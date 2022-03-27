@@ -110,10 +110,10 @@
       (let
           ((`escaped (replace (new RegExp "\n" `g) 
                               (+ (String.fromCharCode 92) "n") text))
-           (`nq (split_by (String.fromCharCode 34) escaped))
-           (`step1 (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
-           (`snq (split_by (String.fromCharCode 39) step1)))
-          (join (+ (String.fromCharCode 92) (String.fromCharCode 39)) snq))
+           (`nq (split_by (String.fromCharCode 34) escaped)))
+           ;(`step1 (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
+           ;(`snq (split_by (String.fromCharCode 39) step1)))
+          (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
       text))
 
 
@@ -1583,21 +1583,49 @@
                                      true)
                            (push acc "{")
                            (when ctx.source (push acc { `comment: (+ "let start " ctx.source " " ) }))
-                           ;(push acc { `comment: (+ "return_point: " ctx.return_point) })
+                           
+                           ;; let must be two pass, because we need to know all the symbol names being defined in the 
+                           ;; allocation block because let allows us to refer to symbol names out of order, similar to
+                           ;; let* in Common Lisp.  
+                           
+                           ;; First pass: build symbols in context for the left hand side of the allocation forms
+                           ;; set them to functions
+                           
+                           (while (< idx (- allocations.length 1))
+                              (do
+                                  (inc idx)
+                                  (= alloc_set (prop (prop allocations idx) `val))
+                                  (= reference_name (sanitize_js_ref_name alloc_set.0.name))
+                                  (= ctx_details (get_declaration_details ctx reference_name))
+                                  ;; if it isn't an argument to a potential parent lambda, set the ctx 
+                                  (if (not (and ctx_details.is_argument
+                                                (== ctx_details.levels_up 1)))
+                                        
+                                   ;; set a placeholder for the reference
+                                      (set_ctx ctx
+                                               reference_name 
+                                               AsyncFunction)) ;; assume callable for recursion
+                                  (clog "set ctx placeholder for " reference_name ": " (get_ctx ctx reference_name) (clone ctx))))
+                                  
+                                  
+                           ;; reset our index to the top of the allocation list
+                           (= idx -1)
+                           
                            (while (< idx (- allocations.length 1))
                                   (do
-                                   (inc idx)
-                                   (= alloc_set (prop (prop allocations idx) `val))
+                                    (inc idx)
+                                    (= alloc_set (prop (prop allocations idx) `val))
                                     (clog "compiling: alloc_set:" (is_complex? alloc_set.1) alloc_set)
                                     (= reference_name (sanitize_js_ref_name alloc_set.0.name))
                                     (= ctx_details (get_declaration_details ctx reference_name))
-                                    (clog "compiling: reference_name:" reference_name)
-                                    (clog "ctx_details:" (clone ctx_details))
+                                    
+                                    ;(clog "compiling: reference_name:" reference_name)
+                                    ;(clog "ctx_details:" (clone ctx_details))
                                     ;; set a placeholder for the reference
-                                    (set_ctx ctx
-                                             reference_name 
-                                             AsyncFunction) ;; assume callable for recursion
-                                    (clog "ctx set for " reference_name ": " (get_ctx ctx reference_name) (clone ctx))
+                                    ;(set_ctx ctx
+                                     ;        reference_name 
+                                      ;       AsyncFunction) ;; assume callable for recursion
+                                    ;(clog "ctx set for " reference_name ": " (get_ctx ctx reference_name) (clone ctx))
                                     (cond
                                       (is_array? alloc_set.1.val)
                                       (do
@@ -1605,23 +1633,18 @@
                                                  `in_assignment
                                                  true)
                                        (= assignment_value (compile alloc_set.1 ctx))
-                                       (clog "<- compiled stmt: " (clone assignment_value))
+                                       ;(clog "<- compiled stmt: " (clone assignment_value))
                                        
-                                       ;(= assignment_value 
-                                        ;(if (is_complex? alloc_set.1)
-                                         ;   (do
-                                          ;   (clog "*******LET_COMPILE_WRAPPER:")
-                                           ;  (compile_wrapper_fn alloc_set.1 ctx))
-                                            ;(compile alloc_set.1 ctx)))
-                                        (set_prop ctx 
+                                       (set_prop ctx 
                                                   `in_assignment
                                                   false))
                                       else
                                       (do 
-                                       (clog "compiling simple assignment value: " alloc_set.1)
+                                       (clog "compiling simple assignment valu for " reference_name  ": " alloc_set.1)
                                        (= assignment_value (compile alloc_set.1 ctx))
                                        
-                                       (clog "setting simple assignment value: <- " (clone assignment_value))))
+                                       ;(clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value))
+                                       ))
                                    
                                    
                                     
@@ -1641,7 +1664,7 @@
                                            
                                      (= assignment_value (wrap_assignment_value assignment_value))
                                     ;
-                                    (clog "set context for assignment value: " (clone assignment_value))
+                                    (clog "set context for " reference_name " assignment value: " (clone assignment_value))
                                     (cond
                                       (and (is_array? assignment_value)
                                            (is_object? (first assignment_value))
@@ -2934,7 +2957,7 @@
                                         ;(for_each (`t ["Environment" "." "read_lisp" "(" "'" (as_lisp pcm) "'" ")" ])
                                         ;   (push acc t))
                                         ;(= pcm (trim (as_lisp pcm)))
-                              (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" (-> (add_escape_encoding (as_lisp pcm)) `replaceAll "'" "\\'")  "'" ")" ")"])
+                              (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" (add_escape_encoding (as_lisp pcm))  "'" ")" ")"])
                                         (push acc t))
                                         ;(for_each (`t ["await" " " "Environment" "." "read_lisp" "(" "'" (as_lisp pcm) "'" ")" ])
                                         ;   (push acc t))
