@@ -110,10 +110,11 @@
       (let
           ((`escaped (replace (new RegExp "\n" `g) 
                               (+ (String.fromCharCode 92) "n") text))
-           (`nq (split_by (String.fromCharCode 34) escaped)))
-           ;(`step1 (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
-           ;(`snq (split_by (String.fromCharCode 39) step1)))
-          (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
+           (`nq (split_by (String.fromCharCode 34) escaped))
+           (`step1 (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
+           (`snq (split_by (String.fromCharCode 39) step1)))
+          ;(join (+ (String.fromCharCode 92) (String.fromCharCode 39)) snq))
+         step1)
       text))
 
 
@@ -204,27 +205,69 @@
           ntree)
       else
       js_tree))
-  
-  
+ 
 (defun `add_escape_encoding (text)
     (if (is_string? text)
         (let
             ((`chars (split_by "" text))
              (`acc []))
             (for_each (`c chars)
-               (if (== (-> c `charCodeAt 0) 92)
-                   (do
-                      (push acc (String.fromCharCode 92))
-                      (push acc c))
+               (cond 
+                 (== (-> c `charCodeAt 0) 92)
+                 (do
+                    (push acc (String.fromCharCode 92))
+                    (push acc c))
+                 (and false (== (-> c `charCodeAt 0) 39))  ;; single quote 
+                 (do 
+                    (push acc (String.fromCharCode 92))
+                    (push acc c))
+                 else
                    (push acc c)))
             (join "" acc))
+        text))  
+  
+(defun `add_escape_encoding_2 (text)
+    (cond (is_string? text)
+        (let
+            ((`chars (split_by "" text))
+             (`acc [])
+             (`quote_style nil)
+             (`final_pos (- chars.length 1))
+             (`idx 0))
+         (cond
+            (== (-> chars.0 `charCodeAt) 34)
+            (= quote_style 34)
+            (== (-> chars.0 `charCodeAt) 39)
+            (= quote_style 39))
+         (console.log "add_escape_encoding*: quote_style: " quote_style chars.0 (prop chars final_pos))
+          (if quote_style
+            (do 
+              (for_each (`c chars)
+                (do
+                  (cond 
+                      (== (-> c `charCodeAt 0) 92)
+                      (do
+                        (push acc (String.fromCharCode 92))
+                        (push acc c))
+                      (and (not (== idx 0))
+                          (not (== idx final_pos))       
+                          (== (-> c `charCodeAt 0) quote_style))  ;; escape quote style
+                      (do 
+                        (push acc (String.fromCharCode 92))
+                        (push acc c))
+                      else
+                      (push acc c))
+                  (inc idx)))
+                (join "" acc))
+            (add_escape_encoding (+ "\"" text "\""))))
+        else
         text))
     
 ;; Establish an environment counter for identification of environments
-((new Function "{ environment_counter = 0 }"))
+((new Function "{ globalThis.environment_counter = 0 }"))
 
 ;; and a function that handles the incrementing and returning of the next value
-((new Function "get_next_environment_id=function () { environment_counter++; return environment_counter; }"))        
+((new Function "get_next_environment_id=function () { globalThis.environment_counter++; return globalThis.environment_counter; }"))        
     
     
 
@@ -2826,14 +2869,15 @@
                                              (if (is_object? tval)
                                                  (do
                                                   (= tmp_name (gen_temp_name "tval"))
-                                                  (for_each (`t (flatten [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+ (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]))
+                                                  (for_each (`t (flatten [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]))
                                                    (push ntree t)))
                                                  
                                                  (do 
                                                      (follow_log "splice: building deferred compilation (serializing tval to lisp)")
+                                                     
                                                      (for_each (`t (flatten [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]))
                                                            (push subacc t))))
-
+                                              (follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
                                               (if (is_object? tval)
                                                   (do 
                                                    (push ntree (quote "=:)"))
@@ -2876,20 +2920,22 @@
                                        (do 
                                         (if ctx.in_lambda
                                             (do
-                                             (follow_log "in_lambda: non splice: " tval)   
+                                             (follow_log "in_lambda: non splice: " tval )   
                                              (= ntree [])
                                               (if (is_object? tval)
                                                   (do
                                                    (= tmp_name (gen_temp_name "tval"))
-                                                   (for_each (`t (flatten [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+ (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]))
+                                                   (for_each (`t (flatten [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]))
                                                     (push ntree t)))
+                                                  ;(push ntree tval))
+                                                  ;(push ntree (+ "\"+await Environment.as_lisp(" tval ")+\"")))
                                                   (for_each (`t (flatten [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]))
                                                             (push ntree t)))
-            
+                                              
 
                                               (when (is_object? tval)
                                                 (push ntree (quote "=:)"))
-                                                (follow_log "to compile: " tval "ctx:" (clone ctx))
+                                                (follow_log "to compile: " (clone tval) (as_lisp tval) "ctx:" (clone ctx))
                                                 
                                                 (= ntree (compile (tokenize tval ctx) ctx))
                                                 (follow_log "compiled ntree: " ntree)
@@ -2897,7 +2943,7 @@
                                                 (= ntree (wrap_and_run ntree ctx)))
             ;(push subacc ntree) ;; this is original
                                               (= subacc (-> subacc `concat ntree))
-                                              (follow_log "subacc: " (JSON.stringify subacc)))
+                                              (follow_log "subacc: " (JSON.stringify subacc) (as_lisp subacc)))
                                               
                                             
                                             (do 
@@ -2944,26 +2990,20 @@
                             (let
                                 ((`acc [])
                                  (`pcm nil)
-                                 
+                                 (`encoded nil)
                                  (`rval nil)
                                  (`is_arr? (is_array? lisp_struct.1)))
                               (= has_lisp_globals true)
                               (quotem_log " ->" (JSON.stringify lisp_struct))
                               (= pcm (follow_tree lisp_struct.1 ctx))
                               (quotem_log "post follow_tree: " (clone pcm))
-                                        ;(= acc pcm)
-                                        ;(push acc "[")
-                                        ;(push acc "'")
-                                        ;(for_each (`t ["Environment" "." "read_lisp" "(" "'" (as_lisp pcm) "'" ")" ])
-                                        ;   (push acc t))
-                                        ;(= pcm (trim (as_lisp pcm)))
-                              (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" (add_escape_encoding (as_lisp pcm))  "'" ")" ")"])
-                                        (push acc t))
-                                        ;(for_each (`t ["await" " " "Environment" "." "read_lisp" "(" "'" (as_lisp pcm) "'" ")" ])
-                                        ;   (push acc t))
-                                        ;(push acc "'")
-                                        ;(push acc "]")
-                                    
+                              (= encoded (-> env `as_lisp pcm))
+                              (quotem_log "as lisp: " encoded)
+                              (= encoded (add_escape_encoding encoded))
+                              (quotem_log "encoded: " encoded)
+                              (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
+                                  (push acc t))
+                                       
                               (quotem_log "<- " acc)
                               acc)))
        
@@ -6818,6 +6858,7 @@
              (`in_quotes 1)
              (`in_long_text 2)
              (`in_comment 3)
+             (`in_single_quote 4)
              (`mode in_code)  ;; start out in code
              (`read_table {
                            "(":[")" (fn (block)
@@ -7031,6 +7072,15 @@
                                             (= mode in_code)
                                             (break))
                                            
+                                           (and (== mode in_single_quote)
+                                                (== escape_mode 0)
+                                                (== c "\'"))
+                                           (do
+                                            (= acc (+ (join "" word_acc)))
+                                            (= word_acc [])
+                                            (= mode in_code)
+                                            (break))
+                                           
                                            (and (== c "|")
                                                 (== mode in_code))
                                            (do 
@@ -7059,7 +7109,21 @@
                                                ;(= block_return [(quote "=:quotem") block_return])
                                                (= backtick_mode 0))
                                             (push acc block_return))
-                                           
+                                          
+                                           (and (== c "\'")
+                                                (== escape_mode 0)
+                                                (== mode in_code))
+                                           (do 
+                                            (if (> word_acc.length 0)
+                                                (do 
+                                                 (push acc (process_word word_acc))
+                                                 (= word_acc [  ])))
+                                            (= mode in_single_quote)
+                                            (= block_return (read_block (+ _depth 1)))
+                                            (when (== backtick_mode 1)
+                                               ;(= block_return [(quote "=:quotem") block_return])
+                                               (= backtick_mode 0))
+                                            (push acc block_return))
                                            
                                            
                                            
@@ -7463,6 +7527,11 @@
         (fval refname)))
 
 
+;; the 4 lines below (quotes and all) crash the reader  (single quote issue)
 
+;(quotem "Hello")
+;"\"Hello 'world'\""
+(quotem "\"Hello \'world\'\"")
+;(-> Environment `as_lisp " \"Hello\" === 'undefined') { return undefined }")
 
 
