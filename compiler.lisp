@@ -283,6 +283,43 @@
             else
             tree)))
 
+
+
+;; Global Javascript Symbols - the compiler wont by default look for these globals
+;; in the Environmentf
+
+(defglobal `external_symbols [`AbortController `AbortSignal `AggregateError `Array `ArrayBuffer
+                              `Atomics `BigInt `BigInt64Array `BigUint64Array `Blob `Boolean 
+                              `ByteLengthQueuingStrategy `CloseEvent `CountQueuingStrategy 
+                              `Crypto `CryptoKey `CustomEvent `DOMException `DataView `Date 
+                              `Error `ErrorEvent `EvalError `Event `EventTarget `File `FileReader 
+                              `FinalizationRegistry `Float32Array `Float64Array `FormData 
+                              `Function `Headers `Infinity `Int16Array `Int32Array `Int8Array 
+                              `Intl `JSON `Location `Map `Math `MessageChannel `MessageEvent 
+                              `MessagePort `NaN `Navigator `Number `Object `Performance 
+                              `PerformanceEntry `PerformanceMark `PerformanceMeasure `ProgressEvent 
+                              `Promise `Proxy `RangeError `ReadableByteStreamController
+                              `ReadableStream `ReadableStreamDefaultController 
+                              `ReadableStreamDefaultReader `ReferenceError `Reflect 
+                              `RegExp `Request `Response `Set `SharedArrayBuffer `Storage 
+                              `String `SubtleCrypto `Symbol `SyntaxError `TextDecoder 
+                              `TextDecoderStream `TextEncoder `TextEncoderStream `TransformStream 
+                              `TypeError `URIError `URL `URLSearchParams `Uint16Array 
+                              `Uint32Array `Uint8Array `Uint8ClampedArray `WeakMap `WeakRef 
+                              `WeakSet `WebAssembly `WebSocket `Window `Worker `WritableStream 
+                              `WritableStreamDefaultController `WritableStreamDefaultWriter
+                              `__defineGetter__ `__defineSetter__ `__lookupGetter__ 
+                              `__lookupSetter__ `_error `addEventListener `alert `atob `btoa 
+                              `clearInterval `clearTimeout `close `closed `confirm `console 
+                              `constructor `crypto `decodeURI `decodeURIComponent `dispatchEvent 
+                              `encodeURI `encodeURIComponent `escape `eval `fetch `getParent
+                              `globalThis `hasOwnProperty `isFinite `isNaN `isPrototypeOf `localStorage
+                              `location `navigator `onload `onunload `parseFloat `parseInt 
+                              `performance `prompt `propertyIsEnumerable `queueMicrotask
+                              `removeEventListener `self `sessionStorage `setInterval
+                              `setTimeout `structuredClone `toLocaleString `toString 
+                              `undefined `unescape `valueOf `window])
+
 ;; The compiler functions takes a JSON structure of lisp forms,
 ;; (presumably the output of the lisp reader), and emits a
 ;; Javascript representation as text.
@@ -307,11 +344,27 @@
 ;; [ { INSTRUCTION OBJECT } STATEMENTS ]
 ;; [ { `ctype: "block" }     "{" "let" [...] "}" ]
 
+
+;; Options:
+
+;; error_report (fn (errors)) - called with the accumulated compilation errors
+;; quiet_mode boolean - if true, logging isn't verbose at all 
+;;                      (this will be inversed once the compiler is more stablized)
+;; env - environment object to use for the compilation environment
+
+
+
+
+
 (defun `compiler (quoted_lisp opts)
   (let
       ((`tree quoted_lisp)
        (`op nil)
        (`Environment (or opts.env env))
+       (`build_environment_mode (or opts.build_environment false))
+       (`env_ref (if build_environment_mode
+                     "this"
+                     "Environment"))
        (`operator nil)
        (`break_out "__BREAK__FLAG__")
        (`tokens [])
@@ -407,6 +460,16 @@
                                        body)
                              tmp_template)))
 
+
+       ;; For optimizations, keep track of referenced global
+       ;; symbols.  If defined with the constant attribute,
+       ;; they can be declared in an outer closure for speed of
+       ;; reference, or if building an environment, the code
+       ;; inlined to the declaring symbol (since one cannot
+       ;; assume that there is a defined environment yet).
+                                                
+       (`referenced_global_symbols {})
+
        ;; A compilation lexical context is established where we
        ;; can store state about declared varables, compilation states,
        ;; and source, etc..
@@ -423,7 +486,6 @@
                                  `parent parent
                                  `ambiguous (new Object)
                                  `defs [])
-                       (log "NEW_CTX++" )
                        (when parent.source
                          (set_prop ctx_obj
                                    `source
@@ -776,7 +838,12 @@
                                                   (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global))))
                                 
                                 
-                                (log "get_lisp_ctx: " ref_name ref_type comps "cannot_be_js_global:" cannot_be_js_global  "found in global?" (not (== NOT_FOUND_THING ref_type)))
+                                (log "get_lisp_ctx: symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
+                                (when (and (not (== NOT_FOUND_THING ref_type))
+                                           (not (contains? ref_name standard_types))
+                                    (set_prop referenced_global_symbols
+                                              ref_name
+                                              ref_type)))
                                 ;(log "get_lisp_ctx: found in Environment? " (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global))
                                 ;(log "    root_ctx: " (clone root_ctx))
                                 (cond 
@@ -786,7 +853,7 @@
                                     undefined ); ref_type
                                   (== comps.length 0)
                                   (do 
-                                      ;(log "get_lisp_ctx: " name " returning: " ref_type)
+                                      ;(log "get_lisp_ctx: [basic reference]" name " returning: " ref_type)
                                       ref_type)
                                   
                                   (and (== comps.length 1)
@@ -3168,8 +3235,25 @@
                
                acc)))
        
-       
-       
+       (`declare_log (if opts.quiet_mode
+                         log
+                        (defclog { `prefix: "DECLARE" `color: "white" `background: "black" })))
+       (`compile_declare (fn (tokens ctx)
+                             (let
+                                 ((`expressions (rest tokens))
+                                  (`targeted nil)
+                                  (`declaration nil))
+                                 (declare_log "->" (clone expressions))
+                                 (for_each (`exp expressions)
+                                    (do
+                                        (= declaration exp.val.0.name)
+                                        (= targeted (rest exp.val))
+                                        (declare_log "declaration: " declaration "targeted: " (each targeted `name))
+                                        (cond
+                                            (== declaration "toplevel")
+                                            (do
+                                                (= env_ref "self")))))
+                                 [])))
        (`get_scoped_type (fn (name)
                              (let
                                  ((`rtype (get_ctx ctx name)))
@@ -3350,8 +3434,9 @@
          (fn (refname)
              (let
                  ((`refval (get_lisp_ctx refname))
-                  (`reftype (sub_type refval)))
-                (log "compile_lisp_scoped_reference: " refname reftype refval)
+                  (`reftype (sub_type refval))
+                  (`basename (get_object_path refname)))
+                (log "compile_lisp_scoped_reference: " refname reftype refval basename)
                
                ;; if the refval isn't changed when is a string, we could have collisions 
                ;; because the compiler/evaluator uses the contents of refval in the ctype
@@ -3364,7 +3449,7 @@
                  (= refval "text"))  
                ;(log "compile_lisp_scoped_reference: " refname reftype refval)         
                (cond
-                 (contains? refname standard_types)   ;; Certain standard types are automatically available everywhere and are not specific to the lisp environment
+                 (contains? basename.0 standard_types)   ;; Certain standard types are automatically available everywhere and are not specific to the lisp environment
                  refname
                  
                  
@@ -3373,21 +3458,46 @@
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
-                  [{ `ctype: refval } "(" "await" " " "Environment" "." "get_global" "(\"" refname  "\")" ")"])
+                  [{ `ctype: refval } "(" "await" " " env_ref "." "get_global" "(\"" refname  "\")" ")"])
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
                   (throw ReferenceError (+ "unknown lisp reference: " refname)))))))
-       (`standard_types [`globalThis `console `btoa `atob `console.log `console.warn `console.error
-                         `this
-                         `Error `EvalError `SyntaxError `ReferenceError `TypeError `RangeError `InternalError `URIError 
-                         `undefined `null 
-                         `Number `String `Object `Boolean `Array 
-                         `Math `Infinity `Date `JSON `Intl `isNaN 
-                         `parseInt `parseFloat 
-                         `Map `Set `Function `AsyncFunction
-                         `Element `Image `fetch
-                         `Environment `Expression `get_next_environment_id `clone `subtype `lisp_writer `do_deferred_splice
+              
+       (`standard_types [`AbortController `AbortSignal `AggregateError `Array `ArrayBuffer
+                          `Atomics `BigInt `BigInt64Array `BigUint64Array `Blob `Boolean 
+                          `ByteLengthQueuingStrategy `CloseEvent `CountQueuingStrategy 
+                          `Crypto `CryptoKey `CustomEvent `DOMException `DataView `Date 
+                          `Error `ErrorEvent `EvalError `Event `EventTarget `File `FileReader 
+                          `FinalizationRegistry `Float32Array `Float64Array `FormData 
+                          `Function `Headers `Infinity `Int16Array `Int32Array `Int8Array 
+                          `Intl `JSON `Location `Map `Math `MessageChannel `MessageEvent 
+                          `MessagePort `NaN `Navigator `Number `Object `Performance 
+                          `PerformanceEntry `PerformanceMark `PerformanceMeasure `ProgressEvent 
+                          `Promise `Proxy `RangeError `ReadableByteStreamController
+                          `ReadableStream `ReadableStreamDefaultController 
+                          `ReadableStreamDefaultReader `ReferenceError `Reflect 
+                          `RegExp `Request `Response `Set `SharedArrayBuffer `Storage 
+                          `String `SubtleCrypto `Symbol `SyntaxError `TextDecoder 
+                          `TextDecoderStream `TextEncoder `TextEncoderStream `TransformStream 
+                          `TypeError `URIError `URL `URLSearchParams `Uint16Array 
+                          `Uint32Array `Uint8Array `Uint8ClampedArray `WeakMap `WeakRef 
+                          `WeakSet `WebAssembly `WebSocket `Window `Worker `WritableStream 
+                          `WritableStreamDefaultController `WritableStreamDefaultWriter
+                          `__defineGetter__ `__defineSetter__ `__lookupGetter__ 
+                          `__lookupSetter__ `_error `addEventListener `alert `atob `btoa 
+                          `clearInterval `clearTimeout `close `closed `confirm `console 
+                          `constructor `crypto `decodeURI `decodeURIComponent `dispatchEvent 
+                          `encodeURI `encodeURIComponent `escape `eval `fetch `getParent
+                          `globalThis `hasOwnProperty `isFinite `isNaN `isPrototypeOf `localStorage
+                          `location `navigator `null `onload `onunload `parseFloat `parseInt 
+                          `performance `prompt `propertyIsEnumerable `queueMicrotask
+                          `removeEventListener `self `sessionStorage `setInterval
+                          `setTimeout `structuredClone `this `toLocaleString `toString 
+                          `undefined `unescape `valueOf `window 
+                          ;; DLisp mandatory defined globals
+                          `AsyncFunction
+                          `Environment `Expression `get_next_environment_id `clone `subtype `lisp_writer `do_deferred_splice
                           ])
        (`is_error nil)
        
@@ -3461,6 +3571,7 @@
                     "typeof": compile_typeof
                     "unquotem": compile_unquotem
                     "debug": compile_debug
+                    "declare": compile_declare
                     
                     })
        (`comp_log (if quiet_mode
@@ -4137,11 +4248,14 @@
                        (take assembly))
                    (assemble_output assembly)]
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
-    (main_log "compile: <-" (clone output))
+    (main_log "<-" (clone output))
+    (main_log "referenced global symbols:" (clone referenced_global_symbols))
     (when (> errors.length 0)
        (map (fn (x)
                 (error_log x))
             errors))
+    (when opts.error_report
+          (opts.error_report errors))
     output))
 
 
@@ -4158,7 +4272,55 @@
      (fn (opts)
          (let
              ((`check_external_env true)
-              (`interface {})
+              (`self this)
+              (`get_global (fn (refname value_if_not_found suppress_check_external_env)
+                               (if (not (== (typeof refname) "string"))
+                                   (throw TypeError "reference name must be a string type")
+                                    (let
+                                        ((`comps (get_object_path refname))
+                                         (`refval nil)
+                                         
+                                         ;; shadow the environments scope check if the suppress_check_external_env is set to true
+                                         ;; this is useful when we have reference names that are not legal js reference names
+                                         
+                                         (`check_external_env (if suppress_check_external_env
+                                                                  false
+                                                                  check_external_env)))
+                                         
+                                          ;; search path is to first check the global Lisp Environment
+                                          ;; and if the check_external_env flag is true, then go to the
+                                          ;; external JS environment.
+                                          
+                                      (= refval (or (prop global_ctx.scope comps.0)
+                                                    (if check_external_env
+                                                        (or (get_outside_global comps.0)
+                                                            NOT_FOUND)
+                                                        NOT_FOUND)))
+                                      
+                                      (when (not (prop global_ctx.scope comps.0))
+                                        (console.log "get_global: [external reference]:" refname))
+                                      ;; based on the value of refval, return the value
+                                      
+                                      (cond
+                                          (== NOT_FOUND refval)
+                                          (or value_if_not_found
+                                              NOT_FOUND)
+                                          
+                                          (== comps.length 1)
+                                          refval
+                                          
+                                          (> comps.length 1)
+                                          (do 
+                                              (resolve_path (rest comps) refval))
+                                          
+                                          else
+                                          (do
+                                              (console.warn "get_global: condition fall through: " comps)
+                                              NOT_FOUND))))))
+                                      
+              (`interface {
+                   `get_global: get_global
+              })
               (`Environment interface)
               (`id (get_next_environment_id))
               
@@ -4252,18 +4414,13 @@
                                                     return rval;
                                                 }
                                             }")
-                           `keys: (fn (obj)
+                           `keys: (new Function "obj"
                                       "{  return Object.keys(obj);  }")
-                        
-                           `take: (fn (place)
-                                      (-> place `shift))
-                           `prepend: (fn (place thing)
-                                         (-> place `unshift thing))
-                           `first: (fn (x)
-                                       x.0)
-                           `last: (fn (x)
-                                      (do 
-                                          (prop x (- x.length 1))))
+                           `take: (new Function "place" "{ return place.shift() }")
+                           
+                           `prepend: (new Function "place" "thing" "{ return place.unshift(thing) }")
+                           `first: (new Function "x" "{ return x[0] }")
+                           `last:  (new Function "x" "{ return x[x.length - 1] }")
                            `slice: (fn (target from to)
                                        (cond
                                          to
@@ -4280,25 +4437,17 @@
                                         (-> x `substr 1)
                                         else
                                         nil))
-                           `second: (fn (x)
-                                        x.1)
-                           `third: (fn (x)
-                                       x.2)
+                           `second: (new Function "x" "{ return x[1] }")
+                           `third: (new Function "x" "{ return x[2] }")
                            
-                           `chop: (fn (x)
-                                      (-> x `substr (- x.length 1)))
-                           `not: (fn (x)
-                                     (if x
-                                         false
-                                         true))
-                           `push: (fn (place thing)
-                                      (-> place `push thing))
-                           `pop: (fn (place)
-                                     (-> place `pop))
+                           `chop:  (new Function "x" "{ return x.substr(x.length-1) }")
+                           `not:   (new Function "x" "{ if (x) { return false } else { return true } }")
+                           `push:  (new Function "place" "thing" "{ return place.push(thing) }")
+                          
+                           `pop: (new Function "place" "{ return place.pop() }")
                            `list: (fn (`& args)
                                       args)
-                           `flatten: (fn (x)
-                                         (-> x `flat))
+                           `flatten: (new Function "x" "{ return x.flat() } ")
                            `jslambda: (fn (`& args)
                                           (apply Function (flatten args)))
                            `join: (fn (`& args)
@@ -4309,35 +4458,23 @@
                                         (-> args.1 `join args.0)))
                            `log: (fn (`& args)
                                      (apply console.log args))
-                           `split: (fn (container token)
-                                       (-> container `split token))
-                           `split_by: (fn (token container)
-                                          (-> container `split token))
-                           `is_object?: (fn (x)
-                                            (instanceof x Object)) 
-                           `is_array?: (fn (x)
-                                           (instanceof x Array)) 
+                           `split: (new Function "container" "token" "{ return container.split(token) }")
+                           `split_by: (new Function "token" "container" "{ return container.split(token) }")
+                           
+                           `is_object?: (new Function "x" "{ return x instanceof Object }")
+                           `is_array?:  (new Function "x" "{ return x instanceof Array }")
                            `is_number?: (fn (x)
                                             (== (sub_type x) "Number"))
                            `is_function?: (fn (x)
                                               (instanceof x Function))
-                           `is_set?:     (fn (x)
-                                             (instanceof x Set))
-                           `is_element?: (fn (x)
-                                             (instanceof x Element)) 
-                           `is_string?: (fn (x)
+                           `is_set?:     (new Function "x" "{ return x instanceof Set }")
+                           `is_element?: (new Function "x" "{ return x instanceof Element }")
+                           `is_string?:  (fn (x)
                                             (or (instanceof x String) 
                                                 (== (typeof x) "string")))
-                           `ends_with?: (fn (val text)
-                                            (cond (is_array? text)
-                                                  (== (last text) val)
-                                                  else
-                                                  (-> text `endsWith val)))
-                           `starts_with?: (fn (val text)
-                                              (cond (is_array? text)
-                                                    (== (first text) val)
-                                                    else
-                                                    (-> text `startsWith val)))
+                           `ends_with?:   (new Function "val" "text" "{ if (val instanceof Array) { return text[text.length-1]===val } else { return text.endsWith(val) } }")
+                           `starts_with?: (new Function "val" "text" "{ if (val instanceof Array) { return text[0]===val } else { return text.startsWith(val) } }")
+                                          
                            `blank?: (fn (val)
                                         (or (eq val nil)
                                             (and (is_string? val)
@@ -4634,51 +4771,7 @@
               (`NOT_FOUND (new ReferenceError "not found"))
               
                                                
-              (`get_global (fn (refname value_if_not_found suppress_check_external_env)
-                               (if (not (== (typeof refname) "string"))
-                                   (throw TypeError "reference name must be a string type")
-                                    (let
-                                        ((`comps (get_object_path refname))
-                                         (`refval nil)
-                                         
-                                         ;; shadow the environments scope check if the suppress_check_external_env is set to true
-                                         ;; this is useful when we have reference names that are not legal js reference names
-                                         
-                                         (`check_external_env (if suppress_check_external_env
-                                                                  false
-                                                                  check_external_env)))
-                                         
-                                          ;; search path is to first check the global Lisp Environment
-                                          ;; and if the check_external_env flag is true, then go to the
-                                          ;; external JS environment.
-                                          
-                                      (= refval (or (prop global_ctx.scope comps.0)
-                                                    (if check_external_env
-                                                        (or (get_outside_global comps.0)
-                                                            NOT_FOUND)
-                                                        NOT_FOUND)))
-                                      
-                                      (when (not (prop global_ctx.scope comps.0))
-                                        (console.log "get_global: [external reference]:" refname))
-                                      ;; based on the value of refval, return the value
-                                      
-                                      (cond
-                                          (== NOT_FOUND refval)
-                                          (or value_if_not_found
-                                              NOT_FOUND)
-                                          
-                                          (== comps.length 1)
-                                          refval
-                                          
-                                          (> comps.length 1)
-                                          (do 
-                                              (resolve_path (rest comps) refval))
-                                          
-                                          else
-                                          (do
-                                              (console.warn "get_global: condition fall through: " comps)
-                                              NOT_FOUND))))))
-                                      
+              
                                       
               (`set_global (fn (refname value meta)
                                (do
@@ -4728,6 +4821,7 @@
                                             { `env: interface 
                                             `ctx: ctx 
                                             `formatted_output: true 
+                                            `error_report: (or opts.error_report nil)
                                             `quiet_mode: (or opts.quiet_mode false) }))
                                (env_log "<- compiled:" compiled)
                                (if opts.on_compilation_complete
@@ -4795,6 +4889,15 @@
                                        (= last_exception e)))
                                (if last_exception
                                    (do
+                                    (when opts.error_report
+                                          (opts.error_report {
+                                                          `error: e.name
+                                                          `message: e.message
+                                                          `form: nil
+                                                          `parent_forms: nil
+                                                          `invalid: true
+                                                          `text: e.stack
+                                                          }))
                                     (env_log "<- ERROR: " (-> last_exception `toString))
                                     (= result last_exception)
                                      (= last_exception nil)
@@ -4876,6 +4979,8 @@
                                `parent: output_view
                                }))
        (`messages_view (div { `style: "height: calc(100% - 10px)" } "Messages"))
+       (`messages_editor
+         (controls/code_editor { `parent: messages_view }))
        (`compile_button (button { `class: "MenuButton2" } "Compile"))
        (`evaluate_button (button { `class: "MenuButton2" } "Evaluate"))
        (`evaluate_js_button (button { `class: "MenuButton2" } "Evaluate JS"))
@@ -4888,6 +4993,7 @@
                       ;(set_disabled compile_button evaluate_button evaluate_js_button)
                       (clear_log)
                       (console.clear)
+                      
                       (notify "Running")
                        (try
                         (do 
@@ -4895,7 +5001,9 @@
                                 (= result
                                    (-> env `evaluate (-> lisp_code_editor.editor `getValue)
                                        nil
-                                       { `on_compilation_complete: (fn (compiled_code)
+                                       { `error_report: (fn (errors)
+                                                            (display_errors errors))
+                                         `on_compilation_complete: (fn (compiled_code)
                                                                        (disp_comp_results compiled_code)) }))
                                 (= compiled (compiler (-> env `read_lisp (-> lisp_code_editor.editor `getValue))
                                                       { `formatted_output: true `js_out: true })))
@@ -4908,7 +5016,8 @@
                                                                   (is_function? result)
                                                                   (-> result `toString)
                                                                   else
-                                                                  (JSON.stringify result nil 4))))        
+                                                                  (JSON.stringify result nil 4)))
+                           (-> output_editor.editor `gotoLine 0 0))        
                         (catch Error (`e)
                                (do
                                 (log (+ "COMPILE ERROR:" e)))))
@@ -4916,6 +5025,11 @@
                        (set_enabled compile_button evaluate_button evaluate_js_button))))
        (`resize_observer
          nil)
+       (`display_errors
+           (fn (errors)
+               (do
+                   (-> messages_editor.editor `setValue (JSON.stringify errors nil 4))
+                   (-> messages_editor.editor `gotoLine 0 0))))
        (`disp_comp_results
          (fn (compiled)
              (cond
@@ -4925,13 +5039,15 @@
                (do 
                    (console.log "dlisp_tab: compiled text: " compiled.1)
                    (-> js_code_editor.editor `setValue 
-                       compiled.1))
+                       compiled.1)
+                   (-> js_code_editor.editor `gotoLine 0 0))
                
                compiled
                (do 
                    (console.log "dlisp_tab: compiled text: " compiled)
                    (-> js_code_editor.editor `setValue
-                       compiled)))))
+                       compiled)
+                   (-> js_code_editor.editor `gotoLine 0 0)))))
        (`qview 
          (quad_view [ lisp_view
                     js_code_view
@@ -6787,6 +6903,9 @@
 
 (defglobal `dlisp use_dlisp_command_line)
 
+
+;; TESTS WILL NOT PASS UNTIL THE READER is compiled 
+
 ;; We need to bring up the reader next, but in case of bugs in our reader, keep the old read_lisp handy
 
 (set_prop env
@@ -7257,7 +7376,7 @@
           `as_lisp
           globalThis.lisp_writer))
 
-;; next run tests 
+;; next run tests on the reader - not always necessary for the boot up 
 
 (defglobal `run_reader_tests 
     (fn ()
@@ -7420,6 +7539,12 @@
            (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
         (fval refname)))) 
 
+(defun `get_outside_global (refname)
+      (let
+        ((`fval (new Function "refname"
+           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
+        (fval refname)))
+
 (defun `get_object_path (refname)
     (let
         ((`chars (split_by "" refname))
@@ -7495,6 +7620,19 @@
             else
             tree)))
 
+(defun `type (x)
+    (cond
+        (== nil x) "null"
+        (== undefined x) "undefined"
+        (instanceof x Array) "array"
+        else
+        (typeof x))
+    {
+        `usage:["value:*"]
+        `description: "returns the type of value that has been passed.  Deprecated, and the sub_type function should be used."
+        `tags:["types","value","what"]
+    })
+
 (defun `random_int (`& `args)
        (let
             ((`top 0)
@@ -7539,24 +7677,6 @@
      (log "nope: it is: " it))
 
  
-;; Failure Work List
-
-;; Strings with single quote in them fail to escape properly: 
-;; see the 'undefined' below - fails in defun but not defglobal so it is an identity (quoting) issue in preserving source
-(defun `get_outside_global2 (refname)
-      (let
-        ((`fval (new Function "refname"
-           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
-        (fval refname)))
-
-
-;; the 4 lines below (quotes and all) crash the reader  (single quote issue)
-
-;(quotem "Hello")
-;"\"Hello 'world'\""
-(quotem "\"Hello \'world\'\"")
-;(-> Environment `as_lisp " \"Hello\" === 'undefined') { return undefined }")
-
 
 (defglobal `transformer
     (fn (arg1 `& args)
