@@ -206,25 +206,6 @@
       else
       js_tree))
  
-(defun `add_escape_encoding (text)
-    (if (is_string? text)
-        (let
-            ((`chars (split_by "" text))
-             (`acc []))
-            (for_each (`c chars)
-               (cond 
-                 (== (-> c `charCodeAt 0) 92)
-                 (do
-                    (push acc (String.fromCharCode 92))
-                    (push acc c))
-                 (and false (== (-> c `charCodeAt 0) 39))  ;; single quote 
-                 (do 
-                    (push acc (String.fromCharCode 92))
-                    (push acc c))
-                 else
-                   (push acc c)))
-            (join "" acc))
-        text))  
   
 (defun `add_escape_encoding (text)
     (if (is_string? text)
@@ -233,11 +214,7 @@
              (`acc []))
             (for_each (`c chars)
                (cond 
-                 (and false (== (-> c `charCodeAt 0) 92))
-                 (do
-                    (push acc (String.fromCharCode 92))
-                    (push acc c))
-                 (and (== (-> c `charCodeAt 0) 34))  ;; was single quote 
+                 (and (== (-> c `charCodeAt 0) 34))  
                  (do 
                     (push acc (String.fromCharCode 92))
                     (push acc c))
@@ -953,6 +930,7 @@
          (fn (ctx lisp_tree)
              (if (and (is_array? lisp_tree)
                       (is_reference? lisp_tree.0)
+                      ;; is this a compile time function?  Check the definition in our environment..
                       (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
                  (let
                      ((`ntree nil))
@@ -969,7 +947,8 @@
                          (comp_time_log "applied:" ntree)
                        
                          (= ntree (do_deferred_splice ntree))
-                         (comp_time_log "compile_time_eval: <-", (clone ntree))))
+                         (comp_time_log "<- lisp: ", (as_lisp (clone ntree)))
+                         (comp_time_log "<-", (clone ntree))))
                    ntree)
                  
                  lisp_tree)))
@@ -6807,6 +6786,13 @@
                         rval))))))
 
 (defglobal `dlisp use_dlisp_command_line)
+
+;; We need to bring up the reader next, but in case of bugs in our reader, keep the old read_lisp handy
+
+(set_prop env
+          `old_read_lisp
+          env.read_lisp)
+      
 (dlisp_tabs)
                                         
 
@@ -6837,11 +6823,7 @@
 ;; in this case represented as JSON structures that are then compiled into
 ;; a javascript form for evaluation.
 
-;; First in case of bugs in our reader, keep the old read_lisp handy
 
-(set_prop env
-          `old_read_lisp
-          env.read_lisp)
 
 ;; Compile the reader in a DLisp instance, from which we then set the compiled reader function
 ;; as the reader for the environment.
@@ -7276,6 +7258,8 @@
           `as_lisp
           globalThis.lisp_writer))
 
+;; next run tests 
+
 (defglobal `run_reader_tests 
     (fn ()
       (let
@@ -7329,6 +7313,28 @@
     `eval_when:{ `compile_time: true } 
     })
 
+;; add_escape_encoding is used for quoting purposes and providing escaped
+;; double quotes to quoted lisp in compiled Javascript
+
+(defglobal `add_escape_encoding 
+  (fn (text)
+    (if (is_string? text)
+        (let
+            ((`chars (split_by "" text))
+             (`acc []))
+            (for_each (`c chars)
+               (cond 
+                 (and (== (-> c `charCodeAt 0) 34)) 
+                 (do 
+                    (push acc (String.fromCharCode 92))
+                    (push acc c))
+                 else
+                   (push acc c)))
+            (join "" acc))
+        text)))
+    
+    
+
 ;; This function will be executed at the time of the compile of code.
 ;; if called, it will be called with the arguments in the place of the
 ;; argument list of the defmacro function.
@@ -7338,6 +7344,9 @@
 
 ;; Therefore the goal is to return a quoted form that will be spliced
 ;; into the tree at the point of the original calling form.
+
+;; When this function is called, it will have the values assigned to the
+;; values in the let.  
 
 (defglobal `defmacro
     (fn (name arg_list `& body)
@@ -7371,6 +7380,16 @@
 (defglobal `read_lisp
     reader)
 
+(defmacro defexternal (name value meta)
+   `(let
+       ((symname (desym ,@name)))
+    (do 
+       (set_prop globalThis
+             symname
+             ,#value)
+       (prop globalThis
+             symname))))  
+         
 (defmacro `defun (name args body meta)
     (let
         ((fn_name name)
@@ -7391,15 +7410,7 @@
                  ,#fn_body)
               (quote ,#source_details)))))
   
-(defmacro defexternal (name value meta)
-   `(let
-       ((symname (desym ,@name)))
-    (do 
-       (set_prop globalThis
-             symname
-             ,#value)
-       (prop globalThis
-             symname))))  
+
   
   
 (defglobal `get_outside_global
@@ -7447,6 +7458,7 @@
 
 
              
+
 
 (defun `do_deferred_splice (tree)
     (let
@@ -7545,4 +7557,24 @@
 (quotem "\"Hello \'world\'\"")
 ;(-> Environment `as_lisp " \"Hello\" === 'undefined') { return undefined }")
 
+
+(defglobal `transformer
+    (fn (arg1 `& args)
+        (let
+            ((arga arg1)
+             (rest_of_them args))
+             
+         (console.log "===TESTER==>arga: ",arga)
+         (console.log "===TESTER==>args: ",rest_of_them)
+         
+        {
+            `arg1: arg1
+            ;`rest: `( ,@(conj [`quote] rest_of_them))
+            `rest:  (quotem ,@(rest_of_them))
+         }))
+    {
+        `eval_when:{ `compile_time: true }
+        })
+     
+         
 
