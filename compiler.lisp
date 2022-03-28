@@ -226,43 +226,25 @@
             (join "" acc))
         text))  
   
-(defun `add_escape_encoding_2 (text)
-    (cond (is_string? text)
+(defun `add_escape_encoding (text)
+    (if (is_string? text)
         (let
             ((`chars (split_by "" text))
-             (`acc [])
-             (`quote_style nil)
-             (`final_pos (- chars.length 1))
-             (`idx 0))
-         (cond
-            (== (-> chars.0 `charCodeAt) 34)
-            (= quote_style 34)
-            (== (-> chars.0 `charCodeAt) 39)
-            (= quote_style 39))
-         (console.log "add_escape_encoding*: quote_style: " quote_style chars.0 (prop chars final_pos))
-          (if quote_style
-            (do 
-              (for_each (`c chars)
-                (do
-                  (cond 
-                      (== (-> c `charCodeAt 0) 92)
-                      (do
-                        (push acc (String.fromCharCode 92))
-                        (push acc c))
-                      (and (not (== idx 0))
-                          (not (== idx final_pos))       
-                          (== (-> c `charCodeAt 0) quote_style))  ;; escape quote style
-                      (do 
-                        (push acc (String.fromCharCode 92))
-                        (push acc c))
-                      else
-                      (push acc c))
-                  (inc idx)))
-                (join "" acc))
-            (add_escape_encoding (+ "\"" text "\""))))
-        else
-        text))
-    
+             (`acc []))
+            (for_each (`c chars)
+               (cond 
+                 (and false (== (-> c `charCodeAt 0) 92))
+                 (do
+                    (push acc (String.fromCharCode 92))
+                    (push acc c))
+                 (and (== (-> c `charCodeAt 0) 34))  ;; was single quote 
+                 (do 
+                    (push acc (String.fromCharCode 92))
+                    (push acc c))
+                 else
+                   (push acc c)))
+            (join "" acc))
+        text))  
 ;; Establish an environment counter for identification of environments
 ((new Function "{ globalThis.environment_counter = 0 }"))
 
@@ -2783,7 +2765,7 @@
                                                             (if (not (is_object? v))
                                                                 v)))))
                                
-                            
+                            (run_log "current ctx: " (clone (flatten_ctx ctx)))
                             (= assembled (+ (if needs_braces? "{" "")
                                             (if needs_return? " return " "")
                                             assembled
@@ -3003,7 +2985,7 @@
                               (quotem_log "encoded: " encoded)
                               (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
                                   (push acc t))
-                                       
+                              (quotem_log "<-  " (join "" acc))
                               (quotem_log "<- " acc)
                               acc)))
        
@@ -3996,6 +3978,9 @@
                         (console.error "compilation",is_error)
                          ))))))
        (`final_token_assembly nil)
+       (`main_log (if opts.quiet_mode
+                      log
+                      (defclog { `prefix: "compiler:" `background: "darkblue" `color: "white" } )))
        (`assemble_output
          (fn (js_tree)
              (let
@@ -4099,7 +4084,7 @@
               {})
     ;(console.clear)
    
-    (console.log "Starting tokenization..." (clone tree))
+    (main_log "Starting tokenization..." (clone tree))
     
     (= output
        (cond
@@ -4125,13 +4110,15 @@
                   (console.error "pre-compilation error")
                   is_error)
               (do
-                  (console.log "compile: final token assembly:" final_token_assembly)
+                  (main_log "final token assembly:" final_token_assembly)
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))))
-           (log "compiled: globals?" has_lisp_globals assembly is_error)
-           (console.log "compiled: globals?" has_lisp_globals (clone assembly))
-           (console.log "compiled: assembly: " (assemble_output assembly))
+           (if is_error
+               (error_log "compilation" (clone is_error))
+               (main_log "no compilation errors"))
+           (main_log "globals:" has_lisp_globals " constructed assembly:" (clone assembly))
+           (main_log "assembly: " (assemble_output assembly))
            (cond 
              (and (not is_error)
                   assembly
@@ -4164,14 +4151,14 @@
                 (= has_lisp_globals false))
            (if is_error
                (do 
-                (log "compiler: is an error: " is_error)
+                (error_log "compiler: is an error: " is_error)
                 is_error)
                (if (is_object? (first assembly))
                    [(+ { `has_lisp_globals: has_lisp_globals }
                        (take assembly))
                    (assemble_output assembly)]
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
-    (console.log "compile: <-" (clone output))
+    (main_log "compile: <-" (clone output))
     (when (> errors.length 0)
        (map (fn (x)
                 (error_log x))
@@ -5463,6 +5450,18 @@
     true
     "function definition with single statement"
     ]
+    ["(quotel \"\\\"Hello\\\" 'world'\")"
+     []
+     "\"Hello\" 'world'"
+     "quote literal: single quote and double quotes"]
+    ["(quote \"\\\"Hello\\\" 'world'\")"
+     []
+     "\"Hello\" 'world'"
+     "quote: single quote and double quotes"]
+    ["(quotem \"\\\"Hello\\\" 'world'\")"
+     []
+     "\"Hello\" 'world'"
+     "quote macro: single quote and double quotes"]
     [ "(fn ()
             (+ 1 2))"
     []
@@ -7269,10 +7268,13 @@
 
 ;; set the read_lisp function to our compiled reader function:
 
+(do 
 (set_prop Environment 
           `read_lisp
           reader)
-
+(set_prop Environment
+          `as_lisp
+          globalThis.lisp_writer))
 
 (defglobal `run_reader_tests 
     (fn ()
@@ -7327,6 +7329,15 @@
     `eval_when:{ `compile_time: true } 
     })
 
+;; This function will be executed at the time of the compile of code.
+;; if called, it will be called with the arguments in the place of the
+;; argument list of the defmacro function.
+
+;; The result of the evaluation is returned to the compiler and used
+;; as a replacement for the calling form.
+
+;; Therefore the goal is to return a quoted form that will be spliced
+;; into the tree at the point of the original calling form.
 
 (defglobal `defmacro
     (fn (name arg_list `& body)
@@ -7369,7 +7380,7 @@
                      (+
                          {
                             `fn_args: (as_lisp fn_args)
-                            `body: (as_lisp fn_body)
+                            `b64body: (b64encode (as_lisp fn_body))
                           }
                          (if meta 
                              meta
