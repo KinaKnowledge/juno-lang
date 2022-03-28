@@ -7185,7 +7185,6 @@
                                                 (do 
                                                     (push acc (process_word word_acc))
                                                     (= word_acc [])))
-                                            (log "backtick_mode: 1")
                                             (= backtick_mode 1))
                                             
                                            (and (== mode in_code)
@@ -7398,8 +7397,9 @@
          (source_details 
                      (+
                          {
+                            `name: name
                             `fn_args: (as_lisp fn_args)
-                            `b64body: (b64encode (as_lisp fn_body))
+                            `fn_body: (add_escape_encoding (as_lisp fn_body))
                           }
                          (if meta 
                              meta
@@ -7575,6 +7575,6 @@
     {
         `eval_when:{ `compile_time: true }
         })
-     
+    
          
 
