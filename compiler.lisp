@@ -34,14 +34,6 @@
 (defglobal `SyntaxError SyntaxError)
 (defglobal `null nil)
 
-;; ## will cause a problem
-
-(defglobal `get_outside_global
-   (fn (refname)
-      (let
-        ((`fval (new Function "refname"
-           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
-        (fval refname))))
 
 ;; returns the first component of an object accessor 
 
@@ -363,8 +355,8 @@
        (`Environment (or opts.env env))
        (`build_environment_mode (or opts.build_environment false))
        (`env_ref (if build_environment_mode
-                     "this"
-                     "Environment"))
+                     ""
+                     "Environment."))
        (`operator nil)
        (`break_out "__BREAK__FLAG__")
        (`tokens [])
@@ -485,6 +477,7 @@
                                  `scope (new Object)
                                  `parent parent
                                  `ambiguous (new Object)
+                                 `declared_types (new Object)
                                  `defs [])
                        (when parent.source
                          (set_prop ctx_obj
@@ -621,6 +614,44 @@
                                  ctx.parent
                                  (get_ctx ctx.parent ref_name)))))))
        
+       (`get_declarations (fn (ctx name)
+                         (let
+                             ((`ref_name nil))
+                           (cond 
+                             (is_nil? name)
+                             (throw TypeError (+ "get_declarations: nil identifier passed: " (sub_type name)))
+                             (is_number? name)
+                             name
+                             (is_function? name)
+                             (throw (+ "get_declarations: invalid identifier passed: " (sub_type name)))
+                             else
+                             (do
+                              (if (starts_with? (quote "=:") name)
+                                  (= ref_name (-> name `substr 2))
+                                  (= ref_name name))
+                              (= ref_name (first (get_object_path ref_name)))
+                               (cond
+                                 (prop op_lookup ref_name)
+                                 nil
+                                 (not (== undefined (prop ctx.declared_types ref_name)))
+                                 (prop ctx.declared_types ref_name)
+                                 ctx.parent
+                                 (get_declarations ctx.parent ref_name)))))))
+       
+       (`set_declaration (fn (ctx name declaration_type value)
+                             (let
+                                 ((`dec_struct (get_declarations ctx name)))
+                                 (when (blank? dec_struct)
+                                     (= dec_struct {
+                                                    `type:undefined
+                                                    `inlined: false
+                                                    }))
+                                 (set_prop dec_struct
+                                           declaration_type
+                                           value)
+                                 (set_prop ctx.declared_types
+                                           name
+                                           dec_struct))))
        (`is_ambiguous? (fn (ctx name)
                            (let
                              ((`ref_name nil))
@@ -826,7 +857,11 @@
                                         (get_source_chain ctx.parent sources)
                                         sources)))))
        (`NOT_FOUND  "__!NOT_FOUND!__")
+       (`THIS_REFERENCE (fn () "this"))
        (`NOT_FOUND_THING (fn () true))
+       (`get_lisp_ctx_log (if opts.quiet_mode
+                              log
+                              (defclog { `prefix: "get_lisp_ctx"  `color: "darkgreen"  `background: "#A0A0A0"} )))
        (`get_lisp_ctx (fn (name)
                           (if (not (is_string? name))
                               (throw Error "Compiler Error: get_lisp_ctx passed a non string identifier")
@@ -834,11 +869,13 @@
                                   ((`comps (get_object_path name))
                                    (`cannot_be_js_global (check_invalid_js_ref comps.0))
                                    (`ref_name (take comps))
-                                   (`ref_type (or (prop root_ctx.defined_lisp_globals ref_name)
-                                                  (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global))))
+                                   (`ref_type (if (== ref_name "this")
+                                                      THIS_REFERENCE
+                                                      (or (prop root_ctx.defined_lisp_globals ref_name)
+                                                      (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)))))
                                 
                                 
-                                (log "get_lisp_ctx: symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
+                                (get_lisp_ctx_log "symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
                                 (when (and (not (== NOT_FOUND_THING ref_type))
                                            (not (contains? ref_name standard_types))
                                     (set_prop referenced_global_symbols
@@ -849,8 +886,10 @@
                                 (cond 
                                   (== NOT_FOUND_THING ref_type)
                                   (do 
-                                    (log "get_lisp_ctx: returning undefined for " name)      
+                                    (get_lisp_ctx_log "returning undefined for " name)      
                                     undefined ); ref_type
+                                  (== ref_type THIS_REFERENCE)
+                                  ref_type
                                   (== comps.length 0)
                                   (do 
                                       ;(log "get_lisp_ctx: [basic reference]" name " returning: " ref_type)
@@ -866,7 +905,7 @@
                                   
                                   else
                                   (do
-                                   (log "get_lisp_ctx: symbol not found: " name ref_name ref_type cannot_be_js_global)
+                                   (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)
                                    (console.error "compile: get_lisp_ctx: symbol not found: " name)
                                    ;(error_log "get_lisp_ctx: unhandled name structure: " name)
                                    undefined)
@@ -1583,33 +1622,42 @@
                                      (cond 
                                        (and (prop ctx.scope symname)
                                             (prop ctx `lambda_scope))
-                                       { `name: symname 
-                                       `is_argument: true 
-                                       `levels_up: (or _levels_up 0) 
-                                       `value: (prop ctx.scope symname)
-                                       `declared_global: (if (prop root_ctx.defined_lisp_globals symname) true false) }
+                                       {   
+                                           `name: symname 
+                                           `is_argument: true 
+                                           `levels_up: (or _levels_up 0) 
+                                           `value: (prop ctx.scope symname)
+                                           `declared_global: (if (prop root_ctx.defined_lisp_globals symname) true false) }
+                                   
                                        (prop ctx.scope symname)
-                                       { `name: symname 
-                                       `is_argument: false 
-                                       `levels_up: (or _levels_up 0) 
-                                       `value: (prop ctx.scope symname) 
-                                       `declared_global: (if (prop root_ctx.defined_lisp_globals symname) true false) }
+                                       {   
+                                           `name: symname 
+                                           `is_argument: false 
+                                           `levels_up: (or _levels_up 0) 
+                                           `value: (prop ctx.scope symname) 
+                                           `declarations: (get_declarations ctx symname)
+                                           `declared_global: (if (prop root_ctx.defined_lisp_globals symname) true false) }
                                        
                                        (and (eq (prop ctx `parent) nil)
                                             (prop root_ctx.defined_lisp_globals symname))
-                                       { `name: symname 
-                                       `is_argument: false 
-                                       `levels_up: (or _levels_up 0) 
-                                       `value: (prop ctx.scope symname)
-                                       `declared_global: true }
+                                       {   
+                                           `name: symname 
+                                           `is_argument: false 
+                                           `levels_up: (or _levels_up 0) 
+                                           `value: (prop ctx.scope symname)
+                                           `declarations: (get_declarations ctx symname)
+                                           `declared_global: true }
+                                   
                                        ctx.parent
                                        (get_declaration_details ctx.parent symname (or (and _levels_up (+ _levels_up 1)) 1))
+                                       
                                        (not (== NOT_FOUND_THING (-> Environment `get_global symname NOT_FOUND_THING)))
-                                       { `name: symname
-                                       `is_argument: false
-                                       `levels_up: (or _levels_up 0)
-                                       `value: (-> Environment `get_global symname)
-                                       `declared_global: true })))
+                                       { 
+                                            `name: symname
+                                            `is_argument: false
+                                            `levels_up: (or _levels_up 0)
+                                            `value: (-> Environment `get_global symname)
+                                            `declared_global: true })))
        
        (`wrap_assignment_value (fn (stmts)
                                   (let
@@ -1648,7 +1696,7 @@
                               (`allocations tokens.1.val)
                               (`block (-> tokens `slice 2))
                               (`idx -1))
-                           (clog "compile_let ->: " (prop tokens.1 `val))
+                           (clog "->: " (prop tokens.1 `val))
                            (set_prop ctx
                                      `return_last_value
                                      true)
@@ -1668,6 +1716,8 @@
                                   (= alloc_set (prop (prop allocations idx) `val))
                                   (= reference_name (sanitize_js_ref_name alloc_set.0.name))
                                   (= ctx_details (get_declaration_details ctx reference_name))
+                                  (when ctx_details
+                                        (clog "declaration details for: " reference_name (clone ctx_details)))
                                   ;; if it isn't an argument to a potential parent lambda, set the ctx 
                                   (if (not (and ctx_details.is_argument
                                                 (== ctx_details.levels_up 1)))
@@ -1800,10 +1850,16 @@
                           (set_prop ctx
                                     `lambda_scope
                                     true)
-                          (if fn_opts.synchronous
-                              (do
+                          (cond 
+                             fn_opts.synchronous
+                             (do
                                (= type_mark (type_marker `Function))
                                (push acc type_mark))
+                             fn_opts.arrow
+                             (do
+                               (= type_mark (type_marker `Function))
+                               (push acc type_mark))
+                             else
                               (do
                                (= type_mark (type_marker `AsyncFunction))  
                                (push acc type_mark)
@@ -1813,7 +1869,8 @@
                           (set_prop type_mark
                                     `args
                                     [])       
-                          (push acc "function")
+                          (when (not fn_opts.arrow)
+                                (push acc "function"))
                           (push acc "(")
                           (while (< idx (- fn_args.length 1))
                                  (do
@@ -1845,7 +1902,8 @@
                                      (push acc ","))))
                           (push acc ")")
                           (push acc " ")
-                          
+                          (when fn_opts.arrow
+                                (push acc "=>"))
                           (fn_log "body: is_block?" (is_block? body.val) body)
                           (set_prop ctx
                                     `return_last_value
@@ -3242,7 +3300,11 @@
                              (let
                                  ((`expressions (rest tokens))
                                   (`targeted nil)
-                                  (`declaration nil))
+                                  (`acc [])
+                                  (`source nil)
+                                  (`details nil)
+                                  (`declaration nil)
+                                  (`dec_struct nil))
                                  (declare_log "->" (clone expressions))
                                  (for_each (`exp expressions)
                                     (do
@@ -3252,8 +3314,57 @@
                                         (cond
                                             (== declaration "toplevel")
                                             (do
-                                                (= env_ref "self")))))
-                                 [])))
+                                               (set_prop opts
+                                                         `root_environment
+                                                         targeted.0)
+                                               (if opts.root_environment
+                                                   (= env_ref "")
+                                                   (= env_ref "Environment.")))
+                                            (== declaration "inline")
+                                            (do 
+                                               (for_each (`name (each targeted `name))
+                                                 (do
+                                                     (= dec_struct (get_declaration_details ctx name))
+                                                     (declare_log "current_declaration for " name ": " (if dec_struct (-> dec_struct.value `toString) "NOT FOUND") (clone dec_struct))
+                                                     (when (and dec_struct.declared_global)
+                                                              ;(not (dec_struct.is_argument)))
+                                                             ;; this is a global so we just produce a reference for this 
+                                                             (for_each (`t [ "let" " " name "=" ])
+                                                                (push acc t))
+                                                             (cond
+                                                                 (and (is_function? dec_struct.value)
+                                                                      (prop (prop Environment.definitions name)
+                                                                            `fn_body))
+                                                                 (do
+                                                                     (= details (prop Environment.definitions name))
+                                                                     (= source (+ "(fn " details.fn_args " " details.fn_body ")"))
+                                                                     (declare_log "source: " source)
+                                                                     (= source (compile (tokenize (read_lisp source) ctx) ctx 1000))
+                                                                     (declare_log "compiled: " source)
+                                                                     (push acc source)
+                                                                     (set_ctx ctx name AsyncFunction))
+                                                                 (is_function? dec_struct.value)
+                                                                 (do 
+                                                                     (push acc (-> (-> dec_struct.value `toString) `replace "\n" ""))
+                                                                     (set_ctx ctx name AsyncFunction))
+                                                                 else
+                                                                 (do 
+                                                                     (push acc (-> dec_struct.value `toString))
+                                                                     (set_ctx ctx name "?arg"))
+                                                                     )
+                                                              (push acc ";"))
+                                                     (set_declaration ctx name `inlined true))))
+                                            (== declaration "function")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type Function)))
+                                            (== declaration "array")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type Array)))
+                                               )))
+                                 (declare_log "<-" (clone acc))
+                                 acc)))
        (`get_scoped_type (fn (name)
                              (let
                                  ((`rtype (get_ctx ctx name)))
@@ -3458,7 +3569,7 @@
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
-                  [{ `ctype: refval } "(" "await" " " env_ref "." "get_global" "(\"" refname  "\")" ")"])
+                  [{ `ctype: refval } "(" "await" " " env_ref "get_global" "(\"" refname  "\")" ")"])
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
@@ -3500,7 +3611,7 @@
                           `Environment `Expression `get_next_environment_id `clone `subtype `lisp_writer `do_deferred_splice
                           ])
        (`is_error nil)
-       
+      
        (`is_block? (fn (tokens)
                        (and (contains? tokens.0.name ["do" "progn"]))))
                                         ;(== tokens.1.type "arr"))))
@@ -3561,6 +3672,8 @@
                     "list": compile_list
                     "function": (fn (tokens ctx)
                                     (compile_fn tokens ctx { `synchronous: true }))
+                    "=>": (fn (tokens ctx)
+                              (compile_fn tokens ctx { `arrow: true }))
                     "quotem": compile_quotem
                     "quote": compile_quote
                     "quotel": compile_quotel
@@ -4145,7 +4258,8 @@
                                            (assemble t))
                                           (is_object? t)
                                           (do
-                                           (when t.comment
+                                           (when (and t.comment
+                                                      opts.include_source)
                                              (push text (+ "/* " t.comment " */"))
                                              (insert_indent)))
                                           
@@ -4207,6 +4321,8 @@
            (if is_error
                (error_log "compilation" (clone is_error))
                (main_log "no compilation errors"))
+           (when opts.root_environment
+                 (= has_lisp_globals false))
            (main_log "globals:" has_lisp_globals " constructed assembly:" (clone assembly))
            (main_log "assembly: " (assemble_output assembly))
            (cond 
@@ -4891,12 +5007,12 @@
                                    (do
                                     (when opts.error_report
                                           (opts.error_report {
-                                                          `error: e.name
-                                                          `message: e.message
+                                                          `error: last_exception.name
+                                                          `message: last_exception.message
                                                           `form: nil
                                                           `parent_forms: nil
                                                           `invalid: true
-                                                          `text: e.stack
+                                                          `text: last_exception.stack
                                                           }))
                                     (env_log "<- ERROR: " (-> last_exception `toString))
                                     (= result last_exception)
@@ -4959,7 +5075,7 @@
   )
 
 
-
+              
 (defun `dlisp_tab ()
   (let
       ((`result nil)
@@ -7376,7 +7492,11 @@
           `as_lisp
           globalThis.lisp_writer))
 
-;; next run tests on the reader - not always necessary for the boot up 
+;; At this point all compiler tests should pass - in the host env run:
+;; (run_tests { `table: true } )
+
+
+;; optional: next run tests on the reader - not always necessary for the bootstrap 
 
 (defglobal `run_reader_tests 
     (fn ()
@@ -7532,12 +7652,7 @@
 
   
   
-(defglobal `get_outside_global
-   (fn (refname)
-      (let
-        ((`fval (new Function "refname"
-           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
-        (fval refname)))) 
+
 
 (defun `get_outside_global (refname)
       (let
@@ -7651,6 +7766,135 @@
            "usage":["arg1:number","arg2?:number"]
            "tags":["rand" "number" "integer" ]
        })
+  
+  
+;; Next construct the environment factory, where we return
+;; a DLisp Environment closure
+   (defexternal 
+     make_dlisp_env 
+     (fn ()
+        (progn
+          
+         
+          ;; State to the compiler that we do not want to be passed an Environment
+          ;; by declaring that this is toplevel.
+          
+          ;; In the compiler context, we have access to the existing environment,
+          ;; bring the needed functions in and rebuild them in the current scope.
+          
+          (declare (toplevel true)
+                   (inline MAX_SAFE_INTEGER Set null nil Array Number Object 
+                           String Function AsyncFunction Error SyntaxError ReferenceError 
+                           TypeError RangeError URIError EvalError Date JSON lisp_writer 
+                           as_lisp Math fetch get_next_environment_id Intl isNaN console 
+                           compiler btoa atob undefined b64encode log b64decode parseInt 
+                           int parseFloat float Environment sub_type values pairs keys 
+                           take prepend first last slice rest second third chop not 
+                           push pop list flatten jslambda join split split_by 
+                           is_object? is_array? is_number? is_function? 
+                           is_set? is_element? is_string? ends_with? starts_with? blank? 
+                           contains? make_set describe undefine eval range conj 
+                           add merge_objects index_of resolve_path delete_prop length 
+                           trim map to_object bind defclog developer client restore_cl_evaluator 
+                           reader desym add_escape_encoding read_lisp defexternal get_outside_global get_object_path 
+                           do_deferred_splice))
+                       
+          (defvar Environment
+              {
+                `global_ctx:{
+                    `scope:{
+                        `not: not
+                        `values: values
+                        `pairs: pairs
+                        `keys: keys
+                        `first: first
+                        `take: take
+                        `as_lisp: as_lisp
+                    }
+                }
+               })
+          
+          (defvar NOT_FOUND (new ReferenceError "not found"))
+          (defvar definitions {})
+          (defvar check_external_env_default true)
+          
+          (defvar set_global 
+              (fn (refname value meta)
+                   (do
+                    (if (not (== (typeof refname) "string"))
+                        (throw TypeError "reference name must be a string type"))
+                    (log "Environment: set_global: " refname value)
+                     (set_prop Environment.global_ctx.scope 
+                               refname
+                               value)
+                     (if (and (is_object? meta)
+                              (not (is_array? meta)))
+                         (set_prop definitions
+                                   refname
+                                   meta))
+                     (prop Environment.global_ctx.scope refname))))
+                 
+          (defvar get_global 
+              (fn (refname value_if_not_found suppress_check_external_env)
+                   (if (not (== (typeof refname) "string"))
+                       (throw TypeError "reference name must be a string type")
+                        (let
+                            ((`comps (get_object_path refname))
+                             (`refval nil)
+                             
+                             ;; shadow the environments scope check if the suppress_check_external_env is set to true
+                             ;; this is useful when we have reference names that are not legal js reference names
+                             
+                             (`check_external_env (if suppress_check_external_env
+                                                      false
+                                                      check_external_env_default)))
+                             
+                              ;; search path is to first check the global Lisp Environment
+                              ;; and if the check_external_env flag is true, then go to the
+                              ;; external JS environment.
+                              
+                          (= refval (or (prop Environment.global_ctx.scope comps.0)
+                                        (if check_external_env
+                                            (or (get_outside_global comps.0)
+                                                NOT_FOUND)
+                                            NOT_FOUND)))
+                          
+                          (when (not (prop Environment.global_ctx.scope comps.0))
+                            (console.log "get_global: [external reference]:" refname))
+                          ;; based on the value of refval, return the value
+                          
+                          (cond
+                              (== NOT_FOUND refval)
+                              (or value_if_not_found
+                                  NOT_FOUND)
+                              
+                              (== comps.length 1)
+                              refval
+                              
+                              (> comps.length 1)
+                              (do 
+                                  (resolve_path (rest comps) refval))
+                              
+                              else
+                              (do
+                                  (console.warn "get_global: condition fall through: " comps)
+                                  NOT_FOUND))))))
+          ;(defvar get_global
+           ;   (fn (name)
+            ;      (prop Environment.global_ctx.scope name)))
+          
+          (set_prop Environment
+                    `get_global get_global
+                    `set_global set_global)
+          (console.log "ENVIRONMENT: ", Environment) 
+          Environment)))
+      
+              
+  
+  
+  
+
+  
   
 (defun `tester (a b)
     (let
