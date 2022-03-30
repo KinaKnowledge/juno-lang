@@ -34,7 +34,11 @@
 (defglobal `SyntaxError SyntaxError)
 (defglobal `null nil)
 
-
+(defun `get_outside_global (refname)
+      (let
+        ((`fval (new Function "refname"
+           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
+        (fval refname)))
 ;; returns the first component of an object accessor 
 
 (defun `get_object_path (refname)
@@ -1040,7 +1044,7 @@
                       (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
                  (let
                      ((`ntree nil))
-                   (comp_time_log "->" lisp_tree "to function: " (-> lisp_tree `slice 1))
+                   (comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
                    (try
                       (= ntree (apply (-> env `get_global (-> lisp_tree.0 `substr 2)) (-> lisp_tree `slice 1)))
                       (catch Error (`e)
@@ -1053,8 +1057,8 @@
                          (comp_time_log "applied:" ntree)
                        
                          (= ntree (do_deferred_splice ntree))
-                         (comp_time_log "<- lisp: ", (as_lisp (clone ntree)))
-                         (comp_time_log "<-", (clone ntree))))
+                         (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp (clone ntree)))
+                         (comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
                    ntree)
                  
                  lisp_tree)))
@@ -1451,7 +1455,9 @@
                                            log
                                            (defclog { `prefix: (+ "compile_block (" block_id "):") 
                                              `background: (color_for_number (random_int 10000) (+ 0.3 (/ (random_int 3) 10)) 0.5) `color: "white"})))
-                                (`ctx (new_ctx ctx)) ;; get a local reference
+                                (`ctx (if block_options.no_scope_boundary
+                                          ctx
+                                          (new_ctx ctx))) ;; get a local reference
                                 (`token nil)
                                 (`last_stmt nil)
                                 (`return_last ctx.return_last_value)
@@ -3320,7 +3326,7 @@
                                                (if opts.root_environment
                                                    (= env_ref "")
                                                    (= env_ref "Environment.")))
-                                            (== declaration "inline")
+                                            (== declaration "include")
                                             (do 
                                                (for_each (`name (each targeted `name))
                                                  (do
@@ -3656,6 +3662,8 @@
                     "new": compile_new
                     "do": compile_block
                     "progn": compile_block
+                    "progl": (fn (tokens ctx)
+                                 (compile_block tokens ctx { `no_scope_boundary: true }))
                     "break": compile_break
                     "inc": compile_val_mod
                     "dec": compile_val_mod
@@ -7649,9 +7657,27 @@
                  ,#fn_body)
               (quote ,#source_details)))))
   
-
+(defmacro desym (val)
+    (let
+        ((strip (fn (v)
+                    (+ "" (as_lisp v)))))
+      (cond 
+            (is_string? val)
+            (strip val)
+            (is_array? val)
+            (for_each (`v val)
+               (strip v))
+            else
+            val)))
   
-  
+(defmacro macroexpand (form)
+    (let
+       ((macro_name (-> (prop form 0) `substr 2))
+        (macro_func (-> Environment `get_global macro_name))
+        (expansion (apply macro_func (-> form `slice 1))))
+      ((quote quote)
+           expansion)))
+       
 
 
 (defun `get_outside_global (refname)
@@ -7735,6 +7761,38 @@
             else
             tree)))
 
+(defmacro define (`& defs)
+    (let
+        ((acc [(quote progl)])
+         (symname nil))
+     
+     (for_each (`defset defs)
+        (do
+            (push acc [(quote defvar) defset.0 defset.1])
+            (= symname defset.0)
+            (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
+            (when (is_object? defset.2)
+                  (push acc ([(quote set_prop) (quote Environment.definitions)
+                                       (+ "" (as_lisp symname) "")
+                                       defset.2])))))
+     acc))
+ 
+ (defmacro define_env (`& defs)
+    (let
+        ((acc [(quote progl)])
+         (symname nil))
+     
+     (for_each (`defset defs)
+        (do
+            (push acc [(quote defvar) defset.0 defset.1])
+            (= symname defset.0)
+            (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
+            (when (is_object? defset.2)
+                  (push acc ([(quote set_prop) (quote Environment.definitions)
+                                       (+ "" (as_lisp symname) "")
+                                       defset.2])))))
+     acc))
+
 (defun `type (x)
     (cond
         (== nil x) "null"
@@ -7770,122 +7828,529 @@
   
 ;; Next construct the environment factory, where we return
 ;; a DLisp Environment closure
-   (defexternal 
+
+(defexternal 
      make_dlisp_env 
-     (fn ()
+     (fn (opts)
         (progn
           
-         
           ;; State to the compiler that we do not want to be passed an Environment
           ;; by declaring that this is toplevel.
           
-          ;; In the compiler context, we have access to the existing environment,
-          ;; bring the needed functions in and rebuild them in the current scope.
+          (declare (toplevel true))
           
-          (declare (toplevel true)
-                   (inline MAX_SAFE_INTEGER Set null nil Array Number Object 
-                           String Function AsyncFunction Error SyntaxError ReferenceError 
-                           TypeError RangeError URIError EvalError Date JSON lisp_writer 
-                           as_lisp Math fetch get_next_environment_id Intl isNaN console 
-                           compiler btoa atob undefined b64encode log b64decode parseInt 
-                           int parseFloat float Environment sub_type values pairs keys 
-                           take prepend first last slice rest second third chop not 
-                           push pop list flatten jslambda join split split_by 
-                           is_object? is_array? is_number? is_function? 
-                           is_set? is_element? is_string? ends_with? starts_with? blank? 
-                           contains? make_set describe undefine eval range conj 
-                           add merge_objects index_of resolve_path delete_prop length 
-                           trim map to_object bind defclog developer client restore_cl_evaluator 
-                           reader desym add_escape_encoding read_lisp defexternal get_outside_global get_object_path 
-                           do_deferred_splice))
-                       
+          ;; Construct the environment
           (defvar Environment
-              {
-                `global_ctx:{
-                    `scope:{
-                        `not: not
-                        `values: values
-                        `pairs: pairs
-                        `keys: keys
-                        `first: first
-                        `take: take
-                        `as_lisp: as_lisp
-                    }
-                }
-               })
+                      {
+                        `global_ctx:{
+                            `scope:{
+                            }
+                        }
+                        `definitions: {
+                            
+                        }})
+          (set_prop Environment
+                    `context
+                    Environment.global_ctx)
+                
+          (define_env 
+                  (MAX_SAFE_INTEGER 9007199254740991)
+                  (values (new Function "...args"
+                             "{
+                                let acc = [];
+                                for (let _i in args) {
+                                    let value = args[_i];
+                                    let type = subtype(value);
+                                    if (value instanceof Set)  {
+                                        acc = acc.concat(Array.from(value));
+                                    } else if (type==='array') {
+                                        acc = acc.concat(value);
+                                    } else if (type==='object') {
+                                        acc = acc.concat(Object.values(value))
+                                    } else {
+                                        acc = acc.concat(value);
+                                    }
+                                }
+                                return acc;
+                            }"))
+                  
+                  (pairs (new Function "obj"
+                            "{
+                                    if (subtype(obj)==='array') {
+                                        let rval = [];
+                                        for (let i = 0; i < obj.length; i+=2) {
+                                            rval.push([obj[i],obj[i+1]]);
+                                        }
+                                        return rval;
+                                    } else {
+                                        let keys = Object.keys(obj);
+                                        let rval = keys.reduce(function(acc,x,i) {
+                                            acc.push([x,obj[x]])
+                                            return acc;
+                                        },[]);
+                                        return rval;
+                                    }
+                                }"))
+                            
+                  (keys (new Function "obj"
+                                      "{  return Object.keys(obj);  }"))
           
-          (defvar NOT_FOUND (new ReferenceError "not found"))
-          (defvar definitions {})
-          (defvar check_external_env_default true)
-          
-          (defvar set_global 
-              (fn (refname value meta)
-                   (do
-                    (if (not (== (typeof refname) "string"))
-                        (throw TypeError "reference name must be a string type"))
-                    (log "Environment: set_global: " refname value)
-                     (set_prop Environment.global_ctx.scope 
-                               refname
-                               value)
-                     (if (and (is_object? meta)
-                              (not (is_array? meta)))
-                         (set_prop definitions
-                                   refname
-                                   meta))
-                     (prop Environment.global_ctx.scope refname))))
+                  (take (new Function "place" "{ return place.shift() }"))
+                           
+                  (prepend (new Function "place" "thing" "{ return place.unshift(thing) }"))
+                  
+                  (first (new Function "x" "{ return x[0] }"))
+                  
+                  (last (new Function "x" "{ return x[x.length - 1] }"))
+                  
+                  (length (new Function "obj"
+                             "{
+                                if(obj instanceof Array) {
+                                    return obj.length;
+                                } else if (obj instanceof Set) {
+                                    return obj.size;
+                                } else if ((obj === undefined)||(obj===null)) {
+                                    return 0;
+                                } else if (typeof obj==='object') {
+                                    return Object.keys(obj).length;
+                                } else if (typeof obj==='string') {
+                                    return obj.length;
+                                } 
+                                return 0;
+                            }"))
+                        
+                  (conj (new Function "...args"
+                           "{   let list = [];
+                                if (args[0] instanceof Array) {
+                                    list = args[0];
+                                } else {
+                                    list = [args[0]];
+                                }
+                                args.slice(1).map(function(x) {
+                                    list = list.concat(x);
+                                });
+                                return list;
+                            }"))
+                        
+                  (map (new AsyncFunction "lambda" "array_values" 
+                              "{ try {
+                                        let rval = [],
+                                                tl = array_values.length;
+                                        for (let i = 0; i < array_values.length; i++) {
+                                            rval.push(await lambda.apply(this,[array_values[i], i, tl]));
+                                         }
+                                        return rval;
+                                    } catch (ex) {           
+                                              if (lambda === undefined || lambda === null) {
+                                                    throw new ReferenceError(\"map: lambda argument (position 0) is undefined or nil\")
+                                              } else if (array_values === undefined || array_values === null) {
+                                                    throw new ReferenceError(\"map: container argument (position 1) is undefined or nil\")
+                                              } else if (!(lambda instanceof Function)) {
+                                                    throw new ReferenceError(\"map: lambda argument must be a function: received: \"+ typeof lambda)
+                                              } else if (!(array_values instanceof Array)) {
+                                                    throw new ReferenceError(\"map: invalid array argument, received: \" + typeof array_values)
+                                              } else {
+                                                    // something else just pass on the error
+                                                throw ex;
+                                              }
+                                    }
+                              }"))
+                      
+                  (bind (new Function "func,this_arg"
+                                      "{ return func.bind(this_arg) }"))
+                                 
+                  (to_object (new Function "array_values"
+                                  "{
+                                      let obj={}
+                                      array_values.forEach((pair)=>{
+                                             obj[pair[0]]=pair[1]
+                                      });
+                                      return obj;
+                                    }"))
+                                
+                  (slice (fn (target from to)
+                             (cond
+                                 to
+                                 (-> target `slice from to)
+                                 from
+                                 (-> target `slice from)
+                                 else
+                                 (throw SyntaxError "slice requires 2 or 3 arguments"))))
+                  (rest (fn (x)
+                          (cond 
+                            (instanceof x Array)
+                            (-> x `slice 1)
+                            (is_string? x)
+                            (-> x `substr 1)
+                            else
+                            nil)))
+                        
+                  (second  (new Function "x" "{ return x[1] }"))
+                  (third (new Function "x" "{ return x[2] }"))
+                           
+                  (chop  (new Function "x" "{ return x.substr(x.length-1) }"))
                  
-          (defvar get_global 
-              (fn (refname value_if_not_found suppress_check_external_env)
-                   (if (not (== (typeof refname) "string"))
-                       (throw TypeError "reference name must be a string type")
+                  (not   (new Function "x" "{ if (x) { return false } else { return true } }"))
+                 
+                  (push  (new Function "place" "thing" "{ return place.push(thing) }"))
+                 
+                  (pop   (new Function "place" "{ return place.pop() }"))
+                 
+                  (list  (fn (`& args) args))
+                 
+                  (flatten (new Function "x" "{ return x.flat() } "))
+                 
+                  (jslambda (fn (`& args)
+                               (apply Function (flatten args))))
+                           
+                  (join (fn (`& args)
+                            (cond
+                               (== args.length 1)
+                               (-> args `join "")
+                               else
+                               (-> args.1 `join args.0))))
+                           
+                  (log (fn (`& args)
+                           (apply console.log args)))
+                  (split (new Function "container" "token" "{ return container.split(token) }"))
+                 
+                  (split_by (new Function "token" "container" "{ return container.split(token) }"))
+                 
+                  (is_object? (new Function "x" "{ return x instanceof Object }"))
+                  (is_array? (new Function "x" "{ return x instanceof Array }"))
+                  (is_number? (fn (x)
+                                  (== (sub_type x) "Number")))
+                  (is_function? (fn (x)
+                                    (instanceof x Function)))
+                  (is_set? (new Function "x" "{ return x instanceof Set }"))
+                  (is_element? (new Function "x" "{ return x instanceof Element }"))
+                  (is_string? (fn (x)
+                                  (or (instanceof x String) 
+                                      (== (typeof x) "string"))))
+                 
+                  (ends_with? (new Function "val" "text" "{ if (val instanceof Array) { return text[text.length-1]===val } else { return text.endsWith(val) } }"))
+                  (starts_with? (new Function "val" "text" "{ if (val instanceof Array) { return text[0]===val } else { return text.startsWith(val) } }"))
+          
+                  (blank? (fn (val)
+                              (or (eq val nil)
+                                  (and (is_string? val)
+                                       (== val "")))))
+                                  
+                  (contains? (fn (value container)
+                               (cond
+                                 (and (not value)
+                                      (not container))
+                                 false
+                                 (eq container nil)
+                                 (throw TypeError "contains?: passed nil/undefined container value")
+                                 (is_string? container)
+                                 (if (is_number? value)
+                                     (> (-> container `indexOf (+ "" value)) -1)
+                                     (> (-> container `indexOf value) -1))
+                                 (is_array? container)
+                                 (-> container `includes? value)
+                                 (is_set? container)
+                                 (-> container `has value)
+                                 else
+                                 (throw TypeError (+ "contains?: passed invalid container type: " (sub_type container))))))
+                             
+                  (make_set (fn (vals)
+                               (if (instanceof vals Array)
+                                   (new Set vals)
+                                   (let
+                                      ((`vtype (sub_type vals)))
+                                     (cond
+                                       (== vtype "Set")
+                                       (new Set vals)
+                                       (== vtype "object")
+                                       (new Set (values vals)))))))
+               
+                  (describe 
+                    (fn (quoted_symbol)
                         (let
-                            ((`comps (get_object_path refname))
-                             (`refval nil)
-                             
-                             ;; shadow the environments scope check if the suppress_check_external_env is set to true
-                             ;; this is useful when we have reference names that are not legal js reference names
-                             
-                             (`check_external_env (if suppress_check_external_env
-                                                      false
-                                                      check_external_env_default)))
-                             
-                              ;; search path is to first check the global Lisp Environment
-                              ;; and if the check_external_env flag is true, then go to the
-                              ;; external JS environment.
-                              
-                          (= refval (or (prop Environment.global_ctx.scope comps.0)
-                                        (if check_external_env
-                                            (or (get_outside_global comps.0)
-                                                NOT_FOUND)
-                                            NOT_FOUND)))
-                          
-                          (when (not (prop Environment.global_ctx.scope comps.0))
-                            (console.log "get_global: [external reference]:" refname))
-                          ;; based on the value of refval, return the value
-                          
-                          (cond
-                              (== NOT_FOUND refval)
-                              (or value_if_not_found
-                                  NOT_FOUND)
-                              
-                              (== comps.length 1)
-                              refval
-                              
-                              (> comps.length 1)
-                              (do 
-                                  (resolve_path (rest comps) refval))
-                              
-                              else
-                              (do
-                                  (console.warn "get_global: condition fall through: " comps)
-                                  NOT_FOUND))))))
-          ;(defvar get_global
-           ;   (fn (name)
-            ;      (prop Environment.global_ctx.scope name)))
+                          ((`not_found { `not_found: true })
+                           (`location (cond (prop Environment.global_ctx.scope quoted_symbol)
+                                            "global"
+                                            (not (== not_found (get_outside_global quoted_symbol not_found)))
+                                            "external"
+                                            else
+                                            nil)))
+                        
+                          (+ {
+                             `type: (cond
+                                      (== location "global")
+                                      (sub_type (prop Environment.global_ctx.scope quoted_symbol))
+                                      (== location "external")
+                                      (sub_type (get_outside_global quoted_symbol))
+                                      else
+                                     "undefined")
+                             `location: location
+                             }
+                             (if (prop Environment.definitions quoted_symbol)
+                                 (prop Environment.definitions quoted_symbol)
+                                 {})))))
+                           
+                  (undefine (fn (quoted_symbol)
+                                (if (prop Environment.global_ctx.scope quoted_symbol)
+                                    (delete_prop Environment.global_ctx.scope quoted_symbol)
+                                    false)))
+                           
+                  (eval_exp (fn (expression)
+                                (do 
+                                  (console.log "EVAL:",expression)
+                                  (expression))))
+                            
+                  (range (fn (`& args)
+                           (let
+                               ((`from_to (if args.1
+                                              [ (int args.0) (int args.1) ]
+                                              [ 0 (int args.0) ]))
+                                (`step (if args.2
+                                           (float args.2)
+                                           1))
+                                (`idx from_to.0)
+                                (`acc []))
+                             (while (< idx from_to.1)
+                                    (do
+                                     (push acc idx)
+                                     (inc idx step)))
+                             acc)))
+                         
+         
+                  (add (new Function "...args"
+                           "{
+                                let acc;
+                                if (typeof args[0]===\"number\") {
+                                    acc = 0;
+                                } else if (args[0] instanceof Array) {
+                                    return args[0].concat(args.slice(1));
+                                } else if (typeof args[0]==='object') {
+                                   let rval = {};
+                                   for (let i in args) {
+                                        if (typeof args[i] === 'object') {
+                                            for (let k in args[i]) {
+                                                rval[k] = args[i][k];
+                                            }
+                                        }
+                                   }
+                                   return rval;
+                                } else {
+                                    acc = \"\";
+                                }
+                                for (let i in args) {
+                                    acc += args[i];
+                                }
+                                return acc;
+                             }"))
+                         
+                  (merge_objects (new Function "x"
+                                 "{
+                                    let rval = {};
+                                    for (let i in x) {
+                                        if (typeof i === 'object') {
+                                            for (let k in x[i]) {
+                                                rval[k] = x[i][k];
+                                            }
+                                        }
+                                    }
+                                    return rval;
+                                 }"))
+                            
+                  (index_of (new Function "value,container"
+                                        "{ let searcher = (v) => v == value; return container.findIndex(searcher);}"))
+                  (resolve_path (new Function "path,obj" 
+                                   "{
+                                        if (typeof path==='string') {
+                                            path = path.split(\".\");
+                                        }
+                                        let s=obj;
+                                        return path.reduce(function(prev, curr) {
+                                            return prev ? prev[curr] : undefined
+                                        }, obj || {})
+                                    }"))
+                                
+                  (delete_prop (new Function "obj" "...args"
+                                  "{
+                                        if (args.length == 1) {
+                                            return delete obj[args[0]];
+                                        } else {
+                                            while (args.length > 0) {
+                                                let prop = args.shift();
+                                                delete obj[prop];
+                                            }
+                                        }
+                                        return obj;
+                                    }"))
+                                
+         
+                  (trim (fn (x)
+                            (-> x `trim)))
+         
+          
+         
+                  (defclog (fn (opts)
+                               (let
+                                   ((`style (+ "padding: 5px;"
+                                               (if opts.background
+                                                   (+ "background: " opts.background ";")
+                                                   "")
+                                               (if opts.color
+                                                   (+ "color: " opts.color ";"))
+                                               "")))
+                                   (fn (`& args)
+                                      (apply console.log (+ "%c" (if opts.prefix
+                                                                     opts.prefix
+                                                                     (take args)))
+                                                         (conj [ style ]
+                                                               args))))))
+                  
+          
+                  (NOT_FOUND (new ReferenceError "not found"))
+                  (check_external_env_default true)
+         
+                  (set_global 
+                      (fn (refname value meta)
+                           (do
+                            (if (not (== (typeof refname) "string"))
+                                (throw TypeError "reference name must be a string type"))
+                            (log "Environment: set_global: " refname value)
+                             (set_prop Environment.global_ctx.scope 
+                                       refname
+                                       value)
+                             (if (and (is_object? meta)
+                                      (not (is_array? meta)))
+                                 (set_prop Environment.definitions
+                                           refname
+                                           meta))
+                             (prop Environment.global_ctx.scope refname))))
+                 
+                  (get_global 
+                      (fn (refname value_if_not_found suppress_check_external_env)
+                           (if (not (== (typeof refname) "string"))
+                               (throw TypeError "reference name must be a string type")
+                                (let
+                                    ((`comps (get_object_path refname))
+                                     (`refval nil)
+                                     
+                                     ;; shadow the environments scope check if the suppress_check_external_env is set to true
+                                     ;; this is useful when we have reference names that are not legal js reference names
+                                     
+                                     (`check_external_env (if suppress_check_external_env
+                                                              false
+                                                              check_external_env_default)))
+                                     
+                                      ;; search path is to first check the global Lisp Environment
+                                      ;; and if the check_external_env flag is true, then go to the
+                                      ;; external JS environment.
+                                      
+                                  (= refval (or (prop Environment.global_ctx.scope comps.0)
+                                                (if check_external_env
+                                                    (or (get_outside_global comps.0)
+                                                        NOT_FOUND)
+                                                    NOT_FOUND)))
+                                  
+                                  (when (not (prop Environment.global_ctx.scope comps.0))
+                                    (console.log "get_global: [external reference]:" refname))
+                                  ;; based on the value of refval, return the value
+                                  
+                                  (cond
+                                      (== NOT_FOUND refval)
+                                      (or value_if_not_found
+                                          NOT_FOUND)
+                                      
+                                      (== comps.length 1)
+                                      refval
+                                      
+                                      (> comps.length 1)
+                                      (do 
+                                          (resolve_path (rest comps) refval))
+                                      
+                                      else
+                                      (do
+                                          (console.warn "get_global: condition fall through: " comps)
+                                          NOT_FOUND)))))))
           
           (set_prop Environment
                     `get_global get_global
                     `set_global set_global)
+          
+          
+          ;; In the compiler context, we have access to the existing environment,
+          ;; bring the needed functions in and rebuild them in the current scope.
+                
+          (declare (include lisp_writer 
+                            get_next_environment_id  
+                            reader add_escape_encoding get_outside_global get_object_path 
+                            do_deferred_splice))        
+          
+          (defvar as_lisp lisp_writer)
+          (defvar read_lisp reader)
+          
+          (defvar inlines  (+  {} 
+                               (if opts.inlines
+                                   opts.inlines
+                                   {})
+                               {   `pop: (fn (args)
+                                             [args.0 "." "pop()"])
+                                   `push: (fn (args)
+                                              [ args.0 ".push" "(" args.1 ")"])
+                                   `chop: (fn (args)
+                                              [ args.0 ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
+                                   `join: (fn (args)
+                                              (if (== args.length 1) 
+                                                  [ args.0 ".join" "()"]
+                                                  [ args.1 ".join" "(" args.0 ")" ]))
+                                   `take: (fn (args)
+                                              [ args.0 ".shift" "()" ])
+                                   `prepend: (fn (args)
+                                                 [ args.0 ".unshift" "(" args.1 ")"])
+                                   `flatten: (fn (args)
+                                                 [ args.0 ".flat()"] )
+                                   `trim: (fn (args)
+                                              [ args.0 ".trim()"])
+                                   
+                                   `slice: (fn (args)
+                                               (cond 
+                                                 (== args.length 3)
+                                                 [ args.0 ".slice(" args.1 "," args.2 ")"]
+                                                 (== args.length 2)
+                                                 [ args.0 ".slice(" args.1 ")"]
+                                                 else
+                                                 (throw SyntaxError "slice requires 2 or 3 arguments")))
+                                   `split_by: (fn (args)
+                                                  [ args.1 ".split" "(" args.0 ")"])
+                                   `bind: (fn (args)
+                                              [ args.0 ".bind(" args.1 ")"])
+                                   `is_array?: (fn (args)
+                                                   [ args.0 " instanceof Array" ])
+                                   `is_object?: (fn (args)
+                                                    [ args.0 " instanceof Object"])
+                                   `is_string?: (fn (args)
+                                                    [ "(" args.0 " instanceof String || typeof " args.0 "===" "'string'" ")"])
+                                   `is_function?: (fn (args)
+                                                      [ args.0 " instanceof Function"])
+                                   `is_element?: (fn (args)
+                                                     [ args.0 " instanceof Element"])
+                                   `log: (fn (args)
+                                             ["console.log" "(" (map (fn (val idx tl)
+                                                                         (if (< idx (- tl 1))
+                                                                             [val ","]
+                                                                             [val]))
+                                                                     args) ")"])
+                                   `int: (fn (args)
+                                             (cond
+                                               (== args.length 1)
+                                               ["parseInt(" args.0 ")"]
+                                               (== args.length 2)
+                                               ["parseInt(" args.0 "," args.1 ")"]
+                                               else
+                                               (throw "SyntaxError" (+ "invalid number of arguments to int: received " args.length))))
+                                   `float: (fn (args)
+                                               ["parseFloat(" args.0 ")"])
+                               
+                               }))
+                           
+         
           (console.log "ENVIRONMENT: ", Environment) 
           Environment)))
       
