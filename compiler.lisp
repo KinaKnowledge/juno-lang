@@ -1532,14 +1532,14 @@
                                       (push stmts stmt)
                                       (when (< idx (- tokens.length 1))
                                         (push stmts ";"))))
+                                    
                              ;; Now depending on the last value in the stmts array, insert a return
                              (clog "compile_block: suppress_return set: " ctx.suppress_return)
-                             (when (and (not ctx.suppress_return)
-                                        (or 
-                                         (and ;return_last 
-                                          (needs_return? stmts ctx))
-                                         (and (> idx 1)
-                                              (needs_return? stmts ctx))))
+                             (when (and (not block_options.suppress_return)
+                                        (not ctx.suppress_return)
+                                        (or (and (needs_return? stmts ctx))
+                                            (and (> idx 1)
+                                                  (needs_return? stmts ctx))))
                                (clog  "needs return statement: block_step:" ctx.block_step)
                                
                                
@@ -2375,6 +2375,7 @@
                            (for_each (`opt_token (or new_opts []))
                                      (do
                                       (log "compile_new: opt_token: complex?"  (is_complex? opt_token.val) opt_token)
+                                      
                                       (if (is_complex? opt_token.val)
                                           (do
                                            (push args (compile_wrapper_fn opt_token ctx)))
@@ -2398,6 +2399,9 @@
                                           (push acc arg))
                                 (push_as_arg_list acc args)
                                  (push acc ")")))
+                           
+                           (prepend acc
+                                    { `ctype: target_type })
                            (log "compile_new: <-" (join "" (flatten acc)))
                            acc)))
        
@@ -3332,7 +3336,7 @@
                                                  (do
                                                      (= dec_struct (get_declaration_details ctx name))
                                                      (declare_log "current_declaration for " name ": " (if dec_struct (-> dec_struct.value `toString) "NOT FOUND") (clone dec_struct))
-                                                     (when (and dec_struct.declared_global)
+                                                     (when (and dec_struct)
                                                               ;(not (dec_struct.is_argument)))
                                                              ;; this is a global so we just produce a reference for this 
                                                              (for_each (`t [ "let" " " name "=" ])
@@ -3360,6 +3364,12 @@
                                                                      )
                                                               (push acc ";"))
                                                      (set_declaration ctx name `inlined true))))
+                                            (== declaration "local")
+                                            (for_each (`name (each targeted `name))
+                                                 (do
+                                                     (= dec_struct (get_declaration_details ctx name))
+                                                     (declare_log "local: declaration_details: " dec_struct)
+                                                     (set_ctx ctx name dec_struct.value)))
                                             (== declaration "function")
                                             (do
                                                (for_each (`name (each targeted `name))
@@ -3663,7 +3673,7 @@
                     "do": compile_block
                     "progn": compile_block
                     "progl": (fn (tokens ctx)
-                                 (compile_block tokens ctx { `no_scope_boundary: true }))
+                                 (compile_block tokens ctx { `no_scope_boundary: true `suppress_return:true }))
                     "break": compile_break
                     "inc": compile_val_mod
                     "dec": compile_val_mod
@@ -3995,7 +4005,8 @@
                              
                              
                              
-                             (or (and (is_string? rcv)
+                             (or (== tokens.0.type "arg")
+                                 (and (is_string? rcv)
                                       (get_declaration_details ctx rcv))
                                  (and (is_array? rcv)
                                       (is_object? rcv.0)
@@ -4016,46 +4027,46 @@
                               ;; create a function that checks the first symbol in the array is a function
                               ;; if the first symbol in the array is a reference.
                               (do
-                              (comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguity: compiled: " (clone rcv))
-                              (= tmp_name (gen_temp_name "array_op_rval"))
+                                  (comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguity: compiled: " (clone rcv))
+                                  (= tmp_name (gen_temp_name "array_op_rval"))
                               
-                              (if (and (is_object? rcv.0)
-                                       (contains?  "block" (or rcv.0.ctype "")))
-                                  (do
-                                   (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back...need to wrap it but keep structural return value as an array")
-                                   (= rcv (check_statement rcv))))
+                                  (if (and (is_object? rcv.0)
+                                           (contains?  "block" (or rcv.0.ctype "")))
+                                      (do
+                                       (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back...need to wrap it but keep structural return value as an array")
+                                       (= rcv (check_statement rcv))))
                                
-                               (comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguous, requires a runtime check" (clone rcv))
-                               (when (> symbolic_replacements.length 0)
-                                 ;; this means it is a block and we need to return the last value
-                                 ;; in this case it is the 
-                                 (push acc { `ctype: "block" })
-                                 (push acc "return")
-                                 (push acc " "))
-                               
-                               (for_each (`t ["await" " " "(" "async" " " "function" "()" "{" "let" " " tmp_name "=" rcv ";" " "  "if" " " "(" tmp_name " " "instanceof" " " "Function" ")" "{"
-                                             "return" " " "await" " " tmp_name "(" ])
-                                         (push acc t))
-                               (push_as_arg_list acc compiled_values)
-                                        ; (for_each (`t (rest tokens))
-                                        ;   (do 
-                                        ;      (= rcv (compile t ctx (+ _cdepth 1)))
-                                        ;     (= rcv (check_statement rcv))
-                                        ;    rcv
-                                        ;   )))
-                               (for_each (`t [")" " " "}" " " "else" " " "{" "return" "[" tmp_name ])
-                                         (push acc t))
-                               
-                               (when (> (length (rest tokens)) 0)
-                                 (push acc ",")
-                                 (push_as_arg_list acc compiled_values)) 
-                                        ; (for_each (`t (rest tokens))
-                                        ;          (do
-                                        ;             (= rcv (compile t ctx (+ _cdepth 1)))
-                                        ;            (= rcv (check_statement rcv))
-                                        ;           rcv))))
-                               (for_each (`t ["]" "}" "}" ")" "()"])
-                                         (push acc t)))
+                                   (comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguous, requires a runtime check" (clone rcv))
+                                   (when (> symbolic_replacements.length 0)
+                                     ;; this means it is a block and we need to return the last value
+                                     ;; in this case it is the 
+                                     (push acc { `ctype: "block" })
+                                     (push acc "return")
+                                     (push acc " "))
+                                   
+                                   (for_each (`t ["await" " " "(" "async" " " "function" "()" "{" "let" " " tmp_name "=" rcv ";" " "  "if" " " "(" tmp_name " " "instanceof" " " "Function" ")" "{"
+                                                 "return" " " "await" " " tmp_name "(" ])
+                                             (push acc t))
+                                   (push_as_arg_list acc compiled_values)
+                                            ; (for_each (`t (rest tokens))
+                                            ;   (do 
+                                            ;      (= rcv (compile t ctx (+ _cdepth 1)))
+                                            ;     (= rcv (check_statement rcv))
+                                            ;    rcv
+                                            ;   )))
+                                   (for_each (`t [")" " " "}" " " "else" " " "{" "return" "[" tmp_name ])
+                                             (push acc t))
+                                   
+                                   (when (> (length (rest tokens)) 0)
+                                     (push acc ",")
+                                     (push_as_arg_list acc compiled_values)) 
+                                            ; (for_each (`t (rest tokens))
+                                            ;          (do
+                                            ;             (= rcv (compile t ctx (+ _cdepth 1)))
+                                            ;            (= rcv (check_statement rcv))
+                                            ;           rcv))))
+                                   (for_each (`t ["]" "}" "}" ")" "()"])
+                                             (push acc t)))
                              else   
                              (do
                               
@@ -5084,11 +5095,12 @@
 
 
               
-(defun `dlisp_tab ()
+(defun `dlisp_tab (passed_env)
   (let
       ((`result nil)
        (`compiled nil)
        (`view nil)
+       (`env (or passed_env env))
        (`lisp_view (div { `style: "height: calc(100% - 10px);" }))
        (`js_code_view (div { `style: "height: calc(100% - 10px);" } ))
        (`js_code_editor
@@ -7124,8 +7136,8 @@
                                                       (do
                                                        (inc idx)
                                                        (set_prop obj
-                                                        key
-                                                        (prop block idx)))
+                                                                 key
+                                                                (prop block idx)))
                                                       (and (is_string? key)
                                                            (contains? ":" key)
                                                            (not (ends_with? ":" key)))
@@ -7600,31 +7612,53 @@
             ((macro_name name)
              (macro_args arg_list)
              (macro_body body)
-             (source_details {
-                               `arguments: macro_args
-                               `body: macro_body
-                              }))
+             (source_details 
+                         {
+                            `eval_when: { `compile_time: true  }
+                            `name: name
+                            `macro: true
+                            `fn_args: (as_lisp macro_args)
+                            `fn_body: (add_escape_encoding (as_lisp macro_body))
+                          }))
+                         
          
          ;; next run through the steps of registering a macro
          ;; which is essentially a compile time function that 
          ;; transforms the body forms with the provided arguments
          ;; and returns the new form
          (do 
-              `(defglobal ,#macro_name 
+             `(defglobal ,#macro_name 
                   (fn ,#macro_args
                       ,@macro_body)
-                  {
-                     `eval_when:{ `compile_time: true }
-                     `macro: true
-                     `source: (quote ,#source_details)
-                               
-                  }))))
+                  (quote ,#source_details)))))
          {
              `eval_when: { `compile_time: true }
          })
+     
+
 
 (defglobal `read_lisp
     reader)
+
+
+(defmacro desym (val)
+    (let
+        ((strip (fn (v)
+                    (+ "" (as_lisp v)))))
+      (cond 
+            (is_string? val)
+            (strip val)
+            (is_array? val)
+            (for_each (`v val)
+               (strip v))
+            else
+            val)))
+
+(defmacro when (condition `& mbody) 
+     `(if ,#condition
+          (do
+              ,@mbody)))
+
 
 (defmacro defexternal (name value meta)
    `(let
@@ -7657,18 +7691,7 @@
                  ,#fn_body)
               (quote ,#source_details)))))
   
-(defmacro desym (val)
-    (let
-        ((strip (fn (v)
-                    (+ "" (as_lisp v)))))
-      (cond 
-            (is_string? val)
-            (strip val)
-            (is_array? val)
-            (for_each (`v val)
-               (strip v))
-            else
-            val)))
+
   
 (defmacro macroexpand (form)
     (let
@@ -7680,12 +7703,13 @@
        
 
 
-(defun `get_outside_global (refname)
-      (let
-        ((`fval (new Function "refname"
-           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
-        (fval refname)))
-
+(defexternal get_outside_global 
+             (fn (refname)
+                  (let
+                    ((`fval (new Function "refname"
+                       (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
+                    (fval refname))))
+                
 (defun `get_object_path (refname)
     (let
         ((`chars (split_by "" refname))
@@ -7828,19 +7852,23 @@
   
 ;; Next construct the environment factory, where we return
 ;; a DLisp Environment closure
+;; This constructor is to be called with the new operator
 
 (defexternal 
-     make_dlisp_env 
+     dlisp_env 
      (fn (opts)
         (progn
           
           ;; State to the compiler that we do not want to be passed an Environment
           ;; by declaring that this is toplevel.
           
-          (declare (toplevel true))
+          (declare (toplevel true)
+                   (include subtype)
+                   (local get_object_path get_outside_global))
           
           ;; Construct the environment
-          (defvar Environment
+          (set_prop this 
+                    `Environment
                       {
                         `global_ctx:{
                             `scope:{
@@ -7848,13 +7876,26 @@
                         }
                         `definitions: {
                             
-                        }})
+                        }
+                        
+                      })
+                    
+          (defvar Environment this.Environment)
+          (defvar id  (get_next_environment_id))
+          
+          (if (eq undefined opts)
+              (= opts {}))
+          
           (set_prop Environment
                     `context
-                    Environment.global_ctx)
-                
+                    this.Environment.global_ctx)
+         
+          (defvar compiler (fn () true))
+          
+         
           (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
+                  (sub_type subtype)
                   (values (new Function "...args"
                              "{
                                 let acc = [];
@@ -8019,7 +8060,7 @@
                   (is_object? (new Function "x" "{ return x instanceof Object }"))
                   (is_array? (new Function "x" "{ return x instanceof Array }"))
                   (is_number? (fn (x)
-                                  (== (sub_type x) "Number")))
+                                  (== (subtype x) "Number")))
                   (is_function? (fn (x)
                                     (instanceof x Function)))
                   (is_set? (new Function "x" "{ return x instanceof Set }"))
@@ -8223,7 +8264,7 @@
                                            refname
                                            meta))
                              (prop Environment.global_ctx.scope refname))))
-                 
+                  
                   (get_global 
                       (fn (refname value_if_not_found suppress_check_external_env)
                            (if (not (== (typeof refname) "string"))
@@ -8268,7 +8309,133 @@
                                       else
                                       (do
                                           (console.warn "get_global: condition fall through: " comps)
-                                          NOT_FOUND)))))))
+                                          NOT_FOUND))))))
+                  
+              (`compile (fn (json_expression opts)
+                            (compiler json_expression { `env: Environment })))
+              (`env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
+              (`evaluate (fn (expression ctx opts)
+                             (let
+                                 ((opts (or opts
+                                             {}))
+                                  (compiled nil)
+                                  (result nil))
+                               (env_log "-> expression: " expression) 
+                               (env_log "-> ctx: " (sub_type ctx) ctx)
+                               (debug)
+                               (= compiled
+                                  (compiler (if opts.json_in
+                                                expression
+                                                (-> Environment `read_lisp expression))
+                                            {   `env: Environment 
+                                                `ctx: ctx 
+                                                `formatted_output: true 
+                                                `error_report: (or opts.error_report nil)
+                                                `quiet_mode: (or opts.quiet_mode false) }))
+                                            
+                               (env_log "<- compiled:" compiled)
+                               (if opts.on_compilation_complete
+                                   (opts.on_compilation_complete compiled))
+                               (console.log "env: <- compiled: " (clone compiled))
+                               (try
+                                   (do     
+                                      (= result
+                                         (cond
+                                            compiled.error  ;; compiler error
+                                            (throw (new compiled.error compiled.message))
+                                            
+                                            (and compiled.0.ctype
+                                                 (or (contains? "block" compiled.0.ctype)
+                                                     (== compiled.0.ctype "assignment")
+                                                     (== compiled.0.ctype "__!NOT_FOUND!__")))
+                                            (if (compiled.0.has_lisp_globals)
+                                                (do 
+                                                  (set_prop compiled
+                                                           
+                                                            1
+                                                           (new AsyncFunction "Environment" (+ "{ " compiled.1 "}")))
+                                                 
+                                                  (compiled.1 Environment))
+                                                (do 
+                                                  (set_prop compiled
+                                                           1
+                                                            (new AsyncFunction  (+ "{" compiled.1 "}")))
+                                                 (compiled.1)))
+                                             
+                                            (and compiled.0.ctype
+                                                 (or (== "AsyncFunction" compiled.0.ctype)
+                                                     (== "statement" compiled.0.ctype)
+                                                     (== "objliteral" compiled.0.ctype)))
+                                            (do
+                                              (if (compiled.0.has_lisp_globals)
+                                                  (do
+                                                    (console.log "env: compiled text: " (+ "{ return " compiled.1 "} "))     
+                                                    (set_prop compiled
+                                                              1
+                                                              (new AsyncFunction "Environment" (+ "{ return " compiled.1 "} ")))
+                                                    (compiled.1 Environment))
+                                                  (do
+                                                   (set_prop compiled
+                                                             1
+                                                             (new AsyncFunction (+ "{ return " compiled.1 "}")))
+                                                   (compiled.1))))
+                                               
+                                            (and compiled.0.ctype
+                                                 (== "Function" compiled.0.ctype))
+                                            (do
+                                                 (if (compiled.0.has_lisp_globals)
+                                                     (do
+                                                      (set_prop compiled
+                                                                1
+                                                                (new Function "Environment" (+ "{ return " compiled.1 "} ")))
+                                                      (compiled.1 Environment))
+                                                     (do 
+                                                      (set_prop compiled
+                                                                1
+                                                                (new Function (+ "{ return " compiled.1 "}")))
+                                                      (compiled.1))))
+                                            else ;; this is a simple expression
+                                            compiled.1)))
+                                   (catch Error (e)
+                                         (do
+                                            (when opts.error_report
+                                                  (opts.error_report {
+                                                                  `error: e.name
+                                                                  `message: e.message
+                                                                  `form: nil
+                                                                  `parent_forms: nil
+                                                                  `invalid: true
+                                                                  `text: e.stack
+                                                                  }))
+                                            (env_log "<- ERROR: " (-> e `toString))
+                                            (= result e)
+                                            (if ctx.in_try
+                                                (throw result)))))
+                               (env_log "<-" result)
+                               result)))
+                           
+              (`eval_struct (fn (lisp_struct ctx opts)
+                                (if (is_function? lisp_struct)
+                                    (lisp_struct)
+                                    (evaluate lisp_struct ctx (+ {
+                                                                 `json_in: true
+                                                                 }
+                                                                 (or opts {})))))))
+          
+         
+          (defvar meta_for_symbol (fn (quoted_symbol)
+                                    (do
+                                         (if (starts_with? (quote "=:") quoted_symbol)
+                                             (prop Environment.definitions (-> quoted_symbol `substr 2))
+                                             (prop Environment.definitions quoted_symbol)))))
+          
+          (defvar set_compiler
+              (fn (compiler_function)
+                   (do 
+                       (= compiler compiler_function)
+                       (set_prop Environment.global_ctx.scope
+                                 "compiler"
+                                 compiler))))
           
           (set_prop Environment
                     `get_global get_global
@@ -8279,13 +8446,18 @@
           ;; bring the needed functions in and rebuild them in the current scope.
                 
           (declare (include lisp_writer 
-                            get_next_environment_id  
                             reader add_escape_encoding get_outside_global get_object_path 
                             do_deferred_splice))        
           
           (defvar as_lisp lisp_writer)
           (defvar read_lisp reader)
           
+          (set_prop Environment.global_ctx.scope
+                    `eval eval_exp
+                    `reader reader
+                    `as_lisp lisp_writer
+                    `lisp_writer lisp_writer)
+         
           (defvar inlines  (+  {} 
                                (if opts.inlines
                                    opts.inlines
@@ -8350,32 +8522,49 @@
                                
                                }))
                            
-         
+          (set_prop Environment
+                     `eval eval_struct
+                     `identify subtype
+                     `meta_for_symbol meta_for_symbol
+                     `set_compiler set_compiler
+                     `read_lisp reader
+                     `as_lisp as_lisp
+                     `definitions this.Environment.definitions
+                     `compile compile
+                     `evaluate evaluate
+                     `do_deferred_splice do_deferred_splice
+                     `as_lisp (fn (v)
+                                  (as_lisp v))
+                     `id (fn () id)
+                     `set_check_external_env (fn (state)
+                                                 (do 
+                                                  (= check_external_env_default
+                                                     state)
+                                                  check_external_env_default))
+                     `check_external_env (fn ()
+                                             check_external_env_default))
+          
+          
           (console.log "ENVIRONMENT: ", Environment) 
+          ;(bind_function Environment this)
           Environment)))
       
-              
-  
-  
-  
+;; Back in the parent lisp environment execute the following:
 
-  
-  
-(defun `tester (a b)
-    (let
-        ((`read_table { "\"":["\"" (fn (block)
-                                          (do 
-                                              ["quotes" block]))]
-                                       }))
-       read_table))
-   
-   
-              
-(defglobal `ifa2
-    (fn (test then elseclause)
-      `(let ((it ,#test))
-         (if it ,#then ,#elseclause)))
-      { `eval_when: { `compile_time: true }})         
+(defglobal `env_alpha (dlisp_env))
+
+;; Note: add when macro to the new env
+;; defmacro, etc to rebuild the environment again within the new env
+
+;; set the current compiler from the parent lisp for the moment to compile the
+;; compiler itselt..
+
+(-> env_alpha `set_compiler compiler)
+
+;; open a new tab
+
+(tab ["Alpha 1" (dlisp_tab env_alpha) ] true)
+
           
 (defmacro `ifa (test then elseclause)
     `(let ((it ,#test))
@@ -8387,23 +8576,5 @@
 
  
 
-(defglobal `transformer
-    (fn (arg1 `& args)
-        (let
-            ((arga arg1)
-             (rest_of_them args))
-             
-         (console.log "===TESTER==>arga: ",arga)
-         (console.log "===TESTER==>args: ",rest_of_them)
-         
-        {
-            `arg1: arg1
-            ;`rest: `( ,@(conj [`quote] rest_of_them))
-            `rest:  (quotem ,@(rest_of_them))
-         }))
-    {
-        `eval_when:{ `compile_time: true }
-        })
-    
          
 
