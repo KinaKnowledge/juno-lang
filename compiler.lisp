@@ -491,10 +491,6 @@
                          (set_prop ctx_obj
                                    `defvar_eval
                                    true))
-                       (when parent.in_lambda
-                         (set_prop ctx_obj
-                                   `in_lambda
-                                   true))
                        (when parent.hard_quote_mode
                          (set_prop ctx_obj
                                    `hard_quote_mode
@@ -593,7 +589,28 @@
                                     value)))))
 
        ;; Retrieves a value from the current compilation context
-
+       
+       (`get_ctx (fn (ctx name)
+                     (let
+                         ((`ref_name nil))
+                                        ;(log "get_ctx: " (sub_type name) name)
+                       (cond 
+                         (is_nil? name)
+                         (throw SyntaxError (+ "get_ctx: nil identifier passed: " (sub_type name)))
+                         (is_number? name)
+                         name
+                         (is_function? name)
+                         (throw SyntaxError (+ "get_ctx: invalid identifier passed: " (sub_type name)))
+                         else
+                         (do
+                          (= ref_name (first (get_object_path name)))
+                          
+                          (cond
+                            (not (== undefined (prop ctx.scope ref_name)))
+                            (prop ctx.scope ref_name)
+                            ctx.parent
+                            (get_ctx ctx.parent ref_name)))))))
+       ;; preferred entry point                  
        (`get_ctx_val (fn (ctx name)
                          (let
                              ((`ref_name nil))
@@ -827,30 +844,6 @@
                                             nil)
                                })))
        
-       
-       (`get_ctx (fn (ctx name)
-                     (let
-                         ((`ref_name nil))
-                                        ;(log "get_ctx: " (sub_type name) name)
-                       (cond 
-                         (is_nil? name)
-                         (throw SyntaxError (+ "get_ctx: nil identifier passed: " (sub_type name)))
-                         (is_number? name)
-                         name
-                         (is_function? name)
-                         (throw SyntaxError (+ "get_ctx: invalid identifier passed: " (sub_type name)))
-                         else
-                         (do
-                          (= ref_name (first (get_object_path name)))
-                          
-                          (cond
-                            (not (== undefined (prop ctx.scope ref_name)))
-                            (prop ctx.scope ref_name)
-                            ctx.parent
-                            (get_ctx ctx.parent ref_name)))))))
-                                        ; else
-                                        ;(find_in_context (+ (quote "=:") name))))) ;; external context
-       
        (`get_source_chain (fn (ctx sources)
                               (if ctx
                                   (let
@@ -963,6 +956,7 @@
                         (let
                             ((`argtype nil)
                              (`rval nil)
+                             (`ctx ctx)
                              (`qval nil)
                              (`argdetails nil)
                              (`argvalue nil)
@@ -985,12 +979,24 @@
                              (= rval (tokenize_quote args))
                              ;(console.log "tokenize: A: returning quote/m:" rval)
                              rval)
+                            (and (is_array? args)
+                                 (not (get_ctx_val ctx `__IN_LAMBDA__))
+                                 (== args.0 (quote "=:progn")))
+                            (do 
+                                (= rval (compile_toplevel args ctx))
+                                (tokenize rval ctx))
                             (and (not (is_array? args))
                                  (is_object? args))
                             (first (tokenize [args]))
                             else
                             (do
-                             
+                             (when (or (== args.0 (quote "=:fn"))
+                                       (== args.0 (quote "=:function"))
+                                       (== args.0 (quote "=:=>")))
+                                 (= ctx (new_ctx ctx))
+                                 (set_ctx ctx
+                                          `__IN_LAMBDA__
+                                          true))
                              ;(log "tokenize:<-" (sub_type args) args)
                              (for_each (`arg args)
                               (do
@@ -1445,6 +1451,39 @@
                                         (clog "- returning true")
                                         true)))))
                                false)))
+                           
+       ;; In the top-level mode, if the form is a progn form, each of its body forms is sequentially processed
+       ;; as a top level form in the same processing mode.  Otherwise, they are compiled as, and evaluated as a
+       ;; unit in a lambda.  
+       (`top_level_log (defclog { `prefix: "top-level" `color: `white `background: "#300010" } ))
+       (`compile_toplevel 
+                       (fn (lisp_tree ctx block_options)
+                           (if (get_ctx_val ctx `__IN_LAMBDA__)
+                               (throw EvalError "Compiler attempt to compile top-level in lambda (most likely a bug)")
+                               (do
+                                 (let
+                                     ((`idx 0)
+                                      (`rval nil)
+                                      (`tokens nil)
+                                      (`stmt nil)
+                                      (`total_statements (- (length lisp_tree) 1))
+                                      (`ctx (if block_options.no_scope_boundary
+                                                ctx
+                                                (new_ctx ctx))))
+                                     (while (< idx total_statements)
+                                        (do
+                                          (inc idx)
+                                          ;; since we have the source lisp tree, first tokenize each statement and 
+                                          ;; then compile and then evaluate it.
+                                          (top_level_log (+ "" idx "/" total_statements) "->" (as_lisp (prop lisp_tree idx)))
+                                          (= tokens (tokenize (prop lisp_tree idx) ctx))
+                                          (= stmt (compile tokens ctx))
+                                          (top_level_log (+ "" idx "/" total_statements) "compiled <- " stmt)
+                                          (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
+                                          (top_level_log (+ "" idx "/" total_statements) "<-" rval)
+                                          (top_level_log (+ "" idx "/" total_statements) "ctx" (clone Environment.context.scope))))
+                                      
+                                   rval)))))
        (`compile_block (fn (tokens ctx block_options)
                            (let
                                ((`acc [])
@@ -1504,8 +1543,7 @@
                                            (clog "compiling standard token -> " token)
                                            
                                            
-                                           (= stmt (compile token ctx)))
-                                          )
+                                           (= stmt (compile token ctx))))
                                       
                                         ;(push stmts { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step " source: " ctx.source) })      
                                       
@@ -1850,9 +1888,9 @@
                           (set_prop ctx
                                     `return_point
                                     0)
-                          (set_prop ctx
-                                    `in_lambda
-                                    true)         
+                          (set_ctx ctx
+                                   `__IN_LAMBDA__
+                                   true)
                           (set_prop ctx
                                     `lambda_scope
                                     true)
@@ -2843,7 +2881,7 @@
        
        
        
-       (`wrap_and_run (fn (js_code ctx)
+       (`wrap_and_run (fn (js_code ctx run_opts)
                           (let
                               ((`assembly nil)
                                (`result nil)
@@ -2887,6 +2925,8 @@
                             (run_log "-> " assembled)
                             
                             (= assembly (new AsyncFunction "Environment" assembled))
+                            (when run_opts.bind_mode
+                                (= assembly (bind_function assembly Environment)))
                             (= result (assembly Environment))
                             (run_log "<-" result)
                             result)))            
@@ -2938,7 +2978,7 @@
                             (while (< idx tlength)
                              (do 
                               (= tval (prop tree idx))
-                              (follow_log "in_lambda:" ctx.in_lambda "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@")))
+                              (follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@")))
                                (cond 
                                  (or (== tval (quote "=$,@"))
                                      )
@@ -2959,7 +2999,7 @@
                                    
                                    (if (not (eq undefined tval))
                                        (do 
-                                        (if ctx.in_lambda
+                                        (if (get_ctx_val ctx `__IN_LAMBDA__)
                                             (do 
                                              (= ntree [])
                                              (if (is_object? tval)
@@ -3014,7 +3054,7 @@
                                   (follow_log "insert-operation (non-splice): idx now:" idx  "tval:" (clone tval))
                                    (if (not (eq undefined tval))
                                        (do 
-                                        (if ctx.in_lambda
+                                        (if (get_ctx_val ctx `__IN_LAMBDA__)
                                             (do
                                              (follow_log "in_lambda: non splice: " tval )   
                                              (= ntree [])
@@ -6622,12 +6662,12 @@
       "Quoted object integrity"
      ]
 
-    ["(progn (defvar `abc (make_set [ 1 2 3])) (call abc `has 1))"
+    ["(progn (defglobal `abc (make_set [ 1 2 3])) (call abc `has 1))"
     []
     true
     "make_set then call - has item true"
     ]
-    ["(progn (defvar `abc (make_set [ 1 2 3])) (call abc `has 5))"
+    ["(progn (defglobal `abc (make_set [ 1 2 3])) (call abc `has 5))"
     []
     false
     "make_set then call - not has item"
@@ -7087,6 +7127,8 @@
         (let
             ((`output_structure [])
              (`idx -1)
+             (`line_number 0)
+             (`column_number 0)
              (`opts (or opts {}))
              (`len (- (length text) 1))
              (`in_buffer (split_by "" text))
@@ -7094,6 +7136,14 @@
              (`in_quotes 1)
              (`in_long_text 2)
              (`in_comment 3)
+             (`local_text (fn ()
+                              (let
+                                  ((`start (Math.max 0 (- idx 10)))
+                                   (`end   (Math.max (length in_buffer) (+ idx 10))))
+                                  (join "" (slice in_buffer start end)))))
+                                           
+             (`position (fn ()
+                            (+ "line: " line_number " column: " column_number)))
              (`in_single_quote 4)
              (`mode in_code)  ;; start out in code
              (`read_table {
@@ -7131,19 +7181,19 @@
                                                         (= key (-> key `substr 2)))
                                                     (cond
                                                       (blank? key)
-                                                      (throw SyntaxError (+ "blank or nil key: " (prop block idx)))
+                                                      (throw SyntaxError (+ "" (position) ": blank or nil key: " (prop block idx) " -->" (local_text) "<--"))
                                                       (is_number? key)
                                                       (do
-                                                       (inc idx)
-                                                       (set_prop obj
-                                                                 key
-                                                                (prop block idx)))
+                                                        (inc idx)
+                                                        (set_prop obj
+                                                                  key
+                                                                 (prop block idx)))
                                                       (and (is_string? key)
                                                            (contains? ":" key)
                                                            (not (ends_with? ":" key)))
                                                       (do
-                                                       (= cpos (-> key `indexOf ":"))
-                                                       (= value (-> key `substr (+ cpos 1)))
+                                                        (= cpos (-> key `indexOf ":"))
+                                                        (= value (-> key `substr (+ cpos 1)))
                                                         (= key (-> key `substr 0 cpos))
                                                         (set_prop obj
                                                                   key
@@ -7158,7 +7208,7 @@
                                                             (do                ;; otherwise the next value must be a colon 
                                                              (if (== (prop block idx) ":")
                                                                  (inc idx) ;; it is, move past it       ;; <<---- BUG: will insert return
-                                                                 (throw SyntaxError (+ "missing colon in object key: " key)))))
+                                                                 (throw SyntaxError (+ "" (position) "missing colon in object key: " key " -->" (local_text))))))
                                                         (set_prop obj
                                                                   key
                                                                   (prop block idx))))))
@@ -7232,7 +7282,7 @@
                                     word_as_number
                                     else
                                     (do 
-                                     (log "reader: what is this?" word word_acc)
+                                     (log "reader: " (position) " what is this?" word word_acc (local_text))
                                      word)))))
              
              (`registered_stop_char nil)
@@ -7257,11 +7307,14 @@
                                 (while (and (not stop)
                                             (< idx len))
                                        (do 
-                                        (inc idx)
-                                        (= escape_mode (Math.max 0 (- escape_mode 1)))
+                                         (inc idx)
+                                         
+                                         (= escape_mode (Math.max 0 (- escape_mode 1)))
                                          (= c (get_char idx))
                                          (= next_c (get_char (+ idx 1)))
-                                         
+                                         (when (== c "\n")
+                                             (inc line_number)
+                                             (= column_number 0))
                                          ;(log _depth "C->" c next_c mode escape_mode (clone acc) (clone word_acc) handler_stack.length)
                                          
                                          ;; read until the end or are stopped via debugger
@@ -7486,6 +7539,7 @@
                                            (do 
                                             ;(when opts.debug (log "++word_acc:" c))
                                             (push word_acc c)))
+                                      (inc column_number)
                                       (= last_c c)))
                                 (if (> word_acc.length 0)
                                     (do 
@@ -7606,7 +7660,7 @@
 ;; When this function is called, it will have the values assigned to the
 ;; values in the let.  
 
-(defglobal `defmacro
+(defglobal defmacro
     (fn (name arg_list `& body)
         (let ;; capture the arguments
             ((macro_name name)
@@ -7615,7 +7669,9 @@
              (source_details 
                          {
                             `eval_when: { `compile_time: true  }
-                            `name: name
+                            `name: (if (starts_with? "=:" name)
+                                       (-> name `substr 2)
+                                       name)
                             `macro: true
                             `fn_args: (as_lisp macro_args)
                             `fn_body: (add_escape_encoding (as_lisp macro_body))
@@ -8455,6 +8511,7 @@
           (set_prop Environment.global_ctx.scope
                     `eval eval_exp
                     `reader reader
+                    `add_escape_encoding add_escape_encoding
                     `as_lisp lisp_writer
                     `lisp_writer lisp_writer)
          
@@ -8563,7 +8620,16 @@
 
 ;; open a new tab
 
-(tab ["Alpha 1" (dlisp_tab env_alpha) ] true)
+(do 
+    (tab ["Alpha 1" (dlisp_tab env_alpha) ] true)
+    (sleep 1)
+    (tab ["Alpha 2" (dlisp_tab env_alpha) ] true)
+    (sleep 1)
+    (tab ["Alpha 3" (dlisp_tab env_alpha) ] true)
+    (sleep 1)
+    (tab ["Alpha 4" (dlisp_tab env_alpha) ] true)
+    (sleep 1)
+    (tab ["Alpha 5" (dlisp_tab env_alpha) ] true))
 
           
 (defmacro `ifa (test then elseclause)
