@@ -1,6 +1,14 @@
 // lisp_writer
 // converts JSON based to the DLisp representation
 
+export function get_outside_global(refname) {
+  try {
+    let tfn = new Function("{ if (typeof " + refname + " === 'undefined') { return undefined } else { return "+refname+" } }");
+    return tfn();
+  } catch (ex) {
+    return undefined;
+  }
+}
 
 export function subtype(value) {
   if (value === null) return "null";

@@ -7,7 +7,7 @@
 
 ;; in the console
 
-;; var { subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=98")
+;; var { get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=9402")
 
 (defglobal `as_lisp
     lisp_writer)
@@ -34,11 +34,14 @@
 (defglobal `SyntaxError SyntaxError)
 (defglobal `null nil)
 
-(defun `get_outside_global (refname)
+(defun `get_outside_global_deprecated (refname)
       (let
         ((`fval (new Function "refname"
-           (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
+           (+ "{ try { if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } } catch (ex) { return undefined; } }"))))
         (fval refname)))
+    
+    
+(defglobal `get_outside_global get_outside_global)
 ;; returns the first component of an object accessor 
 
 (defun `get_object_path (refname)
@@ -355,6 +358,7 @@
 (defun `compiler (quoted_lisp opts)
   (let
       ((`tree quoted_lisp)
+       (`nada (console.log "COMPILER INPUT: length:" (length tree) "->" (clone tree)))
        (`op nil)
        (`Environment (or opts.env env))
        (`build_environment_mode (or opts.build_environment false))
@@ -1466,24 +1470,24 @@
                                       (`rval nil)
                                       (`tokens nil)
                                       (`stmt nil)
-                                      (`total_statements (- (length lisp_tree) 1))
+                                      (`num_non_return_statements (- (length lisp_tree) 2))
                                       (`ctx (if block_options.no_scope_boundary
                                                 ctx
                                                 (new_ctx ctx))))
-                                     (while (< idx total_statements)
+                                     (while (< idx num_non_return_statements)
                                         (do
                                           (inc idx)
                                           ;; since we have the source lisp tree, first tokenize each statement and 
                                           ;; then compile and then evaluate it.
-                                          (top_level_log (+ "" idx "/" total_statements) "->" (as_lisp (prop lisp_tree idx)))
+                                          (top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx)))
                                           (= tokens (tokenize (prop lisp_tree idx) ctx))
                                           (= stmt (compile tokens ctx))
-                                          (top_level_log (+ "" idx "/" total_statements) "compiled <- " stmt)
+                                          (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " stmt)
                                           (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
-                                          (top_level_log (+ "" idx "/" total_statements) "<-" rval)
-                                          (top_level_log (+ "" idx "/" total_statements) "ctx" (clone Environment.context.scope))))
-                                      
-                                   rval)))))
+                                          (top_level_log (+ "" idx "/" num_non_return_statements) "<-" rval)
+                                          (top_level_log (+ "" idx "/" num_non_return_statements) "ctx" (clone Environment.context.scope))))
+                                   ;; return the last statement for standard compilation.
+                                   (prop lisp_tree (+ idx 1)))))))
        (`compile_block (fn (tokens ctx block_options)
                            (let
                                ((`acc [])
@@ -4441,7 +4445,7 @@
 ;; make_environment returns a closure that serves as the global environment
 ;; in which all evaluations occur.  It contains the global values 
 ;; and provides facilities for the compiler 
-
+(defun `make_start_env ()  
 (do   ;; put in do to rebuild global env when rebuilding the function
  (defglobal `make_environment 
      (fn (opts)
@@ -5131,7 +5135,13 @@
                                        (do
                                            ,@mbody))))
                         {`eval_when:{ `compile_time: true }})")
-  )
+  
+  ;; for recovery purposes...
+  (set_prop env
+          `old_read_lisp
+          env.read_lisp)
+  (tab ["Dlisp 0" (dlisp_tab) ] true)
+  ))
 
 
               
@@ -7552,9 +7562,16 @@
                                 acc))))
           (console.log "read->" in_buffer )
           (= output_structure (read_block 0))
-          (console.log "read<-" output_structure)
+          
+          (if (and (is_array? output_structure)
+                   (> (length output_structure) 1))
+              (do 
+                  (prepend output_structure
+                           (quotel "=:progn"))
+                  (console.log "read (multiple forms) <-" output_structure)
+                  (first [output_structure]))
           ;(when opts.debug (console.log "read<-" (first output_structure)))
-          (first output_structure))))
+              (first output_structure)))))
 
 ;; set the read_lisp function to our compiled reader function:
 
@@ -7613,17 +7630,17 @@
 
 ;; lay out the ground work for macro definition 
 
-(defglobal `desym
-    (fn (val)
-        `(let
-             ((v (quote ,@val)))
-           (if (and (is_string? v)
-                    (starts_with? (quote "=:") v))
-               (-> v `substr 2)
-               v)))
-    {
-    `eval_when:{ `compile_time: true } 
-    })
+;(defglobal `desym
+;    (fn (val)
+;        `(let
+;             ((v (quote ,@val)))
+;           (if (and (is_string? v)
+;                    (starts_with? (quote "=:") v))
+;               (-> v `substr 2)
+;               v)))
+;    {
+;    `eval_when:{ `compile_time: true } 
+;    })
 
 ;; add_escape_encoding is used for quoting purposes and providing escaped
 ;; double quotes to quoted lisp in compiled Javascript
@@ -7759,12 +7776,12 @@
        
 
 
-(defexternal get_outside_global 
-             (fn (refname)
-                  (let
-                    ((`fval (new Function "refname"
-                       (+ "{ if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } }"))))
-                    (fval refname))))
+;(defexternal get_outside_global 
+ ;            (fn (refname)
+  ;                (let
+   ;                 ((`fval (new Function "refname"
+    ;                   (+ "{ try { if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } } catch (ex) { return undefined }}"))))
+     ;               (fval refname))))
                 
 (defun `get_object_path (refname)
     (let
@@ -7885,6 +7902,33 @@
         `description: "returns the type of value that has been passed.  Deprecated, and the sub_type function should be used."
         `tags:["types","value","what"]
     })
+
+(defun identify_symbols (quoted_form _state)
+    (let
+        ((acc [])
+         (_state (if _state
+                     _state
+                     {
+                         
+                     })))
+        (debug)
+        (cond
+            (is_array? quoted_form)
+            (do
+                (for_each (`elem quoted_form)
+                   (push acc
+                         (identify_symbols elem _state))))
+            (and (is_string? quoted_form)
+                 (starts_with? "=:" quoted_form))
+            (push acc
+                 { `name: (as_lisp quoted_form)
+                   `where: (describe (as_lisp quoted_form)) })
+            (is_object? quoted_form)
+            (for_each (`elem (values quoted_form))
+                (push acc
+                      (identify_symbols elem _state))))
+        [(quote quote) acc]))
+                       
 
 (defun `random_int (`& `args)
        (let
@@ -8367,10 +8411,10 @@
                                           (console.warn "get_global: condition fall through: " comps)
                                           NOT_FOUND))))))
                   
-              (`compile (fn (json_expression opts)
-                            (compiler json_expression { `env: Environment })))
-              (`env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
-              (`evaluate (fn (expression ctx opts)
+                  (compile (fn (json_expression opts)
+                               (compiler json_expression { `env: Environment })))
+                  (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
+                  (evaluate (fn (expression ctx opts)
                              (let
                                  ((opts (or opts
                                              {}))
@@ -8378,7 +8422,7 @@
                                   (result nil))
                                (env_log "-> expression: " expression) 
                                (env_log "-> ctx: " (sub_type ctx) ctx)
-                               (debug)
+                               ;(debug)
                                (= compiled
                                   (compiler (if opts.json_in
                                                 expression
@@ -8631,6 +8675,8 @@
     (sleep 1)
     (tab ["Alpha 5" (dlisp_tab env_alpha) ] true))
 
+
+         
           
 (defmacro `ifa (test then elseclause)
     `(let ((it ,#test))
@@ -8641,6 +8687,48 @@
      (log "nope: it is: " it))
 
  
-
-         
-
+(identify_symbols 
+        (quote
+            (do
+                (+ 1 2)
+                (+ 5 3)
+                (starts_with? "abc" "abcdef"))))
+     
+     
+;; compiler issue to investigate:
+;; _current_path is treated as a string, not as an array and it should be an array
+;; we need to look at declarations
+(defun identify_symbols (quoted_form _state _current_path)
+    (let
+        ((acc [])
+         (_state (if _state
+                     _state
+                     {
+                        `symbols:{}
+                     }))
+         (_current_path (or _current_path [])))
+        (declare (array _current_path))
+        (debug)
+        (cond
+            (is_array? quoted_form)
+            (do
+                (map (fn (elem idx)
+                         (do 
+                            (identify_symbols elem _state (+ _current_path [ idx ]))))
+                     quoted_form))
+            (and (is_string? quoted_form)
+                 (starts_with? "=:" quoted_form))
+            (do 
+                (when (eq nil (prop _state.symbols (as_lisp quoted_form)))
+                    (set_prop _state.symbols
+                              (as_lisp quoted_form)
+                              []))
+                (push (prop _state.symbols (as_lisp quoted_form))
+                        { 
+                         `path: (clone _current_path)
+                          }
+                        ))
+            (is_object? quoted_form)
+            (for_each (`pset (pairs quoted_form))
+                (identify_symbols pset.1 _state (+ _current_path [ pset.1 ]))))
+        (keys _state.symbols)))
