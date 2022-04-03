@@ -617,7 +617,8 @@
        ;; preferred entry point                  
        (`get_ctx_val (fn (ctx name)
                          (let
-                             ((`ref_name nil))
+                             ((`ref_name nil)
+                              (`declared_type_value nil))
                            (cond 
                              (is_nil? name)
                              (throw TypeError (+ "get_ctx_val: nil identifier passed: " (sub_type name)))
@@ -630,14 +631,23 @@
                               (if (starts_with? (quote "=:") name)
                                   (= ref_name (-> name `substr 2))
                                   (= ref_name name))
-                              (= ref_name (first (get_object_path ref_name)))
-                               (cond
-                                 (prop op_lookup ref_name)
-                                 AsyncFunction
-                                 (not (== undefined (prop ctx.scope ref_name)))
-                                 (prop ctx.scope ref_name)
-                                 ctx.parent
-                                 (get_ctx ctx.parent ref_name)))))))
+                              ;; we need to check an explicit declarations regarding the
+                              ;; reference.  They override an inferred type value.  If 
+                              ;; we don't find a declaration, then get it from the
+                              ;; inferred scope.
+                              ;; do it with the full path 
+                              (= declared_type_value (get_declarations ctx ref_name))
+                              (if declared_type_value.type
+                                  declared_type_value.type
+                                  (do
+                                    (= ref_name (first (get_object_path ref_name)))
+                                    (cond
+                                      (prop op_lookup ref_name)
+                                      AsyncFunction
+                                      (not (== undefined (prop ctx.scope ref_name)))
+                                      (prop ctx.scope ref_name)
+                                      ctx.parent
+                                      (get_ctx ctx.parent ref_name)))))))))
        
        (`get_declarations (fn (ctx name)
                          (let
@@ -650,7 +660,7 @@
                              (is_function? name)
                              (throw (+ "get_declarations: invalid identifier passed: " (sub_type name)))
                              else
-                             (do
+                             (when (is_string? name)
                               (if (starts_with? (quote "=:") name)
                                   (= ref_name (-> name `substr 2))
                                   (= ref_name name))
@@ -1082,6 +1092,9 @@
                               (`math_op (or (prop op_translation math_op) math_op))
                               (`idx 0)
                               (`stmts nil)
+                              (`declaration (if (is_string? tokens.1.name)
+                                                (get_declarations ctx tokens.1.name)
+                                                nil))
                               (`is_overloaded false)
                               (`token nil)
                               (`add_operand (fn ()
@@ -1089,7 +1102,9 @@
                                                            (< idx (- tokens.length 0)))
                                                   (push acc math_op))))
                               (`acc [{"ctype":"expression"}]))
-                           (when (and (or (== tokens.1.type `objlit)
+                           (when (and (or (and declaration (== declaration.type Array))
+                                          (and declaration (== declaration.type Object))
+                                          (== tokens.1.type `objlit)
                                           (== tokens.1.type `arr))
                                       (== math_op `+))
                              (= is_overloaded true))
@@ -3422,6 +3437,18 @@
                                             (do
                                                (for_each (`name (each targeted `name))
                                                   (set_declaration ctx name `type Array)))
+                                            (== declaration "number")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type Number)))
+                                            (== declaration "string")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type String)))
+                                            (== declaration "boolean")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type Boolean))) 
                                                )))
                                  (declare_log "<-" (clone acc))
                                  acc)))
@@ -3958,6 +3985,7 @@
                          else
                          (let
                              ((`is_operation false)
+                              (`declared_type nil)
                               (`symbolic_replacements [])
                               (`compiled_values []))
                            
@@ -3971,6 +3999,11 @@
                            ;; the first element is the operator 
                            (= rcv (compile tokens.0 ctx (+ _cdepth 1)))
                            (comp_log (+ "compile: " _cdepth " [array_literal]:") "<- stmt" rcv)
+                           
+                           (when (is_string? rcv)
+                                 (= declared_type (get_declarations ctx rcv))
+                                 (comp_log (+ "compile: " _cdepth " [array_literal]:") "declared_type: " declared_type (== declared_type.type Function)))
+                                      
                            
                            ;; compiled values will hold the compiled contents
                            
@@ -4034,7 +4067,8 @@
                            
                            
                            (cond 
-                             (or (and (is_object? rcv.0)
+                             (or (== declared_type.type Function)
+                                 (and (is_object? rcv.0)
                                       (is_function? rcv.0.ctype))
                                  (and (is_object? rcv.0)
                                       (not (is_array? rcv.0))
@@ -4049,20 +4083,21 @@
                              
                              
                              
-                             (or (== tokens.0.type "arg")
-                                 (and (is_string? rcv)
-                                      (get_declaration_details ctx rcv))
-                                 (and (is_array? rcv)
-                                      (is_object? rcv.0)
-                                      (and rcv.0.ctype
-                                           (and (not (contains? "unction" rcv.0.ctype))
-                                                (not (== "string" rcv.0.ctype))
-                                                (not (== "nil" rcv.0.ctype))
-                                                (not (== "Number" rcv.0.ctype))
-                                                (not (== "undefined" rcv.0.ctype))
-                                                (not (== "objliteral" rcv.0.ctype))
-                                                (not (== "Boolean" rcv.0.ctype))
-                                                (not (== "array") rcv.0.ctype)))))
+                              (and (eq nil declared_type.type)
+                                 (or (== tokens.0.type "arg")
+                                     (and (is_string? rcv)
+                                          (get_declaration_details ctx rcv))
+                                     (and (is_array? rcv)
+                                          (is_object? rcv.0)
+                                          (and rcv.0.ctype
+                                               (and (not (contains? "unction" rcv.0.ctype))
+                                                    (not (== "string" rcv.0.ctype))
+                                                    (not (== "nil" rcv.0.ctype))
+                                                    (not (== "Number" rcv.0.ctype))
+                                                    (not (== "undefined" rcv.0.ctype))
+                                                    (not (== "objliteral" rcv.0.ctype))
+                                                    (not (== "Boolean" rcv.0.ctype))
+                                                    (not (== "array") rcv.0.ctype))))))
                                                 
                                            
                              
@@ -7010,7 +7045,31 @@
      (quote {"arguments":("a:1" "a:2") "body":(do true) "other":"things"})
      "If statement returns appropriately from inner let"
      ]
+    ["(progn
+          (defglobal `testcall 
+              (fn (callable)
+                  (do
+                      (declare (function callable))
+                      (callable 123))))
+          (-> testcall `toString))"
+     []
+     "async function(callable) {;return (callable)(123)}"
+     "Optmization by using declare - no ambiguity check" 
     ]
+    ["(progn
+          (defglobal `testcall 
+              (fn (my_arg)
+                  (do
+                      (declare (array my_arg))
+                      (+ my_arg 2))))
+          (testcall [12]))
+         "
+      [2]
+     `[12 2]
+     "Type declaration to array using declare"]
+
+
+]
     )
 
                                         
@@ -7093,6 +7152,8 @@
 ;; TESTS WILL NOT PASS UNTIL THE READER is compiled 
 
 ;; We need to bring up the reader next, but in case of bugs in our reader, keep the old read_lisp handy
+
+(make_start_env)
 
 (set_prop env
           `old_read_lisp
@@ -8732,3 +8793,11 @@
             (for_each (`pset (pairs quoted_form))
                 (identify_symbols pset.1 _state (+ _current_path [ pset.1 ]))))
         (keys _state.symbols)))
+    
+    ;; initial tester
+(defun identify_symbols (_current_path)
+    (let
+        ((_current_path (or _current_path [])))
+        (type _current_path)))
+
+
