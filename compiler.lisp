@@ -7,7 +7,7 @@
 
 ;; in the console
 
-;; var { get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=9402")
+;; var { get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=9405")
 
 (defglobal `as_lisp
     lisp_writer)
@@ -483,6 +483,7 @@
                          ((`ctx_obj (new Object)))
                        (set_prop ctx_obj
                                  `scope (new Object)
+                                 `source ""
                                  `parent parent
                                  `ambiguous (new Object)
                                  `declared_types (new Object)
@@ -886,7 +887,7 @@
                                                       (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)))))
                                 
                                 
-                                (get_lisp_ctx_log "symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
+                                ;(get_lisp_ctx_log "symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
                                 (when (and (not (== NOT_FOUND_THING ref_type))
                                            (not (contains? ref_name standard_types))
                                     (set_prop referenced_global_symbols
@@ -1063,10 +1064,14 @@
                       ;; is this a compile time function?  Check the definition in our environment..
                       (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
                  (let
-                     ((`ntree nil))
+                     ((`ntree nil)
+                      (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
+                   
                    (comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
+                   (comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
+                   
                    (try
-                      (= ntree (apply (-> env `get_global (-> lisp_tree.0 `substr 2)) (-> lisp_tree `slice 1)))
+                      (= ntree (apply precompile_function (-> lisp_tree `slice 1)))
                       (catch Error (`e)
                         (do
                          (console.error "precompilation error: " e)
@@ -1088,6 +1093,7 @@
                                                `or: "||"
                                                `and: "&&"
                                                })
+                              (`nada (log "infix_ops: ->" tokens ctx opts))
                               (`math_op (prop (first tokens) `name))
                               (`math_op (or (prop op_translation math_op) math_op))
                               (`idx 0)
@@ -1095,6 +1101,8 @@
                               (`declaration (if (is_string? tokens.1.name)
                                                 (get_declarations ctx tokens.1.name)
                                                 nil))
+                              (`symbol_ctx_val (if (and tokens.1.ref (is_string? tokens.1.name))
+                                                   (get_ctx_val ctx tokens.1.name)))
                               (`is_overloaded false)
                               (`token nil)
                               (`add_operand (fn ()
@@ -1102,8 +1110,11 @@
                                                            (< idx (- tokens.length 0)))
                                                   (push acc math_op))))
                               (`acc [{"ctype":"expression"}]))
+                           (log "infix + declaration: " declaration " ctx value: " )
                            (when (and (or (and declaration (== declaration.type Array))
                                           (and declaration (== declaration.type Object))
+                                          (== symbol_ctx_val Expression)
+                                          (== symbol_ctx_val ArgumentType)
                                           (== tokens.1.type `objlit)
                                           (== tokens.1.type `arr))
                                       (== math_op `+))
@@ -1620,6 +1631,7 @@
        (`Statement (new Function "" "{ return \"statement\" }"))
        (`NilType (new Function "" "{ return \"nil\" }"))
        (`UnknownType (new Function "" " { return \"unknown\"} "))
+       (`ArgumentType (new Function "" " { return \"argument\" }"))
        (`compile_defvar (fn (tokens ctx )
                             (let
                                 ((`target (sanitize_js_ref_name tokens.1.name))
@@ -1949,14 +1961,14 @@
                                          (log "compile_fn: & rest args: " arg)  
                                          (set_ctx ctx
                                                   arg.name
-                                                  "?arg")
+                                                  ArgumentType)
                                          (set_prop arg
                                                    `name 
                                                    (+ "..." arg.name)))
                                        (do
                                          (set_ctx ctx
                                                   arg.name
-                                                  "?arg")))
+                                                  ArgumentType)))
                                    (push acc
                                          arg.name)
                                    (push type_mark.args  ;; add to our type marker details
@@ -2024,7 +2036,7 @@
                                         (= arg (prop fn_args idx))
                                         (set_ctx ctx
                                                   arg.name
-                                                  "?arg")
+                                                  ArgumentType)
                                         (push acc
                                             (+ "\"" arg.name "\""))
                                         (push type_mark.args  ;; add to our type marker details
@@ -3152,7 +3164,7 @@
                               (quotem_log " ->" (JSON.stringify lisp_struct))
                               (= pcm (follow_tree lisp_struct.1 ctx))
                               (quotem_log "post follow_tree: " (clone pcm))
-                              (= encoded (-> env `as_lisp pcm))
+                              (= encoded (-> Environment `as_lisp pcm))
                               (quotem_log "as lisp: " encoded)
                               (= encoded (add_escape_encoding encoded))
                               (quotem_log "encoded: " encoded)
@@ -3241,7 +3253,7 @@
          (fn (tokens ctx)
              [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
              (compile_for_each_inner tokens ctx)
-             " " "}" ")" "()"";" ]))
+             " " "}" ")" "()" ]))
        (`compile_for_each_inner 
          (fn (tokens ctx)
              (let
@@ -3277,12 +3289,12 @@
                           (push idx_iters (prop for_args iter_idx))
                           (set_ctx ctx
                            (prop (last idx_iters) `name)
-                           "?arg")))
+                           ArgumentType)))
                
                (log "compile_for_each: idx_iters: " idx_iters)
-               (set_ctx ctx collector_ref "?arg")
+               (set_ctx ctx collector_ref ArgumentType)
                                         ;(when for_args.1.ref
-                                        ;     (set_ctx ctx for_args.1.name "?arg"))
+                                        ;     (set_ctx ctx for_args.1.name ArgumentType))
                (set_ctx ctx element_list "arg")
                (when (not body_is_block?)
                  ;; we need to make it a block for our function
@@ -3419,7 +3431,7 @@
                                                                  else
                                                                  (do 
                                                                      (push acc (-> dec_struct.value `toString))
-                                                                     (set_ctx ctx name "?arg"))
+                                                                     (set_ctx ctx name ArgumentType))
                                                                      )
                                                               (push acc ";"))
                                                      (set_declaration ctx name `inlined true))))
@@ -3498,12 +3510,12 @@
                  (== call_type "local")
                  (= ref_type (get_ctx ctx tokens.0.name))
                  else
-                 (= ref_type "?arg"))
+                 (= ref_type ArgumentType))
                (sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name)
                (cond (== ref_type AsyncFunction)
                      (= ref_type "AsyncFunction")
                      (== ref_type Expression)
-                     (= ref_type "?arg" )
+                     (= ref_type ArgumentType )
                      (== ref_type Function)
                      (= ref_type "Function")
                      (== ref_type Array)
@@ -3511,10 +3523,10 @@
                      (== ref_type NilType)
                      (= ref_type "nil")
                      (== ref_type Number)
-                     (= ref_type "?arg")
+                     (= ref_type ArgumentType)
                      (== ref_type String)
                      (= ref_type "String")
-                     (== ref_type "?arg")
+                     (== ref_type ArgumentType)
                      true
                      else
                      (= ref_type (sub_type ref_type)))
@@ -3576,7 +3588,7 @@
                         acc)
                     
                     (and (== call_type "local")
-                         (not (== ref_type "?arg"))
+                         (not (== ref_type ArgumentType))
                          (is_array? tokens))
                     (do
                      (= val (get_ctx_val ctx tokens.0.name))
@@ -3586,7 +3598,7 @@
                     
                     
                     
-                    (and (== ref_type "?arg")
+                    (and (== ref_type ArgumentType)
                          (is_array? tokens))
                     (do 
                      (sr_log "compiling array: " tokens)
@@ -3601,7 +3613,7 @@
                                (inc idx)))
                       (push acc "]")
                      acc)
-                    (== ref_type "?arg")
+                    (== ref_type ArgumentType)
                     (do
                      (sr_log "arg reference: <-" tokens.0.name)
                      (push acc tokens.0.name)
@@ -3733,6 +3745,7 @@
                     "set_prop": compile_set_prop
                     "prop": compile_prop
                     "=": compile_assignment
+                    "setq": compile_assignment
                     "==": compile_compare
                     "eq": compile_compare
                     ">": compile_compare
@@ -4237,7 +4250,7 @@
                                    ;(== false (get_ctx ctx tokens.name))))
                           (do 
                             (= refval snt_value) ;(get_ctx ctx (sanitize_js_ref_name tokens.name)))
-                            (when (== refval "?arg")
+                            (when (== refval ArgumentType)
                               (= refval snt_name)) ;tokens.name))
                             (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval))
                                         ;(comp_log "compile: singleton: get_declaration_details: " (get_declaration_details ctx tokens.name))
@@ -4261,6 +4274,7 @@
                       ))
                 (catch Error (`e)
                        (do
+                        (console.error "COMPILATION ERROR: ",e)
                         (setq is_error {
                               `error: e.name
                               `message: e.message
@@ -4385,7 +4399,7 @@
               `defined_lisp_globals
               {})
     ;(console.clear)
-   
+    (main_log "Environment ID: " (-> Environment `id))
     (main_log "Starting tokenization..." (clone tree))
     
     (= output
@@ -5523,9 +5537,12 @@
          (`test_output nil)
          (`tester compiler)
          (`quiet_mode true)
-         (`env (if opts.new_env
-                   (make_environment)
-                   env))
+         (`env (cond opts.new_env
+                    (make_environment)
+                    opts.env
+                    opts.env
+                    else
+                    env))
          (`idx -1)
          (`andf (fn (args)
                     (let
@@ -7067,7 +7084,30 @@
       [2]
      `[12 2]
      "Type declaration to array using declare"]
-
+    ["(defglobal rtest 
+        (fn (acc)
+          (let
+            ((acc (or acc [])))
+            (if (< (length acc) 3)
+                (rtest (+ acc (length acc)))
+                acc))))
+      (rtest)"
+      []
+      `[0 1 2]
+      "Correct type determination on overloaded add - array"
+      
+      ]
+   ["(defglobal rtest2 
+      (fn (acc)
+        (let
+            ((acc (or acc 1)))
+            (if (< acc 4)
+                (rtest2 (+ acc 1))
+                acc))))"
+    []
+    4
+    "Correct type determiniation on overloaded add - number"]
+   
 
 ]
     )
@@ -7647,6 +7687,11 @@
 ;; At this point all compiler tests should pass - in the host env run:
 ;; (run_tests { `table: true } )
 
+;; Once the compiler tests run, the necessary functions for the environment
+;; need to be compiled.  Starting with add_escape_encoding below, compile to
+;; random_int definition.  Then we should be able to compile an environment
+;; with the compiler, vs. the host lisp.
+
 
 ;; optional: next run tests on the reader - not always necessary for the bootstrap 
 
@@ -7689,19 +7734,9 @@
         results)))
 
 
-;; lay out the ground work for macro definition 
-
-;(defglobal `desym
-;    (fn (val)
-;        `(let
-;             ((v (quote ,@val)))
-;           (if (and (is_string? v)
-;                    (starts_with? (quote "=:") v))
-;               (-> v `substr 2)
-;               v)))
-;    {
-;    `eval_when:{ `compile_time: true } 
-;    })
+;; Initial build of environment
+;; Build all forms in the starter environment
+;; up to random_int
 
 ;; add_escape_encoding is used for quoting purposes and providing escaped
 ;; double quotes to quoted lisp in compiled Javascript
@@ -7755,7 +7790,6 @@
                             `fn_body: (add_escape_encoding (as_lisp macro_body))
                           }))
                          
-         
          ;; next run through the steps of registering a macro
          ;; which is essentially a compile time function that 
          ;; transforms the body forms with the provided arguments
@@ -7964,6 +7998,60 @@
         `tags:["types","value","what"]
     })
 
+
+(defun destructure_list (elems)
+      (let
+          ((idx 0)
+           (acc [])
+           (structure elems)
+           (follow_tree (fn (elems _path_prefix)
+                            (cond
+                                (is_array? elems)
+                                (map (fn (elem idx)
+                                        (follow_tree elem (+ _path_prefix idx)))
+                                     elems)
+                                (is_object? elems)
+                                (for_each (`pset (pairs elems))
+                                    (follow_tree pset.1 (+ _path_prefix pset.0)))
+                                else ;; not container, simple values record the final path in our acculumlator
+                                (push acc _path_prefix)))))
+        (follow_tree structure [])
+        
+        acc))
+
+
+(defmacro destructuring_bind (bind_vars expression `& forms)
+      (let
+          ((binding_vars bind_vars)
+           (paths (destructure_list binding_vars))
+           (bound_expression expression)
+           (allocations [])
+           (acc [(quote let)]))
+          (for_each (`idx (range (length paths)))
+             (do 
+                 (push allocations 
+                    [ (resolve_path (prop paths idx) binding_vars) (cond 
+                                                                      (is_object? expression) 
+                                                                      (resolve_path (prop paths idx) expression)
+                                                                      else
+                                                                      (join "." (conj [ expression ] (prop paths idx)))) ])))
+          (push acc
+                allocations)
+          (= acc (conj acc
+                       forms))
+          acc))
+  
+  
+(defun or_args (`& argset)
+  (let
+      ((is_true false))
+      (for_each (`elem argset)
+        (if elem
+            (do
+              (= is_true true)
+              (break))))
+      is_true))
+  
 (defun identify_symbols (quoted_form _state)
     (let
         ((acc [])
@@ -8575,7 +8663,7 @@
                                (env_log "<-" result)
                                result)))
                            
-              (`eval_struct (fn (lisp_struct ctx opts)
+              (eval_struct (fn (lisp_struct ctx opts)
                                 (if (is_function? lisp_struct)
                                     (lisp_struct)
                                     (evaluate lisp_struct ctx (+ {
@@ -8606,8 +8694,8 @@
           ;; In the compiler context, we have access to the existing environment,
           ;; bring the needed functions in and rebuild them in the current scope.
                 
-          (declare (include lisp_writer 
-                            reader add_escape_encoding get_outside_global get_object_path 
+          (declare (local lisp_writer)
+                   (include reader add_escape_encoding get_outside_global get_object_path 
                             do_deferred_splice))        
           
           (defvar as_lisp lisp_writer)
@@ -8695,8 +8783,6 @@
                      `compile compile
                      `evaluate evaluate
                      `do_deferred_splice do_deferred_splice
-                     `as_lisp (fn (v)
-                                  (as_lisp v))
                      `id (fn () id)
                      `set_check_external_env (fn (state)
                                                  (do 
@@ -8736,7 +8822,8 @@
     (sleep 1)
     (tab ["Alpha 5" (dlisp_tab env_alpha) ] true))
 
-
+;; next go back and compile from defmacro to random_int so we build the 
+;; new compiler based environment 
          
           
 (defmacro `ifa (test then elseclause)
@@ -8769,13 +8856,12 @@
                      }))
          (_current_path (or _current_path [])))
         (declare (array _current_path))
-        (debug)
         (cond
             (is_array? quoted_form)
             (do
                 (map (fn (elem idx)
                          (do 
-                            (identify_symbols elem _state (+ _current_path [ idx ]))))
+                            (identify_symbols elem _state (+ _current_path idx))))
                      quoted_form))
             (and (is_string? quoted_form)
                  (starts_with? "=:" quoted_form))
@@ -8792,12 +8878,143 @@
             (is_object? quoted_form)
             (for_each (`pset (pairs quoted_form))
                 (identify_symbols pset.1 _state (+ _current_path [ pset.1 ]))))
-        (keys _state.symbols)))
+        _state.symbols))
     
     ;; initial tester
-(defun identify_symbols (_current_path)
+
+;; Given an input list containing values in the main list or object or in sublists or objects, 
+;; return a list that contains the path to each element in the input list
+
+(defun destructure_list (elems)
+      (let
+          ((idx 0)
+           (acc [])
+           (structure elems)
+           (follow_tree (fn (elems _path_prefix)
+                            (cond
+                                (is_array? elems)
+                                (map (fn (elem idx)
+                                        (follow_tree elem (+ _path_prefix idx)))
+                                     elems)
+                                (is_object? elems)
+                                (for_each (`pset (pairs elems))
+                                    (follow_tree pset.1 (+ _path_prefix pset.0)))
+                                else ;; not container, simple values record the final path in our acculumlator
+                                (push acc _path_prefix)))))
+        (follow_tree structure [])
+        
+        acc))
+
+
+(defmacro destructuring_bind (bind_vars expression `& forms)
+      (let
+          ((binding_vars bind_vars)
+           (paths (destructure_list binding_vars))
+           (bound_expression expression)
+           (allocations [])
+           (acc [(quote let)]))
+          (for_each (`idx (range (length paths)))
+             (do 
+                 (push allocations 
+                    [ (resolve_path (prop paths idx) binding_vars) (cond 
+                                                                      (is_object? expression) 
+                                                                      (resolve_path (prop paths idx) expression)
+                                                                      else
+                                                                      (join "." (conj [ expression ] (prop paths idx)))) ])))
+          (push acc
+                allocations)
+          (= acc (conj acc
+                       forms))
+          acc))
+  
+
+
+(defmacro destructuring_bind (bind_vars expression `& forms)
+      (let
+          ((binding_vars bind_vars)
+           (paths (destructure_list binding_vars))
+           (bound_expression expression)
+           (allocations [])
+           (acc [(quote let)]))
+          (for_each (`idx (range (length paths)))
+             (do 
+                 (push allocations 
+                    [ (resolve_path (prop paths idx) binding_vars) (cond 
+                                                                      (is_object? expression) 
+                                                                      (resolve_path (prop paths idx) expression)
+                                                                      else
+                                                                      (join "." (conj [ expression ] (prop paths idx)))) ])))
+          (push acc
+                allocations)
+          (= acc (conj acc
+                       forms))
+          acc))
+  
+  
+
+(defmacro `defun (name args body meta)
     (let
-        ((_current_path (or _current_path [])))
-        (type _current_path)))
+        ((fn_name name)
+         (fn_args args)
+         (fn_body body)
+         (source_details 
+                     (+
+                         {
+                            `name: name
+                            `fn_args: (as_lisp fn_args)
+                            `fn_body: (add_escape_encoding (as_lisp fn_body))
+                          }
+                         (if meta 
+                             meta
+                             {}))))
+    
+     `(do
+         (defglobal ,#fn_name
+             (fn ,#fn_args
+                 ,#fn_body)
+              (quote ,#source_details)))))
 
-
+(defglobal defmacro
+   (fn (name lambda_list `& forms)
+        (let ;; capture the arguments
+            ((macro_name name)
+             (macro_args lambda_list)
+             (macro_body forms)
+             (complex_lambda_list (or_args (for_each (`elem lambda_list)
+                                                (> (length (flatten (destructure_list elem))) 0))))
+                                     
+             (source_details 
+                         {
+                            `eval_when: { `compile_time: true  }
+                            `name: (if (starts_with? "=:" name)
+                                       (-> name `substr 2)
+                                       name)
+                            `macro: true
+                            `fn_args: (as_lisp macro_args)
+                            `fn_body: (add_escape_encoding (as_lisp macro_body))
+                          }))
+        
+         ;; next run through the steps of registering a macro
+         ;; which is essentially a compile time function that 
+         ;; transforms the body forms with the provided arguments
+         ;; and returns the new form
+         ;; add a destructuring_bind if we have a complex lambda list
+         
+         (if complex_lambda_list
+          `(defglobal ,#macro_name 
+                  (fn (`& args)
+                      (destructuring_bind ,#macro_args 
+                                          args
+                                          ,@macro_body))
+                  (quote ,#source_details))
+              
+          `(defglobal ,#macro_name 
+                  (fn ,#macro_args
+                      ,@macro_body)
+                  (quote ,#source_details)))))
+          
+          
+    {
+        `eval_when: { `compile_time: true }
+    })
+   
