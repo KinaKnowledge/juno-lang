@@ -20,11 +20,12 @@ export function subtype(value) {
   return typeof value;
 }
 
-const bracketStyles=['(',')','(',')','{','}'];
+
 
 export function lisp_writer(obj,depth,max_depth) {
   if (depth===undefined) depth=0;
   if (max_depth===undefined) max_depth=502;
+  const bracketStyles=['(',')','(',')','{','}'];
   let bracketStyle=0;
   let text='';
   let type = subtype(obj);
