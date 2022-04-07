@@ -7822,6 +7822,23 @@
             else
             val)))
 
+(defglobal unquotify 
+  (fn (val)
+   (let
+       ((dval val))
+    (if (starts_with? "\"" dval)
+        (= dval (-> dval `substr 1 (- dval.length 2))))
+    (if (starts_with? "=:" dval)
+        (= dval (-> dval `substr 2)))
+    dval))
+       {
+           `description: "Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros."
+           `usage: ["val:string"]
+           `tags:["macro" "quote" "quotes" "desym"]
+       })
+      
+
+
 (defmacro when (condition `& mbody) 
      `(if ,#condition
           (do
@@ -7846,7 +7863,7 @@
          (source_details 
                      (+
                          {
-                            `name: name
+                            `name: (unquotify name)
                             `fn_args: (as_lisp fn_args)
                             `fn_body: (add_escape_encoding (as_lisp fn_body))
                           }
@@ -7969,7 +7986,7 @@
                                        defset.2])))))
      acc))
  
- (defmacro define_env (`& defs)
+(defmacro define_env (`& defs)
     (let
         ((acc [(quote progl)])
          (symname nil))
@@ -8042,15 +8059,108 @@
           acc))
   
   
-(defun or_args (`& argset)
-  (let
-      ((is_true false))
-      (for_each (`elem argset)
-        (if elem
-            (do
-              (= is_true true)
-              (break))))
-      is_true))
+
+  
+(defglobal defmacro
+   (fn (name lambda_list `& forms)
+        (let ;; capture the arguments
+            ((macro_name name)
+             (macro_args lambda_list)
+             (macro_body forms)
+             (final_form (last forms))
+             (macro_meta (if (and (is_object? final_form)
+                                  (not (blank? final_form.description))
+                                  (not (blank? final_form.usage)))
+                             (pop forms)))
+             (complex_lambda_list (or_args (for_each (`elem lambda_list)
+                                                (> (length (flatten (destructure_list elem))) 0))))
+                                     
+             (source_details 
+                         (+ {
+                                `eval_when: { `compile_time: true  }
+                                `name: (if (starts_with? "=:" name)
+                                           (-> name `substr 2)
+                                           name)
+                                `macro: true
+                                `fn_args: (as_lisp macro_args)
+                                `fn_body: (add_escape_encoding (as_lisp macro_body))
+                            }
+                            (if macro_meta
+                                macro_meta
+                                {}))))
+        
+         ;; next run through the steps of registering a macro
+         ;; which is essentially a compile time function that 
+         ;; transforms the body forms with the provided arguments
+         ;; and returns the new form
+         ;; add a destructuring_bind if we have a complex lambda list
+         
+         (if complex_lambda_list
+          `(defglobal ,#macro_name 
+                  (fn (`& args)
+                      (destructuring_bind ,#macro_args 
+                                          args
+                                          ,@macro_body))
+                  (quote ,#source_details))
+              
+          `(defglobal ,#macro_name 
+                  (fn ,#macro_args
+                      ,@macro_body)
+                  (quote ,#source_details)))))
+          
+          
+    {
+        `eval_when: { `compile_time: true }
+    })  
+
+(defmacro defun (name lambda_list body meta)
+    (let
+        ((fn_name name)
+         (fn_args lambda_list)
+         (fn_body body)
+         (fn_meta meta)
+         (complex_lambda_list (or_args 
+                                   (for_each (`elem lambda_list)
+                                        (> (length (flatten (destructure_list elem))) 0))))
+                                     
+         (source_details 
+                     (+
+                         {
+                            `name: (unquotify name)
+                            `fn_args: (as_lisp fn_args)
+                            `fn_body: (add_escape_encoding (as_lisp fn_body))
+                          }
+                         (if fn_meta 
+                             (do 
+                                 (if fn_meta.description
+                                     (set_prop fn_meta
+                                               `description
+                                                fn_meta.description))
+                                  fn_meta)
+                             {}))))
+    
+        (if complex_lambda_list
+          `(defglobal ,#fn_name 
+                  (fn (`& args)
+                      (destructuring_bind ,#fn_args 
+                                          args
+                                          ,#fn_body))
+                  (quote ,#source_details))
+         `(defglobal ,#fn_name
+             (fn ,#fn_args
+                 ,#fn_body)
+              (quote ,#source_details))))
+    {
+     `description: (+ "Defines a top level function in the current environment.  Given a name, lambda_list,"
+                      "body, and a meta data description, builds, compiles and installs the function in the"
+                      "environment under the provided name.  The body isn't an explicit progn, and must be"
+                      "within a block structure, such as progn, let or do.")
+     `usage: ["name:string" "lambda_list:array" "body:array" "meta:object"]
+     `tags: ["function" "lambda" "define" "environment"]
+     
+     })
+  
+  
   
 (defun identify_symbols (quoted_form _state)
     (let
@@ -8078,7 +8188,15 @@
                       (identify_symbols elem _state))))
         [(quote quote) acc]))
                        
-
+(defmacro unless (condition `& forms)
+    `(if (not ,#condition)
+         (do 
+             ,@forms))
+     {
+       `description: "opposite of if, if the condition is false then the forms are evaluated"
+       `usage: ["condition:array" "forms:array"]
+     })
+ 
 (defun `random_int (`& `args)
        (let
             ((`top 0)
@@ -8475,9 +8593,31 @@
          
                   (trim (fn (x)
                             (-> x `trim)))
-         
-          
-         
+                        
+                  (unquotify (fn (val)
+                               (let
+                                   ((dval val))
+                                (if (starts_with? "\"" dval)
+                                    (= dval (-> dval `substr 1 (- dval.length 2))))
+                                (if (starts_with? "=:" dval)
+                                    (= dval (-> dval `substr 2)))
+                                dval))
+                               {
+                                   `description: "Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros."
+                                   `usage: ["val:string"]
+                                   `tags:["macro" "quote" "quotes" "desym"]
+                               })
+                  
+                  (or_args (fn (argset)
+                               (let
+                                  ((is_true false))
+                                  (for_each (`elem argset)
+                                    (if elem
+                                        (do
+                                          (= is_true true)
+                                          (break))))
+                                  is_true)))
+                              
                   (defclog (fn (opts)
                                (let
                                    ((`style (+ "padding: 5px;"
@@ -8493,6 +8633,7 @@
                                                                      (take args)))
                                                          (conj [ style ]
                                                                args))))))
+                  
                   
           
                   (NOT_FOUND (new ReferenceError "not found"))
@@ -8884,137 +9025,3 @@
 
 ;; Given an input list containing values in the main list or object or in sublists or objects, 
 ;; return a list that contains the path to each element in the input list
-
-(defun destructure_list (elems)
-      (let
-          ((idx 0)
-           (acc [])
-           (structure elems)
-           (follow_tree (fn (elems _path_prefix)
-                            (cond
-                                (is_array? elems)
-                                (map (fn (elem idx)
-                                        (follow_tree elem (+ _path_prefix idx)))
-                                     elems)
-                                (is_object? elems)
-                                (for_each (`pset (pairs elems))
-                                    (follow_tree pset.1 (+ _path_prefix pset.0)))
-                                else ;; not container, simple values record the final path in our acculumlator
-                                (push acc _path_prefix)))))
-        (follow_tree structure [])
-        
-        acc))
-
-
-(defmacro destructuring_bind (bind_vars expression `& forms)
-      (let
-          ((binding_vars bind_vars)
-           (paths (destructure_list binding_vars))
-           (bound_expression expression)
-           (allocations [])
-           (acc [(quote let)]))
-          (for_each (`idx (range (length paths)))
-             (do 
-                 (push allocations 
-                    [ (resolve_path (prop paths idx) binding_vars) (cond 
-                                                                      (is_object? expression) 
-                                                                      (resolve_path (prop paths idx) expression)
-                                                                      else
-                                                                      (join "." (conj [ expression ] (prop paths idx)))) ])))
-          (push acc
-                allocations)
-          (= acc (conj acc
-                       forms))
-          acc))
-  
-
-
-(defmacro destructuring_bind (bind_vars expression `& forms)
-      (let
-          ((binding_vars bind_vars)
-           (paths (destructure_list binding_vars))
-           (bound_expression expression)
-           (allocations [])
-           (acc [(quote let)]))
-          (for_each (`idx (range (length paths)))
-             (do 
-                 (push allocations 
-                    [ (resolve_path (prop paths idx) binding_vars) (cond 
-                                                                      (is_object? expression) 
-                                                                      (resolve_path (prop paths idx) expression)
-                                                                      else
-                                                                      (join "." (conj [ expression ] (prop paths idx)))) ])))
-          (push acc
-                allocations)
-          (= acc (conj acc
-                       forms))
-          acc))
-  
-  
-
-(defmacro `defun (name args body meta)
-    (let
-        ((fn_name name)
-         (fn_args args)
-         (fn_body body)
-         (source_details 
-                     (+
-                         {
-                            `name: name
-                            `fn_args: (as_lisp fn_args)
-                            `fn_body: (add_escape_encoding (as_lisp fn_body))
-                          }
-                         (if meta 
-                             meta
-                             {}))))
-    
-     `(do
-         (defglobal ,#fn_name
-             (fn ,#fn_args
-                 ,#fn_body)
-              (quote ,#source_details)))))
-
-(defglobal defmacro
-   (fn (name lambda_list `& forms)
-        (let ;; capture the arguments
-            ((macro_name name)
-             (macro_args lambda_list)
-             (macro_body forms)
-             (complex_lambda_list (or_args (for_each (`elem lambda_list)
-                                                (> (length (flatten (destructure_list elem))) 0))))
-                                     
-             (source_details 
-                         {
-                            `eval_when: { `compile_time: true  }
-                            `name: (if (starts_with? "=:" name)
-                                       (-> name `substr 2)
-                                       name)
-                            `macro: true
-                            `fn_args: (as_lisp macro_args)
-                            `fn_body: (add_escape_encoding (as_lisp macro_body))
-                          }))
-        
-         ;; next run through the steps of registering a macro
-         ;; which is essentially a compile time function that 
-         ;; transforms the body forms with the provided arguments
-         ;; and returns the new form
-         ;; add a destructuring_bind if we have a complex lambda list
-         
-         (if complex_lambda_list
-          `(defglobal ,#macro_name 
-                  (fn (`& args)
-                      (destructuring_bind ,#macro_args 
-                                          args
-                                          ,@macro_body))
-                  (quote ,#source_details))
-              
-          `(defglobal ,#macro_name 
-                  (fn ,#macro_args
-                      ,@macro_body)
-                  (quote ,#source_details)))))
-          
-          
-    {
-        `eval_when: { `compile_time: true }
-    })
-   
