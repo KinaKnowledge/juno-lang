@@ -8160,7 +8160,34 @@
      
      })
   
-  
+(defmacro reduce ((elem item_list) form)
+    `(let
+        ((__collector [])
+         (__result nil)
+         (__action (fn (,@elem)
+                         ,#form)))
+      (declare (function __action))                     
+      (for_each (__item ,#item_list)
+         (do
+             (= __result (__action __item))
+             (if __result
+                 (push __collector __result))))
+      __collector)
+  {
+      "description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list."
+      "usage":[['binding-elem:symbol','values:list'],["form:list"]]
+      `tags: [`filter `remove `select `list `array]
+  })
+             
+(defmacro ifa (test thenclause elseclause)
+    `(let 
+          ((it ,#test))
+         (if it ,#thenclause ,#elseclause))
+  {
+      `description: "Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause."
+      `usage: ["test:*" "thenclause:*" "elseclause:*"]
+      `tags: ["cond" "it" "if" "anaphoric"]
+  })              
   
 (defun identify_symbols (quoted_form _state)
     (let
@@ -8215,8 +8242,81 @@
            "usage":["arg1:number","arg2?:number"]
            "tags":["rand" "number" "integer" ]
        })
-  
-  
+
+(defun symbol_tree (quoted_form _state _current_path)
+    (let
+        ((acc [])
+         (_state (if _state
+                     _state
+                     {
+                        `symbols:{}
+                     }))
+         (_current_path (or _current_path [])))
+        (declare (array _current_path))
+        (cond
+            (is_array? quoted_form)
+            (do
+                (map (fn (elem idx)
+                         (do 
+                            (ifa (symbol_tree elem _state (+ _current_path idx))
+                                 (push acc it))))
+                     quoted_form)
+                 acc)
+            (and (is_string? quoted_form)
+                 (starts_with? "=:" quoted_form))
+            (do 
+                (unquotify quoted_form))
+                
+                
+            (is_object? quoted_form)
+            (do (for_each (`pset (pairs quoted_form))
+                    (ifa (symbol_tree pset.1 _state (+ _current_path [ pset.1 ]))
+                         (push acc it)))
+                acc)))
+    {
+        `description: "Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen."
+        `usage: ["quoted_form:quote"]
+        `tags: ["structure" "development" "analysis"]
+    })  
+
+(defun resolve_multi_path (path obj not_found)
+  (do 
+      (debug)
+    (cond
+    (is_object? obj)
+    (cond
+      
+      (and (== (length path) 1)
+          (== "*" (first path)))
+	  (or obj
+	      not_found)
+	  (== (length path) 1)
+      (or (prop obj (first path))
+           not_found)
+      (and (is_array? obj)
+           (== "*" (first path)))
+      (for_each (val obj)
+         (resolve_multi_path (rest path) val not_found))
+     
+	  (and (is_object? obj)
+	       (== "*" (first path)))
+	  (for_each (val (values obj))
+	    (resolve_multi_path (rest path) val not_found))
+	  
+	  
+	  
+	  (> (length path) 1)
+	  (resolve_multi_path (rest path) (prop obj (first path)) not_found))
+	 else
+	 not_found))
+   {
+       `tags: ["path" "wildcard" "tree" "structure"]
+       `usage:["path:array" "obj:object" "not_found:?*"]
+       `description:  "Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list."
+   })
+
+
+
 ;; Next construct the environment factory, where we return
 ;; a DLisp Environment closure
 ;; This constructor is to be called with the new operator
@@ -8967,7 +9067,7 @@
 ;; new compiler based environment 
          
           
-(defmacro `ifa (test then elseclause)
+(defmacro ifa (test then elseclause)
     `(let ((it ,#test))
           (if it ,#then ,#elseclause)))
  
@@ -9021,7 +9121,40 @@
                 (identify_symbols pset.1 _state (+ _current_path [ pset.1 ]))))
         _state.symbols))
     
-    ;; initial tester
 
-;; Given an input list containing values in the main list or object or in sublists or objects, 
-;; return a list that contains the path to each element in the input list
+(defun get_definitions (tree_struct)
+    (let
+        ((local_definers {
+                            `let: [1 `* 0]
+                            `fn: [1 `*]
+                            `defvar: [1]
+                            `defun: [2 `*]
+                            })
+         (scopes {})
+         (op nil)
+         (symbol_name nil)
+         (follow_tree (fn (struct)
+                          (cond 
+                              (is_array? struct)
+                              (do
+                                  (= op (prop local_definers struct.0))
+                                  (when op 
+                                      (= symbol_name (resolve_multi_path op struct))
+                                      (if (eq nil (prop scopes symbol_name))
+                                          (do
+                                              (set_prop scopes
+                                                        symbol_name
+                                                        {
+                                                          `defined_by: struct.0
+                                                          `type: "local"
+                                                          `shadows:[]
+                                                         })
+                                              (push (prop (prop scopes symbol_name)
+                                                          `shadows)
+                                                    struct.0))))
+                                  (for_each (`symbols (rest struct))
+                                      (if (is_object? symbols)
+                                          (follow_tree symbols))))))))
+        (follow_tree tree_struct)
+        scopes))
+    
