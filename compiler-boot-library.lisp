@@ -471,9 +471,9 @@
 (defglobal bind_function bind) 
  
 (defmacro is_reference? (val)
-  (and (is_string? val)
-       (> (length val) 2)
-       (starts_with? (quote "=:") val))) 
+  `(and (is_string? ,#val)
+       (> (length ,#val) 2)
+       (starts_with? (quote "=:") ,#val))) 
     
 (defun `scan_str (regex search_string)
      (let
@@ -482,15 +482,21 @@
          (`totals  [])
          (`strs    (+ "" search_string)))
          (if (is_regex? regex)
-            (while (and (= result (-> regex `exec strs ))
-                        result.0
-                        (not (== result.0 last_result.0)))
+            (do 
+                (= regex.lastIndex 0)
+                (while (and (do 
+                               (= result (-> regex `exec strs ))
+                                true)
+                             result
+                            (if last_result
+                                (not (== result.0 last_result.0))
+                                true))
                (do 
                    (= last_result result)
                    (push totals (to_object
                                 (map (fn (v)
                                      [v (prop result v)])
-                                 (keys result))))))
+                                 (keys result)))))))
             (throw (new ReferenceError (+ "scan_str: invalid RegExp provided: " regex))))
          totals)
         {`description: (+ "Using a provided regex and a search string, performs a regex " 
@@ -499,6 +505,7 @@
                           "text, index, and any capture groups.")
          `usage:["regex:RegExp" "text:string"]
          `tags:["regex" "string" "match" "exec" "array"] })
+     
      
 (defun remove_prop (obj key)
       (when (not (== undefined (prop obj key)))
@@ -897,6 +904,11 @@
             comps.0)
         (throw TypeError (+ "path_to_js_syntax: need array - given " (sub_type comps)))))
 
-
+(defun first_is_upper_case? (str_val)
+    (progn
+       (defvar rval (-> str_val `match (new RegExp "^[A-Z]")))
+       (if (and rval rval.0)
+           true
+           false)))
 
 

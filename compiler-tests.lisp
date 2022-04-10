@@ -1392,7 +1392,76 @@
     []
     4
     "Correct type determiniation on overloaded add - number"]
-   
-
-    ])
-
+   ["(let
+      ((blk_counter 0) 
+       (blk_name \"test\"))
+       
+       (= blk_name
+          (or (and blk_name
+                  (+ blk_name (inc blk_counter)))
+              (inc blk_counter)))
+        (or blk_name
+            blk_counter))"
+    []
+    "test1"
+    "Detection of infix operations in value mod operation w/positive or"]
+    ["(let
+      ((blk_counter 0) 
+       (blk_name nil))
+       
+       (= blk_name
+          (or (and blk_name
+                  (+ blk_name (inc blk_counter)))
+              (inc blk_counter)))
+        (or blk_name
+            blk_counter))"
+    []
+    1
+    "Detection of infix operations in value mod operation w/negative or"]
+   ["(let
+      ((blk_counter 0))
+       (inc blk_counter))"
+    []
+    1
+    "Value modification outside of infix_ops"]
+  ["(-> (fn ()
+        (let
+          ((blk_counter 0))
+           (inc blk_counter)))
+      `toString)"
+    []
+   "async function() {\n    let blk_counter=0;\n    return blk_counter+=1\n}"
+   "Value modification outside of infix_ops - output expression"
+     ]
+  ["(let
+      ((blk_counter 1))
+       (> (inc blk_counter) 1))"
+    []
+    true
+    "Comparison operator with embedded value modification compilation - true"
+   ]
+  ["(let
+      ((blk_counter 0))
+       (> (inc blk_counter) 1))"
+    []
+    false
+    "Comparison operator with embedded value modification compilation - false"
+   ]
+  ["{
+      \"==\":\"abc\"
+    }"
+   []
+   `{
+    "==": "abc"
+     }
+   "Proper handling non-valid Javascript characters"]
+  ["(let
+    ((non_valid_js_name? nil)
+     (assignment_value 123))
+      (= non_valid_js_name? assignment_value)
+      non_valid_js_name?)"
+    []
+    123
+    "Handle assignment of non valid js characters in assignment."
+   ]
+])
