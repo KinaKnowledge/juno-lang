@@ -919,7 +919,7 @@
                                   else
                                   (do
                                    (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)
-                                   (console.error "compile: get_lisp_ctx: symbol not found: " name)
+                                   ;(console.error "compile: get_lisp_ctx: symbol not found: " name)
                                    ;(error_log "get_lisp_ctx: unhandled name structure: " name)
                                    undefined)
                                    ;(throw SyntaxError (+ "get_lisp_ctx: unhandled name structure: " name))
@@ -1121,7 +1121,7 @@
                                       (== math_op `+))
                              (= is_overloaded true))
                            
-                           (log "infix +>" math_op is_overloaded (rest tokens))
+                           (log "infix +> op:" math_op "overloaded: " is_overloaded (rest tokens))
                            (if is_overloaded
                                (do
                                 (set_prop tokens
@@ -1926,6 +1926,8 @@
                           (set_prop ctx
                                     `lambda_scope
                                     true)
+                          (set_prop ctx
+                                    `suppress_return false)
                           (cond 
                              fn_opts.synchronous
                              (do
@@ -2785,6 +2787,7 @@
                             (if (is_block? tokens.1.val)
                                 (= target (compile_wrapper_fn tokens.1.val ctx))
                                 (= target (compile tokens.1 ctx)))
+                            (log "compile_call: target: " target)
                             (if (is_complex? tokens.2)
                                 (= method (compile_wrapper_fn tokens.2 ctx))
                                 (= method (compile tokens.2 ctx)))
@@ -3377,6 +3380,7 @@
                (if test_condition.ref
                    (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.name) ctx))
                    (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.val) ctx)))
+               (log "compile_while: test_condition:",(clone prebuild))
                (push prebuild (compile (build_fn_with_assignment body_ref body.val) ctx))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push prebuild t))
@@ -3474,7 +3478,11 @@
                                             (== declaration "boolean")
                                             (do
                                                (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type Boolean))) 
+                                                  (set_declaration ctx name `type Boolean)))
+                                            (== declaration "regexp")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type RegExp)))   
                                                )))
                                  (declare_log "<-" (clone acc))
                                  acc)))
