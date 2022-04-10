@@ -1,450 +1,526 @@
-;; Compiler Reader
-;; (c) 2022 Kina, LLC
-;; -----------------------------
+;; Compiler Test Functions
+
+;; Import into the Working Environroment for testing
+
+(do
+(defun `dlisp_tab (passed_env)
+  (let
+      ((`result nil)
+       (`compiled nil)
+       (`view nil)
+       (`env (or passed_env env))
+       (`lisp_view (div { `style: "height: calc(100% - 10px);" }))
+       (`js_code_view (div { `style: "height: calc(100% - 10px);" } ))
+       (`js_code_editor
+         (controls/code_editor { `parent: js_code_view `javascript_mode: true }))
+       (`success false)
+       (`lisp_code_editor (controls/code_editor {
+                                                `parent: lisp_view
+                                                }))
+       (`output_view (div { `style: "height: calc(100% - 10px)" } ))
+       (`output_editor
+         (controls/code_editor {
+                               `parent: output_view
+                               }))
+       (`messages_view (div { `style: "height: calc(100% - 10px)" } "Messages"))
+       (`messages_editor
+         (controls/code_editor { `parent: messages_view }))
+       (`compile_button (button { `class: "MenuButton2" } "Compile"))
+       (`evaluate_button (button { `class: "MenuButton2" } "Evaluate"))
+       (`evaluate_js_button (button { `class: "MenuButton2" } "Evaluate JS"))
+       (`controls [ compile_button  evaluate_button evaluate_js_button ])
+       (`control_view (div { `style: "display: flex; margin: 5px;" } 
+                           controls))
+       
+       (`compile (fn (eval_code?)
+                     (do
+                      ;(set_disabled compile_button evaluate_button evaluate_js_button)
+                      (clear_log)
+                      (console.clear)
+                      
+                      (notify "Running")
+                       (try
+                        (do 
+                            (if eval_code?
+                                (= result
+                                   (-> env `evaluate (-> lisp_code_editor.editor `getValue)
+                                       nil
+                                       { `error_report: (fn (errors)
+                                                            (display_errors errors))
+                                         `on_compilation_complete: (fn (compiled_code)
+                                                                       (disp_comp_results compiled_code)) }))
+                                (= compiled (compiler (-> env `read_lisp (-> lisp_code_editor.editor `getValue))
+                                                      { `formatted_output: true `js_out: true })))
+                           (disp_comp_results compiled)
+                           (-> output_editor.editor `setValue (cond
+                                                                  (== result undefined)
+                                                                  "[undefined]"
+                                                                  (== result nil)
+                                                                  "[nil]"
+                                                                  (is_function? result)
+                                                                  (-> result `toString)
+                                                                  else
+                                                                  (JSON.stringify result nil 4)))
+                           (-> output_editor.editor `gotoLine 0 0))        
+                        (catch Error (`e)
+                               (do
+                                (log (+ "COMPILE ERROR:" e)))))
+                       
+                       (set_enabled compile_button evaluate_button evaluate_js_button))))
+       (`resize_observer
+         nil)
+       (`display_errors
+           (fn (errors)
+               (do
+                   (-> messages_editor.editor `setValue (JSON.stringify errors nil 4))
+                   (-> messages_editor.editor `gotoLine 0 0))))
+       (`disp_comp_results
+         (fn (compiled)
+             (cond
+               (and compiled
+                    (== compiled.length 2))
+               
+               (do 
+                   (console.log "dlisp_tab: compiled text: " compiled.1)
+                   (-> js_code_editor.editor `setValue 
+                       compiled.1)
+                   (-> js_code_editor.editor `gotoLine 0 0))
+               
+               compiled
+               (do 
+                   (console.log "dlisp_tab: compiled text: " compiled)
+                   (-> js_code_editor.editor `setValue
+                       compiled)
+                   (-> js_code_editor.editor `gotoLine 0 0)))))
+       (`qview 
+         (quad_view [ lisp_view
+                    js_code_view
+                    messages_view
+                    output_view ]
+                    { `on_size_adjust: (fn ()
+                                           (do
+                                            (-> js_code_editor.editor `resize)
+                                             (-> lisp_code_editor.editor `resize))) }
+                    )))
+    (= view
+       (div { `style: "height: calc(100% - 10px); overflow: hidden;"}
+            control_view
+            qview.view))
+    
+    (-> lisp_code_editor.editor.commands `addCommand
+        {
+        `name: "exec"
+        `bindKey: { `win: "Shift-Enter" `linux: "Shift-Enter" `mac: "Shift-Enter" }
+        `exec: compile
+        })
+    (attach_event_listener compile_button `click
+                           compile)
+    
+    (attach_event_listener evaluate_button `click
+                           (fn (e)
+                               (compile true)))
+    (attach_event_listener evaluate_js_button `click
+                           (fn (e)
+                               (let
+                                   ((`f (new AsyncFunction "Environment" 
+                                             (-> js_code_editor.editor `getValue)))
+                                    (`result (f env)))
+                                   (-> output_editor.editor `setValue (cond
+                                                                  (== result undefined)
+                                                                  "[undefined]"
+                                                                  (== result nil)
+                                                                  "[nil]"
+                                                                  (is_function? result)
+                                                                  (-> result `toString)
+                                                                  else
+                                                                  (JSON.stringify result nil 4)))  )))    
+                                   
+                                         
+    
+    (setTimeout (fn ()
+                    (do 
+                     (-> qview `set_vertical_position (- window.innerWidth (/ window.innerWidth 2)))
+                     (-> qview `set_horizontal_position (- window.innerHeight (/ window.innerHeight 3)) (- window.innerHeight (/ window.innerHeight 2)))))
+                
+                1000)
+    view))
+
+(defun `dlisp_tabs ()
+   (do
+       (tab ["Dlisp 1" (dlisp_tab)] true)
+       (sleep 1)
+       (tab ["Dlisp 2" (dlisp_tab)] true)
+       (sleep 1)
+       (tab ["Dlisp 3" (dlisp_tab)] true)
+       (sleep 1)
+       (tab ["Dlisp 4" (dlisp_tab)] true)
+       (sleep 1)
+       (tab ["Dlisp 5" (dlisp_tab)] true)))
 
 
-(defglobal `reader (fn (text opts)
-        (let
-            ((`output_structure [])
-             (`idx -1)
-             (`line_number 0)
-             (`column_number 0)
-             (`opts (or opts {}))
-             (`len (- (length text) 1))
-             (`in_buffer (split_by "" text))
-             (`in_code 0)
-             (`in_quotes 1)
-             (`in_long_text 2)
-             (`in_comment 3)
-             (`local_text (fn ()
-                              (let
-                                  ((`start (Math.max 0 (- idx 10)))
-                                   (`end   (Math.max (length in_buffer) (+ idx 10))))
-                                  (join "" (slice in_buffer start end)))))
-                                           
-             (`position (fn ()
-                            (+ "line: " line_number " column: " column_number)))
-             (`in_single_quote 4)
-             (`mode in_code)  ;; start out in code
-             (`read_table {
-                           "(":[")" (fn (block)
-                                       (do ;(log "got_paren_block:" block)
-                                           block))]
-                           "[":["]" (fn (block)
-                                        (do ;(log "got_bracket_block:" block)
-                                            block))]
-                           "{":["}" (fn (block)
-                                         (let
-                                             ((`obj (new Object))
-                                              (`idx -1)
-                                              (`key_mode 0)
-                                              (`need_colon 1)
-                                              (`value_mode 2)
-                                              (`key nil)
-                                              (`value nil)
-                                              (`cpos nil)
-                                              (`state key_mode)
-                                              (`block_length (- (length block) 1)))
-                                           ;(console.log "handle_brace->" block)
-                                            ;(log "handle_brace->" (JSON.stringify block))
-                                           (while (< idx block_length)
-                                                  (do
-                                                   (inc idx) ; move to next position - assumption we positioned for the key
-                                                   (= key (prop block idx))  ;; get the value
-                                                   (when (and (is_array? key)
-                                                              (== key.length 2)
-                                                              (== key.0 (quotel "=:quotem"))
-                                                              (is_string? key.1))
-                                                        (= key key.1))
-                                                    (if (and (is_string? key)
-                                                             (starts_with? "=:" key)
-                                                             (> (length key) 2))
-                                                        (= key (-> key `substr 2)))
-                                                    (cond
-                                                      (blank? key)
-                                                      (throw SyntaxError (+ "" (position) ": blank or nil key: " (prop block idx) " -->" (local_text) "<--"))
-                                                      (is_number? key)
-                                                      (do
-                                                        (inc idx)
-                                                        (set_prop obj
-                                                                  key
-                                                                 (prop block idx)))
-                                                      (and (is_string? key)
-                                                           (contains? ":" key)
-                                                           (not (ends_with? ":" key)))
-                                                      (do
-                                                        (= cpos (-> key `indexOf ":"))
-                                                        (= value (-> key `substr (+ cpos 1)))
-                                                        (= key (-> key `substr 0 cpos))
-                                                        (set_prop obj
-                                                                  key
-                                                                  value))
-                                                      else
-                                                      (do 
-                                                          (inc idx)         ;; and move to the value 
-                                                          ;(log "key: " key key.length "value:" (prop block idx))
-                                                          
-                                                        (if (ends_with? ":" key)
-                                                            (= key (chop key)) ;; remove the colon
-                                                            (do                ;; otherwise the next value must be a colon 
-                                                             (if (== (prop block idx) ":")
-                                                                 (inc idx) ;; it is, move past it       ;; <<---- BUG: will insert return
-                                                                 (throw SyntaxError (+ "" (position) "missing colon in object key: " key " -->" (local_text))))))
-                                                        (set_prop obj
-                                                                  key
-                                                                  (prop block idx))))))
-                                           obj))]
-                                              
-                           "\"":["\"" (fn (block)
-                                          (do 
-                                              ;(log "got quote block:" block)
-                                              ["quotes" block]))]
-                          
-                                              })
-             (`get_char (fn (pos)
-                            (prop in_buffer pos)))
-             (`handle_escape_char (fn (c)
-                                      (let
-                                          ((`ccode (-> c `charCodeAt 0)))
-                                        (cond
-                                          (== ccode 34)   ;; backslash
-                                          c
-                                          (== ccode 92)
-                                          c
-                                          (== c "t")
-                                          9
-                                          (== c "n")
-                                          10
-                                          (== c "r")
-                                          13
-                                          (== c "f")
-                                          12 ;; formfeed
-                                          (== c "b")
-                                          8 ;; backspace
-                                          else  ;; just return the character
-                                          c))))
-             
-             (`process_word (fn (word_acc backtick_mode)
-                                (let
-                                    ((`word (join "" word_acc))
-                                     (`word_as_number (parseFloat word)))
-                                  ;(log "process_word: " word word_as_number backtick_mode)
-                                  (cond
-                                    (== "true" word)
-                                    true
-                                    (== "false" word)
-                                    false
-                                    (== ":" word)
-                                    word
-                                    (== ",@" word)
-                                    (quotel "=$,@")
-                                    (or (== ",#" word)
-                                        (== "##" word))
-                                    (quotel "=:##")
-                                    
-                                    (== "=$,@" word)
-                                    (quotel "=$,@")
-                                    
-                                    (== (quotel "=:##") word)
-                                    (quotel "=:##")
-                                    
-                                    (isNaN word_as_number)
-                                    (do 
-                                     ;(log "process_word: returning: " word)
-                                     (cond 
-                                           (== word (quotel "=:"))
-                                           (do 
-                                              (quotel "=:"))
-                                           (contains? word [(quotel "=:(") (quotel "=:)") (quotel "=:'")])
-                                           (do 
-                                               word)
-                                           (== backtick_mode 1)
-                                           word
-                                           else 
-                                           (+ (quotel "=:") word))) ;; since not in quotes, return a reference 
-                                    (is_number? word_as_number)
-                                    word_as_number
-                                    else
-                                    (do 
-                                     (log "reader: " (position) " what is this?" word word_acc (local_text))
-                                     word)))))
-             
-             (`registered_stop_char nil)
-             (`handler_stack [])
-             (`handler nil)
-             (`c nil)
-             (`next_c nil)
-             (`depth 0)
-             (`stop false)
-             (`read_block (fn (_depth _prefix_op)
-                              (let
-                                  ((`acc [])
-                                   (`word_acc [])
-                                   (`backtick_mode 0)
-                                   (`escape_mode 0)
-                                   (`last_c nil)
-                                   (`block_return nil))
-                                (when _prefix_op
-                                  (push acc
-                                        _prefix_op))
-                                ;(debug)
-                                (while (and (not stop)
-                                            (< idx len))
+                                        ;(show_test_dialog)
+(do
+ 
+ (defun `show_test_dialog (test_number)
+   (let
+       ((`test_detail (or (prop compiler_tests test_number)
+                          ["" [] undefined "No Test"]))
+        (`result nil)
+        (`compiled nil)
+        (`setup_code (prop test_detail 5)))
+     (dialog_window 
+      (let
+          ((`view (div { `style: "height: 700px; width: 700px;" } ))
+           (`test_output (div { `style: "height: 50px"} "Test Output" ))
+           
+           (`test_code_view 
+             (if setup_code
+                 (div { `style: "height: 200px;" } )
+                 (div { `style: "height: 200px;" } )))
+           (`js_code_view 
+             (div { `style: "height: 300px;" } ))
+           (`js_code_editor
+             (controls/code_editor { `parent: js_code_view `javascript_mode: true }))
+           (`setup_code_view 
+             (when setup_code
+               (div { `style: "margin-top: 4px; height: 50px;" } )))
+           (`success false)
+           (`test_code_editor (controls/code_editor {
+                                                    `parent: test_code_view
+                                                    }))
+           (`run_test_button (button { `class: "MenuButton2" `style: "background: darkblue; color: white;" } "Run Test"))
+           (`compile_button (button { `class: "MenuButton2" } "Compile Only"))
+           (`setup_code_editor 
+             (when setup_code
+               (controls/code_editor {
+                                     `parent: setup_code_view
+                                     })))
+           (`disp_comp_results
+             (fn (compiled)
+                 (cond
+                   (and compiled
+                        (== compiled.length 2))
+                   
+                   (-> js_code_editor.editor `setValue 
+                       compiled.1)
+                   
+                   compiled
+                   (-> js_code_editor.editor `setValue
+                       (as_lisp compiled)))))
+           (`compile (fn (eval_code?)
+                         (do
+                          (set_disabled compile_button run_test_button)
+                          (clear_log)
+                           (try
+                            (if eval_code?
+                                (-> env `evaluate (-> test_code_editor.editor `getValue)
+                                    nil
+                                    { `on_compilation_complete: (fn (compiled_code)
+                                                                    (disp_comp_results compiled_code)) })
+                                (= compiled (compiler (read_lisp (-> test_code_editor.editor `getValue))
+                                                      { `formatted_output: true `js_out: true })))
+                            
+                            (catch Error (`e)
+                                   (do
+                                    (log (+ "COMPILE ERROR:" e)))))
+                           (disp_comp_results compiled)
+                           (set_enabled compile_button run_test_button)))))
+        
+        (-> view `append (div { } "Test Code"))
+        (-> view `append test_code_view)
+        (-> view `append (div { } "Compiled Code"))
+        (-> view `append js_code_view)
+        
+        (-> test_code_editor.editor.commands `addCommand
+            {
+            `name: "exec"
+            `bindKey: { `win: "Shift-Enter" `linux: "Shift-Enter" `mac: "Shift-Enter" }
+            `exec: compile
+            }) 
+        (log "TEST DETAIL: " test_detail)
+        (when setup_code
+          (-> view `append (div { } "Setup Code"))
+          (-> view `append setup_code_view))
+        (-> view `append run_test_button)
+        (-> view `append compile_button)
+        (-> view `append test_output)
+        
+        (try 
+         (do 
+          (-> test_code_editor.editor `setValue test_detail.0)
+          (when setup_code (-> setup_code_editor.editor `setValue test_detail.5))
+           (= success true))
+         (catch Error (`e)
+                (log (+ "Error: " e))))
+        (when (not success)
+          (-> test_code_editor.editor `setValue (+ ";; No test found! ??")))
+        (-> test_code_editor.session `setUseWrapMode false)      
+        (-> test_code_editor.editor `setReadOnly false)
+        (when setup_code_editor
+          (-> setup_code_editor.editor `setReadOnly false)
+          (-> setup_code_editor.session `setUseWrapMode false))
+        (attach_event_listener compile_button
+                               `click
+                               compile)
+        (if test_number             
+            (attach_event_listener run_test_button
+                                   `click
+                                   (fn (e)
+                                       (do
+                                        (set_disabled compile_button run_test_button)
+                                        (try
+                                         
+                                         (= compiled (compiler (read_lisp (-> test_code_editor.editor `getValue))
+                                                               { `formatted_output: true `js_out: true }))
+                                         
+                                         (catch Error (`e)
+                                                (do
+                                                 (log (+ "COMPILE ERROR:" e)))))
+                                         (try
+                                          (= result (first (run_tests test_number (+ { `test_code: (-> test_code_editor.editor `getValue) }
+                                                                                     (if setup_code
+                                                                                         { `setup_code:  (-> setup_code_editor.editor `getValue) }
+                                                                                         {})))))
+                                          (catch Error (`e)
+                                                 (do
+                                                  (log (+ "ERROR: " e)))))
+                                         (log "COMPILED: " compiled)
+                                         (cond
+                                           (and compiled
+                                                (== compiled.length 2))
+                                           (-> js_code_editor.editor `setValue 
+                                               compiled.1)
+                                           compiled
+                                           (-> js_code_editor.editor `setValue
+                                               (as_lisp compiled)))
+                                         
+                                         (log "RESULT: " result)
+                                         (set_enabled compile_button run_test_button)
+                                         (-> test_output
+                                             `replaceChildren
+                                             (table { `style: "width: 100%" } 
+                                                    (thead
+                                                     (th "Pass?") (th "Result") (th "Expected"))
+                                                    (tbody
+                                                     (tr
+                                                      (td result.2)
+                                                      (td (as_lisp result.3))
+                                                      (td (as_lisp result.4)))))))))
+            (attach_event_listener run_test_button
+                                   `click
+                                   (fn (e)
                                        (do 
-                                         (inc idx)
-                                         
-                                         (= escape_mode (Math.max 0 (- escape_mode 1)))
-                                         (= c (get_char idx))
-                                         (= next_c (get_char (+ idx 1)))
-                                         (when (== c "\n")
-                                             (inc line_number)
-                                             (= column_number 0))
-                                         ;(log _depth "C->" c next_c mode escape_mode (clone acc) (clone word_acc) handler_stack.length)
-                                         
-                                         ;; read until the end or are stopped via debugger
-                                         ;; we have a few special cases that facilitate the transformation
-                                         ;; into a JSON structure as well as comments
-                                         
-                                         ;; consult the read table and accumulate chunks into blocks
-                                         ;; once done with the block pass to the read table handler if it exists.
-                                         
-                                         (cond 
-                                           (and (== c "\n")
-                                                (== mode in_comment))
-                                           (do 
-                                               (= mode in_code)
-                                               (break))
-                                           
-                                           (and (> mode 0)
-                                                ;(== escape_mode 0)
-                                                (== 92 (-> c `charCodeAt 0)))
-                                           (do 
-                                            (= escape_mode 2))
-                                        
-                                           (and (> mode 0)
-                                                (== escape_mode 1))
-                                           (do 
-                                               ;(console.log "escape mode - handling the escape character")
-                                               (push word_acc (handle_escape_char c)))
-                                           
-                                           (and (== mode in_long_text)
-                                                (== escape_mode 0)
-                                                (== c "|"))
-                                           (do 
-                                               (push acc (join "" word_acc))
-                                               (= word_acc [])
-                                               (= mode in_code)
-                                               (break))
-                                           
-                                           (and (== mode in_quotes)
-                                                (== escape_mode 0)
-                                                (== c "\""))
-                                           (do
-                                            (= acc (+ (join "" word_acc)))
-                                            (= word_acc [])
-                                            (= mode in_code)
-                                            (break))
-                                           
-                                           (and (== mode in_single_quote)
-                                                (== escape_mode 0)
-                                                (== c "\'"))
-                                           (do
-                                            (= acc (+ (join "" word_acc)))
-                                            (= word_acc [])
-                                            (= mode in_code)
-                                            (break))
-                                           
-                                           (and (== c "|")
-                                                (== mode in_code))
-                                           (do 
-                                             (if (> word_acc.length 0)
-                                                 (do 
-                                                   (push acc (process_word word_acc))
-                                                   (= word_acc [  ])))
-                                             (= mode in_long_text)
-                                             (= block_return (read_block (+ _depth 1)))
-                                             (when (== backtick_mode 1)
-                                               (= block_return [(quotel "=:quotem") block_return])
-                                               (= backtick_mode 0))
-                                             (push acc block_return))
-                                         
-                                           (and (== c "\"")
-                                                (== escape_mode 0)
-                                                (== mode in_code))
-                                           (do 
-                                            (if (> word_acc.length 0)
-                                                (do 
-                                                 (push acc (process_word word_acc))
-                                                 (= word_acc [  ])))
-                                            (= mode in_quotes)
-                                            (= block_return (read_block (+ _depth 1)))
-                                            (when (== backtick_mode 1)
-                                               ;(= block_return [(quote "=:quotem") block_return])
-                                               (= backtick_mode 0))
-                                            (push acc block_return))
+                                        (set_disabled compile_button run_test_button)
+                                        (compile true)
+                                         (set_enabled compile_button run_test_button)))))
+        
+        
+        (setTimeout (fn ()
+                        (do 
+                         (-> test_code_editor.editor `resize)
+                         (-> test_code_editor.editor `moveCursorTo 0 0)
+                          (-> test_code_editor.editor `clearSelection))
+                        (when setup_code_editor
+                          (-> setup_code_editor.editor `resize)
+                          (-> setup_code_editor.editor `moveCursorTo 0 0)
+                          (-> setup_code_editor.editor `clearSelection)))
+                    100)
+        view)
+      {
+      `title: (+ "Test " (or test_number "") ": " test_detail.3)
+      `width: 730
+      })))
+ 
+
+
+ 
+ (defun `test_code (test_number)
+   (prop (prop compiler_tests test_number) 0))
+  (defun `cc () (do (clear_log) (console.clear)))
+  (defun `run_tests (test_numbers opts)
+    (let
+        ((`results nil)
+         (`clog (defclog { `background: "black" `color: "white" } ))
+         (`test_function nil)
+         (`tests compiler_tests)  ;; shadow if we slice a certain subset
+         (`test_output nil)
+         (`tester compiler)
+         (`quiet_mode true)
+         (`env (cond opts.new_env
+                    (make_environment)
+                    opts.env
+                    opts.env
+                    else
+                    env))
+         (`idx -1)
+         (`andf (fn (args)
+                    (let
+                        ((`rval true))
+                      (for_each (`a (or args []))
+                                (when (not a)
+                                  (= rval false)
+                                  (break)))
+                      rval))))
+      
+      (clear_log)
+      
+      (clog "run_tests" "STARTING TESTS" (-> env `id))
+      (cond 
+        (and (eq opts nil)
+             (is_object? test_numbers))
+        (= opts test_numbers)
+        (and (is_object? opts)
+             (is_array? test_numbers))
+        (do 
+         (= tests (nth test_numbers tests)))
+        (and (not (is_object? test_numbers))
+             (is_number? test_numbers))
+        (do 
+         (= quiet_mode false)
+         (= tests (nth [ test_numbers ] tests))))
+      
+      (= results
+         (for_each (`test tests)
+                   (do
+                    (defvar `result nil)
+                    (= test_output nil)
+                     (inc idx)
+                     (clog "START TEST:      " idx test.3)
+                     (clog "TEST EXPRESSION: " idx (or opts.test_code
+                                                       (as_lisp test.0)))
+                     (sleep 0.01)
+                     (when (or opts.setup_code test.5)
+                       (-> env `evaluate (or opts.setup_code
+                                             test.5)))  ;; environmental setup
+                     (if test.4
+                         (= tester (fn (v)
+                                       (-> env `evaluate v)))
+                         (= tester 
+                                        ;(fn (source)
+                                        ;   (-> env `evaluate source nil { `env: env `quiet_mode: true }))))
+                            (bind_function env.evaluate env)))
+                     (= result (do 
+                                (= test_function
+                                   (try 
+                                    (tester (or opts.test_code test.0) nil { `env: env `quiet_mode: quiet_mode })
+                                    (catch Error (`e)
+                                           e)))
+                                (clog "run_tests: test function:" (sub_type test_function) test_function )
+                                 (console.log "test_function: " test_function)
+                                 (cond 
+                                   (and (is_object? test_function)
+                                        test_function.message)
+                                   
+                                   (+ "FAIL: [COMPILE]: " (as_lisp test_function))
+                                   (is_function? test_function)
+                                   (do 
+                                    (log "running function: " test.1)
+                                    (= test_output
+                                     (try
+                                      (if (> test.1.length 0) 
+                                          (apply test_function test.1)
+                                          (test_function))
+                                      (catch Error (`e)
+                                             e)))
+                                     (log "test output: " test_output))
+                                   else  ;; non function - don't try and evaluate it
+                                   (do (log "run_tests: non function returned: " test_function)
+                                       (= test_output test_function)))
+                                 (clog "TEST OUTPUT:" (sub_type test_function) test_output )
+                                 (if (and (is_object? test_output)
+                                          test_output.message)
+                                     (+ "FAIL: [EXEC]:" (+ "compiler returned: " (as_lisp test_function) "->" (as_lisp test_output.message)))
+                                     test_output)))
+                     (console.log "run_tests: output: " result)                   
+                    [ idx
+                     (or test.3 (as_lisp test.0))
+                     (== (as_lisp result) (as_lisp test.2))
+                     (as_lisp result)
+                     (as_lisp test.2)])))
+      (cond opts.summary
+            (andf (each results `1))
+            opts.table
+            (controls/table2 results
+                                          {
+                                          `on_row_click: (fn (value position)
+                                                             (show_test_dialog value.0))
+                                          `read_only: true
+                                          `title: (if (not (== false (andf (each results `2))))
+                                                      "PASS"
+                                                      "FAIL")
+                                          `columns:[
+                                          {`name: "Test #" `width: 50 }
+                                          {`name: "Test Name" `width: 300 }
+                                          {`name: "Pass" `width: 50 }
+                                          {`name: "Received"  `width: 200}
+                                          {`name: "Expected"  `width: 50} ]
+                                          `row_style_callback: (fn (row_data data_offset viewport_row_offset)
+                                                                   { `columns: [nil, nil, (if (== row_data.2 true) { `style: "background: #50FF5020;" } { `style: "background: #FF505020;" }) ] })
                                           
-                                           (and (== c "\'")
-                                                (== escape_mode 0)
-                                                (== mode in_code))
-                                           (do 
-                                            (if (> word_acc.length 0)
-                                                (do 
-                                                 (push acc (process_word word_acc))
-                                                 (= word_acc [  ])))
-                                            (= mode in_single_quote)
-                                            (= block_return (read_block (+ _depth 1)))
-                                            (when (== backtick_mode 1)
-                                               ;(= block_return [(quote "=:quotem") block_return])
-                                               (= backtick_mode 0))
-                                            (push acc block_return))
-                                           
-                                           
-                                           
-                                           (== mode in_comment)
-                                           false ;; just discard the character
-                                           
-                                           (and (== c ";")
-                                                (== mode in_code))
-                                           (do
-                                               (if (> word_acc.length 0)
-                                                (do 
-                                                 (push acc (process_word word_acc))
-                                                 (= word_acc [  ])))
-                                            (= mode in_comment)
-                                            (read_block (+ _depth 1))) ;; read the block but just discard the contents since it is a comment.
-                                           
-                                           ;; at depth+1, we read until we encounter a block end character
-                                           ;; which terminates the present block, or if we encounter another
-                                           ;; block begin character, we start a new block that is nested in
-                                           ;; in the present block.  
-                                           
-                                           (and (== mode in_code)
-                                                (> (length handler_stack) 0)
-                                                (== c (prop (last handler_stack) 0)))
-                                           (do
-                                             ;(log _depth "at block end, getting last handler from handler stack")
-                                             ;; break out and return the accumulator which will be handled by 
-                                             ;; the calling level 
-                                             (break))
-                                            
-                                            
-                                           
-                                           ;; start block read
-                                           (and (== mode in_code)
-                                                (prop read_table c)
-                                                (first (prop read_table c)))
-                                           (do 
-                                             ;(log _depth "new handler key: " c "pushing into handler_stack.." (prop read_table c))
-                                            
-                                             (push handler_stack 
-                                                  (prop read_table c))
-                                              
-                                             (if (> word_acc.length 0)
-                                                 (do 
-                                                     (push acc (process_word word_acc backtick_mode))
-                                                     (= backtick_mode 0)
-                                                     (= word_acc [])))
-                                             
-                                             ;; now read the block until the block complete character is encountered...
-                                             (= block_return (read_block (+ _depth 1)))
-                                             ;(log _depth "<- block return: " block_return)
-                                             ;; handle the returned block that was read with the handler
-                                             (= handler (prop (pop handler_stack) 1))
-                                             
-                                             (= block_return 
-                                                   (handler block_return))
-                                               
-                                             ;; TODO  
-                                             ;(when (== c "}")
-                                             ;   (= backtick_mode 0))
-                                             ;(log _depth "received handler return: " block_return)
-                                             
-                                             ;; if the block is undefined, do not add it to the accumulator, other add the block structure
-                                             ;; to the accumulator and discard the block complete character
-                                             
-                                             (when (not (== undefined block_return))
-                                                (when (== backtick_mode 1)
-                                                      (= block_return [(quotel "=:quotem") block_return])
-                                                      (= backtick_mode 0))
-                                                (push acc block_return)))
-                                             
-                                            
-                                           
-                                           (and (== mode in_code)
-                                                (== c "`"))
-                                           (do 
-                                            (if (> word_acc.length 0)
-                                                (do 
-                                                    (push acc (process_word word_acc))
-                                                    (= word_acc [])))
-                                            (= backtick_mode 1))
-                                            
-                                           (and (== mode in_code)
-                                                (== c ":")
-                                                (== word_acc.length 0)
-                                                (> acc.length 0)
-                                                (is_string? (last acc)))
-                                            (push acc
-                                                 (+ (pop acc) ":"))
-                                           
-                                           (and (== mode in_code)
-                                                (== last_c ",")
-                                                (or (== c "#")
-                                                    (== c "@")))
-                                           (do
-                                               ;(log "special operator: " (+ last_c c))
-                                               (push word_acc c)
-                                               (push acc (process_word word_acc))
-                                               (= word_acc []))
-                                           
-                                           (and (== mode in_code)
-                                                (or (== c " ")
-                                                    (== (-> c `charCodeAt 0) 10)
-                                                    (== (-> c `charCodeAt 0) 9)
-                                                    (and (== c ",")
-                                                         (not (== next_c "@"))
-                                                         (not (== next_c "#")))))
-                                                    
-                                           (do 
-                                               ;(when opts.debug (log "whitespace:" c))
-                                           (if (> word_acc.length 0)
-                                               (do 
-                                                (if (== backtick_mode 1)
-                                                    (do 
-                                                        (push acc (process_word word_acc backtick_mode))
-                                                        (= backtick_mode 0))
-                                                    (push acc (process_word word_acc)))
-                                                (= word_acc []))))
-                                            
-                                           (and (== mode in_code)
-                                                (== (-> c `charCodeAt 0) 13))
-                                            false ;; discard it as whitespace 
-                                            else
-                                           (do 
-                                            ;(when opts.debug (log "++word_acc:" c))
-                                            (push word_acc c)))
-                                      (inc column_number)
-                                      (= last_c c)))
-                                (if (> word_acc.length 0)
-                                    (do 
-                                     ;(log "outside of loop: pushing into acc, backtick_mode:",backtick_mode, word_acc)
-                                     (push acc (process_word word_acc backtick_mode))
-                                     
-                                        ;(push acc (join "" word_acc))
-                                     (= word_acc [])))
-                                ;(log _depth "read_block: <-"  acc)
-                                acc))))
-          
-          (console.log "read->" in_buffer )
-          (= output_structure (read_block 0))
-          
-          (if (and (is_array? output_structure)
-                   (> (length output_structure) 1))
-              (do 
-                  (prepend output_structure
-                           (quotel "=:progn"))
-                  (console.log "read (multiple forms) <-" output_structure)
-                  (first [output_structure]))
-          ;(when opts.debug (console.log "read<-" (first output_structure)))
-              (first output_structure)))))
+                                          })
+            else
+            results)))
+  (defun `tcq (test_num)
+    (do 
+     (clear_log)
+     (display [(test_code test_num)
+      (compiler (read_lisp (test_code test_num))) { `only_code: true })]))
+  )         
+
+
+;; reader test
+(defun `run_reader_tests ()
+  (let
+      ((`results [])
+       (`reader_output nil)
+       (`read_lisp_output nil)
+       (`test_result nil)
+       (`idx -1)
+       (`andf (fn (args)
+                    (let
+                        ((`rval true))
+                      (for_each (`a (or args []))
+                                (when (not a)
+                                  (= rval false)
+                                  (break)))
+                      rval))))
+    (for_each (`test compiler_tests)
+        (do
+            (inc idx)
+            (log "RUNNING TEST: " test.3 test.0)
+            (sleep 0.01)
+            (= reader_output (reader test.0))
+            (= read_lisp_output (read_lisp test.0))
+            (= test_result (== (JSON.stringify reader_output) (JSON.stringify  read_lisp_output)))
+            (push results
+                  [idx
+                   (or test.3 (as_lisp test.0))
+                   test_result
+                   reader_output
+                   read_lisp_output])
+            (when (not test_result)
+                  (console.log "FAIL TEST:", test reader_output read_lisp_output))))
+                  
+    
+    (render_view (controls/table2 results
+                                  {
+                                   `on_row_click: (fn (value position)
+                                                             (show_test_dialog value.0))
+                                   `read_only: true
+                                   `title: (if (not (== false (andf (each results `2))))
+                                              "PASS"
+                                              "FAIL")
+                                   `columns:[
+                                          {`name: "Test #" `width: 50 }
+                                          {`name: "Test Name" `width: 300 }
+                                          {`name: "Pass" `width: 50 }
+                                          {`name: "Reader"  `width: 200}
+                                          {`name: "Read Lisp"  `width: 200} ]
+                                   `row_style_callback: (fn (row_data data_offset viewport_row_offset)
+                                                           { `columns: [nil, nil, (if (== row_data.2 true) { `style: "background: #50FF5020;" } { `style: "background: #FF505020;" }) ] })
+                                   }
+                                      
+                                   ))))
+
+true)
 
