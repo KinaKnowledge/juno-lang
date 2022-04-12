@@ -27,6 +27,17 @@
             (join "" acc))
         text)))
     
+(defglobal `embed_compiled_quote  
+  (fn (type tmp_name tval)
+    (cond
+        (== type 0)
+        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        (== type 1)
+        [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]
+        (== type 2)
+        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        (== type 3)
+        [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]))) 
     
 
 ;; This function will be executed at the time of the compile of code.
@@ -383,4 +394,73 @@
         `eval_when: { `compile_time: true }
     })  
 
+(defun `object_methods (obj)
+    (let
+        ((`properties (new Set))
+         (`current_obj  obj))
+     (while current_obj
+        (do
+            (map (fn (item)
+                     (-> properties `add item))
+                 (Object.getOwnPropertyNames current_obj))
+            (= current_obj (Object.getPrototypeOf current_obj))))
+    (-> (Array.from (-> properties `keys))
+        `filter (fn (item)
+                    (is_function? item))))
+    {
+     `description: "Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains."
+     `usage: ["obj:object"]
+     `tags: [`object `methods `functions `introspection `keys]
+     })    
+ 
+(defun `expand_dot_accessor (val ctx)
+  (let
+      ((`comps (split_by "." val))
+       (`find_in_ctx (fn (the_ctx)
+                         (cond
+                           (prop the_ctx.scope reference)
+                           (prop the_ctx.scope reference)
+                           the_ctx.parent
+                           (find_in_ctx the_ctx.parent))))
+       (`reference (take comps))
+       
+       (`val_type (find_in_ctx ctx))) ;; contains the named reference, comps now will have the path components
+    
+                                        ;(log "expand_dot_accessor: " val reference val_type comps)
+    (cond
+      (== 0 comps.length)
+      reference
+      (and (is_object? val_type)
+           (contains? comps.0 (object_methods val_type))
+           (not (-> val_type `propertyIsEnumerable comps.0)))
+      val  ;; direct reference to a special property
+      else 
+      (join ""
+            (conj [ reference ]
+                  (flatten (for_each (`comp comps)
+                                     (if (is_number? comp)
+                                         [ "[" comp "]" ]
+                                         [ "[\"" comp "\"]" ]))))))))
+
+
+(defun `safe_access (token ctx sanitizer_fn)
+    (let
+        ((`comps nil)
+         (`acc [])
+         (`acc_full [])
+         (`pos nil))
+     (= comps (split_by "." token.name))
+     (if (== comps.length 1)
+         token.name
+         (do 
+             (set_prop comps
+                       0
+                       (sanitizer_fn comps.0))
+             (while (> comps.length 0)
+                (do 
+                    (push acc
+                          (take comps))
+                    (push acc_full
+                          (expand_dot_accessor (join "." acc) ctx))))
+             (flatten ["(" (join "&&" acc_full) ")" ])))))    
 

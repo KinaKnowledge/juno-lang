@@ -25,8 +25,29 @@
             (join "" acc))
         text)))
     
-    
 (defglobal get_outside_global get_outside_global)      
+
+
+;; Convenience function with embedded quoting for the compiler
+
+(defglobal embed_compiled_quote  
+  (fn (type tmp_name tval)
+    (cond
+        (== type 0)
+        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        (== type 1)
+        [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]
+        (== type 2)
+        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        (== type 3)
+        [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]
+        (== type 4)
+        (quote "=:)"))))
+     
+     
+
+
+
  
 ;; This function will be executed at the time of the compile of code.
 ;; if called, it will be called with the arguments in the place of the
@@ -89,6 +110,10 @@
                (strip v))
             else
             val)))
+        
+(defmacro desym_ref (val)
+   `(+ "" (as_lisp ,#val)))
+ 
 
 (defglobal unquotify 
   (fn (val)
@@ -237,6 +262,9 @@
                rval)
             else
             tree)))
+
+
+
 
 (defmacro define (`& defs)
     (let
@@ -589,6 +617,7 @@
                       (and (not (== "return" next_val))
                            (not (== "throw" next_val))
                            (not (and (is_object? next_val)
+                                     (is_string? next_val.ctype)
                                      (contains? "block" (or next_val.ctype ""))))))
                                                              
                                        
@@ -912,3 +941,23 @@
            false)))
 
 
+(defun safe_access (token ctx sanitizer_fn)
+    (let
+        ((comps nil)
+         (acc [])
+         (acc_full [])
+         (pos nil))
+     (= comps (split_by "." token.name))
+     (if (== comps.length 1)
+         token.name
+         (do 
+             (set_prop comps
+                       0
+                       (sanitizer_fn comps.0))
+             (while (> comps.length 0)
+                (do 
+                    (push acc
+                          (take comps))
+                    (push acc_full
+                          (expand_dot_accessor (join "." acc) ctx))))
+             (flatten ["(" (join "&&" acc_full) ")" ])))))

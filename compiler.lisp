@@ -14,6 +14,12 @@
 (defglobal `as_lisp
     lisp_writer)
 
+(defmacro quotel (val)
+    (quote val))
+
+(defmacro declare (values)
+    true)
+
 (defmacro `is_reference? (val)
   (and (is_string? val)
        (> (length val) 2)
@@ -25,6 +31,8 @@
               (> (length (quotem ,@val)) 2)
               (starts_with? (quote "=:") ,@val)))
     {`eval_when:{ `compile_time: true }})
+
+
 
 (defglobal ise?
     (fn (val) 
@@ -44,7 +52,44 @@
     
     
 (defglobal `get_outside_global get_outside_global)
-;; returns the first component of an object accessor 
+
+(defglobal `embed_compiled_quote  
+  (fn (type tmp_name tval)
+    (cond
+        (== type 0)
+        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        (== type 1)
+        [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]
+        (== type 2)
+        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        (== type 3)
+        [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]))) 
+    
+    
+(defmacro `desym_ref (val)
+    (desym val))
+
+(defun `safe_access (token ctx sanitizer_fn)
+    (let
+        ((`comps nil)
+         (`acc [])
+         (`acc_full [])
+         (`pos nil))
+     (= comps (split_by "." token.name))
+     (if (== comps.length 1)
+         token.name
+         (do 
+             (set_prop comps
+                       0
+                       (sanitizer_fn comps.0))
+             (while (> comps.length 0)
+                (do 
+                    (push acc
+                          (take comps))
+                    (push acc_full
+                          (expand_dot_accessor (join "." acc) ctx))))
+             (flatten ["(" (join "&&" acc_full) ")" ])))))    
+
 
 (defun `get_object_path (refname)
     (let
@@ -131,6 +176,7 @@
                            the_ctx.parent
                            (find_in_ctx the_ctx.parent))))
        (`reference (take comps))
+       
        (`val_type (find_in_ctx ctx))) ;; contains the named reference, comps now will have the path components
     
                                         ;(log "expand_dot_accessor: " val reference val_type comps)
@@ -177,7 +223,7 @@
            (`_ctx (or _ctx {}))
            (`next_val nil)
            (`flattened (flatten js_tree)))
-         (console.log "splice_in_return: started")
+         (console.log "splice_in_return (fixed): started" (clone js_tree))
           (for_each (`comp flattened)
              (do 
                (= next_val (prop flattened (+ idx 1)))
@@ -191,6 +237,7 @@
                       (and (not (== "return" next_val))
                            (not (== "throw" next_val))
                            (not (and (is_object? next_val)
+                                     (is_string? next_val.ctype)
                                      (contains? "block" (or next_val.ctype ""))))))
                                                              
                                        
@@ -357,12 +404,16 @@
 
 
 
-(defun `compiler (quoted_lisp opts)
+(defglobal compiler
+    (fn (quoted_lisp opts)
   (let
       ((`tree quoted_lisp)
-       (`nada (console.log "COMPILER INPUT: length:" (length tree) "->" (clone tree)))
+       
        (`op nil)
-       (`Environment (or opts.env env))
+       (`Environment opts.env)
+       (`default_safety_level (or Environment.declarations.safety.level 1))
+       (`nada (console.log "COMPILER: " Environment  " Safety Level: " default_safety_level "INPUT: ->" (clone tree)))
+       
        (`build_environment_mode (or opts.build_environment false))
        (`env_ref (if build_environment_mode
                      ""
@@ -429,7 +480,7 @@
        (`return_marker (fn ()
                            { `mark: "rval" }))
        (`entry_signature nil)
-       (`temp_fn_asn_template [{"type":"special","val":"=:defvar","ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":"=:fn","ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
+       (`temp_fn_asn_template [{"type":"special","val":(quotel "=:defvar"),"ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":(quotel "=:fn"),"ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
        (`anon_fn_template (-> temp_fn_asn_template `slice 2))
        (`build_fn_with_assignment (fn (tmp_var_name body args)
                                       (let
@@ -489,6 +540,7 @@
                                  `ambiguous (new Object)
                                  `declared_types (new Object)
                                  `defs [])
+                      (when parent
                        (when parent.source
                          (set_prop ctx_obj
                                    `source
@@ -520,7 +572,7 @@
                        (when parent.return_point
                          (set_prop ctx_obj
                                    `return_point
-                                   (+ parent.return_point 1)))
+                                   (+ parent.return_point 1))))
                        ctx_obj)))
 
       
@@ -720,8 +772,8 @@
                            (delete_prop ctx.ambiguous
                                      name)))                        
                                 
-       (`invalid_js_ref_chars "+?-&^#!*[]~{}|")
-       (`invalid_js_ref_chars_regex (new RegExp "[+?\\-&^#!*()\\[\\]~=><]" `g))
+       (`invalid_js_ref_chars "+?-%&^#!*[]~{}|")
+       (`invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]" `g))
        
        (`check_invalid_js_ref (fn (symname)
                                   (cond
@@ -761,6 +813,8 @@
                                                       (push acc "_star_")
                                                       (== t "~")
                                                       (push acc "_tilde_")
+                                                      (== t "~")
+                                                      (push acc "_percent_")
                                                       (== t "|")
                                                       (push acc "_pipe_")
                                                       (contains? t "(){}")
@@ -928,12 +982,17 @@
        
        (`get_val (fn (token ctx)
                      (do
-                                        (log "get_val: ->" token ctx)
+                       (log "get_val: ->" token ctx)
                       (cond
                         token.ref
                         (do 
                             ;(log "get_val: sanitized reference: " (sanitize_js_ref_name (expand_dot_accessor token.name ctx)))
-                            (sanitize_js_ref_name (expand_dot_accessor token.name ctx)))
+                            (defvar `comps (split_by "." token.name))
+                            (log "get_val: " (safe_access token ctx sanitize_js_ref_name))
+                            (if (and (> (safety_level ctx) 1)
+                                     (> comps.length 1))
+                                (join " " (safe_access token ctx sanitize_js_ref_name))
+                                (sanitize_js_ref_name (expand_dot_accessor token.name ctx))))
                         else
                         token.val))))
        (`has_lisp_globals false)
@@ -1029,31 +1088,31 @@
                                   (== (sub_type arg) "array")
                                   {`type: `arr `__token__:true `source: (as_lisp arg) `val: (tokenize arg ctx) `ref: is_ref `name: nil  }
                                   (== argtype "Function")
-                                  {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym arg)}
+                                  {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg)}
                                   (== argtype "AsyncFunction")
-                                  {`type: `asf `__token__:true `val: arg `ref: is_ref `name: (desym arg)}
+                                  {`type: `asf `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg)}
                                   (== argtype "array")
-                                  {`type: `array `__token__:true `val: arg `ref: is_ref `name: (desym arg)}
+                                  {`type: `array `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg)}
                                   (== argtype "Number")
-                                  {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym arg)}
+                                  {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym_ref arg)}
                                   (and (== argtype "String") is_ref)
-                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (desym arg) `global: argdetails.global `local: argdetails.local }
+                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global `local: argdetails.local }
                                   (== argtype "String")
-                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (desym arg) `global: argdetails.global}
+                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global}
                                   (is_object? arg)
                                   (do 
                                    {`type: `objlit `__token__:true `val: (tokenize_object arg) `ref: is_ref `name: nil})
-                                  (and (== argtype "literal") is_ref (== (desym arg) "nil"))
+                                  (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
                                   {`type: `null `__token__:true `val: null `ref: true `name: "null"}
                                   (and (== argtype "unbound") is_ref (eq nil argvalue))
-                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (desym arg)}
+                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (desym_ref arg)}
                                   (and (== argtype "unbound") is_ref)
-                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (sanitize_js_ref_name (desym arg))}
+                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (sanitize_js_ref_name (desym_ref arg))}
                                   
                                         ;(== argtype "Boolean")
                                         ;{`type: `bool `__token__:true `val: argvalue `ref: false `name: arg}
                                   else
-                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (desym arg) `global: argdetails.global `local: argdetails.local}))))))))
+                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global `local: argdetails.local}))))))))
        ;; checks to see if the first argument to the passed array is 
        ;; a compile time function, as registered in the environment's definitions 
        ;; structure 
@@ -1069,13 +1128,14 @@
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
                    
                    (comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
-                   (comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
+                   ;(comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
                    
                    (try
                       (= ntree (apply precompile_function (-> lisp_tree `slice 1)))
                       (catch Error (`e)
                         (do
                          (console.error "precompilation error: " e)
+                         (throw e)
                          )))
                    (if (eq nil ntree)
                        (comp_time_log "unable to perform compilation time operation")
@@ -1094,6 +1154,7 @@
                                                `or: "||"
                                                `and: "&&"
                                                })
+                              (`ctx (new_ctx ctx))
                               (`nada (log "infix_ops: ->" tokens ctx opts))
                               (`math_op_a (prop (first tokens) `name))
                               (`math_op (or (prop op_translation math_op_a) math_op_a))
@@ -1111,6 +1172,9 @@
                                                            (< idx (- tokens.length 0)))
                                                   (push acc math_op))))
                               (`acc [{"ctype":"expression"}]))
+                           (set_ctx ctx
+                                    `__COMP_INFIX_OPS__
+                                    true)
                            (log "infix + declaration: " declaration " ctx value: " )
                            (when (and (or (and declaration (== declaration.type Array))
                                           (and declaration (== declaration.type Object))
@@ -1215,7 +1279,7 @@
                                 (= rval (compile token ctx)))
                             (when (not (is_array? rval))
                               (= rval [ rval ]))
-                            (log "compile_elem: <-" (join "" (flatten rval)))
+                            (log "compile_elem: <-" (flatten rval))
                             rval)))
        (`inline_log (if opts.quiet_mode
                         log
@@ -1304,6 +1368,7 @@
        (`compile_compare (fn (tokens ctx)
                              (let
                                  ((`acc [{ `ctype: "expression" } ])
+                                  (`ctx (new_ctx ctx))
                                   (`ops {
                                         `eq: "=="
                                         `==: "==="
@@ -1319,6 +1384,9 @@
                                   
                                   (`left (prop tokens 1))
                                   (`right (prop tokens 2)))
+                               (set_ctx ctx
+                                        `__COMP_INFIX_OPS__
+                                        true)
                                (log "compile_compare: " operator left right)
                                (push acc "(")
                                (push acc (compile left ctx))
@@ -1335,11 +1403,12 @@
                                      (`assignment_value nil)
                                      (`assignment_type nil)
                                      (`wrap_as_function? nil)
-                                     (`target (cond
+                                     (`target (sanitize_js_ref_name 
+                                              (cond
                                                 token.ref
                                                 token.name
                                                 else
-                                                (throw Error (+ "assignment: invalid target: " token.name))))
+                                                (throw Error (+ "assignment: invalid target: " token.name)))))
                                      (`target_details (get_declaration_details ctx token.name))
                                      (`target_location_compile_time (cond
                                                                       target_details.is_argument
@@ -1642,10 +1711,15 @@
                                    (fn (stmts)
                                        (let
                                            ((`fst (+ "" (or (and (is_array? stmts)
-                                                                 (first stmts)
-                                                                 (is_object? (first stmts))
-                                                                 (prop (first stmts) `ctype))
-                                                            ""))))
+                                                           (first stmts)
+                                                           (is_object? (first stmts))
+                                                           (prop (first stmts) `ctype)
+                                                           (cond
+                                                               (is_string? (prop (first stmts) `ctype))
+                                                               (prop (first stmts) `ctype)
+                                                               else
+                                                               (sub_type (prop (first stmts) `ctype))))
+                                                      ""))))
                                          (log "compile_defvar: check_needs_return: " fst (sub_type fst))
                                          (cond
                                            (contains? "block" fst)
@@ -2087,10 +2161,15 @@
                     (fn (stmts)
                         (do
                          (= fst (+ "" (or (and (is_array? stmts)
-                                               (first stmts)
-                                               (is_object? (first stmts))
-                                               (prop (first stmts) `ctype))
-                                          "")))
+                                                           (first stmts)
+                                                           (is_object? (first stmts))
+                                                           (prop (first stmts) `ctype)
+                                                           (cond
+                                                               (is_string? (prop (first stmts) `ctype))
+                                                               (prop (first stmts) `ctype)
+                                                               else
+                                                               (sub_type (prop (first stmts) `ctype))))
+                                                      "")))
                          (cond_log "check_needs_return: " fst (sub_type fst))
                           (cond
                             (contains? "block" fst)
@@ -2203,10 +2282,15 @@
                                (fn (stmts)
                                    (do
                                     (= fst (+ "" (or (and (is_array? stmts)
-                                                          (first stmts)
-                                                          (is_object? (first stmts))
-                                                          (prop (first stmts) `ctype))
-                                                     "")))
+                                                           (first stmts)
+                                                           (is_object? (first stmts))
+                                                           (prop (first stmts) `ctype)
+                                                           (cond
+                                                               (is_string? (prop (first stmts) `ctype))
+                                                               (prop (first stmts) `ctype)
+                                                               else
+                                                               (sub_type (prop (first stmts) `ctype))))
+                                                      "")))
                                     (if_log "check_needs_return: " fst (sub_type fst))
                                      (cond
                                        (contains? "block" fst)
@@ -2259,6 +2343,7 @@
                                         ;(push acc (+ "/* if start: block_id: " ctx.block_id " block_step: " ctx.block_step " */"))
                           (if (and (is_object? (first compiled_test))
                                    (prop (first compiled_test) `ctype)
+                                   (is_string? (prop (first compiled_test) `ctype))
                                    (contains? "unction" (prop (first compiled_test) `ctype)))
                               (for_each (`t ["if" " " "(" "await" " " compiled_test "()" ")"])
                                         (push acc t))
@@ -2436,14 +2521,19 @@
                          (let
                              ((`acc [])
                               (`prebuild [])
-                              (`target_type tokens.1.name)
+                              (`target_type (sanitize_js_ref_name tokens.1.name))
+                              (`comps (get_object_path target_type))
                               (`complex? false)
                               (`rval_ref nil)
+                              (`target_return_type nil)
                               (`new_arg_name nil)
                               (`args [])
                               (`ctx (new_ctx ctx))
+                              
                               (`new_opts (-> tokens `slice 2)))
-                           (log "compile_new: target_type: " target_type)
+                           (when (> comps.length 1)
+                              (= target_type (path_to_js_syntax comps)))
+                           (log "compile_new: target_type: " target_type comps)
                            (for_each (`opt_token (or new_opts []))
                                      (do
                                       (log "compile_new: opt_token: complex?"  (is_complex? opt_token.val) opt_token)
@@ -2454,6 +2544,7 @@
                                           (do 
                                            (push args (compile opt_token ctx))))))
                            (log "compile_new: complex: " complex? "args: " args)
+                           
                            (if complex?     
                                (do
                                 (= rval_ref (gen_temp_name "rval_new"))
@@ -2471,10 +2562,18 @@
                                           (push acc arg))
                                 (push_as_arg_list acc args)
                                  (push acc ")")))
-                           
+                           (= target_return_type
+                               (or (get_ctx_val ctx target_type)
+                                   (prop (or (get_declarations ctx target_type) {})
+                                         `type)
+                                   (get_outside_global target_type)
+                                   UnknownType))
+                                   
+                                   
+                               
                            (prepend acc
-                                    { `ctype: target_type })
-                           (log "compile_new: <-" (join "" (flatten acc)))
+                                    { `ctype: target_return_type })
+                           (log "compile_new: <-" (clone acc))
                            acc)))
        
        
@@ -2486,31 +2585,48 @@
                                                       (get_lisp_ctx tokens.1.name)
                                                       "global"))
                                   (`target tokens.1.name)
-                                  (`operation (cond
-                                                (and (== target_location "local")
-                                                     (== tokens.0.name "inc"))
-                                                "+="
-                                                (and (== target_location "local")
-                                                     (== tokens.0.name "dec"))
-                                                "-="
-                                                (== tokens.0.name "inc")
-                                                "+"
-                                                else
-                                                "-"))
+                                  (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
+                                  (`operation (if in_infix
+                                                  (cond
+                                                    (== tokens.0.name "inc")
+                                                    "+"
+                                                    (== tokens.0.name "dec")
+                                                    "-"
+                                                    else
+                                                    (throw (+ "Invalid value modification operator: " tokens.0.name)))
+                                                  (cond
+                                                         
+                                                    (and (== target_location "local")
+                                                         (== tokens.0.name "inc"))
+                                                    "+="
+                                                    (and (== target_location "local")
+                                                         (== tokens.0.name "dec"))
+                                                    "-="
+                                                    (== tokens.0.name "inc")
+                                                    "+"
+                                                    else
+                                                    "-")))
                                   (`mod_source nil)
                                   (`how_much (or (and tokens.2
                                                       (compile tokens.2 ctx)) 
                                                  1)))
                                (log "compile_val_mod: " target operation target_location tokens)
-                               (if (== target_location "global")
-                                   (do
+                               (cond 
+                                  (== target_location "global")
+                                  (do
                                     (= has_lisp_globals true)
                                     (= mod_source (+ "(" operation " " target " " how_much ")"))
                                     ["await" " " "Environment.set_global(\"" target "\","
                                      (compile (tokenize (read_lisp mod_source)
                                                         ctx)
                                               ctx) ")"])
-                                   [target operation how_much]))))                         
+                                  
+                                  in_infix
+                                  (do 
+                                     ["(" target "=" target operation how_much")"])
+                                 
+                                  else
+                                   [target operation how_much]))))                       
        
        (`try_log (if opts.quiet_mode
                      log
@@ -2532,11 +2648,16 @@
                   (`check_needs_return 
                     (fn (stmts)
                         (do
-                         (= fst (or (and (is_array? stmts)
-                                         (first stmts)
-                                         (is_object? (first stmts))
-                                         (prop (first stmts) `ctype))
-                                    ""))
+                         (= fst (+ "" (or (and (is_array? stmts)
+                                                           (first stmts)
+                                                           (is_object? (first stmts))
+                                                           (prop (first stmts) `ctype)
+                                                           (cond
+                                                               (is_string? (prop (first stmts) `ctype))
+                                                               (prop (first stmts) `ctype)
+                                                               else
+                                                               (sub_type (prop (first stmts) `ctype))))
+                                                      "")))
                          (try_log "check_needs_return: " fst (sub_type fst))
                           (cond
                             (contains? "block" fst)
@@ -2932,6 +3053,8 @@
                                                         (is_object? (first js_code))
                                                         (prop (first js_code) `ctype))
                                                    "")))
+                                  (when (is_function? fst)
+                                        (= fst (sub_type fst)))
                                   (run_log "checking if return is required: fst: " fst  js_code)
                                    (cond
                                      (contains? "block" fst)
@@ -3041,7 +3164,7 @@
                                                  (do
                                                   (= tmp_name (gen_temp_name "tval"))
                                                   
-                                                  (for_each (`t (flatten [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]))
+                                                  (for_each (`t (flatten (embed_compiled_quote 0 tmp_name tval)))
                                                    (push ntree t)))
                                                  
                                                  (do 
@@ -3049,12 +3172,12 @@
                                                      ;(for_each (`t (flatten [ (quote "=$&!") (+ (quote "=:") "' + await ") (quote "=:Environment.as_lisp") (+ (quote "=:") "(" tval ")" "+" "'") ]))
                                                      ;   (push subacc t))))
                                                      
-                                                     (for_each (`t (flatten [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]))
+                                                     (for_each (`t (flatten (embed_compiled_quote 1 tmp_name tval)))
                                                            (push subacc t))))
                                               (follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
                                               (if (is_object? tval)
                                                   (do 
-                                                   (push ntree (quote "=:)"))
+                                                   (push ntree (embed_compiled_quote 4))
                                                    (= ntree (compile (tokenize tval ctx) ctx))
                                                    (= ntree (check_return_tree ntree))
                                                     (follow_log "spliced: <-" ntree)
@@ -3101,19 +3224,19 @@
                                                    (= tmp_name (gen_temp_name "tval"))
                                                    ;(for_each (`t (flatten ["(" "let" "(" "("  tmp_name (+  (quote "=:") (as_lisp tval)) ")" ")" (+ (quote "=:") tmp_name) ]))
                                                     ;  (push ntree t)))
-                                                   (for_each (`t (flatten [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]))
+                                                   (for_each (`t (flatten (embed_compiled_quote 2 tmp_name tval)))
                                                     (push ntree t)))
                                                   ;(push ntree tval))
                                                   ;(push ntree (+ "\"+await Environment.as_lisp(" tval ")+\"")))
                                               
                                                   ;(for_each (`t (flatten ["'" "+" " " "await" " " "Environment.as_lisp" "(" tval ")" "+" "'"]))
                                                   ;   (push ntree t)))
-                                                  (for_each (`t (flatten [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]))
+                                                  (for_each (`t (flatten (embed_compiled_quote 3 tmp_name tval)))
                                                             (push ntree t)))
                                               
 
                                               (when (is_object? tval)
-                                                (push ntree (quote "=:)"))
+                                                (push ntree (embed_compiled_quote 4))
                                                 (follow_log "to compile: " (clone tval) (as_lisp tval) "ctx:" (clone ctx))
                                                 
                                                 (= ntree (compile (tokenize tval ctx) ctx))
@@ -3482,10 +3605,29 @@
                                             (== declaration "regexp")
                                             (do
                                                (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type RegExp)))   
+                                                  (set_declaration ctx name `type RegExp)))
+                                            (== declaration "optimize")
+                                            (do 
+                                                (declare_log "optimizations: " targeted)
+                                                (for_each (`factor (each targeted `val))
+                                                  (do 
+                                                      (declare_log "optimization: " (each factor `name))
+                                                      (= factor (each factor `name))
+                                                      (cond
+                                                          (== factor.0 "safety")
+                                                          (set_declaration ctx "__SAFETY__" `level factor.1))
+                                                      (declare_log "safety set: " (safety_level ctx))))
+                                                
+                                                )
                                                )))
                                  (declare_log "<-" (clone acc))
                                  acc)))
+       (`safety_level (fn (ctx)
+                          (when ctx
+                              (defvar `safety (get_declarations ctx "__SAFETY__"))
+                              (if safety
+                                  safety.level
+                                  default_safety_level))))
        (`get_scoped_type (fn (name)
                              (let
                                  ((`rtype (get_ctx ctx name)))
@@ -4124,6 +4266,7 @@
                                           (get_declaration_details ctx rcv))
                                      (and (is_array? rcv)
                                           (is_object? rcv.0)
+                                          (is_string? rcv.0.ctype)
                                           (and rcv.0.ctype
                                                (and (not (contains? "unction" rcv.0.ctype))
                                                     (not (== "string" rcv.0.ctype))
@@ -4145,6 +4288,7 @@
                                   (= tmp_name (gen_temp_name "array_op_rval"))
                               
                                   (if (and (is_object? rcv.0)
+                                           (is_string? rcv.0.ctype)
                                            (contains?  "block" (or rcv.0.ctype "")))
                                       (do
                                        (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back...need to wrap it but keep structural return value as an array")
@@ -4409,7 +4553,12 @@
                 (assemble (flatten [js_tree]))
                 (join "" text))))))
     
+    (declare (optimize (safety 2)))
     
+    
+    
+    (if (eq nil Environment)
+        (throw "Compiler: No environment passed in options."))
     
     ;; setup key values in the context for flow control operations 
     ;; break - the looping constructs will return down the stack if
@@ -4423,7 +4572,7 @@
               `defined_lisp_globals
               {})
     ;(console.clear)
-    (main_log "Environment ID: " (-> Environment `id))
+    ;(main_log "Environment ID: " (-> env `id))
     (main_log "Starting tokenization..." (clone tree))
     
     (= output
@@ -4461,6 +4610,7 @@
                  (= has_lisp_globals false))
            (main_log "globals:" has_lisp_globals " constructed assembly:" (clone assembly))
            (main_log "assembly: " (assemble_output assembly))
+                      
            (cond 
              (and (not is_error)
                   assembly
@@ -4508,7 +4658,7 @@
             errors))
     (when opts.error_report
           (opts.error_report errors))
-    output))
+    output)))
 
 
 
@@ -4583,6 +4733,11 @@
               ;; eval_when: an object of specifiers as to what situations to evaluate the contents the symbol refers to (`compile_time `exec_time) when true
               (`definitions { })
               
+              (`declarations { 
+                  `safety: {
+                      `level: 2
+                  }
+              })
               
               ;; the root context 
               (`global_ctx {
@@ -4983,8 +5138,8 @@
                                           [ args.0 ".shift" "()" ])
                                `prepend: (fn (args)
                                              [ args.0 ".unshift" "(" args.1 ")"])
-                               `flatten: (fn (args)
-                                             [ args.0 ".flat()"] )
+                               ;`flatten: (fn (args)
+                                ;             [ args.0 ".flat()"] )
                                `trim: (fn (args)
                                           [ args.0 ".trim()"])
                                
@@ -5078,11 +5233,11 @@
                                   (compiler (if opts.json_in
                                                 expression
                                                 (-> interface `read_lisp expression))
-                                            { `env: interface 
-                                            `ctx: ctx 
-                                            `formatted_output: true 
-                                            `error_report: (or opts.error_report nil)
-                                            `quiet_mode: (or opts.quiet_mode false) }))
+                                            {   `env: interface 
+                                                `ctx: ctx 
+                                                `formatted_output: true 
+                                                `error_report: (or opts.error_report nil)
+                                                `quiet_mode: (or opts.quiet_mode false) }))
                                (env_log "<- compiled:" compiled)
                                (if opts.on_compilation_complete
                                    (opts.on_compilation_complete compiled))
@@ -5096,6 +5251,7 @@
                                     (throw (new compiled.error compiled.message))
                                     
                                     (and compiled.0.ctype
+                                         (is_string? compiled.0.ctype)
                                          (or (contains? "block" compiled.0.ctype)
                                              (== compiled.0.ctype "assignment")
                                              (== compiled.0.ctype "__!NOT_FOUND!__")))
@@ -5187,6 +5343,7 @@
                      `read_lisp read_lisp
                      `as_lisp as_lisp
                      `definitions definitions
+                     `declarations declarations
                      `compile compile
                      `evaluate evaluate
                      `do_deferred_splice do_deferred_splice
@@ -5221,7 +5378,7 @@
   (set_prop env
           `old_read_lisp
           env.read_lisp)
-  
+  env
   ))
 
 
@@ -5265,14 +5422,14 @@
     (log "reader installed")
     (sleep 0.1)  
     (when run_tests?
-          (defvar `test_results (run_tests { `table: true }))
+          (defvar `test_results (run_tests { `table: true `env: env }))
           (tab ["Compiler Tests - Start Env"
                 test_results.view]
                true))
     (log "starting bootstrap environment")
     (sleep 0.1)  
     (-> env `evaluate (bootstrap_a))
-    
+    ;; ok 
     (log "Building alpha environment")
     (sleep 0.1)
     (-> env `evaluate (alpha_environment))
@@ -5284,7 +5441,7 @@
     (log "Loading Compiler Boot Library")
     (sleep 0.1)
     (-> env_alpha `evaluate (bootstrap_b))
-    
+    (-> env `evaluate (+ "(defglobal `client (-> developer `getInstanceById " client.id "))"))
     (log "Loading Alpha Environment")
    
     ;; open a new tab

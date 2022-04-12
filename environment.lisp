@@ -11,8 +11,8 @@
                    (local get_object_path get_outside_global))
           
           ;; Construct the environment
-          (set_prop this 
-                    `Environment
+          (defvar
+                    Environment
                       {
                         `global_ctx:{
                             `scope:{
@@ -21,10 +21,14 @@
                         `definitions: {
                             
                         }
-                        
+                        `declarations: { 
+                          `safety: {
+                              `level: 2
+                          }
+                        }
                       })
                     
-          (defvar Environment this.Environment)
+         ; (defvar Environment this.Environment)
           (defvar id  (get_next_environment_id))
           
           (if (eq undefined opts)
@@ -32,7 +36,7 @@
           
           (set_prop Environment
                     `context
-                    this.Environment.global_ctx)
+                    Environment.global_ctx)
          
           (defvar compiler (fn () true))
           
@@ -214,7 +218,9 @@
                   (is_string? (fn (x)
                                   (or (instanceof x String) 
                                       (== (typeof x) "string"))))
-                 
+                  (is_nil? (fn (x)
+                               (== x nil)))
+                           
                   (ends_with? (new Function "val" "text" "{ if (val instanceof Array) { return text[text.length-1]===val } else { return text.endsWith(val) } }"))
                   (starts_with? (new Function "val" "text" "{ if (val instanceof Array) { return text[0]===val } else { return text.startsWith(val) } }"))
           
@@ -436,8 +442,12 @@
                   
                   (get_global 
                       (fn (refname value_if_not_found suppress_check_external_env)
-                           (if (not (== (typeof refname) "string"))
+                           (cond 
+                               (not (== (typeof refname) "string"))
                                (throw TypeError "reference name must be a string type")
+                               (== refname "Environment")
+                               Environment
+                               else
                                 (let
                                     ((`comps (get_object_path refname))
                                      (`refval nil)
@@ -616,7 +626,7 @@
                 
           (declare (local lisp_writer)
                    (include reader add_escape_encoding get_outside_global get_object_path 
-                            do_deferred_splice))        
+                            do_deferred_splice safe_access embed_compiled_quote))        
           
           (defvar as_lisp lisp_writer)
           (defvar read_lisp reader)
@@ -646,8 +656,8 @@
                                               [ args.0 ".shift" "()" ])
                                    `prepend: (fn (args)
                                                  [ args.0 ".unshift" "(" args.1 ")"])
-                                   `flatten: (fn (args)
-                                                 [ args.0 ".flat()"] )
+                                   ;`flatten: (fn (args)
+                                    ;             [ args.0 ".flat()"] )
                                    `trim: (fn (args)
                                               [ args.0 ".trim()"])
                                    
@@ -699,7 +709,9 @@
                      `set_compiler set_compiler
                      `read_lisp reader
                      `as_lisp as_lisp
-                     `definitions this.Environment.definitions
+                     `inlines inlines
+                     `definitions Environment.definitions
+                     `declarations Environment.declarations
                      `compile compile
                      `evaluate evaluate
                      `do_deferred_splice do_deferred_splice

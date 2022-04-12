@@ -8,7 +8,7 @@
       ((`result nil)
        (`compiled nil)
        (`view nil)
-       (`env (or passed_env env))
+       (`env passed_env)
        (`lisp_view (div { `style: "height: calc(100% - 10px);" }))
        (`js_code_view (div { `style: "height: calc(100% - 10px);" } ))
        (`js_code_editor
@@ -332,26 +332,23 @@
       })))
  
 
-
+(defun `reader_lib ()
+    (get_attachment (unpack (first (retrieve { `no_meta: true `index_0: "Compiler-Reader" `type: `Function } )))))
  
  (defun `test_code (test_number)
    (prop (prop compiler_tests test_number) 0))
-  (defun `cc () (do (clear_log) (console.clear)))
-  (defun `run_tests (test_numbers opts)
+ (defun `cc () (do (clear_log) (console.clear)))
+ (defun `run_tests (test_numbers opts)
     (let
         ((`results nil)
          (`clog (defclog { `background: "black" `color: "white" } ))
+         
          (`test_function nil)
          (`tests compiler_tests)  ;; shadow if we slice a certain subset
          (`test_output nil)
          (`tester compiler)
          (`quiet_mode true)
-         (`env (cond opts.new_env
-                    (make_environment)
-                    opts.env
-                    opts.env
-                    else
-                    env))
+         (`env nil)
          (`idx -1)
          (`andf (fn (args)
                     (let
@@ -363,8 +360,8 @@
                       rval))))
       
       (clear_log)
+     
       
-      (clog "run_tests" "STARTING TESTS" (-> env `id))
       (cond 
         (and (eq opts nil)
              (is_object? test_numbers))
@@ -378,7 +375,24 @@
         (do 
          (= quiet_mode false)
          (= tests (nth [ test_numbers ] tests))))
-      
+       (= env
+          (cond opts.new_env
+                    (make_start_env)
+                    opts.env
+                    opts.env))
+       (when (eq nil env)
+             (throw "run_tests: environment is nil"))
+       (clog "run_tests" "STARTING TESTS" (-> env `id))
+       (when opts.new_env
+             (-> env `evaluate (reader_lib))
+             (-> env `evaluate "(do 
+                            (set_prop Environment 
+                                      `read_lisp
+                                      reader)
+                            (set_prop Environment
+                                      `as_lisp
+                                      globalThis.lisp_writer))"))
+         
       (= results
          (for_each (`test tests)
                    (do
