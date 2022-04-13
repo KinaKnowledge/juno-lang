@@ -1464,4 +1464,39 @@
     123
     "Handle assignment of non valid js characters in assignment."
    ]
+  ["(let
+     ((abc { `def: 123 }))
+     (declare (optimize (safety 2)))
+     abc.def)"
+   []
+   123
+   "Safety level 2 for property accessors" ]
+  ["(let
+     ((abc { `def: 123 }))
+     (declare (optimize (safety 2)))
+     abc.fgh)"
+   []
+   undefined
+   "Safety level 2 for property accessors with invalid accessor" ]
+  ["(let
+    ((acc [])
+     (condition true))
+    (push acc (if condition
+                  \"OK\"
+                  \"Nope\"))
+    acc)"
+   []
+   `["OK"]
+   "Embedded if block in inline."
+            ]
+  ["(let
+    ((abc [0 1 2 3]))
+    (declare (include length first))
+    [(first abc) (length abc)])"
+   []
+   `[0 4]
+    "Declare inclusion of function code."
+    ]        
+        
+        
 ])

@@ -1639,6 +1639,7 @@
                                 (`last_stmt nil)
                                 (`return_last ctx.return_last_value)
                                 (`stmt nil)
+                                (`stmt_ctype nil)
                                 (`stmts [])
                                 (`idx 0))
                              (when tokens.1.source
@@ -1680,8 +1681,10 @@
                                           (do 
                                            (clog "compiling standard token -> " token)
                                            
-                                           
-                                           (= stmt (compile token ctx))))
+                                           (if (and (== token.val.0.name "declare")
+                                                    block_options.ignore_declarations)
+                                                (= stmt { `ignored: "declare" } )
+                                                (= stmt (compile token ctx)))))
                                       
                                         ;(push stmts { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step " source: " ctx.source) })      
                                       
@@ -1699,13 +1702,21 @@
                                         true) ;; disabled due to return issue
                                         
                                       (clog "in block:<-" stmt)
-                                      (when (and (> ctx.block_step 0)
-                                                 (is_object? (first stmt))
-                                                 (prop (first stmt) `ctype)
-                                                 (== (prop (first stmt) `ctype) "AsyncFunction"))
-                                        (push stmts "await")
-                                        (push stmts " "))
-                                      (push stmts stmt)
+                                      (= stmt_ctype (and (> ctx.block_step 0)
+                                                         (is_object? (first stmt))
+                                                         (prop (first stmt) `ctype)))
+                                                 
+                                      (cond 
+                                        (== stmt_ctype "AsyncFunction")
+                                        (do 
+                                            (push stmts "await")
+                                            (push stmts " ")
+                                            (push stmts stmt))
+                                        (== stmt_ctype "block")
+                                        (do 
+                                            (push stmts (wrap_assignment_value stmt)))
+                                        else
+                                        (push stmts stmt))
                                       (when (< idx (- tokens.length 1))
                                         (push stmts ";"))))
                                     
@@ -1876,6 +1887,7 @@
                                          log
                                          (defclog { `prefix: (+ "compile_let: " (or ctx.block_id "")) `background: (color_for_number (random_int 10000) 0.2 0.8) `color: "black"})))
                               (`token nil)
+                              (`declarations_handled false)
                               (`assignment_value nil)
                               (`assignment_type nil)
                               (`reference_name nil)
@@ -1894,6 +1906,12 @@
                            ;; let must be two pass, because we need to know all the symbol names being defined in the 
                            ;; allocation block because let allows us to refer to symbol names out of order, similar to
                            ;; let* in Common Lisp.  
+                           (clog "block: " (clone block))
+                           ;; Check declaration details if they exist in the first form of the block form
+                           (when (== block.0.val.0.name "declare")
+                              (= declarations_handled true)
+                              (push acc (compile_declare block.0.val ctx)))
+                              
                            
                            ;; First pass: build symbols in context for the left hand side of the allocation forms
                            ;; set them to functions
@@ -2004,6 +2022,7 @@
                                                     ctx
                                                     {
                                                     `no_scope_boundary: true
+                                                    `ignore_declarations: declarations_handled
                                                     }))
                            (push acc "}")
                            (clog "return_point: " ctx.return_point)
@@ -3424,7 +3443,7 @@
                result)))
        
        (`compile_debug (fn (tokens ctx)
-                           [{ `ctype: "block" } "debugger" ";"]))
+                           [{ `ctype: "statement" } "debugger" ";"]))
        (`compile_for_each
          (fn (tokens ctx)
              [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
@@ -3563,6 +3582,7 @@
                                   (`acc [])
                                   (`source nil)
                                   (`details nil)
+                                  (`sanitized_name nil)
                                   (`declaration nil)
                                   (`dec_struct nil))
                                  (declare_log "->" (clone expressions))
@@ -3584,12 +3604,13 @@
                                             (do 
                                                (for_each (`name (each targeted `name))
                                                  (do
+                                                     (= sanitized_name (sanitize_js_ref_name name))
                                                      (= dec_struct (get_declaration_details ctx name))
                                                      (declare_log "current_declaration for " name ": " (if dec_struct (-> dec_struct.value `toString) "NOT FOUND") (clone dec_struct))
                                                      (when (and dec_struct)
                                                               ;(not (dec_struct.is_argument)))
                                                              ;; this is a global so we just produce a reference for this 
-                                                             (for_each (`t [ "let" " " name "=" ])
+                                                             (for_each (`t [ "let" " " sanitized_name "=" ])
                                                                 (push acc t))
                                                              (cond
                                                                  (and (is_function? dec_struct.value)
@@ -3738,8 +3759,6 @@
                (sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local"))
                (= rval
                   (cond
-                    
-                    
                     (== ref_type "AsyncFunction")
                     (do
                      (push acc "await")
@@ -4591,7 +4610,10 @@
                 (assemble (flatten [js_tree]))
                 (join "" text))))))
     
-    (declare (optimize (safety 2)))
+    (declare (optimize (safety 2))
+             (include length first second map do_deferred_splice
+                      not sub_type last flatten))
+            
     
     
     
