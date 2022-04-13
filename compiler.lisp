@@ -1272,7 +1272,26 @@
        
        (`compile_elem (fn (token ctx)
                           (let
-                              ((`rval nil))
+                              ((`rval nil)
+                               (`check_needs_wrap 
+                                       (fn (stmts)
+                                           (let
+                                               ((`fst (+ "" (or (and (is_array? stmts)
+                                                               (first stmts)
+                                                               (is_object? (first stmts))
+                                                               (prop (first stmts) `ctype)
+                                                               (cond
+                                                                   (is_string? (prop (first stmts) `ctype))
+                                                                   (prop (first stmts) `ctype)
+                                                                   else
+                                                                   (sub_type (prop (first stmts) `ctype))))
+                                                          ""))))
+                                             (inline_log "check_needs_return: " fst (sub_type fst))
+                                             (cond
+                                               (contains? "block" fst)
+                                               true
+                                               else
+                                               false)))))
                             (log "compile_elem: -> complex?" (is_complex? token.val) token)
                             (if (is_complex? token.val)
                                 (= rval (compile_wrapper_fn token ctx))
@@ -1289,39 +1308,58 @@
                                 ((`rval nil)
                                  (`stmt nil)
                                  (`has_literal? false)
+                                 (`wrap_style 0)
+                                 (`check_needs_wrap 
+                                       (fn (stmts)
+                                           (let
+                                               ((`fst (+ "" (or (and (is_array? stmts)
+                                                               (first stmts)
+                                                               (is_object? (first stmts))
+                                                               (prop (first stmts) `ctype)
+                                                               (cond
+                                                                   (is_string? (prop (first stmts) `ctype))
+                                                                   (prop (first stmts) `ctype)
+                                                                   else
+                                                                   (sub_type (prop (first stmts) `ctype))))
+                                                          ""))))
+                                             (inline_log "check_needs_wrap: " fst (sub_type fst))
+                                             (cond
+                                               (== fst "ifblock")
+                                               1
+                                               (contains? "block" fst)
+                                               2
+                                               else
+                                               0))))
                                  (`args []))
                               (inline_log "->" tokens)
-                                        ;(for_each (`token (-> tokens `slice 1))
-                                        ;   (do
-                                        ;      (inline_log "compiling: " token)
-                                        ;     (when false;(== token.type "arr")
-                                        ;(== token.type "literal")
+                            
+                              ;; compile the arguments first to determine if they are candidates
+                              ;; for inline opportunities
                               
-                                        ;      (= has_literal? true))))
+                              (for_each (`token (-> tokens `slice 1))
+                                 (do
+                                     (inline_log "compiling: " token)
+                                     (= stmt (wrap_assignment_value (compile token ctx)))
+                                     (push args stmt)))
+                                     ;(= wrap_style (check_needs_wrap stmt))
+                                     ;(cond 
+                                     ;    (== wrap_style 1)
+                                     ;    (push args [ { `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" " " "()" "{" (splice_in_return stmt) "}" ")" "()" ])
+                                     ;    (== wrap_style 2)
+                                     ;    (push args [ { `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" " " "()" stmt ")" "()" ])
+                                     ;    else
+                                     ;    (push args stmt))
+                                     ;(inline_log "compiled arg: <-" (last args))))
                               
-                              
-                              
-                              
-                              (inline_log "has_literal?" has_literal?)
-                              (inline_log tokens.0.name  args (prop Environment.inlines tokens.0.name))
-                              (if has_literal?
-                                  (compile_scoped_reference tokens ctx)
-                                  (do
-                                   (for_each (`token (-> tokens `slice 1))
-                                             (do
-                                              (inline_log "compiling: " token)
-                                              (= stmt (compile_elem token ctx))
-                                               (push args stmt)))
-                                   
-                                   (if (prop Environment.inlines tokens.0.name)
-                                       (= rval ((prop Environment.inlines tokens.0.name)
+                              (if (prop Environment.inlines tokens.0.name)
+                                  (= rval ((prop Environment.inlines tokens.0.name)
                                                 args))
-                                       (throw ReferenceError (+ "no source for named lib function " tokens.0.name)))
-                                    ;; join together to a unit expression
-                                    (= rval (flatten rval))
-                                    (inline_log "<-" rval)
-                                   rval)))))
-       
+                                  (throw ReferenceError (+ "no source for named lib function " tokens.0.name)))
+                              
+                              (= rval (flatten rval))
+                              (inline_log "<-" rval)
+                              rval)))
+                             
        
        (`compile_push (fn (tokens ctx)
                           (let
@@ -2410,7 +2448,7 @@
                                     (is_block? tokens)
                                     (do
                                      (cwrap_log "compile_wrapper_fn: wrapping block in anon func" tokens)
-                                     (= ctx (new ctx))
+                                     (= ctx (new_ctx ctx))
                                       (set_prop ctx
                                                 `return_point
                                                 1)
@@ -2418,7 +2456,7 @@
                                     (and (is_object? tokens)
                                          (== tokens.val.0.name "if"))
                                     (do 
-                                     (= ctx (new ctx))
+                                     (= ctx (new_ctx ctx))
                                      (set_prop ctx
                                       `return_point
                                       1)
@@ -3886,7 +3924,7 @@
                                               (is_block? tokens.val))
                                          (== tokens.val.0.name "if")
                                          (== tokens.val.0.name "let"))))
-                                        ;(log "IS_COMPLEX?: " rval "IS_BLOCK?: " (contains? tokens.0.name ["do" "progn" "let"]) tokens)
+                             (log "IS_COMPLEX?: " rval "IS_BLOCK?: " (is_block? tokens) tokens)
                            rval
                            )))
        (`is_form? (fn (token)
