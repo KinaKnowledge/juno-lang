@@ -156,6 +156,8 @@
       (let
           ((`escaped (replace (new RegExp "\n" `g) 
                               (+ (String.fromCharCode 92) "n") text))
+           (`escaped (replace (new RegExp "\r" `g) 
+                              (+ (String.fromCharCode 92) "r") escaped))
            (`nq (split_by (String.fromCharCode 34) escaped))
            (`step1 (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
            (`snq (split_by (String.fromCharCode 39) step1)))
@@ -262,7 +264,7 @@
              (`acc []))
             (for_each (`c chars)
                (cond 
-                 (and (== (-> c `charCodeAt 0) 34))  
+                 (== (-> c `charCodeAt 0) 34)
                  (do 
                     (push acc (String.fromCharCode 92))
                     (push acc c))
@@ -1062,7 +1064,7 @@
                                 (tokenize rval ctx))
                             (and (not (is_array? args))
                                  (is_object? args))
-                            (first (tokenize [args]))
+                            (first (tokenize [args] ctx))
                             else
                             (do
                              (when (or (== args.0 (quote "=:fn"))
@@ -1309,27 +1311,6 @@
                                  (`stmt nil)
                                  (`has_literal? false)
                                  (`wrap_style 0)
-                                 (`check_needs_wrap 
-                                       (fn (stmts)
-                                           (let
-                                               ((`fst (+ "" (or (and (is_array? stmts)
-                                                               (first stmts)
-                                                               (is_object? (first stmts))
-                                                               (prop (first stmts) `ctype)
-                                                               (cond
-                                                                   (is_string? (prop (first stmts) `ctype))
-                                                                   (prop (first stmts) `ctype)
-                                                                   else
-                                                                   (sub_type (prop (first stmts) `ctype))))
-                                                          ""))))
-                                             (inline_log "check_needs_wrap: " fst (sub_type fst))
-                                             (cond
-                                               (== fst "ifblock")
-                                               1
-                                               (contains? "block" fst)
-                                               2
-                                               else
-                                               0))))
                                  (`args []))
                               (inline_log "->" tokens)
                             
@@ -1889,6 +1870,7 @@
                               (`token nil)
                               (`declarations_handled false)
                               (`assignment_value nil)
+                              (`block_declarations {})
                               (`assignment_type nil)
                               (`reference_name nil)
                               (`alloc_set nil)
@@ -2006,13 +1988,15 @@
                                         ;                          assignment_type))
                                     
                                         ;(log "compile_let: compiling: ref:" reference_name "=" (join "" (flatten assignment_value)))
-                                    (if (and ctx_details.is_argument
-                                             (== ctx_details.levels_up 1))
+                                    (if (or (and ctx_details.is_argument
+                                                 (== ctx_details.levels_up 1))
+                                            (prop block_declarations reference_name))
                                         true   ;; test for whether or now we need to declare it without getting in trouble with JS
                                         (do 
                                          (push acc "let")   ;; depending on block status, this may be let for a scoped {}
                                          (push acc " ")))
                                     (push acc reference_name)
+                                    (set_prop block_declarations reference_name true) ;; mark that we have already declared so that if it is redeclared we don't try and declare in JS again
                                     (push acc "=")
                                     (push acc assignment_value)
                                     (push acc ";"))) ;/*LET*/")))
@@ -2874,7 +2858,9 @@
                               (log "compile_return: " acc)
                               
                               acc)))
-       
+       (`apply_log (if opts.quiet_mode
+                       log
+                       (defclog { `prefix: "compile_apply" `background: "sienna" `color: "white" })))
        (`compile_apply (fn (tokens ctx)
                            (let
                                ((`acc [])
@@ -2889,30 +2875,22 @@
                                 (`args (-> tokens `slice 2)))
                              (when (and args (== args.length 1))
                                (= args (first args)))
-                             (log "compile_apply: tokens: " tokens)
-                             (log "compile_apply: function:" "is_form:" (is_form? fn_ref) fn_ref)
-                             (log "compile_apply: args: " args)
+                             (apply_log "apply_log: -> " tokens)
+                             ;(apply_log "compile_apply: function:" "is_form:" (is_form? fn_ref) fn_ref)
+                             ;(apply_log "compile_apply: args: " args)
                              
+                             (= function_ref (compile fn_ref ctx))
                              
-                             (if (is_form? fn_ref)
-                                 (do
-                                  (console.log "compile_apply: build: " (build_anon_fn fn_ref.val))
-                                  (= compiled_fun_resolver (compile (prop (build_anon_fn fn_ref.val) `0)  ctx))
-                                   (console.log "compile_apply: build: " compiled_fun_resolver)    
-                                   (for_each (`t ["let" " " function_ref "=" compiled_fun_resolver ])
-                                             (push acc t))
-                                        ;(push acc (compile (build_fn_with_assignment function_ref fn_ref.val) ctx))
-                                   (push acc "()")
-                                   (push acc ";"))
-                                 (= function_ref (compile fn_ref ctx))) 
-                             (log "compile_apply: function_ref: " function_ref)
-                             
+                             ;(apply_log "compile_apply: function_ref: " (clone function_ref))
+                             (= function_ref (wrap_assignment_value function_ref))
+                             (apply_log "compile_apply: compiled: function: " (clone function_ref))
                              ;; now handle the arguments 
                              ;; Dlisp allows for multiple arguments to apply, with the last argument must be an array.
                              ;; In this case, we are going to need to unshift the preceding arguments into the final argument (which must be an array)
                              
                              (if (is_array? args)
                                  (do           
+                                  ;(apply_log "args is_array?" args)
                                   (= target_argument_ref (gen_temp_name "target_arg"))
                                   (= target_arg (pop args)) ;; take the last argument
                                    (for_each (`t [ "let" " " target_argument_ref "=" "[]" ".concat" "(" (compile target_arg ctx) ")" ";"])
@@ -2922,35 +2900,39 @@
                                    (for_each (`token args)
                                              (do
                                               (= preceding_arg_ref (gen_temp_name "pre_arg"))
+                                              
                                               (if (is_form? token)
                                                   (do
-                                                   (for_each (`t [ "let" " " preceding_arg_ref "=" (compile token.val ctx) ";" ])
+                                                   (for_each (`t [ "let" " " preceding_arg_ref "=" (wrap_assignment_value (compile token.val ctx)) ";" ])
                                                              (push acc t)))
-                                                  (= preceding_arg_ref (compile token ctx)))
+                                                  (= preceding_arg_ref (wrap_assignment_value (compile token ctx))))
                                                (push acc
                                                      [ target_argument_ref ".unshift" "(" preceding_arg_ref ")" ";" ])))
                                    ;; now we have our arguments placed into the front of the final array 
                                    ;; now call the functions apply method and return it
-                                   (for_each (`t ["return" " " "await" " " function_ref "." "apply" "(" "this" "," target_argument_ref ")"])
+                                   (for_each (`t ["return" " "  "(" function_ref ")" "." "apply" "(" "this" "," target_argument_ref ")"])
                                              (push acc t)))
                                  
                                  
                                  ;; otherwise - just one arg (which presumably is an array) and so just construct the JS statement
                                  (do
+                                     ;(apply_log "args is not an array - just one arg")
                                   (if (is_form? args)
                                       (do 
-                                       (for_each (`t [ "let" " " args_ref "=" (compile args.val ctx) ";" ])
+                                       (for_each (`t [ "let" " " args_ref "=" (wrap_assignment_value (compile args.val ctx)) ";" ])
                                                  (push acc t))
                                        (= complex? true)))
-                                  (log "compile_apply: complex? " complex?)       
-                                   (for_each (`t ["return" " " "await" " " function_ref "." "apply" "(" "this" ])
+                                  ;(apply_log "arguments <- " (clone acc))
+                                   (for_each (`t [ "return" " " "(" " " function_ref ")" "." "apply" "(" "this" ])
                                              (push acc t))
                                    (when args
                                      (push acc ",")
                                      (if complex?
                                          (push acc args_ref)
-                                         (push acc (compile args ctx))))
+                                         (push acc (wrap_assignment_value (compile args ctx)))))
                                    (push acc ")")))
+                             (apply_log "<-" (join "" (flatten ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])))
+                             ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
                              ["(" "async" " " "function" "()" "{" acc "}" ")" "()"])))
        
        (`compile_call (fn (tokens ctx)
@@ -4327,6 +4309,7 @@
                                           (and rcv.0.ctype
                                                (and (not (contains? "unction" rcv.0.ctype))
                                                     (not (== "string" rcv.0.ctype))
+                                                    (not (== "String" rcv.0.ctype))
                                                     (not (== "nil" rcv.0.ctype))
                                                     (not (== "Number" rcv.0.ctype))
                                                     (not (== "undefined" rcv.0.ctype))
@@ -5462,8 +5445,33 @@
     (get_attachment (unpack (first (retrieve { `no_meta: true `index_0: "Environment" `type: `Function } )))))
 
 
-;; now make the environment 
+(defun `run_compiler_tests ()
+  (do
+    (import `Boot.Compiler-Tests)
+    (make_start_env)
+    (log "ENV ID: " env)
+    (sleep 0.1)  ;; for screen updates for logging
+    (-> env `evaluate (reader_lib))
+    
+    (-> env `evaluate "(do 
+                            (set_prop Environment 
+                                      `read_lisp
+                                      reader)
+                            (set_prop Environment
+                                      `as_lisp
+                                      globalThis.lisp_writer))")
+    (log "reader installed")
+    (sleep 0.1)  
 
+    (defvar `test_results (run_tests { `table: true `env: env }))
+    (tab ["Compiler Tests - Start Env"
+        test_results.view]
+       true)))
+
+;; now make the environment 
+;(quote "\"Hello\" 'world'")
+;(reader (as_lisp (reader (as_lisp "\"Hello\" 'world'"))))
+;(quote "\"Hello\" \n world")
 (defun `init_bootstrap (run_tests?)
   (do
     (import `Boot.Compiler-Tests)

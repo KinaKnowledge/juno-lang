@@ -221,8 +221,8 @@
                   (is_nil? (fn (x)
                                (== x nil)))
                            
-                  (ends_with? (new Function "val" "text" "{ if (val instanceof Array) { return text[text.length-1]===val } else { return text.endsWith(val) } }"))
-                  (starts_with? (new Function "val" "text" "{ if (val instanceof Array) { return text[0]===val } else { return text.startsWith(val) } }"))
+                  (ends_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}"))
+                  (starts_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}"))
           
                   (blank? (fn (val)
                               (or (eq val nil)

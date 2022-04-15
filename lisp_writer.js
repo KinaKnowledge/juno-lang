@@ -98,11 +98,20 @@ export function lisp_writer(obj,depth,max_depth) {
     else if (obj==="=:##") return ",#";
     else if (obj==="=$,@") return "=$,@";
     else if (obj.startsWith("=:")) return obj.substr(2);
-    obj = obj.replaceAll("\"","\\\"");
-    obj = obj.replaceAll("'","\\'");
+    
+    obj = obj.replaceAll("\"","\\\"");        
+    obj = obj.replaceAll("'","\\'");        
+    obj = obj.replaceAll("\n",'\\n');
+    obj = obj.replaceAll("\r",'\\r');
+    obj = obj.replaceAll("\f",'\\f');
+    obj = obj.replaceAll("\b",'\\b');			         
     //obj = JSON.stringify(obj);  // encode with JSON semantics
-    if (depth == 0) console.log("lisp_writer: <-",obj);
+    
+    if (depth == 0) console.log("lisp_writer: <-",'"'+obj+'"');
+    
     return '"'+obj+'"';
+    
+    
   } else {
     if (depth === 0) console.log("lisp_writer: <- [ other ]",obj);
     return obj; // numbers and booleans

@@ -112,15 +112,15 @@
                                           (== ccode 92)
                                           c
                                           (== c "t")
-                                          9
+                                          (String.fromCharCode 9)
                                           (== c "n")
-                                          10
+                                          (String.fromCharCode 10) ;"\n" ; 10; (String.fromCharCode 10)
                                           (== c "r")
-                                          13
+                                          (String.fromCharCode 13)
                                           (== c "f")
-                                          12 ;; formfeed
+                                          c; (string.fromCharCode 12) ;; formfeed
                                           (== c "b")
-                                          8 ;; backspace
+                                          c ;(string.fromCharCode 8) ;; backspace
                                           else  ;; just return the character
                                           c))))
              
@@ -437,7 +437,7 @@
           
           (console.log "read->" in_buffer )
           (= output_structure (read_block 0))
-          
+          (console.log "read<-" (clone output_structure))
           (if (and (is_array? output_structure)
                    (> (length output_structure) 1))
               (do 

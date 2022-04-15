@@ -870,11 +870,11 @@
              (for_each (value work_values)
                 (do
                    (= value_type (subtype value))
-                   (when (== value_type `number)
-                      (= value_type `string)
+                   (when (== value_type `Number)
+                      (= value_type `String)
                       (= value (+ "" value)))
                    (cond
-                       (== value_type `string)
+                       (== value_type `String)
                        (push rval (-> value `replace target replacement))
                        
                        (== value_type `array)
@@ -903,6 +903,8 @@
       (let
           ((`escaped (replace (new RegExp "\n" `g) 
                               (+ (String.fromCharCode 92) "n") text))
+           (`escaped (replace (new RegExp "\r" `g) 
+                              (+ (String.fromCharCode 92) "r") escaped))
            (`nq (split_by (String.fromCharCode 34) escaped))
            (`step1 (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq))
            (`snq (split_by (String.fromCharCode 39) step1)))

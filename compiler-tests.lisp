@@ -80,6 +80,14 @@
      []
      "\"Hello\" 'world'"
      "quote macro: single quote and double quotes"]
+    ["(quote \"Hello \n world\")"
+     []
+     "Hello \n world"
+     "quoted newline handling"]
+    ["(quote \"Hello \r world\")"
+     []
+     "Hello \r world"
+     "quoted carriage-return handling"]
     [ "(fn ()
             (+ 1 2))"
     []
@@ -336,6 +344,55 @@
     []
     true
     "apply to an inline function"]
+    ["(apply (fn (v)
+           (+ v 1))
+       [2])"
+    []
+    3
+    "apply an anonymous function"]
+    ["(let
+    ((x 3))
+    (apply 
+       (fn (v)
+           (+ v 1))
+           [x]))"
+     []
+     4
+     "Application of variable to anonymous"]
+    ["(let
+        ((x 3))
+        (apply (cond
+                   (>= x 0)
+                   (fn (v)
+                       (+ v 1))
+                   else
+                   (fn (v)
+                       (- v 1)))
+               [x]))"
+     []
+     4
+     "apply to a conditionally returned function"]
+    ["(let
+        ((x 3))
+        (apply 
+           (if (> x 0) 
+               (fn (v)
+                  (+ v 1))
+               (fn (v)
+                   (- v 1)))
+               [x]))"
+     []
+     4
+     "apply to a conditionally returned function (if)"]
+    ["(let
+        ((x 3))
+        (apply 
+           (fn (v w)
+               (+ v w))
+               2 [x]))"
+     []
+     5
+     "Multi argument apply with anonymous function"]
     [ "(fn ()
          (do (defvar `s (new Set))
              (call s `add 1)
@@ -412,12 +469,17 @@
     []
     120
     "let with recursion"]
-    
+   
     [ "(let ((`x 1) (`y 2)) (+ x y))"
     []
     3
     "evaluation of anonymous let block"
     ]
+     ["(let ((d1 1) (d1 2)) d1)"
+     []
+     2
+     "Redeclaration of local reference in let"
+     ]
     [ "(do (defvar `abc 123) abc)"
     []
     123
