@@ -1499,7 +1499,7 @@
                                   
                                   
                                         ;(push acc assignment_value)
-                                  
+                                 
                                   ;(push acc ";")
                                   (log "compile_assignment: <-" acc)
                                   acc)))
@@ -2766,17 +2766,24 @@
                          `in_try
                          true)
                (= stmts (compile try_block ctx))
-                                        ;(= insert_return? (check_needs_return stmts))
+               ;(= insert_return? (check_needs_return stmts))
                
-               (try_log "compiled try block: " stmts)
+               (if (and stmts.0.ctype
+                        (or (== stmts.0.ctype AsyncFunction)
+                            (== stmts.0.ctype Function)))
+                    (prepend stmts "await"))
+                
+               (try_log "compiled try block: " (clone stmts))
                (try_log "try block needs return?: " insert_return? "needs braces?" needs_braces?)
+              ;(if insert_return?
+               ;    (= stmts (splice_in_return stmts)))
                (if (is_complex? try_block)
                                         ;(contains? try_block.0.name ["do" "progn" "let"])
                                         ;(== try_block.1.type "arr"))
                    
                    (for_each (`t ["try" " " "/* TRY COMPLEX */ "   stmts " " ])
                              (push acc t))
-                   (for_each (`t ["try" " " "/* TRY SIMPLE */ " "{" " "  stmts " " "}"])
+                   (for_each (`t ["try" " " "/* TRY SIMPLE */ " "{" " " { `mark: "rval" }  stmts " " "}"])
                              (push acc t)))
                (try_log "compiled try:" (flatten acc))
                (while (< idx catches.length)
@@ -2870,17 +2877,23 @@
                                 (`function_ref (gen_temp_name "apply_fn"))
                                 (`target_argument_ref nil)
                                 (`target_arg nil)
+                                (`ctype nil)
                                 (`preceding_arg_ref nil)
+                                (`requires_await false)
                                 (`compiled_fun_resolver nil)
                                 (`args (-> tokens `slice 2)))
                              (when (and args (== args.length 1))
                                (= args (first args)))
-                             (apply_log "apply_log: -> " tokens)
+                             (apply_log " -> " tokens)
                              ;(apply_log "compile_apply: function:" "is_form:" (is_form? fn_ref) fn_ref)
                              ;(apply_log "compile_apply: args: " args)
                              
                              (= function_ref (compile fn_ref ctx))
-                             
+                             (when fn_ref.ref
+                                 (= ctype (get_declaration_details ctx function_ref)))
+                             (apply_log "function reference: " ctype)
+                             (when (is_function? ctype.value)
+                                 (= requires_await true))
                              ;(apply_log "compile_apply: function_ref: " (clone function_ref))
                              (= function_ref (wrap_assignment_value function_ref))
                              (apply_log "compile_apply: compiled: function: " (clone function_ref))
@@ -2933,7 +2946,7 @@
                                    (push acc ")")))
                              (apply_log "<-" (join "" (flatten ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])))
                              ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
-                             ["(" "async" " " "function" "()" "{" acc "}" ")" "()"])))
+                             ["await" " " "(" "async" " " "function" "()" "{" acc "}" ")" "()"])))
        
        (`compile_call (fn (tokens ctx)
                           (let

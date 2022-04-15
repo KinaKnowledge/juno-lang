@@ -890,6 +890,20 @@
     nil
     "(-> env `set_check_external_env false)"
     ]
+    ["(let
+     ((`ntree nil)
+      (`precompile_function (fn (v)
+                                (- v 1))))
+                   
+       (try
+          (= ntree (apply precompile_function [2]))
+          (catch Error (`e)
+            (do
+             e
+             ))))"
+     []
+     1
+     "try/catching a return value assignment via apply"]
     [ "(let
          ((`x 1)
           (`y 2)
