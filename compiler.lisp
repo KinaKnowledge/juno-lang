@@ -88,7 +88,7 @@
                           (take comps))
                     (push acc_full
                           (expand_dot_accessor (join "." acc) ctx))))
-             (flatten ["(" (join "&&" acc_full) ")" ])))))    
+             (join " " (flatten ["(" (join "&&" acc_full) ")" ]))))))
 
 
 (defun `get_object_path (refname)
@@ -213,8 +213,25 @@
       text) )
 
 
-;; Given a compiled js tree structure, searches for return markers,
-;; and if found, splices in a "return" string in it's place
+(defun `defclog (opts)
+     (let
+         ((`style (+ "padding: 5px;"
+                     (if opts.background
+                         (+ "background: " opts.background ";")
+                         "")
+                     (if opts.color
+                         (+ "color: " opts.color ";"))
+                     "")))
+         (fn (`& args)
+            (apply console.log (+ "%c" (if opts.prefix
+                                           opts.prefix
+                                           (take args)))
+                               (conj [ style ]
+                                     args))
+                               
+                                       ) ))
+
+
 
 (defun `splice_in_return (js_tree _ctx _depth)
     (cond
@@ -235,7 +252,7 @@
                  (push ntree (splice_in_return comp _ctx (+ (or _depth 0) 1)))
                   ;; only splice in if the next element isn't a return, throw, or another block
                  (and (is_object? comp)
-                      (== comp.mark "rval")
+                      (== comp.mark "return_point")
                       (and (not (== "return" next_val))
                            (not (== "throw" next_val))
                            (not (and (is_object? next_val)
@@ -244,7 +261,7 @@
                                                              
                                        
                  (do 
-                     ;(console.log "splice_in_return: splicing return at: " comp)
+                     (console.log "splice_in_return: splicing return at: " comp idx (prop flattened (- idx 1)) (prop flattened (+ idx 1)))
                      (push ntree " ")
                      (push ntree "return")
                      (push ntree " "))
@@ -255,7 +272,223 @@
           ntree)
       else
       js_tree))
- 
+
+(defun `getf_ctx (ctx name _value)
+    (if (and ctx (is_string? name))
+        (cond
+           (not (== undefined (prop ctx.scope name)))
+           (if (not (== _value undefined))
+               (do 
+                   (set_prop ctx.scope
+                             name
+                             _value)
+                   _value)
+               (prop ctx.scope name))
+           ctx.parent
+           (getf_ctx ctx.parent name _value)
+           else
+           undefined)
+       (throw "invalid call to get_ctx: missing argument/s")))
+
+(defun `setf_ctx (ctx name value)
+    (let
+        ((`found_val (getf_ctx ctx name value)))
+        (if (== found_val undefined)
+            (set_prop ctx.scope
+                      name
+                      value))
+        value))
+                  
+        
+(defun `set_path (path obj value)
+    (let
+        ((`fpath (clone path))
+         (`idx (pop fpath))
+         (`rpath fpath)
+         (`target_obj nil))
+     (= target_obj (resolve_path rpath obj))
+     ;(console.log "set_path: " rpath "target: " target_obj " idx: " idx (prop target_obj idx))
+     (if target_obj
+         (do (set_prop target_obj
+                   idx
+                   value))
+             ;(console.log "set_path: value set: " (resolve_path path obj)))
+         (throw RangeError (+ "set_path: invalid path: " path)))))
+
+(defun `gen_multiples (len multiple?)
+  (let
+      ((`val 100)
+       (`acc [val])
+       (`mult (or multiple? 10)))
+     (for_each (`r (range len))
+        (push acc (= val (* val mult))))
+    (reverse acc)))
+
+(defun `path_multiply (path multiple?)
+  (let
+      ((`acc 0)
+       (`multiples (gen_multiples (length path) multiple?)))
+      (for_each (`pset (pairs (interlace path multiples)))
+          (= acc (+ acc (* pset.0 pset.1))))
+      acc))
+
+(defun `splice_in_return_a (js_tree _ctx _depth _path)
+  (cond
+     (is_array? js_tree)
+     (let
+         ((`idx -1)
+          (`ntree [])
+          (`_depth (or _depth 0))
+          (`_path (or _path []))
+          (`root _path)
+          (`function_block? (if (== _depth 0)
+                                true
+                                false))
+          (`last_path nil)
+          (`new_ctx (fn (ctx)
+                        {
+                          `parent: ctx 
+                          `scope:{
+                              `level:(if ctx.scope.level
+                                         (+ ctx.scope.level 1)
+                                         0)
+                              `viable_return_points: []
+                              `base_path: (clone _path)
+                              `potential_return_points: []
+                              `return_found: false
+                          }
+                        }))
+          (`_ctx (or _ctx (new_ctx nil)))
+          (`splice_log (defclog { `prefix:(+ "splice_return [" _ctx.scope.level "]") `color: "black" `background: "#20F0F0"  }))
+          (`next_val nil))
+      (splice_log "->" (clone js_tree))
+      
+      (for_each (`comp js_tree)
+          (do
+              (inc idx)
+              (= last_path (conj _path [idx]))
+              (cond
+                  (is_array? comp)
+                  (push ntree (splice_in_return_a comp _ctx (+ _depth 1) (conj _path [idx])))
+                  (or (is_string? comp)
+                      (is_number? comp)
+                      (is_function? comp))
+                  (push ntree comp)
+                  (is_object? comp)
+                  (cond
+                    (is_function? comp.ctype)
+                    (do 
+                        (splice_log "FUNCTION TYPE: " comp.ctype)
+                        (push ntree comp))
+                    (or (== comp.ctype "AsyncFunction")
+                        (== comp.ctype "Function"))
+                    (do 
+                        (= _path  [])
+                        (= _ctx (new_ctx _ctx))
+                        (= function_block? true)
+                        (splice_log "start return point encountered: " comp (getf_ctx _ctx `base_path))
+                        
+                        (push ntree comp))
+                        
+                    (== comp.mark "rval")
+                    (do 
+                        (splice_log "potential return: " (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (push (getf_ctx _ctx `potential_return_points)
+                                        {
+                                          `path: (conj _path [idx])
+                                          `type: comp.mark
+                                          `block_step: comp.block_step
+                                          `lambda_step: comp.lambda_step
+                                         } )
+                        (push ntree comp))
+                    (== comp.mark "forced_return")
+                    (do 
+                        (push (getf_ctx _ctx `viable_return_points)
+                              {
+                                `path: (conj _path [idx])
+                                `type: comp.mark
+                               })
+                        (splice_log "force_return: at level:" (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (push ntree comp))
+                    (== comp.mark "final-return")
+                    (do 
+                        (splice_log "final block return for level:" (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (push (getf_ctx _ctx `viable_return_points)
+                              {
+                                `path: (conj _path [idx])
+                                `type: comp.mark
+                               })
+                        (setf_ctx _ctx `return_found true)
+                        (push ntree comp))
+                    else
+                    (push ntree comp))
+                  else
+                  (push ntree comp))))
+      (when function_block?
+           (let
+               ((`viables (reverse (or (getf_ctx _ctx `viable_return_points) [])))
+                (`potentials (reverse (or (getf_ctx _ctx `potential_return_points) [])))
+                (`base_path (getf_ctx _ctx `base_path))
+                (`base_addr nil)
+                (`final_viable_path (prop (first viables) `path))
+                (`max_viable 0)
+                (`plength 0)
+                (`max_path_segment_length nil)
+                (`final_return_found (getf_ctx _ctx `return_found)))
+                
+              (splice_log "<return must be by here> found?" final_return_found "level: "  _ctx.scope.level "root: " root  "base_path: " base_path "last_path: " last_path)
+              (splice_log "viable_return_points: " (clone viables))
+              (splice_log "potential_return_points: " (clone potentials))
+              (splice_log "tree to operate on: " (clone js_tree))
+              
+              ;; we do change the indices because we will replace the marker objects
+              ;; rule: for all viables, insert return statement at point of path
+              ;; rule: for all potentials, ONLY if NO viables, insert return point
+            
+              (for_each (`v viables)
+                 (do (set_path v.path ntree { `mark: "return_point" } )
+                     (splice_log "set viable: " (clone (resolve_path (chop v.path) ntree)))))
+            
+              
+             (splice_log "removing potentials: base_path: " base_path "max_viable: " max_viable (length final_viable_path) final_viable_path)
+             
+              (for_each (`p potentials)
+                 (do 
+                     (= plength (Math.min (length p.path) (length final_viable_path)))
+                     (= base_addr (slice final_viable_path 0 plength))
+                     (defvar `ppath (slice p.path 0 plength))
+                     (defvar `vpath (slice final_viable_path 0 plength))
+                     (= max_path_segment_length (Math.max 8
+                                                          (+ 1 (prop (minmax ppath) 1))
+                                                          (+ 1 (prop (minmax vpath) 1))))
+                     (splice_log p "max_path_segment_length: " max_path_segment_length "ppath: " ppath " vpath: " vpath 
+                                 (path_multiply ppath max_path_segment_length) ">" (path_multiply vpath max_path_segment_length)
+                                 (> (path_multiply ppath max_path_segment_length) (path_multiply vpath max_path_segment_length)))
+                     (if (or (> (path_multiply ppath max_path_segment_length)
+                                (path_multiply vpath max_path_segment_length))
+                             (and (== p.block_step 0)
+                                  (== p.lambda_step 0))
+                             (== 0 (length viables)))
+                        (do 
+                            (splice_log "set potential to return at" ppath "versus final viable: " vpath)
+                            (set_path p.path ntree { `mark: "return_point" }))
+                            
+                         (set_path p.path ntree { `mark: "ignore" } ))
+                     ))
+           ))
+              
+          
+      (if (== _depth 0)
+          (splice_log "<-" (clone ntree)))
+      
+      
+      ntree)
+     else
+     js_tree))
+                  
+                        
+          
+
   
 (defun `add_escape_encoding (text)
     (if (is_string? text)
@@ -993,7 +1226,7 @@
                             (log "get_val: " (safe_access token ctx sanitize_js_ref_name))
                             (if (and (> (safety_level ctx) 1)
                                      (> comps.length 1))
-                                (join " " (safe_access token ctx sanitize_js_ref_name))
+                                (safe_access token ctx sanitize_js_ref_name)
                                 (sanitize_js_ref_name (expand_dot_accessor token.name ctx))))
                         else
                         token.val))))
@@ -1470,13 +1703,16 @@
                                    ;        target
                                     ;       assignment_value)
                                   
-                                  
+                                  ;(push acc (if (== (get_ctx_val ctx "__LAMBDA_STEP__") 0)
+                                   ;              { `mark: "final-return" }
+                                    ;            (return_marker)))
                                   
                                   (if (== target_location_compile_time "local")
                                       (do
                                        (set_ctx ctx
                                                 target
                                                 assignment_type)
+                                       
                                        (push acc target)
                                        (push acc "=")
                                         (push acc assignment_value))
@@ -1512,13 +1748,13 @@
                                                log
                                                (defclog { `prefix: (+ "needs_return (" ctx.block_id ")") `background: "#C0C0C0" `color: `darkgreen } )))
                                     (`flattened nil))
-                                 (clog "-> " stmts)
-                                 (clog "block_step:" ctx.block_step)
-                                 (clog "final -> " final_stmt)
+                                 ;(clog "-> " stmts)
+                                 ;(clog "block_step:" ctx.block_step)
+                                 ;(clog "final -> " final_stmt)
                                  (cond 
                                    (eq nil final_stmt)
                                    (do
-                                    (clog "empty stmts: " stmts)
+                                    ;(clog "empty stmts: " stmts)
                                     false)
                                    (and (not (is_array? final_stmt))
                                         (not (== "}" final_stmt)))
@@ -1528,11 +1764,11 @@
                                         ;false
                                    else
                                    (do
-                                    (map (fn (stmt idx)
-                                             (clog "idx:" idx " stmt ->" stmt))
-                                         stmts)
+                                    ;(map (fn (stmt idx)
+                                     ;        (clog "idx:" idx " stmt ->" stmt))
+                                      ;   stmts)
                                     (= flattened (flatten final_stmt))
-                                     (clog "first flattened:" (first flattened) (sub_type flattened) )
+                                     ;(clog "first flattened:" (first flattened) (sub_type flattened) )
                                      ;; check for instructions on the last statment
                                      ;; if there is a comment present, then check for the second
                                      (cond  
@@ -1545,7 +1781,7 @@
                                             (prop (second flattened) `ctype))
                                        (= inst (second flattened)))
                                      
-                                     (clog "inst: " inst (not (contains? (first flattened) ["__BREAK__FLAG__" "let" "{" "if" "return" "throw"])) (join "" flattened))
+                                     ;(clog "inst: " inst (not (contains? (first flattened) ["__BREAK__FLAG__" "let" "{" "if" "return" "throw"])) (join "" flattened))
                                      
                                      (cond
                                        (and inst
@@ -1567,7 +1803,7 @@
                                        false
                                        else
                                        (do
-                                        (clog "- returning true")
+                                        ;(clog "- returning true")
                                         true)))))
                                false)))
                            
@@ -1621,6 +1857,7 @@
                                 (`return_last ctx.return_last_value)
                                 (`stmt nil)
                                 (`stmt_ctype nil)
+                                (`lambda_block false)
                                 (`stmts [])
                                 (`idx 0))
                              (when tokens.1.source
@@ -1631,9 +1868,16 @@
                              (set_prop ctx
                                        `block_id
                                        block_id)
-                             (clog "start: return_point:" ctx.return_point "return_last:" return_last  "num_steps: " (- tokens.length 1) tokens)
+                            
+                             (when (== (get_ctx_val ctx `__LAMBDA_STEP__) -1)
+                                   (= lambda_block true)
+                                   (setf_ctx ctx `__LAMBDA_STEP__
+                                            (- tokens.length 1)))
+                             (clog "start: lambda_block?:" lambda_block "lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__)  "num_steps: " (- tokens.length 1) (clone tokens))
                              (when (not block_options.no_scope_boundary)
                                (push acc "{"))
+                               
+                             
                                         ;(when true ; block_options.new_scope
                                         ;     (= ctx (new_ctx ctx)))
                                         ;(when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))
@@ -1647,10 +1891,16 @@
                                         (set_prop ctx
                                                   `final_block_statement
                                                   true))
+                                              
                                       (set_prop ctx
                                                 `block_step 
                                                 (- tokens.length 1 idx))
-                                      (clog "step start:  block_step:" ctx.block_step "source:" token.source)
+                                            
+                                      (when lambda_block
+                                           (set_ctx ctx "__LAMBDA_STEP__" 
+                                                    (- tokens.length 1 idx)))
+                                                
+                                      (clog "step start: lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__) "source:" token.source)
                                       (if (and (== token.type "arr")
                                                (== token.val.0.name "return"))
                                           (do 
@@ -1683,6 +1933,7 @@
                                         true) ;; disabled due to return issue
                                         
                                       (clog "in block:<-" stmt)
+                                      
                                       (= stmt_ctype (and (> ctx.block_step 0)
                                                          (is_object? (first stmt))
                                                          (prop (first stmt) `ctype)))
@@ -1690,14 +1941,19 @@
                                       (cond 
                                         (== stmt_ctype "AsyncFunction")
                                         (do 
-                                            (push stmts "await")
-                                            (push stmts " ")
+                                            ;(push stmts "await")
+                                            ;(push stmts " ")
+                                            (clog "async function: [adding potential return marker] " stmt)
+                                             (push stmts { `mark: "block<-async" })
                                             (push stmts stmt))
                                         (== stmt_ctype "block")
                                         (do 
+                                            ;(push stmts { `mark: "wrap-block" })
                                             (push stmts (wrap_assignment_value stmt)))
                                         else
-                                        (push stmts stmt))
+                                        (do 
+                                            (push stmts { `mark: "standard" })
+                                            (push stmts stmt)))
                                       (when (< idx (- tokens.length 1))
                                         (push stmts ";"))))
                                     
@@ -1712,10 +1968,12 @@
                                
                                
                                (= last_stmt (pop stmts))
-                               (clog "block_step:" ctx.block_step "last stmt: " last_stmt)
-                               
+                               (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))`
+                               ; TODO - 
                                (push stmts
-                                     "return")
+                                     { `mark: "final-return" } )
+                               ;(push stmts
+                                ;     "return")
                                (push stmts " ")
                                (push stmts last_stmt))
                              
@@ -1723,8 +1981,9 @@
                              (push acc stmts)
                              (when (not block_options.no_scope_boundary)
                                (push acc "}"))
-                             (clog "end: block_step: " ctx.block_step (flatten acc))
+                             (clog "end: block_step: " ctx.block_step acc)
                              (prepend acc { `ctype: "block" } )
+                             (clog "<-" (clone acc))
                              acc)))
        
        (`Expression (new Function "" "{ return \"expression\" }"))
@@ -1761,7 +2020,7 @@
                               (log "compile_defvar: ->" tokens)
                               (= assignment_value
                                  (do 
-                                  (flatten [(compile tokens.2 ctx)])))
+                                  (compile tokens.2 ctx)))
                               (log "compile_defvar: compile returned:" assignment_value)
                               (= wrap_as_function? (check_needs_wrap assignment_value))
                               
@@ -1779,7 +2038,7 @@
                                             
                                    
                                    (when wrap_as_function?
-                                         (= assignment_value [ { `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
+                                         (= assignment_value [ { `ctype: "AsyncFunction" }  "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                                   
                                   (set_ctx ctx
                                            target
@@ -1787,14 +2046,16 @@
                               (log "compile_defvar: assignment_value: " assignment_value)
                               (if ctx.defvar_eval
                                   (do
-                                   (remove_prop ctx
-                                                `defvar_eval)
-                                   [{ `ctype: "assignment"  } "let" " " target "=" assignment_value "()" ";"])
-                                  [{ `ctype: "assignment"  } (if (and ctx_details.is_argument
-                                                                      (==  ctx_details.levels_up 1))
-                                                                 ""
-                                                                 "let ") 
-                                  "" target "=" assignment_value ";"]))))
+                                    (remove_prop ctx
+                                                 `defvar_eval)
+                                    [{ `ctype: "assignment"  } "let" " " target "=" assignment_value "()" ";"])
+                                  
+                                  [ { `ctype: "assignment"  } 
+                                    (if (and ctx_details.is_argument
+                                             (==  ctx_details.levels_up 1))
+                                         ""
+                                         "let ") 
+                                  "" target "=" [ assignment_value ]";"]))))
        ;; checks to see what has been declared during compilation and returns where
        ;; it only checks for declarations that have occurred during the compile phase
        
@@ -1855,9 +2116,9 @@
                                      (log "wrap_assignment_value: check_needs_return: " fst (sub_type fst))
                                      (cond
                                        (== "ifblock" fst)
-                                       [{`ctype: "AsyncFunction" }  "await" " " "(" "async" " " "function" " " "()" " " "{" " " (splice_in_return stmts) " " "}" ")" "()" ]
+                                       [{`ctype: "AsyncFunction" } {`mark: "wrap_assignment_value"}  "await" " " "(" "async" " " "function" " " "()" " " "{" " " stmts " " "}" ")" "()" ]
                                        (contains? "block" fst)
-                                       [{`ctype: "AsyncFunction" }  "await" " " "(" "async" " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
+                                       [{`ctype: "AsyncFunction" } {`mark: "wrap_assignment_value"} "await" " " "(" "async" " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
                                        else
                                        stmts))))
        (`compile_let (fn (tokens ctx)
@@ -1872,6 +2133,7 @@
                               (`assignment_value nil)
                               (`block_declarations {})
                               (`assignment_type nil)
+                              (`stmt nil)
                               (`reference_name nil)
                               (`alloc_set nil)
                               (`ctx_details nil)
@@ -1907,8 +2169,8 @@
                                   (when ctx_details
                                         (clog "declaration details for: " reference_name (clone ctx_details)))
                                   ;; if it isn't an argument to a potential parent lambda, set the ctx 
-                                  (if (not (and ctx_details.is_argument
-                                                (== ctx_details.levels_up 1)))
+                                  (when (not (and ctx_details.is_argument))
+                                                ;(== ctx_details.levels_up 1)))
                                         
                                    ;; set a placeholder for the reference
                                       (set_ctx ctx
@@ -1923,6 +2185,7 @@
                            (while (< idx (- allocations.length 1))
                                   (do
                                     (inc idx)
+                                    (= stmt [])
                                     (= alloc_set (prop (prop allocations idx) `val))
                                     (clog "compiling: alloc_set:" (is_complex? alloc_set.1) alloc_set)
                                     (= reference_name (sanitize_js_ref_name alloc_set.0.name))
@@ -1978,7 +2241,7 @@
                                       (and (is_array? assignment_value)
                                            (is_object? (first assignment_value))
                                            (prop (first assignment_value) `ctype))
-                                      (= assignment_type (take assignment_value))
+                                      (= assignment_type (first assignment_value))
                                       (prop op_lookup alloc_set.1.val.0.name)
                                       (= assignment_type Function)
                                       else
@@ -1988,19 +2251,20 @@
                                         ;                          assignment_type))
                                     
                                         ;(log "compile_let: compiling: ref:" reference_name "=" (join "" (flatten assignment_value)))
-                                    (if (or (and ctx_details.is_argument
-                                                 (== ctx_details.levels_up 1))
+                                    (if (or (and ctx_details.is_argument)
+                                                 ;(== ctx_details.levels_up 1))
                                             (prop block_declarations reference_name))
                                         true   ;; test for whether or now we need to declare it without getting in trouble with JS
                                         (do 
-                                         (push acc "let")   ;; depending on block status, this may be let for a scoped {}
-                                         (push acc " ")))
-                                    (push acc reference_name)
+                                         (push stmt "let")   ;; depending on block status, this may be let for a scoped {}
+                                         (push stmt " ")))
+                                    (push stmt reference_name)
                                     (set_prop block_declarations reference_name true) ;; mark that we have already declared so that if it is redeclared we don't try and declare in JS again
-                                    (push acc "=")
-                                    (push acc assignment_value)
-                                    (push acc ";"))) ;/*LET*/")))
-                           (clog "assignments complete:" (join "" (flatten acc)))
+                                    (push stmt "=")
+                                    (push stmt assignment_value)
+                                    (push stmt ";")
+                                    (push acc stmt))) ;/*LET*/")))
+                           (clog "assignments complete:" (clone acc))
                            (push acc (compile_block (conj ["PLACEHOLDER"]
                                                           block)
                                                     ctx
@@ -2010,7 +2274,7 @@
                                                     }))
                            (push acc "}")
                            (clog "return_point: " ctx.return_point)
-                           (clog "<-" (flatten acc))
+                           (clog "<-" (clone acc))
                            (console.log "compile_let: <-" acc)
                            (if (== ctx.return_point 1)
                                acc
@@ -2035,9 +2299,13 @@
                           (set_prop ctx
                                     `return_point
                                     0)
+                          
                           (set_ctx ctx
                                    `__IN_LAMBDA__
                                    true)
+                          (set_ctx ctx
+                                   `__LAMBDA_STEP__
+                                   -1)   ;; define the lambda step here as -1, when hit the first block, set it to the countdown to 0
                           (set_prop ctx
                                     `lambda_scope
                                     true)
@@ -2105,18 +2373,21 @@
                           (cond 
                             (== body.val.0.name `let)
                             (do 
-                             
+                             (fn_log "let block: " body.val)
+                             ;(push acc { `mark: "rval" })
                              (push acc (compile body.val
-                                                ctx)))
+                                                ctx
+                                                )))
                             (== body.val.0.name `do)
                             (do 
                              (fn_log "do block: " body.val)
                              (push acc (compile_block body.val
-                                                      ctx)))
+                                                      ctx
+                                                      )))
                             
                             else  ;; make a pseudo-block
                             (do 
-                             
+                             (fn_log "making pseudo-block: " body)
                              (= nbody [{
                                 `type: "special",
                                 `val: (quote "=:do"),
@@ -2128,8 +2399,11 @@
                               `return_last_value
                               true)
                               (fn_log "nbody: " nbody)
+                              (push acc { `mark: "nbody" } )
                               (push acc (compile_block nbody
-                                                       ctx))))
+                                                       ctx
+                                                       ))))
+                          
                               
                           (fn_log "<-" (clone acc))
                           acc)))
@@ -2195,6 +2469,7 @@
                   (`conditions [])
                   (`stmts nil)
                   (`fst nil)
+                  (`ctx (new_ctx ctx))    ;; we are in a function wrapper
                   (`inject_return false)
                   (`block_stmts nil)
                   (`needs_braces? false)
@@ -2231,13 +2506,16 @@
                   (`condition nil)
                   (`condition_block nil)
                   (`condition_tokens (-> tokens `slice 1)))
-               (cond_log "compile_cond: condition_tokens: " condition_tokens)
+               (cond_log "->" condition_tokens)
+               
                (cond 
                  (not (== (% condition_tokens.length 2) 0))
                  (throw SyntaxError "cond: Invalid syntax: missing condition block")
                  (== condition_tokens.length 0)
                  (throw SyntaxError "cond: Invalid syntax: no conditions provided"))
-               
+               (set_ctx ctx
+                        `__LAMBDA_STEP__
+                         -1)
                (while (< idx condition_tokens.length)
                       (do
                        (= inject_return false)
@@ -2252,6 +2530,7 @@
                           (push acc "else")
                           (push acc " "))
                         (when (not (== condition.name "else"))
+                          (push acc {`ctype: "ifblock"  } )
                           (push acc "if")
                           (push acc " ")
                           (push acc "("))
@@ -2260,17 +2539,16 @@
                         (cond 
                           (is_form? condition)
                           (do 
-                           (= stmts (compile condition ctx))
-                           (cond_log "<- condition (form): " stmts)
-                            
+                            (= stmts (compile condition ctx))
+                            (cond_log "<- condition (form): " stmts)
                             (push acc " ")
                             (push acc stmts))
                           (== condition.name "else")
                           (cond_log "else block")
                           else 
                           (do 
-                           (= stmts (compile condition ctx))
-                           (cond_log "<- condition: " stmts)
+                            (= stmts (compile condition ctx))
+                            (cond_log "<- condition: " stmts)
                             (push acc stmts)))
                         (when (not (== condition.name "else"))
                           (push acc ")"))
@@ -2279,7 +2557,7 @@
                         (= stmts (compile condition_block ctx))
                         (cond_log "<-condition block" stmts)
                         (when (check_needs_return stmts)
-                          (= inject_return true))
+                          (= inject_return true)) ; true
                         (cond_log "cond block needs return?" inject_return  "needs braces?" needs_braces?)
                         (when needs_braces?
                           (push acc "{")
@@ -2347,15 +2625,15 @@
                                        (and (== ctx.block_step 0)
                                             (< ctx.return_point 3))
                                        (do 
-                                        (if_log "end of block-> block_step 0, return_point < 2")
+                                        (if_log "end of block-> block_step 0, return_point < 3")
                                         (= needs_braces? true)
-                                        true)
+                                        false)  ;;true
                                        (and (== ctx.block_step 0)
                                             (> ctx.return_point 2))
                                        (do 
-                                        (if_log "end of block-> block_step 0, return_point > 1")
+                                        (if_log "end of block-> block_step 0, return_point > 2")
                                         (= needs_braces? true)
-                                        true)
+                                        false) ;; true
                                        (> ctx.block_step 0)
                                        (do 
                                         (= needs_braces? true)
@@ -2364,9 +2642,9 @@
                                        (do 
                                         (if_log "check_needs_return: " ctx.block_step  "defaulting to true")
                                         (= needs_braces? true)
-                                        true))))))
+                                        false))))))   ;; true
                           
-                          (if_log "start: block_id: " ctx.block_id "block_step:" ctx.block_step "return_point:" ctx.return_point tokens)
+                          (if_log "start: block_id: " ctx.block_id "block_step:" ctx.block_step "__LAMBDA_STEP__:" (get_ctx_val ctx "__LAMBDA_STEP__") tokens)
                           (if_log "test_form: " test_form.source test_form)
                           (if_log "if_true: " if_true.source if_true)
                           (if_log "if_false: " if_false.source if_false)
@@ -2395,12 +2673,15 @@
                           (= compiled_true (compile if_true ctx))
                           (= inject_return (check_needs_return compiled_true))
                           
-                          (if_log "if_true <- inject_return?" inject_return "stmt:" compiled_true)
+                          (if_log "if_true <- __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_true))
                           
                           (when needs_braces?
                             (push acc "{")
                             (push acc " "))
-                          (push acc (return_marker))
+                          (push acc (if (and false (== (get_ctx_val ctx "__LAMBDA_STEP__") 0)
+                                             (== ctx.block_step 0))
+                                        { `mark: "final-return" }
+                                        { `mark: `rval `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx "__LAMBDA_STEP__")}))
                           (when inject_return
                             (push acc "return")
                             (push acc " "))
@@ -2410,14 +2691,16 @@
                           (when if_false
                             (= compiled_false (compile if_false ctx))
                             (= inject_return (check_needs_return compiled_false))
-                            (if_log "if_false <-" compiled_false)
+                            (if_log "if_false <-" (clone compiled_false))
                             (push acc " " )
                             (push acc "else")
                             (push acc " ")
                             (when needs_braces?
                               (push acc "{")
                               (push acc " "))
-                            (push acc (return_marker))
+                            (push acc (if (and false (== (get_ctx_val ctx "__LAMBDA_STEP__") 0))
+                                          { `mark: "final-return" }
+                                          { `mark: `rval `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx "__LAMBDA_STEP__")} ))
                             (when inject_return
                               (push acc "return")
                               (push acc " "))
@@ -2425,11 +2708,11 @@
                             (when needs_braces?
                               (push acc "}")))
                           
-                          (if_log "<-" (flatten acc))
+                          (if_log "<-" (clone acc))
                           (set_prop ctx
                                     `suppress_return
                                     in_suppress?)
-                          acc)))                     
+                          acc)))
        (`cwrap_log (if quiet_mode
                        log
                        (defclog { `color: "darkgreen;" })))
@@ -2463,7 +2746,7 @@
                                      (set_prop ctx
                                       `return_point
                                       1)
-                                      (for_each (`t ["(" "async" " " "function" "()" "{" (splice_in_return (compile_if tokens.val ctx)) "}" ")" "()" ])
+                                      (for_each (`t ["(" "async" " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
                                                 (push acc t)))
                                     (is_array? tokens)
                                     (do
@@ -2501,7 +2784,7 @@
                                             `return_point
                                             0)
                                         ;(push acc "/* compile_block_to_anon_fn (block) */")
-                                            (for_each (`t ["(" "async" " " "function" "()" (splice_in_return (compile_block tokens ctx)) ")" "()" ])
+                                            (for_each (`t ["(" "async" " " "function" "()" (compile_block tokens ctx) ")" "()" ])
                                                       (push acc t)))
                                           (== tokens.0.name "let")
                                           (do 
@@ -2511,7 +2794,7 @@
                                            (set_prop ctx
                                             `return_point
                                             0)
-                                            (for_each (`t ["(" "async" " " "function" "()" (splice_in_return (compile tokens ctx)) ")" "()"])
+                                            (for_each (`t ["(" "async" " " "function" "()" (compile tokens ctx) ")" "()"])
                                                       (push acc t)))
                                           else
                                           (do
@@ -2673,7 +2956,7 @@
                      log
                      (defclog { `prefix: "compile_try"  `background: "violet" `color: `black })))                           
        (`compile_try (fn (tokens ctx)
-                         [ { `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" "{" (splice_in_return (compile_try_inner tokens ctx)) "}" ")" "()" ]))
+                         [ { `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" "{"  (compile_try_inner tokens ctx) "}" ")" "()" ]))
        
        (`compile_try_inner
          (fn (tokens ctx)
@@ -2755,7 +3038,8 @@
                   (`base_error_caught false)
                   (`catches (-> tokens `slice 2)))
                (try_log "->" tokens)
-               (try_log "complex?: " (is_complex? try_block) "try block:"  try_block)
+               (try_log "__LAMBDA_STEP__:" (get_ctx_val ctx "__LAMBDA_STEP__")
+                                         "try block:"  try_block)
                (try_log "catches: " catches)
                (when (== (length catches) 0)
                  (throw SyntaxError "try: missing catch form"))
@@ -2774,7 +3058,7 @@
                     (prepend stmts "await"))
                 
                (try_log "compiled try block: " (clone stmts))
-               (try_log "try block needs return?: " insert_return? "needs braces?" needs_braces?)
+               (try_log "try block at lambda step: " (get_ctx_val ctx "__LAMBDA_STEP__") "needs braces?" needs_braces?)
               ;(if insert_return?
                ;    (= stmts (splice_in_return stmts)))
                (if (is_complex? try_block)
@@ -2783,9 +3067,11 @@
                    
                    (for_each (`t ["try" " " "/* TRY COMPLEX */ "   stmts " " ])
                              (push acc t))
-                   (for_each (`t ["try" " " "/* TRY SIMPLE */ " "{" " " { `mark: "rval" }  stmts " " "}"])
+                   (for_each (`t ["try" " " "/* TRY SIMPLE */ " "{" " "  (if (== (get_ctx_val ctx "__LAMBDA_STEP__") 0)
+                                                                             { `mark: "final-return" }
+                                                                             { `mark: "rval" })  stmts " " "}"])
                              (push acc t)))
-               (try_log "compiled try:" (flatten acc))
+               (try_log "compiled try:" (clone acc))
                (while (< idx catches.length)
                       (do 
                        (= catch_block (prop (prop catches idx) `val))
@@ -2813,7 +3099,7 @@
                
                
                
-               (try_log "<-" (join "" (flatten acc)))
+               (try_log "<-"  (clone acc))
                acc
                )))
        
@@ -2853,7 +3139,7 @@
                                  (`return_value nil))
                               (log "compile_return:" "block?" (is_block? tokens.1.val) ctx)
                               (push acc
-                                    { `ctype: "return" })
+                                    { `mark: "forced_return" })
                               (if (is_block? tokens.1.val)
                                   (do
                                    (for_each (`t ["let" " " return_val_reference "=" (compile tokens.1.val ctx) ";" "return" " " return_val_reference ";"])
@@ -2944,7 +3230,7 @@
                                          (push acc args_ref)
                                          (push acc (wrap_assignment_value (compile args ctx)))))
                                    (push acc ")")))
-                             (apply_log "<-" (join "" (flatten ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])))
+                             (apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
                              ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
                              ["await" " " "(" "async" " " "function" "()" "{" acc "}" ")" "()"])))
        
@@ -3026,7 +3312,7 @@
                         (compile tokens.3 ctx))))
                (= assignment_value
                   (do 
-                   (flatten [(compile tokens.2 ctx)])))
+                   (compile tokens.2 ctx)))
                
                (= wrap_as_function? (check_needs_wrap assignment_value))
                (if (and (is_object? assignment_value.0)
@@ -3045,7 +3331,7 @@
                                 else
                                 assignment_value))
                     (when wrap_as_function?
-                      (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" (splice_in_return assignment_value) ")" "()" ])))
+                      (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                    
                    (set_prop root_ctx.defined_lisp_globals
                              target
@@ -3123,11 +3409,14 @@
                                      (do 
                                       (= needs_braces? true)
                                       true))))
-                               (`assembled (join "" (reduce (`v (flatten [js_code]))
+                                
+                               (`assembled nil))
+                            (= assembled (splice_in_return (splice_in_return_a js_code)))
+                            (= assembled (join "" (reduce (`v (flatten [assembled]))
                                                             (if (not (is_object? v))
-                                                                v)))))
-                               
+                                                                v))))   
                             (run_log "current ctx: " (clone (flatten_ctx ctx)))
+                            
                             (= assembled (+ (if needs_braces? "{" "")
                                             (if needs_return? " return " "")
                                             assembled
@@ -3449,6 +3738,7 @@
              (let
                  ((`acc [])
                   (`idx 0)
+                  (`stmts [])
                   (`ctx (new_ctx ctx))
                   (`idx_iter (gen_temp_name "iter"))
                   (`idx_iters [])
@@ -3500,8 +3790,9 @@
                          true)
                (log "for_each prebuild tokens:" prebuild)
                
+               
                (push acc (compile prebuild ctx))
-               (log "for_each: prebuild:" (last acc))
+               (log "for_each: prebuild:" (clone (last acc)))
                (for_each (`t ["let" " " collector_ref "=" "[]" "," element_list "=" (compile elements ctx) ";" ])
                          (push acc t))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
@@ -3529,6 +3820,7 @@
                (push acc " ")
                (push acc collector_ref)
                (push acc ";")
+               (log "compile_for_each <-" acc)
                acc)))
        
        
@@ -3564,7 +3856,7 @@
                (for_each (`t [ "await" " " "(" "async" " " "function" "()" "{" " " prebuild "}" ")" "()" ])
                          (push acc t))
                (log "compile_while: prebuild: " prebuild)
-               
+               (log "compile_while: <-" (clone acc))
                acc)))
        
        (`declare_log (if opts.quiet_mode
@@ -3712,7 +4004,7 @@
                                              (sr_log "check_statement: needs wrap: " stmt.0.ctype stmt)
                                               ;; since we wrapped it in a function - make sure we have a 
                                               ;; return value established 
-                                             (= stmt (splice_in_return stmt))
+                                             ;(= stmt (splice_in_return stmt))
                                              (if (== stmt.0.ctype "ifblock")
                                                 [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " "{" " " stmt " " "}" " " ")" "()"]
                                                 [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
@@ -4026,7 +4318,7 @@
                                             (do 
                                              (comp_log "check_statement: needs wrap: " stmt.0.ctype (== stmt.0.ctype "ifblock") stmt)
                                              (if (== stmt.0.ctype "ifblock")
-                                                 [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" (splice_in_return stmt) "}" " " ")" "()"]
+                                                 [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" stmt "}" " " ")" "()"]
                                                  [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
                                             stmt)))
                   (`kvpair nil)
@@ -4131,7 +4423,7 @@
                                             (do 
                                              (comp_log "check_statement: needs wrap: " stmt.0.ctype (== stmt.0.ctype "ifblock") stmt)
                                              (if (== stmt.0.ctype "ifblock")
-                                                 [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" (splice_in_return stmt) "}" " " ")" "()"]
+                                                 [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" stmt "}" " " ")" "()"]
                                                  [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
                                             stmt)))
                   (`ref nil))
@@ -4266,7 +4558,7 @@
                                            (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw if block back at pos " idx "...need to wrap it but keep structural return value as an array")
                                            (push symbolic_replacements
                                                  [ idx (gen_temp_name "array_arg") 
-                                                   [{ `ctype: "AsyncFunction"} "(" "async" " " "function" "()" " " "{" (splice_in_return compiled_element)  "}" " " ")"]])))))
+                                                   [{ `ctype: "AsyncFunction"} "(" "async" " " "function" "()" " " "{" compiled_element  "}" " " ")"]])))))
                                 
                                 compiled_values)
                            
@@ -4631,6 +4923,10 @@
     ;(main_log "Environment ID: " (-> env `id))
     (main_log "Starting tokenization..." (clone tree))
     
+    (set_ctx root_ctx
+             `__LAMBDA_STEP__
+              -1) 
+    
     (= output
        (cond
          opts.only_tokens
@@ -4658,7 +4954,9 @@
                   (main_log "final token assembly:" final_token_assembly)
                   (= assembly (compile final_token_assembly
                                        root_ctx
-                                       0))))
+                                       0))
+                  (= assembly (splice_in_return_a assembly))
+                  (= assembly (splice_in_return assembly))))
            (if is_error
                (error_log "compilation" (clone is_error))
                (main_log "no compilation errors"))
@@ -5539,8 +5837,4 @@
     (log "Complete")))
     
 (log "Run (init_bootstrap true) to initialize and build compiler environment (true will run the tests).")
-    
-
-
-
 

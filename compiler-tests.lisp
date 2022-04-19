@@ -1431,8 +1431,8 @@
                       (callable 123))))
           (-> testcall `toString))"
      []
-     "async function(callable) {;return (callable)(123)}"
-     "Optmization by using declare - no ambiguity check" 
+     "async function(callable) {; return  (callable)(123)}"
+     "Optimization by using declare - no ambiguity check" 
     ]
     ["(progn
           (defglobal `testcall 
@@ -1506,7 +1506,7 @@
            (inc blk_counter)))
       `toString)"
     []
-   "async function() {\n    let blk_counter=0;\n    return blk_counter+=1\n}"
+   "async function() {\n    let blk_counter=0;\n     return  blk_counter+=1\n}"
    "Value modification outside of infix_ops - output expression"
      ]
   ["(let
@@ -1573,6 +1573,57 @@
    `[0 4]
     "Declare inclusion of function code."
     ]        
-        
-        
+  ["(let
+      ((`my_func 
+            (fn (sources)
+                (if true
+                    (let
+                      ((`sources (or sources [])))
+                      (push sources 1)
+                      sources)))))
+        (my_func))"
+   []
+   `[1]
+   "Declaration detection within subblock - if`"]      
+  ["(let
+       ((`cnt nil)
+        (`val nil)
+        (`vals [ 0 1 2 3 4 ])
+        (`acc_a [])
+        (`idx 0))
+     
+     (while (< idx (- vals.length 1))
+            (do
+             (inc idx)
+             (= val (prop vals idx))
+             (= cnt val)
+              (if (< idx 5)
+                  (do 
+                      (if (< val 3)
+                          (= cnt \"OK\"))))
+              (push acc_a cnt)))
+    acc_a)"
+   []
+   `["OK","OK",3,4]
+   "Nested if return control"
+   ]
+  ["(let
+    ((word_acc [])
+     (mode 0)
+     (acc []))
+    (cond
+        true    
+        (do 
+           (if (== acc.length 0)
+               (do 
+                (if (== mode 1)
+                    (do 
+                        (push acc \"A\")
+                        (= mode 0))
+                    (push acc \"B\"))
+                (push acc \"C\")))))
+    acc)"
+   []
+   `["B" "C"]
+   "Nested if return control 2"]
 ])
