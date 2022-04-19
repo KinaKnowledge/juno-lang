@@ -1626,4 +1626,32 @@
    []
    `["B" "C"]
    "Nested if return control 2"]
+  ["((fn (block)
+     (let
+         ((`obj (new Object))
+          (`idx -1)
+          (`key nil)
+          (`block_length (- (length block) 1)))
+       (while (< idx block_length)
+              (do
+               (inc idx) 
+               (= key (prop block idx))  
+                (cond
+                  else
+                  (do 
+                    (inc idx)     
+                    (if (ends_with? \":\" key)
+                        (= key (chop key))
+                        (do               
+                         (if (== (prop block idx) \":\")
+                             (inc idx)
+                             (throw SyntaxError (+ \"\"  \"missing colon in object key: \" key \" -->\" )))))
+                    (set_prop obj
+                              key
+                              (prop block idx))))))
+       obj))
+   (split_by \" \" \"abc: 123\"))"
+  []
+  {"abc": "123" }
+  "More complicated return structure"]
 ])
