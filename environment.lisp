@@ -12,21 +12,22 @@
           
           ;; Construct the environment
           (defvar
-                    Environment
-                      {
-                        `global_ctx:{
-                            `scope:{
-                            }
+                Environment
+                  {
+                    `global_ctx:{
+                        `scope:{
                         }
-                        `definitions: {
-                            
-                        }
-                        `declarations: { 
-                          `safety: {
-                              `level: 2
-                          }
-                        }
-                      })
+                    }
+                    `definitions: {
+                        
+                    }
+                    `declarations: { 
+                      `safety: {
+                          `level: 2
+                      }
+                    }
+                   `externs:{}
+                  })
                     
          ; (defvar Environment this.Environment)
           (defvar id  (get_next_environment_id))
@@ -39,6 +40,7 @@
                     Environment.global_ctx)
          
           (defvar compiler (fn () true))
+          
           
          
           (define_env 
@@ -122,7 +124,7 @@
                                 });
                                 return list;
                             }"))
-                        
+                  (reverse (new Function "container" "{ return container.slice(0).reverse }"))      
                   (map (new AsyncFunction "lambda" "array_values" 
                               "{ try {
                                         let rval = [],
@@ -223,7 +225,7 @@
                            
                   (ends_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}"))
                   (starts_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}"))
-          
+                  
                   (blank? (fn (val)
                               (or (eq val nil)
                                   (and (is_string? val)
@@ -375,7 +377,22 @@
                                         return obj;
                                     }"))
                                 
-         
+                  (min_value (new Function "elements" "{ return Math.min(...elements); }"))
+                  (max_value (new Function "elements" "{ return Math.max(...elements); }"))
+                  (interlace (fn (`& args)
+                                 (let 
+                                     ((min_length  (min_value (map length args)))
+                                      (rlength_args (range (length args)))
+                                      (rval []))
+                                     (for_each (`i (range min_length))
+                                        (for_each (`j rlength_args)
+                                            (push rval (prop (prop args j) i))))
+                                         rval))
+                               { `usage: ["list0:array" "list1:array" "listn?:array"] 
+                                 `description: "Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ..." 
+                                 `tags: ["list","array","join" "merge"]
+                               })
+      
                   (trim (fn (x)
                             (-> x `trim)))
                         
@@ -465,14 +482,20 @@
                                       
                                   (= refval (or (prop Environment.global_ctx.scope comps.0)
                                                 (if check_external_env
-                                                    (or (get_outside_global comps.0)
+                                                    (or (prop Environment.externs comps.0)
+                                                        (get_outside_global comps.0)
                                                         NOT_FOUND)
                                                     NOT_FOUND)))
                                   
                                   (when (not (prop Environment.global_ctx.scope comps.0))
-                                    (console.log "get_global: [external reference]:" refname))
+                                    (console.log "get_global: [external reference]:" (if (prop Environment.externs comps.0) "[cached]" "") refname ))
                                   ;; based on the value of refval, return the value
-                                  
+                                  (when (== undefined (prop Environment.externs comps.0))
+                                     (set_prop Environment.externs
+                                               comps.0
+                                               refval))
+                                        
+                                        
                                   (cond
                                       (== NOT_FOUND refval)
                                       (or value_if_not_found
@@ -689,6 +712,9 @@
                                                                              [val ","]
                                                                              [val]))
                                                                      args) ")"])
+                                   `reverse: (fn (args)
+                                                 [args.0 ".slice(0).reverse"])
+                                    
                                    `int: (fn (args)
                                              (cond
                                                (== args.length 1)

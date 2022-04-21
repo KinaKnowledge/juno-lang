@@ -594,7 +594,247 @@
                                          [ "[" comp "]" ]
                                          [ "[\"" comp "\"]" ])))))))) 
  
-(defun splice_in_return (js_tree _ctx _depth)
+
+
+
+
+
+
+
+(defun getf_ctx (ctx name _value)
+    (if (and ctx (is_string? name))
+        (cond
+           (not (== undefined (prop ctx.scope name)))
+           (if (not (== _value undefined))
+               (do 
+                   (set_prop ctx.scope
+                             name
+                             _value)
+                   _value)
+               (prop ctx.scope name))
+           ctx.parent
+           (getf_ctx ctx.parent name _value)
+           else
+           undefined)
+       (throw "invalid call to get_ctx: missing argument/s")))
+
+(defun setf_ctx (ctx name value)
+    (let
+        ((`found_val (getf_ctx ctx name value)))
+        (if (== found_val undefined)
+            (set_prop ctx.scope
+                      name
+                      value))
+        value))
+                  
+        
+(defun set_path (path obj value)
+    (let
+        ((`fpath (clone path))
+         (`idx (pop fpath))
+         (`rpath fpath)
+         (`target_obj nil))
+     (= target_obj (resolve_path rpath obj))
+     ;(console.log "set_path: " rpath "target: " target_obj " idx: " idx (prop target_obj idx))
+     (if target_obj
+         (do (set_prop target_obj
+                   idx
+                   value))
+             ;(console.log "set_path: value set: " (resolve_path path obj)))
+         (throw RangeError (+ "set_path: invalid path: " path)))))
+
+(defun minmax (container)
+    (let
+       ((value_found false)
+        (smallest MAX_SAFE_INTEGER)
+        (biggest (* -1 MAX_SAFE_INTEGER)))
+       (if (and container (is_array? container) (> (length container) 0))
+          (do 
+              (for_each (`value container)
+                (and (is_number? value) 
+                  (do 
+                    (= value_found true)
+                    (= smallest (Math.min value smallest))
+                    (= biggest (Math.max value biggest)))))
+              (if value_found [ smallest biggest] 
+                  nil))
+          nil)
+        ))
+
+
+(defun gen_multiples (len multiple?)
+  (let
+      ((`val 100)
+       (`acc [val])
+       (`mult (or multiple? 10)))
+     (for_each (`r (range len))
+        (push acc (= val (* val mult))))
+    (reverse acc)))
+
+(defun path_multiply (path multiple?)
+  (let
+      ((`acc 0)
+       (`multiples (gen_multiples (length path) multiple?)))
+      (for_each (`pset (pairs (interlace path multiples)))
+          (= acc (+ acc (* pset.0 pset.1))))
+      acc))
+  
+(defglobal splice_in_return_a 
+  (fn (js_tree _ctx _depth _path)
+  (cond
+     (is_array? js_tree)
+     (let
+         ((`idx -1)
+          (`ntree [])
+          (`_depth (or _depth 0))
+          (`_path (or _path []))
+          (`root _path)
+          (`function_block? (if (== _depth 0)
+                                true
+                                false))
+          (`last_path nil)
+          (`new_ctx (fn (ctx)
+                        {
+                          `parent: ctx 
+                          `scope:{
+                              `level:(if ctx.scope.level
+                                         (+ ctx.scope.level 1)
+                                         0)
+                              `viable_return_points: []
+                              `base_path: (clone _path)
+                              `potential_return_points: []
+                              `return_found: false
+                          }
+                        }))
+          (`_ctx (or _ctx (new_ctx nil)))
+          (`splice_log (defclog { `prefix:(+ "splice_return [" _ctx.scope.level "]") `color: "black" `background: "#20F0F0"  }))
+          (`next_val nil))
+      (splice_log "->" (clone js_tree))
+      
+      (for_each (`comp js_tree)
+          (do
+              (inc idx)
+              (= last_path (conj _path [idx]))
+              (cond
+                  (is_array? comp)
+                  (push ntree (splice_in_return_a comp _ctx (+ _depth 1) (conj _path [idx])))
+                  (or (is_string? comp)
+                      (is_number? comp)
+                      (is_function? comp))
+                  (push ntree comp)
+                  (is_object? comp)
+                  (cond
+                    (is_function? comp.ctype)
+                    (do 
+                        (splice_log "FUNCTION TYPE: " comp.ctype)
+                        (push ntree comp))
+                    (or (== comp.ctype "AsyncFunction")
+                        (== comp.ctype "Function"))
+                    (do 
+                        (= _path  [])
+                        (= _ctx (new_ctx _ctx))
+                        (= function_block? true)
+                        (splice_log "start return point encountered: " comp (getf_ctx _ctx `base_path))
+                        
+                        (push ntree comp))
+                        
+                    (== comp.mark "rval")
+                    (do 
+                        (splice_log "potential return: " (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (push (getf_ctx _ctx `potential_return_points)
+                                        {
+                                          `path: (conj _path [idx])
+                                          `type: comp.mark
+                                          `block_step: comp.block_step
+                                          `lambda_step: comp.lambda_step
+                                         } )
+                        (push ntree comp))
+                    (== comp.mark "forced_return")
+                    (do 
+                        (push (getf_ctx _ctx `viable_return_points)
+                              {
+                                `path: (conj _path [idx])
+                                `type: comp.mark
+                               })
+                        (splice_log "force_return: at level:" (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (push ntree comp))
+                    (== comp.mark "final-return")
+                    (do 
+                        (splice_log "final block return for level:" (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (push (getf_ctx _ctx `viable_return_points)
+                              {
+                                `path: (conj _path [idx])
+                                `type: comp.mark
+                               })
+                        (setf_ctx _ctx `return_found true)
+                        (push ntree comp))
+                    else
+                    (push ntree comp))
+                  else
+                  (push ntree comp))))
+      (when function_block?
+           (let
+               ((`viables (reverse (or (getf_ctx _ctx `viable_return_points) [])))
+                (`potentials (reverse (or (getf_ctx _ctx `potential_return_points) [])))
+                (`base_path (getf_ctx _ctx `base_path))
+                (`base_addr nil)
+                (`final_viable_path (prop (first viables) `path))
+                (`max_viable 0)
+                (`plength 0)
+                (`max_path_segment_length nil)
+                (`final_return_found (getf_ctx _ctx `return_found)))
+                
+              (splice_log "<return must be by here> found?" final_return_found "level: "  _ctx.scope.level "root: " root  "base_path: " base_path "last_path: " last_path)
+              (splice_log "viable_return_points: " (clone viables))
+              (splice_log "potential_return_points: " (clone potentials))
+              (splice_log "tree to operate on: " (clone js_tree))
+              
+              ;; we do change the indices because we will replace the marker objects
+              ;; rule: for all viables, insert return statement at point of path
+              ;; rule: for all potentials, ONLY if NO viables, insert return point
+            
+              (for_each (`v viables)
+                 (do (set_path v.path ntree { `mark: "return_point" } )
+                     (splice_log "set viable: " (clone (resolve_path (chop v.path) ntree)))))
+            
+              
+             (splice_log "removing potentials: base_path: " base_path "max_viable: " max_viable (length final_viable_path) final_viable_path)
+             
+              (for_each (`p potentials)
+                 (do 
+                     (= plength (Math.min (length p.path) (length final_viable_path)))
+                     (= base_addr (slice final_viable_path 0 plength))
+                     (defvar `ppath (slice p.path 0 plength))
+                     (defvar `vpath (slice final_viable_path 0 plength))
+                     (= max_path_segment_length (Math.max 8
+                                                          (+ 1 (prop (minmax ppath) 1))
+                                                          (+ 1 (prop (minmax vpath) 1))))
+                     (splice_log p "max_path_segment_length: " max_path_segment_length "ppath: " ppath " vpath: " vpath 
+                                 (path_multiply ppath max_path_segment_length) ">" (path_multiply vpath max_path_segment_length)
+                                 (> (path_multiply ppath max_path_segment_length) (path_multiply vpath max_path_segment_length)))
+                     (if (or (> (path_multiply ppath max_path_segment_length)
+                                (path_multiply vpath max_path_segment_length))
+                             (and (== p.block_step 0)
+                                  (== p.lambda_step 0))
+                             (== 0 (length viables)))
+                        (do 
+                            (splice_log "set potential to return at" ppath "versus final viable: " vpath)
+                            (set_path p.path ntree { `mark: "return_point" }))
+                            
+                         (set_path p.path ntree { `mark: "ignore" } ))
+                     ))
+           ))
+              
+          
+      (if (== _depth 0)
+          (splice_log "<-" (clone ntree)))
+      
+      
+      ntree)
+     else
+     js_tree)))
+                  
+(defun splice_in_return_b (js_tree _ctx _depth)
     (cond
       (is_array? js_tree)
       (let
@@ -603,17 +843,17 @@
            (`_ctx (or _ctx {}))
            (`next_val nil)
            (`flattened (flatten js_tree)))
-         (console.log "splice_in_return: started")
+         (console.log "splice_in_return_b (fixed): started" (clone js_tree))
           (for_each (`comp flattened)
              (do 
                (= next_val (prop flattened (+ idx 1)))
                ;(console.log "splice_in_return: " (or _depth 0) "comp:" (clone comp) "next_val: " (clone next_val))
                (cond
                  (is_array? comp)
-                 (push ntree (splice_in_return comp _ctx (+ (or _depth 0) 1)))
+                 (push ntree (splice_in_return_b comp _ctx (+ (or _depth 0) 1)))
                   ;; only splice in if the next element isn't a return, throw, or another block
                  (and (is_object? comp)
-                      (== comp.mark "rval")
+                      (== comp.mark "return_point")
                       (and (not (== "return" next_val))
                            (not (== "throw" next_val))
                            (not (and (is_object? next_val)
@@ -622,7 +862,7 @@
                                                              
                                        
                  (do 
-                     ;(console.log "splice_in_return: splicing return at: " comp)
+                     (console.log "splice_in_return_b: splicing return at: " comp idx (prop flattened (- idx 1)) (prop flattened (+ idx 1)))
                      (push ntree " ")
                      (push ntree "return")
                      (push ntree " "))
@@ -632,7 +872,8 @@
               
           ntree)
       else
-      js_tree))
+      js_tree))                       
+       
 
 (defun color_for_number (num saturation brightness)
         (common.colorForNumber (Math.abs num) saturation brightness)
@@ -948,11 +1189,13 @@
         ((comps nil)
          (acc [])
          (acc_full [])
-         (pos nil))
+         (pos nil)
+         (rval nil))
      (= comps (split_by "." token.name))
      (if (== comps.length 1)
          token.name
          (do 
+             ;(debug)
              (set_prop comps
                        0
                        (sanitizer_fn comps.0))
@@ -962,4 +1205,7 @@
                           (take comps))
                     (push acc_full
                           (expand_dot_accessor (join "." acc) ctx))))
-             (flatten ["(" (join "&&" acc_full) ")" ])))))
+             (= rval (flatten ["(" (join " && " acc_full) ")" ]))
+             rval))))
+
+

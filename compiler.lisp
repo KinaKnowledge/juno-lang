@@ -88,7 +88,7 @@
                           (take comps))
                     (push acc_full
                           (expand_dot_accessor (join "." acc) ctx))))
-             (join " " (flatten ["(" (join "&&" acc_full) ")" ]))))))
+             (join " " (flatten ["(" (join " && " acc_full) ")" ]))))))
 
 
 (defun `get_object_path (refname)
@@ -233,45 +233,7 @@
 
 
 
-(defun `splice_in_return (js_tree _ctx _depth)
-    (cond
-      (is_array? js_tree)
-      (let
-          ((`idx 0)
-           (`ntree [])
-           (`_ctx (or _ctx {}))
-           (`next_val nil)
-           (`flattened (flatten js_tree)))
-         (console.log "splice_in_return (fixed): started" (clone js_tree))
-          (for_each (`comp flattened)
-             (do 
-               (= next_val (prop flattened (+ idx 1)))
-               ;(console.log "splice_in_return: " (or _depth 0) "comp:" (clone comp) "next_val: " (clone next_val))
-               (cond
-                 (is_array? comp)
-                 (push ntree (splice_in_return comp _ctx (+ (or _depth 0) 1)))
-                  ;; only splice in if the next element isn't a return, throw, or another block
-                 (and (is_object? comp)
-                      (== comp.mark "return_point")
-                      (and (not (== "return" next_val))
-                           (not (== "throw" next_val))
-                           (not (and (is_object? next_val)
-                                     (is_string? next_val.ctype)
-                                     (contains? "block" (or next_val.ctype ""))))))
-                                                             
-                                       
-                 (do 
-                     (console.log "splice_in_return: splicing return at: " comp idx (prop flattened (- idx 1)) (prop flattened (+ idx 1)))
-                     (push ntree " ")
-                     (push ntree "return")
-                     (push ntree " "))
-                 else
-                 (push ntree comp))
-                (inc idx)))
-              
-          ntree)
-      else
-      js_tree))
+
 
 (defun `getf_ctx (ctx name _value)
     (if (and ctx (is_string? name))
@@ -486,7 +448,45 @@
      else
      js_tree))
                   
-                        
+(defun `splice_in_return_b (js_tree _ctx _depth)
+    (cond
+      (is_array? js_tree)
+      (let
+          ((`idx 0)
+           (`ntree [])
+           (`_ctx (or _ctx {}))
+           (`next_val nil)
+           (`flattened (flatten js_tree)))
+         (console.log "splice_in_return_b (fixed): started" (clone js_tree))
+          (for_each (`comp flattened)
+             (do 
+               (= next_val (prop flattened (+ idx 1)))
+               ;(console.log "splice_in_return: " (or _depth 0) "comp:" (clone comp) "next_val: " (clone next_val))
+               (cond
+                 (is_array? comp)
+                 (push ntree (splice_in_return_b comp _ctx (+ (or _depth 0) 1)))
+                  ;; only splice in if the next element isn't a return, throw, or another block
+                 (and (is_object? comp)
+                      (== comp.mark "return_point")
+                      (and (not (== "return" next_val))
+                           (not (== "throw" next_val))
+                           (not (and (is_object? next_val)
+                                     (is_string? next_val.ctype)
+                                     (contains? "block" (or next_val.ctype ""))))))
+                                                             
+                                       
+                 (do 
+                     (console.log "splice_in_return_b: splicing return at: " comp idx (prop flattened (- idx 1)) (prop flattened (+ idx 1)))
+                     (push ntree " ")
+                     (push ntree "return")
+                     (push ntree " "))
+                 else
+                 (push ntree comp))
+                (inc idx)))
+              
+          ntree)
+      else
+      js_tree))                       
           
 
   
@@ -860,14 +860,15 @@
                                   else
                                   value)))
        (`set_ctx (fn (ctx name value)
-                     (do 
-                      (set_ctx_log "set_ctx:  ref:" name "type: " (sub_type value) "val: " (clone value))
+                     (do
+                      (defvar `sanitized_name (sanitize_js_ref_name name))
+                      (set_ctx_log "set_ctx:  ref:" sanitized_name "type: " (sub_type value) "val: " (clone value))
                       
                                         ;(= name (sanitize_js_ref_name name))
                       (if (and (is_array? value)
                                value.0.ctype)
                           (set_prop ctx.scope
-                                    name
+                                    sanitized_name
                                     (cond
                                       (== value.0.ctype "Function")
                                       Function
@@ -878,7 +879,7 @@
                                       else
                                       value.0.ctype))
                           (set_prop ctx.scope
-                                    name
+                                    sanitized_name
                                     value)))))
 
        ;; Retrieves a value from the current compilation context
@@ -886,6 +887,7 @@
        (`get_ctx (fn (ctx name)
                      (let
                          ((`ref_name nil))
+                         
                                         ;(log "get_ctx: " (sub_type name) name)
                        (cond 
                          (is_nil? name)
@@ -908,6 +910,8 @@
                          (let
                              ((`ref_name nil)
                               (`declared_type_value nil))
+                           (when (eq nil ctx)
+                                 (console.error "get_ctx_val: undefined/nil ctx passed."))
                            (cond 
                              (is_nil? name)
                              (throw TypeError (+ "get_ctx_val: nil identifier passed: " (sub_type name)))
@@ -920,6 +924,7 @@
                               (if (starts_with? (quote "=:") name)
                                   (= ref_name (-> name `substr 2))
                                   (= ref_name name))
+                              (= ref_name (sanitize_js_ref_name name))
                               ;; we need to check an explicit declarations regarding the
                               ;; reference.  They override an inferred type value.  If 
                               ;; we don't find a declaration, then get it from the
@@ -938,33 +943,41 @@
                                       ctx.parent
                                       (get_ctx ctx.parent ref_name)))))))))
        
-       (`get_declarations (fn (ctx name)
+       (`get_declarations (fn (ctx name _tagged)
                          (let
-                             ((`ref_name nil))
+                             ((`ref_name nil)
+                              (`oname name)
+                              (`name (if _tagged
+                                         name
+                                         (sanitize_js_ref_name name))))
                            (cond 
+                             (not (is_object? ctx))
+                             (throw TypeError (+ "get_declarations: invalid ctx passed"))
                              (is_nil? name)
-                             (throw TypeError (+ "get_declarations: nil identifier passed: " (sub_type name)))
+                             (throw TypeError (+ "get_declarations: nil identifier passed: " (sub_type oname)))
                              (is_number? name)
                              name
                              (is_function? name)
-                             (throw (+ "get_declarations: invalid identifier passed: " (sub_type name)))
+                             (throw (+ "get_declarations: invalid identifier passed: " (sub_type oname)))
                              else
                              (when (is_string? name)
                               (if (starts_with? (quote "=:") name)
                                   (= ref_name (-> name `substr 2))
                                   (= ref_name name))
-                              (= ref_name (first (get_object_path ref_name)))
+                              ;(console.log "get_declarations: refname: " ref_name oname (prop ctx.declared_types ref_name))
+                              ;(= ref_name (first (get_object_path ref_name)))
                                (cond
                                  (prop op_lookup ref_name)
                                  nil
                                  (not (== undefined (prop ctx.declared_types ref_name)))
                                  (prop ctx.declared_types ref_name)
                                  ctx.parent
-                                 (get_declarations ctx.parent ref_name)))))))
+                                 (get_declarations ctx.parent ref_name true)))))))
        
        (`set_declaration (fn (ctx name declaration_type value)
                              (let
-                                 ((`dec_struct (get_declarations ctx name)))
+                                 ((`sname (sanitize_js_ref_name name))
+                                  (`dec_struct (get_declarations ctx sname)))
                                  (when (blank? dec_struct)
                                      (= dec_struct {
                                                     `type:undefined
@@ -974,8 +987,10 @@
                                            declaration_type
                                            value)
                                  (set_prop ctx.declared_types
-                                           name
-                                           dec_struct))))
+                                           sname
+                                           dec_struct)
+                                 (prop ctx.declared_types
+                                       sname))))
        (`is_ambiguous? (fn (ctx name)
                            (let
                              ((`ref_name nil))
@@ -1233,7 +1248,7 @@
        (`has_lisp_globals false)
        (`root_ctx   (new_ctx (or opts.ctx)))
        (`lisp_global_ctx_handle Environment.context)
-       (`tokenize_object (fn (obj)
+       (`tokenize_object (fn (obj ctx)
                              (do
                               ;(log "tokenize_object: " (keys obj) (as_lisp obj))
                               (if  (== (JSON.stringify obj) "{}")
@@ -1243,7 +1258,7 @@
                                    (for_each (`pset (pairs obj))
                                              (do
                                         ;(log "pset: " pset)
-                                              {`type: `keyval `val: (tokenize pset) `ref: false `name: (desym pset.0) `__token__:true }))))))
+                                              {`type: `keyval `val: (tokenize pset ctx) `ref: false `name: (desym pset.0) `__token__:true }))))))
                                         ;{`type: `value `val:(tokenize pset.1) `ref: (is_reference? pset.1) `name: (desym pset.1) } ])))) )
        
        
@@ -1273,6 +1288,9 @@
                                         ;(`tstate (or tstate { `in_quotem: false } ))
                              (`is_ref nil))
                           ;(log "tokenize:" (sub_type args) args)
+                          (when (eq nil ctx)
+                                (console.error "tokenize: nil ctx passed: " (clone args))
+                                (throw ReferenceError "nil/undefined ctx passed to tokenize"))
                           (when (is_array? args)
                             (= args (compile_time_eval ctx args)))   ;; check to see this is an eval_when compile function, and evaluate it if so.
                           (cond 
@@ -1336,7 +1354,7 @@
                                   {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global}
                                   (is_object? arg)
                                   (do 
-                                   {`type: `objlit `__token__:true `val: (tokenize_object arg) `ref: is_ref `name: nil})
+                                   {`type: `objlit `__token__:true `val: (tokenize_object arg ctx) `ref: is_ref `name: nil})
                                   (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
                                   {`type: `null `__token__:true `val: null `ref: true `name: "null"}
                                   (and (== argtype "unbound") is_ref (eq nil argvalue))
@@ -1370,6 +1388,14 @@
                       (catch Error (`e)
                         (do
                          (console.error "precompilation error: " e)
+                         (push errors
+                               {  `error: e.name
+                                  `message: e.message
+                                  `form: ctx.source
+                                  `parent_forms: (get_source_chain ctx)
+                                  `invalid: true
+                                  `text: (as_lisp lisp_tree)
+                               })
                          (throw e)
                          )))
                    (if (eq nil ntree)
@@ -1396,8 +1422,9 @@
                               (`idx 0)
                               (`stmts nil)
                               (`declaration (if (is_string? tokens.1.name)
-                                                (get_declarations ctx tokens.1.name)
+                                                (get_declarations ctx tokens.1.name (not tokens.1.ref))
                                                 nil))
+                              
                               (`symbol_ctx_val (if (and tokens.1.ref (is_string? tokens.1.name))
                                                    (get_ctx_val ctx tokens.1.name)))
                               (`is_overloaded false)
@@ -1661,7 +1688,7 @@
                                                 token.name
                                                 else
                                                 (throw Error (+ "assignment: invalid target: " token.name)))))
-                                     (`target_details (get_declaration_details ctx token.name))
+                                     (`target_details (get_declaration_details ctx target))
                                      (`target_location_compile_time (cond
                                                                       target_details.is_argument
                                                                       "local"
@@ -1860,6 +1887,8 @@
                                 (`lambda_block false)
                                 (`stmts [])
                                 (`idx 0))
+                             (when (eq nil ctx)
+                                   (throw ReferenceError "undefined ctx passed to compile block"))
                              (when tokens.1.source
                                (set_prop ctx
                                          `source
@@ -2356,9 +2385,9 @@
                                                   arg.name
                                                   ArgumentType)))
                                    (push acc
-                                         arg.name)
+                                         (sanitize_js_ref_name arg.name))
                                    (push type_mark.args  ;; add to our type marker details
-                                         arg.name)
+                                         (sanitize_js_ref_name arg.name))
                                    (when (< idx (- fn_args.length 1))
                                      (push acc ","))))
                           (push acc ")")
@@ -2644,7 +2673,9 @@
                                         (= needs_braces? true)
                                         false))))))   ;; true
                           
-                          (if_log "start: block_id: " ctx.block_id "block_step:" ctx.block_step "__LAMBDA_STEP__:" (get_ctx_val ctx "__LAMBDA_STEP__") tokens)
+                          (if_log "start: block_id: " ctx.block_id "block_step:" ctx.block_step "__LAMBDA_STEP__:" (and ctx (get_ctx_val ctx "__LAMBDA_STEP__")) tokens)
+                          (when (eq nil ctx)
+                                (throw ReferenceError "undefined/nil ctx passed to compile_if"))
                           (if_log "test_form: " test_form.source test_form)
                           (if_log "if_true: " if_true.source if_true)
                           (if_log "if_false: " if_false.source if_false)
@@ -3290,7 +3321,7 @@
        (`compile_set_global 
          (fn (tokens ctx)
              (let
-                 ((`target (sanitize_js_ref_name tokens.1.name))
+                 ((`target tokens.1.name)
                   (`wrap_as_function? nil)
                   (`acc nil)
                   (`clog (if opts.quiet_mode
@@ -3411,10 +3442,11 @@
                                       true))))
                                 
                                (`assembled nil))
-                            (= assembled (splice_in_return (splice_in_return_a js_code)))
-                            (= assembled (join "" (reduce (`v (flatten [assembled]))
-                                                            (if (not (is_object? v))
-                                                                v))))   
+                            (= assembled (splice_in_return_b (splice_in_return_a js_code)))
+                            (= assembled (assemble_output assembled))
+                            ;(= assembled (join "" (reduce (`v (flatten [assembled]))
+                             ;                               (if (not (is_object? v))
+                              ;                                  v))))   
                             (run_log "current ctx: " (clone (flatten_ctx ctx)))
                             
                             (= assembled (+ (if needs_braces? "{" "")
@@ -3469,6 +3501,8 @@
                             (`subacc [])
                             (`ntree nil))
                          (follow_log "->" (clone tree))
+                         (when (eq nil ctx)
+                               (throw ReferenceError "follow_tree received nil/undefined ctx"))
                          (cond
                            (is_array? tree)
                            (do
@@ -3793,7 +3827,7 @@
                
                (push acc (compile prebuild ctx))
                (log "for_each: prebuild:" (clone (last acc)))
-               (for_each (`t ["let" " " collector_ref "=" "[]" "," element_list "=" (compile elements ctx) ";" ])
+               (for_each (`t ["let" " " collector_ref "=" "[]" "," element_list "=" (wrap_assignment_value (compile elements ctx)) ";" ])
                          (push acc t))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push acc t))
@@ -3877,7 +3911,7 @@
                                     (do
                                         (= declaration exp.val.0.name)
                                         (= targeted (rest exp.val))
-                                        (declare_log "declaration: " declaration "targeted: " (each targeted `name))
+                                        (declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted)
                                         (cond
                                             (== declaration "toplevel")
                                             (do
@@ -4004,7 +4038,7 @@
                                              (sr_log "check_statement: needs wrap: " stmt.0.ctype stmt)
                                               ;; since we wrapped it in a function - make sure we have a 
                                               ;; return value established 
-                                             ;(= stmt (splice_in_return stmt))
+                                             
                                              (if (== stmt.0.ctype "ifblock")
                                                 [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " "{" " " stmt " " "}" " " ")" "()"]
                                                 [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
@@ -4521,8 +4555,14 @@
                            (= rcv (compile tokens.0 ctx (+ _cdepth 1)))
                            (comp_log (+ "compile: " _cdepth " [array_literal]:") "<- stmt" rcv)
                            
-                           (when (is_string? rcv)
-                                 (= declared_type (get_declarations ctx rcv))
+                           (when (and false (is_string? rcv)) ;tokens.0.val
+                                 (= declared_type (get_declarations ctx rcv true))
+                                 ;(= declared_type (get_declarations ctx tokens.0.name))  ;if passing rcv, already compiled so don't sanitize it in declarations
+                                 (comp_log (+ "compile: " _cdepth " [array_literal]:") "declared_type: " declared_type (== declared_type.type Function)))
+                           
+                           (when (and tokens.0.ref (is_string? tokens.0.val))
+                                 (= declared_type (get_declarations ctx tokens.0.name))
+                                 ;(= declared_type (get_declarations ctx tokens.0.name))  ;if passing rcv, already compiled so don't sanitize it in declarations
                                  (comp_log (+ "compile: " _cdepth " [array_literal]:") "declared_type: " declared_type (== declared_type.type Function)))
                                       
                            
@@ -4537,13 +4577,14 @@
                            ;; end up writing them out twice due to the array construction
                            ;; but we also need to preserve the order of evaluation of each array element
                            ;; from first to last.
-
+                           
                            (map (fn (`compiled_element idx)
                                     (let
                                         ((`inst (if (and (is_object? compiled_element.0)     ;; get the instructive metadata from the compiled structure
                                                          (prop compiled_element.0 `ctype))
                                                     (prop compiled_element.0 `ctype)
                                                     nil)))
+                                      (comp_log (+ "compile: " _cdepth " [array_literal]:") idx (clone compiled_element))
                                       (cond 
                                         (or (== inst "block")
                                             (== inst "letblock"))
@@ -4726,6 +4767,7 @@
                        (comp_log "    ctx: " (clone ctx))
                        (defvar `snt_name nil)
                        (defvar `snt_value nil)
+                       
                         (cond
                           (and (not tokens.ref)
                                (== tokens.type "arr"))
@@ -4757,7 +4799,7 @@
                                (do
                                    (= snt_name (sanitize_js_ref_name tokens.name))
                                    (= snt_value (get_ctx ctx snt_name))
-                                   (comp_log (+ "compile: " _cdepth " singleton: ") "local ref?" snt_name snt_value)
+                                   (comp_log (+ "compile: " _cdepth " singleton: ") "local ref?" snt_name snt_value "declarations?: ")
                                    (or snt_value
                                        (== false snt_value))))
                                    ;(== false (get_ctx ctx tokens.name))))
@@ -4767,9 +4809,11 @@
                               (= refval snt_name)) ;tokens.name))
                             (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval))
                                         ;(comp_log "compile: singleton: get_declaration_details: " (get_declaration_details ctx tokens.name))
-                            (if (== tokens.type "literal")
-                               refval
-                               (get_val tokens ctx)))
+                            (cond 
+                                  (== tokens.type "literal")
+                                  refval
+                                  else
+                                  (get_val tokens ctx)))
                           
                           (get_lisp_ctx tokens.name)
                           (compile_lisp_scoped_reference tokens.name ctx)
@@ -4956,7 +5000,7 @@
                                        root_ctx
                                        0))
                   (= assembly (splice_in_return_a assembly))
-                  (= assembly (splice_in_return assembly))))
+                  (= assembly (splice_in_return_b assembly))))
            (if is_error
                (error_log "compilation" (clone is_error))
                (main_log "no compilation errors"))
@@ -5779,11 +5823,13 @@
         test_results.view]
        true)))
 
+
+
 ;; now make the environment 
 ;(quote "\"Hello\" 'world'")
 ;(reader (as_lisp (reader (as_lisp "\"Hello\" 'world'"))))
 ;(quote "\"Hello\" \n world")
-(defun `init_bootstrap (run_tests?)
+(defun `init_bootstrap (run_tests? no_tabs?)
   (do
     (import `Boot.Compiler-Tests)
     (make_start_env)
@@ -5816,25 +5862,41 @@
     (defglobal `env_alpha (dlisp_env))
     (sleep 0.1)
     (-> env_alpha `set_compiler compiler)
-
-    (log "Loading Compiler Boot Library")
-    (sleep 0.1)
-    (-> env_alpha `evaluate (bootstrap_b))
-    (-> env `evaluate (+ "(defglobal `client (-> developer `getInstanceById " client.id "))"))
-    (log "Loading Alpha Environment")
-   
-    ;; open a new tab
-
-    (tab ["Alpha 1" (dlisp_tab env_alpha) ] true)
-    (sleep 1)
-    (tab ["Alpha 2" (dlisp_tab env_alpha) ] true)
-    (sleep 1)
-    (tab ["Alpha 3" (dlisp_tab env_alpha) ] true)
-    (sleep 1)
-    (tab ["Alpha 4" (dlisp_tab env_alpha) ] true)
-    (sleep 1)
-    (tab ["Alpha 5" (dlisp_tab env_alpha) ] true)
-    (log "Complete")))
+    
+    (when (not no_tabs?)
+        (log "Loading Compiler Boot Library")
+        (sleep 0.1)
+        (-> env_alpha `evaluate (bootstrap_b))
+        (-> env_alpha `evaluate (+ "(defglobal `client (-> developer `getInstanceById " client.id "))"))
+        (log "Loading Alpha Environment")
+       
+        ;; open a new tab
+    
+        (tab ["Alpha 1" (dlisp_tab env_alpha) ] true)
+        (sleep 1)
+        (tab ["Alpha 2" (dlisp_tab env_alpha) ] true)
+        (sleep 1)
+        (tab ["Alpha 3" (dlisp_tab env_alpha) ] true)
+        (sleep 1)
+        (tab ["Alpha 4" (dlisp_tab env_alpha) ] true)
+        (sleep 1)
+        (tab ["Alpha 5" (dlisp_tab env_alpha) ] true)
+        (log "Complete"))))
     
 (log "Run (init_bootstrap true) to initialize and build compiler environment (true will run the tests).")
+    
 
+(defun `invert_pairs (value)
+    (if (is_array? value)
+          (map (fn (v)
+                   (let
+                      ()
+                       (declare (boolean v.1))
+                      [v.1 v.0]))
+                    value)
+          (throw Error "invert_pairs passed a non-array value"))
+     {
+       `description: "Given an array value containing pairs of value, as in [[1 2] [3 4]], invert the positions to be: [[2 1] [4 3]]"
+       `usage:["value:array"]
+       `tags:["array" "list" "invert" "flip" "reverse" "swap"]
+      })

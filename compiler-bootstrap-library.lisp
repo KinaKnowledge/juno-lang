@@ -10,6 +10,8 @@
 ;; add_escape_encoding is used for quoting purposes and providing escaped
 ;; double quotes to quoted lisp in compiled Javascript
 
+
+
 (defglobal `add_escape_encoding 
   (fn (text)
     (if (is_string? text)
@@ -27,18 +29,17 @@
             (join "" acc))
         text)))
     
-(defglobal `embed_compiled_quote  
+(defglobal `embed_compiled_quote
   (fn (type tmp_name tval)
     (cond
         (== type 0)
-        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        [(quotel "=:(") (quotel "=:let") (quotel "=:(") (quotel "=:(")  tmp_name (+  (quotel "=:") (as_lisp tval)) (quotel "=:)") (quotel "=:)") (+ (quotel "=:") tmp_name) ]
         (== type 1)
-        [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]
+        [ (quotel "=$&!") (quotel "=:'") (quotel "=:+") (quotel "=:await") (quotel "=:Environment.as_lisp")  (quotel "=:(")  tval (quotel "=:)") (quotel "=:+") (quotel "=:'") ]
         (== type 2)
-        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
+        [(quotel "=:(") (quotel "=:let") (quotel "=:(") (quotel "=:(")  tmp_name (+  (quotel "=:") (as_lisp tval)) (quotel "=:)") (quotel "=:)") (+ (quotel "=:") tmp_name) ]
         (== type 3)
-        [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]))) 
-    
+        [(quotel "=:'") (quotel "=:+") (quotel "=:await") (quotel "=:Environment.as_lisp") (quotel "=:(") tval (quotel "=:)") (quotel "=:+") (quotel "=:'") ])))
 
 ;; This function will be executed at the time of the compile of code.
 ;; if called, it will be called with the arguments in the place of the
@@ -462,5 +463,5 @@
                           (take comps))
                     (push acc_full
                           (expand_dot_accessor (join "." acc) ctx))))
-             (flatten ["(" (join "&&" acc_full) ")" ])))))    
+             (flatten ["(" (join " && " acc_full) ")" ])))))    
 
