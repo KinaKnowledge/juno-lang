@@ -1431,7 +1431,7 @@
                       (callable 123))))
           (-> testcall `toString))"
      []
-     "async function(callable) {; return  (callable)(123)}"
+     "async function(callable) {\n    ;\n     return  (callable)(123)\n}"
      "Optimization by using declare - no ambiguity check" 
     ]
     ["(progn
@@ -1654,4 +1654,118 @@
   []
   {"abc": "123" }
   "More complicated return structure"]
+  ["((fn (`& multi?)
+      (if (== (length multi?) 0)
+          \"zero\"
+          \"non-zero\"))
+      1 2)"
+  []
+  "non-zero"
+  "Invalid JS character handling in rest args"]
+  ["((fn (multi?)
+  (if (== multi? 0)
+      \"zero\"
+      \"non-zero\"))
+  0)"
+  []
+  "zero"
+  "Invalid JS character handling in args"
+  ]
+  ["(do
+      (defglobal `is_weird? true)
+      is_weird?)"
+   []
+   true
+   "Define and access global with invalid JS character"]
+  ["(apply is_string? [\"Hello\"])"
+   []
+   true
+   "Application of global function with invalid JS character"
+   ]
+  ["(for_each (`t [\"1\" 
+                (if (starts_with? \"A\" \"ABC\")
+                     { `hello: `world })
+               \" \" \"2\"])
+           t)"
+    []
+    `["1",{"hello":"world"}," ","2"]
+    "Embedded if in array"
+    ]
+   ["((fn (things)
+    (cond
+      (not things.ref)
+      (if (is_string? things)
+          (do 
+           [ { `ctype: \"string\" } 1 ] )
+           [ { `ctype: \"number\"  } 2 ])  ;; straight value
+      things.ref 
+      (do 
+        true
+       )  
+     )) 2)"
+    []
+    `[{"ctype":"number"},2]
+    "Embedded if in cond with block 1"
+    ]
+   ["((fn (things)
+    (cond
+      (not things.ref)
+      (if (is_string? things)
+          (do 
+           [ { `ctype: \"string\" } 1 ] )
+           [ { `ctype: \"number\"  } 2 ])  ;; straight value
+      things.ref 
+      (do 
+        true
+       )  
+     )) \"abc\")"
+    []
+    `[{"ctype":"string"},1]
+    "Embedded if in cond with block 2"
+    ]
+    ["((fn (things)
+        (cond
+          (not things.ref)
+          (if (is_string? things)
+              (do 
+               [ { `ctype: \"string\" } 1 ] )
+               [ { `ctype: \"number\"  } 2 ])  ;; straight value
+          things.ref 
+          (do 
+            true
+           )  
+         )) { `ref: 3 })"
+    []
+    true
+    "Embedded if in cond with block 3"
+    ]
+   ["[ (do
+         (+ 2 2))
+       (if (> 5 2)
+          (do
+              (* 5 2))
+          (do false))
+       ]"
+    []
+    [4 10]
+    "Do block under if conditional in array 1"
+   ]
+   ["[ (do
+         (+ 2 2))
+       (if (> 5 2)
+           (* 5 2)
+           (do false))]"
+    []
+    [4 10]
+    "Do block under if conditional in array 2 in 1"
+       ]
+   ["[ (do
+        (+ 2 2))
+      (if (> 5 2)
+          (* 5 2)
+          false)
+       ]"
+     []
+     [4 10]
+    "If conditional in array no blocks"
 ])

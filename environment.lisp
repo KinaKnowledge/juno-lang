@@ -713,7 +713,7 @@
                                                                              [val]))
                                                                      args) ")"])
                                    `reverse: (fn (args)
-                                                 [args.0 ".slice(0).reverse"])
+                                                 [args.0 ".slice(0).reverse()"])
                                     
                                    `int: (fn (args)
                                              (cond

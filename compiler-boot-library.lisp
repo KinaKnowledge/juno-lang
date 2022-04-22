@@ -689,6 +689,7 @@
           (`_depth (or _depth 0))
           (`_path (or _path []))
           (`root _path)
+          (`if_links {})
           (`function_block? (if (== _depth 0)
                                 true
                                 false))
@@ -704,6 +705,7 @@
                               `base_path: (clone _path)
                               `potential_return_points: []
                               `return_found: false
+                              `if_links: {}
                           }
                         }))
           (`_ctx (or _ctx (new_ctx nil)))
@@ -740,32 +742,75 @@
                         
                     (== comp.mark "rval")
                     (do 
-                        (splice_log "potential return: " (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (splice_log "potential return: " (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
                         (push (getf_ctx _ctx `potential_return_points)
                                         {
                                           `path: (conj _path [idx])
                                           `type: comp.mark
                                           `block_step: comp.block_step
+                                          `if_id: comp.if_id
+                                          `source: (JSON.stringify (clone (slice js_tree idx)))
                                           `lambda_step: comp.lambda_step
                                          } )
+                        (when (and comp.if_id 
+                                   (eq nil (prop (getf_ctx _ctx `if_links) comp.if_id)))
+                            (set_prop (getf_ctx _ctx `if_links)
+                                      comp.if_id
+                                      []))
+                        (when comp.if_id
+                              (push (prop (getf_ctx _ctx `if_links) comp.if_id)
+                                    (last (getf_ctx _ctx `potential_return_points))))
                         (push ntree comp))
                     (== comp.mark "forced_return")
                     (do 
                         (push (getf_ctx _ctx `viable_return_points)
                               {
                                 `path: (conj _path [idx])
+                                `if_id: comp.if_id
+                                `block_step: comp.block_step
+                                `lambda_step: comp.lambda_step
+                                `source: (JSON.stringify (clone (slice js_tree idx)))
                                 `type: comp.mark
                                })
-                        (splice_log "force_return: at level:" (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (splice_log "force_return: at level:" (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (when (and comp.if_id 
+                                   (eq nil (prop (getf_ctx _ctx `if_links) comp.if_id)))
+                            (set_prop (getf_ctx _ctx `if_links)
+                                      comp.if_id
+                                      []))
+                        (when comp.if_id
+                              (push (prop (getf_ctx _ctx `if_links) comp.if_id)
+                                    (last (getf_ctx _ctx `viable_return_points))))
                         (push ntree comp))
                     (== comp.mark "final-return")
                     (do 
-                        (splice_log "final block return for level:" (getf_ctx _ctx `level) comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        (splice_log "final block return for level:" (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
                         (push (getf_ctx _ctx `viable_return_points)
                               {
                                 `path: (conj _path [idx])
                                 `type: comp.mark
+                                `lambda_step: comp.lambda_step
+                                `block_step: comp.block_step
+                                `source: (JSON.stringify (clone (slice js_tree idx)))
+                                `if_id: comp.if_id
                                })
+                        (when (and comp.if_id 
+                                   (eq nil (prop (getf_ctx _ctx `if_links) comp.if_id)))
+                            (set_prop (getf_ctx _ctx `if_links)
+                                      comp.if_id
+                                      []))
+                        (when comp.if_id
+                              (push (prop (getf_ctx _ctx `if_links) comp.if_id)
+                                    (last (getf_ctx _ctx `viable_return_points)))
+                              (push (getf_ctx _ctx `potential_return_points)
+                              {
+                                `path: (conj _path [idx])
+                                `type: comp.mark
+                                `lambda_step: comp.lambda_step
+                                `block_step: comp.block_step
+                                `source: (JSON.stringify (clone (slice js_tree idx)))
+                                `if_id: comp.if_id
+                               }))
                         (setf_ctx _ctx `return_found true)
                         (push ntree comp))
                     else
@@ -781,6 +826,7 @@
                 (`final_viable_path (prop (first viables) `path))
                 (`max_viable 0)
                 (`plength 0)
+                (`if_paths [])
                 (`max_path_segment_length nil)
                 (`final_return_found (getf_ctx _ctx `return_found)))
                 
@@ -788,13 +834,15 @@
               (splice_log "viable_return_points: " (clone viables))
               (splice_log "potential_return_points: " (clone potentials))
               (splice_log "tree to operate on: " (clone js_tree))
-              
+              (splice_log "if_links: " (clone (getf_ctx _ctx `if_links)))
               ;; we do change the indices because we will replace the marker objects
               ;; rule: for all viables, insert return statement at point of path
               ;; rule: for all potentials, ONLY if NO viables, insert return point
             
               (for_each (`v viables)
-                 (do (set_path v.path ntree { `mark: "return_point" } )
+                 (do 
+                     (set_path v.path ntree { `mark: "return_point" } )
+                     
                      (splice_log "set viable: " (clone (resolve_path (chop v.path) ntree)))))
             
               
@@ -818,10 +866,22 @@
                                   (== p.lambda_step 0))
                              (== 0 (length viables)))
                         (do 
-                            (splice_log "set potential to return at" ppath "versus final viable: " vpath)
-                            (set_path p.path ntree { `mark: "return_point" }))
-                            
-                         (set_path p.path ntree { `mark: "ignore" } ))
+                            (splice_log "set potential to return at" ppath "versus final viable: " vpath p.if_id)
+                            (set_path p.path ntree { `mark: "return_point" })
+                            (when (and p.if_id
+                                       (prop (getf_ctx _ctx `if_links) p.if_id))
+                                  (for_each (`pinfo (prop (getf_ctx _ctx `if_links) p.if_id))
+                                     (do
+                                       (when (== undefined (prop if_paths (as_lisp pinfo.path)))
+                                         (set_prop if_paths (as_lisp pinfo.path) true)
+                                         (set_path pinfo.path ntree { `mark: "return_point" } )
+                                         (splice_log "if adjust on: " pinfo.if_id pinfo.path pinfo))))
+                                  ))
+                         (do 
+                           (when (and (== undefined (prop if_paths (as_lisp p.path)))
+                                      (not (== p.type "final-return")))
+                                (set_path p.path ntree { `mark: "ignore" } )
+                                (splice_log "if adjust off: " p.if_id p.path p))))
                      ))
            ))
               
@@ -843,7 +903,7 @@
            (`_ctx (or _ctx {}))
            (`next_val nil)
            (`flattened (flatten js_tree)))
-         (console.log "splice_in_return_b (fixed): started" (clone js_tree))
+         ;(console.log "splice_in_return_b (fixed): started" (clone js_tree))
           (for_each (`comp flattened)
              (do 
                (= next_val (prop flattened (+ idx 1)))
@@ -862,7 +922,7 @@
                                                              
                                        
                  (do 
-                     (console.log "splice_in_return_b: splicing return at: " comp idx (prop flattened (- idx 1)) (prop flattened (+ idx 1)))
+                     ;(console.log "splice_in_return_b: splicing return at: " comp idx (prop flattened (- idx 1)) (prop flattened (+ idx 1)))
                      (push ntree " ")
                      (push ntree "return")
                      (push ntree " "))
