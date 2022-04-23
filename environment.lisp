@@ -181,8 +181,10 @@
                   (second  (new Function "x" "{ return x[1] }"))
                   (third (new Function "x" "{ return x[2] }"))
                            
-                  (chop  (new Function "x" "{ return x.substr(x.length-1) }"))
-                 
+                  (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(x.length-1) } else { return x.substr(x.length-1) } }"))
+                  
+                  (chomp (new Function "x" "{ return x.substr(x.length-1) }"))
+                  
                   (not   (new Function "x" "{ if (x) { return false } else { return true } }"))
                  
                   (push  (new Function "place" "thing" "{ return place.push(thing) }"))
@@ -667,9 +669,9 @@
                                    {})
                                {   `pop: (fn (args)
                                              [args.0 "." "pop()"])
-                                   `push: (fn (args)
-                                              [ args.0 ".push" "(" args.1 ")"])
-                                   `chop: (fn (args)
+                                   `ipush: (fn (args)
+                                              [  args.0 ".push" "(" args.1 ")"])
+                                   `chomp: (fn (args)
                                               [ args.0 ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
                                    `join: (fn (args)
                                               (if (== args.length 1) 
