@@ -711,6 +711,9 @@
           (`_ctx (or _ctx (new_ctx nil)))
           (`splice_log (defclog { `prefix:(+ "splice_return [" _ctx.scope.level "]") `color: "black" `background: "#20F0F0"  }))
           (`next_val nil))
+     
+      
+         
       (splice_log "->" (clone js_tree))
       
       (for_each (`comp js_tree)

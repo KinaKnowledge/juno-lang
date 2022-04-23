@@ -7,7 +7,7 @@
 
 ;; in the console
 
-;; var { get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=9409")
+;; var { get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=940954")
 
 (import `Boot.Compiler-Tests)  
 
@@ -1589,8 +1589,18 @@
                            (let
                                ((`acc [])
                                 (`target (wrap_assignment_value (compile (second tokens) ctx)))
+                                (`target_val nil)
                                 (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx))))
-                             [ "(" target ")" "[" idx_key "]"])))
+                                
+                            (log "compile_prop: target: " target)
+                            (log "compile_prop: idx_key: " idx_key)
+                            (if (> (safety_level ctx) 1)
+                                (do
+                                    (= target_val (gen_temp_name "targ"))
+                                    ["await" " " "(" "async" " " "function" "()" "{" 
+                                                                                   "let" " " target_val "=" target ";" 
+                                                                                   "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ])
+                                [ "(" target ")" "[" idx_key "]"]))))
        
        (`compile_elem (fn (token ctx)
                           (let
@@ -2055,7 +2065,7 @@
                                    
                                    
                                    (= last_stmt (pop stmts))
-                                   (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))`
+                                   (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
                                    ; TODO - 
                                    (push stmts
                                          { `mark: "final-return" `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__) } )
@@ -2069,13 +2079,13 @@
                                          (needs_return? stmts ctx)))
                                 (do
                                    (= last_stmt (pop stmts))
-                                   (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))`
+                                   (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
                                    ; TODO - 
                                    (push stmts
                                          { `mark: "block-end"  `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__)} )
                                    (push stmts " ")
                                    (push stmts last_stmt)  
-                                   (clog "HERE: block_step:" ctx.block_step "last stmt: " (last stmts))` 
+                                   (clog "HERE: block_step:" ctx.block_step "last stmt: " (last stmts))
                                     ))
                              
                                         ;(when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))  
@@ -5994,4 +6004,3 @@
     
 (log "Run (init_bootstrap true) to initialize and build compiler environment (true will run the tests).")
     
-
