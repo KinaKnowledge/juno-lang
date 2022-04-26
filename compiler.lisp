@@ -213,6 +213,8 @@
       text) )
 
 
+
+
 (defun `defclog (opts)
      (let
          ((`style (+ "padding: 5px;"
@@ -2157,7 +2159,7 @@
                               (log "compile_defvar: assignment_value: " assignment_value)
                               (if ctx.defvar_eval
                                   (do
-                                    (remove_prop ctx
+                                    (delete_prop ctx
                                                  `defvar_eval)
                                     [{ `ctype: "assignment"  } "let" " " target "=" assignment_value "()" ";"])
                                   
@@ -2232,6 +2234,10 @@
                                        [{`ctype: "AsyncFunction" } {`mark: "wrap_assignment_value"} "await" " " "(" "async" " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
                                        else
                                        stmts))))
+       
+        
+
+       
        (`compile_let (fn (tokens ctx)
                          (let
                              ((`acc [])
@@ -2245,8 +2251,14 @@
                               (`block_declarations {})
                               (`assignment_type nil)
                               (`stmt nil)
+                              (`def_idx nil)
+                              (`redefinitions {})  ;; maps symbols that are already defined in scope to tmp variables in a JS block...
+                                                   ;; which are then redefined with local shadowing: ALREADY DEFINED SYMBOL->TEMP_SYMBOL
+                              (`need_sub_block false)
+                              (`assignments {})                     
                               (`reference_name nil)
                               (`alloc_set nil)
+                              (`sub_block_count 0)
                               (`ctx_details nil)
                               (`allocations tokens.1.val)
                               (`block (-> tokens `slice 2))
@@ -2255,21 +2267,54 @@
                            (set_prop ctx
                                      `return_last_value
                                      true)
+                           
+                           ;; start the main block 
                            (push acc "{")
+                           (inc sub_block_count)
+                           
                            (when ctx.source (push acc { `comment: (+ "let start " ctx.source " " ) }))
                            
                            ;; let must be two pass, because we need to know all the symbol names being defined in the 
                            ;; allocation block because let allows us to refer to symbol names out of order, similar to
                            ;; let* in Common Lisp.  
+                           
                            (clog "block: " (clone block))
+                           
                            ;; Check declaration details if they exist in the first form of the block form
+                           
                            (when (== block.0.val.0.name "declare")
                               (= declarations_handled true)
                               (push acc (compile_declare block.0.val ctx)))
                               
+                           ;; In let allocation forms, we need to check each allocated symbol's (AS) assignment
+                           ;; form for the symbol name in enclosing scope, because any operations that are
+                           ;; performed as part of the symbol value assignment are actually references to
+                           ;; the previously allocated closure symbol (CS).  The local AS symbol will be assigned 
+                           ;; the computer value of the assignment form and should shadow the CS.
+                            
+                           ;; However, in JS scope rules the right hand side is referencing AS 
+                           ;; symbol, not the CS bound symbol, and so a Reference Error will occur.  Therefore
+                           ;; we need a strategy for evaluating assignment value form with the CS, and then
+                           ;; providing the value to the AS, which is just being allocated. 
+                           ;; NOTE that this situation doesn't apply to function arguments enclosing the let block, 
+                           ;; which are considered local to the allocaton, and not in a closure.  The compiler 
+                           ;; doesn't reallocate those function arguments.
+                            
+                           ;; Approach:
+                           ;; 1. We need to detect if the allocated symbol is already allocated in a closure,
+                           ;;    but we don't care if it is a global symbol because these use dynamic 
+                           ;;    lookup, (get_global), or if it is an enclosing function argument.  
+                           ;; 2. If it is in the closure already, then we need allocate to a temp name
+                           ;;    in a higher block { } and then introduce a new subblock where the AS
+                           ;;    is actually allocated and assigned the value from the temp variable.
+                           ;; 3. We will need to keep track of the number of subblocks we introduce in
+                           ;;    the let to allow for shadowing because we will need to close them
+                           ;;    after our let block as completed.
                            
                            ;; First pass: build symbols in context for the left hand side of the allocation forms
-                           ;; set them to functions
+                           ;; set them to AsyncFunction, unless we have a declaration already for it 
+                           ;; from declare...
+                           
                            
                            (while (< idx (- allocations.length 1))
                               (do
@@ -2278,11 +2323,22 @@
                                   (= reference_name (sanitize_js_ref_name alloc_set.0.name))
                                   (= ctx_details (get_declaration_details ctx reference_name))
                                   (when ctx_details
-                                        (clog "declaration details for: " reference_name (clone ctx_details)))
+                                        (clog "declaration details for: " reference_name (clone ctx_details))
+                                        ;; already declared..
+                                        (when (and (not ctx_details.is_argument)
+                                                   (> ctx_details.levels_up 1))
+                                              (= need_sub_block true)
+                                              (if (prop redefinitions reference_name)
+                                                  (push (prop redefinitions reference_name)
+                                                        (gen_temp_name reference_name))
+                                                  (set_prop redefinitions
+                                                            reference_name
+                                                            [0 (gen_temp_name reference_name)]))))  
+                                              
+                                            
+                                              
                                   ;; if it isn't an argument to a potential parent lambda, set the ctx 
-                                  (when (not (and ctx_details.is_argument))
-                                                ;(== ctx_details.levels_up 1)))
-                                        
+                                  (when (not ctx_details.is_argument)
                                    ;; set a placeholder for the reference
                                       (set_ctx ctx
                                                reference_name 
@@ -2293,22 +2349,22 @@
                            ;; reset our index to the top of the allocation list
                            (= idx -1)
                            
+                           ;; build all the right hand side allocations.  When the allocation value is to be
+                           ;; assigned to a shadowed symbol in local scope, we need to make a function in an
+                           ;; enclosing block that can be called in the right order to assign the value to the 
+                           ;; shadowed variable.  By putting the function in an enclosing scope, we can access
+                           ;; the CS value.
+                           
                            (while (< idx (- allocations.length 1))
                                   (do
                                     (inc idx)
                                     (= stmt [])
                                     (= alloc_set (prop (prop allocations idx) `val))
-                                    (clog "compiling: alloc_set:" (is_complex? alloc_set.1) alloc_set)
+                                    
                                     (= reference_name (sanitize_js_ref_name alloc_set.0.name))
                                     (= ctx_details (get_declaration_details ctx reference_name))
+                                    (clog "compiling:" reference_name " ctx_details:" ctx_details)
                                     
-                                    ;(clog "compiling: reference_name:" reference_name)
-                                    ;(clog "ctx_details:" (clone ctx_details))
-                                    ;; set a placeholder for the reference
-                                    ;(set_ctx ctx
-                                     ;        reference_name 
-                                      ;       AsyncFunction) ;; assume callable for recursion
-                                    ;(clog "ctx set for " reference_name ": " (get_ctx ctx reference_name) (clone ctx))
                                     (cond
                                       (is_array? alloc_set.1.val)
                                       (do
@@ -2323,13 +2379,13 @@
                                                   false))
                                       else
                                       (do 
-                                       (clog "compiling simple assignment valu for " reference_name  ": " alloc_set.1)
+                                       (clog "compiling simple assignment value for " reference_name  ": " alloc_set.1)
                                        (= assignment_value (compile alloc_set.1 ctx))
                                        
                                        ;(clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value))
                                        ))
                                    
-                                   
+                                    
                                     
                                     (if (and (is_array? assignment_value)
                                              (is_object? assignment_value.0)
@@ -2339,15 +2395,70 @@
                                                     reference_name
                                                     (map_ctype_to_value assignment_value.0.ctype assignment_value)))
                                          (do 
-                                             (console.warn "compile_assignment: undeclared assignment type: " reference_name)
+                                             (console.warn "compile_assignment: unknown assignment type: " reference_name)
                                              (set_ctx ctx
                                                       reference_name
                                                       assignment_value)))
                                            
                                            
                                      (= assignment_value (wrap_assignment_value assignment_value))
-                                    ;
-                                    (clog "set context for " reference_name " assignment value: " (clone assignment_value))
+                                     (when ctx_details.is_argument
+                                           (set_prop block_declarations
+                                                     reference_name
+                                                     true)) ;; if this is an argument to this function, we don't want to redeclare it below or we will error..
+                                     (= def_idx nil)            
+                                     (cond
+                                         (and (prop redefinitions reference_name)
+                                              (first (prop redefinitions reference_name)))
+                                         (do 
+                                             (= def_idx (first (prop redefinitions reference_name)))
+                                             (inc def_idx)
+                                             (set_prop (prop (prop redefinitions reference_name) 0)
+                                                       def_idx)
+                                                  
+                                             (for_each (`t ["let" " " (prop (prop redefinitions reference_name) def_idx) "=" " " "async" " " "function" "()" "{" "return" " " assignment_value "}" ";"])
+                                                (push acc t)))
+                                         ;; if the name isn't shadowing declare it, so it can be used if referenced by others
+                                         (not (prop block_declarations reference_name))
+                                         (do 
+                                             (for_each (`t ["let" " " reference_name ";" ])
+                                                (push acc t))
+                                             (set_prop block_declarations reference_name true)))
+                                     (when (not (prop assignments reference_name))
+                                           (set_prop assignments
+                                                     reference_name
+                                                     []))
+                                     (push (prop assignments
+                                                  reference_name) 
+                                           (if def_idx
+                                               ["await" " " (prop (prop redefinitions reference_name) def_idx) "()" ";" ]
+                                               assignment_value))))
+                                           
+                                               
+                           (for_each (`pset (pairs redefinitions))
+                             (do
+                               (for_each (`redef pset.1)
+                                 (take (prop redefinitions pset.0)))))
+                           (clog "redefinitions: " (clone redefinitions))     
+                           (when need_sub_block
+                             (push acc "{")
+                             (inc sub_block_count))
+                         
+                           (= idx -1)
+                           (while (< idx (- allocations.length 1))
+                                (do
+                                    (inc idx)
+                                    (= def_idx nil)
+                                    
+                                    (= stmt [])
+                                    (= alloc_set (prop (prop allocations idx) `val)) 
+                                    (= reference_name (sanitize_js_ref_name alloc_set.0.name))
+                                    (= ctx_details (get_declaration_details ctx reference_name))
+                                    (= assignment_value (take (prop assignments reference_name)))
+                                    
+                                    (clog "set declaration for " reference_name "is arg?" ctx_details " already declared?" (prop block_declarations reference_name) " assignment value: " (clone assignment_value))
+                                    
+                                    
                                     (cond
                                       (and (is_array? assignment_value)
                                            (is_object? (first assignment_value))
@@ -2357,16 +2468,12 @@
                                       (= assignment_type Function)
                                       else
                                       (= assignment_type (sub_type assignment_value)))
-                                        ;(set_ctx ctx
-                                        ;        reference_name (or assignment_type.ctype
-                                        ;                          assignment_type))
-                                    
-                                        ;(log "compile_let: compiling: ref:" reference_name "=" (join "" (flatten assignment_value)))
-                                    (if (or (and ctx_details.is_argument)
-                                                 ;(== ctx_details.levels_up 1))
-                                            (prop block_declarations reference_name))
-                                        true   ;; test for whether or now we need to declare it without getting in trouble with JS
-                                        (do 
+                                    ;; test for whether or now we need to declare it without getting in trouble with JS
+                                    (cond
+                                       (prop block_declarations reference_name)
+                                       true    ;; already declared in the above block or in this block
+                                       else
+                                       (do 
                                          (push stmt "let")   ;; depending on block status, this may be let for a scoped {}
                                          (push stmt " ")))
                                     (push stmt reference_name)
@@ -2374,6 +2481,7 @@
                                     (push stmt "=")
                                     (push stmt assignment_value)
                                     (push stmt ";")
+                                    
                                     (push acc stmt))) ;/*LET*/")))
                            (clog "assignments complete:" (clone acc))
                            (push acc (compile_block (conj ["PLACEHOLDER"]
@@ -2383,7 +2491,8 @@
                                                     `no_scope_boundary: true
                                                     `ignore_declarations: declarations_handled
                                                     }))
-                           (push acc "}")
+                           (for_each (`i (range sub_block_count))
+                            (push acc "}"))
                            (clog "return_point: " ctx.return_point)
                            (clog "<-" (clone acc))
                            (console.log "compile_let: <-" acc)
@@ -2566,7 +2675,7 @@
        (`var_counter 0)
        ;; the complicated form conversions
        (`gen_temp_name (fn (arg)
-                           (+ "dl_" (or arg "") "_tmp_" (inc var_counter))))
+                           (+ "__" (or arg "") "__" (inc var_counter))))
        
        (`if_id 0)
        
@@ -3085,7 +3194,7 @@
                                   
                                   in_infix
                                   (do 
-                                     ["(" target "=" target operation how_much")"])
+                                     ["(" target "=" target operation how_much ")"])
                                  
                                   else
                                    [target operation how_much]))))                       
@@ -6004,3 +6113,12 @@
     
 (log "Run (init_bootstrap true) to initialize and build compiler environment (true will run the tests).")
     
+  (let
+        ((idx 0)
+         (idx_inc (fn ()
+                      (let
+                          ((idx (inc idx)))
+                          (console.log idx)
+                          idx))))
+        ;(idx_inc)
+        idx)
