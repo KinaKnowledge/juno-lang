@@ -2413,7 +2413,8 @@
                                          (do 
                                              (= def_idx (first (prop redefinitions reference_name)))
                                              (inc def_idx)
-                                             (set_prop (prop (prop redefinitions reference_name) 0)
+                                             (set_prop (prop redefinitions reference_name)
+                                                       0
                                                        def_idx)
                                                   
                                              (for_each (`t ["let" " " (prop (prop redefinitions reference_name) def_idx) "=" " " "async" " " "function" "()" "{" "return" " " assignment_value "}" ";"])
@@ -2434,11 +2435,12 @@
                                                ["await" " " (prop (prop redefinitions reference_name) def_idx) "()" ";" ]
                                                assignment_value))))
                                            
-                                               
-                           (for_each (`pset (pairs redefinitions))
-                             (do
-                               (for_each (`redef pset.1)
-                                 (take (prop redefinitions pset.0)))))
+                           (when need_sub_block                    
+                               (for_each (`pset (pairs redefinitions))
+                                 (do
+                                   (for_each (`redef pset.1)
+                                     (take (prop redefinitions pset.0))))))
+                                 
                            (clog "redefinitions: " (clone redefinitions))     
                            (when need_sub_block
                              (push acc "{")
@@ -2454,6 +2456,7 @@
                                     (= alloc_set (prop (prop allocations idx) `val)) 
                                     (= reference_name (sanitize_js_ref_name alloc_set.0.name))
                                     (= ctx_details (get_declaration_details ctx reference_name))
+                                    (clog "assignments: " reference_name (clone (prop assignments reference_name)) (clone assignments))
                                     (= assignment_value (take (prop assignments reference_name)))
                                     
                                     (clog "set declaration for " reference_name "is arg?" ctx_details " already declared?" (prop block_declarations reference_name) " assignment value: " (clone assignment_value))
@@ -6112,13 +6115,3 @@
         (log "Complete"))))
     
 (log "Run (init_bootstrap true) to initialize and build compiler environment (true will run the tests).")
-    
-  (let
-        ((idx 0)
-         (idx_inc (fn ()
-                      (let
-                          ((idx (inc idx)))
-                          (console.log idx)
-                          idx))))
-        ;(idx_inc)
-        idx)

@@ -677,7 +677,7 @@
                                               (if (== args.length 1) 
                                                   [ args.0 ".join" "()"]
                                                   [ args.1 ".join" "(" args.0 ")" ]))
-                                   `take: (fn (args)
+                                   `itake: (fn (args)
                                               [ args.0 ".shift" "()" ])
                                    `prepend: (fn (args)
                                                  [ args.0 ".unshift" "(" args.1 ")"])
