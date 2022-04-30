@@ -96,6 +96,7 @@
                   
                   (last (new Function "x" "{ return x[x.length - 1] }"))
                   
+                  
                   (length (new Function "obj"
                              "{
                                 if(obj instanceof Array) {
@@ -296,7 +297,28 @@
                                 (do 
                                   (console.log "EVAL:",expression)
                                   (expression))))
-                            
+                   
+                  (indirect_new (new Function "...args"
+                                "{
+                                    let targetClass = args[0];
+                                    if (subtype(targetClass)===\"String\") {
+                                        let tmpf=new Function(\"{ return \"+targetClass+\" }\");
+                                        targetClass = tmpf();
+                                    }
+                                    if (args.length==1) {
+                                        let f = function(Class) {
+                                            return new (Function.prototype.bind.apply(Class, args));
+                                        }
+                                        let rval = f.apply(this,[targetClass]);
+                                        return rval;
+                                    } else {
+                                        let f = function(Class) {
+                                            return new (Function.prototype.bind.apply(Class, args));
+                                        }
+                                        let rval = f.apply(this,[targetClass].concat(args.slice(1)));
+                                        return rval;
+                                    }}"))
+                                
                   (range (fn (`& args)
                            (let
                                ((`from_to (if args.1
@@ -365,6 +387,7 @@
                                             return prev ? prev[curr] : undefined
                                         }, obj || {})
                                     }"))
+                  
                                 
                   (delete_prop (new Function "obj" "...args"
                                   "{
@@ -439,7 +462,7 @@
                                                                args))))))
                   
                   
-          
+                  
                   (NOT_FOUND (new ReferenceError "not found"))
                   (check_external_env_default true)
          
@@ -619,12 +642,19 @@
                                result)))
                            
               (eval_struct (fn (lisp_struct ctx opts)
-                                (if (is_function? lisp_struct)
-                                    (lisp_struct)
-                                    (evaluate lisp_struct ctx (+ {
-                                                                 `json_in: true
-                                                                 }
-                                                                 (or opts {})))))))
+                               (let
+                                   ((rval nil))
+                                   (env_log "eval_struct ->" (clone lisp_struct) ctx opts)
+                                   (if (is_function? lisp_struct)
+                                      (= rval (lisp_struct))
+                                      (= rval (evaluate lisp_struct 
+                                                        ctx 
+                                                        (+ {
+                                                              `json_in: true
+                                                           }
+                                                         (or opts {})))))
+                                  (env_log "eval_struct <-" (clone rval))
+                                  rval))))
           
          
           (defvar meta_for_symbol (fn (quoted_symbol)
@@ -675,8 +705,8 @@
                                               [ args.0 ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
                                    `join: (fn (args)
                                               (if (== args.length 1) 
-                                                  [ args.0 ".join" "()"]
-                                                  [ args.1 ".join" "(" args.0 ")" ]))
+                                                  [ "(" args.0 ")" ".join" "()"]
+                                                  ["(" args.1 ")" ".join" "(" args.0 ")" ]))
                                    `itake: (fn (args)
                                               [ args.0 ".shift" "()" ])
                                    `prepend: (fn (args)
@@ -686,7 +716,7 @@
                                    `trim: (fn (args)
                                               [ args.0 ".trim()"])
                                    
-                                   `slice: (fn (args)
+                                   `islice: (fn (args)
                                                (cond 
                                                  (== args.length 3)
                                                  [ args.0 ".slice(" args.1 "," args.2 ")"]
@@ -699,9 +729,9 @@
                                    `bind: (fn (args)
                                               [ args.0 ".bind(" args.1 ")"])
                                    `is_array?: (fn (args)
-                                                   [ args.0 " instanceof Array" ])
+                                                   [ "(" args.0 " instanceof Array" ")"])
                                    `is_object?: (fn (args)
-                                                    [ args.0 " instanceof Object"])
+                                                    [ "(" args.0 " instanceof Object" ")" ])
                                    `is_string?: (fn (args)
                                                     [ "(" args.0 " instanceof String || typeof " args.0 "===" "'string'" ")"])
                                    `is_function?: (fn (args)

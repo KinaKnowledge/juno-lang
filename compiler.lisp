@@ -7,7 +7,7 @@
 
 ;; in the console
 
-;; var { get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=940954")
+;; var { check_true, get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=942024")
 
 (import `Boot.Compiler-Tests)  
 
@@ -31,7 +31,6 @@
               (> (length (quotem ,@val)) 2)
               (starts_with? (quote "=:") ,@val)))
     {`eval_when:{ `compile_time: true }})
-
 
 
 (defglobal ise?
@@ -467,9 +466,11 @@
               (for_each (`p potentials)
                  (do 
                      (= plength (Math.min (length p.path) (length final_viable_path)))
-                     (= base_addr (slice final_viable_path 0 plength))
+                     ;(= base_addr (slice final_viable_path 0 plength))
                      (defvar `ppath (slice p.path 0 plength))
-                     (defvar `vpath (slice final_viable_path 0 plength))
+                     (defvar `vpath (if final_viable_path 
+                                        (slice final_viable_path 0 plength)
+                                        []))
                      (= max_path_segment_length (Math.max 8
                                                           (+ 1 (prop (minmax ppath) 1))
                                                           (+ 1 (prop (minmax vpath) 1))))
@@ -893,7 +894,7 @@
                                   Expression 
                                   (and (is_string? ctype)
                                        (contains? "block" ctype))
-                                  AsyncFunction
+                                  UnknownType
                                   (== ctype "array")
                                   Array
                                   (== ctype "Boolean")
@@ -1411,23 +1412,23 @@
                                   (== argtype "Number")
                                   {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym_ref arg)}
                                   (and (== argtype "String") is_ref)
-                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global `local: argdetails.local }
+                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local }
                                   (== argtype "String")
-                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global}
+                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global}
                                   (is_object? arg)
                                   (do 
                                    {`type: `objlit `__token__:true `val: (tokenize_object arg ctx) `ref: is_ref `name: nil})
                                   (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
                                   {`type: `null `__token__:true `val: null `ref: true `name: "null"}
                                   (and (== argtype "unbound") is_ref (eq nil argvalue))
-                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (desym_ref arg)}
+                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (clean_quoted_reference (desym_ref arg))}
                                   (and (== argtype "unbound") is_ref)
-                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (sanitize_js_ref_name (desym_ref arg))}
+                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (clean_quoted_reference (sanitize_js_ref_name (desym_ref arg)))}
                                   
                                         ;(== argtype "Boolean")
                                         ;{`type: `bool `__token__:true `val: argvalue `ref: false `name: arg}
                                   else
-                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (desym_ref arg) `global: argdetails.global `local: argdetails.local}))))))))
+                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local}))))))))
        ;; checks to see if the first argument to the passed array is 
        ;; a compile time function, as registered in the environment's definitions 
        ;; structure 
@@ -1641,6 +1642,7 @@
                             (let
                                 ((`rval nil)
                                  (`stmt nil)
+                                 (`inline_fn nil)
                                  (`has_literal? false)
                                  (`wrap_style 0)
                                  (`args []))
@@ -1665,11 +1667,13 @@
                                      ;(inline_log "compiled arg: <-" (last args))))
                               
                               (if (prop Environment.inlines tokens.0.name)
-                                  (= rval ((prop Environment.inlines tokens.0.name)
-                                                args))
+                                  (do 
+                                      (= inline_fn (prop Environment.inlines tokens.0.name))
+                                      (= rval (inline_fn
+                                                    args)))
                                   (throw ReferenceError (+ "no source for named lib function " tokens.0.name)))
                               
-                              (= rval (flatten rval))
+                              ;(= rval (flatten rval))
                               (inline_log "<-" rval)
                               rval)))
                              
@@ -1685,13 +1689,17 @@
        (`compile_list 
          (fn (tokens ctx)
              (let
-                 ((`acc [])
-                  (`contents nil))
+                 ((`acc ["["])
+                  (`compiled_values []))
+                  
                (log "compile_list: -> " tokens)
-               (= contents (compile_wrapper_fn (-> tokens `slice 1) ctx))
-                                        ;(push_as_arg_list acc contents)
-               (log "compile_list: <- " contents)
-               contents)))
+               (for_each (`t (-> tokens `slice 1))
+                  (push compiled_values (wrap_assignment_value (compile t ctx))))
+               
+               (push_as_arg_list acc compiled_values)
+               (push acc "]")
+               (log "compile_list: <- " acc)
+               acc)))
        (`compile_typeof
          (fn (tokens ctx)
              ["typeof" " " (compile_elem tokens.1 ctx) ]))
@@ -2106,7 +2114,7 @@
        (`ArgumentType (new Function "" " { return \"argument\" }"))
        (`compile_defvar (fn (tokens ctx )
                             (let
-                                ((`target (sanitize_js_ref_name tokens.1.name))
+                                ((`target (clean_quoted_reference (sanitize_js_ref_name tokens.1.name)))
                                  (`wrap_as_function? nil)
                                  (`ctx_details nil)
                                  (`check_needs_wrap 
@@ -2149,9 +2157,9 @@
                                             target
                                             (map_ctype_to_value assignment_value.0.ctype assignment_value))
                                             
-                                   
-                                   (when wrap_as_function?
-                                         (= assignment_value [ { `ctype: "AsyncFunction" }  "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
+                                   (= assignment_value (wrap_assignment_value assignment_value)))
+                                   ;(when wrap_as_function?
+                                    ;     (= assignment_value [ { `ctype: "AsyncFunction" }  "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                                   
                                   (set_ctx ctx
                                            target
@@ -2168,7 +2176,7 @@
                                              (==  ctx_details.levels_up 1))
                                          ""
                                          "let ") 
-                                  "" target "=" [ assignment_value ]";"]))))
+                                  "" target "=" (list assignment_value) ";"]))))
        ;; checks to see what has been declared during compilation and returns where
        ;; it only checks for declarations that have occurred during the compile phase
        
@@ -2180,6 +2188,7 @@
                                            `name: symname 
                                            `is_argument: true 
                                            `levels_up: (or _levels_up 0) 
+                                           ;`declarations: (get_declarations ctx symname)
                                            `value: (prop ctx.scope symname)
                                            `declared_global: (if (prop root_ctx.defined_lisp_globals symname) true false) }
                                    
@@ -2211,6 +2220,7 @@
                                             `is_argument: false
                                             `levels_up: (or _levels_up 0)
                                             `value: (-> Environment `get_global symname)
+                                            ;`declarations: (get_declarations ctx symname)
                                             `declared_global: true })))
        
        (`wrap_assignment_value (fn (stmts)
@@ -2237,7 +2247,17 @@
        
         
 
-       
+       (`clean_quoted_reference 
+                        (fn (name)
+                            (cond
+                              (and (is_string? name)
+                                   (starts_with? "\"" name)
+                                   (ends_with? "\"" name))
+                              (-> (-> name `substr 1)
+                                  `substr 0 (- (length name) 2))
+                              else
+                              name)))
+                                 
        (`compile_let (fn (tokens ctx)
                          (let
                              ((`acc [])
@@ -2262,6 +2282,7 @@
                               (`ctx_details nil)
                               (`allocations tokens.1.val)
                               (`block (-> tokens `slice 2))
+                              
                               (`idx -1))
                            (clog "->: " (prop tokens.1 `val))
                            (set_prop ctx
@@ -2320,7 +2341,8 @@
                               (do
                                   (inc idx)
                                   (= alloc_set (prop (prop allocations idx) `val))
-                                  (= reference_name (sanitize_js_ref_name alloc_set.0.name))
+                                  (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
+                                  
                                   (= ctx_details (get_declaration_details ctx reference_name))
                                   (when ctx_details
                                         (clog "declaration details for: " reference_name (clone ctx_details))
@@ -2361,7 +2383,7 @@
                                     (= stmt [])
                                     (= alloc_set (prop (prop allocations idx) `val))
                                     
-                                    (= reference_name (sanitize_js_ref_name alloc_set.0.name))
+                                    (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
                                     (= ctx_details (get_declaration_details ctx reference_name))
                                     (clog "compiling:" reference_name " ctx_details:" ctx_details)
                                     
@@ -2454,7 +2476,7 @@
                                     
                                     (= stmt [])
                                     (= alloc_set (prop (prop allocations idx) `val)) 
-                                    (= reference_name (sanitize_js_ref_name alloc_set.0.name))
+                                    (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
                                     (= ctx_details (get_declaration_details ctx reference_name))
                                     (clog "assignments: " reference_name (clone (prop assignments reference_name)) (clone assignments))
                                     (= assignment_value (take (prop assignments reference_name)))
@@ -2774,15 +2796,21 @@
                           (do 
                             (= stmts (compile condition ctx))
                             (cond_log "<- condition (form): " stmts)
+                            (push acc "check_true")
+                            (push acc "(")
                             (push acc " ")
-                            (push acc stmts))
+                            (push acc stmts)
+                            (push acc ")"))
                           (== condition.name "else")
                           (cond_log "else block")
                           else 
                           (do 
                             (= stmts (compile condition ctx))
+                            (push acc "check_true")
                             (cond_log "<- condition (not form): " stmts)
-                            (push acc stmts)))
+                            (push acc "(")
+                            (push acc stmts)
+                            (push acc ")")))
                         (when (not (== condition.name "else"))
                           (push acc ")"))
                         (push acc " ")
@@ -2824,7 +2852,7 @@
                              (`if_id (inc if_id))
                              (`if_log (if opts.quiet_mode
                                           log
-                                          (defclog { `prefix: (+ "compile_if (" ctx.block_id ")") `background: "#10A0A0" `color: `white })))  
+                                          (defclog { `prefix: (+ "compile_if (" if_id ")") `background: "#10A0A0" `color: `white })))  
                              (`inject_return false)
                              (`block_stmts nil)
                              (`in_suppress? ctx.suppress_return)
@@ -2896,7 +2924,9 @@
                           (when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))
                                         ;(push acc { `comment: (+ "start_if:" ctx.source " ") })
                                         ;(push acc { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step ) })
+                          (if_log "starting test compilation")
                           (= compiled_test (compile_elem test_form ctx))
+                          (if_log "test compilation complete")
                           (set_ctx ctx
                                      `__IF_BLOCK__
                                      if_id)
@@ -2911,13 +2941,14 @@
                                    (prop (first compiled_test) `ctype)
                                    (is_string? (prop (first compiled_test) `ctype))
                                    (contains? "unction" (prop (first compiled_test) `ctype)))
-                              (for_each (`t ["if" " " "(" "await" " " compiled_test "()" ")"])
+                              (for_each (`t ["if" " " "(check_true (" "await" " " compiled_test "()" "))"])
                                         (push acc t))
-                              (for_each (`t ["if" " " "("  compiled_test ")"])
+                              (for_each (`t ["if" " " "(check_true ("  compiled_test "))"])
                                         (push acc t)))
                           
-                          
+                          (if_log "starting compile if true: " (clone if_true))
                           (= compiled_true (compile if_true ctx))
+                          (if_log "if true compilation complete: " (clone compiled_true))
                           (= inject_return (check_needs_return compiled_true))
                           
                           (if_log "if_true <- __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_true))
@@ -2936,7 +2967,9 @@
                           (when needs_braces?
                             (push acc "}"))
                           (when if_false
+                            (if_log "starting compile false: " (clone if_false))
                             (= compiled_false (compile if_false ctx))
+                            (if_log "if false compilation complete: " (clone compiled_false))
                             (= inject_return (check_needs_return compiled_false))
                             (if_log "if_false <-  __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_false))
                             (push acc " " )
@@ -3095,10 +3128,12 @@
                          (let
                              ((`acc [])
                               (`prebuild [])
-                              (`target_type (sanitize_js_ref_name tokens.1.name))
+                              (`target_type (clean_quoted_reference (sanitize_js_ref_name tokens.1.name)))
                               (`comps (get_object_path target_type))
-                              (`complex? false)
-                              (`rval_ref nil)
+                              (`type_details (get_declaration_details ctx target_type))
+                              (`root_type_details (if (> comps.length 1)
+                                                      (get_declaration_details ctx comps.0)
+                                                      nil))
                               (`target_return_type nil)
                               (`new_arg_name nil)
                               (`args [])
@@ -3107,35 +3142,37 @@
                               (`new_opts (-> tokens `slice 2)))
                            (when (> comps.length 1)
                               (= target_type (path_to_js_syntax comps)))
+                          
                            (log "compile_new: target_type: " target_type comps)
+                           (log "compile_new: type details: " type_details)
+                           (when (> comps.length 1)
+                                 (log "compile_new: root type details: " root_type_details))
+                             
                            (for_each (`opt_token (or new_opts []))
                                      (do
-                                      (log "compile_new: opt_token: complex?"  (is_complex? opt_token.val) opt_token)
+                                      (log "compile_new: option_token:" opt_token)
+                                      (push args (wrap_assignment_value (compile opt_token ctx)))))
                                       
-                                      (if (is_complex? opt_token.val)
-                                          (do
-                                           (push args (compile_wrapper_fn opt_token ctx)))
-                                          (do 
-                                           (push args (compile opt_token ctx))))))
-                           (log "compile_new: complex: " complex? "args: " args)
+                           (log "compile_new: args: " args)
                            
-                           (if complex?     
+                           (cond
+                               (and (not (eq nil type_details.value))
+                                    (is_function? type_details.value))
                                (do
-                                (= rval_ref (gen_temp_name "rval_new"))
-                                (prepend prebuild [ "{" " " "let" " " rval_ref ";/*NEW2*/" ])
-                                 (for_each (`t ["return" " " "new" " " target_type "("])
-                                           (push prebuild t))
-                                 (push_as_arg_list prebuild args)
-                                 (push prebuild ")")
-                                 (push prebuild " ")
-                                 (push prebuild "}")
-                                 (for_each (`arg ["(" "async" " " "function" "()" " " prebuild "()" ")"])
-                                           (push acc arg)))
+                                   (for_each (`arg ["new" " " target_type "("])
+                                             (push acc arg))
+                                   (push_as_arg_list acc args)
+                                   (push acc ")"))
+                               (and (eq nil type_details.value)
+                                    (not (eq nil root_type_details.value)))
                                (do
-                                (for_each (`arg ["new" " " target_type "("])
-                                          (push acc arg))
-                                (push_as_arg_list acc args)
-                                 (push acc ")")))
+                                   (for_each (`arg ["(" "await" " " "Environment.get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
+                                       (push acc arg))
+                                   (when (> args.length 0)
+                                       (push acc ",")
+                                       (push_as_arg_list acc args))
+                                   (push acc ")")))
+                               
                            (= target_return_type
                                (or (get_ctx_val ctx target_type)
                                    (prop (or (get_declarations ctx target_type) {})
@@ -3421,13 +3458,12 @@
                              (when (and args (== args.length 1))
                                (= args (first args)))
                              (apply_log " -> " tokens)
-                             ;(apply_log "compile_apply: function:" "is_form:" (is_form? fn_ref) fn_ref)
-                             ;(apply_log "compile_apply: args: " args)
-                             
+                             (apply_log "function:" (clone fn_ref) "args:" (clone args))
                              (= function_ref (compile fn_ref ctx))
+                             (apply_log "compiled function:" (clone function_ref))
                              (when fn_ref.ref
-                                 (= ctype (get_declaration_details ctx function_ref)))
-                             (apply_log "function reference: " ctype)
+                                 (= ctype (get_declaration_details ctx fn_ref.val)))
+                             (apply_log "function type: " ctype)
                              (when (is_function? ctype.value)
                                  (= requires_await true))
                              ;(apply_log "compile_apply: function_ref: " (clone function_ref))
@@ -3891,17 +3927,28 @@
                                  (`is_arr? (is_array? lisp_struct.1)))
                               (= has_lisp_globals true)
                               (quotem_log " ->" (JSON.stringify lisp_struct))
-                              (if (contains? lisp_struct.1 [ (+ "=" ":" "(") (+ "=" ":" ")") (+ "=" ":" "'") ])
+                              (if (contains? lisp_struct.1 [ (+ "=" ":" "(") (+ "=" ":" ")") (+ "=" ":" "'") (+ "=" ":") ])
                                   (+ "\"" lisp_struct.1 "\"")
                                   (do
-                                      (= pcm (follow_tree lisp_struct.1 ctx))
-                                      (quotem_log "post follow_tree: " (clone pcm))
-                                      (= encoded (-> Environment `as_lisp pcm))
-                                      (quotem_log "as lisp: " encoded)
-                                      (= encoded (add_escape_encoding encoded))
-                                      (quotem_log "encoded: " encoded)
-                                      (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
-                                          (push acc t))
+                                     (= pcm (follow_tree lisp_struct.1 ctx))
+                                     (quotem_log "post follow_tree: " (clone pcm))
+                                     (cond
+                                       (is_string? pcm)
+                                       (do 
+                                          (for_each (`t [ (+ "`" pcm "`") ])
+                                             (push acc t)))
+                                       (is_number? pcm)
+                                       (push acc pcm)
+                                       (or (== pcm false) (== pcm true))
+                                       (push acc pcm)
+                                       else
+                                       (do 
+                                          (= encoded (-> Environment `as_lisp pcm))
+                                          (quotem_log "as lisp: " encoded)
+                                          (= encoded (add_escape_encoding encoded))
+                                          (quotem_log "encoded: " encoded)
+                                          (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
+                                              (push acc t))))
                                       (quotem_log "<-  " (join "" acc))
                                       (quotem_log "<- " acc)
                                       acc)))))
@@ -3971,7 +4018,7 @@
                (eval_log "assembly:" (clone assembly))
                ;(console.log "compile_eval: assembly:" assembly)
                (= has_lisp_globals true)
-               (= result [ "Environment" "." "eval" "(""async" " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
+               (= result [ "Environment" "." "eval" "(" "await" " "  "async" " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
                                                                                    ; "," (JSON.stringify ctx) ")" ]])
                                         ;(= result [ "async" " " "function" "()" ["{" "return" " " assembly "}" "()"  ]])
 
@@ -4021,7 +4068,7 @@
                          (do
                           (push idx_iters (prop for_args iter_idx))
                           (set_ctx ctx
-                           (prop (last idx_iters) `name)
+                           (clean_quoted_reference (prop (last idx_iters) `name))
                            ArgumentType)))
                
                (log "compile_for_each: idx_iters: " idx_iters)
@@ -5713,6 +5760,19 @@
                                                 }")
                            `bind: (new Function "func,this_arg"
                                        "{ return func.bind(this_arg) }")
+                                   
+                           `indirect_new: (new Function "...args"
+                                                "{
+                                                    let targetClass = args[0];
+                                                    if (args.length==1) {
+                                                        return new targetClass()
+                                                    } else {
+                                                        let f = function(Class) {
+                                                            return new (Function.prototype.bind.apply(Class, args));
+                                                        }
+                                                        let rval = f.apply(this,[targetClass].concat(args.slice(1)));
+                                                        return rval;
+                                                    }}")
                            `or_args: (fn (argset)
                                            (let
                                               ((is_true false))
@@ -6031,26 +6091,29 @@
     (get_attachment (unpack (first (retrieve { `no_meta: true `index_0: "Environment" `type: `Function } )))))
 
 
-(defun `run_compiler_tests ()
+(defun `run_compiler_tests (environment)
   (do
     (import `Boot.Compiler-Tests)
-    (make_start_env)
-    (log "ENV ID: " env)
-    (sleep 0.1)  ;; for screen updates for logging
-    (-> env `evaluate (reader_lib))
+    (when (not environment)
+        (make_start_env)
+        (log "ENV ID: " env)
+        (sleep 0.1)  ;; for screen updates for logging
+        (-> env `evaluate (reader_lib))
     
-    (-> env `evaluate "(do 
-                            (set_prop Environment 
-                                      `read_lisp
-                                      reader)
-                            (set_prop Environment
-                                      `as_lisp
-                                      globalThis.lisp_writer))")
-    (log "reader installed")
-    (sleep 0.1)  
+        (-> env `evaluate "(do 
+                                (set_prop Environment 
+                                          `read_lisp
+                                          reader)
+                                (set_prop Environment
+                                          `as_lisp
+                                          globalThis.lisp_writer))")
+        (log "reader installed")
+        (sleep 0.1))  
 
-    (defvar `test_results (run_tests { `table: true `env: env }))
-    (tab ["Compiler Tests - Start Env"
+    (defvar `test_results (run_tests { `table: true `env: (or environment env) }))
+    (tab [(if environment
+              "Compiler-Tests - Env"
+              "Compiler Tests - Start Env")
         test_results.view]
        true)))
 
