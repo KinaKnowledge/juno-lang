@@ -1086,7 +1086,7 @@
                                      name)))                        
                                 
        (`invalid_js_ref_chars "+?-%&^#!*[]~{}|")
-       (`invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]" `g))
+       (`invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+" `g))
        
        (`check_invalid_js_ref (fn (symname)
                                   (cond
@@ -1313,7 +1313,7 @@
        (`lisp_global_ctx_handle Environment.context)
        (`tokenize_object (fn (obj ctx)
                              (do
-                              ;(log "tokenize_object: " (keys obj) (as_lisp obj))
+                              (log "tokenize_object: " (keys obj) (as_lisp obj))
                               (if  (== (JSON.stringify obj) "{}")
                                    (do 
                                         ;(log "tokenize_object: returning {}")
@@ -1321,7 +1321,7 @@
                                    (for_each (`pset (pairs obj))
                                              (do
                                         ;(log "pset: " pset)
-                                              {`type: `keyval `val: (tokenize pset ctx) `ref: false `name: (desym pset.0) `__token__:true }))))))
+                                              {`type: `keyval `val: (tokenize pset ctx) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))
                                         ;{`type: `value `val:(tokenize pset.1) `ref: (is_reference? pset.1) `name: (desym pset.1) } ])))) )
        
        
@@ -4647,12 +4647,14 @@
                          (do
                           (inc idx)
                           (= kvpair (prop tokens.val idx))
-                           (log "compile_obj_literal:" idx total_length  "kvpair: " kvpair)
+                           (log "valid_key_literals: compile_obj_literal:" idx total_length  "kvpair: " kvpair)
                                         ;(log "compile_obj_literal:" idx "is_block?" (is_block? kvpair.val.1) kvpair.val.1.val`)
                            (= key (get_val kvpair.val.0 ctx))
-                           (when (and (== key.length 1)
+                           (when
+                              (and (== key.length 1)
                                       (== (-> key `charCodeAt) 34))
                               (= key "'\"'"))
+                            
                            (log "compile_obj_literal:" idx "key->" key "token_value:" kvpair.val.0)
                            (push acc key)
                            

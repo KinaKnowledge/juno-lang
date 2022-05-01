@@ -182,7 +182,7 @@
                   (second  (new Function "x" "{ return x[1] }"))
                   (third (new Function "x" "{ return x[2] }"))
                            
-                  (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(x.length-1) } else { return x.substr(x.length-1) } }"))
+                  (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(x.length-1) } else { return x.substr(0,x.length-1) } }"))
                   
                   (chomp (new Function "x" "{ return x.substr(x.length-1) }"))
                   
