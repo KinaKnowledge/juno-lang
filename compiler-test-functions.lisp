@@ -9,6 +9,8 @@
        (`compiled nil)
        (`view nil)
        (`env passed_env)
+       (`stime nil)
+       (`end_time nil)
        (`lisp_view (div { `style: "height: calc(100% - 10px);" }))
        (`js_code_view (div { `style: "height: calc(100% - 10px);" } ))
        (`js_code_editor
@@ -28,7 +30,8 @@
        (`compile_button (button { `class: "MenuButton2" } "Compile"))
        (`evaluate_button (button { `class: "MenuButton2" } "Evaluate"))
        (`evaluate_js_button (button { `class: "MenuButton2" } "Evaluate JS"))
-       (`controls [ compile_button  evaluate_button evaluate_js_button ])
+       (`timing (div { `style: "font-weight: bold; margin-left: 15px; display: inline-block;padding: 3px" } "-"))
+       (`controls [ compile_button  evaluate_button evaluate_js_button timing])
        (`control_view (div { `style: "display: flex; margin: 5px;" } 
                            controls))
        
@@ -37,7 +40,11 @@
                       ;(set_disabled compile_button evaluate_button evaluate_js_button)
                       (clear_log)
                       (console.clear)
-                      
+                      (set_prop timing
+                                `innerHTML
+                                "Compiling...")
+                      (sleep 0.02)
+                      (= stime (time_in_millis))
                       (notify "Running")
                        (try
                         (do 
@@ -48,7 +55,9 @@
                                        { `error_report: (fn (errors)
                                                             (display_errors errors))
                                          `on_compilation_complete: (fn (compiled_code)
-                                                                       (disp_comp_results compiled_code)) }))
+                                                                       (do 
+                                                                           (= end_time (time_in_millis))
+                                                                           (disp_comp_results compiled_code))) }))
                                 (= compiled (compiler (-> env `read_lisp (-> lisp_code_editor.editor `getValue))
                                                       { `formatted_output: true `js_out: true })))
                            (disp_comp_results compiled)
@@ -61,7 +70,7 @@
                                                                   (-> result `toString)
                                                                   else
                                                                   (JSON.stringify result nil 4)))
-                           (-> output_editor.editor `gotoLine 0 0))        
+                           (-> output_editor.editor `gotoLine 0 0))
                         (catch Error (`e)
                                (do
                                 (log (+ "COMPILE ERROR:" e)))))
@@ -81,6 +90,9 @@
                     (== compiled.length 2))
                
                (do 
+                   (set_prop timing
+                             `innerHTML
+                             (+ "" (-> (/ (- end_time stime) 1000) `toFixed 4) " secs"))
                    (console.log "dlisp_tab: compiled text: " compiled.1)
                    (-> js_code_editor.editor `setValue 
                        compiled.1)
@@ -88,6 +100,9 @@
                
                compiled
                (do 
+                    (set_prop timing
+                             `innerHTML
+                             (+ "" (/ (- end_time start_time) 1000) " secs"))
                    (console.log "dlisp_tab: compiled text: " compiled)
                    (-> js_code_editor.editor `setValue
                        compiled)
@@ -143,7 +158,15 @@
                      (-> qview `set_horizontal_position (- window.innerHeight (/ window.innerHeight 3)) (- window.innerHeight (/ window.innerHeight 2)))))
                 
                 1000)
-    view))
+    { 
+     `view: view
+     `set: (fn (text)
+               (-> lisp_code_editor.editor `setValue text))
+     `get: (fn (text)
+               (-> lisp_code_editor.editor `getValue))
+     `compile: (fn ()
+                   (compile true))
+     }))
 
 (defun `dlisp_tabs ()
    (do
@@ -161,7 +184,7 @@
                                         ;(show_test_dialog)
 (do
  
- (defun `show_test_dialog (test_number)
+ (defun `show_test_dialog (test_number env)
    (let
        ((`test_detail (or (prop compiler_tests test_number)
                           ["" [] undefined "No Test"]))
@@ -218,7 +241,7 @@
                                     { `on_compilation_complete: (fn (compiled_code)
                                                                     (disp_comp_results compiled_code)) })
                                 (= compiled (compiler (read_lisp (-> test_code_editor.editor `getValue))
-                                                      { `formatted_output: true `js_out: true })))
+                                                      { `formatted_output: true `js_out: true `env: env})))
                             
                             (catch Error (`e)
                                    (do
@@ -271,7 +294,7 @@
                                         (try
                                          
                                          (= compiled (compiler (read_lisp (-> test_code_editor.editor `getValue))
-                                                               { `formatted_output: true `js_out: true }))
+                                                               { `formatted_output: true `js_out: true `env: env }))
                                          
                                          (catch Error (`e)
                                                 (do
@@ -457,7 +480,7 @@
             (controls/table2 results
                                           {
                                           `on_row_click: (fn (value position)
-                                                             (show_test_dialog value.0))
+                                                             (show_test_dialog value.0 env))
                                           `read_only: true
                                           `title: (if (not (== false (andf (each results `2))))
                                                       "PASS"
