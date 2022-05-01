@@ -1503,13 +1503,19 @@
        
         ;; open a new tab
         (defvar `cmp_editor (dlisp_tab env_alpha))
+       
         (tab ["Alpha 1" cmp_editor.view ] true)
         (sleep 1)
         (-> cmp_editor `set (load_compiler_code))
         (sleep 0.1)
         (-> cmp_editor `compile)
         (sleep 1)
-        (tab ["Alpha 2" (dlisp_tab env_alpha) ] true)
+        (defvar `cmp_editor2 (dlisp_tab env_alpha))
+        (tab ["Alpha 2" cmp_editor2 ] true)
+        (sleep 1)
+        (-> cmp_editor2 `set "(-> Environment `set_compiler compiler)")
+        (sleep 0.1)
+        (-> cmp_editor2 `compile)
         (sleep 1)
         (tab ["Alpha 3" (dlisp_tab env_alpha) ] true)
         (sleep 1)
