@@ -4578,6 +4578,7 @@
                     "if": compile_if
                     "cond": compile_cond
                     "fn": compile_fn  
+                    "lambda": compile_fn
                     "defglobal": compile_set_global
                     "list": compile_list
                     "function": (fn (tokens ctx)

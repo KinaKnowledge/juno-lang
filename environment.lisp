@@ -205,7 +205,12 @@
                                (-> args `join "")
                                else
                                (-> args.1 `join args.0))))
-                           
+                  (lowercase (fn (x)
+                                 (-> x `toLowerCase)))
+                             
+                  (uppercase (fn (x)
+                                 (-> x `toUpperCase)))
+                             
                   (log (fn (`& args)
                            (apply console.log args)))
                   (split (new Function "container" "token" "{ return container.split(token) }"))
@@ -710,12 +715,16 @@
                                    `itake: (fn (args)
                                               [ args.0 ".shift" "()" ])
                                    `prepend: (fn (args)
-                                                 [ args.0 ".unshift" "(" args.1 ")"])
+                                                 [ "(" args.0 ")" ".unshift" "(" args.1 ")"])
                                    ;`flatten: (fn (args)
                                     ;             [ args.0 ".flat()"] )
                                    `trim: (fn (args)
-                                              [ args.0 ".trim()"])
+                                              [ "(" args.0 ")" ".trim()"])
                                    
+                                   `lowercase: (fn (args)
+                                                   ["(" args.0 ")" ".toLowerCase()"])
+                                   `uppercase: (fn (args)
+                                                   ["(" args.0 ")" ".toUpperCase()"])            
                                    `islice: (fn (args)
                                                (cond 
                                                  (== args.length 3)
@@ -725,7 +734,7 @@
                                                  else
                                                  (throw SyntaxError "slice requires 2 or 3 arguments")))
                                    `split_by: (fn (args)
-                                                  [ args.1 ".split" "(" args.0 ")"])
+                                                  [ "(" args.1 ")" ".split" "(" args.0 ")"])
                                    `bind: (fn (args)
                                               [ args.0 ".bind(" args.1 ")"])
                                    `is_array?: (fn (args)
