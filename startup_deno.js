@@ -23,6 +23,9 @@ await env.set_compiler(cca)
 
 // setup a simple repl from stdin
 
+console.log("DLisp 2.0 (c) 2022 Kina, LLC");
+
+
 import { readline } from "https://deno.land/x/readline/mod.ts";
 
 for await (const line of readline(Deno.stdin)) {
