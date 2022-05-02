@@ -47,7 +47,7 @@
        (`op nil)
        (`Environment opts.env)
        (`default_safety_level (or Environment.declarations.safety.level 1))
-       (`nada (console.log "COMPILER: " Environment  " Safety Level: " default_safety_level "INPUT: ->" (clone tree)))
+       ;(`nada (console.log "COMPILER: " Environment  " Safety Level: " default_safety_level))  ;  "INPUT: ->" (clone tree)))
        
        (`build_environment_mode (or opts.build_environment false))
        (`env_ref (if build_environment_mode
@@ -262,7 +262,7 @@
        (`set_ctx (fn (ctx name value)
                      (do
                       (defvar `sanitized_name (sanitize_js_ref_name name))
-                      (set_ctx_log "set_ctx:  ref:" sanitized_name "type: " (sub_type value) "val: " (clone value))
+                      ;(set_ctx_log "set_ctx:  ref:" sanitized_name "type: " (sub_type value) "val: " (clone value))
                       
                                         ;(= name (sanitize_js_ref_name name))
                       (if (and (is_array? value)
@@ -632,13 +632,13 @@
        
        (`get_val (fn (token ctx)
                      (do
-                       (log "get_val: ->" token ctx)
+                       ;(log "get_val: ->" token ctx)
                       (cond
                         token.ref
                         (do 
                             ;(log "get_val: sanitized reference: " (sanitize_js_ref_name (expand_dot_accessor token.name ctx)))
                             (defvar `comps (split_by "." token.name))
-                            (log "get_val: " (safe_access token ctx sanitize_js_ref_name))
+                            ;(log "get_val: " (safe_access token ctx sanitize_js_ref_name))
                             (if (and (> (safety_level ctx) 1)
                                      (> comps.length 1))
                                 (safe_access token ctx sanitize_js_ref_name)
@@ -650,7 +650,7 @@
        (`lisp_global_ctx_handle Environment.context)
        (`tokenize_object (fn (obj ctx)
                              (do
-                              (log "tokenize_object: " (keys obj) (as_lisp obj))
+                              ;(log "tokenize_object: " (keys obj) (as_lisp obj))
                               (if  (== (JSON.stringify obj) "{}")
                                    (do 
                                         ;(log "tokenize_object: returning {}")
@@ -780,7 +780,7 @@
                      ((`ntree nil)
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
                    
-                   (comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
+                   ;(comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
                    ;(comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
                    
                    (try
@@ -801,11 +801,11 @@
                    (if (eq nil ntree)
                        (comp_time_log "unable to perform compilation time operation")
                        (do
-                         (comp_time_log "applied:" ntree)
-                       
-                         (= ntree (do_deferred_splice ntree))
-                         (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp (clone ntree)))
-                         (comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
+                         ;(comp_time_log "applied:" ntree)
+                         
+                         (= ntree (do_deferred_splice ntree))))
+                         ;(comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp (clone ntree)))
+                         ;(comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
                    ntree)
                  
                  lisp_tree)))
@@ -816,7 +816,7 @@
                                                `and: "&&"
                                                })
                               (`ctx (new_ctx ctx))
-                              (`nada (log "infix_ops: ->" tokens ctx opts))
+                              ;(`nada (log "infix_ops: ->" tokens ctx opts))
                               (`math_op_a (prop (first tokens) `name))
                               (`math_op (or (prop op_translation math_op_a) math_op_a))
                               (`idx 0)
@@ -837,7 +837,7 @@
                            (set_ctx ctx
                                     `__COMP_INFIX_OPS__
                                     true)
-                           (log "infix + declaration: " declaration " ctx value: " )
+                           ;(log "infix + declaration: " declaration " ctx value: " )
                            (when (and (or (and declaration (== declaration.type Array))
                                           (and declaration (== declaration.type Object))
                                           (== symbol_ctx_val Expression)
@@ -857,10 +857,10 @@
                                           `name: "add"
                                           `ref: true })
                                 (= stmts (compile tokens ctx))
-                                (log  "infix (overloaded +): <-" stmts)
+                                ;(log  "infix (overloaded +): <-" stmts)
                                 (= stmts (wrap_assignment_value stmts))
                                 ;; BACKTOHERE
-                                (log  "infix <- " stmts)
+                                ;(log  "infix <- " stmts)
                                 stmts)
                                 
                                (do
@@ -870,9 +870,10 @@
                                   (inc idx)
                                   (= token (prop tokens idx))
                                    (add_operand)
-                                   (push acc (wrap_assignment_value (compile token ctx)))
+                                   (push acc (wrap_assignment_value (compile token ctx)))))
                                    
-                                   (log "infix <- " token (last acc))))
+                                   ; (log "infix <- " token (last acc))
+                                     
                                  (push acc ")")
                                 acc)))))
        
@@ -888,8 +889,8 @@
                                                 (compile_wrapper_fn token.val ctx)
                                                 (compile token ctx)))
                                    (`idx 1))
-                                (log "compile_set_prop: tokens: " tokens)
-                                (log "compile_set_prop: target: " target) 
+                                ;(log "compile_set_prop: tokens: " tokens)
+                                ;(log "compile_set_prop: target: " target) 
                                 (for_each (`t ["await" " " "async" " " "function" "()" "{" "let" " " target_reference "=" target ";" ] )
                                           (push wrapper t))
                                 (while (< idx (- tokens.length 1))
@@ -897,7 +898,7 @@
                                         (inc idx)
                                         (push acc target_reference)
                                          (= token (prop tokens idx))
-                                         (log "compile_set_prop: " target_reference  idx "token: " token)
+                                         ;(log "compile_set_prop: " target_reference  idx "token: " token)
                                          (push acc "[")
                                          (= stmt (wrap_assignment_value (compile token ctx)))
                                          (push acc stmt)
@@ -921,7 +922,7 @@
                                 (push wrapper ";")
                                 (push wrapper "}")
                                 (push wrapper "()")
-                                (log "compile_set_prop: " (join "" (flatten wrapper)))
+                                ;(log "compile_set_prop: " (join "" (flatten wrapper)))
                                 wrapper)))
        
        
@@ -932,8 +933,8 @@
                                 (`target_val nil)
                                 (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx))))
                                 
-                            (log "compile_prop: target: " target)
-                            (log "compile_prop: idx_key: " idx_key)
+                            ;(log "compile_prop: target: " target)
+                            ;(log "compile_prop: idx_key: " idx_key)
                             (if (> (safety_level ctx) 1)
                                 (do
                                     (= target_val (gen_temp_name "targ"))
@@ -958,19 +959,19 @@
                                                                    else
                                                                    (sub_type (prop (first stmts) `ctype))))
                                                           ""))))
-                                             (inline_log "check_needs_return: " fst (sub_type fst))
+                                             ;(inline_log "check_needs_return: " fst (sub_type fst))
                                              (cond
                                                (contains? "block" fst)
                                                true
                                                else
                                                false)))))
-                            (log "compile_elem: -> complex?" (is_complex? token.val) token)
+                            ;(log "compile_elem: -> complex?" (is_complex? token.val) token)
                             (if (is_complex? token.val)
                                 (= rval (compile_wrapper_fn token ctx))
                                 (= rval (compile token ctx)))
                             (when (not (is_array? rval))
                               (= rval [ rval ]))
-                            (log "compile_elem: <-" (flatten rval))
+                            ;(log "compile_elem: <-" (flatten rval))
                             rval)))
        (`inline_log (if opts.quiet_mode
                         log
@@ -983,14 +984,14 @@
                                  (`has_literal? false)
                                  (`wrap_style 0)
                                  (`args []))
-                              (inline_log "->" tokens)
+                              ;(inline_log "->" tokens)
                             
                               ;; compile the arguments first to determine if they are candidates
                               ;; for inline opportunities
                               
                               (for_each (`token (-> tokens `slice 1))
                                  (do
-                                     (inline_log "compiling: " token)
+                                     ;(inline_log "compiling: " token)
                                      (= stmt (wrap_assignment_value (compile token ctx)))
                                      (push args stmt)))
                                      ;(= wrap_style (check_needs_wrap stmt))
@@ -1011,7 +1012,7 @@
                                   (throw ReferenceError (+ "no source for named lib function " tokens.0.name)))
                               
                               ;(= rval (flatten rval))
-                              (inline_log "<-" rval)
+                              ;(inline_log "<-" rval)
                               rval)))
                              
        
@@ -1029,13 +1030,11 @@
                  ((`acc ["["])
                   (`compiled_values []))
                   
-               (log "compile_list: -> " tokens)
                (for_each (`t (-> tokens `slice 1))
                   (push compiled_values (wrap_assignment_value (compile t ctx))))
                
                (push_as_arg_list acc compiled_values)
                (push acc "]")
-               (log "compile_list: <- " acc)
                acc)))
        (`compile_typeof
          (fn (tokens ctx)
@@ -1044,7 +1043,7 @@
          (fn (tokens ctx)
              (let
                  ((`acc []))
-               (log "compile_instanceof: -> " tokens)
+               ;(log "compile_instanceof: -> " tokens)
                (if (and (is_array? tokens)
                         (== tokens.length 3))
                    [ "("
@@ -1083,7 +1082,7 @@
                                (set_ctx ctx
                                         `__COMP_INFIX_OPS__
                                         true)
-                               (log "compile_compare: " operator left right)
+                               ;(log "compile_compare: " operator left right)
                                (push acc "(")
                                (push acc (compile left ctx))
                                (push acc operator)
@@ -1114,9 +1113,9 @@
                                                                       else
                                                                       "local")))
                                   
-                                  (log "compile_assignment: -> " tokens)
-                                  (log "compile_assignment: target_details: " target_details)
-                                  (log "compile_assignment: " assignment_operator target "location:" target_location_compile_time)
+                                  ;(log "compile_assignment: -> " tokens)
+                                  ;(log "compile_assignment: target_details: " target_details)
+                                  ;(log "compile_assignment: " assignment_operator target "location:" target_location_compile_time)
                                   
                                   (unset_ambiguous ctx target)
                                   
@@ -1138,7 +1137,7 @@
                                             UnknownType)))
                                               
                                            
-                                  (log "compile_assignment: target is: " target " type: " assignment_type " value: " (clone assignment_value))
+                                  ;(log "compile_assignment: target is: " target " type: " assignment_type " value: " (clone assignment_value))
                                   (= assignment_value (wrap_assignment_value assignment_value))
                                    
                                    
@@ -1181,7 +1180,7 @@
                                         ;(push acc assignment_value)
                                  
                                   ;(push acc ";")
-                                  (log "compile_assignment: <-" acc)
+                                  ;(log "compile_assignment: <-" acc)
                                   acc)))
        (`needs_return? (fn (stmts ctx)
                            (if (> (length stmts) 0)
@@ -1314,7 +1313,7 @@
                                    (= lambda_block true)
                                    (setf_ctx ctx `__LAMBDA_STEP__
                                             (- tokens.length 1)))
-                             (clog "start: lambda_block?:" lambda_block "lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__)  "num_steps: " (- tokens.length 1) "if_block?" (get_ctx_val ctx `__IF_BLOCK__) (clone tokens))
+                             ;(clog "start: lambda_block?:" lambda_block "lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__)  "num_steps: " (- tokens.length 1) "if_block?" (get_ctx_val ctx `__IF_BLOCK__) (clone tokens))
                              (when (not block_options.no_scope_boundary)
                                (push acc "{"))
                                
@@ -1341,7 +1340,7 @@
                                            (set_ctx ctx "__LAMBDA_STEP__" 
                                                     (- tokens.length 1 idx)))
                                                 
-                                      (clog "step start: lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__) "source:" token.source)
+                                      ;(clog "step start: lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__) "source:" token.source)
                                       (if (and (== token.type "arr")
                                                (== token.val.0.name "return"))
                                           (do 
@@ -1351,7 +1350,7 @@
                                            (push stmts (compile_return token.val ctx))
                                            (= stmt []))
                                           (do 
-                                           (clog "compiling standard token -> " token)
+                                           ;(clog "compiling standard token -> " token)
                                            
                                            (if (and (== token.val.0.name "declare")
                                                     block_options.ignore_declarations)
@@ -1360,20 +1359,20 @@
                                       
                                         ;(push stmts { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step " source: " ctx.source) })      
                                       
-                                      (clog "return_point: " ctx.return_point "block_step:" ctx.block_step "rtn?:" return_last "stmnt: " stmt (length stmt))
+                                     ; (clog "return_point: " ctx.return_point "block_step:" ctx.block_step "rtn?:" return_last "stmnt: " stmt (length stmt))
                                       (cond 
                                         (and (== stmt.0 break_out)
                                              (== stmt.1 "=")
                                              (== stmt.2 "true"))
                                         (do
-                                         (clog "return_point: " ctx.return_point "block_step:" ctx.block_step  "break out:" stmt)
+                                         ;(clog "return_point: " ctx.return_point "block_step:" ctx.block_step  "break out:" stmt)
                                          ;; essentially no op
                                          true)
                                         
                                         else
                                         true) ;; disabled due to return issue
                                         
-                                      (clog "in block:<-" stmt)
+                                      ;(clog "in block:<-" stmt)
                                       
                                       (= stmt_ctype (and (> ctx.block_step 0)
                                                          (is_object? (first stmt))
@@ -1384,7 +1383,7 @@
                                         (do 
                                             ;(push stmts "await")
                                             ;(push stmts " ")
-                                            (clog "async function: [adding potential return marker] " stmt)
+                                            ;(clog "async function: [adding potential return marker] " stmt)
                                              (push stmts { `mark: "block<-async" })
                                             (push stmts stmt))
                                         (== stmt_ctype "block")
@@ -1399,7 +1398,7 @@
                                         (push stmts ";"))))
                                     
                              ;; Now depending on the last value in the stmts array, insert a return
-                             (clog "compile_block: suppress_return set: " ctx.suppress_return "if block:" (get_ctx_val ctx `__IF_BLOCK__))
+                             ;(clog "compile_block: suppress_return set: " ctx.suppress_return "if block:" (get_ctx_val ctx `__IF_BLOCK__))
                              (cond (and (not block_options.suppress_return)
                                         (not ctx.suppress_return)
                                         
@@ -1408,11 +1407,11 @@
                                             (and (> idx 1)
                                                   (needs_return? stmts ctx))))
                                 (do
-                                   (clog  "needs return statement: block_step:" ctx.block_step)
+                                  ;(clog  "needs return statement: block_step:" ctx.block_step)
                                    
                                    
                                    (= last_stmt (pop stmts))
-                                   (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
+                                   ;(clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
                                    ; TODO - 
                                    (push stmts
                                          { `mark: "final-return" `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__) } )
@@ -1426,22 +1425,22 @@
                                          (needs_return? stmts ctx)))
                                 (do
                                    (= last_stmt (pop stmts))
-                                   (clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
+                                   ;(clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
                                    ; TODO - 
                                    (push stmts
                                          { `mark: "block-end"  `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__)} )
                                    (push stmts " ")
                                    (push stmts last_stmt)  
-                                   (clog "HERE: block_step:" ctx.block_step "last stmt: " (last stmts))
+                                   ;(clog "HERE: block_step:" ctx.block_step "last stmt: " (last stmts))
                                     ))
                              
                                         ;(when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))  
                              (push acc stmts)
                              (when (not block_options.no_scope_boundary)
                                (push acc "}"))
-                             (clog "end: block_step: " ctx.block_step acc)
+                             ;(clog "end: block_step: " ctx.block_step acc)
                              (prepend acc { `ctype: "block" } )
-                             (clog "<-" (clone acc))
+                             ;(clog "<-" (clone acc))
                              acc)))
        
        (`Expression (new Function "" "{ return \"expression\" }"))
@@ -1467,7 +1466,7 @@
                                                                else
                                                                (sub_type (prop (first stmts) `ctype))))
                                                       ""))))
-                                         (log "compile_defvar: check_needs_return: " fst (sub_type fst))
+                                         ;(log "compile_defvar: check_needs_return: " fst (sub_type fst))
                                          (cond
                                            (contains? "block" fst)
                                            true
@@ -1475,17 +1474,17 @@
                                            false))))
                                  (`assignment_value nil))
                               
-                              (log "compile_defvar: ->" tokens)
+                              ;(log "compile_defvar: ->" tokens)
                               (= assignment_value
                                  (do 
                                   (compile tokens.2 ctx)))
-                              (log "compile_defvar: compile returned:" assignment_value)
+                              ;(log "compile_defvar: compile returned:" assignment_value)
                               (= wrap_as_function? (check_needs_wrap assignment_value))
                               
-                              (log "compile_defvar: target: " target "wrap?" wrap_as_function? "assignment:" assignment_value)
+                              ;(log "compile_defvar: target: " target "wrap?" wrap_as_function? "assignment:" assignment_value)
                               
                               (= ctx_details (get_declaration_details ctx target))
-                              (log "compile_defvar: ctx_details:" ctx_details)
+                              ;(log "compile_defvar: ctx_details:" ctx_details)
                               (if (and (is_array? assignment_value)
                                        (is_object? assignment_value.0)
                                        assignment_value.0.ctype)
@@ -1501,7 +1500,7 @@
                                   (set_ctx ctx
                                            target
                                            assignment_value))
-                              (log "compile_defvar: assignment_value: " assignment_value)
+                              ;(log "compile_defvar: assignment_value: " assignment_value)
                               (if ctx.defvar_eval
                                   (do
                                     (delete_prop ctx
@@ -1573,7 +1572,7 @@
                                                                (sub_type (prop (first stmts) `ctype))))
                                                       ""))))
                                         
-                                     (log "wrap_assignment_value: check_needs_return: " fst (sub_type fst))
+                                     ;(log "wrap_assignment_value: check_needs_return: " fst (sub_type fst))
                                      (cond
                                        (== "ifblock" fst)
                                        [{`ctype: "AsyncFunction" } {`mark: "wrap_assignment_value"}  "await" " " "(" "async" " " "function" " " "()" " " "{" " " stmts " " "}" ")" "()" ]
@@ -1621,7 +1620,7 @@
                               (`block (-> tokens `slice 2))
                               
                               (`idx -1))
-                           (clog "->: " (prop tokens.1 `val))
+                           ;(clog "->: " (prop tokens.1 `val))
                            (set_prop ctx
                                      `return_last_value
                                      true)
@@ -1636,7 +1635,7 @@
                            ;; allocation block because let allows us to refer to symbol names out of order, similar to
                            ;; let* in Common Lisp.  
                            
-                           (clog "block: " (clone block))
+                           ;(clog "block: " (clone block))
                            
                            ;; Check declaration details if they exist in the first form of the block form
                            
@@ -1682,7 +1681,7 @@
                                   
                                   (= ctx_details (get_declaration_details ctx reference_name))
                                   (when ctx_details
-                                        (clog "declaration details for: " reference_name (clone ctx_details))
+                                        ;(clog "declaration details for: " reference_name (clone ctx_details))
                                         ;; already declared..
                                         (when (and (not ctx_details.is_argument)
                                                    (> ctx_details.levels_up 1))
@@ -1701,9 +1700,8 @@
                                    ;; set a placeholder for the reference
                                       (set_ctx ctx
                                                reference_name 
-                                               AsyncFunction)) ;; assume callable for recursion
-                                  (clog "set ctx placeholder for " reference_name ": " (get_ctx ctx reference_name) (clone ctx))))
-                                  
+                                               AsyncFunction)))) ;; assume callable for recursion
+
                                   
                            ;; reset our index to the top of the allocation list
                            (= idx -1)
@@ -1722,7 +1720,7 @@
                                     
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
                                     (= ctx_details (get_declaration_details ctx reference_name))
-                                    (clog "compiling:" reference_name " ctx_details:" ctx_details)
+                                    ;(clog "compiling:" reference_name " ctx_details:" ctx_details)
                                     
                                     (cond
                                       (is_array? alloc_set.1.val)
@@ -1738,7 +1736,7 @@
                                                   false))
                                       else
                                       (do 
-                                       (clog "compiling simple assignment value for " reference_name  ": " alloc_set.1)
+                                       ;(clog "compiling simple assignment value for " reference_name  ": " alloc_set.1)
                                        (= assignment_value (compile alloc_set.1 ctx))
                                        
                                        ;(clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value))
@@ -1800,7 +1798,7 @@
                                    (for_each (`redef pset.1)
                                      (take (prop redefinitions pset.0))))))
                                  
-                           (clog "redefinitions: " (clone redefinitions))     
+                           ;(clog "redefinitions: " (clone redefinitions))     
                            (when need_sub_block
                              (push acc "{")
                              (inc sub_block_count))
@@ -1815,10 +1813,10 @@
                                     (= alloc_set (prop (prop allocations idx) `val)) 
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
                                     (= ctx_details (get_declaration_details ctx reference_name))
-                                    (clog "assignments: " reference_name (clone (prop assignments reference_name)) (clone assignments))
+                                    ;(clog "assignments: " reference_name (clone (prop assignments reference_name)) (clone assignments))
                                     (= assignment_value (take (prop assignments reference_name)))
                                     
-                                    (clog "set declaration for " reference_name "is arg?" ctx_details " already declared?" (prop block_declarations reference_name) " assignment value: " (clone assignment_value))
+                                    ;(clog "set declaration for " reference_name "is arg?" ctx_details " already declared?" (prop block_declarations reference_name) " assignment value: " (clone assignment_value))
                                     
                                     
                                     (cond
@@ -1845,7 +1843,7 @@
                                     (push stmt ";")
                                     
                                     (push acc stmt))) ;/*LET*/")))
-                           (clog "assignments complete:" (clone acc))
+                           ;(clog "assignments complete:" (clone acc))
                            (push acc (compile_block (conj ["PLACEHOLDER"]
                                                           block)
                                                     ctx
@@ -1855,9 +1853,9 @@
                                                     }))
                            (for_each (`i (range sub_block_count))
                             (push acc "}"))
-                           (clog "return_point: " ctx.return_point)
-                           (clog "<-" (clone acc))
-                           (console.log "compile_let: <-" acc)
+                           ;(clog "return_point: " ctx.return_point)
+                           ;(clog "<-" (clone acc))
+                           ;(console.log "compile_let: <-" acc)
                            (if (== ctx.return_point 1)
                                acc
                                (do
@@ -1908,7 +1906,7 @@
                                (push acc type_mark)
                                 (push acc "async")
                                 (push acc " ")))  ;; async by default
-                          (fn_log "->" tokens)
+                          ;(fn_log "->" tokens)
                           (set_prop type_mark
                                     `args
                                     [])       
@@ -1919,14 +1917,14 @@
                                  (do
                                   (inc idx)
                                   (= arg (prop fn_args idx))
-                                   (fn_log "argument: " arg)                                  
+                                   ;(fn_log "argument: " arg)                                  
                                    (if (== arg.name "&")
                                        (do
                                          (inc idx)
                                          (= arg (prop fn_args idx))
                                          (when (eq nil arg)
                                            (throw SyntaxError "Missing argument symbol after &"))
-                                         (log "compile_fn: & rest args: " arg)  
+                                         ;(log "compile_fn: & rest args: " arg)  
                                          (set_ctx ctx
                                                   arg.name
                                                   ArgumentType)
@@ -1947,7 +1945,7 @@
                           (push acc " ")
                           (when fn_opts.arrow
                                 (push acc "=>"))
-                          (fn_log "body: is_block?" (is_block? body.val) body)
+                          ;(fn_log "body: is_block?" (is_block? body.val) body)
                           (set_prop ctx
                                     `return_last_value
                                     true)
@@ -1955,21 +1953,21 @@
                           (cond 
                             (== body.val.0.name `let)
                             (do 
-                             (fn_log "let block: " body.val)
+                             ;(fn_log "let block: " body.val)
                              ;(push acc { `mark: "rval" })
                              (push acc (compile body.val
                                                 ctx
                                                 )))
                             (== body.val.0.name `do)
                             (do 
-                             (fn_log "do block: " body.val)
+                             ;(fn_log "do block: " body.val)
                              (push acc (compile_block body.val
                                                       ctx
                                                       )))
                             
                             else  ;; make a pseudo-block
                             (do 
-                             (fn_log "making pseudo-block: " body)
+                             ;(fn_log "making pseudo-block: " body)
                              (= nbody [{
                                 `type: "special",
                                 `val: (quote "=:do"),
@@ -1987,7 +1985,7 @@
                                                        ))))
                           
                               
-                          (fn_log "<-" (clone acc))
+                         ;(fn_log "<-" (clone acc))
                           acc)))
                       
         (`compile_jslambda (fn (tokens ctx)
@@ -2028,8 +2026,8 @@
                                   (push acc (join "" (flatten quoted_body)))
                                   (push acc "\"")
                                   (push acc ")")
-                                 (console.log "compile_jslambda: " acc)
-                                 (log "compile_jslambda: <-" (flatten acc))
+                                 ;(console.log "compile_jslambda: " acc)
+                                 ;(log "compile_jslambda: <-" (flatten acc))
                                   acc)))
                                    
                                         
@@ -2073,7 +2071,7 @@
                                                                else
                                                                (sub_type (prop (first stmts) `ctype))))
                                                       "")))
-                         (cond_log "check_needs_return: " fst (sub_type fst))
+                         ;(cond_log "check_needs_return: " fst (sub_type fst))
                           (cond
                             (== fst "ifblock")
                             (do
@@ -2098,7 +2096,7 @@
                   (`condition nil)
                   (`condition_block nil)
                   (`condition_tokens (-> tokens `slice 1)))
-               (cond_log "->" condition_tokens)
+               ;(cond_log "->" condition_tokens)
                
                (cond 
                  (not (== (% condition_tokens.length 2) 0))
@@ -2114,8 +2112,8 @@
                        (= condition (prop condition_tokens idx))
                         (inc idx)
                         (= condition_block (prop condition_tokens idx))
-                        (cond_log idx (get_ctx_val ctx `__LAMBDA_STEP__)  "condition:" condition)
-                        (cond_log idx (get_ctx_val ctx `__LAMBDA_STEP__) "  c block:" condition_block)
+                       ; (cond_log idx (get_ctx_val ctx `__LAMBDA_STEP__)  "condition:" condition)
+                        ;(cond_log idx (get_ctx_val ctx `__LAMBDA_STEP__) "  c block:" condition_block)
                         
                         (when (> idx 2)
                           (push acc " ")
@@ -2132,19 +2130,20 @@
                           (is_form? condition)
                           (do 
                             (= stmts (compile condition ctx))
-                            (cond_log "<- condition (form): " stmts)
+                            ;(cond_log "<- condition (form): " stmts)
                             (push acc "check_true")
                             (push acc "(")
                             (push acc " ")
                             (push acc stmts)
                             (push acc ")"))
                           (== condition.name "else")
-                          (cond_log "else block")
+                          true
+                          ;(cond_log "else block")
                           else 
                           (do 
                             (= stmts (compile condition ctx))
                             (push acc "check_true")
-                            (cond_log "<- condition (not form): " stmts)
+                            ;(cond_log "<- condition (not form): " stmts)
                             (push acc "(")
                             (push acc stmts)
                             (push acc ")")))
@@ -2156,10 +2155,10 @@
                          ;    `__LAMBDA_STEP__
                           ;   -1)
                         (= stmts (compile condition_block ctx))
-                        (cond_log "<-condition block" stmts)
+                        ;(cond_log "<-condition block" stmts)
                         (when (check_needs_return stmts)
                           (= inject_return true)) ; true
-                        (cond_log "cond block needs return?" inject_return  "needs braces?" needs_braces?)
+                        ;(cond_log "cond block needs return?" inject_return  "needs braces?" needs_braces?)
                         (when needs_braces?
                           (push acc "{")
                           (push acc " "))
@@ -2171,11 +2170,11 @@
                              
                              (push acc stmts))
                             (do 
-                             (cond_log "compile_cond: simple condition_block")
+                             ;(cond_log "compile_cond: simple condition_block")
                              (push acc stmts)))
                         (when needs_braces?
                           (push acc "}"))
-                        (cond_log "compile_cond: acc: " acc)
+                        ;(cond_log "compile_cond: acc: " acc)
                         (inc idx)))
                
                acc)))
@@ -2213,7 +2212,7 @@
                                                                else
                                                                (sub_type (prop (first stmts) `ctype))))
                                                       "")))
-                                    (if_log "check_needs_return: " fst (sub_type fst))
+                                    ;(if_log "check_needs_return: " fst (sub_type fst))
                                      (cond
                                        (contains? "block" fst)
                                        (do 
@@ -2228,13 +2227,13 @@
                                        (and (== ctx.block_step 0)
                                             (< ctx.return_point 3))
                                        (do 
-                                        (if_log "end of block-> block_step 0, return_point < 3")
+                                        ;(if_log "end of block-> block_step 0, return_point < 3")
                                         (= needs_braces? true)
                                         false)  ;;true
                                        (and (== ctx.block_step 0)
                                             (> ctx.return_point 2))
                                        (do 
-                                        (if_log "end of block-> block_step 0, return_point > 2")
+                                        ;(if_log "end of block-> block_step 0, return_point > 2")
                                         (= needs_braces? true)
                                         false) ;; true
                                        (> ctx.block_step 0)
@@ -2243,27 +2242,27 @@
                                         false)
                                        else
                                        (do 
-                                        (if_log "check_needs_return: " ctx.block_step  "defaulting to true")
+                                        ;(if_log "check_needs_return: " ctx.block_step  "defaulting to true")
                                         (= needs_braces? true)
                                         false))))))   ;; true
                           (if (== ctx.block_step undefined)
                               (set_prop ctx
                                         `block_step
                                         0))
-                          (if_log "start: block_id: " ctx.block_id "block_step:" ctx.block_step "__LAMBDA_STEP__:" (and ctx (get_ctx_val ctx "__LAMBDA_STEP__")) tokens)
+                          ;(if_log "start: block_id: " ctx.block_id "block_step:" ctx.block_step "__LAMBDA_STEP__:" (and ctx (get_ctx_val ctx "__LAMBDA_STEP__")) tokens)
                           (when (eq nil ctx)
                                 (throw ReferenceError "undefined/nil ctx passed to compile_if"))
-                          (if_log "test_form: " test_form.source test_form)
-                          (if_log "if_true: " if_true.source if_true)
-                          (if_log "if_false: " if_false.source if_false)
+                          ;(if_log "test_form: " test_form.source test_form)
+                          ;(if_log "if_true: " if_true.source if_true)
+                          ;(if_log "if_false: " if_false.source if_false)
                                         ;(if (not ctx.return_point)
                           (push acc { `ctype: "ifblock" })
                           (when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))
                                         ;(push acc { `comment: (+ "start_if:" ctx.source " ") })
                                         ;(push acc { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step ) })
-                          (if_log "starting test compilation")
+                          ;(if_log "starting test compilation")
                           (= compiled_test (compile_elem test_form ctx))
-                          (if_log "test compilation complete")
+                          ;(if_log "test compilation complete")
                           (set_ctx ctx
                                      `__IF_BLOCK__
                                      if_id)
@@ -2272,7 +2271,7 @@
                             (set_prop ctx
                                       `suppress_return
                                       true))
-                          (if_log "compiled_test:" compiled_test)
+                         ; (if_log "compiled_test:" compiled_test)
                                         ;(push acc (+ "/* if start: block_id: " ctx.block_id " block_step: " ctx.block_step " */"))
                           (if (and (is_object? (first compiled_test))
                                    (prop (first compiled_test) `ctype)
@@ -2283,12 +2282,12 @@
                               (for_each (`t ["if" " " "(check_true ("  compiled_test "))"])
                                         (push acc t)))
                           
-                          (if_log "starting compile if true: " (clone if_true))
+                          ;(if_log "starting compile if true: " (clone if_true))
                           (= compiled_true (compile if_true ctx))
-                          (if_log "if true compilation complete: " (clone compiled_true))
+                          ;(if_log "if true compilation complete: " (clone compiled_true))
                           (= inject_return (check_needs_return compiled_true))
                           
-                          (if_log "if_true <- __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_true))
+                         ; (if_log "if_true <- __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_true))
                           
                           (when needs_braces?
                             (push acc "{")
@@ -2304,11 +2303,11 @@
                           (when needs_braces?
                             (push acc "}"))
                           (when if_false
-                            (if_log "starting compile false: " (clone if_false))
+                            ;(if_log "starting compile false: " (clone if_false))
                             (= compiled_false (compile if_false ctx))
-                            (if_log "if false compilation complete: " (clone compiled_false))
+                            ;(if_log "if false compilation complete: " (clone compiled_false))
                             (= inject_return (check_needs_return compiled_false))
-                            (if_log "if_false <-  __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_false))
+                            ;(if_log "if_false <-  __LAMBDA_STEP__: " (get_ctx_val ctx "__LAMBDA_STEP__") "stmt:" (clone compiled_false))
                             (push acc " " )
                             (push acc "else")
                             (push acc " ")
@@ -2328,7 +2327,7 @@
                           (set_ctx ctx
                                      `__IF_BLOCK__
                                      undefined)
-                          (if_log "<-" (clone acc))
+                          ;(if_log "<-" (clone acc))
                           (set_prop ctx
                                     `suppress_return
                                     in_suppress?)
@@ -2341,19 +2340,19 @@
                                     ((`acc [])
                                      (`ctx ctx)
                                      (`needs_await true))
-                                  (cwrap_log "compile_wrapper_fn: tokens: block?" (is_block? tokens) "form?" (is_form? tokens) tokens)
+                                  ;(cwrap_log "compile_wrapper_fn: tokens: block?" (is_block? tokens) "form?" (is_form? tokens) tokens)
                                   (cond
                                     (and (is_object? tokens)
                                          (not (is_array? tokens))
                                          (not (== tokens.type "arr")))
                                     (do 
                                      (= needs_await false)
-                                     (cwrap_log "compile_wrapper_fn: simple form - just compiling")
+                                     ;(cwrap_log "compile_wrapper_fn: simple form - just compiling")
                                       (= acc [(compile tokens ctx)]))
                                     
                                     (is_block? tokens)
                                     (do
-                                     (cwrap_log "compile_wrapper_fn: wrapping block in anon func" tokens)
+                                     ;(cwrap_log "compile_wrapper_fn: wrapping block in anon func" tokens)
                                      (= ctx (new_ctx ctx))
                                       (set_prop ctx
                                                 `return_point
@@ -2370,7 +2369,7 @@
                                                 (push acc t)))
                                     (is_array? tokens)
                                     (do
-                                     (cwrap_log "compile_wrapper_fn: tokens is array:" tokens)
+                                     ;(cwrap_log "compile_wrapper_fn: tokens is array:" tokens)
                                      (= acc (compile_block_to_anon_fn tokens ctx)))
                                     (and (is_object? tokens)
                                          tokens.val
@@ -2378,7 +2377,7 @@
                                     (do 
                                      
                                      (= acc (compile_block_to_anon_fn tokens.val ctx))))
-                                  (cwrap_log "compile_wrapper_fn: <- " (join "" (flatten acc)))
+                                  ;(cwrap_log "compile_wrapper_fn: <- " (join "" (flatten acc)))
                                         ; (when needs_await 
                                         ;(push acc "await")
                                         ;(push acc " "))
@@ -2393,7 +2392,7 @@
                                         (set_prop ctx
                                                   `return_point
                                                   0)
-                                        (log "compile_block_to_anon_fn: tokens: block?" (is_block? tokens) "return_point: " ctx.return_point tokens)
+                                        ;(log "compile_block_to_anon_fn: tokens: block?" (is_block? tokens) "return_point: " ctx.return_point tokens)
                                         (cond
                                           (is_block? tokens)
                                           (do
@@ -2427,7 +2426,7 @@
                                             0)
                                             (for_each (`t ["(" "async" " " "function" "()" "{" " " "return"  " "(compile tokens ctx) " " "}" ")" "()"  ])
                                                       (push acc t))))
-                                        (log "compile_block_to_anon_fn: <-" (flatten acc))
+                                        ;(log "compile_block_to_anon_fn: <-" (flatten acc))
                                         acc)))
        (`make_do_block (fn (tokens)
                            (let
@@ -2480,17 +2479,17 @@
                            (when (> comps.length 1)
                               (= target_type (path_to_js_syntax comps)))
                           
-                           (log "compile_new: target_type: " target_type comps)
-                           (log "compile_new: type details: " type_details)
-                           (when (> comps.length 1)
-                                 (log "compile_new: root type details: " root_type_details))
+                           ;(log "compile_new: target_type: " target_type comps)
+                           ;(log "compile_new: type details: " type_details)
+                           ;(when (> comps.length 1)
+                           ;      (log "compile_new: root type details: " root_type_details))
                              
                            (for_each (`opt_token (or new_opts []))
                                      (do
-                                      (log "compile_new: option_token:" opt_token)
+                                      ;(log "compile_new: option_token:" opt_token)
                                       (push args (wrap_assignment_value (compile opt_token ctx)))))
                                       
-                           (log "compile_new: args: " args)
+                           ;(log "compile_new: args: " args)
                            
                            (cond
                                (and (not (eq nil type_details.value))
@@ -2521,7 +2520,7 @@
                                
                            (prepend acc
                                     { `ctype: target_return_type })
-                           (log "compile_new: <-" (clone acc))
+                           ;(log "compile_new: <-" (clone acc))
                            acc)))
        
        
@@ -2558,7 +2557,7 @@
                                   (`how_much (or (and tokens.2
                                                       (compile tokens.2 ctx)) 
                                                  1)))
-                               (log "compile_val_mod: " target operation target_location tokens)
+                               ;(log "compile_val_mod: " target operation target_location tokens)
                                (cond 
                                   (== target_location "global")
                                   (do
@@ -2606,7 +2605,7 @@
                                                                else
                                                                (sub_type (prop (first stmts) `ctype))))
                                                       "")))
-                         (try_log "check_needs_return: " fst (sub_type fst))
+                         ;(try_log "check_needs_return: " fst (sub_type fst))
                           (cond
                             (contains? "block" fst)
                             (do 
@@ -2661,10 +2660,10 @@
                   (`idx 0)
                   (`base_error_caught false)
                   (`catches (-> tokens `slice 2)))
-               (try_log "->" tokens)
-               (try_log "__LAMBDA_STEP__:" (get_ctx_val ctx "__LAMBDA_STEP__")
-                                         "try block:"  try_block)
-               (try_log "catches: " catches)
+               ;(try_log "->" tokens)
+               ;(try_log "__LAMBDA_STEP__:" (get_ctx_val ctx "__LAMBDA_STEP__")
+               ;                          "try block:"  try_block)
+               ;(try_log "catches: " catches)
                (when (== (length catches) 0)
                  (throw SyntaxError "try: missing catch form"))
                (set_prop ctx
@@ -2681,8 +2680,8 @@
                             (== stmts.0.ctype Function)))
                     (prepend stmts "await"))
                 
-               (try_log "compiled try block: " (clone stmts))
-               (try_log "try block at lambda step: " (get_ctx_val ctx "__LAMBDA_STEP__") "needs braces?" needs_braces?)
+               ;(try_log "compiled try block: " (clone stmts))
+               ;(try_log "try block at lambda step: " (get_ctx_val ctx "__LAMBDA_STEP__") "needs braces?" needs_braces?)
               ;(if insert_return?
                ;    (= stmts (splice_in_return stmts)))
                (if (is_complex? try_block)
@@ -2695,20 +2694,20 @@
                                                                              { `mark: "final-return"  }
                                                                              { `mark: "rval" })  stmts " " "}"])
                              (push acc t)))
-               (try_log "compiled try:" (clone acc))
+               ;(try_log "compiled try:" (clone acc))
                (while (< idx catches.length)
                       (do 
                        (= catch_block (prop (prop catches idx) `val))
-                       (try_log "catch block tokens:" catch_block)
-                        (try_log "catch block:" catch_block.3)
+                       ;(try_log "catch block tokens:" catch_block)
+                        ;(try_log "catch block:" catch_block.3)
                         (set_ctx ctx
                                  catch_block.2.val.0.name
                                  (new catch_block.1.name))
                         (= stmts (compile catch_block.3 ctx))
                         (= insert_return? (check_needs_return stmts))
                                         ;(= stmts (compile_block_to_anon_fn catch_block.3.val ctx))
-                        (try_log "compiled catch block:" stmts)
-                        (try_log "block needs return?" insert_return? "needs_braces?" needs_braces?)
+                        ;(try_log "compiled catch block:" stmts)
+                        ;(try_log "block needs return?" insert_return? "needs_braces?" needs_braces?)
                         (= complete?
                            (insert_catch_block { `insert_return: insert_return? 
                                                `needs_braces: needs_braces?
@@ -2723,7 +2722,7 @@
                
                
                
-               (try_log "<-"  (clone acc))
+               ;(try_log "<-"  (clone acc))
                acc
                )))
        
@@ -2734,7 +2733,7 @@
                                ((`acc [])
                                 (`error_message nil)
                                 (`error_instance nil))
-                             (log "compile_throw: tokens:" tokens)
+                             ;(log "compile_throw: tokens:" tokens)
                              (cond
                                (and (is_array? tokens)
                                     (== tokens.length 3))
@@ -2750,7 +2749,7 @@
                                (throw SyntaxError "Invalid Throw Syntax"))
                              (for_each (`t [ "throw" " " "new" " " error_instance "(" error_message ")" ";"])
                                        (push acc t))
-                             (log "compile_throw: <-" (join "" (flatten acc)))
+                             ;(log "compile_throw: <-" (join "" (flatten acc)))
                              acc)))
        
        
@@ -2761,7 +2760,7 @@
                                 ((`acc [])
                                  (`return_val_reference (gen_temp_name "return"))
                                  (`return_value nil))
-                              (log "compile_return:" "block?" (is_block? tokens.1.val) ctx)
+                              ;(log "compile_return:" "block?" (is_block? tokens.1.val) ctx)
                               (push acc
                                     { `mark: "forced_return" })
                               (if (is_block? tokens.1.val)
@@ -2772,7 +2771,7 @@
                                    (for_each (`t [ "return" " " (compile tokens.1 ctx) ";" ])
                                              (push acc t))))
                               
-                              (log "compile_return: " acc)
+                              ;(log "compile_return: " acc)
                               
                               acc)))
        (`apply_log (if opts.quiet_mode
@@ -2794,18 +2793,18 @@
                                 (`args (-> tokens `slice 2)))
                              (when (and args (== args.length 1))
                                (= args (first args)))
-                             (apply_log " -> " tokens)
-                             (apply_log "function:" (clone fn_ref) "args:" (clone args))
+                             ;(apply_log " -> " tokens)
+                             ;(apply_log "function:" (clone fn_ref) "args:" (clone args))
                              (= function_ref (compile fn_ref ctx))
-                             (apply_log "compiled function:" (clone function_ref))
+                             ;(apply_log "compiled function:" (clone function_ref))
                              (when fn_ref.ref
                                  (= ctype (get_declaration_details ctx fn_ref.val)))
-                             (apply_log "function type: " ctype)
+                             ;(apply_log "function type: " ctype)
                              (when (is_function? ctype.value)
                                  (= requires_await true))
                              ;(apply_log "compile_apply: function_ref: " (clone function_ref))
                              (= function_ref (wrap_assignment_value function_ref))
-                             (apply_log "compile_apply: compiled: function: " (clone function_ref))
+                             ;(apply_log "compile_apply: compiled: function: " (clone function_ref))
                              ;; now handle the arguments 
                              ;; Dlisp allows for multiple arguments to apply, with the last argument must be an array.
                              ;; In this case, we are going to need to unshift the preceding arguments into the final argument (which must be an array)
@@ -2853,7 +2852,7 @@
                                          (push acc args_ref)
                                          (push acc (wrap_assignment_value (compile args ctx)))))
                                    (push acc ")")))
-                             (apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
+                             ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
                              ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
                              ["await" " " "(" "async" " " "function" "()" "{" acc "}" ")" "()"])))
        
@@ -2863,13 +2862,13 @@
                                (`target nil)
                                (`idx -1)
                                (`method nil))
-                            (log "compile_call: " tokens)
+                            ;(log "compile_call: " tokens)
                             (when (< tokens.length 3)
                               (throw SyntaxError (+ "call: missing arguments, requires at least 2")))
                             (if (is_block? tokens.1.val)
                                 (= target (compile_wrapper_fn tokens.1.val ctx))
                                 (= target (compile tokens.1 ctx)))
-                            (log "compile_call: target: " target)
+                            ;(log "compile_call: target: " target)
                             (if (is_complex? tokens.2)
                                 (= method (compile_wrapper_fn tokens.2 ctx))
                                 (= method (compile tokens.2 ctx)))
@@ -2883,13 +2882,13 @@
                                          (push acc t))
                                (for_each (`token (-> tokens `slice 3))
                                 (do
-                                 (log "compile_call: argument: " (is_complex? token) token)
+                                 ;(log "compile_call: argument: " (is_complex? token) token)
                                  (push acc ",")
                                   (if (is_complex? token)
                                       (push acc (compile_wrapper_fn token ctx))
                                       (push acc (compile token ctx)))))
                                 (push acc ")")))
-                            (log "compile_call: <-" (join "" (flatten acc)))
+                            ;(log "compile_call: <-" (join "" (flatten acc)))
                             acc)))
        
        
@@ -2902,8 +2901,8 @@
                                                         (not (is_function? (prop (first stmts) `ctype)))
                                                         (prop (first stmts) `ctype))
                                                    ""))))
-                                (log "check_needs_wrap: fst:" stmts)
-                                (log "check_needs_wrap: fst:" fst)
+                                ;(log "check_needs_wrap: fst:" stmts)
+                               ; (log "check_needs_wrap: fst:" fst)
                                 
                                 (cond
                                   (contains? "block" fst)
@@ -2922,8 +2921,8 @@
                   (`metavalue nil)
                   (`assignment_value nil))
                (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly       
-               (clog "->" tokens)
-               (clog "setting up global reference for: " target)
+               ;(clog "->" tokens)
+               ;(clog "setting up global reference for: " target)
                ;; setup the reference in the globals as an assumed function type
                (set_prop root_ctx.defined_lisp_globals
                               target
@@ -2960,9 +2959,9 @@
                              target
                              assignment_value))
                
-               (clog "compile_set_global: assignment_value: " assignment_value)
+               ;(clog "compile_set_global: assignment_value: " assignment_value)
                (= acc [{ `ctype: "statement"} "await" " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
-               (clog "<-" acc)
+               ;(clog "<-" acc)
                acc)))
        
        (`is_token? (fn (t)
@@ -3039,13 +3038,13 @@
                             ;(= assembled (join "" (reduce (`v (flatten [assembled]))
                              ;                               (if (not (is_object? v))
                               ;                                  v))))   
-                            (run_log "current ctx: " (clone (flatten_ctx ctx)))
+                            ;(run_log "current ctx: " (clone (flatten_ctx ctx)))
                             
                             (= assembled (+ (if needs_braces? "{" "")
                                             (if needs_return? " return " "")
                                             assembled
                                             (if needs_braces? "}" "")))
-                            (run_log "-> " assembled)
+                            ;(run_log "-> " assembled)
                             
                             (= assembly (new AsyncFunction "Environment" assembled))
                             (when run_opts.bind_mode
@@ -3092,25 +3091,25 @@
                             (`result nil)
                             (`subacc [])
                             (`ntree nil))
-                         (follow_log "->" (clone tree))
+                         ;(follow_log "->" (clone tree))
                          (when (eq nil ctx)
                                (throw ReferenceError "follow_tree received nil/undefined ctx"))
                          (cond
                            (is_array? tree)
                            (do
                             (= tlength tree.length)
-                            (follow_log "array with " tlength "elements")
+                            ;(follow_log "array with " tlength "elements")
                             (while (< idx tlength)
                              (do 
                               (= tval (prop tree idx))
-                              (follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@")))
+                              ;(follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@")))
                                (cond 
                                  (or (== tval (quote "=$,@"))
                                      )
                                  (do
                                   (inc idx)
                                   (= tval (prop tree idx))
-                                  (follow_log "splice operation: idx now:" idx  "tval:" (clone tval))
+                                  ;(follow_log "splice operation: idx now:" idx  "tval:" (clone tval))
                                    
                                    ;; the theory of the splice
                                    
@@ -3141,22 +3140,22 @@
                                                      
                                                      (for_each (`t (flatten (embed_compiled_quote 1 tmp_name tval)))
                                                            (push subacc t))))
-                                              (follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
+                                              ;(follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
                                               (if (is_object? tval)
                                                   (do 
                                                    (push ntree (embed_compiled_quote 4))
                                                    (= ntree (compile (tokenize tval ctx) ctx))
                                                    (= ntree (check_return_tree ntree))
-                                                    (follow_log "spliced: <-" ntree)
+                                                    ;(follow_log "spliced: <-" ntree)
                                                     
                                                     (= ntree (wrap_and_run ntree ctx)))
                                                   (do
-                                                      (follow_log "not compiling, tval is simple value:" (clone tval))
+                                                      ;(follow_log "not compiling, tval is simple value:" (clone tval))
                                                       )))
                                             
                                             
                                             (do 
-                                             (follow_log "not in lambda: tokenizing, compiling: " (clone tval))
+                                             ;(follow_log "not in lambda: tokenizing, compiling: " (clone tval))
                                              (= ntree (compile (tokenize tval ctx) ctx))
                                              (= ntree (check_return_tree ntree))
                                              
@@ -3165,11 +3164,11 @@
                                                  (follow_log "spliced: evaluating: " (clone ntree))
                                                  (= ntree (wrap_and_run ntree ctx)))))
                                         
-                                        (follow_log "spliced-evaled: appending " (clone ntree) " to subacc: " (clone subacc))
+                                        ;(follow_log "spliced-evaled: appending " (clone ntree) " to subacc: " (clone subacc))
                                         
-                                        (= subacc (-> subacc `concat ntree))
-                                        (follow_log "spliced-evaled subacc: lisp:" (as_lisp subacc))
-                                        (follow_log "spliced-evaled subacc: json:" (clone subacc)))
+                                        (= subacc (-> subacc `concat ntree)))
+                                        ;(follow_log "spliced-evaled subacc: lisp:" (as_lisp subacc))
+                                        ;(follow_log "spliced-evaled subacc: json:" (clone subacc)))
                                            
                                        (throw SyntaxError "invalid splice operator position")))
                                  (and (not ctx.hard_quote_mode)
@@ -3179,12 +3178,12 @@
                                  (do
                                   (inc idx)
                                   (= tval (prop tree idx))
-                                  (follow_log "insert-operation (non-splice): idx now:" idx  "tval:" (clone tval))
+                                  ;(follow_log "insert-operation (non-splice): idx now:" idx  "tval:" (clone tval))
                                    (if (not (eq undefined tval))
                                        (do 
                                         (if (get_ctx_val ctx `__IN_LAMBDA__)
                                             (do
-                                             (follow_log "in_lambda: non splice: " tval )   
+                                             ;(follow_log "in_lambda: non splice: " tval )   
                                              (= ntree [])
                                               (if (is_object? tval)
                                                   (do
@@ -3204,32 +3203,33 @@
 
                                               (when (is_object? tval)
                                                 (push ntree (embed_compiled_quote 4))
-                                                (follow_log "to compile: " (clone tval) (as_lisp tval) "ctx:" (clone ctx))
+                                                ;(follow_log "to compile: " (clone tval) (as_lisp tval) "ctx:" (clone ctx))
                                                 
                                                 (= ntree (compile (tokenize tval ctx) ctx))
-                                                (follow_log "compiled ntree: " ntree)
-                                                (follow_log "evaluating: " (clone ntree) (clone ctx))
+                                                ;(follow_log "compiled ntree: " ntree)
+                                                ;(follow_log "evaluating: " (clone ntree) (clone ctx))
                                                 (= ntree (wrap_and_run ntree ctx)))
             ;(push subacc ntree) ;; this is original
-                                              (= subacc (-> subacc `concat ntree))
-                                              (follow_log "subacc: " (JSON.stringify subacc) (as_lisp subacc)))
+                                              (= subacc (-> subacc `concat ntree)))
+                                              ;(follow_log "subacc: " (JSON.stringify subacc) (as_lisp subacc)))
                                               
                                             
                                             (do 
-                                              (follow_log "not in lambda: non splice: compiling: " tval)
+                                              ;(follow_log "not in lambda: non splice: compiling: " tval)
                                               (= ntree (compile (tokenize tval ctx) ctx))
                                              
                                               (= ntree (check_return_tree ntree))
-                                              (follow_log "post compile:" ntree)
+                                              ;(follow_log "post compile:" ntree)
                                               (= ntree (wrap_and_run ntree ctx))
-                                              (follow_log "evaled: " (clone ntree))
+                                             ; (follow_log "evaled: " (clone ntree))
                                               
                                               (push subacc ntree))))
                                        (throw SyntaxError "invalid unquotem operator position")))
                                  else
-                                 (do (follow_tree "calling follow_tree: " tval)
+                                 (do 
+                                     ;(follow_log "calling follow_tree: " tval)
                                      (= tval (follow_tree tval ctx))
-                                      (follow_log "pushing to subacc: " tval)
+                                     ;(follow_log "pushing to subacc: " tval)
                                      (push subacc tval)))
                                (inc idx)))
                              (follow_log "<-" (clone subacc))
@@ -3281,12 +3281,12 @@
                                        else
                                        (do 
                                           (= encoded (-> Environment `as_lisp pcm))
-                                          (quotem_log "as lisp: " encoded)
+                                          ;(quotem_log "as lisp: " encoded)
                                           (= encoded (add_escape_encoding encoded))
                                           (quotem_log "encoded: " encoded)
                                           (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
                                               (push acc t))))
-                                      (quotem_log "<-  " (join "" acc))
+                                      ;(quotem_log "<-  " (join "" acc))
                                       (quotem_log "<- " acc)
                                       acc)))))
        
@@ -3297,10 +3297,10 @@
        (`compile_unquotem (fn (lisp_struct ctx)
                               (let
                                   ((`acc []))
-                                (unq_log "->" lisp_struct)
+                                ;(unq_log "->" lisp_struct)
                                 (push acc 
                                       (compile lisp_struct.1 ctx))
-                                (unq_log "<-" acc)
+                                ;(unq_log "<-" acc)
                                 acc)))
        
        
@@ -3318,19 +3318,19 @@
                   (`tokens nil)
                   (`is_arr? (is_array? lisp_struct.1)))
                
-               (evalq_log "lisp ->" lisp_struct)
-               (evalq_log "is_array?" is_arr? "ctx:" ctx)
+               ;(evalq_log "lisp ->" lisp_struct)
+               ;(evalq_log "is_array?" is_arr? "ctx:" ctx)
                (console.log "compile_evalq ->" lisp_struct)
                (= tokens (if is_arr?
                              (tokenize lisp_struct.1  ctx )
                              (pop (tokenize [ lisp_struct.1 ] ctx))))
                ;; tokenize the argument
-               (evalq_log "tokenized: " tokens)
+               ;(evalq_log "tokenized: " tokens)
                
                (= acc [(compile tokens ctx) ]) ;; pass the current ctx in
                (when is_arr? 
                  (= acc ["async" " " "function" "()" ["{" "return" " " acc "}"]]))
-               (evalq_log "<-" (join "" (flatten acc)))
+               ;(evalq_log "<-" (join "" (flatten acc)))
                (console.log "compile_evalq <-" acc)
                acc)))
        
@@ -3348,11 +3348,11 @@
                   (`type_mark nil)
                   (`acc [])
                   (`result nil))
-               (eval_log "->" (clone tokens))
+               ;(eval_log "->" (clone tokens))
                ;(console.log "compile_eval: -> " (clone tokens))
-               (eval_log "to compile:" tokens.1.val)
+               ;(eval_log "to compile:" tokens.1.val)
                (= assembly (compile tokens.1.val ctx))
-               (eval_log "assembly:" (clone assembly))
+               ;(eval_log "assembly:" (clone assembly))
                ;(console.log "compile_eval: assembly:" assembly)
                (= has_lisp_globals true)
                (= result [ "Environment" "." "eval" "(" "await" " "  "async" " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
@@ -3392,11 +3392,11 @@
                                    0))
                   (`for_body tokens.2)
                   (`body_is_block? (is_block? for_body.val)))
-               (log "compile_for_each: tokens: " tokens)
-               (log "compile_for_each: # of iters: " iter_count)
-               (log "compile_for_each: args: " for_args)
-               (log "compile_for_each: elements: " elements)
-               (log "for_body: body is block?" (is_block? for_body) for_body)
+               ;(log "compile_for_each: tokens: " tokens)
+               ;(log "compile_for_each: # of iters: " iter_count)
+               ;(log "compile_for_each: args: " for_args)
+               ;(log "compile_for_each: elements: " elements)
+               ;(log "for_body: body is block?" (is_block? for_body) for_body)
                (when (< iter_count 1)
                  
                  (throw SyntaxError "Invalid for_each arguments"))
@@ -3408,15 +3408,15 @@
                            (clean_quoted_reference (prop (last idx_iters) `name))
                            ArgumentType)))
                
-               (log "compile_for_each: idx_iters: " idx_iters)
+               ;(log "compile_for_each: idx_iters: " idx_iters)
                (set_ctx ctx collector_ref ArgumentType)
                                         ;(when for_args.1.ref
                                         ;     (set_ctx ctx for_args.1.name ArgumentType))
                (set_ctx ctx element_list "arg")
                (when (not body_is_block?)
                  ;; we need to make it a block for our function
-                 (= for_body (make_do_block for_body))
-                 (log "compile_for_each: for_body is now block:" for_body))
+                 (= for_body (make_do_block for_body)))
+                 
                (= prebuild (build_fn_with_assignment body_function_ref
                                                      for_body.val
                                                      idx_iters))
@@ -3425,11 +3425,11 @@
                (set_prop ctx
                          `return_last_value
                          true)
-               (log "for_each prebuild tokens:" prebuild)
+               ;(log "for_each prebuild tokens:" prebuild)
                
                
                (push acc (compile prebuild ctx))
-               (log "for_each: prebuild:" (clone (last acc)))
+               ;(log "for_each: prebuild:" (clone (last acc)))
                (for_each (`t ["let" " " collector_ref "=" "[]" "," element_list "=" (wrap_assignment_value (compile elements ctx)) ";" ])
                          (push acc t))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
@@ -3457,7 +3457,7 @@
                (push acc " ")
                (push acc collector_ref)
                (push acc ";")
-               (log "compile_for_each <-" acc)
+               ;(log "compile_for_each <-" acc)
                acc)))
        
        
@@ -3474,8 +3474,8 @@
                   
                                         ;(`rval_ref (gen_temp_name "return_val"))
                   (`prebuild []))
-               (log "compile_while: tokens: " tokens)
-               (log "compile_while: test_condition: " test_condition.source)
+               ;(log "compile_while: tokens: " tokens)
+               ;(log "compile_while: test_condition: " test_condition.source)
                (set_ctx ctx
                         break_out
                         true)
@@ -3484,7 +3484,7 @@
                (if test_condition.ref
                    (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.name) ctx))
                    (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.val) ctx)))
-               (log "compile_while: test_condition:",(clone prebuild))
+               ;(log "compile_while: test_condition:",(clone prebuild))
                (push prebuild (compile (build_fn_with_assignment body_ref body.val) ctx))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push prebuild t))
@@ -3492,8 +3492,8 @@
                          (push prebuild t))
                (for_each (`t [ "await" " " "(" "async" " " "function" "()" "{" " " prebuild "}" ")" "()" ])
                          (push acc t))
-               (log "compile_while: prebuild: " prebuild)
-               (log "compile_while: <-" (clone acc))
+               ;(log "compile_while: prebuild: " prebuild)
+               ;(log "compile_while: <-" (clone acc))
                acc)))
        
        (`declare_log (if opts.quiet_mode
@@ -3648,8 +3648,8 @@
                                            
                                             stmt)))
                   (`token nil))
-               (sr_log "->" (clone tokens))
-               (sr_log "source ->" ctx.source)
+               ;(sr_log "->" (clone tokens))
+               ;(sr_log "source ->" ctx.source)
                
                (cond 
                  (== call_type "lisp")
@@ -3658,7 +3658,7 @@
                  (= ref_type (get_ctx ctx tokens.0.name))
                  else
                  (= ref_type ArgumentType))
-               (sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name)
+               ;(sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name)
                (cond (== ref_type AsyncFunction)
                      (= ref_type "AsyncFunction")
                      (== ref_type Expression)
@@ -3679,8 +3679,8 @@
                      (= ref_type (sub_type ref_type)))
                
                
-               (sr_log "call_type: " call_type "decoded ref_type: " ref_type)
-               (sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local"))
+               ;(sr_log "call_type: " call_type "decoded ref_type: " ref_type)
+               ;(sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local"))
                (= rval
                   (cond
                     (== ref_type "AsyncFunction")
@@ -3696,7 +3696,7 @@
                               (inc idx)
                               (= token (prop tokens idx))
                                (= stmt (compile token ctx))
-                               (sr_log "<- (AsyncFunction) compiled stmt: " stmt)
+                               ;(sr_log "<- (AsyncFunction) compiled stmt: " stmt)
                                (= stmt (check_statement stmt))
                                (push acc stmt)
                                (when (< idx (- tokens.length 1))
@@ -3714,7 +3714,7 @@
                               (inc idx)
                               (= token (prop tokens idx))
                                (= stmt (compile token ctx))
-                               (sr_log "<- (function) compiled_smt: " stmt)
+                               ;(sr_log "<- (function) compiled_smt: " stmt)
                                (= stmt (check_statement stmt))
                                (push acc stmt)
                                (when (< idx (- tokens.length 1))
@@ -3728,7 +3728,7 @@
                              (== ref_type "String")
                              (== ref_type "Boolean")))
                     (do
-                        (sr_log "<- local scoped reference is: " tokens.0.name)
+                        ;(sr_log "<- local scoped reference is: " tokens.0.name)
                         (push acc tokens.0.name)
                         acc)
                     
@@ -3737,7 +3737,7 @@
                          (is_array? tokens))
                     (do
                      (= val (get_ctx_val ctx tokens.0.name))
-                     (sr_log "<- local scope: val is: " val)
+                     ;(sr_log "<- local scope: val is: " val)
                       (push acc val)
                      acc)
                     
@@ -3746,7 +3746,7 @@
                     (and (== ref_type ArgumentType)
                          (is_array? tokens))
                     (do 
-                     (sr_log "compiling array: " tokens)
+                     ;(sr_log "compiling array: " tokens)
                      (push acc "[")
                      (while (< idx tokens.length)
                             (do 
@@ -3760,20 +3760,20 @@
                      acc)
                     (== ref_type ArgumentType)
                     (do
-                     (sr_log "arg reference: <-" tokens.0.name)
+                     ;(sr_log "arg reference: <-" tokens.0.name)
                      (push acc tokens.0.name)
                      acc)
                     (== ref_type "undefined")
                     (do
-                     (sr_log "unknown reference: " tokens.0.name)
+                     ;(sr_log "unknown reference: " tokens.0.name)
                      (throw ReferenceError (+ "unknown reference: " tokens.0.name)))
                     (== call_type `lisp)
                     (do 
-                     (sr_log "is lisp scoped: " tokens.0.name )
+                     ;(sr_log "is lisp scoped: " tokens.0.name )
                      (compile_lisp_scoped_reference tokens.0.name))
                     else
                     (do 
-                     (sr_log "warning unknown type in local ctx:" tokens.0.name ref_type)
+                     ;(sr_log "warning unknown type in local ctx:" tokens.0.name ref_type)
                      (push acc tokens.0.name)
                      acc)))
                ;; add the ctype to the front
@@ -3782,7 +3782,7 @@
                        (or (== ref_type "AsyncFunction")
                            (== ref_type "Function"))
                        (prepend acc { `ctype: ref_type })))
-               (sr_log "<-" acc)
+               ;(sr_log "<-" acc)
                acc)));(flatten acc))))
        
        (`compile_lisp_scoped_reference
@@ -3791,7 +3791,7 @@
                  ((`refval (get_lisp_ctx refname))
                   (`reftype (sub_type refval))
                   (`basename (get_object_path refname)))
-                (log "compile_lisp_scoped_reference: " refname reftype refval basename)
+                ;(log "compile_lisp_scoped_reference: " refname reftype refval basename)
                
                ;; if the refval isn't changed when is a string, we could have collisions 
                ;; because the compiler/evaluator uses the contents of refval in the ctype
@@ -3858,8 +3858,7 @@
       
        (`is_block? (fn (tokens)
                        (and (contains? tokens.0.name ["do" "progn"]))))
-                                        ;(== tokens.1.type "arr"))))
-                                        ;(== (prop op_lookup tokens.0.name) compile_block)))
+                                       
        (`is_complex? (fn (tokens)
                          (let
                              ((`rval (or (is_block? tokens)
@@ -3867,9 +3866,8 @@
                                               (is_block? tokens.val))
                                          (== tokens.val.0.name "if")
                                          (== tokens.val.0.name "let"))))
-                             (log "IS_COMPLEX?: " rval "IS_BLOCK?: " (is_block? tokens) tokens)
-                           rval
-                           )))
+                             
+                           rval)))
        (`is_form? (fn (token)
                       (or (is_array? token.val )
                           (is_block? token.val))))
@@ -3961,9 +3959,8 @@
                                             stmt)))
                   (`kvpair nil)
                   (`total_length (- tokens.val.length 1)))
-               (log "compile_obj_literal: ->" tokens)
-               (console.log "compile_obj_literal: -> " tokens)
-                                        ;(log "                ctx:" ctx)
+               ;(log "compile_obj_literal: ->" tokens)
+                           
                (set_prop ctx
                          `in_obj_literal
                          true)
@@ -3985,7 +3982,7 @@
                          (do
                           (inc idx)
                           (= kvpair (prop tokens.val idx))
-                           (log "valid_key_literals: compile_obj_literal:" idx total_length  "kvpair: " kvpair)
+                           ;(log "valid_key_literals: compile_obj_literal:" idx total_length  "kvpair: " kvpair)
                                         ;(log "compile_obj_literal:" idx "is_block?" (is_block? kvpair.val.1) kvpair.val.1.val`)
                            (= key (get_val kvpair.val.0 ctx))
                            (when
@@ -4001,7 +3998,7 @@
                                     `__LAMBDA_STEP__
                                     -1)
                            (= stmt (compile_elem kvpair.val.1 ctx))
-                           (log "compile_obj_literal:" idx total_length "<-val" stmt)
+                           ;(log "compile_obj_literal:" idx total_length "<-val" stmt)
                            (= stmt (check_statement stmt))
                            (push acc stmt)
                                         ;(if (is_block? kvpair.val.1.val)
@@ -4012,10 +4009,10 @@
                          ;; key - kvpair[0]: push in the literal identifier
                          
                          (push acc "}")
-                         (log "compile_obj_literal: <-" (flatten acc))
+                         ;(log "compile_obj_literal: <-" (flatten acc))
                         [{ `ctype: "objliteral" } acc]))
                    (do
-                    (log "compile_obj_literal: keys have invalid js chars")
+                    ;(log "compile_obj_literal: keys have invalid js chars")
                     (= tmp_name (gen_temp_name "obj"))
                      (for_each (`t [{ `ctype:`statement }  "await" " " "(" " ""async" " " "function" "()" "{" "let" " " tmp_name "=" "new" " " "Object" "()" ";"])
                                (push acc t))
@@ -4023,13 +4020,13 @@
                             (do
                              (inc idx)
                              (= kvpair (prop tokens.val idx))
-                              (log "compile_obj_literal:" idx total_length  "kvpair: " kvpair)
+                              ;(log "compile_obj_literal:" idx total_length  "kvpair: " kvpair)
                               (for_each (`t [tmp_name "[" "\"" (cl_encode_string (get_val kvpair.val.0 ctx)) "\"" "]" "=" (compile_elem kvpair.val.1 ctx) ";"])
                                         (push acc t))))
                      
                      (for_each (`t ["return" " " tmp_name ";" "}" ")" "()"])
                                (push acc t))
-                     (log "compile_obj_literal: <-" (flatten acc))
+                     ;(log "compile_obj_literal: <-" (flatten acc))
                     acc)))))
                 
        (`is_literal? (fn (val)
@@ -4043,7 +4040,7 @@
                          is_error   ;; unwind 
                        (do
                          (defvar `rval (compile_inner tokens ctx _cdepth))
-                         (if   (and (is_array? rval)
+                         (if  (and  false (is_array? rval)
                                     (is_object? rval.0)
                                     (prop rval.0 `ctype))
                                (comp_log (+ "compile:" _cdepth " <- ") "return type: " (as_lisp rval.0))
@@ -4064,7 +4061,7 @@
                   (`check_statement (fn (stmt)
                                         (if (check_needs_wrap stmt)
                                             (do 
-                                             (comp_log "check_statement: needs wrap: " stmt.0.ctype (== stmt.0.ctype "ifblock") stmt)
+                                             ;(comp_log "check_statement: needs wrap: " stmt.0.ctype (== stmt.0.ctype "ifblock") stmt)
                                              (if (== stmt.0.ctype "ifblock")
                                                  [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" stmt "}" " " ")" "()"]
                                                  [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
@@ -4081,11 +4078,9 @@
                   tokens.1.source
                   else
                   ctx.source))
-               (comp_log (+ "compile:" _cdepth " start:") ctx.source)
-               (comp_log (+ "compile:" _cdepth ":->") tokens)
-                                        ;(console.log "compile: ->: " (clone tokens))
-               
-               
+               ;(comp_log (+ "compile:" _cdepth " start:") ctx.source)
+               ;(comp_log (+ "compile:" _cdepth ":->") tokens)
+                                       
                (try
                 (if (eq nil ctx)
                     (do
@@ -4114,8 +4109,8 @@
                         (= operator_type (prop op_token `val))
                         (= ref (prop op_token `ref))
                         (= op (prop op_lookup operator))
-                        (comp_log (+ "compile: " _cdepth " (form):") operator (if (prop Environment.inlines operator) "lib_function" op) tokens)
-                        (comp_log "    ctx: " (clone ctx))
+                        ;(comp_log (+ "compile: " _cdepth " (form):") operator (if (prop Environment.inlines operator) "lib_function" op) tokens)
+                        ;(comp_log "    ctx: " (clone ctx))
                         (cond 
                           op
                           (op tokens ctx)
@@ -4141,7 +4136,7 @@
                       
                       (is_array? tokens)
                       (do
-                       (comp_log (+ "compile: " _cdepth " [array_literal]:") "->" tokens)
+                       ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "->" tokens)
                        (cond
                          ;; simple case, just an empty array, return js equiv     
                          (== tokens.length 0)
@@ -4160,15 +4155,11 @@
                            ;; function or operator) or a non operation.  If the former
                            ;; it must be evaluated and returned or if the latter, returned
                            ;; as an array of values.
-                           (comp_log (+ "compile: " _cdepth " [array_literal]:") "passing to compile tokens.0" tokens.0)
+                           ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "passing to compile tokens.0" tokens.0)
                            ;; the first element is the operator 
                            (= rcv (compile tokens.0 ctx (+ _cdepth 1)))
-                           (comp_log (+ "compile: " _cdepth " [array_literal]:") "<- stmt" rcv)
+                           ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "<- stmt" rcv)
                            
-                           (when (and false (is_string? rcv)) ;tokens.0.val
-                                 (= declared_type (get_declarations ctx rcv true))
-                                 ;(= declared_type (get_declarations ctx tokens.0.name))  ;if passing rcv, already compiled so don't sanitize it in declarations
-                                 (comp_log (+ "compile: " _cdepth " [array_literal]:") "declared_type: " declared_type (== declared_type.type Function)))
                            
                            (when (and tokens.0.ref (is_string? tokens.0.val))
                                  (= declared_type (get_declarations ctx tokens.0.name))
@@ -4185,7 +4176,7 @@
                                          (set_ctx ctx
                                                   `__LAMBDA_STEP__
                                                   0))
-                                     (comp_log (+ "compile: " _cdepth " [array_literal]:") "-> stmt" t)
+                                     ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "-> stmt" t)
                                      (push compiled_values
                                            (compile t ctx (+ _cdepth 1)))))
                            
@@ -4201,12 +4192,12 @@
                                                          (prop compiled_element.0 `ctype))
                                                     (prop compiled_element.0 `ctype)
                                                     nil)))
-                                      (comp_log (+ "compile: " _cdepth " [array_literal]:") idx (clone compiled_element))
+                                      ;(comp_log (+ "compile: " _cdepth " [array_literal]:") idx (clone compiled_element))
                                       (cond 
                                         (or (== inst "block")
                                             (== inst "letblock"))
                                         (do
-                                          (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back at pos " idx "...need to wrap it but keep structural return value as an array")
+                                          ;(comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back at pos " idx "...need to wrap it but keep structural return value as an array")
                                           ;; the argument offset, the temp variable name and the wrapped function are made available
                                            
                                           (push symbolic_replacements
@@ -4214,7 +4205,7 @@
                                                   [ { `ctype: "AsyncFunction"} "(" "async" " " "function" "()" " " compiled_element " " ")"]]))
                                         (== inst "ifblock")
                                         (do 
-                                           (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw if block back at pos " idx "...need to wrap it but keep structural return value as an array")
+                                           ;(comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw if block back at pos " idx "...need to wrap it but keep structural return value as an array")
                                            (push symbolic_replacements
                                                  [ idx (gen_temp_name "array_arg") 
                                                    [{ `ctype: "AsyncFunction"} "(" "async" " " "function" "()" " " "{" compiled_element  "}" " " ")"]])))))
@@ -4224,10 +4215,10 @@
                            ;; next layout the code, and substitute in compiled_values the references to the functions
                            ;; in the compiled_values array
                            
-                           (comp_log (+ "compile: " _cdepth " [array_literal]:") "# of symbolic_replacements: " symbolic_replacements.length)
-                           (comp_log (+ "compile: " _cdepth " [array_literal]:") (if (is_array? rcv)
-                                                                                     rcv.0.ctype
-                                                                                     "NO CTYPE RETURNED"))
+                           ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "# of symbolic_replacements: " symbolic_replacements.length)
+                           ;(comp_log (+ "compile: " _cdepth " [array_literal]:") (if (is_array? rcv)
+                            ;                                                         rcv.0.ctype
+                             ;                                                        "NO CTYPE RETURNED"))
                            (for_each (`elem symbolic_replacements)
                                      (do
                                       ;; create the function 
@@ -4254,7 +4245,7 @@
                                       (not (is_array? rcv.0))
                                       (contains? "unction" rcv.0.ctype)))
                              (do
-                               (comp_log (+ "compile: " _cdepth " [array_literal]:") " requires evaluation:" (clone rcv))
+                               ;(comp_log (+ "compile: " _cdepth " [array_literal]:") " requires evaluation:" (clone rcv))
                                (= is_operation true)
                                (for_each (`t ["(" rcv ")" "(" ])
                                          (push acc t))
@@ -4288,17 +4279,17 @@
                               ;; create a function that checks the first symbol in the array is a function
                               ;; if the first symbol in the array is a reference.
                               (do
-                                  (comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguity: compiled: " (clone rcv))
+                                  ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguity: compiled: " (clone rcv))
                                   (= tmp_name (gen_temp_name "array_op_rval"))
                               
                                   (if (and (is_object? rcv.0)
                                            (is_string? rcv.0.ctype)
                                            (contains?  "block" (or rcv.0.ctype "")))
                                       (do
-                                       (comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back...need to wrap it but keep structural return value as an array")
+                                       ;(comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw block back...need to wrap it but keep structural return value as an array")
                                        (= rcv (check_statement rcv))))
                                
-                                   (comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguous, requires a runtime check" (clone rcv))
+                                   ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "ambiguous, requires a runtime check" (clone rcv))
                                    (when (> symbolic_replacements.length 0)
                                      ;; this means it is a block and we need to return the last value
                                      ;; in this case it is the 
@@ -4332,7 +4323,7 @@
                              else   
                              (do
                               
-                              (comp_log (+ "compile: " _cdepth " [array_literal]:") "not evaluating" rcv)
+                              ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "not evaluating" rcv)
                               (when (> symbolic_replacements.length 0)
                                 (push acc "return")
                                 (push acc " "))
@@ -4349,12 +4340,10 @@
                                         ;          (= rcv (check_statement rcv))
                                         ;         rcv))
                                (push acc "]")))
-                                        ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "is_operation: " is_operation "first rcv: ", rcv.0 "sub_type rcv.0: ", (sub_type rcv.0))
+                                        
                            (when (> symbolic_replacements.length 0)
                              (push acc "}"))
-                           (comp_log (+ "compile: " _cdepth " [array_literal]:") "<-" acc)
-                           ;(console.log (+ "compile: " _cdepth " [array_literal]: <-") acc)
-                           
+                           ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "<-" acc)
                            acc)))
                       
                       
@@ -4363,12 +4352,12 @@
                            (is_array? tokens.val)
                            tokens.type)
                       (do 
-                       (comp_log (+ "compile: " _cdepth " token.val is array:") tokens)
-                       (set_prop ctx
-                        `source
-                        tokens.source)
+                       ;(comp_log (+ "compile: " _cdepth " token.val is array:") tokens)
+                        (set_prop ctx
+                                  `source
+                                  tokens.source)
                         (= rcv (compile tokens.val ctx (+ _cdepth 1)))
-                        (comp_log (+ "compile: " _cdepth " token.val is array:<-") rcv)
+                        ;(comp_log (+ "compile: " _cdepth " token.val is array:<-") rcv)
                         
                        rcv)
                       
@@ -4381,8 +4370,8 @@
                           (== tokens.type "arg")
                           (== tokens.type "null"))
                       (do 
-                       (comp_log (+ "compile: " _cdepth " singleton: ") tokens)
-                       (comp_log "    ctx: " (clone ctx))
+                       ;(comp_log (+ "compile: " _cdepth " singleton: ") tokens)
+                       ;(comp_log "    ctx: " (clone ctx))
                        (defvar `snt_name nil)
                        (defvar `snt_value nil)
                        
@@ -4404,7 +4393,6 @@
                           (if (and (== tokens.type "literal")
                                    (is_string? tokens.val))
                               (do 
-                                        ;(comp_log (+ "compile: " _cdepth " singleton:") "is a literal")
                                [ { `ctype: "string" } (+ "\"" (cl_encode_string tokens.val) "\"") ])
                               
                                [{ `ctype: (sub_type tokens.val)  } tokens.val ])  ;; straight value
@@ -4417,7 +4405,7 @@
                                (do
                                    (= snt_name (sanitize_js_ref_name tokens.name))
                                    (= snt_value (get_ctx ctx snt_name))
-                                   (comp_log (+ "compile: " _cdepth " singleton: ") "local ref?" snt_name snt_value "declarations?: ")
+                                   ;(comp_log (+ "compile: " _cdepth " singleton: ") "local ref?" snt_name snt_value "declarations?: ")
                                    (or snt_value
                                        (== false snt_value))))
                                    ;(== false (get_ctx ctx tokens.name))))
@@ -4425,7 +4413,7 @@
                             (= refval snt_value) ;(get_ctx ctx (sanitize_js_ref_name tokens.name)))
                             (when (== refval ArgumentType)
                               (= refval snt_name)) ;tokens.name))
-                            (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval))
+                            ;(comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval))
                                         ;(comp_log "compile: singleton: get_declaration_details: " (get_declaration_details ctx tokens.name))
                             (cond 
                                   (== tokens.type "literal")
@@ -4566,7 +4554,7 @@
             
     
     
-    (log "running compiler")
+   ; (log "running compiler")
     (if (eq nil Environment)
         (throw "Compiler: No environment passed in options."))
     
@@ -4583,7 +4571,7 @@
               {})
     ;(console.clear)
     ;(main_log "Environment ID: " (-> env `id))
-    (main_log "Starting tokenization..." (clone tree))
+    ;(main_log "Starting tokenization..." (clone tree))
     
     (set_ctx root_ctx
              `__LAMBDA_STEP__
@@ -4613,19 +4601,19 @@
                   (console.error "pre-compilation error")
                   is_error)
               (do
-                  (main_log "final token assembly:" final_token_assembly)
+                  ;(main_log "final token assembly:" final_token_assembly)
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))
                   (= assembly (splice_in_return_a assembly))
                   (= assembly (splice_in_return_b assembly))))
            (if is_error
-               (error_log "compilation" (clone is_error))
-               (main_log "no compilation errors"))
+               (error_log "compilation" (clone is_error)))
+               
            (when opts.root_environment
                  (= has_lisp_globals false))
-           (main_log "globals:" has_lisp_globals " constructed assembly:" (clone assembly))
-           (main_log "assembly: " (assemble_output assembly))
+           ;(main_log "globals:" has_lisp_globals " constructed assembly:" (clone assembly))
+           ;(main_log "assembly: " (assemble_output assembly))
                       
            (cond 
              (and (not is_error)
@@ -4666,8 +4654,8 @@
                        (take assembly))
                    (assemble_output assembly)]
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
-    (main_log "<-" (clone output))
-    (main_log "referenced global symbols:" (clone referenced_global_symbols))
+    ;(main_log "<-" (clone output))
+    ;(main_log "referenced global symbols:" (clone referenced_global_symbols))
     (when (> errors.length 0)
        (map (fn (x)
                 (error_log x))

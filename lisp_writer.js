@@ -24,16 +24,23 @@ export function subtype(value) {
   return typeof value;
 }
 
+globalThis.dlisp_environment_count=0;
+
+export function get_next_environment_id() {
+    globalThis.dlisp_environment_count++;
+    return globalThis.dlisp_environment_count;
+}
+
 
 
 export function lisp_writer(obj,depth,max_depth) {
   if (depth===undefined) depth=0;
-  if (max_depth===undefined) max_depth=502;
+  if (max_depth===undefined) max_depth=1502;
   const bracketStyles=['(',')','(',')','{','}'];
   let bracketStyle=0;
   let text='';
   let type = subtype(obj);
-  if (depth === 0) console.log("lisp_writer:->",obj);
+  //if (depth === 0) console.log("lisp_writer:->",obj);
   if (type === undefined) {
     type = "UNKNOWN"
   }
@@ -49,7 +56,7 @@ export function lisp_writer(obj,depth,max_depth) {
   if (obj===null) return 'null';
   if (typeof obj==='number') return obj;
   if (typeof obj==='function') {
-    if (depth === 0) console.log("lisp_writer: <- [ function ]",obj.toString());
+    //if (depth === 0) console.log("lisp_writer: <- [ function ]",obj.toString());
     if (obj.name) { return obj.name }
     
     return "lambda";
@@ -66,7 +73,7 @@ export function lisp_writer(obj,depth,max_depth) {
       text += lisp_writer(obj[i],depth+4,max_depth);
     }
     text += bracketStyles[bracketStyle+1];
-    if (depth === 0) console.log("lisp_writer: <- [ array ]",text);
+    //if (depth === 0) console.log("lisp_writer: <- [ array ]",text);
     return text;
   } else if (typeof obj ==='object') {
     // object {}
@@ -94,7 +101,7 @@ export function lisp_writer(obj,depth,max_depth) {
       text+=lisp_writer(keys[i],depth+4)+":"+lisp_writer(obj[keys[i]],depth+4, max_depth)
     }
     text += bracketStyles[bracketStyle+1];
-    if (depth === 0) console.log("lisp_writer: <- [ object ]",text);
+    //if (depth === 0) console.log("lisp_writer: <- [ object ]",text);
     return text;
   } else if (typeof obj === 'string') {
     // string    
@@ -111,7 +118,7 @@ export function lisp_writer(obj,depth,max_depth) {
     obj = obj.replaceAll("\b",'\\b');			         
     //obj = JSON.stringify(obj);  // encode with JSON semantics
     
-    if (depth == 0) console.log("lisp_writer: <-",'"'+obj+'"');
+    //if (depth == 0) console.log("lisp_writer: <-",'"'+obj+'"');
     
     return '"'+obj+'"';
     

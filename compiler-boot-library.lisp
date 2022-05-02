@@ -714,7 +714,8 @@
      
       
          
-      (splice_log "->" (clone js_tree))
+      (if (== _depth 0)
+          (splice_log "->" (clone js_tree)))
       
       (for_each (`comp js_tree)
           (do
@@ -731,7 +732,7 @@
                   (cond
                     (is_function? comp.ctype)
                     (do 
-                        (splice_log "FUNCTION TYPE: " comp.ctype)
+                        ;(splice_log "FUNCTION TYPE: " comp.ctype)
                         (push ntree comp))
                     (or (== comp.ctype "AsyncFunction")
                         (== comp.ctype "Function"))
@@ -739,13 +740,13 @@
                         (= _path  [])
                         (= _ctx (new_ctx _ctx))
                         (= function_block? true)
-                        (splice_log "start return point encountered: " comp (getf_ctx _ctx `base_path))
+                        ;(splice_log "start return point encountered: " comp (getf_ctx _ctx `base_path))
                         
                         (push ntree comp))
                         
                     (== comp.mark "rval")
                     (do 
-                        (splice_log "potential return: " (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        ;(splice_log "potential return: " (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
                         (push (getf_ctx _ctx `potential_return_points)
                                         {
                                           `path: (conj _path [idx])
@@ -775,7 +776,7 @@
                                 `source: (JSON.stringify (clone (slice js_tree idx)))
                                 `type: comp.mark
                                })
-                        (splice_log "force_return: at level:" (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        ;(splice_log "force_return: at level:" (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
                         (when (and comp.if_id 
                                    (eq nil (prop (getf_ctx _ctx `if_links) comp.if_id)))
                             (set_prop (getf_ctx _ctx `if_links)
@@ -787,7 +788,7 @@
                         (push ntree comp))
                     (== comp.mark "final-return")
                     (do 
-                        (splice_log "final block return for level:" (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
+                        ;(splice_log "final block return for level:" (getf_ctx _ctx `level) "if_id: " comp.if_id comp (conj _path [idx]) (clone (slice js_tree idx)))
                         (push (getf_ctx _ctx `viable_return_points)
                               {
                                 `path: (conj _path [idx])
@@ -826,18 +827,20 @@
                 (`potentials (reverse (or (getf_ctx _ctx `potential_return_points) [])))
                 (`base_path (getf_ctx _ctx `base_path))
                 (`base_addr nil)
-                (`final_viable_path (prop (first viables) `path))
+                (`final_viable_path (and viables
+                                         (first viables)
+                                         (prop (first viables) `path)))
                 (`max_viable 0)
                 (`plength 0)
                 (`if_paths [])
                 (`max_path_segment_length nil)
                 (`final_return_found (getf_ctx _ctx `return_found)))
                 
-              (splice_log "<return must be by here> found?" final_return_found "level: "  _ctx.scope.level "root: " root  "base_path: " base_path "last_path: " last_path)
-              (splice_log "viable_return_points: " (clone viables))
-              (splice_log "potential_return_points: " (clone potentials))
-              (splice_log "tree to operate on: " (clone js_tree))
-              (splice_log "if_links: " (clone (getf_ctx _ctx `if_links)))
+              ;(splice_log "<return must be by here> found?" final_return_found "level: "  _ctx.scope.level "root: " root  "base_path: " base_path "last_path: " last_path)
+              ;(splice_log "viable_return_points: " (clone viables))
+              ;(splice_log "potential_return_points: " (clone potentials))
+              ;(splice_log "tree to operate on: " (clone js_tree))
+              ;(splice_log "if_links: " (clone (getf_ctx _ctx `if_links)))
               ;; we do change the indices because we will replace the marker objects
               ;; rule: for all viables, insert return statement at point of path
               ;; rule: for all potentials, ONLY if NO viables, insert return point
@@ -846,30 +849,32 @@
                  (do 
                      (set_path v.path ntree { `mark: "return_point" } )
                      
-                     (splice_log "set viable: " (clone (resolve_path (chop v.path) ntree)))))
+                     ;(splice_log "set viable: " (clone (resolve_path (chop v.path) ntree)))
+                     ))
             
               
-             (splice_log "removing potentials: base_path: " base_path "max_viable: " max_viable (length final_viable_path) final_viable_path)
+             ;(splice_log "removing potentials: base_path: " base_path "max_viable: " max_viable (length final_viable_path) final_viable_path)
              
               (for_each (`p potentials)
                  (do 
                      (= plength (Math.min (length p.path) (length final_viable_path)))
-                     (= base_addr (slice final_viable_path 0 plength))
                      (defvar `ppath (slice p.path 0 plength))
-                     (defvar `vpath (slice final_viable_path 0 plength))
+                     (defvar `vpath (if final_viable_path 
+                                        (slice final_viable_path 0 plength)
+                                        []))
                      (= max_path_segment_length (Math.max 8
                                                           (+ 1 (prop (minmax ppath) 1))
                                                           (+ 1 (prop (minmax vpath) 1))))
-                     (splice_log p "max_path_segment_length: " max_path_segment_length "ppath: " ppath " vpath: " vpath 
-                                 (path_multiply ppath max_path_segment_length) ">" (path_multiply vpath max_path_segment_length)
-                                 (> (path_multiply ppath max_path_segment_length) (path_multiply vpath max_path_segment_length)))
+                     ;(splice_log p "max_path_segment_length: " max_path_segment_length "ppath: " ppath " vpath: " vpath 
+                      ;           (path_multiply ppath max_path_segment_length) ">" (path_multiply vpath max_path_segment_length)
+                       ;          (> (path_multiply ppath max_path_segment_length) (path_multiply vpath max_path_segment_length)))
                      (if (or (> (path_multiply ppath max_path_segment_length)
                                 (path_multiply vpath max_path_segment_length))
                              (and (== p.block_step 0)
                                   (== p.lambda_step 0))
                              (== 0 (length viables)))
                         (do 
-                            (splice_log "set potential to return at" ppath "versus final viable: " vpath p.if_id)
+                            ;(splice_log "set potential to return at" ppath "versus final viable: " vpath p.if_id)
                             (set_path p.path ntree { `mark: "return_point" })
                             (when (and p.if_id
                                        (prop (getf_ctx _ctx `if_links) p.if_id))
@@ -878,13 +883,15 @@
                                        (when (== undefined (prop if_paths (as_lisp pinfo.path)))
                                          (set_prop if_paths (as_lisp pinfo.path) true)
                                          (set_path pinfo.path ntree { `mark: "return_point" } )
-                                         (splice_log "if adjust on: " pinfo.if_id pinfo.path pinfo))))
+                                         ;(splice_log "if adjust on: " pinfo.if_id pinfo.path pinfo)
+                                         )))
                                   ))
                          (do 
                            (when (and (== undefined (prop if_paths (as_lisp p.path)))
                                       (not (== p.type "final-return")))
                                 (set_path p.path ntree { `mark: "ignore" } )
-                                (splice_log "if adjust off: " p.if_id p.path p))))
+                                ;(splice_log "if adjust off: " p.if_id p.path p)
+                                )))
                      ))
            ))
               
@@ -937,9 +944,56 @@
       else
       js_tree))                       
        
+(defun map_range (n from_range to_range)
+            (+ to_range.0
+               (* (/ (- n from_range.0)
+                     (- from_range.1 from_range.0))
+                  (- to_range.1 to_range.0)))
+        { `usage: ["n:number" "from_range:array" "to_range:array"]
+          `tags:  ["range" "scale" "conversion"]
+          `description: (+ "Given an initial number n, and two numeric ranges, maps n from the first range " 
+                           "to the second range, returning the value of n as scaled into the second range. ") })
+
+(defglobal HSVtoRGB (new Function "h, s, v" "{
+        var r, g, b, i, f, p, q, t;
+        if (arguments.length === 1) {
+            s = h.s, v = h.v, h = h.h;
+        }
+        i = Math.floor(h * 6);
+        f = h * 6 - i;
+        p = v * (1 - s);
+        q = v * (1 - f * s);
+        t = v * (1 - (1 - f) * s);
+        switch (i % 6) {
+            case 0: r = v, g = t, b = p; break;
+            case 1: r = q, g = v, b = p; break;
+            case 2: r = p, g = v, b = t; break;
+            case 3: r = p, g = q, b = v; break;
+            case 4: r = t, g = p, b = v; break;
+            case 5: r = v, g = p, b = q; break;
+        }
+        return {
+            r: Math.round(r * 255),
+            g: Math.round(g * 255),
+            b: Math.round(b * 255)
+        }
+    }"))
 
 (defun color_for_number (num saturation brightness)
-        (common.colorForNumber (Math.abs num) saturation brightness)
+    (let
+        ((h (Math.abs (parseInt num)))
+         (pos (% 8 h))
+         (color_key [0 4 1 5 2 6 3 7])
+         (rgb nil)
+         (v (prop color_key pos)))
+       (declare (number v h)
+                (object rgb))
+       (= h (map_range (% 360 (* 28 h)) [0 360] [0.0 1.0]))
+       (= v (map_range (v [0 7] [0.92 1])))
+       (= rgb (HSVtoRGB h saturation brightness))
+       (+ "#" (-> (-> rgb.r `toString 16) `padStart 2 "0")
+              (-> (-> rgb.g `toString 16) `padStart 2 "0")
+              (-> (-> rgb.b `toString 16) `padStart 2 "0")))
         {
             `usage:["number:number" "saturation:float" "brightness:float"]
             `description:"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string"
