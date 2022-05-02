@@ -7,7 +7,9 @@
 
 ;; in the console
 
-;; var { check_true, get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=942024")
+;; var { get_next_environment_id, check_true, get_outside_global, subtype,lisp_writer, clone } = await import("/lisp_writer.js?id=942024")
+
+
 
 (import `Boot.Compiler-Tests)  
 
