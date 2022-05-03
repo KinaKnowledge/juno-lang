@@ -27,6 +27,22 @@
     
 (defglobal get_outside_global get_outside_global)      
 
+(defglobal true? check_true)
+
+(defglobal if_compile_time_defined 
+    (fn (quoted_symbol exists_form not_exists_form)
+        (if (== (prop (describe quoted_symbol)
+                      `location)
+                   nil)
+           not_exists_form
+           exists_form))
+     {
+         `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
+         `tags: ["compile" "defined" "global" "symbol" "reference"]
+         `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]
+         `eval_when:{ `compile_time: true }
+     })
+       
 
 ;; Convenience function with embedded quoting for the compiler
 
@@ -714,8 +730,8 @@
      
       
          
-      (if (== _depth 0)
-          (splice_log "->" (clone js_tree)))
+      ;(if (== _depth 0)
+      ;    (splice_log "->" (clone js_tree)))
       
       (for_each (`comp js_tree)
           (do
@@ -896,8 +912,8 @@
            ))
               
           
-      (if (== _depth 0)
-          (splice_log "<-" (clone ntree)))
+      ;(if (== _depth 0)
+      ;    (splice_log "<-" (clone ntree)))
       
       
       ntree)
@@ -954,7 +970,7 @@
           `description: (+ "Given an initial number n, and two numeric ranges, maps n from the first range " 
                            "to the second range, returning the value of n as scaled into the second range. ") })
 
-(defglobal HSVtoRGB (new Function "h, s, v" "{
+(defglobal HSV_to_RGB (new Function "h, s, v" "{
         var r, g, b, i, f, p, q, t;
         if (arguments.length === 1) {
             s = h.s, v = h.v, h = h.h;
@@ -990,7 +1006,7 @@
                 (object rgb))
        (= h (map_range (% 360 (* 28 h)) [0 360] [0.0 1.0]))
        (= v (map_range (v [0 7] [0.92 1])))
-       (= rgb (HSVtoRGB h saturation brightness))
+       (= rgb (HSV_to_RGB h saturation brightness))
        (+ "#" (-> (-> rgb.r `toString 16) `padStart 2 "0")
               (-> (-> rgb.g `toString 16) `padStart 2 "0")
               (-> (-> rgb.b `toString 16) `padStart 2 "0")))

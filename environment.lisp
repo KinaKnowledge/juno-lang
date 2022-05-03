@@ -1,3 +1,14 @@
+;; Environment - (c) 2022 Kina, LLC 
+;; Author: Alex Nygren
+
+
+;; The "world" that is the scope of the compiler and the compiled code.
+;; Faciliates dynamic scope, lisp globals, definitions and other properties.
+;; It is the interface the top level function calls into as the compiler
+;; is accessed via an environment object.  
+
+;; Use evaluate(lisp_text) to compile and evaluate lisp text and forms
+
 (defexternal 
      dlisp_env 
      (fn (opts)
@@ -48,6 +59,7 @@
                   (sub_type subtype)
                   (int parseInt)
                   (float parseFloat)
+                  
                   (values (new Function "...args"
                              "{
                                 let acc = [];
@@ -125,7 +137,13 @@
                                 });
                                 return list;
                             }"))
-                  (reverse (new Function "container" "{ return container.slice(0).reverse }"))      
+                        
+                  (reverse (new Function "container" "{ return container.slice(0).reverse }")
+                           { "usage": ["container:list"] 
+                              "description": "Returns a copy of the passed list as reversed.  The original is not changed." 
+                              `tags: ["list" "sort" "order"] 
+                            })
+                        
                   (map (new AsyncFunction "lambda" "array_values" 
                               "{ try {
                                         let rval = [],
@@ -186,7 +204,7 @@
                   
                   (chomp (new Function "x" "{ return x.substr(x.length-1) }"))
                   
-                  (not   (new Function "x" "{ if (x) { return false } else { return true } }"))
+                  (not   (new Function "x" "{ if (check_true(x)) { return false } else { return true } }"))
                  
                   (push  (new Function "place" "thing" "{ return place.push(thing) }"))
                  
@@ -274,24 +292,30 @@
                           ((`not_found { `not_found: true })
                            (`location (cond (prop Environment.global_ctx.scope quoted_symbol)
                                             "global"
-                                            (not (== not_found (get_outside_global quoted_symbol not_found)))
+                                            (not (== undefined (get_outside_global quoted_symbol)))
                                             "external"
                                             else
-                                            nil)))
-                        
-                          (+ {
-                             `type: (cond
-                                      (== location "global")
-                                      (sub_type (prop Environment.global_ctx.scope quoted_symbol))
-                                      (== location "external")
-                                      (sub_type (get_outside_global quoted_symbol))
-                                      else
-                                     "undefined")
-                             `location: location
-                             }
-                             (if (prop Environment.definitions quoted_symbol)
-                                 (prop Environment.definitions quoted_symbol)
-                                 {})))))
+                                            nil))
+                           (`result nil))
+                          (= result
+                              (+ {
+                                 `type: (cond
+                                          (== location "global")
+                                          (sub_type (prop Environment.global_ctx.scope quoted_symbol))
+                                          (== location "external")
+                                          (sub_type (get_outside_global quoted_symbol))
+                                          else
+                                         "undefined")
+                                 `location: location
+                                 }
+                                 (if (prop Environment.definitions quoted_symbol)
+                                     (prop Environment.definitions quoted_symbol)
+                                     {})))
+                            (when result.description
+                                (set_prop result
+                                          `description
+                                          (-> Environment `eval result.description)))
+                            result)))
                            
                   (undefine (fn (quoted_symbol)
                                 (if (prop Environment.global_ctx.scope quoted_symbol)
@@ -425,6 +449,17 @@
       
                   (trim (fn (x)
                             (-> x `trim)))
+                  
+                  (assert (fn (assertion_form failure_message)
+                              (if assertion_form
+                                  assertion_form
+                                 (throw EvalError (or failure_message "assertion failure"))))
+                         {
+                             `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
+                             `usage:["form:*" "failure_message:string?"]
+                             `tags:["true" "error" "check" "debug" "valid" "assertion"]
+                         })
+                  
                         
                   (unquotify (fn (val)
                                (let
@@ -476,7 +511,7 @@
                            (do
                             (if (not (== (typeof refname) "string"))
                                 (throw TypeError "reference name must be a string type"))
-                            (log "Environment: set_global: " refname value)
+                            ;(log "Environment: set_global: " refname value)
                              (set_prop Environment.global_ctx.scope 
                                        refname
                                        value)
@@ -517,8 +552,8 @@
                                                         NOT_FOUND)
                                                     NOT_FOUND)))
                                   
-                                  (when (not (prop Environment.global_ctx.scope comps.0))
-                                    (console.log "get_global: [external reference]:" (if (prop Environment.externs comps.0) "[cached]" "") refname ))
+                                  ;(when (not (prop Environment.global_ctx.scope comps.0))
+                                   ; (console.log "get_global: [external reference]:" (if (prop Environment.externs comps.0) "[cached]" "") refname ))
                                   ;; based on the value of refval, return the value
                                   (when (== undefined (prop Environment.externs comps.0))
                                      (set_prop Environment.externs
@@ -552,8 +587,8 @@
                                              {}))
                                   (compiled nil)
                                   (result nil))
-                               (env_log "-> expression: " expression) 
-                               (env_log "-> ctx: " (sub_type ctx) ctx)
+                               ;(env_log "-> expression: " expression) 
+                               ;(env_log "-> ctx: " (sub_type ctx) ctx)
                                ;(debug)
                                (= compiled
                                   (compiler (if opts.json_in
@@ -565,10 +600,10 @@
                                                 `error_report: (or opts.error_report nil)
                                                 `quiet_mode: (or opts.quiet_mode false) }))
                                             
-                               (env_log "<- compiled:" compiled)
+                               ;(env_log "<- compiled:" compiled)
                                (if opts.on_compilation_complete
                                    (opts.on_compilation_complete compiled))
-                               (console.log "env: <- compiled: " (clone compiled))
+                               ;(console.log "env: <- compiled: " (clone compiled))
                                (try
                                    (do     
                                       (= result
@@ -601,7 +636,7 @@
                                             (do
                                               (if (compiled.0.has_lisp_globals)
                                                   (do
-                                                    (console.log "env: compiled text: " (+ "{ return " compiled.1 "} "))     
+                                                    ;(console.log "env: compiled text: " (+ "{ return " compiled.1 "} "))     
                                                     (set_prop compiled
                                                               1
                                                               (new AsyncFunction "Environment" (+ "{ return " compiled.1 "} ")))
@@ -643,13 +678,13 @@
                                             (= result e)
                                             (if (and ctx ctx.in_try)
                                                 (throw result)))))
-                               (env_log "<-" result)
+                               ;(env_log "<-" result)
                                result)))
                            
               (eval_struct (fn (lisp_struct ctx opts)
                                (let
                                    ((rval nil))
-                                   (env_log "eval_struct ->" (clone lisp_struct) ctx opts)
+                                   ;(env_log "eval_struct ->" (clone lisp_struct) ctx opts)
                                    (if (is_function? lisp_struct)
                                       (= rval (lisp_struct))
                                       (= rval (evaluate lisp_struct 
@@ -658,7 +693,7 @@
                                                               `json_in: true
                                                            }
                                                          (or opts {})))))
-                                  (env_log "eval_struct <-" (clone rval))
+                                  ;(env_log "eval_struct <-" (clone rval))
                                   rval))))
           
          
@@ -668,6 +703,9 @@
                                              (prop Environment.definitions (-> quoted_symbol `substr 2))
                                              (prop Environment.definitions quoted_symbol)))))
           
+          ;; This will allow us to swap out compiler functions for when we are using potentially
+          ;; multiple compilers, for example in the development of the compiler.  
+          
           (defvar set_compiler
               (fn (compiler_function)
                    (do 
@@ -675,6 +713,8 @@
                        (set_prop Environment.global_ctx.scope
                                  "compiler"
                                  compiler))))
+          
+          ;; Expose our global setters/getters for the dynamic and top level contexts
           
           (set_prop Environment
                     `get_global get_global
@@ -685,8 +725,9 @@
           ;; bring the needed functions in and rebuild them in the current scope.
                 
           (declare (local lisp_writer)
-                   (include reader add_escape_encoding get_outside_global get_object_path 
+                   (include reader add_escape_encoding get_outside_global get_object_path
                             do_deferred_splice safe_access embed_compiled_quote))        
+          
           
           (defvar as_lisp lisp_writer)
           (defvar read_lisp reader)
@@ -698,22 +739,25 @@
                     `as_lisp lisp_writer
                     `lisp_writer lisp_writer)
          
+         
+         ;; inline functions for more efficient compiled code...
+         
           (defvar inlines  (+  {} 
                                (if opts.inlines
                                    opts.inlines
                                    {})
                                {   `pop: (fn (args)
-                                             [args.0 "." "pop()"])
-                                   `ipush: (fn (args)
-                                              [  args.0 ".push" "(" args.1 ")"])
+                                             ["(" args.0 ")" "." "pop()"])
+                                   `push: (fn (args)
+                                              ["(" args.0 ")" ".push" "(" args.1 ")"])
                                    `chomp: (fn (args)
-                                              [ args.0 ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
+                                              ["(" args.0 ")" ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
                                    `join: (fn (args)
                                               (if (== args.length 1) 
-                                                  [ "(" args.0 ")" ".join" "()"]
+                                                  ["(" args.0 ")" ".join" "()"]
                                                   ["(" args.1 ")" ".join" "(" args.0 ")" ]))
-                                   `itake: (fn (args)
-                                              [ args.0 ".shift" "()" ])
+                                   `take: (fn (args)
+                                              ["(" args.0 ")" ".shift" "()" ])
                                    `prepend: (fn (args)
                                                  [ "(" args.0 ")" ".unshift" "(" args.1 ")"])
                                    ;`flatten: (fn (args)
@@ -728,9 +772,9 @@
                                    `islice: (fn (args)
                                                (cond 
                                                  (== args.length 3)
-                                                 [ args.0 ".slice(" args.1 "," args.2 ")"]
+                                                 [ "(" args.0 ")" ".slice(" args.1 "," args.2 ")"]
                                                  (== args.length 2)
-                                                 [ args.0 ".slice(" args.1 ")"]
+                                                 [ "(" args.0 ")" ".slice(" args.1 ")"]
                                                  else
                                                  (throw SyntaxError "slice requires 2 or 3 arguments")))
                                    `split_by: (fn (args)
@@ -754,7 +798,7 @@
                                                                              [val]))
                                                                      args) ")"])
                                    `reverse: (fn (args)
-                                                 [args.0 ".slice(0).reverse()"])
+                                                 ["("args.0 ")" ".slice(0).reverse()"])
                                     
                                    `int: (fn (args)
                                              (cond
@@ -768,6 +812,8 @@
                                                ["parseFloat(" args.0 ")"])
                                
                                }))
+          
+          ;; Finally the interface that is exposed to compiler and the compiled code...
                            
           (set_prop Environment
                      `eval eval_struct
@@ -791,7 +837,5 @@
                      `check_external_env (fn ()
                                              check_external_env_default))
           
-          
-          (console.log "ENVIRONMENT: ", Environment) 
           ;(bind_function Environment this)
           Environment)))
