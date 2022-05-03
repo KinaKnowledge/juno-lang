@@ -1,6 +1,8 @@
-
 ;; DLisp to Javascript Compiler
 ;; (c) 2022 Kina
+
+
+;; Author: Alex Nygren
 
 ;; var { check_true, get_outside_global, subtype,lisp_writer,clone } = await import("/lisp_writer.js?id=942024")
 
@@ -238,6 +240,8 @@
                                   Boolean
                                   (== ctype "nil")
                                   NilType
+                                  (is_function? ctype)
+                                  ctype
                                   else
                                   value)))
        ;; sets a value in the current compilation context
@@ -847,7 +851,7 @@
                                       (== math_op `+))
                              (= is_overloaded true))
                            
-                           (log "infix +> op:" math_op "overloaded: " is_overloaded (rest tokens))
+                           ;(log "infix +> op:" math_op "overloaded: " is_overloaded (rest tokens))
                            (if is_overloaded
                                (do
                                 (set_prop tokens
@@ -1038,7 +1042,11 @@
                acc)))
        (`compile_typeof
          (fn (tokens ctx)
-             ["typeof" " " (compile_elem tokens.1 ctx) ]))
+             (do 
+                 (log "compile_typeof: " (clone tokens))
+                 (if (== tokens.1.type "arg")
+                     ["typeof" " " tokens.1.name ]
+                     ["typeof" " " (compile_elem tokens.1 ctx) ]))))
        (`compile_instanceof 
          (fn (tokens ctx)
              (let
@@ -1114,7 +1122,7 @@
                                                                       "local")))
                                   
                                   ;(log "compile_assignment: -> " tokens)
-                                  ;(log "compile_assignment: target_details: " target_details)
+                                  (log "compile_assignment: target_details: " target_details)
                                   ;(log "compile_assignment: " assignment_operator target "location:" target_location_compile_time)
                                   
                                   (unset_ambiguous ctx target)
@@ -1137,7 +1145,7 @@
                                             UnknownType)))
                                               
                                            
-                                  ;(log "compile_assignment: target is: " target " type: " assignment_type " value: " (clone assignment_value))
+                                  (log "compile_assignment: target is: " target " type: " assignment_type " value: " (clone assignment_value))
                                   (= assignment_value (wrap_assignment_value assignment_value))
                                    
                                    
@@ -1286,7 +1294,7 @@
                                 (`clog (if quiet_mode
                                            log
                                            (defclog { `prefix: (+ "compile_block (" block_id "):") 
-                                             `background: (color_for_number (random_int 10000) (+ 0.3 (/ (random_int 3) 10)) 0.5) `color: "white"})))
+                                             `background: "#404080" `color: "white"})))
                                 (`ctx (if block_options.no_scope_boundary
                                           ctx
                                           (new_ctx ctx))) ;; get a local reference
@@ -1600,7 +1608,7 @@
                               (`ctx (new_ctx ctx))
                               (`clog (if quiet_mode
                                          log
-                                         (defclog { `prefix: (+ "compile_let: " (or ctx.block_id "")) `background: (color_for_number (random_int 10000) 0.2 0.8) `color: "black"})))
+                                         (defclog { `prefix: (+ "compile_let: " (or ctx.block_id "")) `background: "#B0A0F0" `color: "black"})))
                               (`token nil)
                               (`declarations_handled false)
                               (`assignment_value nil)
@@ -1744,13 +1752,22 @@
                                    
                                     
                                     
-                                    (if (and (is_array? assignment_value)
-                                             (is_object? assignment_value.0)
+                                    (cond 
+                                       (and (is_array? assignment_value)
+                                            (is_object? assignment_value.0)
                                               assignment_value.0.ctype)
-                                         (do 
+                                        (do 
                                            (set_ctx ctx
                                                     reference_name
                                                     (map_ctype_to_value assignment_value.0.ctype assignment_value)))
+                                        (and (is_array? assignment_value)
+                                             (is_array? assignment_value.0)
+                                             assignment_value.0.0.ctype)
+                                        (do 
+                                           (set_ctx ctx
+                                                    reference_name
+                                                    (map_ctype_to_value assignment_value.0.0.ctype assignment_value))) 
+                                        else 
                                          (do 
                                              (console.warn "compile_assignment: unknown assignment type: " reference_name)
                                              (set_ctx ctx
@@ -1818,16 +1835,8 @@
                                     
                                     ;(clog "set declaration for " reference_name "is arg?" ctx_details " already declared?" (prop block_declarations reference_name) " assignment value: " (clone assignment_value))
                                     
-                                    
-                                    (cond
-                                      (and (is_array? assignment_value)
-                                           (is_object? (first assignment_value))
-                                           (prop (first assignment_value) `ctype))
-                                      (= assignment_type (first assignment_value))
-                                      (prop op_lookup alloc_set.1.val.0.name)
-                                      (= assignment_type Function)
-                                      else
-                                      (= assignment_type (sub_type assignment_value)))
+                                    ;(= assignment_type ctx_details.value)
+                                    ;(clog "assignment: " reference_name "->" assignment_type "ctx_details: " (clone ctx_details))
                                     ;; test for whether or now we need to declare it without getting in trouble with JS
                                     (cond
                                        (prop block_declarations reference_name)
@@ -1978,7 +1987,7 @@
                              (set_prop ctx
                               `return_last_value
                               true)
-                              (fn_log "nbody: " nbody)
+                              ;(fn_log "nbody: " nbody)
                               (push acc { `mark: "nbody" } )
                               (push acc (compile_block nbody
                                                        ctx
@@ -3086,7 +3095,7 @@
                                                 "undefined"
                                                 else
                                                 stmts))
-                                            (follow_log "check_return_tree: " fst " returning: " (sub_type rval) (clone rval))
+                                            ;(follow_log "check_return_tree: " fst " returning: " (sub_type rval) (clone rval))
                                             rval)))
                             (`result nil)
                             (`subacc [])
@@ -3232,7 +3241,7 @@
                                      ;(follow_log "pushing to subacc: " tval)
                                      (push subacc tval)))
                                (inc idx)))
-                             (follow_log "<-" (clone subacc))
+                             ;(follow_log "<-" (clone subacc))
                             subacc)
                            (or (is_number? tree)
                                (is_string? tree)
@@ -3705,6 +3714,8 @@
                      acc)
                     (== ref_type "Function")
                     (do
+                     (push acc "await")  ;; we don't know if the function returns a promise so we need to hedge our bets..
+                     (push acc " ")
                      (push acc (if (== call_type `lisp)
                                    (compile_lisp_scoped_reference tokens.0.name)
                                    tokens.0.name))
@@ -4040,12 +4051,13 @@
                          is_error   ;; unwind 
                        (do
                          (defvar `rval (compile_inner tokens ctx _cdepth))
-                         (if  (and  false (is_array? rval)
-                                    (is_object? rval.0)
-                                    (prop rval.0 `ctype))
-                               (comp_log (+ "compile:" _cdepth " <- ") "return type: " (as_lisp rval.0))
-                               (do 
-                                   (comp_warn "<-"  _cdepth   "unknown/undeclared type returned: " (clone rval))))
+                         (if false  ;; disabled 
+                             (if  (and  (is_array? rval)
+                                        (is_object? rval.0)
+                                        (prop rval.0 `ctype))
+                                   (comp_log (+ "compile:" _cdepth " <- ") "return type: " (as_lisp rval.0))
+                                   (do 
+                                       (comp_warn "<-"  _cdepth   "unknown/undeclared type returned: " (clone rval)))))
                          rval))))
                          
        (`compile_inner
@@ -4136,7 +4148,7 @@
                       
                       (is_array? tokens)
                       (do
-                       ;(comp_log (+ "compile: " _cdepth " [array_literal]:") "->" tokens)
+                       ;(console.log (+ "compile: " _cdepth " [array_literal]:") "->" tokens)
                        (cond
                          ;; simple case, just an empty array, return js equiv     
                          (== tokens.length 0)
@@ -4631,11 +4643,13 @@
              (set_prop assembly.0
                        `ctype
                        "statement")
-             (and (is_string? (first assembly))
+             (and assembly
+                  (is_string? (first assembly))
                   (== (first assembly) "throw"))
              (= assembly
                 [ { `ctype: `block } assembly])
              (and (not is_error)
+                  assembly
                   (or (not (is_object? (first assembly)))
                       (not (prop (first assembly) `ctype))))
              (= assembly
