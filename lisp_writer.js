@@ -124,7 +124,7 @@ export function lisp_writer(obj,depth,max_depth) {
     
     
   } else {
-    if (depth === 0) console.log("lisp_writer: <- [ other ]",obj);
+    //if (depth === 0) console.log("lisp_writer: <- [ other ]",obj);
     return obj; // numbers and booleans
   }
 }

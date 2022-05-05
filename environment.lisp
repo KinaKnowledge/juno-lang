@@ -674,7 +674,7 @@
                                                                   `invalid: true
                                                                   `text: e.stack
                                                                   }))
-                                            (env_log "<- ERROR: " (-> e `toString))
+                                            ;(env_log "<- ERROR: " (-> e `toString))
                                             (= result e)
                                             (if (and ctx ctx.in_try)
                                                 (throw result)))))

@@ -793,7 +793,7 @@
                       (= ntree (apply precompile_function (-> lisp_tree `slice 1)))
                       (catch Error (`e)
                         (do
-                         (console.error "precompilation error: " e)
+                         ;(console.error "precompilation error: " e)
                          (push errors
                                {  `error: e.name
                                   `message: e.message
@@ -3701,8 +3701,8 @@
                      (= ref_type (sub_type ref_type)))
                
                
-               (sr_log "call_type: " call_type "decoded ref_type: " ref_type)
-               (sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local"))
+               ;(sr_log "call_type: " call_type "decoded ref_type: " ref_type)
+               ;(sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local"))
                (= rval
                   (cond
                     (== ref_type "AsyncFunction")
@@ -4466,19 +4466,18 @@
                           (compile_lisp_scoped_reference tokens.name ctx)
                           
                           else
-                          (do (comp_log "compile: unknown reference: " tokens.name)
+                          (do ;(comp_log "compile: unknown reference: " tokens.name)
                               (throw ReferenceError (+ "compile: unknown reference: " tokens.name)))))
                       else
                       (do 
-                       (error_log "compile: invalid compilation structure:",tokens)
-                       (console.error "Compile passed invalid compilation structure")
-                        (console.error (clone tokens))
-                        (console.error "CTX:" (clone ctx))
+                       ;(error_log "compile: invalid compilation structure:",tokens)
+                       ;(console.error "Compile passed invalid compilation structure")
+                        ;(console.error (clone tokens))
+                        ;(console.error "CTX:" (clone ctx))
                         (throw SyntaxError "compile passed invalid compilation structure"))
                       ))
                 (catch Error (`e)
                        (do
-                        (console.error "COMPILATION ERROR: ",e)
                         (setq is_error {
                               `error: e.name
                               `message: e.message
@@ -4492,10 +4491,7 @@
                                                   tokens.val))
                               })
                         (push errors
-                           (clone is_error))
-                        (error_log is_error)
-                        (console.error "compilation",is_error)
-                         ))))))
+                           (clone is_error))))))))
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
@@ -4636,23 +4632,26 @@
                (do
                    (= final_token_assembly (tokenize tree root_ctx)))
                 (catch Error (`e)
-                    (console.error "pre-compilation: " e.message)))
+                    (= is_error e)))
+                    
             
-            (if (eq nil final_token_assembly)
+            (cond 
+              is_error
+              is_error
+              (eq nil final_token_assembly)
               (do  
-                  (= is_error (new Error "Pre-Compilation Error"))
-                  (error_log "pre-compilation error")
-                  (console.error "pre-compilation error")
+                  (= is_error (new EvalError "Pre-Compilation Error"))
                   is_error)
+              else
               (do
-                  ;(main_log "final token assembly:" final_token_assembly)
+                  ;; we have tokenized and processed the input tree, now compile...
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))
                   (= assembly (splice_in_return_a assembly))
                   (= assembly (splice_in_return_b assembly))))
-           (if is_error
-               (error_log "compilation" (clone is_error)))
+           ;(if is_error
+            ;   (error_log "compilation" (clone is_error)))
                
            (when opts.root_environment
                  (= has_lisp_globals false))
@@ -4670,7 +4669,6 @@
                         (and (not (== val "assignment"))
                              (not (contains? "block" val))
                              (not (contains? "unction" val))))))
-             
              
              (set_prop assembly.0
                        `ctype
@@ -4693,7 +4691,7 @@
                 (= has_lisp_globals false))
            (if is_error
                (do 
-                (error_log "compiler: is an error: " is_error)
+                ;(error_log "compiler: is an error: " is_error)
                 is_error)
                (if (is_object? (first assembly))
                    [(+ { `has_lisp_globals: has_lisp_globals }
@@ -4702,12 +4700,11 @@
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
     ;(main_log "<-" (clone output))
     ;(main_log "referenced global symbols:" (clone referenced_global_symbols))
-    (when (> errors.length 0)
-       (map (fn (x)
-                (error_log x))
-            errors))
     (when opts.error_report
           (opts.error_report errors))
     output))))
+
+
+
 
 
