@@ -590,15 +590,17 @@
                                ;(env_log "-> expression: " expression) 
                                ;(env_log "-> ctx: " (sub_type ctx) ctx)
                                ;(debug)
-                               (= compiled
-                                  (compiler (if opts.json_in
-                                                expression
-                                                (-> Environment `read_lisp expression))
-                                            {   `env: Environment 
-                                                `ctx: ctx 
-                                                `formatted_output: true 
-                                                `error_report: (or opts.error_report nil)
-                                                `quiet_mode: (or opts.quiet_mode false) }))
+                               (if opts.compiled_source
+                                   (= compiled expression)
+                                   (= compiled
+                                      (compiler (if opts.json_in
+                                                    expression
+                                                    (-> Environment `read_lisp expression))
+                                                {   `env: Environment 
+                                                    `ctx: ctx 
+                                                    `formatted_output: true 
+                                                    `error_report: (or opts.error_report nil)
+                                                    `quiet_mode: (or opts.quiet_mode false) })))
                                             
                                ;(env_log "<- compiled:" compiled)
                                (if opts.on_compilation_complete
