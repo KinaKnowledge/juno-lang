@@ -1099,15 +1099,19 @@ async function init_dlisp()
             opts=(opts||new Object());
             compiled=null;
             result=null;
-            compiled=await compiler(await (async function() {
-              if (check_true ((opts && opts["json_in"]))){
-                return expression
-              } else {
-                return await Environment["read_lisp"].call(Environment,expression)
-              } 
-            } )(),{
-              env:Environment,ctx:ctx,formatted_output:true,error_report:((opts && opts["error_report"])||null),quiet_mode:((opts && opts["quiet_mode"])||false)
-            });
+            if (check_true ((opts && opts["compiled_source"]))){
+              compiled=expression
+            } else {
+              compiled=await compiler(await (async function() {
+                if (check_true ((opts && opts["json_in"]))){
+                  return expression
+                } else {
+                  return await Environment["read_lisp"].call(Environment,expression)
+                } 
+              } )(),{
+                env:Environment,ctx:ctx,formatted_output:true,error_report:((opts && opts["error_report"])||null),quiet_mode:((opts && opts["quiet_mode"])||false)
+              })
+            };
             if (check_true ((opts && opts["on_compilation_complete"]))){
               await (async function(){
                 let __array_op_rval__119=(opts && opts["on_compilation_complete"]);
