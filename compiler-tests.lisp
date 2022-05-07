@@ -42,6 +42,11 @@
     "Hello"
     "primitive compilation: string"
     ]
+    ["|Hello World \"Long String\"|" 
+     []
+     "Hello World \"Long String\""
+     "long string for embedded text"
+     ]
     ["\"undefined\""
      []
      "undefined"
@@ -885,7 +890,7 @@
               (do 
                   e.message))))"
     []
-    "FAIL: [EXEC]:compiler returned: lambda->\"compile: unknown reference: x\""
+    "FAIL: [EXEC]:compiler returned: lambda->\"ReferenceError: compile: unknown reference: x\""
     "let returning quoted closure then eval"
     nil
     "(-> env `set_check_external_env false)"
@@ -1506,7 +1511,7 @@
            (inc blk_counter)))
       `toString)"
     []
-   "async function() {\n    let blk_counter=0;\n     return  blk_counter+=1\n}"
+   "async function() {\n    let blk_counter;\n    blk_counter=0;\n     return  blk_counter+=1\n}"
    "Value modification outside of infix_ops - output expression"
      ]
   ["(let
@@ -1767,5 +1772,123 @@
        ]"
      []
      [4 10]
-    "If conditional in array no blocks"
+    "If conditional in array no blocks"]
+   ["(let
+        ((idx 0)
+         (fzl 0)
+         (hye nil)
+         (idx_inc (fn ()
+                      (let
+                          ((idx (inc idx))
+                           (fzl (+ fzl 1)))
+                          (inc idx)
+                          [idx fzl]))))
+        (= hye (idx_inc))
+        [idx fzl hye])"
+    []
+    [1 0 [2 1]]
+    "Redeclarations of scope variables (shadowing)"]
+   ["(do 
+      (defvar `tt
+        (if (> 4 2)
+            1
+            2))
+      tt)"
+    []
+    1
+    "defvar returning an if"]
+   ["((fn (a)
+           (if a
+              (- a 1)
+              (+ a 1))) 0)"
+    []
+    -1
+    "0 is true"]
+   ["(let
+    ((stime (Date.now))
+     (seconds 2)
+     (wait (new Promise 
+            (fn (resolve)
+                (setTimeout (lambda() (resolve (> (- (Date.now) stime) 1900))) (* seconds 1000))))))
+    wait)"
+    []
+    true
+    "handle promise resolution via timeout"]
+  ["(progn 
+      (defglobal `abc 123)
+      [ abc ])"
+    []
+    `[ 123 ]
+    "array with number in start position"
+    ]
+   ["(progn 
+      (defglobal `abc 123)
+      [[ abc ]])"
+    []
+    `[[ 123 ]]
+    "array with array with number in start position"
+    ]
+   ["(let
+       ((c 1))
+        (javascript \"{\" c += \"(\" c \"+\" 2 \")\" + (+ c 4) \"}\")
+       c)"
+     []
+     9
+     "javascript operator with embedded lisp compilation and block tokens"]
+   ["(let
+        ((cc (dynamic_import \"/compiler.js\")))
+        (defglobal `init_compiler cc.init_compiler)
+        (is_function? init_compiler))"
+    []
+    true
+    "dynamic import of ES module"]
+   ["(let
+        ((abc [\"hello\" \"world\"]))
+        (-> (prop abc 0) `substr 2))"
+     []
+     "llo"
+     "calling a result of a return value"]
+   ["(let
+        ((aa \"Hello\")
+         (bb { `term: \"substr\" 
+              })
+         (b (-> aa (prop bb `term) 1 )))
+      b)"
+    []
+    "ello"
+    "complex call with evaluated method form"]
+   [
+    "(let
+        ((aa \"Hello\"))
+        (-> aa `substr 1))"
+    []
+    "ello"
+    "simple call with simple target and method - 1 arg"
+    ]
+   ["(let
+        ((aa \"Hello\"))
+        (-> aa `substr 1 2))"
+    []
+    "el"
+    "simple call with simple target and method - multi arg"]
+   
+   ["(let
+        ((aa \"Hello\")
+         (bb { `term: \"substr\" 
+               `target: aa })
+         (b (-> (prop bb `target) (prop bb `term) 1 )))
+          b)"
+    []
+    "ello"
+    "complex call form with evaluated target and method"]
+   ["(let
+        ((aa \"Hello\")
+         (bb { `term: \"substr\" 
+               `target: aa })
+         (b (-> (prop bb `target) (prop bb `term) 1 2 )))
+          b)"
+    []
+    "el"
+    "complex call form with evaluated target and method"]
+
 ])
