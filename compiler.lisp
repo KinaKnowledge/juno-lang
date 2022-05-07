@@ -2877,39 +2877,77 @@
        
        (`compile_call (fn (tokens ctx)
                           (let
+                              ((`simple_target? (if (== tokens.1.ref true)
+                                                    true
+                                                    false))
+                               (`simple_method? (if (== tokens.2.type "literal")
+                                                    true
+                                                    false)))
+                             ;(console.log "compile_call: simple_target: " simple_target? "simple_method?" simple_method?)
+                             (cond
+                                 (and simple_target?
+                                      simple_method?)
+                                 (compile_call_inner tokens ctx { `type: 0 })
+                                 simple_target?
+                                 (compile_call_inner tokens ctx { `type: 0 })
+                                 else
+                                 [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
+                                             (compile_call_inner tokens ctx { `type: 2 })
+                                             " " "}" ")" "()" ]))))
+       (`compile_call_inner (fn (tokens ctx opts)
+                          (let
                               ((`acc [])
                                (`target nil)
                                (`idx -1)
+                               (`add_args (fn ()
+                                              (for_each (`token (-> tokens `slice 3))
+                                                (do
+                                                 (push acc ",")
+                                                 (push acc (wrap_assignment_value (compile token ctx)))))))
                                (`method nil))
                             ;(log "compile_call: " tokens)
                             (when (< tokens.length 3)
                               (throw SyntaxError (+ "call: missing arguments, requires at least 2")))
-                            (if (is_block? tokens.1.val)
-                                (= target (compile_wrapper_fn tokens.1.val ctx))
-                                (= target (compile tokens.1 ctx)))
-                            ;(log "compile_call: target: " target)
-                            (if (is_complex? tokens.2)
-                                (= method (compile_wrapper_fn tokens.2 ctx))
-                                (= method (compile tokens.2 ctx)))
-                            (cond
-                              (== tokens.length 3)
-                              (for_each (`t ["await" " " target "[" method "]" "()"])
-                                        (push acc t))
-                              else
-                              (do 
-                               (for_each (`t ["await" " " target"[" method "]" "." "call" "(" target])
-                                         (push acc t))
-                               (for_each (`token (-> tokens `slice 3))
+                            ;(console.log "compile_call: ->" (clone tokens))
+                            
+                            (= target (wrap_assignment_value (compile tokens.1 ctx)))
+                            (= method (wrap_assignment_value (compile tokens.2 ctx)))
+                            
+                            ;(console.log "compile_call: target: " target)
+                            ;(console.log "compile_call: method: " method)
+                            (cond 
+                                (or (== opts.type 0)
+                                    (== opts.type 1))
                                 (do
-                                 ;(log "compile_call: argument: " (is_complex? token) token)
-                                 (push acc ",")
-                                  (if (is_complex? token)
-                                      (push acc (compile_wrapper_fn token ctx))
-                                      (push acc (compile token ctx)))))
-                                (push acc ")")))
+                                    (cond 
+                                          (== tokens.length 3)
+                                          (for_each (`t ["await" " " target "[" method "]" "()"])
+                                            (push acc t))
+                                          else
+                                          (do 
+                                              (for_each (`t ["await" " " target "[" method "]" ".call" "(" target ])
+                                                 (push acc t))
+                                              (add_args)
+                                              (push acc ")"))))
+                                (== opts.type 2)
+                                (do 
+                                    (for_each (`t ["{" " " "let" " " "__call_target__" "="  target "," " " "__call_method__" "=" method ";" ])
+                                        (push acc t))
+                                    (cond
+                                      (== tokens.length 3)
+                                      (for_each (`t [ "return" " " "await" " " "__call_target__"  "[" "__call_method__" "]" "()"])
+                                                (push acc t))
+                                      else
+                                      (do 
+                                       (for_each (`t [ "return" " " "await" " " "__call_target__"   "[" "__call_method__" "]" "." "call" "(" "__call_target__"])
+                                                 (push acc t))
+                                        (add_args)
+                                        (push acc ")")))
+                            
+                           
+                                    (push acc "}")))
                             ;(log "compile_call: <-" (join "" (flatten acc)))
                             acc)))
-       
        
        
        (`check_needs_wrap (fn (stmts)
@@ -3207,10 +3245,6 @@
                                                    (push ntree t)))
                                                  
                                                  (do 
-                                                     ;(follow_log "splice: building deferred compilation (serializing tval to lisp)")
-                                                     ;(for_each (`t (flatten [ (quote "=$&!") (+ (quote "=:") "' + await ") (quote "=:Environment.as_lisp") (+ (quote "=:") "(" tval ")" "+" "'") ]))
-                                                     ;   (push subacc t))))
-                                                     
                                                      (for_each (`t (flatten (embed_compiled_quote 1 tmp_name tval)))
                                                            (push subacc t))))
                                               ;(follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
@@ -3255,15 +3289,10 @@
                                               (if (is_object? tval)
                                                   (do
                                                    (= tmp_name (gen_temp_name "tval"))
-                                                   ;(for_each (`t (flatten ["(" "let" "(" "("  tmp_name (+  (quote "=:") (as_lisp tval)) ")" ")" (+ (quote "=:") tmp_name) ]))
-                                                    ;  (push ntree t)))
+                                                  
                                                    (for_each (`t (flatten (embed_compiled_quote 2 tmp_name tval)))
                                                     (push ntree t)))
-                                                  ;(push ntree tval))
-                                                  ;(push ntree (+ "\"+await Environment.as_lisp(" tval ")+\"")))
-                                              
-                                                  ;(for_each (`t (flatten ["'" "+" " " "await" " " "Environment.as_lisp" "(" tval ")" "+" "'"]))
-                                                  ;   (push ntree t)))
+                                                  
                                                   (for_each (`t (flatten (embed_compiled_quote 3 tmp_name tval)))
                                                             (push ntree t)))
                                               
