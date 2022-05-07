@@ -57,8 +57,16 @@
           (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
                   (sub_type subtype)
-                  (int parseInt)
-                  (float parseFloat)
+                  (int parseInt
+                       { `usage: "value:string|number" 
+                          `description: "Convenience method for parseInt, should be used in map vs. directly calling parseInt, which will not work directly"
+                          `tags: ["conversion" "number"]
+                        })
+                  (float parseFloat
+                        { `usage: "value:string|number" 
+                          `description: "Convenience method for parseFloat, should be used in map vs. directly calling parseFloat, which will not work directly"
+                          `tags: ["conversion" "number"]
+                        })
                   
                   (values (new Function "...args"
                              "{
@@ -107,6 +115,7 @@
                   (first (new Function "x" "{ return x[0] }"))
                   
                   (last (new Function "x" "{ return x[x.length - 1] }"))
+                  
                   
                   
                   (length (new Function "obj"
@@ -235,22 +244,87 @@
                  
                   (split_by (new Function "token" "container" "{ return container.split(token) }"))
                  
-                  (is_object? (new Function "x" "{ return x instanceof Object }"))
-                  (is_array? (new Function "x" "{ return x instanceof Array }"))
+                  (is_object? (new Function "x" "{ return x instanceof Object }")
+                              {
+                               `description: "for the given value x, returns true if x is an Javascript object type."
+                               `usage: ["arg:value"]
+                               `tags: ["type" "condition" "subtype" "value" "what" ]
+                               })
+                     
+                  (is_array? (new Function "x" "{ return x instanceof Array }")
+                             {
+                                `description: "for the given value x, returns true if x is an array."
+                                `usage: ["arg:value"]
+                                `tags: ["type" "condition" "subtype" "value" "what" ]
+                                })
+                            
                   (is_number? (fn (x)
-                                  (== (subtype x) "Number")))
+                                  (== (subtype x) "Number"))
+                               {
+                                `description: "for the given value x, returns true if x is a number."
+                                `usage: ["arg:value"]
+                                `tags: ["type" "condition" "subtype" "value" "what" "function"]
+                                })
+                              
                   (is_function? (fn (x)
-                                    (instanceof x Function)))
-                  (is_set? (new Function "x" "{ return x instanceof Set }"))
-                  (is_element? (new Function "x" "{ return x instanceof Element }"))
+                                    (instanceof x Function))
+                                {
+                                    `description: "for the given value x, returns true if x is a function."
+                                    `usage: ["arg:value"]
+                                    `tags: ["type" "condition" "subtype" "value" "what" "function"]
+                                })
+                            
+                  (is_set? (new Function "x" "{ return x instanceof Set }")
+                           {
+                            `description: "for the given value x, returns true if x is a set."
+                            `usage: ["arg:value"]
+                            `tags: ["type" "condition" "subtype" "value" "what" ]
+                            })
+                        
+                  (is_element? (new Function "x" "{ return x instanceof Element }")
+                               {
+                                `description: "for the given value x, returns true if x is an Element object"
+                                `usage: ["arg:value"]
+                                `tags: ["type" "condition" "subtype" "value" "what" ]
+                                })
+                            
                   (is_string? (fn (x)
                                   (or (instanceof x String) 
-                                      (== (typeof x) "string"))))
+                                      (== (typeof x) "string")))
+                              {
+                                `description: "for the given value x, returns true if x is a String object"
+                                `usage: ["arg:value"]
+                                `tags: ["type" "condition" "subtype" "value" "what" ]
+                              })
+                            
                   (is_nil? (fn (x)
-                               (== x nil)))
+                               (== x nil))
+                           {
+                             `description: "for the given value x, returns true if x is exactly equal to nil."
+                             `usage: ["arg:value"]
+                             `tags: ["type" "condition" "subtype" "value" "what" ]
+                            })
+                  
+                  (is_regex? (fn (x)
+                                (== (sub_type x) "RegExp"))
+                           {
+                            `description: "for the given value x, returns true if x is a Javascript regex object"
+                            `usage: ["arg:value"]
+                            `tags: ["type" "condition" "subtype" "value" "what" ]
+                            })
                            
-                  (ends_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}"))
-                  (starts_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}"))
+                  (ends_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}")
+                               {
+                                   `description: "for a given string or array, checks to see if it ends with the given start_value.  Non string args return false."
+                                   `usage: ["end_value:value" "collection:array|string" ]
+                                   `tags: ["string" "text" "list" "array" "filter" "reduce"]
+                               })
+                  (starts_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}")
+                                {
+                                   "description": "for a given string or array, checks to see if it starts with the given start_value.  Non string args return false."
+                                   "usage": ["start_value:value" "collection:array|string" ]
+                                   "tags": ["string" "text" "list" "array" "filter" "reduce" "begin"]
+                                })
                   
                   (blank? (fn (val)
                               (or (eq val nil)
