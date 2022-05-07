@@ -25,8 +25,12 @@ await env.set_compiler(cca)
 
 console.log("DLisp 2.0 (c) 2022 Kina, LLC");
 
+// let readline = await import("https://deno.land/x/readline/mod.ts");
+// readline.readline is AsyncGeneratorFunction
 
 import { readline } from "https://deno.land/x/readline/mod.ts";
+// console.log("readline: ",readline.readline);
+
 
 for await (const line of readline(Deno.stdin)) {
     console.log(await env.evaluate(new TextDecoder().decode(line)));
