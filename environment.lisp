@@ -57,6 +57,12 @@
           (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
                   (sub_type subtype)
+                  (global_debug 0
+                                { 
+                                  `description: "Set global_debug to a positive integer for verbose console output."
+                                  `tags: ["debug" "compiler" "environment" "global"]
+                                 })
+                  
                   (int parseInt
                        { `usage: "value:string|number" 
                           `description: "Convenience method for parseInt, should be used in map vs. directly calling parseInt, which will not work directly"
@@ -115,8 +121,6 @@
                   (first (new Function "x" "{ return x[0] }"))
                   
                   (last (new Function "x" "{ return x[x.length - 1] }"))
-                  
-                  
                   
                   (length (new Function "obj"
                              "{
@@ -312,6 +316,14 @@
                             `usage: ["arg:value"]
                             `tags: ["type" "condition" "subtype" "value" "what" ]
                             })
+                   
+                  (is_date? (fn (x)
+                               (== (sub_type x) "Date"))
+                               {
+                                `description: "for the given value x, returns true if x is a Date object."
+                                `usage: ["arg:value"]
+                                `tags: ["type" "condition" "subtype" "value" "what" ]
+                                })
                            
                   (ends_with? (new Function "val" "text" "{ if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}")
                                {
@@ -618,16 +630,16 @@
                                       ;; search path is to first check the global Lisp Environment
                                       ;; and if the check_external_env flag is true, then go to the
                                       ;; external JS environment.
-                                      
-                                  (= refval (or (prop Environment.global_ctx.scope comps.0)
-                                                (if check_external_env
+                                  (= refval (prop Environment.global_ctx.scope comps.0))
+                                  
+                                  (if (and (== undefined refval)
+                                           check_external_env)
+                                      (= refval (if check_external_env
                                                     (or (prop Environment.externs comps.0)
                                                         (get_outside_global comps.0)
                                                         NOT_FOUND)
                                                     NOT_FOUND)))
                                   
-                                  ;(when (not (prop Environment.global_ctx.scope comps.0))
-                                   ; (console.log "get_global: [external reference]:" (if (prop Environment.externs comps.0) "[cached]" "") refname ))
                                   ;; based on the value of refval, return the value
                                   (when (== undefined (prop Environment.externs comps.0))
                                      (set_prop Environment.externs
@@ -856,7 +868,7 @@
                                    `split_by: (fn (args)
                                                   [ "(" args.1 ")" ".split" "(" args.0 ")"])
                                    `bind: (fn (args)
-                                              [ args.0 ".bind(" args.1 ")"])
+                                              ["(" args.0 ")" ".bind(" args.1 ")"])
                                    `is_array?: (fn (args)
                                                    [ "(" args.0 " instanceof Array" ")"])
                                    `is_object?: (fn (args)
