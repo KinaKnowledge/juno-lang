@@ -4475,7 +4475,7 @@
                       
                       ; Simple compilations ----
                       (or (and (is_object? tokens)
-                               tokens.val
+                               (check_true tokens.val)
                                tokens.type)
                           (== tokens.type "literal")
                           (== tokens.type "arg")
@@ -4512,12 +4512,13 @@
                                (prop op_lookup tokens.name))
                           tokens.name
                           
-                          (and tokens.ref 
+                          (and tokens.ref
                                (do
                                    (= snt_name (sanitize_js_ref_name tokens.name))
                                    (= snt_value (get_ctx ctx snt_name))
                                    ;(comp_log (+ "compile: " _cdepth " singleton: ") "local ref?" snt_name snt_value "declarations?: ")
                                    (or snt_value
+                                       (== 0 snt_value)
                                        (== false snt_value))))
                                    ;(== false (get_ctx ctx tokens.name))))
                           (do 

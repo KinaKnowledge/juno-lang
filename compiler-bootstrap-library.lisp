@@ -444,6 +444,34 @@
                                          [ "[\"" comp "\"]" ]))))))))
 
 
+(defun safe_access_2 (token ctx sanitizer_fn)
+    (let
+        ((comps nil)
+         (acc [])
+         (acc_full [])
+         (pos nil)
+         (rval nil))
+     (= comps (split_by "." token.name))
+     (if (== comps.length 1)
+         token.name
+         (do 
+             ;(debug)
+             (set_prop comps
+                       0
+                       (sanitizer_fn comps.0))
+             (while (> comps.length 0)
+                (do 
+                    (push acc
+                          (take comps))
+                    (if (> comps.length 0)
+                        (push acc_full
+                              (join "" ["check_true(" (expand_dot_accessor (join "." acc) ctx) ")"]))
+                        (push acc_full
+                          (expand_dot_accessor (join "." acc) ctx)))))
+                          
+             (= rval (flatten ["(" (join " && " acc_full) ")" ]))
+             rval))))
+
 (defun `safe_access (token ctx sanitizer_fn)
     (let
         ((`comps nil)

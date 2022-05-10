@@ -57,9 +57,9 @@
           (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
                   (sub_type subtype)
-                  (global_debug 0
+                  (DEBUG_LEVEL 0
                                 { 
-                                  `description: "Set global_debug to a positive integer for verbose console output."
+                                  `description: "Set DEBUG_LEVEL to a positive integer for verbose console output."
                                   `tags: ["debug" "compiler" "environment" "global"]
                                  })
                   

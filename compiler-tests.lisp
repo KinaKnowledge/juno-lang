@@ -1511,7 +1511,7 @@
            (inc blk_counter)))
       `toString)"
     []
-   "async function() {\n    let blk_counter;\n    blk_counter=0;\n     return  blk_counter+=1\n}"
+   "async function() {\n            let blk_counter;\n            blk_counter=0;\n             return  blk_counter+=1\n        }"
    "Value modification outside of infix_ops - output expression"
      ]
   ["(let
@@ -1890,5 +1890,14 @@
     []
     "el"
     "complex call form with evaluated target and method"]
-
+   ["((fn (a b)
+        (do
+            (defvar `not not)
+            (if (not (> a b))
+                \"a less than b\"
+                \"b less than a\")))
+        5 3)"
+    []
+    "b less than a"
+    "local declaration via defvar and use of global reference"]
 ])
