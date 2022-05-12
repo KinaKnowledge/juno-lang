@@ -1404,6 +1404,7 @@ async function init_dlisp()
                                   if (__exception__138 instanceof Error) {
                                      let e=__exception__138;
                                      {
+                                        await env_log("caught error: ",(e && e.name),(e && e.message));
                                         if (check_true ((opts && opts["error_report"]))){
                                              await (async function(){
                                                 let __array_op_rval__154=(opts && opts["error_report"]);
@@ -1419,7 +1420,7 @@ async function init_dlisp()
                                             })()
                                         };
                                         result=e;
-                                        if (check_true ((ctx&&(ctx && ctx["in_try"]))))throw new Error(result);
+                                        if (check_true ((ctx&&(ctx && ctx["in_try"]))))throw result;
                                         
                                     }
                                 } 
@@ -1531,7 +1532,7 @@ async function init_dlisp()
         opts=(opts||new Object());
         len=(await (await Environment.get_global("length"))(text)-1);
         debugmode=await (async function () {
-             if (check_true (((await Environment.get_global("DEBUG_LEVEL"))>2))){
+             if (check_true (((await Environment.get_global("DEBUG_LEVEL"))>6))){
                   return true
             } else {
                   return false
@@ -1990,39 +1991,39 @@ async function init_dlisp()
         }
     }
 };
-                    let add_escape_encoding=async function(text) {    if (check_true ((text instanceof String || typeof text==='string'))){
-        let chars;
-        let acc;
-        chars=(text).split("");
-        acc=[];
-        await (async function() {
-            let __for_body__3=async function(c) {
-                 return  await async function(){
-                    if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {
-                        (acc).push(await String.fromCharCode(92));
-                         return  (acc).push(c)
-                    } else  {
-                         return (acc).push(c)
+                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){
+            let chars;
+            let acc;
+            chars=(text).split("");
+            acc=[];
+            await (async function() {
+                let __for_body__3=async function(c) {
+                     return  await async function(){
+                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {
+                            (acc).push(await String.fromCharCode(92));
+                             return  (acc).push(c)
+                        } else  {
+                             return (acc).push(c)
+                        }
+                    }()
+                };
+                let __array__4=[],__elements__2=chars;
+                let __BREAK__FLAG__=false;
+                for(let __iter__1 in __elements__2) {
+                    __array__4.push(await __for_body__3(__elements__2[__iter__1]));
+                    if(__BREAK__FLAG__) {
+                         __array__4.pop();
+                        break;
+                        
                     }
-                }()
-            };
-            let __array__4=[],__elements__2=chars;
-            let __BREAK__FLAG__=false;
-            for(let __iter__1 in __elements__2) {
-                __array__4.push(await __for_body__3(__elements__2[__iter__1]));
-                if(__BREAK__FLAG__) {
-                     __array__4.pop();
-                    break;
-                    
-                }
-            }return __array__4;
-             
-        })();
-         return  (acc).join("")
-    } else {
-          return text
-    }
-};
+                }return __array__4;
+                 
+            })();
+             return  (acc).join("")
+        } else {
+              return text
+        }
+    };
                     let get_outside_global=function get_outside_global(refname) {  try {
     let tfn = new Function("{ if (typeof " + refname + " === 'undefined') { return undefined } else { return "+refname+" } }");
     return tfn();
@@ -2202,41 +2203,41 @@ async function init_dlisp()
                              return  rval
                         }
                     };
-                    let embed_compiled_quote=async function(type,tmp_name,tval) {     return  await async function(){
-        if (check_true( (type===0))) {
-             return await (async function(){
-                let __array_op_rval__6="=:(";
-                 if (__array_op_rval__6 instanceof Function){
-                    return await __array_op_rval__6(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
-                } else {
-                    return[__array_op_rval__6,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
-                }
-            })()
-        } else if (check_true( (type===1))) {
-             return [`=$&!`,"=:'",`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
-        } else if (check_true( (type===2))) {
-             return await (async function(){
-                let __array_op_rval__7="=:(";
-                 if (__array_op_rval__7 instanceof Function){
-                    return await __array_op_rval__7(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
-                } else {
-                    return[__array_op_rval__7,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
-                }
-            })()
-        } else if (check_true( (type===3))) {
-             return await (async function(){
-                let __array_op_rval__8="=:'";
-                 if (__array_op_rval__8 instanceof Function){
-                    return await __array_op_rval__8(`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'") 
-                } else {
-                    return[__array_op_rval__8,`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
-                }
-            })()
-        } else if (check_true( (type===4))) {
-             return "=:)"
-        }
-    }()
-};
+                    let embed_compiled_quote=async function(type,tmp_name,tval) {         return  await async function(){
+            if (check_true( (type===0))) {
+                 return await (async function(){
+                    let __array_op_rval__6="=:(";
+                     if (__array_op_rval__6 instanceof Function){
+                        return await __array_op_rval__6(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
+                    } else {
+                        return[__array_op_rval__6,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
+                    }
+                })()
+            } else if (check_true( (type===1))) {
+                 return [`=$&!`,"=:'",`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
+            } else if (check_true( (type===2))) {
+                 return await (async function(){
+                    let __array_op_rval__7="=:(";
+                     if (__array_op_rval__7 instanceof Function){
+                        return await __array_op_rval__7(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
+                    } else {
+                        return[__array_op_rval__7,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
+                    }
+                })()
+            } else if (check_true( (type===3))) {
+                 return await (async function(){
+                    let __array_op_rval__8="=:'";
+                     if (__array_op_rval__8 instanceof Function){
+                        return await __array_op_rval__8(`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'") 
+                    } else {
+                        return[__array_op_rval__8,`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
+                    }
+                })()
+            } else if (check_true( (type===4))) {
+                 return "=:)"
+            }
+        }()
+    };
                     ;
                     let as_lisp=lisp_writer;
                     ;

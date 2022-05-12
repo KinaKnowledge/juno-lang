@@ -890,7 +890,7 @@
               (do 
                   e.message))))"
     []
-    "FAIL: [EXEC]:compiler returned: lambda->\"ReferenceError: compile: unknown reference: x\""
+    [{"error":"ReferenceError" "message":"compile: unknown reference: x" "form":"" "parent_forms":() "invalid":true "text":"x"}]
     "let returning quoted closure then eval"
     nil
     "(-> env `set_check_external_env false)"
@@ -1900,4 +1900,32 @@
     []
     "b less than a"
     "local declaration via defvar and use of global reference"]
+   ["((fn (a b)
+        (let
+            ((not not))
+            (if (not (> a b))
+                \"a less than b\"
+                \"b less than a\")))
+        5 3)"
+    []
+    "b less than a"
+    "local declaration via let and use of global reference"]
+   ["(let
+        ((a 1)
+         (b 2)))"
+    []
+   `({"error":"SyntaxError" "message":"let: invalid structure: block" "form":"((a 1) (b 2))" "parent_forms":("((a 1) (b 2))" "((a 1) (b 2))") "invalid":true "text":""})
+   "Invalid let form structure"
+      ]
+   ["(do
+    (defvar syntax_error (new SyntaxError \"Invalid!\"))
+    (try
+        (throw syntax_error)
+        (catch SyntaxError (e)
+           (if (== e.message \"Invalid!\")
+               true
+               false))))"
+    []
+    true
+    "Throwing previously constructed Error instance"]
 ])

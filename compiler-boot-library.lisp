@@ -1410,4 +1410,103 @@
          `usage: ["compiled_souce:array"]
          `tags: ["compilation" "compile" "eval" "pre-compilation"] })
      
+(defun form_structure (quoted_form max_depth)
+      (let
+          ((idx 0)
+           (acc [])
+           (max_depth (or max_depth MAX_SAFE_INTEGER))
+           (structure quoted_form)
+           (follow_tree (fn (elems acc _depth)
+                            (cond
+                                (and (or (is_array? elems)
+                                         (is_object? elems))
+                                     (>= _depth max_depth))
+                                (if (is_array? elems)
+                                    `array
+                                    `object)
+                                (is_array? elems)
+                                (map (fn (elem idx)
+                                                   (follow_tree elem [] (+ _depth 1)))
+                                               elems)
+                                
+                                (is_object? elems)
+                                (do 
+                                  (for_each (`pset (pairs elems))
+                                        (follow_tree pset.1 [] (+ _depth 1))))
+                                   
+                                else ;; not container, simple values record the final path in our acculumlator
+                                (cond
+                                   (and (is_string? elems)
+                                        (starts_with? "=:" elems))
+                                   `symbol
+                                   (is_number? elems)
+                                   `number
+                                   (is_string? elems)
+                                   `string
+                                   (or (== elems true)
+                                       (== elems false))
+                                   `boolean
+                                   else
+                                   elems)))))
+        (follow_tree structure [] 0))
+    {
+     `description: (+ "Given a form and an optional max_depth positive number, " 
+                      "traverses the passed JSON form and produces a nested array structure that contains"
+                      "the contents of the form classified as either a \"symbol\", \"number\", \"string\", \"boolean\", \"array\", \"object\", or the elem itself. "
+                      "The returned structure will mirror the passed structure in form, except with the leaf contents "
+                      "being replaced with generalized categorizations.")
+     `tags: ["validation" "compilation" "structure"]
+     `usage: ["quoted_form:*" "max_depth:?number"]
+     })
 
+
+
+(defun validate_form_structure (validation_rules quoted_form)
+    (let
+        ((results {
+                  `valid: []
+                  `invalid: []
+                  `rule_count: (length validation_rules)
+                  `all_passed: false
+                   })
+         (`all_valid nil)
+         (target nil))
+        (for_each (`rule (or validation_rules []))
+          (do
+           (when (and (is_array? rule)
+                     (> rule.length 1)
+                     (is_array? rule.0)
+                     (is_array? rule.1))
+              (= all_valid true)
+              (= target (resolve_path rule.0 quoted_form))
+              (for_each (`validation rule.1)
+                  (when (not (validation target))
+                      (= all_valid false)
+                      (break)))
+              (if all_valid
+                  (push results.valid
+                        (or rule.2 rule.0))
+                  (push results.invalid
+                        (or rule.2 rule.0))))))
+      (set_prop results
+                `all_passed
+                (== (length results.valid) results.rule_count))
+      results)
+  {
+    `description: (+ "Given a validation rule structure and a quoted form to analyze returns an object with "
+                     "two keys, valid and invalid, which are arrays containing the outcome of the rule "
+                     "evaluation, a rule_count key containing the total rules passed, and an all_passed key"
+                     "which will be set to true if all rules passed, otherwise it will fail."
+                     "If the rule evaluates successfully, valid is populated with the rule path, " 
+                     "otherwise the rule path is placed in the invalid array.<br><br>"
+                     "Rule structure is as follows:<br><code>"
+                     "[ [path [validation validation ...] \"rule_name\"] [path [validation ...] \"rule_name\"] ]<br>"
+                     "</code>"
+                     "where path is an array with the index path and "
+                     "validation is a single argument lambda (fn (v) v) that must either " 
+                     "return true or false. If true, the validation is considered correct, " 
+                     "false for incorrect.  The result of the rule application will be put in the valid array, " 
+                     "otherwise the result will be put in invalid.")
+    `tags: ["validation" "rules" "form" "structure"]
+    `usage: ["validation_rules:array" "quoted_form:*"]
+      })

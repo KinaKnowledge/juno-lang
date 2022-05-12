@@ -1,3 +1,4 @@
+
 ;; DLisp to Javascript Compiler
 ;; (c) 2022 Kina
 
@@ -654,8 +655,9 @@
        (`has_lisp_globals false)
        (`root_ctx   (new_ctx (or opts.ctx)))
        (`lisp_global_ctx_handle Environment.context)
-       (`tokenize_object (fn (obj ctx)
+       (`tokenize_object (fn (obj ctx _path)
                              (do
+                              (= _path (or _path []))
                               ;(log "tokenize_object: " (keys obj) (as_lisp obj))
                               (if  (== (JSON.stringify obj) "{}")
                                    (do 
@@ -668,27 +670,29 @@
                                         ;{`type: `value `val:(tokenize pset.1) `ref: (is_reference? pset.1) `name: (desym pset.1) } ])))) )
        
        
-       (`tokenize_quote (fn (args)
+       (`tokenize_quote (fn (args _path)
                             (do
                                         ;(log "tokenize_quote->" args)
                                         ;(console.log "tokenize_quote->" args)
                              (cond
                                (== args.0 (quote "=:quote"))
-                               {`type: `arr `__token__:true `source: (as_lisp args) `val: (conj [ { `type: `special `val: (quote "=:quote") `ref: true `name: "quote" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil  }
+                               {`type: `arr `__token__:true `source: (as_lisp args) `val: (conj [ { `type: `special `val: (quote "=:quote") `ref: true `name: "quote" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil  `path: _path}
                                (== args.0 (quote "=:quotem"))
                                {`type: `arr `__token__:true `source: (as_lisp args) 
-                               `val: (conj [ { `type: `special `val: (quote "=:quotem") `ref: true `name: "quotem" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil  }
+                               `val: (conj [ { `type: `special `val: (quote "=:quotem") `ref: true `name: "quotem" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }
                                else
                                {`type: `arr `__token__:true `source: (as_lisp args) 
-                               `val: (conj [ { `type: `special `val: (quote "=:quotel") `ref: true `name: "quotel" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil  }))))
+                               `val: (conj [ { `type: `special `val: (quote "=:quotel") `ref: true `name: "quotel" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }))))
        ;; pass 1: build up a structure containing categorizations of the code to be compiled.
        
-       (`tokenize   (fn (args ctx)
+       (`tokenize   (fn (args ctx _path)
                         (let
                             ((`argtype nil)
                              (`rval nil)
                              (`ctx ctx)
+                             (`_path (or _path []))
                              (`qval nil)
+                             (`idx -1)
                              (`argdetails nil)
                              (`argvalue nil)
                                         ;(`tstate (or tstate { `in_quotem: false } ))
@@ -703,14 +707,14 @@
                             (or (is_string? args)
                                 (is_number? args)
                                 (or (== args true) (== args false)))
-                            (first (tokenize [ args ] ctx))
+                            (first (tokenize [ args ] ctx _path))
                             (and (is_array? args)
                                  (or (== args.0 (quote "=:quotem"))
                                      (== args.0 (quote "=:quote"))
                                      (== args.0 (quote "=:quotel"))))
                             (do
                                         ;(log "tokenize -> " args)
-                             (= rval (tokenize_quote args))
+                             (= rval (tokenize_quote args _path))
                              ;(console.log "tokenize: A: returning quote/m:" rval)
                              rval)
                             (and (is_array? args)
@@ -718,10 +722,10 @@
                                  (== args.0 (quote "=:progn")))
                             (do 
                                 (= rval (compile_toplevel args ctx))
-                                (tokenize rval ctx))
+                                (tokenize rval ctx _path))
                             (and (not (is_array? args))
                                  (is_object? args))
-                            (first (tokenize [args] ctx))
+                            (first (tokenize [args] ctx (+ _path 0)))
                             else
                             (do
                              (when (or (== args.0 (quote "=:fn"))
@@ -734,6 +738,7 @@
                              ;(log "tokenize:<-" (sub_type args) args)
                              (for_each (`arg args)
                               (do
+                               (inc idx)
                                (= argdetails (find_in_context ctx arg))
                                
                                ;(log "tokenize: argdetails: " (clone argdetails))
@@ -745,33 +750,33 @@
                                         ;(console.log "tokenize->: " arg)
                                 (cond
                                   (== (sub_type arg) "array")
-                                  {`type: `arr `__token__:true `source: (as_lisp arg) `val: (tokenize arg ctx) `ref: is_ref `name: nil  }
+                                  {`type: `arr `__token__:true `source: (as_lisp arg) `val: (tokenize arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx) }
                                   (== argtype "Function")
-                                  {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg)}
+                                  {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
                                   (== argtype "AsyncFunction")
-                                  {`type: `asf `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg)}
+                                  {`type: `asf `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
                                   (== argtype "array")
-                                  {`type: `array `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg)}
+                                  {`type: `array `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
                                   (== argtype "Number")
-                                  {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym_ref arg)}
+                                  {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym_ref arg)`path: (+ _path idx)}
                                   (and (== argtype "String") is_ref)
-                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local }
+                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx) }
                                   (== argtype "String")
-                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global}
+                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}
                                   (is_object? arg)
                                   (do 
-                                   {`type: `objlit `__token__:true `val: (tokenize_object arg ctx) `ref: is_ref `name: nil})
+                                   {`type: `objlit `__token__:true `val: (tokenize_object arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx)})
                                   (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
-                                  {`type: `null `__token__:true `val: null `ref: true `name: "null"}
+                                  {`type: `null `__token__:true `val: null `ref: true `name: "null" `path: (+ _path idx)}
                                   (and (== argtype "unbound") is_ref (eq nil argvalue))
-                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (clean_quoted_reference (desym_ref arg))}
+                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (clean_quoted_reference (desym_ref arg)) `path: (+ _path idx)}
                                   (and (== argtype "unbound") is_ref)
-                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (clean_quoted_reference (sanitize_js_ref_name (desym_ref arg)))}
+                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (clean_quoted_reference (sanitize_js_ref_name (desym_ref arg))) `path: (+ _path idx)}
                                   
                                         ;(== argtype "Boolean")
                                         ;{`type: `bool `__token__:true `val: argvalue `ref: false `name: arg}
                                   else
-                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local}))))))))
+                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx)}))))))))
        ;; checks to see if the first argument to the passed array is 
        ;; a compile time function, as registered in the environment's definitions 
        ;; structure 
@@ -794,6 +799,8 @@
                       (catch Error (`e)
                         (do
                          ;(console.error "precompilation error: " e)
+                         (set_prop e
+                                   `handled true)
                          (push errors
                                {  `error: e.name
                                   `message: e.message
@@ -1612,7 +1619,7 @@
                               else
                               name)))
                                  
-       (`compile_let (fn (tokens ctx)
+        (`compile_let (fn (tokens ctx)
                          (let
                              ((`acc [])
                               (`ctx (new_ctx ctx))
@@ -1623,6 +1630,7 @@
                               (`declarations_handled false)
                               (`assignment_value nil)
                               (`block_declarations {})
+                              (`my_tokens tokens)
                               (`assignment_type nil)
                               (`stmt nil)
                               (`def_idx nil)
@@ -1631,13 +1639,39 @@
                               (`need_sub_block false)
                               (`assignments {})                     
                               (`reference_name nil)
+                              (`shadowed_globals {})
                               (`alloc_set nil)
                               (`sub_block_count 0)
                               (`ctx_details nil)
+                              (`structure_validation_rules [ [[1 `val] (list is_array?) "allocation section"]
+                                                             [[2] (list (fn (v) (not (== v undefined)))) "block"]])
+                              
+                              (`validation_results nil)
                               (`allocations tokens.1.val)
                               (`block (-> tokens `slice 2))
-                              
+                              (`syntax_error nil)
                               (`idx -1))
+                           ;; validate the let structure if we have the functionality
+                           
+                           
+                               (if_compile_time_defined `validate_form_structure
+                                  (do
+                                    (= validation_results (validate_form_structure structure_validation_rules tokens))
+                                    (when (not validation_results.all_passed)
+                                       (for_each (`problem (or validation_results.invalid []))
+                                          (push errors  {     `error: "SyntaxError"
+                                                              `message: (+ "let: invalid structure: " problem)
+                                                              `form: ctx.source
+                                                              `parent_forms: (get_source_chain ctx)
+                                                              `invalid: true
+                                                              `text: ""
+                                                           }))
+                                       (= syntax_error (new SyntaxError "invalid syntax"))
+                                       (set_prop syntax_error
+                                            `handled true)
+                                       ;(console.error "ERROR: " syntax_error)
+                                       (throw syntax_error))))
+                                
                            ;(clog "->: " (prop tokens.1 `val))
                            (set_prop ctx
                                      `return_last_value
@@ -1665,7 +1699,7 @@
                            ;; form for the symbol name in enclosing scope, because any operations that are
                            ;; performed as part of the symbol value assignment are actually references to
                            ;; the previously allocated closure symbol (CS).  The local AS symbol will be assigned 
-                           ;; the computer value of the assignment form and should shadow the CS.
+                           ;; the computed value of the assignment form and should shadow the CS.
                             
                            ;; However, in JS scope rules the right hand side is referencing AS 
                            ;; symbol, not the CS bound symbol, and so a Reference Error will occur.  Therefore
@@ -1699,7 +1733,7 @@
                                   
                                   (= ctx_details (get_declaration_details ctx reference_name))
                                   (when ctx_details
-                                        ;(clog "declaration details for: " reference_name (clone ctx_details))
+                                        ;(console.log "declaration details for: " reference_name (clone ctx_details))
                                         ;; already declared..
                                         (when (and (not ctx_details.is_argument)
                                                    (> ctx_details.levels_up 1))
@@ -1709,7 +1743,13 @@
                                                         (gen_temp_name reference_name))
                                                   (set_prop redefinitions
                                                             reference_name
-                                                            [0 (gen_temp_name reference_name)]))))  
+                                                            [0 (gen_temp_name reference_name)]))
+                                              (when (and ctx_details.declared_global
+                                                         (not ctx_details.is_argument))
+                                                  (set_prop shadowed_globals
+                                                            alloc_set.0.name
+                                                            true))))
+                                                   
                                               
                                             
                                               
@@ -1738,7 +1778,7 @@
                                     
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
                                     (= ctx_details (get_declaration_details ctx reference_name))
-                                    ;(clog "compiling:" reference_name " ctx_details:" ctx_details)
+                                    (console.log "compiling:" reference_name " ctx_details:" ctx_details)
                                     
                                     (cond
                                       (is_array? alloc_set.1.val)
@@ -1752,6 +1792,15 @@
                                        (set_prop ctx 
                                                   `in_assignment
                                                   false))
+                                      
+                                      ;; local shadow of a globally declared variable
+                                      (and (is_string? alloc_set.1.name)
+                                           (prop Environment.context.scope alloc_set.1.name)
+                                           (not ctx_details.is_argument)
+                                           (prop shadowed_globals alloc_set.0.name))
+                                                  
+                                      (do
+                                          (= assignment_value [{`ctype: ctx_details.value } "await" " " "Environment.get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
                                       else
                                       (do 
                                        ;(clog "compiling simple assignment value for " reference_name  ": " alloc_set.1)
@@ -2751,9 +2800,16 @@
                            (let
                                ((`acc [])
                                 (`error_message nil)
+                                (`mode 1)
                                 (`error_instance nil))
-                             ;(log "compile_throw: tokens:" tokens)
+                             (log "compile_throw: tokens:" tokens)
                              (cond
+                               (and (is_array? tokens)
+                                    (== tokens.length 2)
+                                    tokens.1.ref)
+                               (do 
+                                   (= mode 0)
+                                   (= error_instance (compile tokens.1 ctx)))
                                (and (is_array? tokens)
                                     (== tokens.length 3))
                                (do
@@ -2766,8 +2822,13 @@
                                 (= error_instance "Error"))
                                else
                                (throw SyntaxError "Invalid Throw Syntax"))
-                             (for_each (`t [ "throw" " " "new" " " error_instance "(" error_message ")" ";"])
-                                       (push acc t))
+                           
+                             (if (== mode 0)
+                                 (for_each (`t [ "throw" " " error_instance ";" ])
+                                    (push acc t))
+                                 (for_each (`t [ "throw" " " "new" " " error_instance "(" error_message ")" ";"])
+                                           (push acc t)))
+                                       
                              ;(log "compile_throw: <-" (join "" (flatten acc)))
                              acc)))
        
@@ -4561,8 +4622,9 @@
                                                        tokens)
                                                   tokens.val))
                               })
-                        (push errors
-                           (clone is_error))))))))
+                        (if (not e.handled)
+                            (push errors
+                               (clone is_error)))))))))
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
@@ -4716,6 +4778,8 @@
               else
               (do
                   ;; we have tokenized and processed the input tree, now compile...
+                  (if (> DEBUG_LEVEL 3)
+                      (main_log "input tokens: " (clone final_token_assembly)))
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))
@@ -4763,19 +4827,15 @@
            (if is_error
                (do 
                 ;(error_log "compiler: is an error: " is_error)
-                is_error)
+                [ { `ctype: "FAIL" }  errors])
                (if (is_object? (first assembly))
                    [(+ { `has_lisp_globals: has_lisp_globals }
                        (take assembly))
                    (assemble_output assembly)]
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
     ;(main_log "<-" (clone output))
-    ;(main_log "referenced global symbols:" (clone referenced_global_symbols))
+    ;(when (> errors.length 0)
+    ;  (main_log "ERRORS:" (clone errors)))
     (when opts.error_report
           (opts.error_report errors))
     output))))
-
-
-
-
-
