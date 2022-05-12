@@ -5,9 +5,31 @@
 
 
 
-;; in the console
+;; in the console:
 
-;; var { get_next_environment_id, check_true, get_outside_global, subtype,lisp_writer, clone } = await import("/lisp_writer.js?id=942024")
+;; var { get_next_environment_id, check_true, get_outside_global, subtype,lisp_writer, clone } = await import("/lisp_writer.js?id=94534")
+
+;; To load the previously compiled compiler and environment (in the console):
+
+;; var { get_next_environment_id, check_true, get_outside_global, subtype,lisp_writer, clone } = await import("/lisp_writer.js?id=94534")
+;; globalThis.subtype=subtype
+;; globalThis.check_true=check_true
+
+;; var { init_dlisp } = await import("./environment.js");
+;; var { init_compiler } = await import("./compiler.js");
+;; await init_dlisp()
+;; var env=await dlisp_env()
+;; var { environment_boot } = await import("./environment_boot.js")
+;; await environment_boot(env);
+;; await init_compiler(env)
+;; var cca = await env.get_global("compiler")
+;; await env.set_compiler(cca)
+;; var env_alpha = env  
+
+;; Next compile the below and evaluate to open a tab
+
+; (tab ["Alpha A" (dlisp_tab env_alpha) ] true)
+
 
 
 
@@ -632,6 +654,12 @@
             tree)))
 
 
+;; stub macro for boot strappin 
+
+(defmacro `if_compile_time_defined (a b)
+    false)
+
+
 
 ;; Global Javascript Symbols - the compiler wont by default look for these globals
 ;; in the Environmentf
@@ -666,7 +694,7 @@
                               `performance `prompt `propertyIsEnumerable `queueMicrotask
                               `removeEventListener `self `sessionStorage `setInterval
                               `setTimeout `structuredClone `toLocaleString `toString 
-                              `undefined `unescape `valueOf `window])
+                              `undefined `unescape `valueOf `window `check_true])
 
 
 
@@ -760,6 +788,8 @@
                    ;; standard library
                        `scope:{
                            `MAX_SAFE_INTEGER: 9007199254740991
+                           `DEBUG_LEVEL: 0
+                           `check_true: check_true
                            `Set: Set
                            `null: null
                            `nil: null
@@ -1411,6 +1441,8 @@
   ))
 
 
+
+
 ;(defun `get_compiler_tests ()
  ;   (defglobal `compiler_tests
   ;      (get_attachment (unpack (first (retrieve { `no_meta: true `index_0: `Boot.Compiler-Tests }))))))
@@ -1456,12 +1488,11 @@
        true)))
 
 
-
+(defglobal DEBUG_LEVEL 0)
+(defglobal check_true check_true)
 ;; now make the environment 
-;(quote "\"Hello\" 'world'")
-;(reader (as_lisp (reader (as_lisp "\"Hello\" 'world'"))))
-;(quote "\"Hello\" \n world")
-(defun `init_bootstrap (run_tests? no_tabs?)
+
+(defun `init_bootstrap (run_tests? no_tabs? )
   (do
     (-> JEVAL `evaluate "(eval (compile_lisp (load_compiler_code)))")
     (import `Boot.Compiler-Tests)
@@ -1483,7 +1514,8 @@
           (defvar `test_results (run_tests { `table: true `env: env }))
           (tab ["Compiler Tests - Start Env"
                 test_results.view]
-               true))
+               true)
+          (sleep 1))
     (log "starting bootstrap environment")
     (sleep 0.1)  
     (-> env `evaluate (bootstrap_a))
@@ -1508,8 +1540,11 @@
        
         (tab ["Alpha 1" cmp_editor.view ] true)
         (sleep 1)
-        (-> cmp_editor `set (load_compiler_code))
+        (-> cmp_editor `set (+ "(progn\n " (load_compiler_code) "\n  (-> Environment `set_compiler compiler))\n" ))
         (sleep 0.1)
+        (-> cmp_editor `compile)
+        (sleep 1)
+        ;; now recompile with the rebuilt compiler
         (-> cmp_editor `compile)
         (sleep 1)
         (defvar `cmp_editor2 (dlisp_tab env_alpha))
@@ -1517,7 +1552,7 @@
         (sleep 1)
         (-> cmp_editor2 `set "(-> Environment `set_compiler compiler)")
         (sleep 0.1)
-        (-> cmp_editor2 `compile)
+        ;(-> cmp_editor2 `compile)
         (sleep 1)
         (tab ["Alpha 3" (dlisp_tab env_alpha) ] true)
         (sleep 1)
@@ -1528,3 +1563,4 @@
         )))
     
 (log "Run (init_bootstrap true) to initialize and build compiler environment (true will run the tests).")
+
