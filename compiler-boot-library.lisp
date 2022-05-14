@@ -8,6 +8,8 @@
 ;; add_escape_encoding is used for quoting purposes and providing escaped
 ;; double quotes to quoted lisp in compiled Javascript
 
+
+
 (defglobal `add_escape_encoding 
   (fn (text)
     (if (is_string? text)
@@ -28,6 +30,9 @@
 (defglobal get_outside_global get_outside_global)      
 
 (defglobal true? check_true)
+
+   
+         
 
 (defglobal if_compile_time_defined 
     (fn (quoted_symbol exists_form not_exists_form)
@@ -62,8 +67,6 @@
      
      
 
-
-
  
 ;; This function will be executed at the time of the compile of code.
 ;; if called, it will be called with the arguments in the place of the
@@ -92,7 +95,7 @@
                                        name)
                             `macro: true
                             `fn_args: (as_lisp macro_args)
-                            `fn_body: (add_escape_encoding (as_lisp macro_body))
+                            ;`fn_body: (as_lisp macro_body)
                           }))
                          
          ;; next run through the steps of registering a macro
@@ -174,7 +177,7 @@
                          {
                             `name: (unquotify name)
                             `fn_args: (as_lisp fn_args)
-                            `fn_body: (add_escape_encoding (as_lisp fn_body))
+                            ;`fn_body: (add_escape_encoding (as_lisp fn_body))
                           }
                          (if meta 
                              meta
@@ -236,6 +239,7 @@
          (`comps [])
          (`mode 0)
          (`name_acc []))
+        (declare (include length))
         (for_each (`c chars)
           (do
             (cond
@@ -421,7 +425,7 @@
                                            name)
                                 `macro: true
                                 `fn_args: (as_lisp macro_args)
-                                `fn_body: (add_escape_encoding (as_lisp macro_body))
+                                ;`fn_body: (as_lisp macro_body)
                             }
                             (if macro_meta
                                 macro_meta
@@ -470,7 +474,7 @@
                          {
                             `name: (unquotify name)
                             `fn_args: (as_lisp fn_args)
-                            `fn_body: (add_escape_encoding (as_lisp fn_body))
+                            ;`fn_body: (as_lisp fn_body)
                           }
                          (if fn_meta 
                              (do 
@@ -1510,3 +1514,68 @@
     `tags: ["validation" "rules" "form" "structure"]
     `usage: ["validation_rules:array" "quoted_form:*"]
       })
+
+
+(defglobal *compiler_syntax_rules* 
+     { 
+      `compile_let:  [ [[0 1 `val] (list is_array?) "let allocation section"]
+                       [[0 2] (list (fn (v) (not (== v undefined)))) "let missing block"]]
+      `compile_cond: [ [[0] (list (fn (v) (== (% (length (rest v)) 2) 0))) "cond: odd number of arguments" ]]
+      })
+
+(defun compiler_source_chain (cpath tree sources)
+      (if (and (is_array? cpath)
+               tree)
+          (let
+              ((sources (or sources []))
+               (source nil))
+            (= cpath (chop cpath))
+            (= source (as_lisp (resolve_path cpath tree)))
+            (if (> source.length 80)
+                (= source (+ (-> source `substr 0 80) "...")))
+            ;(console.log "compiler_source_chain: cpath: " cpath "source: " source "tree: " tree sources)
+            (when (not (blank? source))
+              (push sources source))
+            (if (and (> cpath.length 0)
+                     (< sources.length 2))
+                (compiler_source_chain cpath tree sources))
+            sources)))
+            
+
+(defun compiler_syntax_validation (validator_key tokens errors ctx tree)
+  (let
+      ((validation_results nil)
+       (syntax_error nil)
+       (cpath nil)
+       (rules (prop *compiler_syntax_rules* validator_key)))
+    (if rules
+        (if_compile_time_defined `validate_form_structure
+          (do
+            ;(console.log "compiler_syntax_validation: " validator_key " -> tokens: " tokens "tree: " tree)
+            ;(debug)
+            (= validation_results (validate_form_structure rules [ tokens ]))
+            (= cpath (cond
+                         (is_array? tokens)
+                         (chop tokens.0.path)
+                         (is_object? tokens)
+                         tokens.path))
+            (console.log "compiler_syntax_validation: <- " validation_results)
+            (when (not validation_results.all_passed)
+               (for_each (`problem (or validation_results.invalid []))
+                  (push errors  {     `error: "SyntaxError"
+                                      `message:  problem
+                                      `form: (if (> (length cpath) 0)
+                                                 (as_lisp (resolve_path cpath tree))
+                                                 "")
+                                      `parent_forms: (compiler_source_chain cpath tree)
+                                      `invalid: true
+                                   }))
+               (= syntax_error (new SyntaxError "invalid syntax"))
+               (set_prop syntax_error
+                    `handled true)
+               ;(console.error "ERROR: " syntax_error)
+               (throw syntax_error)
+               )))
+        (console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree ))
+    validation_results))
+

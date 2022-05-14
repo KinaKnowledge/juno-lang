@@ -73,15 +73,15 @@
     true
     "function definition with single statement"
     ]
-    ["(quotel \"\\\"Hello\\\" 'world'\")"
+    ["(quotel \"\\"Hello\\" 'world'\")"
      []
      "\"Hello\" 'world'"
      "quote literal: single quote and double quotes"]
-    ["(quote \"\\\"Hello\\\" 'world'\")"
+    ["(quote \"\\"Hello\\" 'world'\")"
      []
      "\"Hello\" 'world'"
      "quote: single quote and double quotes"]
-    ["(quotem \"\\\"Hello\\\" 'world'\")"
+    ["(quotem \"\\"Hello\\" 'world'\")"
      []
      "\"Hello\" 'world'"
      "quote macro: single quote and double quotes"]
@@ -89,9 +89,10 @@
      []
      "Hello \n world"
      "quoted newline handling"]
-    ["(quote \"Hello \r world\")"
+    ["(quote \"Hello \\r world\")"
      []
-     "Hello \r world"
+     "Hello 
+ world"
      "quoted carriage-return handling"]
     [ "(fn ()
             (+ 1 2))"
@@ -426,7 +427,7 @@
     `[]
     "let with simple assigment - array literal"]
     
-    [ "(fn () (let ((log console.log)) (log \"hello\") (log (sub_type log)) (typeof log))"
+    [ "(fn () (let ((log console.log)) (log \"hello\") (log (sub_type log)) (typeof log)))"
     []
     `function
     "let type detection on assignment"
@@ -1063,7 +1064,7 @@
             (fn (a1 `& r)
                     (do
                         `[,@a1 ,@r])))
-          (sp \"A1\" \"B1\" \"B2\" \"B3\")"
+          (sp \"A1\" \"B1\" \"B2\" \"B3\"))"
      []
      `["A1" "B1" "B2" "B3"]
      "Quoted splice of array with multiple elements into list"
@@ -1914,7 +1915,7 @@
         ((a 1)
          (b 2)))"
     []
-   `({"error":"SyntaxError" "message":"let: invalid structure: block" "form":"((a 1) (b 2))" "parent_forms":("((a 1) (b 2))" "((a 1) (b 2))") "invalid":true "text":""})
+   `({"error":"SyntaxError" "message":"let missing block" "form":"" "parent_forms":("(let ((a 1) (b 2)))") "invalid":true})
    "Invalid let form structure"
       ]
    ["(do

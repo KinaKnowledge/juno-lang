@@ -110,7 +110,7 @@ export async function environment_boot(Environment) {
                 } else {
                       return name
                 }
-            } )(),macro:true,fn_args:await (await Environment.get_global("as_lisp"))(macro_args),fn_body:await (await Environment.get_global("add_escape_encoding"))(await (await Environment.get_global("as_lisp"))(macro_body))
+            } )(),macro:true,fn_args:await (await Environment.get_global("as_lisp"))(macro_args)
         };
         {
              return  await Environment.do_deferred_splice(await Environment.read_lisp('(defglobal ' + await Environment.as_lisp ( macro_name ) + ' (fn ' + await Environment.as_lisp ( macro_args ) + ' \"=$&!\" ' + await Environment.as_lisp ( macro_body ) + ') (quote ' + await Environment.as_lisp ( source_details ) + '))'))
@@ -150,10 +150,10 @@ export async function environment_boot(Environment) {
                  return val
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"desym\" \"macro\":true \"fn_args\":\"(val)\" \"fn_body\":\"((let ((strip (fn (v) (+ \\"\\" (as_lisp v))))) (cond (is_string? val) (strip val) (is_array? val) (for_each (\\"v\\" val) (strip v)) else val)))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"desym\" \"macro\":true \"fn_args\":\"(val)\"}')));
     await Environment.set_global("desym_ref",async function(val) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(+ \"\" (as_lisp ' + await Environment.as_lisp ( val ) + '))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"desym_ref\" \"macro\":true \"fn_args\":\"(val)\" \"fn_body\":\"((quotem (+ \\"\\" (as_lisp ,# val))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"desym_ref\" \"macro\":true \"fn_args\":\"(val)\"}')));
     await Environment.set_global("unquotify",async function(val) {
         let dval;
         dval=val;
@@ -169,10 +169,10 @@ export async function environment_boot(Environment) {
     });
     await Environment.set_global("when",async function(condition,...mbody) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(if ' + await Environment.as_lisp ( condition ) + ' (do \"=$&!\" ' + await Environment.as_lisp ( mbody ) + '))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"when\" \"macro\":true \"fn_args\":\"(condition \\"&\\" mbody)\" \"fn_body\":\"((quotem (if ,# condition (do =$,@ mbody))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"when\" \"macro\":true \"fn_args\":\"(condition \\"&\\" mbody)\"}')));
     await Environment.set_global("defexternal",async function(name,value,meta) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(let ((symname (desym \"=$&!\" ' + await Environment.as_lisp ( name ) + '))) (do (set_prop globalThis symname ' + await Environment.as_lisp ( value ) + ') (prop globalThis symname)))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defexternal\" \"macro\":true \"fn_args\":\"(name value meta)\" \"fn_body\":\"((quotem (let ((symname (desym =$,@ name))) (do (set_prop globalThis symname ,# value) (prop globalThis symname)))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defexternal\" \"macro\":true \"fn_args\":\"(name value meta)\"}')));
     await Environment.set_global("defun",async function(name,args,body,meta) {
         let fn_name;
         let fn_args;
@@ -182,7 +182,7 @@ export async function environment_boot(Environment) {
         fn_args=args;
         fn_body=body;
         source_details=await (await Environment.get_global("add"))({
-            name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args),fn_body:await (await Environment.get_global("add_escape_encoding"))(await (await Environment.get_global("as_lisp"))(fn_body))
+            name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args)
         },await (async function() {
              if (check_true (meta)){
                   return meta
@@ -191,7 +191,7 @@ export async function environment_boot(Environment) {
             } 
         } )());
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(do (defglobal ' + await Environment.as_lisp ( fn_name ) + ' (fn ' + await Environment.as_lisp ( fn_args ) + ' ' + await Environment.as_lisp ( fn_body ) + ') (quote ' + await Environment.as_lisp ( source_details ) + ')))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name args body meta)\" \"fn_body\":\"((let ((fn_name name) (fn_args args) (fn_body body) (source_details (+ {\\"name\\":(unquotify name) \\"fn_args\\":(as_lisp fn_args) \\"fn_body\\":(add_escape_encoding (as_lisp fn_body))} (if meta meta {})))) (quotem (do (defglobal ,# fn_name (fn ,# fn_args ,# fn_body) (quote ,# source_details))))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name args body meta)\"}')));
     await Environment.set_global("macroexpand",async function(quoted_form) {
         let macro_name;
         let macro_func;
@@ -209,7 +209,7 @@ export async function environment_boot(Environment) {
             } 
         })();
          return  expansion
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"macroexpand\" \"fn_args\":\"(quoted_form)\" \"fn_body\":\"(let ((macro_name (-> quoted_form.0 \\"substr\\" 2)) (macro_func (-> Environment \\"get_global\\" macro_name)) (expansion (if (is_function? macro_func) (apply macro_func (-> quoted_form \\"slice\\" 1)) quoted_form))) expansion)\" \"description\":\"Given a quoted form, will perform the macro expansion and return the expanded form.\" \"usage\":(\"quoted_form:*\") \"tags\":(\"macro\" \"expansion\" \"debug\" \"compile\" \"compilation\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"macroexpand\" \"fn_args\":\"(quoted_form)\" \"description\":\"Given a quoted form, will perform the macro expansion and return the expanded form.\" \"usage\":(\"quoted_form:*\") \"tags\":(\"macro\" \"expansion\" \"debug\" \"compile\" \"compilation\")}')));
     await Environment.set_global("macroexpand_nq",async function(form) {
         let macro_name;
         let macro_func;
@@ -237,15 +237,31 @@ export async function environment_boot(Environment) {
             } 
         })();
          return  [`=:quote`,expansion]
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"macroexpand_nq\" \"macro\":true \"fn_args\":\"(form)\" \"fn_body\":\"((let ((macro_name (-> (prop form 0) \\"substr\\" 2)) (macro_func (-> Environment \\"get_global\\" macro_name)) (expansion (if (is_function? macro_func) (apply macro_func (-> form \\"slice\\" 1)) form))) ((quote quote) expansion)))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"macroexpand_nq\" \"macro\":true \"fn_args\":\"(form)\"}')));
     await Environment.set_global("check_type",async function(thing,type_name,error_string) {
         if (check_true (error_string)){
               return await Environment.do_deferred_splice(await Environment.read_lisp('(if (not (== (sub_type ' + await Environment.as_lisp ( thing ) + ') ' + await Environment.as_lisp ( type_name ) + ')) (throw TypeError ' + await Environment.as_lisp ( error_string ) + '))'))
         } else {
               return await Environment.do_deferred_splice(await Environment.read_lisp('(if (not (== (sub_type ' + await Environment.as_lisp ( thing ) + ') ' + await Environment.as_lisp ( type_name ) + ')) (throw TypeError (+ \"invalid type: required \" ' + await Environment.as_lisp ( type_name ) + ' \" but got \" (sub_type ' + await Environment.as_lisp ( thing ) + '))))'))
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"check_type\" \"macro\":true \"fn_args\":\"(thing type_name error_string)\" \"fn_body\":\"((if error_string (quotem (if (not (== (sub_type ,# thing) ,# type_name)) (throw TypeError ,# error_string))) (quotem (if (not (== (sub_type ,# thing) ,# type_name)) (throw TypeError (+ \\"invalid type: required \\" ,# type_name \\" but got \\" (sub_type ,# thing)))))))\" \"description\":\"If the type of thing (ascertained by sub_type) are not of the type type_name, will throw a TypeError with the optional error_string as the error message.\" \"usage\":(\"thing:*\" \"type_name:string\" \"error_string:string\") \"tags\":(\"types\" \"validation\" \"type\" \"assert\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"check_type\" \"macro\":true \"fn_args\":\"(thing type_name error_string)\" \"description\":\"If the type of thing (ascertained by sub_type) are not of the type type_name, will throw a TypeError with the optional error_string as the error message.\" \"usage\":(\"thing:*\" \"type_name:string\" \"error_string:string\") \"tags\":(\"types\" \"validation\" \"type\" \"assert\")}')));
     await Environment.set_global("get_object_path",async function(refname) {
+        let length=function anonymous(obj) {
+{
+                                if(obj instanceof Array) {
+                                    return obj.length;
+                                } else if (obj instanceof Set) {
+                                    return obj.size;
+                                } else if ((obj === undefined)||(obj===null)) {
+                                    return 0;
+                                } else if (typeof obj==='object') {
+                                    return Object.keys(obj).length;
+                                } else if (typeof obj==='string') {
+                                    return obj.length;
+                                } 
+                                return 0;
+                            }
+};
         let chars;
         let comps;
         let mode;
@@ -254,6 +270,7 @@ export async function environment_boot(Environment) {
         comps=[];
         mode=0;
         name_acc=[];
+        ;
         await (async function() {
             let __for_body__20=async function(c) {
                  return  await async function(){
@@ -285,11 +302,11 @@ export async function environment_boot(Environment) {
             }return __array__21;
              
         })();
-        if (check_true ((await (await Environment.get_global("length"))(name_acc)>0))){
+        if (check_true ((await length(name_acc)>0))){
              (comps).push((name_acc).join(""))
         };
          return  comps
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_object_path\" \"fn_args\":\"(refname)\" \"fn_body\":\"(let ((\\"chars\\" (split_by \\"\\" refname)) (\\"comps\\" ()) (\\"mode\\" 0) (\\"name_acc\\" ())) (for_each (\\"c\\" chars) (do (cond (and (== c \\".\\") (== mode 0)) (do (push comps (join \\"\\" name_acc)) (= name_acc ())) (and (== mode 0) (== c \\"[\\")) (do (= mode 1) (push comps (join \\"\\" name_acc)) (= name_acc ())) (and (== mode 1) (== c \\"]\\")) (do (= mode 0) (push comps (join \\"\\" name_acc)) (= name_acc ())) else (push name_acc c)))) (if (> (length name_acc) 0) (push comps (join \\"\\" name_acc))) comps)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_object_path\" \"fn_args\":\"(refname)\"}')));
     await Environment.set_global("do_deferred_splice",async function(tree) {
         let rval;
         let idx;
@@ -366,7 +383,7 @@ export async function environment_boot(Environment) {
                  return tree
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"do_deferred_splice\" \"fn_args\":\"(tree)\" \"fn_body\":\"(let ((\\"rval\\" nil) (\\"idx\\" 0) (\\"tval\\" nil) (\\"deferred_operator\\" (join \\"\\" (\\"=\\" \\"$\\" \\"&\\" \\"!\\")))) (cond (is_array? tree) (do (= rval ()) (while (< idx tree.length) (do (= tval (prop tree idx)) (if (== tval deferred_operator) (do (inc idx) (= tval (prop tree idx)) (= rval (-> rval \\"concat\\" (do_deferred_splice tval)))) (push rval (do_deferred_splice tval))) (inc idx))) rval) (is_object? tree) (do (= rval {}) (for_each (\\"pset\\" (pairs tree)) (do (set_prop rval pset.0 (do_deferred_splice pset.1)))) rval) else tree))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"do_deferred_splice\" \"fn_args\":\"(tree)\"}')));
     await Environment.set_global("define",async function(...defs) {
         let acc;
         let symname;
@@ -394,7 +411,7 @@ export async function environment_boot(Environment) {
              
         })();
          return  acc
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"define\" \"macro\":true \"fn_args\":\"(\\"&\\" defs)\" \"fn_body\":\"((let ((acc ((quote progl))) (symname nil)) (for_each (\\"defset\\" defs) (do (push acc ((quote defvar) defset.0 defset.1)) (= symname defset.0) (push acc ((quote set_prop) (quote Environment.global_ctx.scope) (+ \\"\\" (as_lisp symname)) symname)) (when (is_object? defset.2) (push acc (((quote set_prop) (quote Environment.definitions) (+ \\"\\" (as_lisp symname) \\"\\") defset.2)))))) acc))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"define\" \"macro\":true \"fn_args\":\"(\\"&\\" defs)\"}')));
     await Environment.set_global("define_env",async function(...defs) {
         let acc;
         let symname;
@@ -422,7 +439,7 @@ export async function environment_boot(Environment) {
              
         })();
          return  acc
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"define_env\" \"macro\":true \"fn_args\":\"(\\"&\\" defs)\" \"fn_body\":\"((let ((acc ((quote progl))) (symname nil)) (for_each (\\"defset\\" defs) (do (push acc ((quote defvar) defset.0 defset.1)) (= symname defset.0) (push acc ((quote set_prop) (quote Environment.global_ctx.scope) (+ \\"\\" (as_lisp symname)) symname)) (when (is_object? defset.2) (push acc (((quote set_prop) (quote Environment.definitions) (+ \\"\\" (as_lisp symname) \\"\\") defset.2)))))) acc))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"define_env\" \"macro\":true \"fn_args\":\"(\\"&\\" defs)\"}')));
     await Environment.set_global("type",async function(x) {
          return  await async function(){
             if (check_true( (null===x))) {
@@ -435,7 +452,7 @@ export async function environment_boot(Environment) {
                  return typeof x
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"type\" \"fn_args\":\"(x)\" \"fn_body\":\"(cond (== nil x) \\"null\\" (== undefined x) \\"undefined\\" (instanceof x Array) \\"array\\" else (typeof x))\" \"usage\":(\"value:*\") \"description\":\"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.\" \"tags\":(\"types\" \"value\" \"what\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"type\" \"fn_args\":\"(x)\" \"usage\":(\"value:*\") \"description\":\"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.\" \"tags\":(\"types\" \"value\" \"what\")}')));
     await Environment.set_global("destructure_list",async function(elems) {
         let idx;
         let acc;
@@ -474,7 +491,7 @@ export async function environment_boot(Environment) {
         };
         await follow_tree(structure,[]);
          return  acc
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"destructure_list\" \"fn_args\":\"(elems)\" \"fn_body\":\"(let ((idx 0) (acc ()) (structure elems) (follow_tree (fn (elems _path_prefix) (cond (is_array? elems) (map (fn (elem idx) (follow_tree elem (+ _path_prefix idx))) elems) (is_object? elems) (for_each (\\"pset\\" (pairs elems)) (follow_tree pset.1 (+ _path_prefix pset.0))) else (push acc _path_prefix))))) (follow_tree structure ()) acc)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"destructure_list\" \"fn_args\":\"(elems)\"}')));
     await Environment.set_global("destructuring_bind",async function(bind_vars,expression,...forms) {
         let binding_vars;
         let paths;
@@ -533,7 +550,7 @@ export async function environment_boot(Environment) {
         (acc).push(allocations);
         acc=await (await Environment.get_global("conj"))(acc,forms);
          return  acc
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"destructuring_bind\" \"macro\":true \"fn_args\":\"(bind_vars expression \\"&\\" forms)\" \"fn_body\":\"((let ((binding_vars bind_vars) (paths (destructure_list binding_vars)) (bound_expression expression) (allocations ()) (acc ((quote let)))) (for_each (\\"idx\\" (range (length paths))) (do (push allocations ((resolve_path (prop paths idx) binding_vars) (cond (is_object? expression) (resolve_path (prop paths idx) expression) else (join \\".\\" (conj (expression) (prop paths idx)))))))) (push acc allocations) (= acc (conj acc forms)) acc))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"destructuring_bind\" \"macro\":true \"fn_args\":\"(bind_vars expression \\"&\\" forms)\"}')));
     await Environment.set_global("defmacro",async function(name,lambda_list,...forms) {
         let macro_name;
         let macro_args;
@@ -576,7 +593,7 @@ export async function environment_boot(Environment) {
                 } else {
                       return name
                 }
-            } )(),macro:true,fn_args:await (await Environment.get_global("as_lisp"))(macro_args),fn_body:await (await Environment.get_global("add_escape_encoding"))(await (await Environment.get_global("as_lisp"))(macro_body))
+            } )(),macro:true,fn_args:await (await Environment.get_global("as_lisp"))(macro_args)
         },await (async function() {
              if (check_true (macro_meta)){
                   return macro_meta
@@ -622,7 +639,7 @@ export async function environment_boot(Environment) {
              
         })());
         source_details=await (await Environment.get_global("add"))({
-            name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args),fn_body:await (await Environment.get_global("add_escape_encoding"))(await (await Environment.get_global("as_lisp"))(fn_body))
+            name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args)
         },await (async function() {
              if (check_true (fn_meta)){
                 if (check_true ((fn_meta && fn_meta["description"]))){
@@ -643,7 +660,7 @@ export async function environment_boot(Environment) {
         } else {
               return await Environment.do_deferred_splice(await Environment.read_lisp('(defglobal ' + await Environment.as_lisp ( fn_name ) + ' (fn ' + await Environment.as_lisp ( fn_args ) + ' ' + await Environment.as_lisp ( fn_body ) + ') (quote ' + await Environment.as_lisp ( source_details ) + '))'))
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name lambda_list body meta)\" \"fn_body\":\"((let ((fn_name name) (fn_args lambda_list) (fn_body body) (fn_meta meta) (complex_lambda_list (or_args (for_each (\\"elem\\" lambda_list) (> (length (flatten (destructure_list elem))) 0)))) (source_details (+ {\\"name\\":(unquotify name) \\"fn_args\\":(as_lisp fn_args) \\"fn_body\\":(add_escape_encoding (as_lisp fn_body))} (if fn_meta (do (if fn_meta.description (set_prop fn_meta \\"description\\" fn_meta.description)) fn_meta) {})))) (if complex_lambda_list (quotem (defglobal ,# fn_name (fn (\\"&\\" args) (destructuring_bind ,# fn_args args ,# fn_body)) (quote ,# source_details))) (quotem (defglobal ,# fn_name (fn ,# fn_args ,# fn_body) (quote ,# source_details))))))\" \"description\":(+ \"Defines a top level function in the current environment.  Given a name, lambda_list,\" \"body, and a meta data description, builds, compiles and installs the function in the\" \"environment under the provided name.  The body isn\'t an explicit progn, and must be\" \"within a block structure, such as progn, let or do.\") \"usage\":(\"name:string\" \"lambda_list:array\" \"body:array\" \"meta:object\") \"tags\":(\"function\" \"lambda\" \"define\" \"environment\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name lambda_list body meta)\" \"description\":(+ \"Defines a top level function in the current environment.  Given a name, lambda_list,\" \"body, and a meta data description, builds, compiles and installs the function in the\" \"environment under the provided name.  The body isn\'t an explicit progn, and must be\" \"within a block structure, such as progn, let or do.\") \"usage\":(\"name:string\" \"lambda_list:array\" \"body:array\" \"meta:object\") \"tags\":(\"function\" \"lambda\" \"define\" \"environment\")}')));
     await Environment.set_global("reduce",async function(...args) {
         let elem;
         let item_list;
@@ -652,17 +669,17 @@ export async function environment_boot(Environment) {
         item_list=(args && args["0"] && args["0"]["1"]);
         form=(args && args["1"]);
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(let ((__collector ()) (__result nil) (__action (fn (\"=$&!\" ' + await Environment.as_lisp ( elem ) + ') ' + await Environment.as_lisp ( form ) + '))) (declare (function __action)) (for_each (__item ' + await Environment.as_lisp ( item_list ) + ') (do (= __result (__action __item)) (if __result (push __collector __result)))) __collector)'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"reduce\" \"macro\":true \"fn_args\":\"((elem item_list) form)\" \"fn_body\":\"((quotem (let ((__collector ()) (__result nil) (__action (fn (=$,@ elem) ,# form))) (declare (function __action)) (for_each (__item ,# item_list) (do (= __result (__action __item)) (if __result (push __collector __result)))) __collector)))\" \"description\":\"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.\" \"usage\":((\"binding-elem:symbol\" \"values:list\") (\"form:list\")) \"tags\":(\"filter\" \"remove\" \"select\" \"list\" \"array\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"reduce\" \"macro\":true \"fn_args\":\"((elem item_list) form)\" \"description\":\"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.\" \"usage\":((\"binding-elem:symbol\" \"values:list\") (\"form:list\")) \"tags\":(\"filter\" \"remove\" \"select\" \"list\" \"array\")}')));
     await Environment.set_global("is_nil?",async function(value) {
          return  (null===value)
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_nil?\" \"fn_args\":\"(\\"value\\")\" \"fn_body\":\"(== nil value)\" \"description\":\"for the given value x, returns true if x is exactly equal to nil.\" \"usage\":(\"arg:value\") \"tags\":(\"type\" \"condition\" \"subtype\" \"value\" \"what\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_nil?\" \"fn_args\":\"(\\"value\\")\" \"description\":\"for the given value x, returns true if x is exactly equal to nil.\" \"usage\":(\"arg:value\") \"tags\":(\"type\" \"condition\" \"subtype\" \"value\" \"what\")}')));
     await Environment.set_global("is_regex?",async function(x) {
          return  (await (await Environment.get_global("sub_type"))(x)==="RegExp")
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_regex?\" \"fn_args\":\"(x)\" \"fn_body\":\"(== (sub_type x) \\"RegExp\\")\" \"description\":\"for the given value x, returns true if x is a Javascript regex object\" \"usage\":(\"arg:value\") \"tags\":(\"type\" \"condition\" \"subtype\" \"value\" \"what\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_regex?\" \"fn_args\":\"(x)\" \"description\":\"for the given value x, returns true if x is a Javascript regex object\" \"usage\":(\"arg:value\") \"tags\":(\"type\" \"condition\" \"subtype\" \"value\" \"what\")}')));
     await Environment.set_global("bind_function",(await Environment.get_global("bind")));
     await Environment.set_global("is_reference?",async function(val) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(and (is_string? ' + await Environment.as_lisp ( val ) + ') (> (length ' + await Environment.as_lisp ( val ) + ') 2) (starts_with? (quote =:) ' + await Environment.as_lisp ( val ) + '))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"is_reference?\" \"macro\":true \"fn_args\":\"(val)\" \"fn_body\":\"((quotem (and (is_string? ,# val) (> (length ,# val) 2) (starts_with? (quote =:) ,# val))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"is_reference?\" \"macro\":true \"fn_args\":\"(val)\"}')));
     await Environment.set_global("scan_str",async function(regex,search_string) {
         let result;
         let last_result;
@@ -723,7 +740,7 @@ export async function environment_boot(Environment) {
         } else throw new Error(new ReferenceError(("scan_str: invalid RegExp provided: "+regex)));
         ;
          return  totals
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"scan_str\" \"fn_args\":\"(regex search_string)\" \"fn_body\":\"(let ((\\"result\\" nil) (\\"last_result\\" nil) (\\"totals\\" ()) (\\"strs\\" (+ \\"\\" search_string))) (if (is_regex? regex) (do (= regex.lastIndex 0) (while (and (do (= result (-> regex \\"exec\\" strs)) true) result (if last_result (not (== result.0 last_result.0)) true)) (do (= last_result result) (push totals (to_object (map (fn (v) (v (prop result v))) (keys result))))))) (throw (new ReferenceError (+ \\"scan_str: invalid RegExp provided: \\" regex)))) totals)\" \"description\":(+ \"Using a provided regex and a search string, performs a regex \" \"exec using the provided regex argument on the string argument. \" \"Returns an array of results or an empty array, with matched \" \"text, index, and any capture groups.\") \"usage\":(\"regex:RegExp\" \"text:string\") \"tags\":(\"regex\" \"string\" \"match\" \"exec\" \"array\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"scan_str\" \"fn_args\":\"(regex search_string)\" \"description\":(+ \"Using a provided regex and a search string, performs a regex \" \"exec using the provided regex argument on the string argument. \" \"Returns an array of results or an empty array, with matched \" \"text, index, and any capture groups.\") \"usage\":(\"regex:RegExp\" \"text:string\") \"tags\":(\"regex\" \"string\" \"match\" \"exec\" \"array\")}')));
     await Environment.set_global("remove_prop",async function(obj,key) {
         if (check_true (await (await Environment.get_global("not"))((undefined===await (async function(){
             let __targ__64=obj;
@@ -743,7 +760,7 @@ export async function environment_boot(Environment) {
                  return  val
             }
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"remove_prop\" \"fn_args\":\"(obj key)\" \"fn_body\":\"(when (not (== undefined (prop obj key))) (let ((\\"val\\" (prop obj key))) (delete_prop obj key) val))\" \"usage\":(\"obj:object\" \"key:*\") \"description\":\"Similar to delete, but returns the removed value if the key exists, otherwise returned undefined.\" \"tags\":(\"object\" \"key\" \"value\" \"mutate\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"remove_prop\" \"fn_args\":\"(obj key)\" \"usage\":(\"obj:object\" \"key:*\") \"description\":\"Similar to delete, but returns the removed value if the key exists, otherwise returned undefined.\" \"tags\":(\"object\" \"key\" \"value\" \"mutate\")}')));
     await Environment.set_global("object_methods",async function(obj) {
         let properties;
         let current_obj;
@@ -777,7 +794,7 @@ export async function environment_boot(Environment) {
                 })
             } 
         })()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"object_methods\" \"fn_args\":\"(obj)\" \"fn_body\":\"(let ((\\"properties\\" (new Set)) (\\"current_obj\\" obj)) (while current_obj (do (map (fn (item) (-> properties \\"add\\" item)) (Object.getOwnPropertyNames current_obj)) (= current_obj (Object.getPrototypeOf current_obj)))) (-> (Array.from (-> properties \\"keys\\")) \\"filter\\" (fn (item) (is_function? item))))\" \"description\":\"Given a instantiated object, get all methods (functions) that the object and it\'s prototype chain contains.\" \"usage\":(\"obj:object\") \"tags\":(\"object\" \"methods\" \"functions\" \"introspection\" \"keys\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"object_methods\" \"fn_args\":\"(obj)\" \"description\":\"Given a instantiated object, get all methods (functions) that the object and it\'s prototype chain contains.\" \"usage\":(\"obj:object\") \"tags\":(\"object\" \"methods\" \"functions\" \"introspection\" \"keys\")}')));
     await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
         let comps;
         let find_in_ctx;
@@ -840,7 +857,7 @@ export async function environment_boot(Environment) {
                 })()))).join("")
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"expand_dot_accessor\" \"fn_args\":\"(val ctx)\" \"fn_body\":\"(let ((\\"comps\\" (split_by \\".\\" val)) (\\"find_in_ctx\\" (fn (the_ctx) (cond (prop the_ctx.scope reference) (prop the_ctx.scope reference) the_ctx.parent (find_in_ctx the_ctx.parent)))) (\\"reference\\" (take comps)) (\\"val_type\\" (find_in_ctx ctx))) (cond (== 0 comps.length) reference (and (is_object? val_type) (contains? comps.0 (object_methods val_type)) (not (-> val_type \\"propertyIsEnumerable\\" comps.0))) val else (join \\"\\" (conj (reference) (flatten (for_each (\\"comp\\" comps) (if (is_number? comp) (\\"[\\" comp \\"]\\") (\\"[\\"\\" comp \\"\\"]\\"))))))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"expand_dot_accessor\" \"fn_args\":\"(val ctx)\"}')));
     await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
         if (check_true ((ctx&&(name instanceof String || typeof name==='string')))){
               return await async function(){
@@ -874,7 +891,7 @@ export async function environment_boot(Environment) {
             }()
         } else throw new Error("invalid call to get_ctx: missing argument/s");
         
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"getf_ctx\" \"fn_args\":\"(ctx name _value)\" \"fn_body\":\"(if (and ctx (is_string? name)) (cond (not (== undefined (prop ctx.scope name))) (if (not (== _value undefined)) (do (set_prop ctx.scope name _value) _value) (prop ctx.scope name)) ctx.parent (getf_ctx ctx.parent name _value) else undefined) (throw \\"invalid call to get_ctx: missing argument/s\\"))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"getf_ctx\" \"fn_args\":\"(ctx name _value)\"}')));
     await Environment.set_global("setf_ctx",async function(ctx,name,value) {
         let found_val;
         found_val=await (await Environment.get_global("getf_ctx"))(ctx,name,value);
@@ -887,7 +904,7 @@ export async function environment_boot(Environment) {
             }()
         };
          return  value
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"setf_ctx\" \"fn_args\":\"(ctx name value)\" \"fn_body\":\"(let ((\\"found_val\\" (getf_ctx ctx name value))) (if (== found_val undefined) (set_prop ctx.scope name value)) value)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"setf_ctx\" \"fn_args\":\"(ctx name value)\"}')));
     await Environment.set_global("set_path",async function(path,obj,value) {
         let fpath;
         let idx;
@@ -907,7 +924,7 @@ export async function environment_boot(Environment) {
             }()
         } else throw new RangeError(("set_path: invalid path: "+path));
         
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"set_path\" \"fn_args\":\"(path obj value)\" \"fn_body\":\"(let ((\\"fpath\\" (clone path)) (\\"idx\\" (pop fpath)) (\\"rpath\\" fpath) (\\"target_obj\\" nil)) (= target_obj (resolve_path rpath obj)) (if target_obj (do (set_prop target_obj idx value)) (throw RangeError (+ \\"set_path: invalid path: \\" path))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"set_path\" \"fn_args\":\"(path obj value)\"}')));
     await Environment.set_global("minmax",async function(container) {
         let value_found;
         let smallest;
@@ -951,7 +968,7 @@ export async function environment_boot(Environment) {
         } else {
               return null
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"minmax\" \"fn_args\":\"(container)\" \"fn_body\":\"(let ((value_found false) (smallest MAX_SAFE_INTEGER) (biggest (* -1 MAX_SAFE_INTEGER))) (if (and container (is_array? container) (> (length container) 0)) (do (for_each (\\"value\\" container) (and (is_number? value) (do (= value_found true) (= smallest (Math.min value smallest)) (= biggest (Math.max value biggest))))) (if value_found (smallest biggest) nil)) nil))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"minmax\" \"fn_args\":\"(container)\"}')));
     await Environment.set_global("gen_multiples",async function(len,multiple_ques_) {
         let val;
         let acc;
@@ -983,7 +1000,7 @@ export async function environment_boot(Environment) {
              
         })();
          return  (acc).slice(0).reverse()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"gen_multiples\" \"fn_args\":\"(len multiple?)\" \"fn_body\":\"(let ((\\"val\\" 100) (\\"acc\\" (val)) (\\"mult\\" (or multiple? 10))) (for_each (\\"r\\" (range len)) (push acc (= val (* val mult)))) (reverse acc))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"gen_multiples\" \"fn_args\":\"(len multiple?)\"}')));
     await Environment.set_global("path_multiply",async function(path,multiple_ques_) {
         let acc;
         let multiples;
@@ -1006,7 +1023,7 @@ export async function environment_boot(Environment) {
              
         })();
          return  acc
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"path_multiply\" \"fn_args\":\"(path multiple?)\" \"fn_body\":\"(let ((\\"acc\\" 0) (\\"multiples\\" (gen_multiples (length path) multiple?))) (for_each (\\"pset\\" (pairs (interlace path multiples))) (= acc (+ acc (* pset.0 pset.1)))) acc)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"path_multiply\" \"fn_args\":\"(path multiple?)\"}')));
     await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_depth,_path) {
          return  await async function(){
             if (check_true( (js_tree instanceof Array))) {
@@ -1413,10 +1430,10 @@ export async function environment_boot(Environment) {
                  return js_tree
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"splice_in_return_b\" \"fn_args\":\"(js_tree _ctx _depth)\" \"fn_body\":\"(cond (is_array? js_tree) (let ((\\"idx\\" 0) (\\"ntree\\" ()) (\\"_ctx\\" (or _ctx {})) (\\"next_val\\" nil) (\\"flattened\\" (flatten js_tree))) (for_each (\\"comp\\" flattened) (do (= next_val (prop flattened (+ idx 1))) (cond (is_array? comp) (push ntree (splice_in_return_b comp _ctx (+ (or _depth 0) 1))) (and (is_object? comp) (== comp.mark \\"return_point\\") (and (not (== \\"return\\" next_val)) (not (== \\"throw\\" next_val)) (not (and (is_object? next_val) (is_string? next_val.ctype) (contains? \\"block\\" (or next_val.ctype \\"\\")))))) (do (push ntree \\" \\") (push ntree \\"return\\") (push ntree \\" \\")) else (push ntree comp)) (inc idx))) ntree) else js_tree)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"splice_in_return_b\" \"fn_args\":\"(js_tree _ctx _depth)\"}')));
     await Environment.set_global("map_range",async function(n,from_range,to_range) {
          return  await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"map_range\" \"fn_args\":\"(n from_range to_range)\" \"fn_body\":\"(+ to_range.0 (* (/ (- n from_range.0) (- from_range.1 from_range.0)) (- to_range.1 to_range.0)))\" \"usage\":(\"n:number\" \"from_range:array\" \"to_range:array\") \"tags\":(\"range\" \"scale\" \"conversion\") \"description\":(+ \"Given an initial number n, and two numeric ranges, maps n from the first range \" \"to the second range, returning the value of n as scaled into the second range. \")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"map_range\" \"fn_args\":\"(n from_range to_range)\" \"usage\":(\"n:number\" \"from_range:array\" \"to_range:array\") \"tags\":(\"range\" \"scale\" \"conversion\") \"description\":(+ \"Given an initial number n, and two numeric ranges, maps n from the first range \" \"to the second range, returning the value of n as scaled into the second range. \")}')));
     await Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
     await Environment.set_global("color_for_number",async function(num,saturation,brightness) {
         let h;
@@ -1454,7 +1471,7 @@ export async function environment_boot(Environment) {
                 return await __call_target__[__call_method__].call(__call_target__,2,"0")
             } 
         })())
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"color_for_number\" \"fn_args\":\"(num saturation brightness)\" \"fn_body\":\"(let ((h (Math.abs (parseInt num))) (pos (% 8 h)) (color_key (0 4 1 5 2 6 3 7)) (rgb nil) (v (prop color_key pos))) (declare (number v h) (object rgb)) (= h (map_range (% 360 (* 28 h)) (0 360) (0 1))) (= v (map_range (v (0 7) (0.92 1)))) (= rgb (HSV_to_RGB h saturation brightness)) (+ \\"#\\" (-> (-> rgb.r \\"toString\\" 16) \\"padStart\\" 2 \\"0\\") (-> (-> rgb.g \\"toString\\" 16) \\"padStart\\" 2 \\"0\\") (-> (-> rgb.b \\"toString\\" 16) \\"padStart\\" 2 \\"0\\")))\" \"usage\":(\"number:number\" \"saturation:float\" \"brightness:float\") \"description\":\"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string\" \"tags\":(\"ui\" \"color\" \"view\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"color_for_number\" \"fn_args\":\"(num saturation brightness)\" \"usage\":(\"number:number\" \"saturation:float\" \"brightness:float\") \"description\":\"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string\" \"tags\":(\"ui\" \"color\" \"view\")}')));
     await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
         let var_table;
         let ctx_keys;
@@ -1494,10 +1511,10 @@ export async function environment_boot(Environment) {
             };
              return  var_table
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"flatten_ctx\" \"fn_args\":\"(ctx _var_table)\" \"fn_body\":\"(let ((\\"var_table\\" (or _var_table (new Object))) (\\"ctx_keys\\" (keys var_table))) (when ctx.scope (for_each (\\"k\\" (keys ctx.scope)) (when (not (contains? k ctx_keys)) (set_prop var_table k (prop ctx.scope k)))) (when ctx.parent (flatten_ctx ctx.parent var_table)) var_table))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"flatten_ctx\" \"fn_args\":\"(ctx _var_table)\"}')));
     await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(let ((it ' + await Environment.as_lisp ( test ) + ')) (if it ' + await Environment.as_lisp ( thenclause ) + ' ' + await Environment.as_lisp ( elseclause ) + '))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"ifa\" \"macro\":true \"fn_args\":\"(test thenclause elseclause)\" \"fn_body\":\"((quotem (let ((it ,# test)) (if it ,# thenclause ,# elseclause))))\" \"description\":\"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.\" \"usage\":(\"test:*\" \"thenclause:*\" \"elseclause:*\") \"tags\":(\"cond\" \"it\" \"if\" \"anaphoric\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"ifa\" \"macro\":true \"fn_args\":\"(test thenclause elseclause)\" \"description\":\"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.\" \"usage\":(\"test:*\" \"thenclause:*\" \"elseclause:*\") \"tags\":(\"cond\" \"it\" \"if\" \"anaphoric\")}')));
     await Environment.set_global("identify_symbols",async function(quoted_form,_state) {
         let acc;
         acc=[];
@@ -1552,10 +1569,10 @@ export async function environment_boot(Environment) {
             }
         }();
          return  [`=:quote`,acc]
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"identify_symbols\" \"fn_args\":\"(quoted_form _state)\" \"fn_body\":\"(let ((acc ()) (_state (if _state _state {}))) (debug) (cond (is_array? quoted_form) (do (for_each (\\"elem\\" quoted_form) (push acc (identify_symbols elem _state)))) (and (is_string? quoted_form) (starts_with? =: quoted_form)) (push acc {\\"name\\":(as_lisp quoted_form) \\"where\\":(describe (as_lisp quoted_form))}) (is_object? quoted_form) (for_each (\\"elem\\" (values quoted_form)) (push acc (identify_symbols elem _state)))) ((quote quote) acc))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"identify_symbols\" \"fn_args\":\"(quoted_form _state)\"}')));
     await Environment.set_global("unless",async function(condition,...forms) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(if (not ' + await Environment.as_lisp ( condition ) + ') (do \"=$&!\" ' + await Environment.as_lisp ( forms ) + '))'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"unless\" \"macro\":true \"fn_args\":\"(condition \\"&\\" forms)\" \"fn_body\":\"((quotem (if (not ,# condition) (do =$,@ forms))))\" \"description\":\"opposite of if, if the condition is false then the forms are evaluated\" \"usage\":(\"condition:array\" \"forms:array\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"unless\" \"macro\":true \"fn_args\":\"(condition \\"&\\" forms)\" \"description\":\"opposite of if, if the condition is false then the forms are evaluated\" \"usage\":(\"condition:array\" \"forms:array\")}')));
     await Environment.set_global("random_int",async function(...args) {
         let __top__153= async function(){
             return 0
@@ -1573,7 +1590,7 @@ export async function environment_boot(Environment) {
             };
              return  await parseInt(await (await Environment.get_global("add"))((await Math.random()*(top-bottom)),bottom))
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"random_int\" \"fn_args\":\"(\\"&\\" \\"args\\")\" \"fn_body\":\"(let ((\\"top\\" 0) (\\"bottom\\" 0)) (if (> (length args) 1) (do (= top (parseInt args.1)) (= bottom (parseInt args.0))) (= top (parseInt args.0))) (parseInt (+ (* (Math.random) (- top bottom)) bottom)))\" \"description\":\"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.\" \"usage\":(\"arg1:number\" \"arg2?:number\") \"tags\":(\"rand\" \"number\" \"integer\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"random_int\" \"fn_args\":\"(\\"&\\" \\"args\\")\" \"description\":\"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.\" \"usage\":(\"arg1:number\" \"arg2?:number\") \"tags\":(\"rand\" \"number\" \"integer\")}')));
     await Environment.set_global("symbol_tree",async function(quoted_form,_state,_current_path) {
         let acc;
         acc=[];
@@ -1639,7 +1656,7 @@ export async function environment_boot(Environment) {
                  return  acc
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"symbol_tree\" \"fn_args\":\"(quoted_form _state _current_path)\" \"fn_body\":\"(let ((acc ()) (_state (if _state _state {\\"symbols\\":{}})) (_current_path (or _current_path ()))) (declare (array _current_path)) (cond (is_array? quoted_form) (do (map (fn (elem idx) (do (ifa (symbol_tree elem _state (+ _current_path idx)) (push acc it)))) quoted_form) acc) (and (is_string? quoted_form) (starts_with? =: quoted_form)) (do (unquotify quoted_form)) (is_object? quoted_form) (do (for_each (\\"pset\\" (pairs quoted_form)) (ifa (symbol_tree pset.1 _state (+ _current_path (pset.1))) (push acc it))) acc)))\" \"description\":\"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.\" \"usage\":(\"quoted_form:quote\") \"tags\":(\"structure\" \"development\" \"analysis\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"symbol_tree\" \"fn_args\":\"(quoted_form _state _current_path)\" \"description\":\"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.\" \"usage\":(\"quoted_form:quote\") \"tags\":(\"structure\" \"development\" \"analysis\")}')));
     await Environment.set_global("resolve_multi_path",async function(path,obj,not_found) {
         debugger;
         ;
@@ -1702,7 +1719,7 @@ export async function environment_boot(Environment) {
                  return not_found
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"resolve_multi_path\" \"fn_args\":\"(path obj not_found)\" \"fn_body\":\"(do (debug) (cond (is_object? obj) (cond (and (== (length path) 1) (== \\"*\\" (first path))) (or obj not_found) (== (length path) 1) (or (prop obj (first path)) not_found) (and (is_array? obj) (== \\"*\\" (first path))) (for_each (val obj) (resolve_multi_path (rest path) val not_found)) (and (is_object? obj) (== \\"*\\" (first path))) (for_each (val (values obj)) (resolve_multi_path (rest path) val not_found)) (> (length path) 1) (resolve_multi_path (rest path) (prop obj (first path)) not_found)) else not_found))\" \"tags\":(\"path\" \"wildcard\" \"tree\" \"structure\") \"usage\":(\"path:array\" \"obj:object\" \"not_found:?*\") \"description\":\"Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list.\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"resolve_multi_path\" \"fn_args\":\"(path obj not_found)\" \"tags\":(\"path\" \"wildcard\" \"tree\" \"structure\") \"usage\":(\"path:array\" \"obj:object\" \"not_found:?*\") \"description\":\"Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list.\"}')));
     await Environment.set_global("except_nil",async function(items) {
         let acc=[];
         ;
@@ -1728,7 +1745,7 @@ export async function environment_boot(Environment) {
              
         })();
          return  acc
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"except_nil\" \"fn_args\":\"(\\"items\\")\" \"fn_body\":\"(do (defvar \\"acc\\" ()) (if (not (eq (sub_type items) \\"array\\")) (setq items (list items))) (for_each (\\"value\\" items) (if (not (eq nil value)) (push acc value))) acc)\" \"description\":\"Takes the passed list or set and returns a new list that doesn\'t contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.\" \"usage\":(\"items:list|set\") \"tags\":(\"filter\" \"nil\" \"undefined\" \"remove\" \"no_empties\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"except_nil\" \"fn_args\":\"(\\"items\\")\" \"description\":\"Takes the passed list or set and returns a new list that doesn\'t contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.\" \"usage\":(\"items:list|set\") \"tags\":(\"filter\" \"nil\" \"undefined\" \"remove\" \"no_empties\")}')));
     await Environment.set_global("each",async function(items,property) {
          return  await async function(){
             if (check_true( ((property instanceof String || typeof property==='string')||await (await Environment.get_global("is_number?"))(property)))) {
@@ -1902,7 +1919,7 @@ export async function environment_boot(Environment) {
                 
             }
         }()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"each\" \"fn_args\":\"(items property)\" \"fn_body\":\"(cond (or (is_string? property) (is_number? property)) (except_nil (for_each (\\"item\\" (or items ())) (do (when item (prop item property))))) (eq (sub_type property) \\"array\\") (reduce (\\"item\\" items) (do (defvar \\"nl\\" ()) (for_each (\\"p\\" property) (cond (is_array? p) (push nl (resolve_path p item)) (is_function? p) (push nl (p item)) else (push nl (prop item p)))) nl)) (eq (sub_type property) \\"AsyncFunction\\") (reduce (\\"item\\" items) (property item)) (eq (sub_type property) \\"Function\\") (reduce (\\"item\\" items) (property item)) else (throw TypeError (+ \\"each: strings, arrays, and functions can be provided for the property name or names to extract - received: \\" (sub_type property))))\" \"description\":(+ \"Provided a list of items, provide a property name or \" \"a list of property names to be extracted and returned from the source array as a new list.\" \"If property is an array, and contains values that are arrays, those arrays will be treated as a path.\") \"usage\":(\"items:list\" \"property:string|list|function|AsyncFunction\") \"tags\":(\"pluck\" \"element\" \"only\" \"list\" \"object\" \"property\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"each\" \"fn_args\":\"(items property)\" \"description\":(+ \"Provided a list of items, provide a property name or \" \"a list of property names to be extracted and returned from the source array as a new list.\" \"If property is an array, and contains values that are arrays, those arrays will be treated as a path.\") \"usage\":(\"items:list\" \"property:string|list|function|AsyncFunction\") \"tags\":(\"pluck\" \"element\" \"only\" \"list\" \"object\" \"property\")}')));
     await Environment.set_global("replace",async function(...args) {
         if (check_true (((args && args.length)<3)))throw new SyntaxError("Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)");
          else {
@@ -2010,7 +2027,7 @@ export async function environment_boot(Environment) {
                 }
             })()
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"replace\" \"fn_args\":\"(\\"&\\" args)\" \"fn_body\":\"(if (< args.length 3) (throw SyntaxError \\"Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)\\") (try (let ((target args.0) (replacement args.1) (work_values (slice args 2)) (value_type nil) (sr_val nil) (arg_value_type (subtype args.2)) (rval ())) (for_each (value work_values) (do (= value_type (subtype value)) (when (== value_type \\"Number\\") (= value_type \\"String\\") (= value (+ \\"\\" value))) (cond (== value_type \\"String\\") (push rval (-> value \\"replace\\" target replacement)) (== value_type \\"array\\") (for_each (\\"elem\\" value) (push rval (replace target replacement elem))) (== value_type \\"object\\") (do (= sr_val {}) (for_each (\\"k\\" (keys value)) (when (-> value \\"hasOwnProperty\\" k) (set_prop sr_val k (replace target replacement (prop value k))))) (= rval (-> rval \\"concat\\" sr_val)))))) (if (and (not (== arg_value_type \\"array\\")) (not (== arg_value_type \\"object\\"))) (first rval) rval)) (catch Error (\\"e\\") (console.error (+ \\"replace: \\" e)))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"replace\" \"fn_args\":\"(\\"&\\" args)\"}')));
     await Environment.set_global("cl_encode_string",async function(text) {
         if (check_true ((text instanceof String || typeof text==='string'))){
             let escaped;
@@ -2026,7 +2043,7 @@ export async function environment_boot(Environment) {
         } else {
               return text
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"cl_encode_string\" \"fn_args\":\"(text)\" \"fn_body\":\"(if (is_string? text) (let ((\\"escaped\\" (replace (new RegExp \\"\n\\" \\"g\\") (+ (String.fromCharCode 92) \\"n\\") text)) (\\"escaped\\" (replace (new RegExp \\"\r\\" \\"g\\") (+ (String.fromCharCode 92) \\"r\\") escaped)) (\\"nq\\" (split_by (String.fromCharCode 34) escaped)) (\\"step1\\" (join (+ (String.fromCharCode 92) (String.fromCharCode 34)) nq)) (\\"snq\\" (split_by (String.fromCharCode 39) step1))) step1) text)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"cl_encode_string\" \"fn_args\":\"(text)\"}')));
     await Environment.set_global("path_to_js_syntax",async function(comps) {
         if (check_true ((comps instanceof Array))){
              if (check_true (((comps && comps.length)>1))){
@@ -2050,7 +2067,7 @@ export async function environment_boot(Environment) {
             }
         } else throw new TypeError(("path_to_js_syntax: need array - given "+await (await Environment.get_global("sub_type"))(comps)));
         
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"path_to_js_syntax\" \"fn_args\":\"(comps)\" \"fn_body\":\"(if (is_array? comps) (if (> comps.length 1) (join \\"\\" (map (fn (comp idx) (if (== idx 0) comp (cond (and (isNaN (int comp)) (starts_with? \\"\\"\\" comp)) (+ \\"[\\" comp \\"]\\") (isNaN (int comp)) (+ \\".\\" comp) else (+ \\"[\\" \\"\'\\" comp \\"\'\\" \\"]\\")))) comps)) comps.0) (throw TypeError (+ \\"path_to_js_syntax: need array - given \\" (sub_type comps))))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"path_to_js_syntax\" \"fn_args\":\"(comps)\"}')));
     await Environment.set_global("first_is_upper_case?",async function(str_val) {
         {
             let rval=await str_val["match"].call(str_val,new RegExp("^[A-Z]"));
@@ -2061,7 +2078,7 @@ export async function environment_boot(Environment) {
                   return false
             }
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"first_is_upper_case?\" \"fn_args\":\"(str_val)\" \"fn_body\":\"(progn (defvar rval (-> str_val \\"match\\" (new RegExp \\"^[A-Z]\\"))) (if (and rval rval.0) true false))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"first_is_upper_case?\" \"fn_args\":\"(str_val)\"}')));
     await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_fn) {
         let comps;
         let acc;
@@ -2115,7 +2132,7 @@ export async function environment_boot(Environment) {
             rval=await (await Environment.get_global("flatten"))(["(",(acc_full).join(" && "),")"]);
              return  rval
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"safe_access_2\" \"fn_args\":\"(token ctx sanitizer_fn)\" \"fn_body\":\"(let ((comps nil) (acc ()) (acc_full ()) (pos nil) (rval nil)) (= comps (split_by \\".\\" token.name)) (if (== comps.length 1) token.name (do (set_prop comps 0 (sanitizer_fn comps.0)) (while (> comps.length 0) (do (push acc (take comps)) (if (> comps.length 0) (push acc_full (join \\"\\" (\\"check_true(\\" (expand_dot_accessor (join \\".\\" acc) ctx) \\")\\"))) (push acc_full (expand_dot_accessor (join \\".\\" acc) ctx))))) (= rval (flatten (\\"(\\" (join \\" && \\" acc_full) \\")\\"))) rval)))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"safe_access_2\" \"fn_args\":\"(token ctx sanitizer_fn)\"}')));
     await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn) {
         let comps;
         let acc;
@@ -2165,13 +2182,13 @@ export async function environment_boot(Environment) {
             rval=await (await Environment.get_global("flatten"))(["(",(acc_full).join(" && "),")"]);
              return  rval
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"safe_access\" \"fn_args\":\"(token ctx sanitizer_fn)\" \"fn_body\":\"(let ((comps nil) (acc ()) (acc_full ()) (pos nil) (rval nil)) (= comps (split_by \\".\\" token.name)) (if (== comps.length 1) token.name (do (set_prop comps 0 (sanitizer_fn comps.0)) (while (> comps.length 0) (do (push acc (take comps)) (push acc_full (expand_dot_accessor (join \\".\\" acc) ctx)))) (= rval (flatten (\\"(\\" (join \\" && \\" acc_full) \\")\\"))) rval)))\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"safe_access\" \"fn_args\":\"(token ctx sanitizer_fn)\"}')));
     await Environment.set_global("compile_to_js",async function(quoted_form) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(-> Environment \"compile\" ' + await Environment.as_lisp ( quoted_form ) + ')'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"compile_to_js\" \"macro\":true \"fn_args\":\"(quoted_form)\" \"fn_body\":\"((quotem (-> Environment \\"compile\\" ,# quoted_form)))\" \"description\":(+ \"Given a quoted form, returns an array with two elements, element 0 is the compilation metadata, \" \"and element 1 is the output Javascript as a string.\") \"usage\":(\"quoted_form:*\") \"tags\":(\"compilation\" \"source\" \"javascript\" \"environment\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"compile_to_js\" \"macro\":true \"fn_args\":\"(quoted_form)\" \"description\":(+ \"Given a quoted form, returns an array with two elements, element 0 is the compilation metadata, \" \"and element 1 is the output Javascript as a string.\") \"usage\":(\"quoted_form:*\") \"tags\":(\"compilation\" \"source\" \"javascript\" \"environment\")}')));
     await Environment.set_global("evaluate_compiled_source",async function(compiled_source) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(-> Environment \"evaluate\" ' + await Environment.as_lisp ( compiled_source ) + ' nil {\"compiled_source\":true})'))
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"evaluate_compiled_source\" \"macro\":true \"fn_args\":\"(compiled_source)\" \"fn_body\":\"((quotem (-> Environment \\"evaluate\\" ,# compiled_source nil {\\"compiled_source\\":true})))\" \"description\":(+ \"The macro evaluate_compiled_source takes the direct output of the compiler, \" \"which can be captured using the macro compile_to_js, and performs the \" \"evaluation of the compiled source, thereby handling the second half of the \" \"compile then evaluate cycle.  This call will return the results of \" \"the evaluation of the compiled code assembly.\") \"usage\":(\"compiled_souce:array\") \"tags\":(\"compilation\" \"compile\" \"eval\" \"pre-compilation\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"evaluate_compiled_source\" \"macro\":true \"fn_args\":\"(compiled_source)\" \"description\":(+ \"The macro evaluate_compiled_source takes the direct output of the compiler, \" \"which can be captured using the macro compile_to_js, and performs the \" \"evaluation of the compiled source, thereby handling the second half of the \" \"compile then evaluate cycle.  This call will return the results of \" \"the evaluation of the compiled code assembly.\") \"usage\":(\"compiled_souce:array\") \"tags\":(\"compilation\" \"compile\" \"eval\" \"pre-compilation\")}')));
     await Environment.set_global("form_structure",async function(quoted_form,max_depth) {
         let idx;
         let acc;
@@ -2228,8 +2245,8 @@ export async function environment_boot(Environment) {
             }()
         };
          return  await follow_tree(structure,[],0)
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"form_structure\" \"fn_args\":\"(quoted_form max_depth)\" \"fn_body\":\"(let ((idx 0) (acc ()) (max_depth (or max_depth MAX_SAFE_INTEGER)) (structure quoted_form) (follow_tree (fn (elems acc _depth) (cond (and (or (is_array? elems) (is_object? elems)) (>= _depth max_depth)) (if (is_array? elems) \\"array\\" \\"object\\") (is_array? elems) (map (fn (elem idx) (follow_tree elem () (+ _depth 1))) elems) (is_object? elems) (do (for_each (\\"pset\\" (pairs elems)) (follow_tree pset.1 () (+ _depth 1)))) else (cond (and (is_string? elems) (starts_with? =: elems)) \\"symbol\\" (is_number? elems) \\"number\\" (is_string? elems) \\"string\\" (or (== elems true) (== elems false)) \\"boolean\\" else elems))))) (follow_tree structure () 0))\" \"description\":(+ \"Given a form and an optional max_depth positive number, \" \"traverses the passed JSON form and produces a nested array structure that contains\" \"the contents of the form classified as either a \\"symbol\\", \\"number\\", \\"string\\", \\"boolean\\", \\"array\\", \\"object\\", or the elem itself. \" \"The returned structure will mirror the passed structure in form, except with the leaf contents \" \"being replaced with generalized categorizations.\") \"tags\":(\"validation\" \"compilation\" \"structure\") \"usage\":(\"quoted_form:*\" \"max_depth:?number\")}')));
-     return  await Environment.set_global("validate_form_structure",async function(validation_rules,quoted_form) {
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"form_structure\" \"fn_args\":\"(quoted_form max_depth)\" \"description\":(+ \"Given a form and an optional max_depth positive number, \" \"traverses the passed JSON form and produces a nested array structure that contains\" \"the contents of the form classified as either a \\"symbol\\", \\"number\\", \\"string\\", \\"boolean\\", \\"array\\", \\"object\\", or the elem itself. \" \"The returned structure will mirror the passed structure in form, except with the leaf contents \" \"being replaced with generalized categorizations.\") \"tags\":(\"validation\" \"compilation\" \"structure\") \"usage\":(\"quoted_form:*\" \"max_depth:?number\")}')));
+    await Environment.set_global("validate_form_structure",async function(validation_rules,quoted_form) {
         let results;
         let all_valid;
         let target;
@@ -2296,7 +2313,103 @@ export async function environment_boot(Environment) {
             
         }();
          return  results
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"validate_form_structure\" \"fn_args\":\"(validation_rules quoted_form)\" \"fn_body\":\"(let ((results {\\"valid\\":() \\"invalid\\":() \\"rule_count\\":(length validation_rules) \\"all_passed\\":false}) (\\"all_valid\\" nil) (target nil)) (for_each (\\"rule\\" (or validation_rules ())) (do (when (and (is_array? rule) (> rule.length 1) (is_array? rule.0) (is_array? rule.1)) (= all_valid true) (= target (resolve_path rule.0 quoted_form)) (for_each (\\"validation\\" rule.1) (when (not (validation target)) (= all_valid false) (break))) (if all_valid (push results.valid (or rule.2 rule.0)) (push results.invalid (or rule.2 rule.0)))))) (set_prop results \\"all_passed\\" (== (length results.valid) results.rule_count)) results)\" \"description\":(+ \"Given a validation rule structure and a quoted form to analyze returns an object with \" \"two keys, valid and invalid, which are arrays containing the outcome of the rule \" \"evaluation, a rule_count key containing the total rules passed, and an all_passed key\" \"which will be set to true if all rules passed, otherwise it will fail.\" \"If the rule evaluates successfully, valid is populated with the rule path, \" \"otherwise the rule path is placed in the invalid array.<br><br>\" \"Rule structure is as follows:<br><code>\" \"[ [path [validation validation ...] \\"rule_name\\"] [path [validation ...] \\"rule_name\\"] ]<br>\" \"</code>\" \"where path is an array with the index path and \" \"validation is a single argument lambda (fn (v) v) that must either \" \"return true or false. If true, the validation is considered correct, \" \"false for incorrect.  The result of the rule application will be put in the valid array, \" \"otherwise the result will be put in invalid.\") \"tags\":(\"validation\" \"rules\" \"form\" \"structure\") \"usage\":(\"validation_rules:array\" \"quoted_form:*\")}')))
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"validate_form_structure\" \"fn_args\":\"(validation_rules quoted_form)\" \"description\":(+ \"Given a validation rule structure and a quoted form to analyze returns an object with \" \"two keys, valid and invalid, which are arrays containing the outcome of the rule \" \"evaluation, a rule_count key containing the total rules passed, and an all_passed key\" \"which will be set to true if all rules passed, otherwise it will fail.\" \"If the rule evaluates successfully, valid is populated with the rule path, \" \"otherwise the rule path is placed in the invalid array.<br><br>\" \"Rule structure is as follows:<br><code>\" \"[ [path [validation validation ...] \\"rule_name\\"] [path [validation ...] \\"rule_name\\"] ]<br>\" \"</code>\" \"where path is an array with the index path and \" \"validation is a single argument lambda (fn (v) v) that must either \" \"return true or false. If true, the validation is considered correct, \" \"false for incorrect.  The result of the rule application will be put in the valid array, \" \"otherwise the result will be put in invalid.\") \"tags\":(\"validation\" \"rules\" \"form\" \"structure\") \"usage\":(\"validation_rules:array\" \"quoted_form:*\")}')));
+    await Environment.set_global("*compiler_syntax_rules*",{
+        compile_let:[[[0,1,"val"],[(await Environment.get_global("is_array?"))],"let allocation section"],[[0,2],[async function(v) {
+             return  await (await Environment.get_global("not"))((v===undefined))
+        }],"let missing block"]],compile_cond:[[[0],[async function(v) {
+             return  ((await (await Environment.get_global("length"))(await (await Environment.get_global("rest"))(v))%2)===0)
+        }],"cond: odd number of arguments"]]
+    });
+    await Environment.set_global("compiler_source_chain",async function(cpath,tree,sources) {
+        if (check_true (((cpath instanceof Array)&&tree))){
+            let source;
+            sources=(sources||[]);
+            source=null;
+            cpath=await (await Environment.get_global("chop"))(cpath);
+            source=await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))(cpath,tree));
+            if (check_true (((source && source.length)>80))){
+                 source=await (await Environment.get_global("add"))(await source["substr"].call(source,0,80),"...")
+            };
+            if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("blank?"))(source)))){
+                 (sources).push(source)
+            };
+            if (check_true ((((cpath && cpath.length)>0)&&((sources && sources.length)<2)))){
+                 await (await Environment.get_global("compiler_source_chain"))(cpath,tree,sources)
+            };
+             return  sources
+        }
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"compiler_source_chain\" \"fn_args\":\"(cpath tree sources)\"}')));
+     return  await Environment.set_global("compiler_syntax_validation",async function(validator_key,tokens,errors,ctx,tree) {
+        let validation_results;
+        let syntax_error;
+        let cpath;
+        let rules;
+        validation_results=null;
+        syntax_error=null;
+        cpath=null;
+        rules=await (async function(){
+            let __targ__235=(await Environment.get_global("*compiler_syntax_rules*"));
+            if (__targ__235){
+                 return(__targ__235)[validator_key]
+            } 
+        })();
+        if (check_true (rules)){
+            validation_results=await (await Environment.get_global("validate_form_structure"))(rules,await (async function(){
+                let __array_op_rval__236=tokens;
+                 if (__array_op_rval__236 instanceof Function){
+                    return await __array_op_rval__236() 
+                } else {
+                    return[__array_op_rval__236]
+                }
+            })());
+            cpath=await async function(){
+                if (check_true( (tokens instanceof Array))) {
+                     return await (await Environment.get_global("chop"))((tokens && tokens["0"] && tokens["0"]["path"]))
+                } else if (check_true( (tokens instanceof Object))) {
+                     return (tokens && tokens["path"])
+                }
+            }();
+            if (check_true (await (await Environment.get_global("not"))((validation_results && validation_results["all_passed"])))){
+                await (async function() {
+                    let __for_body__239=async function(problem) {
+                         return  (errors).push({
+                            error:"SyntaxError",message:problem,form:await (async function() {
+                                if (check_true ((await (await Environment.get_global("length"))(cpath)>0))){
+                                      return await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))(cpath,tree))
+                                } else {
+                                      return ""
+                                }
+                            } )(),parent_forms:await (await Environment.get_global("compiler_source_chain"))(cpath,tree),invalid:true
+                        })
+                    };
+                    let __array__240=[],__elements__238=((validation_results && validation_results["invalid"])||[]);
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__237 in __elements__238) {
+                        __array__240.push(await __for_body__239(__elements__238[__iter__237]));
+                        if(__BREAK__FLAG__) {
+                             __array__240.pop();
+                            break;
+                            
+                        }
+                    }return __array__240;
+                     
+                })();
+                syntax_error=new SyntaxError("invalid syntax");
+                await async function(){
+                    let __target_obj__241=syntax_error;
+                    __target_obj__241["handled"]=true;
+                    return __target_obj__241;
+                    
+                }();
+                throw syntax_error;
+                
+            }
+        } else {
+             await console.log("compiler_syntax_validation: no rules for: ",validator_key," -> tokens: ",tokens,"tree: ",tree)
+        };
+         return  validation_results
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"compiler_syntax_validation\" \"fn_args\":\"(validator_key tokens errors ctx tree)\"}')))
 }
 
 }

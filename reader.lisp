@@ -11,6 +11,9 @@
              (`column_number 0)
              (`opts (or opts {}))
              (`len (- (length text) 1))
+             (`debugmode (if (> DEBUG_LEVEL 6)
+                             true
+                             false))
              (`in_buffer (split_by "" text))
              (`in_code 0)
              (`in_quotes 1)
@@ -21,17 +24,17 @@
                                   ((`start (Math.max 0 (- idx 10)))
                                    (`end   (Math.max (length in_buffer) (+ idx 10))))
                                   (join "" (slice in_buffer start end)))))
-                                           
              (`position (fn ()
                             (+ "line: " line_number " column: " column_number)))
+             
              (`in_single_quote 4)
              (`mode in_code)  ;; start out in code
              (`read_table {
                            "(":[")" (fn (block)
-                                       (do ;(log "got_paren_block:" block)
+                                       (do 
                                            block))]
                            "[":["]" (fn (block)
-                                        (do ;(log "got_bracket_block:" block)
+                                        (do 
                                             block))]
                            "{":["}" (fn (block)
                                          (let
@@ -176,6 +179,7 @@
              (`next_c nil)
              (`depth 0)
              (`stop false)
+             
              (`read_block (fn (_depth _prefix_op)
                               (let
                                   ((`acc [])
@@ -187,7 +191,7 @@
                                 (when _prefix_op
                                   (push acc
                                         _prefix_op))
-                                ;(debug)
+                                (= depth _depth)
                                 (while (and (not stop)
                                             (< idx len))
                                        (do 
@@ -199,7 +203,9 @@
                                          (when (== c "\n")
                                              (inc line_number)
                                              (= column_number 0))
-                                         ;(log _depth "C->" c next_c mode escape_mode (clone acc) (clone word_acc) handler_stack.length)
+                                         
+                                         (when debugmode
+                                               (console.log _depth "C->" c next_c mode escape_mode (clone acc) (clone word_acc) handler_stack.length))
                                          
                                          ;; read until the end or are stopped via debugger
                                          ;; we have a few special cases that facilitate the transformation
@@ -209,17 +215,42 @@
                                          ;; once done with the block pass to the read table handler if it exists.
                                          
                                          (cond 
+                                           (and (== next_c undefined)
+                                                (== handler_stack.length 0))
+                                           (if false (throw SyntaxError (+ "no match found: " (position)  " for " (prop (last handler_stack) 0))))
+                                           (and (== next_c undefined)
+                                                (or (not (== c (prop (last handler_stack) 0)))
+                                                    (> handler_stack.length 1)))
+                                           (throw SyntaxError (+ "premature end: " (position)  " expected: " (prop (last handler_stack) 0)))
+                                           (and (== next_c undefined)
+                                                (== mode in_quotes)
+                                                (not (== (-> c `charCodeAt) 34)))
+                                           (throw SyntaxError (+ "premature end: "  (position) " expected: \""))
+                                           (and (== next_c undefined)
+                                                (== mode in_long_text)
+                                                (not (== c "|")))
+                                           (throw SyntaxError (+ "premature end: "  (position) " expected: |")))
+                                         
+                                         (cond 
                                            (and (== c "\n")
                                                 (== mode in_comment))
                                            (do 
                                                (= mode in_code)
                                                (break))
                                            
+                                           ;; DISABLED: condition where we have an escaped backslash - we need to store it
+                                           (and  
+                                                (> mode 0)
+                                                (== escape_mode 1)
+                                                (== 92 (-> c `charCodeAt 0))) 
+                                           (do 
+                                             (push word_acc c))
+                                         
                                            (and (> mode 0)
                                                 ;(== escape_mode 0)
                                                 (== 92 (-> c `charCodeAt 0)))
                                            (do 
-                                            (= escape_mode 2))
+                                             (= escape_mode 2))
                                         
                                            (and (> mode 0)
                                                 (== escape_mode 1))
@@ -231,7 +262,8 @@
                                                 (== escape_mode 0)
                                                 (== c "|"))
                                            (do 
-                                               (push acc (join "" word_acc))
+                                               ;(push acc (join "" word_acc))
+                                               (= acc (+ (join "" word_acc)))
                                                (= word_acc [])
                                                (= mode in_code)
                                                (break))
@@ -279,7 +311,6 @@
                                             (= mode in_quotes)
                                             (= block_return (read_block (+ _depth 1)))
                                             (when (== backtick_mode 1)
-                                               ;(= block_return [(quote "=:quotem") block_return])
                                                (= backtick_mode 0))
                                             (push acc block_return))
                                           
@@ -294,7 +325,6 @@
                                             (= mode in_single_quote)
                                             (= block_return (read_block (+ _depth 1)))
                                             (when (== backtick_mode 1)
-                                               ;(= block_return [(quote "=:quotem") block_return])
                                                (= backtick_mode 0))
                                             (push acc block_return))
                                            
@@ -327,8 +357,6 @@
                                              ;; the calling level 
                                              (break))
                                             
-                                            
-                                           
                                            ;; start block read
                                            (and (== mode in_code)
                                                 (prop read_table c)
@@ -347,19 +375,14 @@
                                              
                                              ;; now read the block until the block complete character is encountered...
                                              (= block_return (read_block (+ _depth 1)))
-                                             ;(log _depth "<- block return: " block_return)
+                                             
                                              ;; handle the returned block that was read with the handler
                                              (= handler (prop (pop handler_stack) 1))
                                              
                                              (= block_return 
                                                    (handler block_return))
                                                
-                                             ;; TODO  
-                                             ;(when (== c "}")
-                                             ;   (= backtick_mode 0))
-                                             ;(log _depth "received handler return: " block_return)
-                                             
-                                             ;; if the block is undefined, do not add it to the accumulator, other add the block structure
+                                             ;; if the block is undefined, do not add it to the accumulator, otherwise add the block structure
                                              ;; to the accumulator and discard the block complete character
                                              
                                              (when (not (== undefined block_return))
@@ -432,12 +455,16 @@
                                      
                                         ;(push acc (join "" word_acc))
                                      (= word_acc [])))
-                                ;(log _depth "read_block: <-"  acc)
+                                
                                 acc))))
           
-          (console.log "read->" in_buffer )
+          
+          (when debugmode
+                (console.log "read->" in_buffer ))
           (= output_structure (read_block 0))
-          (console.log "read<-" (clone output_structure))
+          (when debugmode
+                (console.log "read<-" (clone output_structure)))
+            
           (if (and (is_array? output_structure)
                    (> (length output_structure) 1))
               (do 

@@ -350,6 +350,7 @@
                                       ctx.parent
                                       (get_ctx ctx.parent ref_name)))))))))
        
+       
        (`get_declarations (fn (ctx name _tagged)
                          (let
                              ((`ref_name nil)
@@ -398,6 +399,10 @@
                                            dec_struct)
                                  (prop ctx.declared_types
                                        sname))))
+       
+       
+
+       
        (`is_ambiguous? (fn (ctx name)
                            (let
                              ((`ref_name nil))
@@ -662,11 +667,11 @@
                               (if  (== (JSON.stringify obj) "{}")
                                    (do 
                                         ;(log "tokenize_object: returning {}")
-                                    { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true })
+                                    { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true  `path: _path})
                                    (for_each (`pset (pairs obj))
                                              (do
                                         ;(log "pset: " pset)
-                                              {`type: `keyval `val: (tokenize pset ctx) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))
+                                              {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))
                                         ;{`type: `value `val:(tokenize pset.1) `ref: (is_reference? pset.1) `name: (desym pset.1) } ])))) )
        
        
@@ -750,7 +755,7 @@
                                         ;(console.log "tokenize->: " arg)
                                 (cond
                                   (== (sub_type arg) "array")
-                                  {`type: `arr `__token__:true `source: (as_lisp arg) `val: (tokenize arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx) }
+                                  {`type: `arr `__token__:true  `val: (tokenize arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx) }
                                   (== argtype "Function")
                                   {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
                                   (== argtype "AsyncFunction")
@@ -765,7 +770,7 @@
                                   {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}
                                   (is_object? arg)
                                   (do 
-                                   {`type: `objlit `__token__:true `val: (tokenize_object arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx)})
+                                   {`type: `objlit `__token__:true  `val: (tokenize_object arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx)})
                                   (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
                                   {`type: `null `__token__:true `val: null `ref: true `name: "null" `path: (+ _path idx)}
                                   (and (== argtype "unbound") is_ref (eq nil argvalue))
@@ -776,7 +781,7 @@
                                         ;(== argtype "Boolean")
                                         ;{`type: `bool `__token__:true `val: argvalue `ref: false `name: arg}
                                   else
-                                  {`type: argtype `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx)}))))))))
+                                  {`type: argtype `__token__:true  `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx)}))))))))
        ;; checks to see if the first argument to the passed array is 
        ;; a compile time function, as registered in the environment's definitions 
        ;; structure 
@@ -1653,24 +1658,7 @@
                               (`idx -1))
                            ;; validate the let structure if we have the functionality
                            
-                           
-                               (if_compile_time_defined `validate_form_structure
-                                  (do
-                                    (= validation_results (validate_form_structure structure_validation_rules tokens))
-                                    (when (not validation_results.all_passed)
-                                       (for_each (`problem (or validation_results.invalid []))
-                                          (push errors  {     `error: "SyntaxError"
-                                                              `message: (+ "let: invalid structure: " problem)
-                                                              `form: ctx.source
-                                                              `parent_forms: (get_source_chain ctx)
-                                                              `invalid: true
-                                                              `text: ""
-                                                           }))
-                                       (= syntax_error (new SyntaxError "invalid syntax"))
-                                       (set_prop syntax_error
-                                            `handled true)
-                                       ;(console.error "ERROR: " syntax_error)
-                                       (throw syntax_error))))
+                           (compiler_syntax_validation `compile_let tokens errors ctx tree)
                                 
                            ;(clog "->: " (prop tokens.1 `val))
                            (set_prop ctx
@@ -1778,7 +1766,7 @@
                                     
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
                                     (= ctx_details (get_declaration_details ctx reference_name))
-                                    (console.log "compiling:" reference_name " ctx_details:" ctx_details)
+                                    ;(console.log "compiling:" reference_name " ctx_details:" ctx_details)
                                     
                                     (cond
                                       (is_array? alloc_set.1.val)
@@ -2164,6 +2152,7 @@
                   (`condition nil)
                   (`condition_block nil)
                   (`condition_tokens (-> tokens `slice 1)))
+              (compiler_syntax_validation `compile_cond tokens errors ctx tree)
                ;(cond_log "->" condition_tokens)
                ;(console.log "compile_cond: " (clone tokens))
                (cond 

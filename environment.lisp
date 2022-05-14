@@ -213,7 +213,7 @@
                   (second  (new Function "x" "{ return x[1] }"))
                   (third (new Function "x" "{ return x[2] }"))
                            
-                  (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(x.length-1) } else { return x.substr(0,x.length-1) } }"))
+                  (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(0, x.length-1) } else { return x.substr(0,x.length-1) } }"))
                   
                   (chomp (new Function "x" "{ return x.substr(x.length-1) }"))
                   
@@ -666,6 +666,8 @@
                   
                   (compile (fn (json_expression opts)
                                (compiler json_expression { `env: Environment })))
+                  
+                  
                   (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
                   (evaluate (fn (expression ctx opts)
                              (let
@@ -678,15 +680,33 @@
                                ;(debug)
                                (if opts.compiled_source
                                    (= compiled expression)
-                                   (= compiled
-                                      (compiler (if opts.json_in
-                                                    expression
-                                                    (-> Environment `read_lisp expression))
-                                                {   `env: Environment 
-                                                    `ctx: ctx 
-                                                    `formatted_output: true 
-                                                    `error_report: (or opts.error_report nil)
-                                                    `quiet_mode: (or opts.quiet_mode false) })))
+                                   (try 
+                                      (= compiled
+                                          (compiler (if opts.json_in
+                                                        expression
+                                                        (-> Environment `read_lisp expression))
+                                                    {   `env: Environment 
+                                                        `ctx: ctx 
+                                                        `formatted_output: true 
+                                                        `error_report: (or opts.error_report nil)
+                                                        `quiet_mode: (or opts.quiet_mode false) }))
+                                     (catch Error (`e)
+                                        (do 
+                                            (if opts.error_report
+                                                  (opts.error_report [{   `error: (sub_type e)
+                                                                          `message:  e.message
+                                                                          `form: (cond 
+                                                                                     (and (is_string? expression)
+                                                                                          (> expression.length 100))
+                                                                                     (+ (-> expression `substr 0 100) "...")
+                                                                                     else
+                                                                                     (as_lisp expression))
+                                                                          `parent_forms: []
+                                                                          `invalid: true
+                                                                       }])
+                                                  (console.error "Compilation Error: " e))
+                                            (= compiled [ { `error: true } nil  ])))))
+                                              
                                             
                                ;(env_log "<- compiled:" compiled)
                                (if opts.on_compilation_complete
@@ -753,6 +773,7 @@
                                             compiled.1)))
                                    (catch Error (e)
                                          (do
+                                            (env_log "caught error: " e.name e.message)
                                             (when opts.error_report
                                                   (opts.error_report {
                                                                   `error: e.name
