@@ -25,14 +25,27 @@ await env.set_compiler(cca)
 
 console.log("DLisp 2.0 (c) 2022 Kina, LLC");
 
-// let readline = await import("https://deno.land/x/readline/mod.ts");
+//let readline = await import("https://deno.land/x/readline/mod.ts");
 // readline.readline is AsyncGeneratorFunction
 
 import { readline } from "https://deno.land/x/readline/mod.ts";
 // console.log("readline: ",readline.readline);
+const repl = Deno.readTextFileSync("repl.lisp");
+const te = new TextDecoder();
 
 
-for await (const line of readline(Deno.stdin)) {
-    console.log(await env.evaluate(new TextDecoder().decode(line)));
-}
+// const freader=async function* () { return readline(Deno.stdin) };
+// await env.set_global("freader",freader);
+// console.log(await env.evaluate("(defglobal freader freader)"));
+await env.set_global("te",te)
+await env.set_global("readline",readline)
+
+await env.evaluate(repl);
+
+//await env.evaluate("(defglobal te te)");
+await env.evaluate("(repl)");
+
+//let lines=[];
+//for await (const line of readline(Deno.stdin)) {
+//      console.log(await env.evaluate(new TextDecoder().decode(line)));
 
