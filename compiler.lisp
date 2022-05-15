@@ -644,11 +644,9 @@
        
        (`get_val (fn (token ctx)
                      (do
-                       ;(log "get_val: ->" token ctx)
                       (cond
                         token.ref
                         (do 
-                            ;(log "get_val: sanitized reference: " (sanitize_js_ref_name (expand_dot_accessor token.name ctx)))
                             (defvar `comps (split_by "." token.name))
                             ;(log "get_val: " (safe_access token ctx sanitize_js_ref_name))
                             (if (and (> (safety_level ctx) 1)
@@ -1180,14 +1178,10 @@
                                        
                                        (push acc target)
                                        (push acc "=")
-                                        (push acc assignment_value))
+                                       (push acc assignment_value))
                                       (do
                                        (for_each (`t [{ `ctype: "statement"} "await" " " "Environment" "." "set_global" "(" "\"" target "\"" "," assignment_value ")"])
                                                  (push acc t))))
-                                  
-                                  
-                                 
-                                  
                                   
                                   (set_prop ctx
                                             `in_assignment false)
@@ -1401,6 +1395,8 @@
                                                          (prop (first stmt) `ctype)))
                                                  
                                       (cond 
+                                        (== stmt_ctype "no_return")
+                                        (push stmts stmt); do nothing... 
                                         (== stmt_ctype "AsyncFunction")
                                         (do 
                                             ;(push stmts "await")
@@ -1435,11 +1431,12 @@
                                    (= last_stmt (pop stmts))
                                    ;(clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
                                    ; TODO - 
-                                   (push stmts
-                                         { `mark: "final-return" `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__) } )
+                                   (when (not (== last_stmt.0.mark "no_return"))
+                                     (push stmts
+                                           { `mark: "final-return" `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__) } )
                                    ;(push stmts
                                     ;     "return")
-                                   (push stmts " ")
+                                      (push stmts " "))
                                    (push stmts last_stmt))
                                
                                 (or (needs_return? stmts ctx)
@@ -1448,7 +1445,7 @@
                                 (do
                                    (= last_stmt (pop stmts))
                                    ;(clog "block_step:" ctx.block_step "last stmt: " (clone last_stmt))
-                                   ; TODO - 
+                                   ; TODO -
                                    (push stmts
                                          { `mark: "block-end"  `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__)} )
                                    (push stmts " ")
@@ -1816,7 +1813,7 @@
                                                     (map_ctype_to_value assignment_value.0.0.ctype assignment_value))) 
                                         else 
                                          (do 
-                                             (console.warn "compile_assignment: unknown assignment type: " reference_name)
+                                             (push warnings (+ "undeclared type assignment:" reference_name))
                                              (set_ctx ctx
                                                       reference_name
                                                       assignment_value)))
@@ -1956,6 +1953,12 @@
                              (do
                                (= type_mark (type_marker `Function))
                                (push acc type_mark))
+                             fn_opts.generator
+                             (do
+                                 (= type_mark (type_marker `GeneratorFunction))
+                                 (push acc type_mark)
+                                 (push acc "async")
+                                 (push acc " "))
                              else
                               (do
                                (= type_mark (type_marker `AsyncFunction))  
@@ -1966,8 +1969,13 @@
                           (set_prop type_mark
                                     `args
                                     [])       
-                          (when (not fn_opts.arrow)
-                                (push acc "function"))
+                          (cond 
+                            fn_opts.arrow
+                            false
+                            fn_opts.generator
+                            (push acc "function*")
+                            else
+                            (push acc "function"))
                           (push acc "(")
                           (while (< idx (- fn_args.length 1))
                                  (do
@@ -2002,9 +2010,13 @@
                           (when fn_opts.arrow
                                 (push acc "=>"))
                           ;(fn_log "body: is_block?" (is_block? body.val) body)
-                          (set_prop ctx
+                          (if fn_opts.generator
+                              (set_prop ctx
                                     `return_last_value
-                                    true)
+                                    false)
+                              (set_prop ctx
+                                    `return_last_value
+                                    true))
                           
                           (cond 
                             (== body.val.0.name `let)
@@ -2087,7 +2099,20 @@
                                   acc)))
                                    
                                         
-                      
+        
+       (`compile_yield (fn (tokens ctx)
+                           (let
+                               ((`acc [{`mark: "no_return" }])
+                                (`expr nil))
+                               (push acc "yield")
+                               (push acc " ")
+                               (= expr
+                                 (do 
+                                  (compile tokens.1 ctx)))
+                               (push acc (wrap_assignment_value expr))
+                               (push acc ";")
+                               acc)))
+                         
        (`var_counter 0)
        ;; the complicated form conversions
        (`gen_temp_name (fn (arg)
@@ -3631,7 +3656,94 @@
                ;(log "compile_while: prebuild: " prebuild)
                ;(log "compile_while: <-" (clone acc))
                acc)))
-       
+           
+       (`compile_for_with
+         (fn (tokens ctx)
+             [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
+             (compile_for_with_inner tokens ctx)
+             " " "}" ")" "()" ]))
+       (`compile_for_with_inner 
+         (fn (tokens ctx)
+             (let
+                 ((`acc [])
+                  (`idx 0)
+                  (`stmts [])
+                  (`ctx (new_ctx ctx))
+                  (`iter_ref (gen_temp_name "iter"))
+                  (`idx_iters [])
+                  (`generator_expression (gen_temp_name "elements"))
+                  (`body_function_ref (gen_temp_name "for_body"))
+                  
+                  
+                  (`prebuild [])
+                  (`for_args tokens.1.val)
+                  (`iterator_ref for_args.0) 
+                  (`elements (last for_args))
+                  (`iter_count (if for_args
+                                   (- for_args.length 1)
+                                   0))
+                  (`for_body tokens.2)
+                  (`body_is_block? (is_block? for_body.val)))
+               ;(log "compile_for_with: tokens: " tokens)
+               ;(log "compile_for_with: # of iters: " iter_count)
+               ;(log "compile_for_with: args: " for_args)
+               ;(log "compile_for_with: elements: " elements)
+               ;(log "for_body: body is block?" (is_block? for_body) for_body)
+               (when (< iter_count 1)
+                 
+                 (throw SyntaxError "Invalid for_each arguments"))
+               
+               (for_each (`iter_ref (range iter_count))
+                         (do
+                          (push idx_iters (prop for_args iter_ref))
+                          (set_ctx ctx
+                           (clean_quoted_reference (prop (last idx_iters) `name))
+                           ArgumentType)))
+               
+               ;(log "compile_for_with: idx_iters: " idx_iters)
+               
+                                        ;(when for_args.1.ref
+                                        ;     (set_ctx ctx for_args.1.name ArgumentType))
+               (set_ctx ctx generator_expression "arg")
+               (when (not body_is_block?)
+                 ;; we need to make it a block for our function
+                 (= for_body (make_do_block for_body)))
+                 
+               (= prebuild (build_fn_with_assignment body_function_ref
+                                                     for_body.val
+                                                     idx_iters))
+               
+                                        ; [iterator_ref]))
+               (set_prop ctx
+                         `return_last_value
+                         true)
+               
+               (push acc (compile prebuild ctx))
+               
+               ;(for_each (`t ["let" " " generator_expression "=" (wrap_assignment_value (compile elements ctx)) ";" ])
+                ;         (push acc t))
+               (for_each (`t [ "let" " " break_out "=" "false" ";"])
+                         (push acc t))
+               
+               (set_ctx ctx body_function_ref AsyncFunction)
+               ;; for the simplest, fastest scenario, one binding variable to the list
+               (cond
+                 (and (== for_args.length 2) ;; simplest (for_each (`i my_array) ...
+                      (not (is_array? for_args.1)))
+                 (do 
+                  ;(set_ctx ctx idx_iter Number)
+                  (for_each (`t ["for" " " "await" " " "(" "const" " "  iter_ref " " "of" " " (wrap_assignment_value (compile elements ctx)) ")" " " "{" ])
+                   (push acc t))
+                   
+                   (for_each (`t [ "await" " " body_function_ref "(" iter_ref ")"  ";" ])
+                             (push acc t))
+                   (for_each (`t ["if" "(" break_out ")" " "  "break" ";"])
+                             (push acc t))
+                   
+                   (push acc "}")))
+               
+               acc)))       
+           
        (`declare_log (if opts.quiet_mode
                          log
                         (defclog { `prefix: "DECLARE" `color: "white" `background: "black" })))
@@ -3740,8 +3852,8 @@
                                                           (set_declaration ctx "__SAFETY__" `level factor.1))
                                                       (declare_log "safety set: " (safety_level ctx))))
                                                 
-                                                )
-                                               )))
+                                                ))))
+                                            
                                  (declare_log "<-" (clone acc))
                                  acc)))
        (`safety_level (fn (ctx)
@@ -3965,8 +4077,7 @@
                  declarations.inlined
                  refname ;; it's been placed in source, so don't get the global, use the inlined reference
                  
-                 (and refval
-                      (not (== refval undefined)))
+                 (not (== refval undefined))
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
@@ -4071,12 +4182,16 @@
                     "cond": compile_cond
                     "fn": compile_fn  
                     "lambda": compile_fn
+                    "function*": (fn (tokens ctx)
+                                     (compile_fn tokens ctx { `generator: true }))
                     "defglobal": compile_set_global
                     "list": compile_list
                     "function": (fn (tokens ctx)
                                     (compile_fn tokens ctx { `synchronous: true }))
                     "=>": (fn (tokens ctx)
                               (compile_fn tokens ctx { `arrow: true }))
+                    "yield": compile_yield
+                    "for_with": compile_for_with
                     "quotem": compile_quotem
                     "quote": compile_quote
                     "quotel": compile_quotel
@@ -4583,7 +4698,10 @@
                                   else
                                   (get_val tokens ctx)))
                           
-                          (get_lisp_ctx tokens.name)
+                          (contains? tokens.name standard_types)
+                          tokens.name
+                          ;; finally check global scope
+                          (not (== undefined (get_lisp_ctx tokens.name)))
                           (compile_lisp_scoped_reference tokens.name ctx)
                           
                           else
@@ -4826,5 +4944,7 @@
     ;(when (> errors.length 0)
     ;  (main_log "ERRORS:" (clone errors)))
     (when opts.error_report
-          (opts.error_report errors))
+          (opts.error_report { `errors: errors `warnings: warnings}))
+          
+               
     output))))

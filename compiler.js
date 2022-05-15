@@ -2905,7 +2905,7 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                                 } else if (check_true( ((assignment_value instanceof Array)&&((assignment_value && assignment_value["0"]) instanceof Array)&&(assignment_value && assignment_value["0"] && assignment_value["0"]["0"] && assignment_value["0"]["0"]["ctype"])))) {
                                      return  await set_ctx(ctx,reference_name,await map_ctype_to_value((assignment_value && assignment_value["0"] && assignment_value["0"]["0"] && assignment_value["0"]["0"]["ctype"]),assignment_value))
                                 } else  {
-                                    await console.warn("compile_assignment: unknown assignment type: ",reference_name);
+                                    (warnings).push(("undeclared type assignment:"+reference_name));
                                      return  await set_ctx(ctx,reference_name,assignment_value)
                                 }
                             }();
@@ -7021,7 +7021,7 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                              return refname
                         } else if (check_true((declarations && declarations["inlined"]))) {
                              return refname
-                        } else if (check_true( (refval&&await not((refval===undefined))))) {
+                        } else if (check_true( await not((refval===undefined)))) {
                             has_lisp_globals=true;
                              return  [{
                                 ctype:refval
@@ -7778,7 +7778,9 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                                                          return await get_val(tokens,ctx)
                                                     }
                                                 }()
-                                            } else if (check_true( await get_lisp_ctx((tokens && tokens.name)))) {
+                                            } else if (check_true( await contains_ques_((tokens && tokens.name),standard_types))) {
+                                                 return (tokens && tokens.name)
+                                            } else if (check_true( await not((undefined===await get_lisp_ctx((tokens && tokens.name)))))) {
                                                  return await compile_lisp_scoped_reference((tokens && tokens.name),ctx)
                                             } else  {
                                                 throw new ReferenceError(("compile: unknown reference: "+(tokens && tokens.name)));
@@ -8060,9 +8062,13 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                      await (async function(){
                         let __array_op_rval__741=(opts && opts["error_report"]);
                          if (__array_op_rval__741 instanceof Function){
-                            return await __array_op_rval__741(errors) 
+                            return await __array_op_rval__741({
+                                errors:errors,warnings:warnings
+                            }) 
                         } else {
-                            return[__array_op_rval__741,errors]
+                            return[__array_op_rval__741,{
+                                errors:errors,warnings:warnings
+                            }]
                         }
                     })()
                 };
