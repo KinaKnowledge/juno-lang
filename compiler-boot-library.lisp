@@ -326,7 +326,15 @@
                   (push acc ([(quote set_prop) (quote Environment.definitions)
                                        (+ "" (as_lisp symname) "")
                                        defset.2])))))
-     acc))
+     acc)
+   {
+    `usage: ["declaration:array" "declaration:array*"]
+    `description: (+ "Given 1 or more declarations in the form of (symbol value ?metadata), " 
+                     "creates a symbol in global scope referencing the provided value.  If a "
+                     "metadata object is provided, this is stored as a the symbol's metadata.")
+    `tags: ["symbol" "reference" "definition" "metadata" "environment"]
+                     
+    })
  
 (defmacro define_env (`& defs)
     (let
@@ -972,6 +980,7 @@
                       (== comp.mark "return_point")
                       (and (not (== "return" next_val))
                            (not (== "throw" next_val))
+                           (not (== "yield" next_val))
                            (not (and (is_object? next_val)
                                      (is_string? next_val.ctype)
                                      (contains? "block" (or next_val.ctype ""))))))
@@ -1559,7 +1568,7 @@
                          (chop tokens.0.path)
                          (is_object? tokens)
                          tokens.path))
-            (console.log "compiler_syntax_validation: <- " validation_results)
+            ;(console.log "compiler_syntax_validation: <- " validation_results)
             (when (not validation_results.all_passed)
                (for_each (`problem (or validation_results.invalid []))
                   (push errors  {     `error: "SyntaxError"
