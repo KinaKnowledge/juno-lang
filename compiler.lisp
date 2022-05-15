@@ -4078,6 +4078,7 @@
                  refname ;; it's been placed in source, so don't get the global, use the inlined reference
                  
                  (not (== refval undefined))
+                 ;(contains? basename.0 (keys Environment.context.scope))    
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
@@ -4700,9 +4701,15 @@
                           
                           (contains? tokens.name standard_types)
                           tokens.name
-                          ;; finally check global scope
+                          ;; check global scope
                           (not (== undefined (get_lisp_ctx tokens.name)))
                           (compile_lisp_scoped_reference tokens.name ctx)
+                          
+                          ;; finally do we have a key in place for the global definition?
+                          ;(contains? (first (get_object_path tokens.name)) (keys Environment.context.scope))
+                          ;(do
+                          ;      (= has_lisp_globals true)
+                          ;      [{ `ctype: undefined } "(" "await" " " env_ref "get_global" "(\"" tokens.name  "\")" ")"])
                           
                           else
                           (do ;(comp_log "compile: unknown reference: " tokens.name)

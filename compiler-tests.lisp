@@ -520,6 +520,34 @@
     1000
     "global scope set - simple"
     ]
+    [ "(progn
+         (defglobal `tt1 0)
+         tt1)"
+    []
+    0
+    "global scope set and recall of js falsy values 0"
+    ]
+    [ "(progn
+         (defglobal `tt1 nil)
+         tt1)"
+    []
+    nil
+    "global scope set and recall of js falsy values - nil"
+    ]
+    [ "(progn
+         (defglobal `tt1 false)
+         tt1)"
+    []
+    false
+    "global scope set and recall of js falsy values - false"
+    ]
+    [ "(progn
+         (defglobal `tt1 (parseFloat \"AA\"))
+         (isNaN tt1))"
+    []
+    true
+    "global scope set and recall of js falsy values - NaN"
+    ]
     [ "(fn ()
             (do
                 (defglobal `test_set1 1010)
