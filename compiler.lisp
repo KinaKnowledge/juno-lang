@@ -35,7 +35,8 @@
 
 ;; Options:
 
-;; error_report (fn (errors)) - called with the accumulated compilation errors
+;; error_report (fn (errors)) - when compilation is completed, this function is called
+;;                              with the accumulated compilation errors and warnings
 ;; quiet_mode boolean - if true, logging isn't verbose at all 
 ;;                      (this will be inversed once the compiler is more stablized)
 ;; env - environment object to use for the compilation environment
@@ -47,8 +48,13 @@
     (let
       ((`get_global opts.env.get_global))
      (let
-      ((`tree quoted_lisp)
+      ((`tree quoted_lisp)  ;; the JSON source
        
+       ;; when we are compiling forms that are compile time manipulated by functions, 
+       ;; expanded_tree will hold the tree structure that is the result of those
+       ;; macro expansions 
+       
+       (`expanded_tree (clone tree))
        (`op nil)
        (`Environment opts.env)
        (`default_safety_level (or Environment.declarations.safety.level 1))
@@ -264,6 +270,8 @@
                                   "Boolean"
                                   (== NilType value)
                                   "nil"
+                                  (== Object value)
+                                  "Object"
                                   else
                                   value)))
        (`set_ctx (fn (ctx name value)
@@ -575,16 +583,54 @@
                                                  (not (== NOT_FOUND global)))
                                             nil)
                                })))
-       
-       (`get_source_chain (fn (ctx sources)
-                              (if ctx
-                                  (let
-                                      ((`sources (or sources [])))
-                                    (when ctx.source
-                                      (push sources ctx.source))
-                                    (if ctx.parent
-                                        (get_source_chain ctx.parent sources)
-                                        sources)))))
+       (`source_chain (fn (cpath tree sources)
+                                  (if (and (is_array? cpath)
+                                           tree)
+                                      (let
+                                          ((sources (or sources []))
+                                           (source nil))
+                                        (= cpath (chop cpath))
+                                        (= source (as_lisp (resolve_path cpath tree)))
+                                        (if (> source.length 80)
+                                            (= source (+ (-> source `substr 0 80) "...")))
+                                        ;(console.log "compiler_source_chain: cpath: " cpath "source: " source "tree: " tree sources)
+                                        (when (not (blank? source))
+                                          (push sources source))
+                                        (if (and (> cpath.length 0)
+                                                 (< sources.length 4))
+                                            (source_chain cpath tree sources))
+                                        sources))))
+       (`source_from_tokens (fn (tokens tree collect_parents?)
+                               (let
+                                   ()
+                                   ;(console.log "source_from_tokens: tokens: " (clone tokens) "tree: " (clone tree) "expanded_tree: " (clone expanded_tree))
+                                   ;(debug)
+                                   (cond
+                                       (and tokens.path
+                                            collect_parents?)
+                                       (source_chain tokens.path tree)
+                                       tokens.path
+                                       (as_lisp (resolve_path tokens.path tree))
+                                       (and (is_array? tokens)
+                                            tokens.0.path
+                                            collect_parents?)
+                                       (source_chain tokens.0.path tree)
+                                       (and (is_array? tokens)
+                                            tokens.0.path)
+                                       (as_lisp (resolve_path (chop tokens.0.path) tree))
+                                       (and (== undefined tokens)
+                                            (not (== undefined tree)))
+                                       (as_lisp tree)
+                                       else
+                                       (do
+                                           (console.warn "source_from_tokens: unable to determine source path from: " (clone tokens))
+                                           
+                                           "")))))
+                                        
+                                      
+                                                 
+                          
+                          
        (`NOT_FOUND  "__!NOT_FOUND!__")
        (`THIS_REFERENCE (fn () "this"))
        (`NOT_FOUND_THING (fn () true))
@@ -696,6 +742,7 @@
                              (`_path (or _path []))
                              (`qval nil)
                              (`idx -1)
+                             (`tobject nil)
                              (`argdetails nil)
                              (`argvalue nil)
                                         ;(`tstate (or tstate { `in_quotem: false } ))
@@ -705,7 +752,23 @@
                                 (console.error "tokenize: nil ctx passed: " (clone args))
                                 (throw ReferenceError "nil/undefined ctx passed to tokenize"))
                           (when (is_array? args)
-                            (= args (compile_time_eval ctx args)))   ;; check to see this is an eval_when compile function, and evaluate it if so.
+                            ;; check to see this is an eval_when compile function, and evaluate it if so.
+                            (= args (compile_time_eval ctx args))
+                            (cond
+                                (> _path.length 1)
+                                (do
+                                   (= tobject (resolve_path (chop _path) expanded_tree))
+                                   (when tobject
+                                       (set_prop tobject
+                                                 (last _path)
+                                                 args)))
+                                (== _path.length 1)
+                                (do 
+                                    (set_prop expanded_tree
+                                              (first _path)
+                                              args))
+                                else
+                                (= expanded_tree args)))   
                           (cond 
                             (or (is_string? args)
                                 (is_number? args)
@@ -799,6 +862,7 @@
                    
                    (try
                       (= ntree (apply precompile_function (-> lisp_tree `slice 1)))
+                      
                       (catch Error (`e)
                         (do
                          ;(console.error "precompilation error: " e)
@@ -807,10 +871,9 @@
                          (push errors
                                {  `error: e.name
                                   `message: e.message
-                                  `form: ctx.source
-                                  `parent_forms: (get_source_chain ctx)
+                                  `form: (source_chain [0] [lisp_tree])
+                                  `parent_forms: []
                                   `invalid: true
-                                  `text: (as_lisp lisp_tree)
                                })
                          (throw e)
                          )))
@@ -854,8 +917,9 @@
                                     `__COMP_INFIX_OPS__
                                     true)
                            ;(log "infix + declaration: " declaration " ctx value: " )
-                           (when (and (or (and declaration (== declaration.type Array))
-                                          (and declaration (== declaration.type Object))
+                           (when (and (or (== declaration.type Array)
+                                          (== declaration.type Object)
+                                          (== symbol_ctx_val `objliteral)                     
                                           (== symbol_ctx_val Expression)
                                           (== symbol_ctx_val ArgumentType)
                                           (== tokens.1.type `objlit)
@@ -1286,9 +1350,14 @@
                                           ;; then compile and then evaluate it.
                                           (top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx)))
                                           (= tokens (tokenize (prop lisp_tree idx) ctx))
+                                          (top_level_log (+ "" idx "/" num_non_return_statements) "tokens ->" (clone tokens))
+                                          (top_level_log (+ "" idx "/" num_non_return_statements) "expand ->" (clone expanded_tree))
+
                                           (= stmt (compile tokens ctx))
+                                          
                                           (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " stmt)
                                           (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
+                                          
                                           (top_level_log (+ "" idx "/" num_non_return_statements) "<-" rval)
                                           (top_level_log (+ "" idx "/" num_non_return_statements) "ctx" (clone Environment.context.scope))))
                                    ;; return the last statement for standard compilation.
@@ -1329,15 +1398,10 @@
                                    (= lambda_block true)
                                    (setf_ctx ctx `__LAMBDA_STEP__
                                             (- tokens.length 1)))
-                             ;(clog "start: lambda_block?:" lambda_block "lambda_step:" (get_ctx_val ctx `__LAMBDA_STEP__)  "num_steps: " (- tokens.length 1) "if_block?" (get_ctx_val ctx `__IF_BLOCK__) (clone tokens))
+
                              (when (not block_options.no_scope_boundary)
                                (push acc "{"))
                                
-                             
-                                        ;(when true ; block_options.new_scope
-                                        ;     (= ctx (new_ctx ctx)))
-                                        ;(when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))
-                                        ;(push stmts { `comment: (+ "block start  block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step " total steps: " (- tokens.length 1) " return_point: " ctx.return_point) })      
                              (while (< idx (- tokens.length 1))
                                     (do
                                      (inc idx)
@@ -1373,9 +1437,6 @@
                                                 (= stmt { `ignored: "declare" } )
                                                 (= stmt (compile token ctx)))))
                                       
-                                        ;(push stmts { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step " source: " ctx.source) })      
-                                      
-                                     ; (clog "return_point: " ctx.return_point "block_step:" ctx.block_step "rtn?:" return_last "stmnt: " stmt (length stmt))
                                       (cond 
                                         (and (== stmt.0 break_out)
                                              (== stmt.1 "=")
@@ -1453,7 +1514,7 @@
                                    ;(clog "HERE: block_step:" ctx.block_step "last stmt: " (last stmts))
                                     ))
                              
-                                        ;(when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))  
+                                       
                              (push acc stmts)
                              (when (not block_options.no_scope_boundary)
                                (push acc "}"))
@@ -1666,7 +1727,7 @@
                            (push acc "{")
                            (inc sub_block_count)
                            
-                           (when ctx.source (push acc { `comment: (+ "let start " ctx.source " " ) }))
+                           ;;(when ctx.source (push acc { `comment: (+ "let start " ctx.source " " ) }))
                            
                            ;; let must be two pass, because we need to know all the symbol names being defined in the 
                            ;; allocation block because let allows us to refer to symbol names out of order, similar to
@@ -1813,7 +1874,7 @@
                                                     (map_ctype_to_value assignment_value.0.0.ctype assignment_value))) 
                                         else 
                                          (do 
-                                             (push warnings (+ "undeclared type assignment:" reference_name))
+                                             ;(push warnings (+ "undeclared type assignment:" reference_name))
                                              (set_ctx ctx
                                                       reference_name
                                                       assignment_value)))
@@ -2339,9 +2400,7 @@
                           ;(if_log "if_false: " if_false.source if_false)
                                         ;(if (not ctx.return_point)
                           (push acc { `ctype: "ifblock" })
-                          (when ctx.source (push acc { `comment: (+ "" ctx.source " " ) }))
-                                        ;(push acc { `comment: (+ "start_if:" ctx.source " ") })
-                                        ;(push acc { `comment: (+ "block_id: " (or ctx.block_id "") "  block_step: " ctx.block_step ) })
+                          
                           ;(if_log "starting test compilation")
                           (= compiled_test (compile_elem test_form ctx))
                           ;(if_log "test compilation complete")
@@ -3840,6 +3899,10 @@
                                             (do
                                                (for_each (`name (each targeted `name))
                                                   (set_declaration ctx name `type RegExp)))
+                                            (== declaration "object")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type Object)))
                                             (== declaration "optimize")
                                             (do 
                                                 (declare_log "optimizations: " targeted)
@@ -3900,7 +3963,7 @@
                                             stmt)))
                   (`token nil))
                ;(sr_log "->" (clone tokens))
-               ;(sr_log "source ->" ctx.source)
+               
                
                (cond 
                  (== call_type "lisp")
@@ -4343,18 +4406,8 @@
                                                  [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
                                             stmt)))
                   (`ref nil))
-               (set_prop
-                ctx
-                `source 
-                (cond tokens.source
-                  tokens.source
-                  tokens.0.source
-                  tokens.0.source
-                  tokens.1.source
-                  tokens.1.source
-                  else
-                  ctx.source))
-               ;(comp_log (+ "compile:" _cdepth " start:") ctx.source)
+               
+               
                ;(comp_log (+ "compile:" _cdepth ":->") tokens)
                                        
                (try
@@ -4717,7 +4770,7 @@
                       else
                       (do 
                        ;(error_log "compile: invalid compilation structure:",tokens)
-                       ;(console.error "Compile passed invalid compilation structure")
+                       ;console.error "Compile passed invalid compilation structure")
                         ;(console.error (clone tokens))
                         ;(console.error "CTX:" (clone ctx))
                         (throw SyntaxError "compile passed invalid compilation structure"))
@@ -4727,14 +4780,9 @@
                         (setq is_error {
                               `error: e.name
                               `message: e.message
-                              `form: ctx.source
-                              `parent_forms: (get_source_chain ctx)
+                              `form: (source_from_tokens tokens expanded_tree)
+                              `parent_forms: (source_from_tokens tokens expanded_tree true)
                               `invalid: true
-                              `text: (as_lisp (if (is_array? tokens)
-                                                  (map (fn (v)
-                                                           v.val) 
-                                                       tokens)
-                                                  tokens.val))
                               })
                         (if (not e.handled)
                             (push errors

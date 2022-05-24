@@ -1133,56 +1133,25 @@
            "tags":["rand" "number" "integer" ]
        })
 
-(defun symbol_tree (quoted_form _state _current_path)
-    (let
-        ((acc [])
-         (_state (if _state
-                     _state
-                     {
-                        `symbols:{}
-                     }))
-         (_current_path (or _current_path [])))
-        (declare (array _current_path))
-        (cond
-            (is_array? quoted_form)
-            (do
-                (map (fn (elem idx)
-                         (do 
-                            (ifa (symbol_tree elem _state (+ _current_path idx))
-                                 (push acc it))))
-                     quoted_form)
-                 acc)
-            (and (is_string? quoted_form)
-                 (starts_with? "=:" quoted_form))
-            (do 
-                (unquotify quoted_form))
-                
-                
-            (is_object? quoted_form)
-            (do (for_each (`pset (pairs quoted_form))
-                    (ifa (symbol_tree pset.1 _state (+ _current_path [ pset.1 ]))
-                         (push acc it)))
-                acc)))
-    {
-        `description: "Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen."
-        `usage: ["quoted_form:quote"]
-        `tags: ["structure" "development" "analysis"]
-    })  
 
 (defun resolve_multi_path (path obj not_found)
   (do 
-      (debug)
+    ;(console.log "path: " path " obj: " obj)
     (cond
     (is_object? obj)
     (cond
-      
       (and (== (length path) 1)
           (== "*" (first path)))
 	  (or obj
 	      not_found)
-	  (== (length path) 1)
+	  (and (== (length path) 1)
+	       (is_object? (prop obj (first path))))
       (or (prop obj (first path))
            not_found)
+      (and (== (length path) 1)
+           (not (is_object? (prop obj (first path))))
+           (not (eq nil (prop obj (first path)))))
+      (prop obj (first path))
       (and (is_array? obj)
            (== "*" (first path)))
       (for_each (val obj)
@@ -1193,8 +1162,6 @@
 	  (for_each (val (values obj))
 	    (resolve_multi_path (rest path) val not_found))
 	  
-	  
-	  
 	  (> (length path) 1)
 	  (resolve_multi_path (rest path) (prop obj (first path)) not_found))
 	 else
@@ -1204,6 +1171,89 @@
        `usage:["path:array" "obj:object" "not_found:?*"]
        `description:  "Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list."
    })
+
+(defun symbol_tree (quoted_form _state _current_path )
+    (let
+        ((acc [])
+         (allocators {
+                `let: [[1 `* 0]]
+                `defun: [[1] [2 `*]]
+                })
+         (uop nil)
+         (get_allocations (fn ()
+                             (do
+                              (= sym_paths (prop allocators (unquotify quoted_form.0)))
+                              (when sym_paths
+                                 (for_each (sym_path sym_paths)
+                                    (do
+                                        (= fval (resolve_multi_path sym_path quoted_form))
+                                        (console.log "Fval is: " fval "sym_path: " sym_path "current_path: " _current_path " " quoted_form)
+                                        (= uop (unquotify quoted_form.0))
+                                        (if (is_array? fval)
+                                          (for_each (`s fval)
+                                            (do
+                                              (= s (unquotify s))
+                                              (when (eq nil (prop _state.definitions fval))
+                                                    (set_prop _state.definitions
+                                                              s
+                                                              []))
+                                              (push (prop _state.definitions s)
+                                                   { `path: _current_path `op: uop })))
+                                           (do 
+                                               (when (eq nil (prop _state.definitions fval))
+                                                    (set_prop _state.definitions
+                                                              fval
+                                                              []))
+                                               (push (prop _state.definitions fval)
+                                                     { `path: _current_path `op: uop })))))))))
+         (idx -1)
+         (fval nil)
+         (sym_paths nil)
+         (is_root (if (eq _state undefined)
+                      true
+                      false))
+         (_state (if _state
+                     _state
+                     {
+                        `definitions:{}
+                     }))
+         (_current_path (or _current_path [])))
+        (declare (array _current_path))
+        (console.log "symbol_tree: quoted_form: " quoted_form _current_path)
+        (get_allocations)
+        (cond
+            (is_array? quoted_form)
+            (do
+                (map (fn (elem idx)
+                         (do 
+                            (ifa (symbol_tree elem _state (conj  _current_path idx))
+                                 (push acc it))))
+                     quoted_form)
+                 (if is_root 
+                     (+ { `tree: acc }
+                        _state)
+                     acc))
+            (and (is_string? quoted_form)
+                 (starts_with? "=:" quoted_form))
+            (do 
+                (unquotify quoted_form))
+                
+                
+            (is_object? quoted_form)
+            (do 
+                (for_each (`pset (pairs quoted_form))
+                    (ifa (symbol_tree pset.1 _state (conj _current_path [ pset.1 ]))
+                         (push acc it)))
+                (if is_root 
+                     (+ { `tree: acc }
+                        _state)
+                     acc))))
+    {
+        `description: "Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen."
+        `usage: ["quoted_form:quote"]
+        `tags: ["structure" "development" "analysis"]
+    })   
+
 
 (defun except_nil (`items)
         (do 
@@ -1588,3 +1638,20 @@
         (console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree ))
     validation_results))
 
+(defun symbols ()
+    (keys Environment.context.scope)
+    {
+        `description: "Returns an array of all defined symbols in the current evironment."
+        `usage: []
+        `tags: [`symbol `env `environment `global `globals ]
+    })
+
+(defun describe_all ()    
+    (apply add   
+      (for_each (s (symbols))
+        (to_object [[s (describe s)]])))
+    {
+        `description: "Returns an object with all defined symbols as the keys and their corresponding descriptions."
+        `usage: []
+        `tags: [`env `environment `symbol `symbols `global `globals ]
+    })
