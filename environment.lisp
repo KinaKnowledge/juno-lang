@@ -845,6 +845,7 @@
                     `eval eval_exp
                     `reader reader
                     `add_escape_encoding add_escape_encoding
+                    `get_outside_global get_outside_global
                     `as_lisp lisp_writer
                     `lisp_writer lisp_writer)
          
