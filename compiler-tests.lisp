@@ -908,7 +908,7 @@
     `(+ x y)
     "let returning quoted closure"
     ]
-    [ "(fn ()
+    [ "((fn ()
          (try 
           (let
             ((`x 1)
@@ -917,9 +917,9 @@
            source)
            (catch Error (`e)
               (do 
-                  e.message))))"
+                  e.message)))))"
     []
-    [{"error":"ReferenceError" "message":"compile: unknown reference: x" "form":"" "parent_forms":() "invalid":true "text":"x"}]
+    [{"error":"ReferenceError" "message":"compile: unknown reference: x" "form":"x" "parent_forms":("(+ x y)") "invalid":true}]
     "let returning quoted closure then eval"
     nil
     "(-> env `set_check_external_env false)"
@@ -1492,6 +1492,14 @@
       "Correct type determination on overloaded add - array"
       
       ]
+   ["((fn (inb) 
+          (let
+            ((a { `b: 1 }))
+            (+ a inb)))
+          { `c: 2})"
+    []
+    {`b: 1 `c: 2}
+    "overloaded add with local defined object"]
    ["(defglobal rtest2 
       (fn (acc)
         (let
@@ -1957,4 +1965,59 @@
     []
     true
     "Throwing previously constructed Error instance"]
+   ["(defglobal msb
+        (fn () 
+            (let
+              ((buckets (new Object))
+               (push_to (fn (category thing)
+                             (let
+                                 ((`place nil))
+                             (if (eq nil category)
+                                 buckets
+                                 (do
+                                     (= place (prop buckets category))
+                                     (if place
+                                        (push place thing)
+                                        (set_prop buckets
+                                                  category
+                                                  [ thing ]))
+                                     thing))))))
+             push_to)))
+    (defglobal srt (msb))
+    (srt `c1 100)
+    (srt `c1 101)
+    (srt `c3 2021)
+    (srt)"
+  nil
+  {"c1":[100 101] "c3":[2021]}
+  "Top level function returning a function accessing a closure."
+     ]
+  ["(do
+        (defvar msb
+            (fn () 
+            (let
+              ((buckets (new Object))
+               (push_to (fn (category thing)
+                             (let
+                                 ((`place nil))
+                             (if (eq nil category)
+                                 buckets
+                                 (do
+                                     (= place (prop buckets category))
+                                     (if place
+                                        (push place thing)
+                                        (set_prop buckets
+                                                  category
+                                                  [ thing ]))
+                                     thing))))))
+              push_to)))
+        (defvar srt (msb))
+        (srt `c1 100)
+        (srt `c1 101)
+        (srt `c3 2021)
+    (srt))"
+   nil
+   {"c1":[100 101] "c3":[2021]}
+   "Function returning a function accessing a closure"
+   ]
 ])

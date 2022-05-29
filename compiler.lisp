@@ -3212,9 +3212,15 @@
                     (when wrap_as_function?
                       (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                    
-                   (set_prop root_ctx.defined_lisp_globals
-                             target
-                             assignment_value))
+                   (do 
+                       (if (and (is_array? assignment_value)
+                                (== assignment_value.0 "await"))
+                           (set_prop root_ctx.defined_lisp_globals
+                                     target
+                                     AsyncFunction)
+                           (set_prop root_ctx.defined_lisp_globals
+                                     target
+                                     assignment_value))))
                
                ;(clog "compile_set_global: assignment_value: " assignment_value)
                (= acc [{ `ctype: "statement"} "await" " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])

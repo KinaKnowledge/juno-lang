@@ -233,7 +233,7 @@
                   (join (fn (`& args)
                             (cond
                                (== args.length 1)
-                               (-> args `join "")
+                               (-> args.0 `join "")
                                else
                                (-> args.1 `join args.0))))
                   (lowercase (fn (x)
@@ -864,7 +864,7 @@
                                               ["(" args.0 ")" ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
                                    `join: (fn (args)
                                               (if (== args.length 1) 
-                                                  ["(" args.0 ")" ".join" "()"]
+                                                  ["(" args.0 ")" ".join" "('')"]
                                                   ["(" args.1 ")" ".join" "(" args.0 ")" ]))
                                    `take: (fn (args)
                                               ["(" args.0 ")" ".shift" "()" ])
