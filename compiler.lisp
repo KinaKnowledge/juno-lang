@@ -2875,7 +2875,7 @@
                                 (`error_message nil)
                                 (`mode 1)
                                 (`error_instance nil))
-                             (log "compile_throw: tokens:" tokens)
+                             ;(log "compile_throw: tokens:" tokens)
                              (cond
                                (and (is_array? tokens)
                                     (== tokens.length 2)
@@ -3194,7 +3194,8 @@
                    (compile tokens.2 ctx)))
                
                (= wrap_as_function? (check_needs_wrap assignment_value))
-               (if (and (is_object? assignment_value.0)
+               (cond 
+                   (and (is_object? assignment_value.0)
                         assignment_value.0.ctype)
                    (do 
                     (set_prop root_ctx.defined_lisp_globals
@@ -3212,6 +3213,7 @@
                     (when wrap_as_function?
                       (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                    
+                   else
                    (do 
                        (if (and (is_array? assignment_value)
                                 (== assignment_value.0 "await"))
@@ -3223,7 +3225,10 @@
                                      assignment_value))))
                
                ;(clog "compile_set_global: assignment_value: " assignment_value)
-               (= acc [{ `ctype: "statement"} "await" " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
+               (= acc [{ `ctype: "statement" } (if (== Function (prop root_ctx.defined_lisp_globals target))
+                                                   ""
+                                                   "await") 
+                                               " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
                ;(clog "<-" acc)
                acc)))
        
@@ -4960,7 +4965,11 @@
                  (= has_lisp_globals false))
            ;(main_log "globals:" has_lisp_globals " constructed assembly:" (clone assembly))
            ;(main_log "assembly: " (assemble_output assembly))
-                      
+           (when (and assembly.0.ctype
+                     (is_function? assembly.0.ctype))
+               (set_prop assembly.0
+                         `ctype
+                         (map_value_to_ctype assembly.0.ctype)))          
            (cond 
              (and (not is_error)
                   assembly

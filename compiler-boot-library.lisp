@@ -1655,3 +1655,62 @@
         `usage: []
         `tags: [`env `environment `symbol `symbols `global `globals ]
     })
+
+(defun is_value? (val)
+    (if (== val "")
+        true
+        (if (== val undefined)
+            false
+            (if (isNaN val)
+                true
+                (if val
+                    true
+                    false))))
+    {
+     `description: "Returns true for anything that is not nil or undefined."
+     `usage: ["val:*"]
+     `tags: [`if `value `truthy `false `true ]
+     })
+ 
+(defun and* (`& vals)
+   (when (> vals.length 0)
+       (defvar rval true)
+       (for_each (`v vals)
+          (when (not (is_value? v))
+             (= rval false)
+             (break)))
+        rval)
+    {
+        `description: (+ "Similar to and, but unlike and, values that " 
+                         "are \"\" (blank) or NaN are considered to be true."  
+                         "Uses is_value? to determine if the value should be considered to be true."
+                         "Returns true if the given arguments all are considered a value, " 
+                         "otherwise false.  If no arguments are provided, returns undefined.")
+        `usage: ["val0:*" "val1:*" "val2:*" ]
+        `tags: ["truth" "and" "logic" "truthy"]
+    })
+
+(defun or* (`& vals)
+   (when (> vals.length 0)
+       (defvar rval false)
+       (for_each (`v vals)
+          (when (is_value? v)
+             (= rval true)
+             (break)))
+        rval)
+    {
+        `description: (+ "Similar to or, but unlike or, values that " 
+                         "are \"\" (blank) or NaN are considered to be true."  
+                         "Uses is_value? to determine if the value should be considered to be true."
+                         "Returns true if the given arguments all are considered a value, " 
+                         "otherwise false.  If no arguments are provided, returns undefined.")
+        `usage: ["val0:*" "val1:*" "val2:*" ]
+        `tags: ["truth" "or" "logic" "truthy"]
+    })
+       
+                      
+       
+       
+               
+       
+                

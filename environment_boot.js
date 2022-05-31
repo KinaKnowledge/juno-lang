@@ -2557,7 +2557,7 @@ export async function environment_boot(Environment) {
     await Environment.set_global("symbols",async function() {
          return  await (await Environment.get_global("keys"))(Environment.context.scope)
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"symbols\" \"fn_args\":\"()\" \"description\":\"Returns an array of all defined symbols in the current evironment.\" \"usage\":() \"tags\":(\"symbol\" \"env\" \"environment\" \"global\" \"globals\")}')));
-     return  await Environment.set_global("describe_all",async function() {
+    await Environment.set_global("describe_all",async function() {
          return  await (async function(){
             let __apply_args__261=await (async function() {
                 let __for_body__265=async function(s) {
@@ -2584,7 +2584,80 @@ export async function environment_boot(Environment) {
             })();
             return ( (await Environment.get_global("add"))).apply(this,__apply_args__261)
         })()
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"describe_all\" \"fn_args\":\"()\" \"description\":\"Returns an object with all defined symbols as the keys and their corresponding descriptions.\" \"usage\":() \"tags\":(\"env\" \"environment\" \"symbol\" \"symbols\" \"global\" \"globals\")}')))
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"describe_all\" \"fn_args\":\"()\" \"description\":\"Returns an object with all defined symbols as the keys and their corresponding descriptions.\" \"usage\":() \"tags\":(\"env\" \"environment\" \"symbol\" \"symbols\" \"global\" \"globals\")}')));
+    await Environment.set_global("is_value?",async function(val) {
+        if (check_true ((val===""))){
+              return true
+        } else {
+             if (check_true ((val===undefined))){
+                  return false
+            } else {
+                 if (check_true (await isNaN(val))){
+                      return true
+                } else {
+                     if (check_true (val)){
+                          return true
+                    } else {
+                          return false
+                    }
+                }
+            }
+        }
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_value?\" \"fn_args\":\"(val)\" \"description\":\"Returns true for anything that is not nil or undefined.\" \"usage\":(\"val:*\") \"tags\":(\"if\" \"value\" \"truthy\" false true)}')));
+    await Environment.set_global("and*",async function(...vals) {
+        if (check_true (((vals && vals.length)>0))){
+            let rval=true;
+            ;
+            await (async function() {
+                let __for_body__270=async function(v) {
+                    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("is_value?"))(v)))){
+                        rval=false;
+                        __BREAK__FLAG__=true;
+                        return
+                    }
+                };
+                let __array__271=[],__elements__269=vals;
+                let __BREAK__FLAG__=false;
+                for(let __iter__268 in __elements__269) {
+                    __array__271.push(await __for_body__270(__elements__269[__iter__268]));
+                    if(__BREAK__FLAG__) {
+                         __array__271.pop();
+                        break;
+                        
+                    }
+                }return __array__271;
+                 
+            })();
+             return  rval
+        }
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"and*\" \"fn_args\":\"(\\"&\\" vals)\" \"description\":(+ \"Similar to and, but unlike and, values that \" \"are \\"\\" (blank) or NaN are considered to be true.\" \"Uses is_value? to determine if the value should be considered to be true.\" \"Returns true if the given arguments all are considered a value, \" \"otherwise false.  If no arguments are provided, returns undefined.\") \"usage\":(\"val0:*\" \"val1:*\" \"val2:*\") \"tags\":(\"truth\" \"and\" \"logic\" \"truthy\")}')));
+     return  await Environment.set_global("or*",async function(...vals) {
+        if (check_true (((vals && vals.length)>0))){
+            let rval=false;
+            ;
+            await (async function() {
+                let __for_body__274=async function(v) {
+                    if (check_true (await (await Environment.get_global("is_value?"))(v))){
+                        rval=true;
+                        __BREAK__FLAG__=true;
+                        return
+                    }
+                };
+                let __array__275=[],__elements__273=vals;
+                let __BREAK__FLAG__=false;
+                for(let __iter__272 in __elements__273) {
+                    __array__275.push(await __for_body__274(__elements__273[__iter__272]));
+                    if(__BREAK__FLAG__) {
+                         __array__275.pop();
+                        break;
+                        
+                    }
+                }return __array__275;
+                 
+            })();
+             return  rval
+        }
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"or*\" \"fn_args\":\"(\\"&\\" vals)\" \"description\":(+ \"Similar to or, but unlike or, values that \" \"are \\"\\" (blank) or NaN are considered to be true.\" \"Uses is_value? to determine if the value should be considered to be true.\" \"Returns true if the given arguments all are considered a value, \" \"otherwise false.  If no arguments are provided, returns undefined.\") \"usage\":(\"val0:*\" \"val1:*\" \"val2:*\") \"tags\":(\"truth\" \"or\" \"logic\" \"truthy\")}')))
 }
 
 }
