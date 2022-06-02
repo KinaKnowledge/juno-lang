@@ -1537,7 +1537,8 @@ async function init_dlisp()
                         return __target_obj__163;
                         
                     }();
-                    let reader=async function(text,opts) {    let output_structure;    let idx;
+                    let reader=async function(text,opts) {    let output_structure;
+    let idx;
     let line_number;
     let column_number;
     let len;
@@ -1579,7 +1580,7 @@ async function init_dlisp()
                   return false
             } 
         })();
-        in_buffer=text.split("");
+        in_buffer=(text).split("");
         in_code=0;
         in_quotes=1;
         in_long_text=2;
@@ -1589,7 +1590,7 @@ async function init_dlisp()
             let end;
             start=await Math.max(0,(idx-10));
             end=await Math.max(await (await Environment.get_global("length"))(in_buffer),(idx+10));
-             return  in_buffer.slice(start,end).join("")
+             return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")
         };
         position=async function() {
              return  ("line: "+line_number+" column: "+column_number)
@@ -1641,8 +1642,8 @@ async function init_dlisp()
                                      return(__targ__6)[idx]
                                 } 
                             })();
-                            if (check_true ((key instanceof Array&&(( key && key.length )===2)&&(( key && key["0"] )==="=:quotem")&&(( key && key["1"] ) instanceof String || typeof ( key && key["1"] )==='string')))){
-                                 key=( key && key["1"] )
+                            if (check_true (((key instanceof Array)&&((key && key.length)===2)&&((key && key["0"])==="=:quotem")&&((key && key["1"]) instanceof String || typeof (key && key["1"])==='string')))){
+                                 key=(key && key["1"])
                             };
                             if (check_true (((key instanceof String || typeof key==='string')&&await (await Environment.get_global("starts_with?"))("=:",key)&&(await (await Environment.get_global("length"))(key)>2)))){
                                  key=await key["substr"].call(key,2)
@@ -1682,7 +1683,7 @@ async function init_dlisp()
                                 } else  {
                                     idx+=1;
                                     if (check_true (await (await Environment.get_global("ends_with?"))(":",key))){
-                                         key=key.substr(0,(key.length-1))
+                                         key=await (await Environment.get_global("chop"))(key)
                                     } else {
                                         if (check_true ((await (async function(){
                                             let __targ__11=block;
@@ -1761,7 +1762,7 @@ async function init_dlisp()
         process_word=async function(word_acc,backtick_mode) {
             let word;
             let word_as_number;
-            word=word_acc.join("");
+            word=(word_acc).join("");
             word_as_number=await parseFloat(word);
              return  await async function(){
                 if (check_true( ("true"===word))) {
@@ -1820,7 +1821,7 @@ async function init_dlisp()
             last_c=null;
             block_return=null;
             if (check_true (_prefix_op)){
-                 acc.push(_prefix_op)
+                 (acc).push(_prefix_op)
             };
             depth=_depth;
             await (async function(){
@@ -1837,10 +1838,10 @@ async function init_dlisp()
                          column_number=0
                     };
                     if (check_true (debugmode)){
-                         await console.log(_depth,"C->",c,next_c,mode,escape_mode,await clone(acc),await clone(word_acc),( handler_stack && handler_stack.length ))
+                         await console.log(_depth,"C->",c,next_c,mode,escape_mode,await clone(acc),await clone(word_acc),(handler_stack && handler_stack.length))
                     };
                     await async function(){
-                        if (check_true( ((next_c===undefined)&&(( handler_stack && handler_stack.length )===0)))) {
+                        if (check_true( ((next_c===undefined)&&((handler_stack && handler_stack.length)===0)))) {
                              if (check_true (false))throw new SyntaxError(("no match found: "+await position()+" for "+await (async function(){
                                 let __targ__17=await (await Environment.get_global("last"))(handler_stack);
                                 if (__targ__17){
@@ -1853,7 +1854,7 @@ async function init_dlisp()
                             if (__targ__18){
                                  return(__targ__18)[0]
                             } 
-                        })()))||(( handler_stack && handler_stack.length )>1))))) {
+                        })()))||((handler_stack && handler_stack.length)>1))))) {
                              throw new SyntaxError(("premature end: "+await position()+" expected: "+await (async function(){
                                 let __targ__19=await (await Environment.get_global("last"))(handler_stack);
                                 if (__targ__19){
@@ -1874,33 +1875,36 @@ async function init_dlisp()
                             mode=in_code;
                             __BREAK__FLAG__=true;
                             return
+                        } else if (check_true( ((92===await c["charCodeAt"].call(c,0))&&(mode===in_long_text)))) {
+                            (word_acc).push(c);
+                             return  (word_acc).push(c)
                         } else if (check_true( ((mode>0)&&(escape_mode===1)&&(92===await c["charCodeAt"].call(c,0))))) {
-                             return  word_acc.push(c)
+                             return  (word_acc).push(c)
                         } else if (check_true( ((mode>0)&&(92===await c["charCodeAt"].call(c,0))))) {
                              return  escape_mode=2
                         } else if (check_true( ((mode>0)&&(escape_mode===1)))) {
-                             return  word_acc.push(await handle_escape_char(c))
+                             return  (word_acc).push(await handle_escape_char(c))
                         } else if (check_true( ((mode===in_long_text)&&(escape_mode===0)&&(c==="|")))) {
-                            acc=await (await Environment.get_global("add"))(word_acc.join(""));
+                            acc=await (await Environment.get_global("add"))((word_acc).join(""));
                             word_acc=[];
                             mode=in_code;
                             __BREAK__FLAG__=true;
                             return
                         } else if (check_true( ((mode===in_quotes)&&(escape_mode===0)&&(c==="\"")))) {
-                            acc=await (await Environment.get_global("add"))(word_acc.join(""));
+                            acc=await (await Environment.get_global("add"))((word_acc).join(""));
                             word_acc=[];
                             mode=in_code;
                             __BREAK__FLAG__=true;
                             return
                         } else if (check_true( ((mode===in_single_quote)&&(escape_mode===0)&&(c==="'")))) {
-                            acc=await (await Environment.get_global("add"))(word_acc.join(""));
+                            acc=await (await Environment.get_global("add"))((word_acc).join(""));
                             word_acc=[];
                             mode=in_code;
                             __BREAK__FLAG__=true;
                             return
                         } else if (check_true( ((c==="|")&&(mode===in_code)))) {
-                            if (check_true ((( word_acc && word_acc.length )>0))){
-                                acc.push(await process_word(word_acc));
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (acc).push(await process_word(word_acc));
                                  word_acc=[]
                             };
                             mode=in_long_text;
@@ -1909,10 +1913,10 @@ async function init_dlisp()
                                 block_return=["=:quotem",block_return];
                                  backtick_mode=0
                             };
-                             return  acc.push(block_return)
+                             return  (acc).push(block_return)
                         } else if (check_true( ((c==="\"")&&(escape_mode===0)&&(mode===in_code)))) {
-                            if (check_true ((( word_acc && word_acc.length )>0))){
-                                acc.push(await process_word(word_acc));
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (acc).push(await process_word(word_acc));
                                  word_acc=[]
                             };
                             mode=in_quotes;
@@ -1920,10 +1924,10 @@ async function init_dlisp()
                             if (check_true ((backtick_mode===1))){
                                  backtick_mode=0
                             };
-                             return  acc.push(block_return)
+                             return  (acc).push(block_return)
                         } else if (check_true( ((c==="'")&&(escape_mode===0)&&(mode===in_code)))) {
-                            if (check_true ((( word_acc && word_acc.length )>0))){
-                                acc.push(await process_word(word_acc));
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (acc).push(await process_word(word_acc));
                                  word_acc=[]
                             };
                             mode=in_single_quote;
@@ -1931,12 +1935,12 @@ async function init_dlisp()
                             if (check_true ((backtick_mode===1))){
                                  backtick_mode=0
                             };
-                             return  acc.push(block_return)
+                             return  (acc).push(block_return)
                         } else if (check_true( (mode===in_comment))) {
                              return false
                         } else if (check_true( ((c===";")&&(mode===in_code)))) {
-                            if (check_true ((( word_acc && word_acc.length )>0))){
-                                acc.push(await process_word(word_acc));
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (acc).push(await process_word(word_acc));
                                  word_acc=[]
                             };
                             mode=in_comment;
@@ -1960,20 +1964,20 @@ async function init_dlisp()
                                  return(__targ__22)[c]
                             } 
                         })())))) {
-                            handler_stack.push(await (async function(){
+                            (handler_stack).push(await (async function(){
                                 let __targ__23=read_table;
                                 if (__targ__23){
                                      return(__targ__23)[c]
                                 } 
                             })());
-                            if (check_true ((( word_acc && word_acc.length )>0))){
-                                acc.push(await process_word(word_acc,backtick_mode));
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (acc).push(await process_word(word_acc,backtick_mode));
                                 backtick_mode=0;
                                  word_acc=[]
                             };
                             block_return=await read_block(await (await Environment.get_global("add"))(_depth,1));
                             handler=await (async function(){
-                                let __targ__24=handler_stack.pop();
+                                let __targ__24=(handler_stack).pop();
                                 if (__targ__24){
                                      return(__targ__24)[1]
                                 } 
@@ -1991,34 +1995,34 @@ async function init_dlisp()
                                     block_return=["=:quotem",block_return];
                                      backtick_mode=0
                                 };
-                                 return  acc.push(block_return)
+                                 return  (acc).push(block_return)
                             }
                         } else if (check_true( ((mode===in_code)&&(c==="`")))) {
-                            if (check_true ((( word_acc && word_acc.length )>0))){
-                                acc.push(await process_word(word_acc));
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (acc).push(await process_word(word_acc));
                                  word_acc=[]
                             };
                              return  backtick_mode=1
-                        } else if (check_true( ((mode===in_code)&&(c===":")&&(( word_acc && word_acc.length )===0)&&(( acc && acc.length )>0)&&(await (await Environment.get_global("last"))(acc) instanceof String || typeof await (await Environment.get_global("last"))(acc)==='string')))) {
-                             return acc.push(await (await Environment.get_global("add"))(acc.pop(),":"))
+                        } else if (check_true( ((mode===in_code)&&(c===":")&&((word_acc && word_acc.length)===0)&&((acc && acc.length)>0)&&(await (await Environment.get_global("last"))(acc) instanceof String || typeof await (await Environment.get_global("last"))(acc)==='string')))) {
+                             return (acc).push(await (await Environment.get_global("add"))((acc).pop(),":"))
                         } else if (check_true( ((mode===in_code)&&(last_c===",")&&((c==="#")||(c==="@"))))) {
-                            word_acc.push(c);
-                            acc.push(await process_word(word_acc));
+                            (word_acc).push(c);
+                            (acc).push(await process_word(word_acc));
                              return  word_acc=[]
                         } else if (check_true( ((mode===in_code)&&((c===" ")||(await c["charCodeAt"].call(c,0)===10)||(await c["charCodeAt"].call(c,0)===9)||((c===",")&&await (await Environment.get_global("not"))((next_c==="@"))&&await (await Environment.get_global("not"))((next_c==="#"))))))) {
-                            if (check_true ((( word_acc && word_acc.length )>0))){
+                            if (check_true (((word_acc && word_acc.length)>0))){
                                 if (check_true ((backtick_mode===1))){
-                                    acc.push(await process_word(word_acc,backtick_mode));
+                                    (acc).push(await process_word(word_acc,backtick_mode));
                                      backtick_mode=0
                                 } else {
-                                     acc.push(await process_word(word_acc))
+                                     (acc).push(await process_word(word_acc))
                                 };
                                  return  word_acc=[]
                             }
                         } else if (check_true( ((mode===in_code)&&(await c["charCodeAt"].call(c,0)===13)))) {
                              return false
                         } else  {
-                             return  word_acc.push(c)
+                             return  (word_acc).push(c)
                         }
                     }();
                     column_number+=1;
@@ -2034,8 +2038,8 @@ async function init_dlisp()
                 } ;
                 
             })();
-            if (check_true ((( word_acc && word_acc.length )>0))){
-                acc.push(await process_word(word_acc,backtick_mode));
+            if (check_true (((word_acc && word_acc.length)>0))){
+                (acc).push(await process_word(word_acc,backtick_mode));
                  word_acc=[]
             };
              return  acc
@@ -2047,8 +2051,8 @@ async function init_dlisp()
         if (check_true (debugmode)){
              await console.log("read<-",await clone(output_structure))
         };
-        if (check_true ((output_structure instanceof Array&&(await (await Environment.get_global("length"))(output_structure)>1)))){
-            output_structure.unshift("=:progn");
+        if (check_true (((output_structure instanceof Array)&&(await (await Environment.get_global("length"))(output_structure)>1)))){
+            (output_structure).unshift("=:progn");
             await console.log("read (multiple forms) <-",output_structure);
              return  await (await Environment.get_global("first"))(await (async function(){
                 let __array_op_rval__26=output_structure;

@@ -238,6 +238,16 @@
                                                (= mode in_code)
                                                (break))
                                            
+                                           
+                                           ;; when in in_long_text mode, duplicate the \ because the extra backslash will be 
+                                           ;; removed in the process of compilation as it goes through the unquoting process.
+                                           
+                                           (and (== 92 (-> c `charCodeAt 0))
+                                                (== mode in_long_text))
+                                           (do 
+                                               (push word_acc c)
+                                               (push word_acc c))
+                                           
                                            ;; DISABLED: condition where we have an escaped backslash - we need to store it
                                            (and  
                                                 (> mode 0)
