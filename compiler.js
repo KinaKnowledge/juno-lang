@@ -1,7 +1,9 @@
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 
-export async function init_compiler(Environment) {
- await Environment.set_global("compiler",async function(quoted_lisp,opts) {
+export async function init_compiler(Environment)
+{
+
+await Environment.set_global("compiler",async function(quoted_lisp,opts) {
     let __get_global__1= async function(){
         return (opts && opts["env"] && opts["env"]["get_global"])
     };
@@ -215,7 +217,7 @@ export async function init_compiler(Environment) {
                                 } else {
                                       return (await container["indexOf"].call(container,value)>-1)
                                 }
-                            } else if (check_true( container instanceof Array)) {
+                            } else if (check_true( (container instanceof Array))) {
                                  return await container["includes"].call(container,value)
                             } else if (check_true( await (await get_global("is_set?"))(container))) {
                                  return await container["has"].call(container,value)
@@ -7848,13 +7850,16 @@ export async function init_compiler(Environment) {
                                                         ctype:await sub_type((tokens && tokens["val"]))
                                                     },(tokens && tokens["val"])]
                                                 }
+                                            } else if (check_true( ((tokens && tokens["ref"])&&(opts && opts["root_environment"])))) {
+                                                 return (tokens && tokens.name)
                                             } else if (check_true( ((tokens && tokens["ref"])&&await (async function(){
                                                 let __targ__735=op_lookup;
                                                 if (__targ__735){
                                                      return(__targ__735)[(tokens && tokens.name)]
                                                 } 
                                             })()))) {
-                                                 return (tokens && tokens.name)
+                                                 throw new SyntaxError(("compiler operator "+(tokens && tokens.name)+" referenced as a value."));
+                                                
                                             } else if (check_true( ((tokens && tokens["ref"])&&await (async function ()  {
                                                 snt_name=await sanitize_js_ref_name((tokens && tokens.name));
                                                 snt_value=await get_ctx(ctx,snt_name);
@@ -8034,7 +8039,9 @@ export async function init_compiler(Environment) {
                 }();
                 await set_ctx(root_ctx,"__LAMBDA_STEP__",-1);
                 output=await async function(){
-                    if (check_true((opts && opts["only_tokens"]))) {
+                    if (check_true((opts && opts["special_operators"]))) {
+                         return await (await Environment.get_global("make_set"))(await (await Environment.get_global("keys"))(op_lookup))
+                    } else if (check_true((opts && opts["only_tokens"]))) {
                          return await tokenize(tree,root_ctx)
                     } else if (check_true(is_error)) {
                          return [{

@@ -1,5 +1,4 @@
-
-;; DLisp to Javascript Compiler
+;; DLisp λ to Javascript Compiler
 ;; (c) 2022 Kina
 
 
@@ -4738,9 +4737,14 @@
                               
                                [{ `ctype: (sub_type tokens.val)  } tokens.val ])  ;; straight value
                           
+                          (and tokens.ref
+                               opts.root_environment)
+                           tokens.name
+                           
                           (and tokens.ref 
                                (prop op_lookup tokens.name))
-                          tokens.name
+                          (throw SyntaxError (+ "compiler operator " tokens.name " referenced as a value."))
+                          
                           
                           (and tokens.ref
                                (do
@@ -4925,6 +4929,9 @@
     
     (= output
        (cond
+         opts.special_operators
+         (make_set (keys op_lookup))
+         
          opts.only_tokens
          (tokenize tree root_ctx)  
          

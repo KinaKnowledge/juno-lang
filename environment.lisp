@@ -52,8 +52,9 @@
          
           (defvar compiler (fn () true))
           
-          
-         
+          (defvar compiler_operators (new Set))
+          (defvar special_identity (fn (v)
+                                       v))
           (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
                   (sub_type subtype)
@@ -191,8 +192,44 @@
                                              obj[pair[0]]=pair[1]
                                       });
                                       return obj;
-                                    }"))
+                                    }")
+                             {
+                                 `description: (+ "Given an array of pairs in the form of [[key value] [key value] ...], constructs an "
+                                                  "object with the first array element of the pair as the key and the second "
+                                                  "element as the value. A single object is returned.")
+                                 `usage: ["paired_array:array"]
+                                 `tags: ["conversion" "object" "array" "list" "pairs"]
+                             })
                                 
+                  (to_array (fn (container)
+                                (cond
+                                    (is_array? container)
+                                    container
+                                    (is_set? container)
+                                    (do 
+                                        (defvar acc [])
+                                        (-> container `forEach (fn (v)
+                                                                   (push acc v)))
+                                        acc)
+                                    (is_string? container)
+                                    (split_by "" container)
+                                    (is_object? container)
+                                    (pairs container)
+                                    else
+                                    [container]))
+                                {
+                                 `description: (+ "Given a container of type Array, Set, Object, or a string, " 
+                                                  "it will convert the members of the container to an array form, "
+                                                  "and return a new array with the values of the provided container. "
+                                                  "In the case of an object, the keys and values will be contained in "
+                                                  "paired arrays in the returned array.  A string will be split into "
+                                                  "individual characters. If provided a different "
+                                                  "type other than the listed values above, the value will be placed "
+                                                  "in an array as a single element.")
+                                 `usage:["container:*"]
+                                 `tags: ["list" "array" "conversion" "set" "object" "string" "pairs"]
+                                })
+                            
                   (slice (fn (target from to)
                              (cond
                                  to
@@ -571,6 +608,8 @@
                                           (break))))
                                   is_true)))
                               
+                  (special_operators (fn ()
+                                         (make_set (compiler [] { `special_operators: true `env: Environment }))))
                   (defclog (fn (opts)
                                (let
                                    ((`style (+ "padding: 5px;"
@@ -613,8 +652,13 @@
                            (cond 
                                (not (== (typeof refname) "string"))
                                (throw TypeError "reference name must be a string type")
+                               
                                (== refname "Environment")
                                Environment
+                               
+                               (-> compiler_operators `has refname)
+                               special_identity
+                               
                                else
                                 (let
                                     ((`comps (get_object_path refname))
@@ -668,6 +712,7 @@
                                (compiler json_expression { `env: Environment })))
                   
                   
+                                     
                   (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
                   (evaluate (fn (expression ctx opts)
                              (let
@@ -805,7 +850,8 @@
                                   ;(env_log "eval_struct <-" (clone rval))
                                   rval))))
           
-         
+          
+          
           (defvar meta_for_symbol (fn (quoted_symbol)
                                     (do
                                          (if (starts_with? (quote "=:") quoted_symbol)
@@ -819,6 +865,8 @@
               (fn (compiler_function)
                    (do 
                        (= compiler compiler_function)
+                       (= compiler_operators
+                          (compiler [] { `special_operators: true `env: Environment }))
                        (set_prop Environment.global_ctx.scope
                                  "compiler"
                                  compiler))))
@@ -933,6 +981,7 @@
                      `read_lisp reader
                      `as_lisp as_lisp
                      `inlines inlines
+                     `special_operators special_operators
                      `definitions Environment.definitions
                      `declarations Environment.declarations
                      `compile compile

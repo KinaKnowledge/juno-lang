@@ -10,7 +10,7 @@
     (defglobal $ nil)
     (defglobal $$ nil)
     (defglobal $$$ nil)
-    (write stdout (-> te `encode "-> "))
+    (write stdout (-> te `encode "λ-> "))
     (try
     (for_with (`l (generator stdin))
 	      (progn		
@@ -23,7 +23,7 @@
 		   (push return_stack
 			 (-> Environment `evaluate buffer))
 		   (console.log (last return_stack))
-		   (write stdout (-> te `encode "-> "))
+		   (write stdout (-> te `encode "λ-> "))
 		   (= lines [])
 		   (when (> return_stack.length 3)
 		     (take return_stack))
