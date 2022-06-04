@@ -1707,8 +1707,25 @@
         `usage: ["val0:*" "val1:*" "val2:*" ]
         `tags: ["truth" "or" "logic" "truthy"]
     })
-       
-                      
+
+(defun either (`& args)
+   (let
+      ((rval nil))
+      (for_each (`arg args)
+         (do 
+             (= rval arg)
+             (when (and (not (== undefined arg))
+                  (not (== nil arg)))
+             (break))))
+      rval)
+  {
+      `description: (+ "Similar to or, but unlike or, returns the first non nil " 
+                       "or undefined value in the argument list whereas or returns " 
+                       "the first truthy value.")
+      `usage: ["values:*"]
+      `tags: ["nil" "truthy" "logic" "or" "undefined"]
+  })       
+            
        
        
                
