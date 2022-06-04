@@ -10,12 +10,14 @@ globalThis.check_true=check_true
 
 var { init_dlisp } = await import("./environment.js");
 var { init_compiler } = await import("./compiler.js");
+var { load_core } = await import("./core.js");
 
 await init_dlisp()
 var env=await dlisp_env()
 var { environment_boot } = await import("./environment_boot.js")
 await environment_boot(env);
 await init_compiler(env)
+await load_core(env)
 var cca = await env.get_global("compiler")
 await env.set_compiler(cca)
 
