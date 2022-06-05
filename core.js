@@ -2038,22 +2038,21 @@ export async function load_core(Environment) {
         description:("Given an integer value representing seconds of a time duration, return a string "+"representing the time in words, such as 2 mins.  If the key longForm is set to "+"true in options return full words instead of contracted forms.  For example min vs. minute."),usage:["seconds:integer","options:object"],tags:["time","date","format","string","elapsed"]
     });
     await Environment.set_global("ago",async function(dval) {
-         return  await (await Environment.get_global("common.showTimeInWords"))(((await (async function() {
+         return  [(await Environment.get_global("show_time_in_words")),((await (async function() {
             {
                  let __call_target__=new Date(), __call_method__="getTime";
                 return await __call_target__[__call_method__]()
             } 
-        })()-await dval["getTime"]())/1000))
+        })()-await dval["getTime"]())/1000)]
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"ago\" \"fn_args\":\"(dval)\" \"usage\":(\"dval:Date\") \"description\":\"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.\" \"tags\":(\"date\" \"format\" \"time\" \"string\" \"elapsed\")}')));
     await Environment.set_global("lifespan",async function(dval) {
-         return  await (await Environment.get_global("common.showTimeInWords"))(((await dval["getTime"]()-await (async function() {
+         return  [(await Environment.get_global("show_time_in_words")),((await dval["getTime"]()-await (async function() {
             {
                  let __call_target__=new Date(), __call_method__="getTime";
                 return await __call_target__[__call_method__]()
             } 
-        })())/1000))
+        })())/1000)]
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"lifespan\" \"fn_args\":\"(dval)\" \"usage\":(\"dval:Date\") \"description\":\"Given a date object, return a formatted string in English with the amount of time until the specified date.\" \"tags\":(\"date\" \"format\" \"time\" \"string\" \"elapsed\")}')));
-    await console.log("BOOT.SERVER: complete");
      return  true
 }
 }

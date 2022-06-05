@@ -1787,7 +1787,7 @@
          })
  
  (defun ago (dval)
-        (common.showTimeInWords (/ (- (-> (new Date) `getTime) (-> dval `getTime)) 1000))
+        (show_time_in_words (/ (- (-> (new Date) `getTime) (-> dval `getTime)) 1000))
         {
          `usage: ["dval:Date"]
          `description: "Given a date object, return a formatted string in English with the amount of time elapsed from the provided date."
@@ -1795,19 +1795,14 @@
          })
      
  (defun lifespan (dval)
-        (common.showTimeInWords (/ (- (-> dval `getTime) (-> (new Date) `getTime)) 1000))
+        (show_time_in_words (/ (- (-> dval `getTime) (-> (new Date) `getTime)) 1000))
         {
          `usage: ["dval:Date"]
          `description: "Given a date object, return a formatted string in English with the amount of time until the specified date."
          `tags:["date" "format" "time" "string" "elapsed"]
          })
      
-      
- 
-         
-         
-    
-   (console.log "BOOT.SERVER: complete")
+
     true
 )
 
