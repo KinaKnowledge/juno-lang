@@ -1,4 +1,3 @@
-
 ;; DLisp λ to Javascript Compiler
 ;; (c) 2022 Kina
 
@@ -785,7 +784,7 @@
                              rval)
                             (and (is_array? args)
                                  (not (get_ctx_val ctx `__IN_LAMBDA__))
-                                 (== args.0 (quote "=:progn")))
+                                 (== args.0 (quote "=:iprogn")))
                             (do 
                                 (= rval (compile_toplevel args ctx))
                                 (tokenize rval ctx _path))

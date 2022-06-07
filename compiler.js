@@ -1,7 +1,7 @@
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 
 export async function init_compiler(Environment) {
-await Environment.set_global("compiler",async function(quoted_lisp,opts) {
+  await Environment.set_global("compiler",async function(quoted_lisp,opts) {
     let __get_global__1= async function(){
         return (opts && opts["env"] && opts["env"]["get_global"])
     };
@@ -1403,7 +1403,7 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                         } else if (check_true( ((args instanceof Array)&&(((args && args["0"])===`=:quotem`)||((args && args["0"])===`=:quote`)||((args && args["0"])===`=:quotel`))))) {
                             rval=await tokenize_quote(args,_path);
                              return  rval
-                        } else if (check_true( ((args instanceof Array)&&await not(await get_ctx_val(ctx,"__IN_LAMBDA__"))&&((args && args["0"])===`=:progn`)))) {
+                        } else if (check_true( ((args instanceof Array)&&await not(await get_ctx_val(ctx,"__IN_LAMBDA__"))&&((args && args["0"])===`=:iprogn`)))) {
                             rval=await compile_toplevel(args,ctx);
                              return  await tokenize(rval,ctx,_path)
                         } else if (check_true( (await not((args instanceof Array))&&(args instanceof Object)))) {
@@ -8261,5 +8261,5 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
             }
         }
     }
-})
+  })
 }

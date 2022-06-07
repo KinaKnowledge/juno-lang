@@ -479,7 +479,7 @@
                    (> (length output_structure) 1))
               (do 
                   (prepend output_structure
-                           (quotel "=:progn"))
+                           (quotel "=:iprogn"))
                   (console.log "read (multiple forms) <-" output_structure)
                   (first [output_structure]))
           ;(when opts.debug (console.log "read<-" (first output_structure)))

@@ -520,23 +520,20 @@
     1000
     "global scope set - simple"
     ]
-    [ "(progn
-         (defglobal `tt1 0)
-         tt1)"
+    [ "(defglobal `tt1 0)
+       tt1"
     []
     0
     "global scope set and recall of js falsy values 0"
     ]
-    [ "(progn
-         (defglobal `tt1 nil)
-         tt1)"
+    [ "(defglobal `tt1 nil)
+       tt1"
     []
     nil
     "global scope set and recall of js falsy values - nil"
     ]
-    [ "(progn
-         (defglobal `tt1 false)
-         tt1)"
+    [ "(defglobal `tt1 false)
+       tt1"
     []
     false
     "global scope set and recall of js falsy values - false"
@@ -1119,12 +1116,12 @@
       "Quoted object integrity"
      ]
 
-    ["(progn (defglobal `abc (make_set [ 1 2 3])) (call abc `has 1))"
+    ["(defglobal `abc (make_set [ 1 2 3])) (call abc `has 1)"
     []
     true
     "make_set then call - has item true"
     ]
-    ["(progn (defglobal `abc (make_set [ 1 2 3])) (call abc `has 5))"
+    ["(defglobal `abc (make_set [ 1 2 3])) (call abc `has 5)"
     []
     false
     "make_set then call - not has item"
@@ -1457,24 +1454,22 @@
      (quote {"arguments":("a:1" "a:2") "body":(do true) "other":"things"})
      "If statement returns appropriately from inner let"
      ]
-    ["(progn
-          (defglobal `testcall 
-              (fn (callable)
-                  (do
-                      (declare (function callable))
-                      (callable 123))))
-          (-> testcall `toString))"
+    ["(defglobal `testcall 
+          (fn (callable)
+              (do
+                  (declare (function callable))
+                  (callable 123))))
+      (-> testcall `toString)"
      []
      "async function(callable) {\n    ;\n     return  (callable)(123)\n}"
      "Optimization by using declare - no ambiguity check" 
     ]
-    ["(progn
-          (defglobal `testcall 
-              (fn (my_arg)
-                  (do
-                      (declare (array my_arg))
-                      (+ my_arg 2))))
-          (testcall [12]))
+    ["(defglobal `testcall 
+          (fn (my_arg)
+              (do
+                  (declare (array my_arg))
+                  (+ my_arg 2))))
+      (testcall [12])
          "
       [2]
      `[12 2]
@@ -1851,16 +1846,14 @@
     []
     true
     "handle promise resolution via timeout"]
-  ["(progn 
-      (defglobal `abc 123)
-      [ abc ])"
+  ["(defglobal `abc 123)
+    [ abc ]"
     []
     `[ 123 ]
     "array with number in start position"
     ]
-   ["(progn 
-      (defglobal `abc 123)
-      [[ abc ]])"
+   ["(defglobal `abc 123)
+     [[ abc ]]"
     []
     `[[ 123 ]]
     "array with array with number in start position"
@@ -2031,9 +2024,8 @@
     []
     true
     "Declaring sync function as a global and calling it."]
-  ["(progn
-      (defglobal testf (new Function \"a\" \"return a + 2;\"))
-      (testf 2))"
+  ["(defglobal testf (new Function \"a\" \"return a + 2;\"))
+    (testf 2)"
     []
     4
     "Defglobal correctly passes on assignment type to global compiler context."]

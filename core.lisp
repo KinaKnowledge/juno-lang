@@ -1565,23 +1565,7 @@
       `tags: ["objects" "accumulator" "values" "sorting" "categorize" "categorization" "buckets"]
   })
  
- (defun get_function_args (f)
-    (let
-        ((r (new RegExp |^[a-zA-Z_]+ [a-zA-Z ]*\\(([a-zA-Z 0-9_,\\.\\n]*)\\)| `gm))
-         (s (-> f `toString))
-         (r (scan_str r s)))
-      (when (and (> r.length 0)
-                 (is_object? r.0))
-        (map (fn (v)
-                 (if (ends_with? "\n" v)
-                     (chop v)
-                     v))
-                 (split_by "," (or (second r.0) "")))))
-    {
-      `description: "Given a javascript function, return a list of arg names for that function"
-      `usage: ["function:function"]
-      `tags: [ "function" "introspect" "introspection" "arguments"]
-     })
+ 
  
  (defglobal bytes_from_int_16
     (jslambda (`x)

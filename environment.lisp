@@ -49,7 +49,9 @@
           (set_prop Environment
                     `context
                     Environment.global_ctx)
-         
+          
+          
+          
           (defvar compiler (fn () true))
           
           (defvar compiler_operators (new Set))
@@ -709,7 +711,34 @@
                                           NOT_FOUND))))))
                   
                   (compile (fn (json_expression opts)
-                               (compiler json_expression { `env: Environment })))
+                               (let
+                                   ((opts (or opts {
+                                              `meta: false
+                                               }))
+                                    (out nil))
+                                (if (is_function? json_expression)
+                                    (throw SyntaxError "compile: non-JSON value (function) received as input"))
+                                (= out
+                                   (compiler json_expression { `env: Environment }))
+                                (cond
+                                    (and (is_array? out)
+                                         out.0.ctype
+                                         (== out.0.ctype "FAIL"))
+                                    out
+                                    opts.meta
+                                    out
+                                    else
+                                    out.1)))
+                            {
+                                   `description: (+ "Compiles the given JSON or quoted lisp and returns a string containing "
+                                                    "the lisp form or expression as javascript.<br>"
+                                                    "If passed the option { meta: true } , an array is returned containing compilation metadata "
+                                                    "in element 0 and the compiled code in element 1.")
+                                   `usage: ["json_expression:*" "opts:object"]
+                                   `tags:["macro" "quote" "quotes" "desym"]
+                               })
+                                    
+                                    
                   
                   
                                      
@@ -818,7 +847,7 @@
                                             compiled.1)))
                                    (catch Error (e)
                                          (do
-                                            ;(env_log "caught error: " e.name e.message)
+                                            (env_log "caught error: " e.name e.message)
                                             (when opts.error_report
                                                   (opts.error_report {
                                                                   `error: e.name
