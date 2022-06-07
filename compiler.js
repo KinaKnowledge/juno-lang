@@ -67,22 +67,22 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
             if (check_true( (tree instanceof Array))) {
                 rval=[];
                 await (async function(){
-                     let __test_condition__22=async function() {
+                     let __test_condition__27=async function() {
                          return  (idx<( tree && tree.length ))
                     };
-                    let __body_ref__23=async function() {
+                    let __body_ref__28=async function() {
                         tval=await (async function(){
-                            let __targ__24=tree;
-                            if (__targ__24){
-                                 return(__targ__24)[idx]
+                            let __targ__29=tree;
+                            if (__targ__29){
+                                 return(__targ__29)[idx]
                             } 
                         })();
                         if (check_true ((tval===deferred_operator))){
                             idx+=1;
                             tval=await (async function(){
-                                let __targ__25=tree;
-                                if (__targ__25){
-                                     return(__targ__25)[idx]
+                                let __targ__30=tree;
+                                if (__targ__30){
+                                     return(__targ__30)[idx]
                                 } 
                             })();
                              rval=await rval["concat"].call(rval,await do_deferred_splice(tval))
@@ -92,8 +92,8 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                          return  idx+=1
                     };
                     let __BREAK__FLAG__=false;
-                    while(await __test_condition__22()) {
-                        await __body_ref__23();
+                    while(await __test_condition__27()) {
+                        await __body_ref__28();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -105,24 +105,24 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
             } else if (check_true( (tree instanceof Object))) {
                 rval=new Object();
                 await (async function() {
-                    let __for_body__28=async function(pset) {
+                    let __for_body__33=async function(pset) {
                          return  await async function(){
-                            let __target_obj__30=rval;
-                            __target_obj__30[( pset && pset["0"] )]=await do_deferred_splice(( pset && pset["1"] ));
-                            return __target_obj__30;
+                            let __target_obj__35=rval;
+                            __target_obj__35[( pset && pset["0"] )]=await do_deferred_splice(( pset && pset["1"] ));
+                            return __target_obj__35;
                             
                         }()
                     };
-                    let __array__29=[],__elements__27=await (await Environment.get_global("pairs"))(tree);
+                    let __array__34=[],__elements__32=await (await Environment.get_global("pairs"))(tree);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__26 in __elements__27) {
-                        __array__29.push(await __for_body__28(__elements__27[__iter__26]));
+                    for(let __iter__31 in __elements__32) {
+                        __array__34.push(await __for_body__33(__elements__32[__iter__31]));
                         if(__BREAK__FLAG__) {
-                             __array__29.pop();
+                             __array__34.pop();
                             break;
                             
                         }
-                    }return __array__29;
+                    }return __array__34;
                      
                 })();
                  return  rval

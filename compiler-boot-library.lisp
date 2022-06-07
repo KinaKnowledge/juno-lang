@@ -9,7 +9,7 @@
 ;; double quotes to quoted lisp in compiled Javascript
 
 
-(do
+
 (defglobal `add_escape_encoding 
   (fn (text)
     (if (is_string? text)
@@ -1744,4 +1744,3 @@
       `usage: ["function:function"]
       `tags: [ "function" "introspect" "introspection" "arguments"]
      })              
-)

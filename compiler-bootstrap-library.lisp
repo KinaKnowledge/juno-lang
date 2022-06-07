@@ -41,6 +41,23 @@
         (== type 3)
         [(quotel "=:'") (quotel "=:+") (quotel "=:await") (quotel "=:Environment.as_lisp") (quotel "=:(") tval (quotel "=:)") (quotel "=:+") (quotel "=:'") ])))
 
+
+
+
+(defglobal if_compile_time_defined 
+    (fn (quoted_symbol exists_form not_exists_form)
+        (if (== (prop (describe quoted_symbol)
+                      `location)
+                   nil)
+           not_exists_form
+           exists_form))
+     {
+         `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
+         `tags: ["compile" "defined" "global" "symbol" "reference"]
+         `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]
+         `eval_when:{ `compile_time: true }
+     })
+
 ;; This function will be executed at the time of the compile of code.
 ;; if called, it will be called with the arguments in the place of the
 ;; argument list of the defmacro function.
@@ -68,7 +85,7 @@
                                        name)
                             `macro: true
                             `fn_args: (as_lisp macro_args)
-                            `fn_body: (add_escape_encoding (as_lisp macro_body))
+                            ;`fn_body: (as_lisp macro_body)
                           }))
                          
          ;; next run through the steps of registering a macro
@@ -146,7 +163,7 @@
                          {
                             `name: (unquotify name)
                             `fn_args: (as_lisp fn_args)
-                            `fn_body: (add_escape_encoding (as_lisp fn_body))
+                            ;`fn_body: (as_lisp fn_body)
                           }
                          (if meta 
                              meta
@@ -178,11 +195,15 @@
      ;               (fval refname))))
                 
 (defun `get_object_path (refname)
+  (if (or (> (-> refname `indexOf ".") -1)
+          (> (-> refname `indexOf "[") -1))
     (let
         ((`chars (split_by "" refname))
          (`comps [])
          (`mode 0)
          (`name_acc []))
+        ;(declare (include length))
+                 
         (for_each (`c chars)
           (do
             (cond
@@ -209,10 +230,10 @@
                    (= name_acc []))
                 else
                 (push name_acc c))))
-        (if (> (length name_acc) 0)
+        (if (> name_acc.length 0)
             (push comps (join "" name_acc)))
-        comps))
-
+        comps)
+    [ refname ]))
 
              
 
@@ -365,7 +386,7 @@
                                            name)
                                 `macro: true
                                 `fn_args: (as_lisp macro_args)
-                                `fn_body: (add_escape_encoding (as_lisp macro_body))
+                               ; `fn_body: (as_lisp macro_body)
                             }
                             (if macro_meta
                                 macro_meta
@@ -492,4 +513,5 @@
                     (push acc_full
                           (expand_dot_accessor (join "." acc) ctx))))
              (flatten ["(" (join " && " acc_full) ")" ])))))    
+
 
