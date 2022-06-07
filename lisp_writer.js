@@ -135,7 +135,7 @@ export function clone(src,depth) {
         }
         depth = depth || 0;
         if (depth >= 500) {
-            throw "too deep";
+          throw new EvalError("too deep");
         }
         if (src===undefined) {
             return undefined;

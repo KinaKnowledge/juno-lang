@@ -2020,4 +2020,21 @@
    {"c1":[100 101] "c3":[2021]}
    "Function returning a function accessing a closure"
    ]
+  ["(defglobal `is_value? 
+    (function (val)
+        (if (== val \"\")
+            true
+            (if (== val isNaN)
+                true
+                val))))
+    (is_value? \"\")"
+    []
+    true
+    "Declaring sync function as a global and calling it."]
+  ["(progn
+      (defglobal testf (new Function \"a\" \"return a + 2;\"))
+      (testf 2))"
+    []
+    4
+    "Defglobal correctly passes on assignment type to global compiler context."]
 ])

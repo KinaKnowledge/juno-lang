@@ -73,7 +73,7 @@
                            (-> output_editor.editor `gotoLine 0 0))
                         (catch Error (`e)
                                (do
-                                (log (+ "COMPILE ERROR:" e)))))
+                                (console.error (+ "COMPILE ERROR:" e)))))
                        
                        (set_enabled compile_button evaluate_button evaluate_js_button))))
        (`resize_observer
@@ -81,7 +81,32 @@
        (`display_errors
            (fn (errors)
                (do
-                   (-> messages_editor.editor `setValue (JSON.stringify errors nil 4))
+                   (console.log "DLISP_TAB: ERRORS: " errors)
+                   (defvar `ebuf [])
+                   (when (and (not (is_array? errors.errors))
+                              (is_object? errors)
+                              errors.error)
+                      (= errors { `errors: [errors] `warnings: [] }))        
+                   (for_each (`e (or errors.errors []))
+                     (do
+                      (console.log "errors: e is: " (instanceof e Error) (sub_type e) e)
+                      (cond 
+                        (instanceof e Error)
+                        (do 
+                            (console.log "ERROR: " e)
+                            (push ebuf
+                              {
+                                `type: (sub_type e)
+                                `message: e.message
+                                `form: e.form
+                                `parent_forms: e.parent_forms
+                                `stack: e.stack
+                                }))
+                        else
+                        (push ebuf
+                              e))))
+                   (console.log "EBUF: " ebuf)
+                   (-> messages_editor.editor `setValue (JSON.stringify { `errors: ebuf `warnings: errors.warnings } nil 4))
                    (-> messages_editor.editor `gotoLine 0 0))))
        (`disp_comp_results
          (fn (compiled)
@@ -95,18 +120,22 @@
                              (+ "" (-> (/ (- end_time stime) 1000) `toFixed 4) " secs"))
                    (console.log "dlisp_tab: compiled text: " compiled.1)
                    (-> js_code_editor.editor `setValue 
-                       compiled.1)
+                       (if (is_string? compiled.1)
+                           compiled.1
+                           (JSON.stringify compiled.1 nil 4)))
                    (-> js_code_editor.editor `gotoLine 0 0))
                
                compiled
                (do 
                     (set_prop timing
                              `innerHTML
-                             (+ "" (/ (- end_time start_time) 1000) " secs"))
+                             (+ "" (/ (- end_time stime) 1000) " secs"))
                    (console.log "dlisp_tab: compiled text: " compiled)
-                   (-> js_code_editor.editor `setValue
-                       compiled)
-                   (-> js_code_editor.editor `gotoLine 0 0)))))
+                   (-> messages_editor.editor `setValue
+                       (if (is_string? compiled)
+                           compiled
+                           (JSON.stringify compiled nil 4)))
+                   (-> messages_editor.editor `gotoLine 0 0)))))
        (`qview 
          (quad_view [ lisp_view
                     js_code_view

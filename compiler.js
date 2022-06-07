@@ -1,7 +1,6 @@
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 
-export async function init_compiler(Environment)
-{
+export async function init_compiler(Environment) {
 await Environment.set_global("compiler",async function(quoted_lisp,opts) {
     let __get_global__1= async function(){
         return (opts && opts["env"] && opts["env"]["get_global"])
@@ -182,8 +181,8 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
   }
   return typeof value;
 };
-            let is_nil_ques_=async function(value) {         return  (null===value)
-    };
+            let is_nil_ques_=async function(value) {     return  (null===value)
+};
             let is_number_ques_=async function(x) {                         return  (await subtype(x)==="Number")
                     };
             let starts_with_ques_=function anonymous(val,text) {
@@ -1959,7 +1958,6 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                      return  acc
                 };
                 compile_typeof=async function(tokens,ctx) {
-                    console.log("compile_typeof: ",await clone(tokens));
                     if (check_true (((tokens && tokens["1"] && tokens["1"]["type"])==="arg"))){
                           return ["typeof"," ",(tokens && tokens["1"] && tokens["1"]["name"])]
                     } else {
@@ -8143,7 +8141,10 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
                             }
                         })();
                         await async function(){
-                            if (check_true(is_error)) {
+                            if (check_true( (is_error instanceof SyntaxError))) {
+                                (errors).push(is_error);
+                                 return  is_error
+                            } else if (check_true(is_error)) {
                                  return is_error
                             } else if (check_true( (null==final_token_assembly))) {
                                 is_error=new EvalError("Pre-Compilation Error");
@@ -8262,4 +8263,3 @@ await Environment.set_global("compiler",async function(quoted_lisp,opts) {
     }
 })
 }
-

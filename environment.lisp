@@ -818,7 +818,7 @@
                                             compiled.1)))
                                    (catch Error (e)
                                          (do
-                                            (env_log "caught error: " e.name e.message)
+                                            ;(env_log "caught error: " e.name e.message)
                                             (when opts.error_report
                                                   (opts.error_report {
                                                                   `error: e.name

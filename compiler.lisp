@@ -1083,7 +1083,8 @@
                                      ;    else
                                      ;    (push args stmt))
                                      ;(inline_log "compiled arg: <-" (last args))))
-                              
+                              (when (verbosity)
+                                    (inline_log "args: " args))
                               (if (prop Environment.inlines tokens.0.name)
                                   (do 
                                       (= inline_fn (prop Environment.inlines tokens.0.name))
@@ -1119,7 +1120,7 @@
        (`compile_typeof
          (fn (tokens ctx)
              (do 
-                 (log "compile_typeof: " (clone tokens))
+                 ;(log "compile_typeof: " (clone tokens))
                  (if (== tokens.1.type "arg")
                      ["typeof" " " tokens.1.name ]
                      ["typeof" " " (compile_elem tokens.1 ctx) ]))))
@@ -1450,7 +1451,7 @@
                                         true) ;; disabled due to return issue
                                         
                                       ;(clog "in block:<-" stmt)
-                                      
+                                      (assert (not (== stmt undefined)) "compile_block: returned stmt is undefined")
                                       (= stmt_ctype (and (> ctx.block_step 0)
                                                          (is_object? (first stmt))
                                                          (prop (first stmt) `ctype)))
@@ -3209,7 +3210,7 @@
                                 (== assignment_value.0.ctype "expression")
                                 Expression 
                                 else
-                                assignment_value))
+                                assignment_value.0.ctype))
                     (when wrap_as_function?
                       (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                    
@@ -3224,7 +3225,9 @@
                                      target
                                      assignment_value))))
                
-               ;(clog "compile_set_global: assignment_value: " assignment_value)
+               (when (verbosity ctx)
+                     (clog "compile_set_global: assignment_value: " assignment_value))
+                 
                (= acc [{ `ctype: "statement" } (if (== Function (prop root_ctx.defined_lisp_globals target))
                                                    ""
                                                    "await") 
@@ -3813,7 +3816,9 @@
                    (push acc "}")))
                
                acc)))       
-           
+       (`verbosity (fn (ctx)
+                       (get_ctx ctx "__VERBOSITY__")))
+                       
        (`declare_log (if opts.quiet_mode
                          log
                         (defclog { `prefix: "DECLARE" `color: "white" `background: "black" })))
@@ -3880,6 +3885,19 @@
                                                      (if (and (== "undefined" (prop (get_declarations ctx name) `type))
                                                               (is_function? dec_struct.value))
                                                         (set_declaration ctx name `type Function)))))
+                                            (== declaration "verbose")
+                                            (do 
+                                                (defvar `verbosity_level (parseInt (first (each targeted `name))))
+                                                (if (not (isNaN verbosity_level))
+                                                   (do
+                                                    (if (> verbosity_level 0)
+                                                        (set_ctx ctx "__VERBOSITY__" verbosity_level)
+                                                        (do 
+                                                            (declare_log "verbosity: turned off")
+                                                            (set_ctx ctx "__VERBOSITY__" nil)))
+                                                    (declare_log "compiler: verbosity set: " (verbosity ctx)))
+                                                   (push warnings
+                                                         "invalid verbosity declaration, expected number, received " (first (each targeted `name)))))
                                             (== declaration "local")
                                             (for_each (`name (each targeted `name))
                                                  (do
@@ -3983,7 +4001,8 @@
                  (= ref_type (get_ctx ctx tokens.0.name))
                  else
                  (= ref_type ArgumentType))
-               ;(sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name)
+               (when (verbosity ctx)
+                     (sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name))
                (cond (== ref_type AsyncFunction)
                      (= ref_type "AsyncFunction")
                      (== ref_type Expression)
@@ -4143,7 +4162,10 @@
                           (not (== refval undefined)))
                           ;(not (== refval "__!NOT_FOUND!__")))
                  (= refval "text"))  
-               ;(log "compile_lisp_scoped_reference: " refname reftype refval)         
+                
+                ;(when (verbosity ctx) 
+                 ;     (console.log "compile_lisp_scoped_reference: " refname reftype refval))
+                    
                (cond
                  (contains? basename.0 standard_types)   ;; Certain standard types are automatically available everywhere and are not specific to the lisp environment
                  refname
@@ -4389,7 +4411,7 @@
                          is_error   ;; unwind 
                        (do
                          (defvar `rval (compile_inner tokens ctx _cdepth))
-                         (if false  ;; disabled 
+                         (if (verbosity ctx)
                              (if  (and  (is_array? rval)
                                         (is_object? rval.0)
                                         (prop rval.0 `ctype))
@@ -4449,7 +4471,8 @@
                         (= operator_type (prop op_token `val))
                         (= ref (prop op_token `ref))
                         (= op (prop op_lookup operator))
-                        ;(comp_log (+ "compile: " _cdepth " (form):") operator (if (prop Environment.inlines operator) "lib_function" op) tokens)
+                        (if (verbosity ctx)
+                            (comp_log (+ "compile: " _cdepth " (form):") operator (if (prop Environment.inlines operator) "lib_function" op) tokens))
                         ;(comp_log "    ctx: " (clone ctx))
                         (cond 
                           op
@@ -4740,7 +4763,9 @@
                           
                           (and tokens.ref
                                opts.root_environment)
-                           tokens.name
+                           (do 
+                              (path_to_js_syntax (split_by "." (sanitize_js_ref_name tokens.name))))
+                              
                            
                           (and tokens.ref 
                                (prop op_lookup tokens.name))
@@ -4900,8 +4925,8 @@
              (include length first second map do_deferred_splice
                       not sub_type last flatten add subtype
                       is_nil? is_number? starts_with? 
-                      cl_encode_string contains? 
-                      ))
+                      cl_encode_string contains?)
+             (local check_true))
             
     
     
@@ -4950,6 +4975,10 @@
                     
             
             (cond 
+              (instanceof is_error SyntaxError)
+              (do (push errors
+                       is_error)
+                  is_error)
               is_error
               is_error
               (eq nil final_token_assembly)

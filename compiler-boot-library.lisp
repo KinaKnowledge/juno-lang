@@ -9,7 +9,7 @@
 ;; double quotes to quoted lisp in compiled Javascript
 
 
-
+(do
 (defglobal `add_escape_encoding 
   (fn (text)
     (if (is_string? text)
@@ -134,22 +134,6 @@
    `(+ "" (as_lisp ,#val)))
  
 
-(defglobal unquotify 
-  (fn (val)
-   (let
-       ((dval val))
-    (if (starts_with? "\"" dval)
-        (= dval (-> dval `substr 1 (- dval.length 2))))
-    (if (starts_with? "=:" dval)
-        (= dval (-> dval `substr 2)))
-    dval))
-       {
-           `description: "Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros."
-           `usage: ["val:string"]
-           `tags:["macro" "quote" "quotes" "desym"]
-       })
-      
-
 
 (defmacro when (condition `& mbody) 
      `(if ,#condition
@@ -240,6 +224,7 @@
          (`mode 0)
          (`name_acc []))
         (declare (include length))
+                 
         (for_each (`c chars)
           (do
             (cond
@@ -1727,7 +1712,36 @@
   })       
             
        
-       
-               
-       
-                
+(defmacro is_symbol? (symbol_to_find)
+    (if (starts_with? "=:" symbol_to_find)
+        `(not (== (typeof ,#symbol_to_find) "undefined"))
+        `(not (instanceof (-> Environment `get_global ,#symbol_to_find) ReferenceError)))
+             
+          { 
+            `usage: ["symbol:string|*"]
+            `description: (+ "If provided a quoted symbol, will return true if the symbol can be found " 
+                             "in the global context,  or false if it cannot be found.  " 
+                             "If a non quoted symbol is provided to this macro, if the symbol is defined and "
+                             "refers to a defined value, returns true, otherwise false.")
+    
+            `tags: ["context" "env" "def"]
+           })
+
+(defun get_function_args (f)
+    (let
+        ((r (new RegExp |^[a-zA-Z_]+ [a-zA-Z ]*\\(([a-zA-Z 0-9_,\\.\\n]*)\\)| `gm))
+         (s (-> f `toString))
+         (r (scan_str r s)))
+      (when (and (> r.length 0)
+                 (is_object? r.0))
+        (map (fn (v)
+                 (if (ends_with? "\n" v)
+                     (chop v)
+                     v))
+                 (split_by "," (or (second r.0) "")))))
+    {
+      `description: "Given a javascript function, return a list of arg names for that function"
+      `usage: ["function:function"]
+      `tags: [ "function" "introspect" "introspection" "arguments"]
+     })              
+)

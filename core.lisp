@@ -28,15 +28,6 @@
         })
        
     
-    (defmacro is_symbol? (symbol_to_find)
-          `(not (== (typeof ,#symbol_to_find) "undefined"))
-          { 
-            `usage: ["symbol:string"]
-            `description: "Returns true if the provided quoted symbol is found in an accessible context, or false if it cannot be found"
-            `tags: ["context" "env" "def"]
-           })
-     
-  
     (if (is_symbol? d3)
          (defglobal `d3 d3))
         
@@ -1576,13 +1567,16 @@
  
  (defun get_function_args (f)
     (let
-        ((r (new RegExp |^[a-zA-Z_]+ [a-z]*\\(([a-zA-Z0-9_,\\.]*)\\)| `gm))
+        ((r (new RegExp |^[a-zA-Z_]+ [a-zA-Z ]*\\(([a-zA-Z 0-9_,\\.\\n]*)\\)| `gm))
          (s (-> f `toString))
          (r (scan_str r s)))
       (when (and (> r.length 0)
                  (is_object? r.0))
-        (split_by "," (or (second r.0) "")))
-    )
+        (map (fn (v)
+                 (if (ends_with? "\n" v)
+                     (chop v)
+                     v))
+                 (split_by "," (or (second r.0) "")))))
     {
       `description: "Given a javascript function, return a list of arg names for that function"
       `usage: ["function:function"]
@@ -1802,7 +1796,6 @@
          `tags:["date" "format" "time" "string" "elapsed"]
          })
      
-
     true
 )
 
