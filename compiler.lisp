@@ -37,8 +37,6 @@
 
 ;; error_report (fn (errors)) - when compilation is completed, this function is called
 ;;                              with the accumulated compilation errors and warnings
-;; quiet_mode boolean - if true, logging isn't verbose at all 
-;;                      (this will be inversed once the compiler is more stablized)
 ;; env - environment object to use for the compilation environment
 
 
@@ -646,8 +644,12 @@
                                    (`ref_name (take comps))
                                    (`ref_type (if (== ref_name "this")
                                                       THIS_REFERENCE
-                                                      (or (prop root_ctx.defined_lisp_globals ref_name)
-                                                      (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)))))
+                                                      (progn
+							(defvar `global_ref (prop root_ctx.defined_lisp_globals ref_name))
+							(if (or (eq undefined global_ref)
+								(== global_ref "statement"))
+							    (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
+							    global_ref)))))
                                 
                                 
                                 ;(get_lisp_ctx_log "symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
@@ -677,6 +679,14 @@
                                   
                                   (is_object? ref_type)
                                   (resolve_path comps ref_type)
+                                  
+                                  (and (== (typeof ref_type) "object")
+                                       (contains? comps.0 (-> Object `keys ref_type)))
+                                  (do 
+                                      (while (or (eq ref_type undefined) 
+                                                 (> comps.length 0))
+                                        (= ref_type (prop ref_type (take comps))))
+                                      ref_type)
                                   
                                   else
                                   (do
@@ -878,7 +888,7 @@
                          (throw e)
                          )))
                    (if (eq nil ntree)
-                       (comp_time_log (+ "unable to perform compilation time operation: operator: " (-> lisp_tree.0 `substr 2)))
+                       (push warnings (+ "compile time function " (-> lisp_tree.0 `substr 2) " returned nil"))
                        (do
                          ;(comp_time_log "applied:" ntree)
                          
@@ -1029,7 +1039,7 @@
                                (`check_needs_wrap 
                                        (fn (stmts)
                                            (let
-                                               ((`fst (+ "" (or (and (is_array? stmts)
+                                               ((`fst (or (and (is_array? stmts)
                                                                (first stmts)
                                                                (is_object? (first stmts))
                                                                (prop (first stmts) `ctype)
@@ -1038,7 +1048,7 @@
                                                                    (prop (first stmts) `ctype)
                                                                    else
                                                                    (sub_type (prop (first stmts) `ctype))))
-                                                          ""))))
+                                                          )))
                                              ;(inline_log "check_needs_return: " fst (sub_type fst))
                                              (cond
                                                (contains? "block" fst)
@@ -1542,16 +1552,16 @@
                                  (`check_needs_wrap 
                                    (fn (stmts)
                                        (let
-                                           ((`fst (+ "" (or (and (is_array? stmts)
-                                                           (first stmts)
-                                                           (is_object? (first stmts))
-                                                           (prop (first stmts) `ctype)
-                                                           (cond
-                                                               (is_string? (prop (first stmts) `ctype))
-                                                               (prop (first stmts) `ctype)
-                                                               else
-                                                               (sub_type (prop (first stmts) `ctype))))
-                                                      ""))))
+                                           ((`fst (or (and (is_array? stmts)
+							   (first stmts)
+							   (is_object? (first stmts))
+							   (prop (first stmts) `ctype)
+							   (cond
+							     (is_string? (prop (first stmts) `ctype))
+							     (prop (first stmts) `ctype)
+							     else
+							     (sub_type (prop (first stmts) `ctype))))
+                                                      "")))
                                          ;(log "compile_defvar: check_needs_return: " fst (sub_type fst))
                                          (cond
                                            (contains? "block" fst)
@@ -3091,12 +3101,17 @@
        
        (`check_needs_wrap (fn (stmts)
                               (let
-                                  ((`fst (+ "" (or (and (is_array? stmts)
-                                                        (first stmts)
-                                                        (is_object? (first stmts))
-                                                        (not (is_function? (prop (first stmts) `ctype)))
-                                                        (prop (first stmts) `ctype))
-                                                   ""))))
+                                  ((`fst (or (and (is_array? stmts)
+						  (first stmts)
+						  (is_object? (first stmts))
+						  (not (is_function? (prop (first stmts) `ctype)))
+						  (prop (first stmts) `ctype)
+						  (cond
+						    (is_string? (prop (first stmts) `ctype))
+						    (prop (first stmts) `ctype)
+						    else
+						    (sub_type (prop (first stmts) `ctype))))
+                                                   "")))
                                 ;(log "check_needs_wrap: fst:" stmts)
                                ; (log "check_needs_wrap: fst:" fst)
                                 
@@ -3857,7 +3872,7 @@
                                                  (do
                                                      (= sanitized_name (sanitize_js_ref_name name))
                                                      (= dec_struct (get_declaration_details ctx name))
-                                                     (declare_log "current_declaration for " name ": " (if dec_struct.value (-> dec_struct.value `toString) "NOT FOUND") (clone dec_struct))
+                                                     ;(declare_log "current_declaration for " name ": " (if dec_struct.value (-> dec_struct.value `toString) "NOT FOUND") (clone dec_struct))
                                                      (when (and dec_struct)
                                                               ;(not (dec_struct.is_argument)))
                                                              ;; this is a global so we just produce a reference for this 
@@ -3938,10 +3953,10 @@
                                                   (set_declaration ctx name `type Object)))
                                             (== declaration "optimize")
                                             (do 
-                                                (declare_log "optimizations: " targeted)
+                                                ;(declare_log "optimizations: " targeted)
                                                 (for_each (`factor (each targeted `val))
                                                   (do 
-                                                      (declare_log "optimization: " (each factor `name))
+                                                      ;(declare_log "optimization: " (each factor `name))
                                                       (= factor (each factor `name))
                                                       (cond
                                                           (== factor.0 "safety")
@@ -4803,22 +4818,14 @@
                           ;; check global scope
                           (not (== undefined (get_lisp_ctx tokens.name)))
                           (compile_lisp_scoped_reference tokens.name ctx)
-                          
-                          ;; finally do we have a key in place for the global definition?
-                          ;(contains? (first (get_object_path tokens.name)) (keys Environment.context.scope))
-                          ;(do
-                          ;      (= has_lisp_globals true)
-                          ;      [{ `ctype: undefined } "(" "await" " " env_ref "get_global" "(\"" tokens.name  "\")" ")"])
+                                                   
                           
                           else
                           (do ;(comp_log "compile: unknown reference: " tokens.name)
                               (throw ReferenceError (+ "compile: unknown reference: " tokens.name)))))
                       else
                       (do 
-                       ;(error_log "compile: invalid compilation structure:",tokens)
-                       ;console.error "Compile passed invalid compilation structure")
-                        ;(console.error (clone tokens))
-                        ;(console.error "CTX:" (clone ctx))
+                       
                         (throw SyntaxError "compile passed invalid compilation structure"))
                       ))
                 (catch Error (`e)
@@ -4836,7 +4843,7 @@
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
-                      (defclog { `prefix: "compiler:" `background: "darkblue" `color: "white" } )))
+                      (defclog { `prefix: "compiler:" `background: "green" `color: "black" } )))
        (`assemble_output
          (fn (js_tree)
              (let
@@ -4933,11 +4940,21 @@
                       cl_encode_string contains? clone)
              (local check_true))
             
+      
     
-    
-   ; (log "running compiler")
+   
     (if (eq nil Environment)
-        (throw "Compiler: No environment passed in options."))
+        (throw EvalError "Compiler: No environment passed in options."))
+
+       (when (-> Environment `get_global "__VERBOSITY__")
+	 (let
+	     ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))
+	   (when (> verbosity_level 0)
+	     (set_ctx root_ctx "__VERBOSITY__" verbosity_level)
+	     (main_log "compiler verbosity is on"))))
+       
+
+       
     
     ;; setup key values in the context for flow control operations 
     ;; break - the looping constructs will return down the stack if
@@ -5037,7 +5054,11 @@
                   (or (not (is_object? (first assembly)))
                       (not (prop (first assembly) `ctype))))
              (= assembly
-                [ { `ctype: `statement } assembly]))
+                [ { `ctype: `statement } assembly])
+	     is_error
+	     is_error
+	     (eq nil assembly)
+	     (= assembly []))
            ;; if we are compiling with the root_environment option as true
            ;; we don't have a pre-existing environment, because we are
            ;; compiling the environment.

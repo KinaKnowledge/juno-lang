@@ -38,10 +38,11 @@ const repl = Deno.readTextFileSync("repl.lisp");
 
 await env.set_global("readline",readline);
 await env.set_global("writeAllSync",writeAllSync);
-await env.set_global("clone",clone);
+//await env.set_global("__VERBOSITY__",3);
+
 await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))")
 await env.evaluate("(defun load (filename) (progn (evaluate (read_text_file filename))))")
-await env.evaluate("(load \"io.lisp\")")
+//await env.evaluate("(load \"io.lisp\")")
 await env.evaluate(repl); // compile and load the repl
 await env.evaluate("(repl)"); // and call it..
 

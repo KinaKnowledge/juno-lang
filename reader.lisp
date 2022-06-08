@@ -4,6 +4,8 @@
 
 
 (defglobal `reader (fn (text opts)
+    (if (eq undefined text)
+        (throw EvalError (+ "reader: text to read is " (sub_type text)))
         (let
             ((`output_structure [])
              (`idx -1)
@@ -480,7 +482,7 @@
               (do 
                   (prepend output_structure
                            (quotel "=:iprogn"))
-                  (console.log "read (multiple forms) <-" output_structure)
+                  ;(console.log "read (multiple forms) <-" output_structure)
                   (first [output_structure]))
           ;(when opts.debug (console.log "read<-" (first output_structure)))
-              (first output_structure)))))
+              (first output_structure))))))

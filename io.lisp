@@ -30,7 +30,16 @@
        `tags:[ `file `write `io `text `string ]
        })
 
+   (defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
+   (console.log "imported path: " path)
    
+   (defun compile_file (lisp_file options)
+     (let
+	 ((input_components (path.parse lisp_file))
+	  (input_filename (path.basename lisp_file))
+	  (output_filename (or options.output_file
+			       (+ input_components.dir path.sep input_components.name ".js"))))
+	 output_filename))
    
    
 
