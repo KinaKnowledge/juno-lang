@@ -35,16 +35,13 @@ import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
 // console.log("readline: ",readline.readline);
 const repl = Deno.readTextFileSync("repl.lisp");
-const td = new TextDecoder();
-const te = new TextEncoder();
-	     
-// const freader=async function* () { return readline(Deno.stdin) };
-// await env.set_global("freader",freader);
-// console.log(await env.evaluate("(defglobal freader freader)"));
-await env.set_global("td",td)
-await env.set_global("te",te)
+
 await env.set_global("readline",readline);
 await env.set_global("writeAllSync",writeAllSync);
+await env.set_global("clone",clone);
+await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))")
+await env.evaluate("(defun load (filename) (progn (evaluate (read_text_file filename))))")
+await env.evaluate("(load \"io.lisp\")")
 await env.evaluate(repl); // compile and load the repl
 await env.evaluate("(repl)"); // and call it..
 

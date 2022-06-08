@@ -1,3 +1,4 @@
+
 ;; DLisp λ to Javascript Compiler
 ;; (c) 2022 Kina
 
@@ -877,7 +878,7 @@
                          (throw e)
                          )))
                    (if (eq nil ntree)
-                       (comp_time_log "unable to perform compilation time operation")
+                       (comp_time_log (+ "unable to perform compilation time operation: operator: " (-> lisp_tree.0 `substr 2)))
                        (do
                          ;(comp_time_log "applied:" ntree)
                          
@@ -1348,18 +1349,22 @@
                                           (inc idx)
                                           ;; since we have the source lisp tree, first tokenize each statement and 
                                           ;; then compile and then evaluate it.
-                                          (top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx)))
+                                          (if (verbosity ctx)
+                                              (top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx))))
                                           (= tokens (tokenize (prop lisp_tree idx) ctx))
-                                          (top_level_log (+ "" idx "/" num_non_return_statements) "tokens ->" (clone tokens))
-                                          (top_level_log (+ "" idx "/" num_non_return_statements) "expand ->" (clone expanded_tree))
+                                          (if (verbosity ctx)
+                                              (top_level_log (+ "" idx "/" num_non_return_statements) "tokens ->" (clone tokens)))
+                                          (if (verbosity ctx)
+                                              (top_level_log (+ "" idx "/" num_non_return_statements) "expand ->" (clone expanded_tree)))
 
                                           (= stmt (compile tokens ctx))
                                           
-                                          (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " stmt)
+                                          (if (verbosity ctx)
+                                              (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " stmt))
                                           (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
-                                          
-                                          (top_level_log (+ "" idx "/" num_non_return_statements) "<-" rval)
-                                          (top_level_log (+ "" idx "/" num_non_return_statements) "ctx" (clone Environment.context.scope))))
+                                          (if (verbosity ctx)
+                                            (top_level_log (+ "" idx "/" num_non_return_statements) "<-" rval)
+                                            )))
                                    ;; return the last statement for standard compilation.
                                    (prop lisp_tree (+ idx 1)))))))
        (`compile_block (fn (tokens ctx block_options)
@@ -3157,13 +3162,13 @@
                      (`from_place nil)
                      (`acc []))
                  (= from_tokens tokens.1)
-                 (console.log "compile_dynamic_import: ->" (clone tokens))
+                 ;(console.log "compile_dynamic_import: ->" (clone tokens))
                  (push acc { `ctype: "statement" })
                  (= from_place (compile from_tokens ctx))
-                 (console.log "compile_import: compiled from place: " from_place)
+                 ;(console.log "compile_import: compiled from place: " from_place)
                  (for_each (`t (flatten ["await" " " "import" " " "(" from_place ")"]))
                     (push acc t))
-                (console.log "compile_import: <- " (clone acc))
+                ;(console.log "compile_import: <- " (clone acc))
                 acc)))
                      
        (`compile_set_global 
@@ -3831,12 +3836,12 @@
                                   (`sanitized_name nil)
                                   (`declaration nil)
                                   (`dec_struct nil))
-                                 (declare_log "->" (clone expressions))
+                                 ;(declare_log "->" (clone expressions))
                                  (for_each (`exp expressions)
                                     (do
                                         (= declaration exp.val.0.name)
                                         (= targeted (rest exp.val))
-                                        (declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted)
+                                        ;(declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted)
                                         (cond
                                             (== declaration "toplevel")
                                             (do
@@ -3865,9 +3870,9 @@
                                                                  (do
                                                                      (= details (prop Environment.definitions name))
                                                                      (= source (+ "(fn " details.fn_args " " details.fn_body ")"))
-                                                                     (declare_log "source: " source)
+                                                                     ;(declare_log "source: " source)
                                                                      (= source (compile (tokenize (read_lisp source) ctx) ctx 1000))
-                                                                     (declare_log "compiled: " source)
+                                                                     ;(declare_log "compiled: " source)
                                                                      (push acc source)
                                                                      (set_ctx ctx name AsyncFunction))
                                                                  (is_function? dec_struct.value)
@@ -3901,7 +3906,7 @@
                                             (for_each (`name (each targeted `name))
                                                  (do
                                                      (= dec_struct (get_declaration_details ctx name))
-                                                     (declare_log "local: declaration_details: " dec_struct)
+                                                     ;(declare_log "local: declaration_details: " dec_struct)
                                                      (set_ctx ctx name dec_struct.value)))
                                             (== declaration "function")
                                             (do
@@ -3941,11 +3946,12 @@
                                                       (cond
                                                           (== factor.0 "safety")
                                                           (set_declaration ctx "__SAFETY__" `level factor.1))
-                                                      (declare_log "safety set: " (safety_level ctx))))
+                                                      ;(declare_log "safety set: " (safety_level ctx))  
+                                                      ))
                                                 
                                                 ))))
                                             
-                                 (declare_log "<-" (clone acc))
+                                 ;(declare_log "<-" (clone acc))
                                  acc)))
        (`safety_level (fn (ctx)
                           (when ctx
@@ -4216,7 +4222,7 @@
                           `undefined `unescape `valueOf `window 
                           ;; DLisp mandatory defined globals
                           `AsyncFunction
-                          `Environment `Expression `get_next_environment_id `clone `subtype `lisp_writer `do_deferred_splice
+                          `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice
                           ])
        (`is_error nil)
       
@@ -4924,7 +4930,7 @@
              (include length first second map do_deferred_splice
                       not sub_type last flatten add subtype
                       is_nil? is_number? starts_with? 
-                      cl_encode_string contains?)
+                      cl_encode_string contains? clone)
              (local check_true))
             
     

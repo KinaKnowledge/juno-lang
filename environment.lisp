@@ -154,6 +154,44 @@
                                 return list;
                             }"))
                         
+                  (clone (new Function "src" "depth"
+                            "{ if (src===null) {
+                                    return null;
+                                }
+                                depth = depth || 0;
+                                if (depth >= 500) {
+                                  throw new EvalError(\"clone: too deep\");
+                                }
+                                if (src===undefined) {
+                                    return undefined;
+                                } else if (src === null) {
+                        	        return null;
+                            	} else if (src instanceof Function ) {
+                                        return src; 
+                                } else if (src==this) {
+                                        return this;
+                                } else if (src.constructor===String) {	  
+                            	  return src.toString();
+                            	} else if (src.constructor===Number) {
+                            	  return src;
+                            	} else if (src.constructor===Boolean) {
+                            	  return src;
+                            	} else if ((src.constructor===Array)||(src.constructor===Object)) {
+                            	  let obj;
+                            	  if (src.constructor===Array) {
+                            	    obj=[];
+                            	  } else {
+                            	    obj={}
+                            	  }
+                                      for (let idx in src) {
+                            	    obj[idx]=clone(src[idx],depth+1);
+                            	  }
+                            	  return obj;
+                            	} else {
+                            	  return src;
+                            	}
+                            }"))
+                        
                   (reverse (new Function "container" "{ return container.slice(0).reverse }")
                            { "usage": ["container:list"] 
                               "description": "Returns a copy of the passed list as reversed.  The original is not changed." 
@@ -410,7 +448,7 @@
                                        (new Set vals)
                                        (== vtype "object")
                                        (new Set (values vals)))))))
-               
+                  
                   (describe 
                     (fn (quoted_symbol)
                         (let
