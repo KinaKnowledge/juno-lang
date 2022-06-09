@@ -793,9 +793,9 @@
                              (= rval (tokenize_quote args _path))
                              ;(console.log "tokenize: A: returning quote/m:" rval)
                              rval)
-                            (and (is_array? args)
+                            (and (is_array? args)				
                                  (not (get_ctx_val ctx `__IN_LAMBDA__))
-                                 (== args.0 (quote "=:iprogn")))
+                                 (== args.0 (quote "=:iprogn")))				 
                             (do 
                                 (= rval (compile_toplevel args ctx))
                                 (tokenize rval ctx _path))
@@ -2966,7 +2966,7 @@
                              (= function_ref (compile fn_ref ctx))
                              ;(apply_log "compiled function:" (clone function_ref))
                              (when fn_ref.ref
-                                 (= ctype (get_declaration_details ctx fn_ref.val)))
+                                 (= ctype (get_declaration_details ctx fn_ref.name)))
                              ;(apply_log "function type: " ctype)
                              (when (is_function? ctype.value)
                                  (= requires_await true))
@@ -3229,7 +3229,7 @@
                                 (== assignment_value.0.ctype "expression")
                                 Expression 
                                 else
-                                assignment_value.0.ctype))
+                                assignment_value.0.ctype))		    
                     (when wrap_as_function?
                       (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
                    
@@ -3245,13 +3245,14 @@
                                      assignment_value))))
                
                (when (verbosity ctx)
-                     (clog "compile_set_global: assignment_value: " assignment_value))
+                     (clog "compile_set_global: target: " target  "assignment_value: " assignment_value))
                  
                (= acc [{ `ctype: "statement" } (if (== Function (prop root_ctx.defined_lisp_globals target))
                                                    ""
                                                    "await") 
                                                " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
-               ;(clog "<-" acc)
+               (when (verbosity ctx)
+		 (clog "<-" acc))
                acc)))
        
        (`is_token? (fn (t)
@@ -3382,8 +3383,7 @@
                               (= tval (prop tree idx))
                               ;(follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@")))
                                (cond 
-                                 (or (== tval (quote "=$,@"))
-                                     )
+                                 (== tval (quote "=$,@"))                                     
                                  (do
                                   (inc idx)
                                   (= tval (prop tree idx))
@@ -3835,7 +3835,15 @@
                    (push acc "}")))
                
                acc)))       
-       (`verbosity (fn (ctx)
+
+       ;; checking the compiler context is fairly expensive so unless verbosity is declared or set globally,
+       ;; the verbosity function is set to silence.  After the initialization block, global verbosity is
+       ;; checked, and if on, verbosity is set to check_verbosity.
+       
+       (`silence (fn ()
+		     false))
+       (`verbosity silence)
+       (`check_verbosity (fn (ctx)
                        (get_ctx ctx "__VERBOSITY__")))
                        
        (`declare_log (if opts.quiet_mode
@@ -3912,8 +3920,10 @@
                                                     (if (> verbosity_level 0)
                                                         (set_ctx ctx "__VERBOSITY__" verbosity_level)
                                                         (do 
-                                                            (declare_log "verbosity: turned off")
-                                                            (set_ctx ctx "__VERBOSITY__" nil)))
+							 (declare_log "verbosity: turned off")
+							 (= verbosity silence)
+							 (set_ctx ctx "__VERBOSITY__" nil)))
+						    (= verbosity check_verbosity)
                                                     (declare_log "compiler: verbosity set: " (verbosity ctx)))
                                                    (push warnings
                                                          "invalid verbosity declaration, expected number, received " (first (each targeted `name)))))
@@ -4436,8 +4446,9 @@
                                         (is_object? rval.0)
                                         (prop rval.0 `ctype))
                                    (comp_log (+ "compile:" _cdepth " <- ") "return type: " (as_lisp rval.0))
-                                   (do 
-                                       (comp_warn "<-"  _cdepth   "unknown/undeclared type returned: " (clone rval)))))
+                                   (do 				        
+				     (comp_warn "<-"  _cdepth   "unknown/undeclared type returned: " (clone rval))
+				     (comp_warn "  "  _cdepth   "for given: " (clone tokens)))))
                          rval))))
                          
        (`compile_inner
@@ -4948,9 +4959,10 @@
 
        (when (-> Environment `get_global "__VERBOSITY__")
 	 (let
-	     ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))
+	     ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))	   
 	   (when (> verbosity_level 0)
 	     (set_ctx root_ctx "__VERBOSITY__" verbosity_level)
+	     (= verbosity check_verbosity)
 	     (main_log "compiler verbosity is on"))))
        
 
@@ -4967,10 +4979,7 @@
     (set_prop root_ctx
               `defined_lisp_globals
               {})
-    ;(console.clear)
-    ;(main_log "Environment ID: " (-> env `id))
-    ;(main_log "Starting tokenization..." (clone tree))
-    
+       
     (set_ctx root_ctx
              `__LAMBDA_STEP__
               -1) 

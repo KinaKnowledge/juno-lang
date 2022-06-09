@@ -27,22 +27,22 @@ await env.set_compiler(cca)
 
 console.log("DLisp 2.0 (c) 2022 Kina, LLC");
 
-//let readline = await import("https://deno.land/x/readline/mod.ts");
-// readline.readline is AsyncGeneratorFunction
 
 import { readline } from "https://deno.land/x/readline/mod.ts";
 import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
-// console.log("readline: ",readline.readline);
+
 const repl = Deno.readTextFileSync("repl.lisp");
 
 await env.set_global("readline",readline);
 await env.set_global("writeAllSync",writeAllSync);
-//await env.set_global("__VERBOSITY__",3);
 
 await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))")
-await env.evaluate("(defun load (filename) (progn (evaluate (read_text_file filename))))")
-//await env.evaluate("(load \"io.lisp\")")
+await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))")
+// await env.set_global("__VERBOSITY__",6);
+//await env.evaluate("(load-file \"io.lisp\")")
+await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
+await env.evaluate("(init_io.initializer Environment)");
 await env.evaluate(repl); // compile and load the repl
 await env.evaluate("(repl)"); // and call it..
 

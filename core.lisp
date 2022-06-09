@@ -1779,7 +1779,20 @@
          `description: "Given a date object, return a formatted string in English with the amount of time until the specified date."
          `tags:["date" "format" "time" "string" "elapsed"]
          })
-     
+
+  (defun show (thing)
+    (cond
+      (is_function? thing)
+      (-> thing `toString)
+      else
+      thing)
+    { `usage: ["thing:function"]
+    `description: "Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument."
+    `tags:["compile" "source" "javascript" "js" "display" ]
+    
+    })
+    
+  
     true
 )
 

@@ -39,7 +39,7 @@
         (if (== (prop (describe quoted_symbol)
                       `location)
                    nil)
-           not_exists_form
+           (or not_exists_form [])
            exists_form))
      {
          `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
@@ -217,13 +217,13 @@
     ;                   (+ "{ try { if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } } catch (ex) { return undefined }}"))))
      ;               (fval refname))))
                 
-(defun `get_object_path (refname)
+(defun `get_object_path_old (refname)
     (let
         ((`chars (split_by "" refname))
          (`comps [])
          (`mode 0)
          (`name_acc []))
-        (declare (include length))
+        ;(declare (include length))
                  
         (for_each (`c chars)
           (do
@@ -255,7 +255,46 @@
             (push comps (join "" name_acc)))
         comps))
 
-
+(defun `get_object_path (refname)
+  (if (or (> (-> refname `indexOf ".") -1)
+          (> (-> refname `indexOf "[") -1))
+    (let
+        ((`chars (split_by "" refname))
+         (`comps [])
+         (`mode 0)
+         (`name_acc []))
+        ;(declare (include length))
+                 
+        (for_each (`c chars)
+          (do
+            (cond
+                (and (== c ".")
+                     (== mode 0))
+                (do 
+                    (push comps
+                          (join "" name_acc))
+                    (= name_acc []))
+                (and (== mode 0)
+                     (== c "["))
+                (do
+                   (= mode 1)
+                   (push comps
+                         (join "" name_acc))
+                   (= name_acc []))
+                (and (== mode 1)
+                     (== c "]"))
+                         
+                (do
+                   (= mode 0)
+                   (push comps
+                         (join "" name_acc))
+                   (= name_acc []))
+                else
+                (push name_acc c))))
+        (if (> name_acc.length 0)
+            (push comps (join "" name_acc)))
+        comps)
+    [ refname ]))
              
 
 
@@ -1743,4 +1782,42 @@
       `description: "Given a javascript function, return a list of arg names for that function"
       `usage: ["function:function"]
       `tags: [ "function" "introspect" "introspection" "arguments"]
-     })              
+     })   
+ 
+(defun set_compiler (compiler_function)
+    (progn
+        (-> Environment `set_compiler compiler_function)
+        compiler_function)
+    {
+        `description: (+ "Given a compiled compiler function, installs the provided function as the "
+                         "environment's compiler, and returns the compiler function.")
+        `usage: ["compiler_function:function"]
+        `tags:["compilation" "environment" "compiler"]
+    })
+ 
+(if_compile_time_defined
+   `Deno
+   (defglobal read_text_file
+       (bind Deno.readTextFile Deno)
+       {
+       `description: (+ "Given an accessible filename including " 
+			"path with read permissions returns the file contents as a string.")
+       `usage:["filename:string" "options:object" ]
+       `tags:["file" "read" "text" "input" "io"]
+       })
+   false)
+   
+(if_compile_time_defined
+   `Deno
+    (defun load (filename)       
+	  (evaluate (read_text_file filename))
+       { `description: (+ "Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. "
+			  "The file contents are expected to be Lisp source code in text format.")
+       `tags: [`compile `read `io `file ]
+       `usage: ["filename:string"] 
+       })
+     false)
+
+true
+   
+ 
