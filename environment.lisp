@@ -1,6 +1,7 @@
 ;; Environment - (c) 2022 Kina, LLC 
 ;; Author: Alex Nygren
 
+;; **
 
 ;; The "world" that is the scope of the compiler and the compiled code.
 ;; Faciliates dynamic scope, lisp globals, definitions and other properties.
@@ -154,28 +155,30 @@
                                 return list;
                             }"))
                         
-                  (clone (new Function "src" "depth"
+                  (clone_obj (new Function "src" "depth" "Environment"
                             "{ if (src===null) {
                                     return null;
                                 }
                                 depth = depth || 0;
-                                if (depth >= 500) {
+                                if (depth >= 500) { debugger;
                                   throw new EvalError(\"clone: too deep\");
                                 }
                                 if (src===undefined) {
                                     return undefined;
                                 } else if (src === null) {
-                        	        return null;
+                        	    return null;
                             	} else if (src instanceof Function ) {
-                                        return src; 
+                                    return src; 
                                 } else if (src==this) {
-                                        return this;
+                                    return this;
+                                } else if (src==Environment) {
+                                    return Environment;
                                 } else if (src.constructor===String) {	  
-                            	  return src.toString();
+                            	    return src.toString();
                             	} else if (src.constructor===Number) {
-                            	  return src;
+                            	    return src;
                             	} else if (src.constructor===Boolean) {
-                            	  return src;
+                            	    return src;
                             	} else if ((src.constructor===Array)||(src.constructor===Object)) {
                             	  let obj;
                             	  if (src.constructor===Array) {
@@ -184,7 +187,7 @@
                             	    obj={}
                             	  }
                                       for (let idx in src) {
-                            	    obj[idx]=clone(src[idx],depth+1);
+                            	    obj[idx]=clone_obj(src[idx],depth+1);
                             	  }
                             	  return obj;
                             	} else {
@@ -673,9 +676,14 @@
          
                   (set_global 
                       (fn (refname value meta)
-                           (do
-                            (if (not (== (typeof refname) "string"))
-                                (throw TypeError "reference name must be a string type"))
+                           (progn
+			     (cond (not (== (typeof refname) "string"))
+				   (throw TypeError "reference name must be a string type")
+				   (or (== Environment value)
+				       (== Environment.global_ctx value)
+				       (== Environment.global_ctx.scope value))
+				   (throw EvalError "cannot set the environment scope as a global value"))
+			    
                             ;(log "Environment: set_global: " refname value)
                              (set_prop Environment.global_ctx.scope 
                                        refname
@@ -936,8 +944,20 @@
                           (compiler [] { `special_operators: true `env: Environment }))
                        (set_prop Environment.global_ctx.scope
                                  "compiler"
-                                 compiler))))
-          
+                                 compiler)
+		     compiler)))	  
+	  
+	  (set_prop Environment.global_ctx.scope
+		    `set_compiler
+		    set_compiler)
+
+	  
+
+	  (set_prop Environment.global_ctx.scope
+		    `clone
+		    (fn (val)
+			(clone_obj val 0 Environment)))
+	  
           ;; Expose our global setters/getters for the dynamic and top level contexts
           
           (set_prop Environment

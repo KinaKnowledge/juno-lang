@@ -1,7 +1,7 @@
-
 ;; DLisp λ to Javascript Compiler
 ;; (c) 2022 Kina
 
+;; **
 
 ;; Author: Alex Nygren
 
@@ -44,17 +44,22 @@
 (defglobal `compiler 
   (fn (quoted_lisp opts)
     (let
-      ((`get_global opts.env.get_global))
+	((`get_global opts.env.get_global)
+	 (`Environment opts.env)  
+	 (`clone (fn (val)
+		     (clone_obj val Environment))))
+      (declare (include clone_obj))
      (let
       ((`tree quoted_lisp)  ;; the JSON source
        
        ;; when we are compiling forms that are compile time manipulated by functions, 
        ;; expanded_tree will hold the tree structure that is the result of those
-       ;; macro expansions 
+       ;; macro expansions
        
+            
        (`expanded_tree (clone tree))
        (`op nil)
-       (`Environment opts.env)
+      
        (`default_safety_level (or Environment.declarations.safety.level 1))
        ;(`nada (console.log "COMPILER: " Environment  " Safety Level: " default_safety_level))  ;  "INPUT: ->" (clone tree)))
        
@@ -94,6 +99,7 @@
                          (= log console.log)
                          true)
                         false))
+       
        (`error_log (defclog { `prefix: "Compile Error" `background: "#CA3040" `color: "white" } ))
        (`assembly [])
        (`async_function_type_placeholder (fn () true))
@@ -623,12 +629,7 @@
                                        (do
                                            (console.warn "source_from_tokens: unable to determine source path from: " (clone tokens))
                                            
-                                           "")))))
-                                        
-                                      
-                                                 
-                          
-                          
+                                           "")))))                                                                                                                                                                                   
        (`NOT_FOUND  "__!NOT_FOUND!__")
        (`THIS_REFERENCE (fn () "this"))
        (`NOT_FOUND_THING (fn () true))
@@ -3245,7 +3246,7 @@
                                      assignment_value))))
                
                (when (verbosity ctx)
-                     (clog "compile_set_global: target: " target  "assignment_value: " assignment_value))
+                     (clog "target: " target  "assignment_value: " assignment_value))
                  
                (= acc [{ `ctype: "statement" } (if (== Function (prop root_ctx.defined_lisp_globals target))
                                                    ""
@@ -4502,25 +4503,17 @@
                         (= operator_type (prop op_token `val))
                         (= ref (prop op_token `ref))
                         (= op (prop op_lookup operator))
-                        (if (verbosity ctx)
-                            (comp_log (+ "compile: " _cdepth " (form):") operator (if (prop Environment.inlines operator) "lib_function" op) tokens))
+                        ;(if (verbosity ctx)
+                         ;   (comp_log (+ "compile: " _cdepth " (form):") operator (if (prop Environment.inlines operator) "lib_function" op) tokens))
                         ;(comp_log "    ctx: " (clone ctx))
                         (cond 
                           op
                           (op tokens ctx)
                           (prop Environment.inlines operator)
                           (compile_inline tokens ctx)
-                          else
-                                        ;(or (get_ctx ctx operator)
-                                        ;   (get_lisp_ctx operator))
+                          else                                        
                           (compile_scoped_reference tokens ctx))) 
-                                        ;else
-                                        ;(do
-                                        ;   ["NOCOMPILE" (map (fn (v)
-                                        ;                        (if v.ref
-                                        ;                           (prop v `name)
-                                        ;                          (prop v `val)))
-                                        ;                 tokens)])))
+                                        
                       (and (is_object? tokens)
                            (== tokens.type "objlit"))
                       (do
@@ -4948,7 +4941,7 @@
              (include length first second map do_deferred_splice
                       not sub_type last flatten add subtype
                       is_nil? is_number? starts_with? 
-                      cl_encode_string contains? clone)
+                      cl_encode_string contains?)
              (local check_true))
             
       
