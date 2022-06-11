@@ -98,7 +98,11 @@ export function lisp_writer(obj,depth,max_depth) {
     let keys = Object.keys(obj);
     for (let i in keys) {
       if (i > 0) text+= ' ';
-      text+=lisp_writer(keys[i],depth+4)+":"+lisp_writer(obj[keys[i]],depth+4, max_depth)
+      if (typeof obj[keys[i]]=="symbol") {
+	text+=lisp_writer(keys[i],depth+4)+": \"<symbol>\"";
+      } else {
+	text+=lisp_writer(keys[i],depth+4)+":"+lisp_writer(obj[keys[i]],depth+4, max_depth)
+      }
     }
     text += bracketStyles[bracketStyle+1];
     //if (depth === 0) console.log("lisp_writer: <- [ object ]",text);
@@ -144,7 +148,7 @@ export function clone(src,depth) {
 	} else if (src instanceof Function ) {
             return src; 
         } else if (src==this) {
-            return this;
+          return this;	
         } else if (src.constructor===String) {	  
 	  return src.toString();
 	} else if (src.constructor===Number) {
