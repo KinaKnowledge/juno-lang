@@ -1436,9 +1436,6 @@ export async function init_compiler(Environment) {
                             rval=await tokenize_quote(args,_path);
                              return  rval
                         } else if (check_true( ((args instanceof Array)&&await not(await get_ctx_val(ctx,"__IN_LAMBDA__"))&&((args && args["0"])===`=:iprogn`)))) {
-                            if (check_true ((opts && opts["expand_all_macros"]))){
-                                 await console.log("expanding all macros..")
-                            };
                             rval=await compile_toplevel(args,ctx);
                              return  await tokenize(rval,ctx,_path)
                         } else if (check_true( (await not((args instanceof Array))&&(args instanceof Object)))) {
@@ -1574,13 +1571,18 @@ export async function init_compiler(Environment) {
                              (warnings).push(("compile time function "+await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2)+" returned nil"))
                         } else {
                             ntree=await do_deferred_splice(ntree);
+                            if (check_true (true)){
+                                if (check_true (await not((await JSON.stringify(ntree)===await JSON.stringify(lisp_tree))))){
+                                     ntree=await compile_time_eval(ctx,ntree)
+                                }
+                            };
                             if (check_true (await verbosity(ctx))){
                                  await (async function(){
                                     let __array_op_rval__73=comp_time_log;
                                      if (__array_op_rval__73 instanceof Function){
-                                        return await __array_op_rval__73(await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"<- lisp: ",await (await Environment.get_global("as_lisp"))(await clone(ntree))) 
+                                        return await __array_op_rval__73(await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"<- lisp: ",await (await Environment.get_global("as_lisp"))(ntree)) 
                                     } else {
-                                        return[__array_op_rval__73,await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"<- lisp: ",await (await Environment.get_global("as_lisp"))(await clone(ntree))]
+                                        return[__array_op_rval__73,await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"<- lisp: ",await (await Environment.get_global("as_lisp"))(ntree)]
                                     }
                                 })()
                             }

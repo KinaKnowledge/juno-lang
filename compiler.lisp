@@ -794,9 +794,7 @@
                             (and (is_array? args)				
                                  (not (get_ctx_val ctx `__IN_LAMBDA__))
                                  (== args.0 (quote "=:iprogn")))				 
-                            (do
-			     (when opts.expand_all_macros
-			       (console.log "expanding all macros.."))
+                            (do			     
                                 (= rval (compile_toplevel args ctx))
                                 (tokenize rval ctx _path))
                             (and (not (is_array? args))
@@ -864,7 +862,7 @@
                       ;; is this a compile time function?  Check the definition in our environment..
                       (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
                  (let
-                     ((`ntree nil)
+                     ((`ntree nil)		      
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
 
 		   
@@ -892,9 +890,13 @@
                        (push warnings (+ "compile time function " (-> lisp_tree.0 `substr 2) " returned nil"))
                        (do
                          ;(comp_time_log "applied:" ntree)						  
-			(= ntree (do_deferred_splice ntree))
+			(= ntree (do_deferred_splice ntree))			
+		        (when (not (== (JSON.stringify ntree)
+				       (JSON.stringify lisp_tree)))
+			    ;(console.log "expanding all macros: " (as_lisp ntree))
+			    (= ntree (compile_time_eval ctx ntree)))
 			(when (verbosity ctx)
-                          (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp (clone ntree))))))
+                          (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp ntree)))))
                          ;(comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
                    ntree)
                  
