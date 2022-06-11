@@ -33,20 +33,20 @@
 
    
          
-
 (defglobal if_compile_time_defined 
     (fn (quoted_symbol exists_form not_exists_form)
         (if (== (prop (describe quoted_symbol)
                       `location)
                    nil)
            (or not_exists_form [])
-           exists_form))
+           exists_form)
      {
          `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
          `tags: ["compile" "defined" "global" "symbol" "reference"]
          `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]
          `eval_when:{ `compile_time: true }
-     })
+     }))
+
        
 
 ;; Convenience function with embedded quoting for the compiler
@@ -411,13 +411,17 @@
         acc))
 
 
-(defmacro destructuring_bind (bind_vars expression `& forms)
+(defmacro destructuring_bind (bind_vars expression `& forms)  
       (let
           ((binding_vars bind_vars)
            (paths (destructure_list binding_vars))
            (bound_expression expression)
            (allocations [])
            (acc [(quote let)]))
+	(assert (and (is_array? bind_vars)
+		     (is_value? expression)
+		     (is_value? forms))
+		"destructuring_bind: requires 3 arguments")
           (for_each (`idx (range (length paths)))
              (do 
                  (push allocations 
@@ -1816,7 +1820,9 @@
        `tags: [`compile `read `io `file ]
        `usage: ["filename:string"] 
        })
-     false)
+   false)
+
+
 
 true
    

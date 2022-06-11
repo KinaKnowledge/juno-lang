@@ -13,6 +13,9 @@
 
 (defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
 
+
+
+
 (defun load (filename)       
   (let
        ((fname filename)
@@ -104,7 +107,7 @@
     
     ;; now compile the json
 
-    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true } opts)))
+    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `expand_all_macros: true } opts)))
    
     (cond
       compiled.error
@@ -172,6 +175,9 @@
 	(progn
 	  (console.log "input file " lisp_file " not compiled.")
 	  nil))))
+
+
+
 
 
 

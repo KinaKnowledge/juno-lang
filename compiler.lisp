@@ -45,10 +45,7 @@
   (fn (quoted_lisp opts)
     (let
 	((`get_global opts.env.get_global)
-	 (`Environment opts.env)  
-	 (`clone (fn (val)
-		     (clone_obj val Environment))))
-      (declare (include clone_obj))
+	 (`Environment opts.env))      
      (let
       ((`tree quoted_lisp)  ;; the JSON source
        
@@ -797,7 +794,9 @@
                             (and (is_array? args)				
                                  (not (get_ctx_val ctx `__IN_LAMBDA__))
                                  (== args.0 (quote "=:iprogn")))				 
-                            (do 
+                            (do
+			     (when opts.expand_all_macros
+			       (console.log "expanding all macros.."))
                                 (= rval (compile_toplevel args ctx))
                                 (tokenize rval ctx _path))
                             (and (not (is_array? args))
@@ -867,7 +866,8 @@
                  (let
                      ((`ntree nil)
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
-                   
+
+		   
                    ;(comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
                    ;(comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
                    
@@ -891,10 +891,10 @@
                    (if (eq nil ntree)
                        (push warnings (+ "compile time function " (-> lisp_tree.0 `substr 2) " returned nil"))
                        (do
-                         ;(comp_time_log "applied:" ntree)
-                         
-                         (= ntree (do_deferred_splice ntree))))
-                         ;(comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp (clone ntree)))
+                         ;(comp_time_log "applied:" ntree)						  
+			(= ntree (do_deferred_splice ntree))
+			(when (verbosity ctx)
+                          (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp (clone ntree))))))
                          ;(comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
                    ntree)
                  
@@ -1340,7 +1340,7 @@
        ;; In the top-level mode, if the form is a progn form, each of its body forms is sequentially processed
        ;; as a top level form in the same processing mode.  Otherwise, they are compiled as, and evaluated as a
        ;; unit in a lambda.  
-       (`top_level_log (defclog { `prefix: "top-level" `color: `white `background: "#300010" } ))
+       (`top_level_log (defclog { `prefix: "top-level" `color: `darkgreen `background: "#300010" } ))
        (`compile_toplevel 
                        (fn (lisp_tree ctx block_options)
                            (if (get_ctx_val ctx `__IN_LAMBDA__)
@@ -1361,22 +1361,22 @@
                                           ;; since we have the source lisp tree, first tokenize each statement and 
                                           ;; then compile and then evaluate it.
                                           (if (verbosity ctx)
-                                              (top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx))))
+                                              (progn
+						(console.log "")
+						(top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx)))))
                                           (= tokens (tokenize (prop lisp_tree idx) ctx))
-                                          (if (verbosity ctx)
-                                              (top_level_log (+ "" idx "/" num_non_return_statements) "tokens ->" (clone tokens)))
-                                          (if (verbosity ctx)
-                                              (top_level_log (+ "" idx "/" num_non_return_statements) "expand ->" (clone expanded_tree)))
-
+                                          
                                           (= stmt (compile tokens ctx))
                                           
-                                          (if (verbosity ctx)
-                                              (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " stmt))
+                                          
+                                             
                                           (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
-                                          (if (verbosity ctx)
-                                            (top_level_log (+ "" idx "/" num_non_return_statements) "<-" rval)
-                                            )))
+                                          (when (verbosity ctx)
+					      (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " (as_lisp stmt))
+					      (top_level_log (+ "" idx "/" num_non_return_statements) "<-" (as_lisp rval)))					  
+                                          ))
                                    ;; return the last statement for standard compilation.
+				   
                                    (prop lisp_tree (+ idx 1)))))))
        (`compile_block (fn (tokens ctx block_options)
                            (let
@@ -3195,7 +3195,7 @@
                   (`acc nil)
                   (`clog (if opts.quiet_mode
                              log
-                             (defclog { `prefix: "compile_set_global" `color: `white `background: "#205020" })))
+                             (defclog { `prefix: "compile_set_global" `color: `blue `background: "#205020" })))
                   (`metavalue nil)
                   (`assignment_value nil))
                (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly       
@@ -3246,14 +3246,14 @@
                                      assignment_value))))
                
                (when (verbosity ctx)
-                     (clog "target: " target  "assignment_value: " assignment_value))
+		 (clog "target: " (as_lisp target))
+		 (clog "assignment_value: " (as_lisp assignment_value)))
                  
                (= acc [{ `ctype: "statement" } (if (== Function (prop root_ctx.defined_lisp_globals target))
                                                    ""
                                                    "await") 
                                                " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
-               (when (verbosity ctx)
-		 (clog "<-" acc))
+               
                acc)))
        
        (`is_token? (fn (t)
@@ -3611,10 +3611,12 @@
                ;(console.log "compile_eval: -> " (clone tokens))
                ;(eval_log "to compile:" tokens.1.val)
                (= assembly (compile tokens.1.val ctx))
-               ;(eval_log "assembly:" (clone assembly))
+               (when (verbosity ctx)
+		 (eval_log "assembly:" (clone assembly)))
                ;(console.log "compile_eval: assembly:" assembly)
                (= has_lisp_globals true)
                (= result [ "Environment" "." "eval" "(" "await" " "  "async" " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
+	       
                result)))
        
        (`compile_debug (fn (tokens ctx)
@@ -4209,7 +4211,7 @@
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
-                  [{ `ctype: refval } "(" "await" " " env_ref "get_global" "(\"" refname  "\")" ")"])
+                  [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" "await" " " env_ref "get_global" "(\"" refname  "\")" ")"])
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
@@ -4441,15 +4443,15 @@
                      (if is_error
                          is_error   ;; unwind 
                        (do
-                         (defvar `rval (compile_inner tokens ctx _cdepth))
-                         (if (verbosity ctx)
+			(defvar `rval (compile_inner tokens ctx _cdepth))			
+                         (if false
                              (if  (and  (is_array? rval)
                                         (is_object? rval.0)
                                         (prop rval.0 `ctype))
-                                   (comp_log (+ "compile:" _cdepth " <- ") "return type: " (as_lisp rval.0))
+                                   true ;(comp_log (+ "compile:" _cdepth " <- ") "return type: " (as_lisp rval.0))
                                    (do 				        
-				     (comp_warn "<-"  _cdepth   "unknown/undeclared type returned: " (clone rval))
-				     (comp_warn "  "  _cdepth   "for given: " (clone tokens)))))
+				     (comp_warn "<-"  (or _cdepth "-")   "unknown/undeclared type returned: " (as_lisp rval))
+				     (comp_warn "  "  (or _cdepth "-")   "for given: "  (source_from_tokens tokens expanded_tree)))))
                          rval))))
                          
        (`compile_inner
@@ -4793,7 +4795,8 @@
                            
                           (and tokens.ref 
                                (prop op_lookup tokens.name))
-                          (throw SyntaxError (+ "compiler operator " tokens.name " referenced as a value."))
+			  tokens.name
+					;(throw SyntaxError (+ "compiler operator " tokens.name " referenced as a value."))
                           
                           
                           (and tokens.ref
@@ -4942,7 +4945,7 @@
                       not sub_type last flatten add subtype
                       is_nil? is_number? starts_with? 
                       cl_encode_string contains?)
-             (local check_true))
+             (local check_true clone))
             
       
     

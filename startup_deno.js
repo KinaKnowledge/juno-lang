@@ -7,6 +7,7 @@
 import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } from "./lisp_writer.js";
 globalThis.subtype=subtype
 globalThis.check_true=check_true
+globalThis.clone=clone
 
 var { init_dlisp } = await import("./environment.js");
 var { init_compiler } = await import("./compiler.js");
@@ -25,7 +26,7 @@ await env.set_compiler(cca)
 
 // setup a simple repl from stdin
 
-console.log("DLisp 2.0 (c) 2022 Kina, LLC");
+console.log("\nDLisp 2.0 (c) 2022 Kina, LLC");
 
 
 import { readline } from "https://deno.land/x/readline/mod.ts";
@@ -43,6 +44,8 @@ await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file
 //await env.evaluate("(load-file \"io.lisp\")")
 await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
 await env.evaluate("(init_io.initializer Environment)");
+await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")")
+await env.evaluate ("(load-file \"./tests/test_harness.lisp\")")
 await env.evaluate(repl); // compile and load the repl
 await env.evaluate("(repl)"); // and call it..
 

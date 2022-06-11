@@ -20,7 +20,7 @@
           
           (declare (toplevel true)
                    (include subtype)
-                   (local get_object_path get_outside_global))
+                   (local get_object_path get_outside_global clone))
           
           ;; Construct the environment
           (defvar
@@ -58,7 +58,10 @@
           (defvar compiler_operators (new Set))
           (defvar special_identity (fn (v)
                                        v))
-          (define_env 
+
+	  
+	  
+	  (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
                   (sub_type subtype)
                   (DEBUG_LEVEL 0
@@ -155,45 +158,7 @@
                                 return list;
                             }"))
                         
-                  (clone_obj (new Function "src" "depth" "Environment"
-                            "{ if (src===null) {
-                                    return null;
-                                }
-                                depth = depth || 0;
-                                if (depth >= 500) { debugger;
-                                  throw new EvalError(\"clone: too deep\");
-                                }
-                                if (src===undefined) {
-                                    return undefined;
-                                } else if (src === null) {
-                        	    return null;
-                            	} else if (src instanceof Function ) {
-                                    return src; 
-                                } else if (src==this) {
-                                    return this;
-                                } else if (src==Environment) {
-                                    return Environment;
-                                } else if (src.constructor===String) {	  
-                            	    return src.toString();
-                            	} else if (src.constructor===Number) {
-                            	    return src;
-                            	} else if (src.constructor===Boolean) {
-                            	    return src;
-                            	} else if ((src.constructor===Array)||(src.constructor===Object)) {
-                            	  let obj;
-                            	  if (src.constructor===Array) {
-                            	    obj=[];
-                            	  } else {
-                            	    obj={}
-                            	  }
-                                      for (let idx in src) {
-                            	    obj[idx]=clone_obj(src[idx],depth+1);
-                            	  }
-                            	  return obj;
-                            	} else {
-                            	  return src;
-                            	}
-                            }"))
+                
                         
                   (reverse (new Function "container" "{ return container.slice(0).reverse }")
                            { "usage": ["container:list"] 
@@ -952,12 +917,14 @@
 		    set_compiler)
 
 	  
-
+	  
 	  (set_prop Environment.global_ctx.scope
 		    `clone
 		    (fn (val)
-			(clone_obj val 0 Environment)))
-	  
+			(if (== val Environment)
+			    Environment
+			    (clone val 0 Environment))))
+	
           ;; Expose our global setters/getters for the dynamic and top level contexts
           
           (set_prop Environment
