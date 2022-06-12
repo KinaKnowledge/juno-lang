@@ -1,3 +1,13 @@
+// Source: environment.lisp  
+
+
+// Build Time: 2022-06-12 12:41:37
+// Version: 2022.06.12.12.41
+export const DLISP_ENV_VERSION='2022.06.12.12.41';
+
+
+
+
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 if (typeof AsyncFunction === "undefined") {
   globalThis.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
@@ -1831,7 +1841,7 @@ export async function init_dlisp(Environment)  {
                                                 } 
                                             })()===":"))){
                                                  idx+=1
-                                            } else throw new SyntaxError((""+await position()+"missing colon in object key: "+key+" -->"+await local_text()));
+                                            } else throw new SyntaxError((""+await position()+": missing colon in object key: "+key+" -->"+await local_text()));
                                             
                                         };
                                          return  await async function(){
@@ -2434,6 +2444,17 @@ export async function init_dlisp(Environment)  {
                     let embed_compiled_quote=async function(type,tmp_name,tval) {         return  await async function(){
             if (check_true( (type===0))) {
                  return await (async function(){
+                    let __array_op_rval__5="=:(";
+                     if (__array_op_rval__5 instanceof Function){
+                        return await __array_op_rval__5(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
+                    } else {
+                        return[__array_op_rval__5,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
+                    }
+                })()
+            } else if (check_true( (type===1))) {
+                 return [`=$&!`,"=:'",`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
+            } else if (check_true( (type===2))) {
+                 return await (async function(){
                     let __array_op_rval__6="=:(";
                      if (__array_op_rval__6 instanceof Function){
                         return await __array_op_rval__6(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
@@ -2441,24 +2462,13 @@ export async function init_dlisp(Environment)  {
                         return[__array_op_rval__6,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
                     }
                 })()
-            } else if (check_true( (type===1))) {
-                 return [`=$&!`,"=:'",`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
-            } else if (check_true( (type===2))) {
-                 return await (async function(){
-                    let __array_op_rval__7="=:(";
-                     if (__array_op_rval__7 instanceof Function){
-                        return await __array_op_rval__7(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
-                    } else {
-                        return[__array_op_rval__7,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
-                    }
-                })()
             } else if (check_true( (type===3))) {
                  return await (async function(){
-                    let __array_op_rval__8="=:'";
-                     if (__array_op_rval__8 instanceof Function){
-                        return await __array_op_rval__8(`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'") 
+                    let __array_op_rval__7="=:'";
+                     if (__array_op_rval__7 instanceof Function){
+                        return await __array_op_rval__7(`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'") 
                     } else {
-                        return[__array_op_rval__8,`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
+                        return[__array_op_rval__7,`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
                     }
                 })()
             } else if (check_true( (type===4))) {

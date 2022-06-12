@@ -5020,8 +5020,7 @@
               else
               (do
                   ;; we have tokenized and processed the input tree, now compile...
-                  (if (> DEBUG_LEVEL 3)
-                      (main_log "input tokens: " (clone final_token_assembly)))
+                  
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))

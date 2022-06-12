@@ -51,7 +51,20 @@
     `tags:[ `file `write `io `text `string ]
     })
 
-
+(defmacro with_fs_events ((event_binding location) body)
+  `(let
+       ((watcher (-> Deno `watchFs ,#location)))
+     (declare (object watcher))
+     (for_with (,#event_binding watcher)
+	 (progn
+	       ,#body)))
+  {
+  `description: (+ "This function sets up a watcher scope for events on a filesystem. "
+		   "The symbol passed to the event_binding is bound to new events that occur "
+		   "at the provided location.  Once an event occurs, the body forms are executed.")
+  `usage: ["event_binding:symbol" "location:string" "body:array"]
+  `tags: ["file" "filesystem" "events" "io" "watch"]
+  })
 
 (defun compile_file (lisp_file export_function_name options)
   (let
@@ -80,9 +93,26 @@
     (when (> (length (scan_str invalid_js_ref_chars_regex export_function_name)) 0)
       (throw SyntaxError (+ "export function name contains an invalid JS character: " export_function_name ", cannot contain: " invalid_js_ref_chars)))
 
-    ;; add the boilerplate dependencies..
-    
+    ;; add any build headers first 
+
+    (push segments
+	  (+ "// Source: " input_filename "  "))
+   
+    (when (is_array? opts.build_headers)
+      (for_each (`header opts.build_headers)
+		(push segments header))
+      (push segments "\n"))
+    (push segments "\n")
+    ;; add the boilerplate dependencies.. 
     (push segments boilerplate)
+
+    ;; add any user included  dependencies    
+    (when (is_array? opts.js_headers)
+      (for_each (`header opts.js_headers)
+		(push segments header))
+      (push segments "\n"))
+
+    
     (when (or (== input_components.name "environment")
 	      (== export_function_name "init_dlisp")
 	      opts.toplevel)
@@ -177,7 +207,47 @@
 	  nil))))
 
 
+(defun rebuild_env (opts)
+  (let
+      ((issues [])
+       (source_dir (or opts.source_dir
+		       "."))
+       (output_dir (or opts.output_dir
+		      "."))
+       (dcomps (date_components (new Date)))
+       (version_tag (if (not (blank? opts.version_tag))
+			opts.version_tag
+			(join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
+       (build_time (formatted_date (new Date)))
+       (build_headers [])
+       (source_path (fn (filename)
+			    (join path.sep [ source_dir filename ])))
+       (output_path (fn (filename)
+			(join path.sep [ output_dir filename ]))))
 
+    (console.log "Environment Build Time: " build_time)
+    (console.log "Version Tag: " version_tag)
+    (console.log "Source Directory: " source_dir)
+    (console.log "Output Directory: " output_dir)
+
+    (push build_headers
+	  (+ "// Build Time: " build_time))
+    (push build_headers
+	  (+ "// Version: " version_tag))
+    
+    (push build_headers
+	  (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
+    
+    
+    (load (source_path "reader.lisp"))
+    (compile_file (source_path "compiler.lisp") "init_compiler" { `output_file: (output_path "compiler.js")  `build_headers: build_headers })
+    (compile_file (source_path "environment.lisp") "init_dlisp" { `output_file: (output_path "environment.js") `build_headers: build_headers })
+    (compile_file (source_path "compiler-boot-library.lisp") "environment_boot" { `output_file: (output_path "environment_boot.js") `build_headers: build_headers })
+    (compile_file (source_path "core.lisp") "load_core" { `output_file: (output_path "core.js") `build_headers: build_headers })
+    (compile_file (source_path "io.lisp") nil { `output_file: (output_path "io.js") `build_headers: build_headers })
+    (console.log "complete")
+    true
+    ))
 
 
 

@@ -1,3 +1,13 @@
+// Source: compiler.lisp  
+
+
+// Build Time: 2022-06-12 12:41:37
+// Version: 2022.06.12.12.41
+export const DLISP_ENV_VERSION='2022.06.12.12.41';
+
+
+
+
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 export async function init_compiler(Environment) {
   return await Environment.set_global("compiler",async function(quoted_lisp,opts) {
@@ -8142,16 +8152,6 @@ export async function init_compiler(Environment) {
                                 is_error=new EvalError("Pre-Compilation Error");
                                  return  is_error
                             } else  {
-                                if (check_true (((await Environment.get_global("DEBUG_LEVEL"))>3))){
-                                     await (async function(){
-                                        let __array_op_rval__747=main_log;
-                                         if (__array_op_rval__747 instanceof Function){
-                                            return await __array_op_rval__747("input tokens: ",await clone(final_token_assembly)) 
-                                        } else {
-                                            return[__array_op_rval__747,"input tokens: ",await clone(final_token_assembly)]
-                                        }
-                                    })()
-                                };
                                 assembly=await compile(final_token_assembly,root_ctx,0);
                                 assembly=await (await Environment.get_global("splice_in_return_a"))(assembly);
                                  return  assembly=await (await Environment.get_global("splice_in_return_b"))(assembly)
@@ -8162,42 +8162,42 @@ export async function init_compiler(Environment) {
                         };
                         if (check_true (((assembly && assembly["0"] && assembly["0"]["ctype"])&&(assembly && assembly["0"] && assembly["0"]["ctype"]) instanceof Function))){
                              await async function(){
-                                let __target_obj__748=(assembly && assembly["0"]);
-                                __target_obj__748["ctype"]=await map_value_to_ctype((assembly && assembly["0"] && assembly["0"]["ctype"]));
-                                return __target_obj__748;
+                                let __target_obj__747=(assembly && assembly["0"]);
+                                __target_obj__747["ctype"]=await map_value_to_ctype((assembly && assembly["0"] && assembly["0"]["ctype"]));
+                                return __target_obj__747;
                                 
                             }()
                         };
                         await async function(){
                             if (check_true( (await not(is_error)&&assembly&&(await first(assembly) instanceof Object)&&await (async function(){
+                                let __targ__748=await first(assembly);
+                                if (__targ__748){
+                                     return(__targ__748)["ctype"]
+                                } 
+                            })()&&(await not((await (async function(){
                                 let __targ__749=await first(assembly);
                                 if (__targ__749){
                                      return(__targ__749)["ctype"]
                                 } 
-                            })()&&(await not((await (async function(){
-                                let __targ__750=await first(assembly);
-                                if (__targ__750){
-                                     return(__targ__750)["ctype"]
-                                } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__750=await first(assembly);
-                                if (__targ__750){
-                                     return(__targ__750)["ctype"]
+                                let __targ__749=await first(assembly);
+                                if (__targ__749){
+                                     return(__targ__749)["ctype"]
                                 } 
                             })()==='string'))||await (async function ()  {
                                 let val;
                                 val=await (async function(){
-                                    let __targ__751=await first(assembly);
-                                    if (__targ__751){
-                                         return(__targ__751)["ctype"]
+                                    let __targ__750=await first(assembly);
+                                    if (__targ__750){
+                                         return(__targ__750)["ctype"]
                                     } 
                                 })();
                                  return  (await not((val==="assignment"))&&await not(await contains_ques_("block",val))&&await not(await contains_ques_("unction",val)))
                             } )())))) {
                                  return await async function(){
-                                    let __target_obj__752=(assembly && assembly["0"]);
-                                    __target_obj__752["ctype"]="statement";
-                                    return __target_obj__752;
+                                    let __target_obj__751=(assembly && assembly["0"]);
+                                    __target_obj__751["ctype"]="statement";
+                                    return __target_obj__751;
                                     
                                 }()
                             } else if (check_true( (assembly&&(await first(assembly) instanceof String || typeof await first(assembly)==='string')&&(await first(assembly)==="throw")))) {
@@ -8205,9 +8205,9 @@ export async function init_compiler(Environment) {
                                     ctype:"block"
                                 },assembly]
                             } else if (check_true( (await not(is_error)&&assembly&&(await not((await first(assembly) instanceof Object))||await not(await (async function(){
-                                let __targ__753=await first(assembly);
-                                if (__targ__753){
-                                     return(__targ__753)["ctype"]
+                                let __targ__752=await first(assembly);
+                                if (__targ__752){
+                                     return(__targ__752)["ctype"]
                                 } 
                             })()))))) {
                                  return assembly=[{
@@ -8241,13 +8241,13 @@ export async function init_compiler(Environment) {
                 }();
                 if (check_true ((opts && opts["error_report"]))){
                      await (async function(){
-                        let __array_op_rval__754=(opts && opts["error_report"]);
-                         if (__array_op_rval__754 instanceof Function){
-                            return await __array_op_rval__754({
+                        let __array_op_rval__753=(opts && opts["error_report"]);
+                         if (__array_op_rval__753 instanceof Function){
+                            return await __array_op_rval__753({
                                 errors:errors,warnings:warnings
                             }) 
                         } else {
-                            return[__array_op_rval__754,{
+                            return[__array_op_rval__753,{
                                 errors:errors,warnings:warnings
                             }]
                         }

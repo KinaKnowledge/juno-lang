@@ -33,19 +33,19 @@
 
    
          
-(defglobal if_compile_time_defined 
-    (fn (quoted_symbol exists_form not_exists_form)
-        (if (== (prop (describe quoted_symbol)
-                      `location)
-                   nil)
-           (or not_exists_form [])
-           exists_form)
-     {
-         `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
-         `tags: ["compile" "defined" "global" "symbol" "reference"]
-         `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]
-         `eval_when:{ `compile_time: true }
-     }))
+;(defglobal if_compile_time_defined 
+ ;   (fn (quoted_symbol exists_form not_exists_form)
+  ;      (if (== (prop (describe quoted_symbol)
+   ;                   `location)
+    ;               nil)
+;           (or not_exists_form [])
+ ;          exists_form)
+;     {
+;         `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
+;         `tags: ["compile" "defined" "global" "symbol" "reference"]
+;         `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]
+;         `eval_when:{ `compile_time: true }
+;     }))
 
        
 
@@ -140,6 +140,18 @@
           (do
               ,@mbody)))
 
+
+(defmacro if_compile_time_defined (quoted_symbol exists_form not_exists_form)
+     (if (== (prop (describe quoted_symbol)
+                   `location)
+              nil)
+	 (or not_exists_form [])
+	 exists_form)
+     {
+         `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
+         `tags: ["compile" "defined" "global" "symbol" "reference"]
+         `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]         
+     })
 
 (defmacro defexternal (name value meta)
    `(let
@@ -1787,7 +1799,20 @@
       `usage: ["function:function"]
       `tags: [ "function" "introspect" "introspection" "arguments"]
      })   
- 
+
+(defmacro in_background (`& forms)
+  `(new Promise
+	(fn (resolve reject)
+	    (progn
+	      (resolve true)
+	      ,@forms)))
+  {
+  `description: (+ "Given a form or forms, evaluates the forms in the background, with "
+		   "the function returning true immediately prior to starting the forms.")
+  `usage: ["forms:*"]
+  `tags: ["eval" "background" "promise" "evaluation"]
+  })
+
 (defun set_compiler (compiler_function)
     (progn
         (-> Environment `set_compiler compiler_function)
@@ -1821,6 +1846,7 @@
        `usage: ["filename:string"] 
        })
    false)
+
 
 
 

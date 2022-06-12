@@ -1,3 +1,13 @@
+// Source: compiler-boot-library.lisp  
+
+
+// Build Time: 2022-06-12 12:41:37
+// Version: 2022.06.12.12.41
+export const DLISP_ENV_VERSION='2022.06.12.12.41';
+
+
+
+
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 export async function environment_boot(Environment)  {
 {
@@ -37,21 +47,20 @@ export async function environment_boot(Environment)  {
     });
     await Environment.set_global("get_outside_global",(await Environment.get_global("get_outside_global")));
     await Environment.set_global("true?",(await Environment.get_global("check_true")));
-    await Environment.set_global("if_compile_time_defined",async function(quoted_symbol,exists_form,not_exists_form) {
-        if (check_true ((await (async function(){
-            let __targ__5=await (await Environment.get_global("describe"))(quoted_symbol);
-            if (__targ__5){
-                 return(__targ__5)["location"]
-            } 
-        })()===null))){
-              return (not_exists_form||[])
-        } else {
-              return exists_form
-        }
-    });
     await Environment.set_global("embed_compiled_quote",async function(type,tmp_name,tval) {
          return  await async function(){
             if (check_true( (type===0))) {
+                 return await (async function(){
+                    let __array_op_rval__5="=:(";
+                     if (__array_op_rval__5 instanceof Function){
+                        return await __array_op_rval__5(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
+                    } else {
+                        return[__array_op_rval__5,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
+                    }
+                })()
+            } else if (check_true( (type===1))) {
+                 return [`=$&!`,"=:'",`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
+            } else if (check_true( (type===2))) {
                  return await (async function(){
                     let __array_op_rval__6="=:(";
                      if (__array_op_rval__6 instanceof Function){
@@ -60,24 +69,13 @@ export async function environment_boot(Environment)  {
                         return[__array_op_rval__6,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
                     }
                 })()
-            } else if (check_true( (type===1))) {
-                 return [`=$&!`,"=:'",`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
-            } else if (check_true( (type===2))) {
-                 return await (async function(){
-                    let __array_op_rval__7="=:(";
-                     if (__array_op_rval__7 instanceof Function){
-                        return await __array_op_rval__7(`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)) 
-                    } else {
-                        return[__array_op_rval__7,`=:let`,"=:(","=:(",tmp_name,await (await Environment.get_global("add"))("=:",await (await Environment.get_global("as_lisp"))(tval)),"=:)","=:)",await (await Environment.get_global("add"))("=:",tmp_name)]
-                    }
-                })()
             } else if (check_true( (type===3))) {
                  return await (async function(){
-                    let __array_op_rval__8="=:'";
-                     if (__array_op_rval__8 instanceof Function){
-                        return await __array_op_rval__8(`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'") 
+                    let __array_op_rval__7="=:'";
+                     if (__array_op_rval__7 instanceof Function){
+                        return await __array_op_rval__7(`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'") 
                     } else {
-                        return[__array_op_rval__8,`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
+                        return[__array_op_rval__7,`=:+`,`=:await`,`=:Environment.as_lisp`,"=:(",tval,"=:)",`=:+`,"=:'"]
                     }
                 })()
             } else if (check_true( (type===4))) {
@@ -123,19 +121,19 @@ export async function environment_boot(Environment)  {
                  return await strip(val)
             } else if (check_true( (val instanceof Array))) {
                  return await (async function() {
-                    let __for_body__11=async function(v) {
+                    let __for_body__10=async function(v) {
                          return  await strip(v)
                     };
-                    let __array__12=[],__elements__10=val;
+                    let __array__11=[],__elements__9=val;
                     let __BREAK__FLAG__=false;
-                    for(let __iter__9 in __elements__10) {
-                        __array__12.push(await __for_body__11(__elements__10[__iter__9]));
+                    for(let __iter__8 in __elements__9) {
+                        __array__11.push(await __for_body__10(__elements__9[__iter__8]));
                         if(__BREAK__FLAG__) {
-                             __array__12.pop();
+                             __array__11.pop();
                             break;
                             
                         }
-                    }return __array__12;
+                    }return __array__11;
                      
                 })()
             } else  {
@@ -149,6 +147,18 @@ export async function environment_boot(Environment)  {
     await Environment.set_global("when",async function(condition,...mbody) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(if ' + await Environment.as_lisp ( condition ) + ' (do \"=$&!\" ' + await Environment.as_lisp ( mbody ) + '))'))
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"when\" \"macro\":true \"fn_args\":\"(condition \\"&\\" mbody)\"}')));
+    await Environment.set_global("if_compile_time_defined",async function(quoted_symbol,exists_form,not_exists_form) {
+        if (check_true ((await (async function(){
+            let __targ__12=await (await Environment.get_global("describe"))(quoted_symbol);
+            if (__targ__12){
+                 return(__targ__12)["location"]
+            } 
+        })()===null))){
+              return (not_exists_form||[])
+        } else {
+              return exists_form
+        }
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"if_compile_time_defined\" \"macro\":true \"fn_args\":\"(quoted_symbol exists_form not_exists_form)\" \"description\":\"If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled.\" \"tags\":(\"compile\" \"defined\" \"global\" \"symbol\" \"reference\") \"usage\":(\"quoted_symbol:string\" \"exists_form:*\" \"not_exists_form:*\")}')));
     await Environment.set_global("defexternal",async function(name,value,meta) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(let ((symname (desym \"=$&!\" ' + await Environment.as_lisp ( name ) + '))) (do (set_prop globalThis symname ' + await Environment.as_lisp ( value ) + ') (prop globalThis symname)))'))
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defexternal\" \"macro\":true \"fn_args\":\"(name value meta)\"}')));
@@ -2720,6 +2730,9 @@ export async function environment_boot(Environment)  {
             },((await (await Environment.get_global("second"))((r && r["0"]))||"")).split(","))
         }
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_function_args\" \"fn_args\":\"(f)\" \"description\":\"Given a javascript function, return a list of arg names for that function\" \"usage\":(\"function:function\") \"tags\":(\"function\" \"introspect\" \"introspection\" \"arguments\")}')));
+    await Environment.set_global("in_background",async function(...forms) {
+         return  await Environment.do_deferred_splice(await Environment.read_lisp('(new Promise (fn (resolve reject) (progn (resolve true) \"=$&!\" ' + await Environment.as_lisp ( forms ) + ')))'))
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"in_background\" \"macro\":true \"fn_args\":\"(\\"&\\" forms)\" \"description\":(+ \"Given a form or forms, evaluates the forms in the background, with \" \"the function returning true immediately prior to starting the forms.\") \"usage\":(\"forms:*\") \"tags\":(\"eval\" \"background\" \"promise\" \"evaluation\")}')));
     await Environment.set_global("set_compiler",async function(compiler_function) {
         {
             await Environment["set_compiler"].call(Environment,compiler_function);

@@ -100,7 +100,7 @@
 										       (do                ;; otherwise the next value must be a colon 
 											(if (== (prop block idx) ":")
 											    (inc idx) ;; it is, move past it       ;; <<---- BUG: will insert return
-											    (throw SyntaxError (+ "" (position) "missing colon in object key: " key " -->" (local_text))))))
+											    (throw SyntaxError (+ "" (position) ": missing colon in object key: " key " -->" (local_text))))))
 										    (set_prop obj
 											      key
 											      (prop block idx))))))
