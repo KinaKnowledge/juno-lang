@@ -107,7 +107,7 @@
     
     ;; now compile the json
 
-    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `expand_all_macros: true } opts)))
+    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true } opts)))
    
     (cond
       compiled.error

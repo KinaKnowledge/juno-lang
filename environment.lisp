@@ -64,9 +64,9 @@
 	  (define_env 
                   (MAX_SAFE_INTEGER 9007199254740991)
                   (sub_type subtype)
-                  (DEBUG_LEVEL 0
+                  (__VERBOSITY__ 0
                                 { 
-                                  `description: "Set DEBUG_LEVEL to a positive integer for verbose console output."
+                                  `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
                                   `tags: ["debug" "compiler" "environment" "global"]
                                  })
                   

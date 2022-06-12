@@ -3849,7 +3849,8 @@
 		     false))
        (`verbosity silence)
        (`check_verbosity (fn (ctx)
-                       (get_ctx ctx "__VERBOSITY__")))
+			     (or (get_ctx ctx "__VERBOSITY__")
+				 (-> Environment `get_global "__VERBOSITY__"))))
                        
        (`declare_log (if opts.quiet_mode
                          log
@@ -3869,7 +3870,8 @@
                                     (do
                                         (= declaration exp.val.0.name)
                                         (= targeted (rest exp.val))
-                                        ;(declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted)
+				      (when (verbosity ctx)
+					(declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted))
                                         (cond
                                             (== declaration "toplevel")
                                             (do
@@ -3939,7 +3941,7 @@
                                                      ;(declare_log "local: declaration_details: " dec_struct)
                                                      (set_ctx ctx name dec_struct.value)))
                                             (== declaration "function")
-                                            (do
+                                            (do					      
                                                (for_each (`name (each targeted `name))
                                                   (set_declaration ctx name `type Function)))
                                             (== declaration "array")
@@ -4955,13 +4957,14 @@
     (if (eq nil Environment)
         (throw EvalError "Compiler: No environment passed in options."))
 
-       (when (-> Environment `get_global "__VERBOSITY__")
-	 (let
-	     ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))	   
-	   (when (> verbosity_level 0)
-	     (set_ctx root_ctx "__VERBOSITY__" verbosity_level)
-	     (= verbosity check_verbosity)
-	     (main_log "compiler verbosity is on"))))
+    ;; if verbosity is set in the global context, set our verbosity function...
+    ;; to be active.
+       
+    (when (-> Environment `get_global "__VERBOSITY__")
+      (let
+	  ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))	   
+	(when (> verbosity_level 0)	     
+	  (= verbosity check_verbosity))))
        
 
        
