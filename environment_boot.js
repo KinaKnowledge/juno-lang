@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-13 05:35:09
-// Version: 2022.06.13.05.35
-export const DLISP_ENV_VERSION='2022.06.13.05.35';
+// Build Time: 2022-06-13 06:04:32
+// Version: 2022.06.13.06.04
+export const DLISP_ENV_VERSION='2022.06.13.06.04';
 
 
 
@@ -2728,6 +2728,16 @@ export async function environment_boot(Environment)  {
             },((await (await Environment.get_global("second"))((r && r["0"]))||"")).split(","))
         }
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_function_args\" \"fn_args\":\"(f)\" \"description\":\"Given a javascript function, return a list of arg names for that function\" \"usage\":(\"function:function\") \"tags\":(\"function\" \"introspect\" \"introspection\" \"arguments\")}')));
+    await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
+        prefix:"⚠️  "
+    }),{
+        description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"]
+    });
+    await Environment.set_global("success",await (await Environment.get_global("defclog"))({
+        color:"green",prefix:"✓  "
+    }),{
+        description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"]
+    });
     await Environment.set_global("in_background",async function(...forms) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(new Promise (fn (resolve reject) (progn (resolve true) \"=$&!\" ' + await Environment.as_lisp ( forms ) + ')))'))
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"in_background\" \"macro\":true \"fn_args\":\"(\\"&\\" forms)\" \"description\":(+ \"Given a form or forms, evaluates the forms in the background, with \" \"the function returning true immediately prior to starting the forms.\") \"usage\":(\"forms:*\") \"tags\":(\"eval\" \"background\" \"promise\" \"evaluation\")}')));

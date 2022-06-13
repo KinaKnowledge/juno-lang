@@ -8,6 +8,8 @@
 ;; add_escape_encoding is used for quoting purposes and providing escaped
 ;; double quotes to quoted lisp in compiled Javascript
 
+;; **
+
 
 
 (defglobal `add_escape_encoding 
@@ -32,21 +34,7 @@
 (defglobal true? check_true)
 
    
-         
-;(defglobal if_compile_time_defined 
- ;   (fn (quoted_symbol exists_form not_exists_form)
-  ;      (if (== (prop (describe quoted_symbol)
-   ;                   `location)
-    ;               nil)
-;           (or not_exists_form [])
- ;          exists_form)
-;     {
-;         `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
-;         `tags: ["compile" "defined" "global" "symbol" "reference"]
-;         `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]
-;         `eval_when:{ `compile_time: true }
-;     }))
-
+  
        
 
 ;; Convenience function with embedded quoting for the compiler
@@ -1799,6 +1787,22 @@
       `usage: ["function:function"]
       `tags: [ "function" "introspect" "introspection" "arguments"]
      })   
+
+(defglobal warn
+    (defclog { `prefix: "⚠️  "  })
+    {
+    `description: "Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log."
+    `usage:["args0:*" "argsN:*" ]
+    `tags: ["log" "warning" "error" "signal" "output" "notify" "defclog"]
+    })
+
+(defglobal success
+    (defclog { `color: `green `prefix: "✓  " })
+    {
+    `description: "Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log."
+    `usage:["args0:*" "argsN:*" ]
+    `tags: ["log" "warning" "notify" "signal" "output" "ok" "success" "defclog"]
+    })
 
 (defmacro in_background (`& forms)
   `(new Promise
