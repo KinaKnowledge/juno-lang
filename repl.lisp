@@ -5,15 +5,29 @@
        (generator readline)
        (stdin Deno.stdin)
        (stdout Deno.stdout)
-       (write writeAllSync)
        (td (new TextDecoder))
        (te (new TextEncoder))
+       (prompt nil)
+       (sigint_message (-> te `encode "\nsigint: type Ctrl-D to exit.\n"))
+       (write writeAllSync)
+       
+       (sigint_handler (function ()
+			   (progn
+			     (write stdout sigint_message)
+			     (write stdout prompt))))
        (return_stack []))
+    (declare (function write))
+    (= prompt (-> te `encode "λ-> "))
     (defglobal $ nil)
     (defglobal $$ nil)
     (defglobal $$$ nil)
-    (write stdout (-> te `encode "λ-> "))
     (try
+     (Deno.addSignalListener `SIGINT sigint_handler)
+     (catch Error (e)
+	    (warn "Unable to install sigint handler.")))
+    (write stdout prompt)
+    (try
+
     (for_with (`l (generator stdin))
 	      (progn		
 		(= l (-> td `decode l))			
@@ -25,7 +39,7 @@
 		   (prepend return_stack
 			 (-> Environment `evaluate buffer))
 		   (console.log (first return_stack))
-		   (write stdout (-> te `encode "λ-> "))
+		   (write stdout  prompt)
 		   (= lines [])
 		   (when (> return_stack.length 3)
 		     (pop return_stack))

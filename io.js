@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-13 06:04:32
-// Version: 2022.06.13.06.04
-export const DLISP_ENV_VERSION='2022.06.13.06.04';
+// Build Time: 2022-06-13 13:18:45
+// Version: 2022.06.13.13.18
+export const DLISP_ENV_VERSION='2022.06.13.13.18';
 
 
 
@@ -63,6 +63,9 @@ export async function initializer(Environment)  {
         let output_filename;
         let opts;
         let segments;
+        let include_boilerplate;
+        let start_time;
+        let compile_time;
         let write_file;
         let include_source;
         let compiled;
@@ -83,6 +86,15 @@ export async function initializer(Environment)  {
         opts=(options||new Object());
         export_function_name=(export_function_name||"initializer");
         segments=[];
+        include_boilerplate=await (async function () {
+             if (check_true ((false===(opts && opts["include_boilerplate"])))){
+                  return false
+            } else {
+                  return true
+            } 
+        })();
+        start_time=await Date.now();
+        compile_time=null;
         write_file=true;
         include_source=await (async function () {
              if (check_true ((opts && opts["include_source"]))){
@@ -122,7 +134,9 @@ export async function initializer(Environment)  {
              (segments).push("\n")
         };
         (segments).push("\n");
-        (segments).push(boilerplate);
+        if (check_true (include_boilerplate)){
+             (segments).push(boilerplate)
+        };
         if (check_true (((opts && opts["js_headers"]) instanceof Array))){
             await (async function() {
                 let __for_body__8=async function(header) {
@@ -162,13 +176,19 @@ export async function initializer(Environment)  {
         compiled=await (await Environment.get_global("compiler"))(input_buffer,await (await Environment.get_global("add"))({
             env:Environment,formatted_output:true,include_source:include_source
         },opts));
+        compile_time=await (await Environment.get_global("add"))(await (async function() {
+            {
+                 let __call_target__=((await Date.now()-start_time)/1000), __call_method__="toFixed";
+                return await __call_target__[__call_method__].call(__call_target__,3)
+            } 
+        })(),"s");
         await async function(){
             if (check_true((compiled && compiled["error"]))) {
                  throw new Error((await Environment.get_global("indirect_new"))(compiled.error,(compiled && compiled["message"])));
                 
             } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&&((compiled && compiled["0"] && compiled["0"]["ctype"])==="FAIL")))) {
                 write_file=false;
-                 return  await console.log((compiled && compiled["1"]))
+                 return  await (await Environment.get_global("warn"))((compiled && compiled["1"]))
             } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&&(await (await Environment.get_global("contains?"))("block",(compiled && compiled["0"] && compiled["0"]["ctype"]))||((compiled && compiled["0"] && compiled["0"]["ctype"])==="assignment")||((compiled && compiled["0"] && compiled["0"]["ctype"])==="__!NOT_FOUND!__"))))) {
                  if (check_true (await (async function(){
                     let __array_op_rval__11=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
@@ -223,13 +243,13 @@ export async function initializer(Environment)  {
         }();
         if (check_true (write_file)){
             await (await Environment.get_global("write_text_file"))(output_filename,(segments).join("\n"));
-            await console.log("compiled input file ",lisp_file,"->",output_filename);
+            await (await Environment.get_global("success"))(("["+compile_time+"] compiled: "),lisp_file,"->",output_filename);
              return  output_filename
         } else {
-            await console.log("input file ",lisp_file," not compiled.");
+            await (await Environment.get_global("warn"))("input file ",lisp_file," not compiled.");
              return  null
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"compile_file\" \"fn_args\":\"(lisp_file export_function_name options)\" \"description\":(+ \"Given an input lisp file, and an optional initalizer function name and options \" \"object, compile the lisp file into a javascript file. The options object will \" \"allow the specification of an output path and filename, given by the key \" \"output_file.  If the initializer function isn\'t specified it is named \" \"initializer, which when used with load, will be automatically called \" \"one the file is loaded.  Otherwise the initializer function should be \" \"called when after dynamically importing, using dynamic_import. If the \" \"options object is to be used, with a default initializer, nil should be \" \"used as a placeholder for the initializer_function name.<br><br>\" \"Options are as follows:<br><br>\" \"js_headers: array: If provided, this is an array of strings that represent\" \"lines to be inserted at the top of the file.\" \"include_source: boolean: If provided will append the block forms and \" \"expressions within the text as comments.\" \"output_file: string: If provided the path and filename of the compiled \" \"javascript file to be produced.\" \"NOTE: this function\'s API is unstable and subject to change due to \" \"the early phase of this language.\") \"usage\":(\"input_file:string\" \"initializer_function:string?\" \"options:object?\") \"tags\":(\"compile\" \"environment\" \"building\" \"javascript\" \"lisp\" \"file\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"compile_file\" \"fn_args\":\"(lisp_file export_function_name options)\" \"description\":(+ \"Given an input lisp file, and an optional initalizer function name and options \" \"object, compile the lisp file into a javascript file. The options object will \" \"allow the specification of an output path and filename, given by the key \" \"output_file.  If the initializer function isn\'t specified it is named \" \"initializer, which when used with load, will be automatically called \" \"one the file is loaded.  Otherwise the initializer function should be \" \"called when after dynamically importing, using dynamic_import. If the \" \"options object is to be used, with a default initializer, nil should be \" \"used as a placeholder for the initializer_function name.<br><br>\" \"Options are as follows:<br><br>\" \"js_headers: array: If provided, this is an array of strings that represent\" \"lines to be inserted at the top of the file.\" \"include_source: boolean: If provided will append the block forms and \" \"expressions within the text as comments.\" \"output_file: string: If provided the path and filename of the compiled \" \"javascript file to be produced.\" \"include_boilerplate: boolean: If set to false explicity, the boilerplate\" \"code will be not be included in the build.\" \"<br><br>\" \"NOTE: this function\'s API is unstable and subject to change due to \" \"the early phase of this language.\") \"usage\":(\"input_file:string\" \"initializer_function:string?\" \"options:object?\") \"tags\":(\"compile\" \"environment\" \"building\" \"javascript\" \"lisp\" \"file\")}')));
     await Environment.set_global("rebuild_env",async function(opts) {
         let issues;
         let source_dir;

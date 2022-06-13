@@ -1,15 +1,15 @@
 
 (if (not (is_symbol? Deno))
-    (throw "IO requires Deno"))
+  (throw "IO requires Deno"))
 
 (defglobal read_text_file
-    (bind Deno.readTextFile Deno)
-    {
-    `description: (+ "Given an accessible filename including " 
-		     "path with read permissions returns the file contents as a string.")
-    `usage:["filename:string" "options:object" ]
-    `tags:["file" "read" "text" "input" "io"]
-    })
+  (bind Deno.readTextFile Deno)
+  {
+   `description: (+ "Given an accessible filename including " 
+                    "path with read permissions returns the file contents as a string.")
+   `usage:["filename:string" "options:object" ]
+   `tags:["file" "read" "text" "input" "io"]
+   })
 
 (defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
 
@@ -18,53 +18,53 @@
 
 (defun load (filename)       
   (let
-       ((fname filename)
-	(js_mod nil)
-	(comps (path.parse fname)))
+      ((fname filename)
+       (js_mod nil)
+       (comps (path.parse fname)))
     
-     (cond
-       (== comps.ext ".lisp")
-       (evaluate (read_text_file fname))
-       (== comps.ext ".js")
-       (progn
-	 (= js_mod (dynamic_import fname))
-	 (if js_mod.initializer
-	     (js_mod.initializer Environment)
-	     (throw EvalError "load: unable to find function named initializer in export, use dynamic_import for this.")))
-       (== comps.ext ".json")
-       (evaluate (JSON.parse (read_text_file fname)) { `json_in: true })))
+    (cond
+      (== comps.ext ".lisp")
+      (evaluate (read_text_file fname))
+      (== comps.ext ".js")
+      (progn
+       (= js_mod (dynamic_import fname))
+       (if js_mod.initializer
+         (js_mod.initializer Environment)
+         (throw EvalError "load: unable to find function named initializer in export, use dynamic_import for this.")))
+      (== comps.ext ".json")
+      (evaluate (JSON.parse (read_text_file fname)) { `json_in: true })))
   { `description: (+ "Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. "
 		     "The file contents are expected to be Lisp source code in text format.")
-  `tags: [`compile `read `io `file ]
-  `usage: ["filename:string"] 
-  })
+   `tags: [`compile `read `io `file ]
+   `usage: ["filename:string"] 
+   })
 
 
 (defglobal write_text_file
-    (bind Deno.writeTextFile Deno)
-    {
-    `description: (+ "Given a string path to a filename, an argument containing "
-		     "the string of text to be written, and an optional options argument "
-		     "write the file to the filesystem.<br><br>."
-		     "The WriteFileOptions corresponds to the Deno WriteFileOptions interface")
-    `usage:["filepath:string" "textdata:string" "options:WriteFileOptions"]
-    `tags:[ `file `write `io `text `string ]
-    })
+  (bind Deno.writeTextFile Deno)
+  {
+   `description: (+ "Given a string path to a filename, an argument containing "
+                    "the string of text to be written, and an optional options argument "
+                    "write the file to the filesystem.<br><br>."
+                    "The WriteFileOptions corresponds to the Deno WriteFileOptions interface")
+   `usage:["filepath:string" "textdata:string" "options:WriteFileOptions"]
+   `tags:[ `file `write `io `text `string ]
+   })
 
 (defmacro with_fs_events ((event_binding location) body)
   `(let
        ((watcher (-> Deno `watchFs ,#location)))
      (declare (object watcher))
      (for_with (,#event_binding watcher)
-	 (progn
-	       ,#body)))
+               (progn
+                ,#body)))
   {
-  `description: (+ "This function sets up a watcher scope for events on a filesystem. "
-		   "The symbol passed to the event_binding is bound to new events that occur "
-		   "at the provided location.  Once an event occurs, the body forms are executed.")
-  `usage: ["event_binding:symbol" "location:string" "body:array"]
-  `tags: ["file" "filesystem" "events" "io" "watch"]
-  })
+   `description: (+ "This function sets up a watcher scope for events on a filesystem. "
+                    "The symbol passed to the event_binding is bound to new events that occur "
+                    "at the provided location.  Once an event occurs, the body forms are executed.")
+   `usage: ["event_binding:symbol" "location:string" "body:array"]
+   `tags: ["file" "filesystem" "events" "io" "watch"]
+   })
 
 
 
@@ -74,18 +74,23 @@
        (input_filename (path.basename lisp_file))
        (output_filename (or options.output_file
 			    (+ (if (== input_components.dir "")
-				   "."
-				   input_components.dir)
+                                 "."
+                                 input_components.dir)
 			       path.sep
 			       input_components.name
 			       ".js")))
        (opts (or options {}))
        (export_function_name (or export_function_name "initializer"))
        (segments [])
+       (include_boilerplate (if (== false opts.include_boilerplate)
+                              false
+                              true))
+       (start_time (time_in_millis))
+       (compile_time nil)
        (write_file true)
        (include_source (if opts.include_source
-			   true
-			   false))
+                         true
+                         false))
        (compiled nil) ; holds the compilation output
        (input_buffer nil)
        (invalid_js_ref_chars "+?-%&^#!*[]~{}|")
@@ -102,14 +107,15 @@
 
     (push segments
 	  (+ "// Source: " input_filename "  "))
-   
+    
     (when (is_array? opts.build_headers)
       (for_each (`header opts.build_headers)
 		(push segments header))
       (push segments "\n"))
     (push segments "\n")
     ;; add the boilerplate dependencies.. 
-    (push segments boilerplate)
+    (if include_boilerplate
+      (push segments boilerplate))
 
     ;; add any user included  dependencies    
     (when (is_array? opts.js_headers)
@@ -125,112 +131,115 @@
 
     (= input_buffer (read_text_file lisp_file))
     
-  
+    
     ;; convert to JSON for the compiler if lisp
     
     (if (== input_components.ext ".lisp")
-	(= input_buffer (read_lisp input_buffer { `implicit_progn: false } )))
+      (= input_buffer (read_lisp input_buffer { `implicit_progn: false } )))
 
     
     (if (and (is_array? input_buffer)
 	     (== input_buffer.0 (quotel "=:iprogn")))
-	(set_prop input_buffer
-		  0
-		  (quote "=:progn")))
+      (set_prop input_buffer
+                0
+                (quote "=:progn")))
     
     ;; now compile the json
 
     (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `include_source: include_source } opts)))
-   
+    (= compile_time (+ (-> (/ (- (time_in_millis) start_time) 1000) `toFixed 3) "s"))
     (cond
       compiled.error
       (throw (new compiled.error compiled.message))
       (and compiled.0.ctype
 	   (== compiled.0.ctype "FAIL"))
       (progn
-	(= write_file false)
-	(console.log compiled.1))
+       (= write_file false)
+       (warn compiled.1))
       (and compiled.0.ctype
 	   (or (contains? "block" compiled.0.ctype)
 	       (== compiled.0.ctype "assignment")
 	       (== compiled.0.ctype "__!NOT_FOUND!__")))
       (if (compiled.0.has_lisp_globals)
-	  (do 
-	   (push segments
-		 (+ "export async function " export_function_name "(Environment)  {"))
-	   (push segments compiled.1)
-	    (push segments "}"))
-	  (do 
-	   (push segments
-		 (+ "export async function " export_function_name "() {"))
-	   (push segments compiled.1)
-	    (push segments "}")))
+        (do 
+          (push segments
+                (+ "export async function " export_function_name "(Environment)  {"))
+          (push segments compiled.1)
+          (push segments "}"))
+        (do 
+          (push segments
+                (+ "export async function " export_function_name "() {"))
+          (push segments compiled.1)
+          (push segments "}")))
 
       (and compiled.0.ctype
 	   (or (== "AsyncFunction" compiled.0.ctype)
 	       (== "statement" compiled.0.ctype)
 	       (== "objliteral" compiled.0.ctype)))
       (do
-       (if (compiled.0.has_lisp_globals)
-	   (do
+        (if (compiled.0.has_lisp_globals)
+          (do
 	    (push segments
 		  (+ "export async function " export_function_name "(Environment) {"))
 	    (push segments
-	     (+ "  return " compiled.1 "} ")))
-	   (do
+                  (+ "  return " compiled.1 "} ")))
+          (do
 	    (push segments
 		  (+ "export async function " export_function_name "() {"))
 	    (push segments
-	     (+ "  return " compiled.1 "} ")))))
+                  (+ "  return " compiled.1 "} ")))))
       (and compiled.0.ctype
 	   (== "Function" compiled.0.ctype))
       (do
-       (if (compiled.0.has_lisp_globals)
-	   (do
+        (if (compiled.0.has_lisp_globals)
+          (do
 	    (push segments
 		  (+ "export function " export_function_name "(Environment) {"))
 	    (push segments
-	     (+ "  return " compiled.1 "}")))
-	   (do
+                  (+ "  return " compiled.1 "}")))
+          (do
 	    (push segments
 		  (+ "export function " export_function_name "() {"))
 	    (push segments (+ "  return " compiled.1 " } ")))))
       else
       (progn
-	(console.log "warning: unhandled return: " compiled)
-	(= write_file false)))
+       (console.log "warning: unhandled return: " compiled)
+       (= write_file false)))
 
     (if write_file
-	(progn
-	  (write_text_file output_filename (join "\n" segments))
-	  (console.log "compiled input file " lisp_file "->"  output_filename)
-	  output_filename)
-	(progn
-	  (console.log "input file " lisp_file " not compiled.")
-	  nil)))
+      (progn
+       (write_text_file output_filename (join "\n" segments))
+       (success (+ "[" compile_time "] compiled: ") lisp_file "->"  output_filename)
+       output_filename)
+      (progn
+       (warn "input file " lisp_file " not compiled.")
+       nil)))
   {
-  `description: (+ "Given an input lisp file, and an optional initalizer function name and options "
-		   "object, compile the lisp file into a javascript file. The options object will "
-		   "allow the specification of an output path and filename, given by the key "
-		   "output_file.  If the initializer function isn't specified it is named "
-		   "initializer, which when used with load, will be automatically called "
-		   "one the file is loaded.  Otherwise the initializer function should be "
-		   "called when after dynamically importing, using dynamic_import. If the "
-		   "options object is to be used, with a default initializer, nil should be "
-		   "used as a placeholder for the initializer_function name.<br><br>"
+   `description: (+ "Given an input lisp file, and an optional initalizer function name and options "
+                    "object, compile the lisp file into a javascript file. The options object will "
+                    "allow the specification of an output path and filename, given by the key "
+                    "output_file.  If the initializer function isn't specified it is named "
+                    "initializer, which when used with load, will be automatically called "
+                    "one the file is loaded.  Otherwise the initializer function should be "
+                    "called when after dynamically importing, using dynamic_import. If the "
+                    "options object is to be used, with a default initializer, nil should be "
+                    "used as a placeholder for the initializer_function name.<br><br>"
 
-		   "Options are as follows:<br><br>"
-		   "js_headers: array: If provided, this is an array of strings that represent"
-		   "lines to be inserted at the top of the file."
-		   "include_source: boolean: If provided will append the block forms and "
-		   "expressions within the text as comments."
-		   "output_file: string: If provided the path and filename of the compiled "
-		   "javascript file to be produced."
-		   "NOTE: this function's API is unstable and subject to change due to "
-		   "the early phase of this language.")
-  `usage: ["input_file:string" "initializer_function:string?" "options:object?"]
-  `tags: ["compile" "environment" "building" "javascript" "lisp" "file"]
-  })
+                    "Options are as follows:<br><br>"
+                    "js_headers: array: If provided, this is an array of strings that represent"
+                    "lines to be inserted at the top of the file."
+                    "include_source: boolean: If provided will append the block forms and "
+                    "expressions within the text as comments."
+                    "output_file: string: If provided the path and filename of the compiled "
+                    "javascript file to be produced."
+                    "include_boilerplate: boolean: If set to false explicity, the boilerplate"
+                    "code will be not be included in the build."
+                    "<br><br>"
+                    "NOTE: this function's API is unstable and subject to change due to "
+                    "the early phase of this language.")
+   `usage: ["input_file:string" "initializer_function:string?" "options:object?"]
+   `tags: ["compile" "environment" "building" "javascript" "lisp" "file"]
+   })
 
 ;; Rebuilds the environment as a series of JS files
 ;; from the source 
@@ -241,18 +250,18 @@
        (source_dir (or opts.source_dir
 		       "."))
        (output_dir (or opts.output_dir
-		      "."))
+                       "."))
        (dcomps (date_components (new Date)))
        (version_tag (if (not (blank? opts.version_tag))
-			opts.version_tag
-			(join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
+                      opts.version_tag
+                      (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
        (build_time (formatted_date (new Date)))
        (build_headers [])
        (include_source (or opts.include_source false))
        (source_path (fn (filename)
-			    (join path.sep [ source_dir filename ])))
+                      (join path.sep [ source_dir filename ])))
        (output_path (fn (filename)
-			(join path.sep [ output_dir filename ]))))
+                      (join path.sep [ output_dir filename ]))))
 
     (console.log "Environment Build Time: " build_time)
     (console.log "Version Tag: " version_tag)
@@ -271,24 +280,24 @@
     (load (source_path "reader.lisp"))
     (compile_file (source_path "compiler.lisp") "init_compiler"
 		  { `output_file: (output_path "compiler.js")
-		    `include_source: include_source
-		    `build_headers: build_headers })
+                   `include_source: include_source
+                   `build_headers: build_headers })
     (compile_file (source_path "environment.lisp") "init_dlisp"
 		  { `output_file: (output_path "environment.js")
-		    `include_source: include_source
-		    `build_headers: build_headers })
+                   `include_source: include_source
+                   `build_headers: build_headers })
     (compile_file (source_path "compiler-boot-library.lisp") "environment_boot"
 		  { `output_file: (output_path "environment_boot.js")
-		    `include_source: include_source
-		    `build_headers: build_headers })
+                   `include_source: include_source
+                   `build_headers: build_headers })
     (compile_file (source_path "core.lisp") "load_core"
 		  { `output_file: (output_path "core.js")
-		    `include_source: include_source
-		    `build_headers: build_headers })
+                   `include_source: include_source
+                   `build_headers: build_headers })
     (compile_file (source_path "io.lisp") nil
 		  { `output_file: (output_path "io.js")
-		    `include_source: include_source
-		    `build_headers: build_headers })
+                   `include_source: include_source
+                   `build_headers: build_headers })
     (console.log "complete")
     true
     ))

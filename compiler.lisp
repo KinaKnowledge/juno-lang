@@ -633,9 +633,10 @@
                                        (as_lisp tree)
                                        else
                                        (do
-                                           (console.warn "source_from_tokens: unable to determine source path from: " (clone tokens))
-                                           
-                                           "")))))                                                                                                                                                                                   
+                                         (when (verbosity ctx)
+                                           (console.warn "source_from_tokens: unable to determine source path from: " (clone tokens)))
+                                           "")))))
+       (`source_comment (fn (tokens){ `comment: (source_from_tokens tokens expanded_tree) }))
        (`NOT_FOUND  "__!NOT_FOUND!__")
        (`THIS_REFERENCE (fn () "this"))
        (`NOT_FOUND_THING (fn () true))
@@ -1389,6 +1390,7 @@
                                    ;; return the last statement for standard compilation.
 				   
                                    (prop lisp_tree (+ idx 1)))))))
+       
        (`compile_block (fn (tokens ctx block_options)
                            (let
                                ((`acc [])
@@ -1412,10 +1414,11 @@
                                 (`idx 0))
                              (when (eq nil ctx)
                                    (throw ReferenceError "undefined ctx passed to compile block"))
-                             (when tokens.1.source
-                               (set_prop ctx
-                                         `source
-                                         tokens.1.source))
+                             (when opts.include_source
+                               (when (and tokens.path
+                                          (> tokens.path.length 0))
+                                 (push acc
+                                     (source_comment tokens))))
                              
                              (set_prop ctx
                                        `block_id
@@ -2036,7 +2039,8 @@
                              fn_opts.synchronous
                              (do
                                (= type_mark (type_marker `Function))
-                               (push acc type_mark))
+                               (set_ctx ctx "__SYNCF__" true)
+                               (push acc type_mark))                               
                              fn_opts.arrow
                              (do
                                (= type_mark (type_marker `Function))
@@ -2051,9 +2055,11 @@
                               (do
                                (= type_mark (type_marker `AsyncFunction))  
                                (push acc type_mark)
-                                (push acc "async")
-                                (push acc " ")))  ;; async by default
-                          ;(fn_log "->" tokens)
+                               
+                               (push acc "async")
+                               (push acc " ")))  ;; async by default
+                                        ;(fn_log "->" tokens)
+                          
                           (set_prop type_mark
                                     `args
                                     [])       
@@ -2647,19 +2653,26 @@
                            (when (> comps.length 1)
                               (= target_type (path_to_js_syntax comps)))
                           
-                           ;(log "compile_new: target_type: " target_type comps)
+                           ; (log "compile_new: target_type: " target_type comps)
                            ;(log "compile_new: type details: " type_details)
                            ;(when (> comps.length 1)
                            ;      (log "compile_new: root type details: " root_type_details))
                              
                            (for_each (`opt_token (or new_opts []))
-                                     (do
-                                      ;(log "compile_new: option_token:" opt_token)
+                                     (do                                      
                                       (push args (wrap_assignment_value (compile opt_token ctx)))))
                                       
                            ;(log "compile_new: args: " args)
                            
                            (cond
+                             (and (not (eq nil type_details.value))
+                                  type_details.declared_global)
+                             (do                               
+                               (for_each (`arg ["new" " "  (compile tokens.1 ctx)  "(" ])
+                                         (push acc arg))
+                               (push_as_arg_list acc args)
+                               (push acc ")"))
+                             
                                (and (not (eq nil type_details.value))
                                     (is_function? type_details.value))
                                (do
@@ -3896,9 +3909,8 @@
                                                  (do
                                                      (= sanitized_name (sanitize_js_ref_name name))
                                                      (= dec_struct (get_declaration_details ctx name))
-                                                     ;(declare_log "current_declaration for " name ": " (if dec_struct.value (-> dec_struct.value `toString) "NOT FOUND") (clone dec_struct))
-                                                     (when (and dec_struct)
-                                                              ;(not (dec_struct.is_argument)))
+
+                                                     (when dec_struct                                                              
                                                              ;; this is a global so we just produce a reference for this 
                                                              (for_each (`t [ "let" " " sanitized_name "=" ])
                                                                 (push acc t))
@@ -3927,7 +3939,8 @@
                                                      (set_declaration ctx name `inlined true)
                                                      (if (and (== "undefined" (prop (get_declarations ctx name) `type))
                                                               (is_function? dec_struct.value))
-                                                        (set_declaration ctx name `type Function)))))
+                                                       (set_declaration ctx name `type Function)))))
+                                            
                                             (== declaration "verbose")
                                             (do 
                                                 (defvar `verbosity_level (parseInt (first (each targeted `name))))
@@ -4015,6 +4028,9 @@
                   (`ref_type nil)
                   (`rval nil)
                   (`stmt nil)
+                  (`awaitw (if (get_ctx ctx "__SYNCF__")
+                            ""
+                            "await"))
                   (`sr_log (defclog { `prefix: (+ "compile_scoped_reference (" (or ctx.block_id "-") "):") `background: "steelblue" `color: `white}))
                   (`val nil)
                   (`call_type (cond 
@@ -4075,7 +4091,7 @@
                   (cond
                     (== ref_type "AsyncFunction")
                     (do
-                     (push acc "await")
+                     (push acc awaitw)
                      (push acc " ")
                       (push acc (if (== call_type `lisp)
                                     (compile_lisp_scoped_reference tokens.0.name ctx)
@@ -4095,7 +4111,7 @@
                      acc)
                     (== ref_type "Function")
                     (do
-                     (push acc "await")  ;; we don't know if the function returns a promise so we need to hedge our bets..
+                     (push acc awaitw)  ;; we don't know if the function returns a promise so we need to hedge our bets..
                      (push acc " ")
                      (push acc (if (== call_type `lisp)
                                    (compile_lisp_scoped_reference tokens.0.name ctx)
@@ -4183,6 +4199,9 @@
                  ((`refval (get_lisp_ctx refname))
                   (`reftype (sub_type refval))
                   (`declarations nil)
+                  (`awaitw (if (get_ctx ctx "__SYNCF__")
+                            ""
+                            "await"))
                   (`basename (get_object_path refname)))
                
                ;; if the function has been 'included' in local scope via 
@@ -4224,7 +4243,7 @@
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
-                  [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" "await" " " env_ref "get_global" "(\"" refname  "\")" ")"])
+                  [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" awaitw " " env_ref "get_global" "(\"" refname  "\")" ")"])
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)

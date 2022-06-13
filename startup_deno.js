@@ -8,6 +8,7 @@ import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_
 globalThis.subtype=subtype
 globalThis.check_true=check_true
 globalThis.clone=clone
+globalThis.get_next_environment_id=get_next_environment_id
 
 var { init_dlisp } = await import("./environment.js");
 var { init_compiler } = await import("./compiler.js");
@@ -26,7 +27,7 @@ await env.set_compiler(cca)
 
 // setup a simple repl from stdin
 
-console.log("\nDLisp 2.0 (c) 2022 Kina, LLC");
+console.log("\nDLisp",env.version," (c) 2022 Kina, LLC");
 
 
 import { readline } from "https://deno.land/x/readline/mod.ts";
