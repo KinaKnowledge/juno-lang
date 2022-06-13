@@ -1791,7 +1791,23 @@
     `tags:["compile" "source" "javascript" "js" "display" ]
     
     })
-    
+
+  (defglobal warn
+      (defclog { `prefix: "⚠️  "  `background: "yellow" `foreground: "red" })
+      {
+      `description: "Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log."
+      `usage:["args0:*" "argsN:*" ]
+      `tags: ["log" "warning" "error" "signal" "output" "notify" "defclog"]
+      })
+  
+  (defglobal success
+      (defclog { `color: `green `prefix: "✓  " })
+      {
+      `description: "Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log."
+      `usage:["args0:*" "argsN:*" ]
+      `tags: ["log" "warning" "notify" "signal" "output" "ok" "success" "defclog"]
+      })
+
   
     true
 )

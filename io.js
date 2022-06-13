@@ -1,9 +1,7 @@
 // Source: io.lisp  
-
-
-// Build Time: 2022-06-12 12:41:37
-// Version: 2022.06.12.12.41
-export const DLISP_ENV_VERSION='2022.06.12.12.41';
+// Build Time: 2022-06-13 05:35:09
+// Version: 2022.06.13.05.35
+export const DLISP_ENV_VERSION='2022.06.13.05.35';
 
 
 
@@ -66,6 +64,7 @@ export async function initializer(Environment)  {
         let opts;
         let segments;
         let write_file;
+        let include_source;
         let compiled;
         let input_buffer;
         let invalid_js_ref_chars;
@@ -85,6 +84,13 @@ export async function initializer(Environment)  {
         export_function_name=(export_function_name||"initializer");
         segments=[];
         write_file=true;
+        include_source=await (async function () {
+             if (check_true ((opts && opts["include_source"]))){
+                  return true
+            } else {
+                  return false
+            } 
+        })();
         compiled=null;
         input_buffer=null;
         invalid_js_ref_chars="+?-%&^#!*[]~{}|";
@@ -96,7 +102,6 @@ export async function initializer(Environment)  {
             
         };
         (segments).push(("// Source: "+input_filename+"  "));
-        (segments).push("\n");
         if (check_true (((opts && opts["build_headers"]) instanceof Array))){
             await (async function() {
                 let __for_body__4=async function(header) {
@@ -155,7 +160,7 @@ export async function initializer(Environment)  {
             }()
         };
         compiled=await (await Environment.get_global("compiler"))(input_buffer,await (await Environment.get_global("add"))({
-            env:Environment,formatted_output:true
+            env:Environment,formatted_output:true,include_source:include_source
         },opts));
         await async function(){
             if (check_true((compiled && compiled["error"]))) {
@@ -224,7 +229,7 @@ export async function initializer(Environment)  {
             await console.log("input file ",lisp_file," not compiled.");
              return  null
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"compile_file\" \"fn_args\":\"(lisp_file export_function_name options)\"}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"compile_file\" \"fn_args\":\"(lisp_file export_function_name options)\" \"description\":(+ \"Given an input lisp file, and an optional initalizer function name and options \" \"object, compile the lisp file into a javascript file. The options object will \" \"allow the specification of an output path and filename, given by the key \" \"output_file.  If the initializer function isn\'t specified it is named \" \"initializer, which when used with load, will be automatically called \" \"one the file is loaded.  Otherwise the initializer function should be \" \"called when after dynamically importing, using dynamic_import. If the \" \"options object is to be used, with a default initializer, nil should be \" \"used as a placeholder for the initializer_function name.<br><br>\" \"Options are as follows:<br><br>\" \"js_headers: array: If provided, this is an array of strings that represent\" \"lines to be inserted at the top of the file.\" \"include_source: boolean: If provided will append the block forms and \" \"expressions within the text as comments.\" \"output_file: string: If provided the path and filename of the compiled \" \"javascript file to be produced.\" \"NOTE: this function\'s API is unstable and subject to change due to \" \"the early phase of this language.\") \"usage\":(\"input_file:string\" \"initializer_function:string?\" \"options:object?\") \"tags\":(\"compile\" \"environment\" \"building\" \"javascript\" \"lisp\" \"file\")}')));
     await Environment.set_global("rebuild_env",async function(opts) {
         let issues;
         let source_dir;
@@ -233,6 +238,7 @@ export async function initializer(Environment)  {
         let version_tag;
         let build_time;
         let build_headers;
+        let include_source;
         let source_path;
         let output_path;
         issues=[];
@@ -255,6 +261,7 @@ export async function initializer(Environment)  {
         })();
         build_time=await (await Environment.get_global("formatted_date"))(new Date());
         build_headers=[];
+        include_source=((opts && opts["include_source"])||false);
         source_path=async function(filename) {
              return  (await (async function(){
                 let __array_op_rval__15=source_dir;
@@ -284,19 +291,19 @@ export async function initializer(Environment)  {
         (build_headers).push(("export const DLISP_ENV_VERSION='"+version_tag+"';"));
         await (await Environment.get_global("load"))(await source_path("reader.lisp"));
         await (await Environment.get_global("compile_file"))(await source_path("compiler.lisp"),"init_compiler",{
-            output_file:await output_path("compiler.js"),build_headers:build_headers
+            output_file:await output_path("compiler.js"),include_source:include_source,build_headers:build_headers
         });
         await (await Environment.get_global("compile_file"))(await source_path("environment.lisp"),"init_dlisp",{
-            output_file:await output_path("environment.js"),build_headers:build_headers
+            output_file:await output_path("environment.js"),include_source:include_source,build_headers:build_headers
         });
         await (await Environment.get_global("compile_file"))(await source_path("compiler-boot-library.lisp"),"environment_boot",{
-            output_file:await output_path("environment_boot.js"),build_headers:build_headers
+            output_file:await output_path("environment_boot.js"),include_source:include_source,build_headers:build_headers
         });
         await (await Environment.get_global("compile_file"))(await source_path("core.lisp"),"load_core",{
-            output_file:await output_path("core.js"),build_headers:build_headers
+            output_file:await output_path("core.js"),include_source:include_source,build_headers:build_headers
         });
         await (await Environment.get_global("compile_file"))(await source_path("io.lisp"),null,{
-            output_file:await output_path("io.js"),build_headers:build_headers
+            output_file:await output_path("io.js"),include_source:include_source,build_headers:build_headers
         });
         await console.log("complete");
          return  true

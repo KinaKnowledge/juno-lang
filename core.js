@@ -1,9 +1,7 @@
 // Source: core.lisp  
-
-
-// Build Time: 2022-06-12 12:41:37
-// Version: 2022.06.12.12.41
-export const DLISP_ENV_VERSION='2022.06.12.12.41';
+// Build Time: 2022-06-13 05:35:09
+// Version: 2022.06.13.05.35
+export const DLISP_ENV_VERSION='2022.06.13.05.35';
 
 
 
@@ -2039,6 +2037,16 @@ export async function load_core(Environment)  {
             }
         }()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"show\" \"fn_args\":\"(thing)\" \"usage\":(\"thing:function\") \"description\":\"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.\" \"tags\":(\"compile\" \"source\" \"javascript\" \"js\" \"display\")}')));
+    await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
+        prefix:"⚠️  ",background:"yellow",foreground:"red"
+    }),{
+        description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"]
+    });
+    await Environment.set_global("success",await (await Environment.get_global("defclog"))({
+        color:"green",prefix:"✓  "
+    }),{
+        description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"]
+    });
      return  true
 }
 }

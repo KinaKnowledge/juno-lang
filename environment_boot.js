@@ -1,9 +1,7 @@
 // Source: compiler-boot-library.lisp  
-
-
-// Build Time: 2022-06-12 12:41:37
-// Version: 2022.06.12.12.41
-export const DLISP_ENV_VERSION='2022.06.12.12.41';
+// Build Time: 2022-06-13 05:35:09
+// Version: 2022.06.13.05.35
+export const DLISP_ENV_VERSION='2022.06.13.05.35';
 
 
 

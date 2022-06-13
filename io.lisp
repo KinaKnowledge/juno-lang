@@ -66,6 +66,8 @@
   `tags: ["file" "filesystem" "events" "io" "watch"]
   })
 
+
+
 (defun compile_file (lisp_file export_function_name options)
   (let
       ((input_components (path.parse lisp_file))
@@ -81,6 +83,9 @@
        (export_function_name (or export_function_name "initializer"))
        (segments [])
        (write_file true)
+       (include_source (if opts.include_source
+			   true
+			   false))
        (compiled nil) ; holds the compilation output
        (input_buffer nil)
        (invalid_js_ref_chars "+?-%&^#!*[]~{}|")
@@ -120,7 +125,7 @@
 
     (= input_buffer (read_text_file lisp_file))
     
-    
+  
     ;; convert to JSON for the compiler if lisp
     
     (if (== input_components.ext ".lisp")
@@ -132,12 +137,10 @@
 	(set_prop input_buffer
 		  0
 		  (quote "=:progn")))
-    ;(console.log "compiling: " input_buffer)
-    
     
     ;; now compile the json
 
-    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true } opts)))
+    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `include_source: include_source } opts)))
    
     (cond
       compiled.error
@@ -204,8 +207,33 @@
 	  output_filename)
 	(progn
 	  (console.log "input file " lisp_file " not compiled.")
-	  nil))))
+	  nil)))
+  {
+  `description: (+ "Given an input lisp file, and an optional initalizer function name and options "
+		   "object, compile the lisp file into a javascript file. The options object will "
+		   "allow the specification of an output path and filename, given by the key "
+		   "output_file.  If the initializer function isn't specified it is named "
+		   "initializer, which when used with load, will be automatically called "
+		   "one the file is loaded.  Otherwise the initializer function should be "
+		   "called when after dynamically importing, using dynamic_import. If the "
+		   "options object is to be used, with a default initializer, nil should be "
+		   "used as a placeholder for the initializer_function name.<br><br>"
 
+		   "Options are as follows:<br><br>"
+		   "js_headers: array: If provided, this is an array of strings that represent"
+		   "lines to be inserted at the top of the file."
+		   "include_source: boolean: If provided will append the block forms and "
+		   "expressions within the text as comments."
+		   "output_file: string: If provided the path and filename of the compiled "
+		   "javascript file to be produced."
+		   "NOTE: this function's API is unstable and subject to change due to "
+		   "the early phase of this language.")
+  `usage: ["input_file:string" "initializer_function:string?" "options:object?"]
+  `tags: ["compile" "environment" "building" "javascript" "lisp" "file"]
+  })
+
+;; Rebuilds the environment as a series of JS files
+;; from the source 
 
 (defun rebuild_env (opts)
   (let
@@ -220,6 +248,7 @@
 			(join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
        (build_time (formatted_date (new Date)))
        (build_headers [])
+       (include_source (or opts.include_source false))
        (source_path (fn (filename)
 			    (join path.sep [ source_dir filename ])))
        (output_path (fn (filename)
@@ -240,11 +269,26 @@
     
     
     (load (source_path "reader.lisp"))
-    (compile_file (source_path "compiler.lisp") "init_compiler" { `output_file: (output_path "compiler.js")  `build_headers: build_headers })
-    (compile_file (source_path "environment.lisp") "init_dlisp" { `output_file: (output_path "environment.js") `build_headers: build_headers })
-    (compile_file (source_path "compiler-boot-library.lisp") "environment_boot" { `output_file: (output_path "environment_boot.js") `build_headers: build_headers })
-    (compile_file (source_path "core.lisp") "load_core" { `output_file: (output_path "core.js") `build_headers: build_headers })
-    (compile_file (source_path "io.lisp") nil { `output_file: (output_path "io.js") `build_headers: build_headers })
+    (compile_file (source_path "compiler.lisp") "init_compiler"
+		  { `output_file: (output_path "compiler.js")
+		    `include_source: include_source
+		    `build_headers: build_headers })
+    (compile_file (source_path "environment.lisp") "init_dlisp"
+		  { `output_file: (output_path "environment.js")
+		    `include_source: include_source
+		    `build_headers: build_headers })
+    (compile_file (source_path "compiler-boot-library.lisp") "environment_boot"
+		  { `output_file: (output_path "environment_boot.js")
+		    `include_source: include_source
+		    `build_headers: build_headers })
+    (compile_file (source_path "core.lisp") "load_core"
+		  { `output_file: (output_path "core.js")
+		    `include_source: include_source
+		    `build_headers: build_headers })
+    (compile_file (source_path "io.lisp") nil
+		  { `output_file: (output_path "io.js")
+		    `include_source: include_source
+		    `build_headers: build_headers })
     (console.log "complete")
     true
     ))

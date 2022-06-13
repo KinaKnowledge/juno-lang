@@ -38,7 +38,16 @@
 ;; error_report (fn (errors)) - when compilation is completed, this function is called
 ;;                              with the accumulated compilation errors and warnings
 ;; env - environment object to use for the compilation environment
-
+;; 
+;; root_environment - if true, indicates that this is the Environment object being compiled
+;;                    and therefore the Environment is implicit, vs. passed in and
+;;                    referenced.
+;;
+;; formatted_output - if true, the output code is formatted (somewaht) vs. a long text
+;;                    stream.
+;;
+;; include_source - if true attach the source form as comments for the compiled expressions.
+;;                  
 
 
 (defglobal `compiler 
@@ -58,7 +67,7 @@
        (`op nil)
       
        (`default_safety_level (or Environment.declarations.safety.level 1))
-       ;(`nada (console.log "COMPILER: " Environment  " Safety Level: " default_safety_level))  ;  "INPUT: ->" (clone tree)))
+
        
        (`build_environment_mode (or opts.build_environment false))
        (`env_ref (if build_environment_mode
