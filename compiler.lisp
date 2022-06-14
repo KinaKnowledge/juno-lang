@@ -61,13 +61,11 @@
        ;; when we are compiling forms that are compile time manipulated by functions, 
        ;; expanded_tree will hold the tree structure that is the result of those
        ;; macro expansions
-       
-            
+                   
        (`expanded_tree (clone tree))
        (`op nil)
       
        (`default_safety_level (or Environment.declarations.safety.level 1))
-
        
        (`build_environment_mode (or opts.build_environment false))
        (`env_ref (if build_environment_mode
@@ -97,9 +95,7 @@
                                                            opts.prefix
                                                            (take args)))
                                                (conj [ style ]
-                                                     args))
-                                               
-                                                       ) )))
+                                                     args))))))
        (`quiet_mode (if opts.quiet_mode
                         (do
                          (= log console.log)
@@ -985,6 +981,7 @@
                                   ((`acc [])
                                    (`wrapper [])
                                    (`stmt nil)
+				   (`preamble (calling_preamble ctx))
                                    (`token (second tokens))
                                    (`target_reference (gen_temp_name "target_obj"))
                                    (`complicated (is_complex? token.val))
@@ -994,7 +991,7 @@
                                    (`idx 1))
                                 ;(log "compile_set_prop: tokens: " tokens)
                                 ;(log "compile_set_prop: target: " target) 
-                                (for_each (`t ["await" " " "async" " " "function" "()" "{" "let" " " target_reference "=" target ";" ] )
+                                (for_each (`t [preamble.0 " " preamble.1 " " "function" "()" "{" "let" " " target_reference "=" target ";" ] )
                                           (push wrapper t))
                                 (while (< idx (- tokens.length 1))
                                        (do
@@ -1034,6 +1031,7 @@
                                ((`acc [])
                                 (`target (wrap_assignment_value (compile (second tokens) ctx)))
                                 (`target_val nil)
+				(`preamble (calling_preamble ctx))
                                 (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx))))
                                 
                             ;(log "compile_prop: target: " target)
@@ -1041,7 +1039,7 @@
                             (if (> (safety_level ctx) 1)
                                 (do
                                     (= target_val (gen_temp_name "targ"))
-                                    ["await" " " "(" "async" " " "function" "()" "{" 
+                                    [preamble.0 " " "(" preamble.1 " " "function" "()" "{" 
                                                                                    "let" " " target_val "=" target ";" 
                                                                                    "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ])
                                 [ "(" target ")" "[" idx_key "]"]))))
@@ -1688,14 +1686,15 @@
                                                                (prop (first stmts) `ctype)
                                                                else
                                                                (sub_type (prop (first stmts) `ctype))))
-                                                      ""))))
+                                                      "")))
+                                      (`preamble (calling_preamble ctx)))
                                         
                                      ;(log "wrap_assignment_value: check_needs_return: " fst (sub_type fst))
                                      (cond
                                        (== "ifblock" fst)
-                                       [{`ctype: "AsyncFunction" } {`mark: "wrap_assignment_value"}  "await" " " "(" "async" " " "function" " " "()" " " "{" " " stmts " " "}" ")" "()" ]
+                                       [preamble.2 {`mark: "wrap_assignment_value"}  preamble.0 " " "(" preamble.1 " " "function" " " "()" " " "{" " " stmts " " "}" ")" "()" ]
                                        (contains? "block" fst)
-                                       [{`ctype: "AsyncFunction" } {`mark: "wrap_assignment_value"} "await" " " "(" "async" " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
+                                       [preamble.2 {`mark: "wrap_assignment_value"} preamble.0 " " "(" preamble.1 " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
                                        else
                                        stmts))))
        
@@ -1722,6 +1721,7 @@
                               (`token nil)
                               (`declarations_handled false)
                               (`assignment_value nil)
+                             
                               (`block_declarations {})
                               (`my_tokens tokens)
                               (`assignment_type nil)
@@ -1736,6 +1736,7 @@
                               (`alloc_set nil)
                               (`sub_block_count 0)
                               (`ctx_details nil)
+                              (`preamble (calling_preamble ctx))
                               (`structure_validation_rules [ [[1 `val] (list is_array?) "allocation section"]
                                                              [[2] (list (fn (v) (not (== v undefined)))) "block"]])
                               
@@ -1926,7 +1927,7 @@
                                                        0
                                                        def_idx)
                                                   
-                                             (for_each (`t ["let" " " (prop (prop redefinitions reference_name) def_idx) "=" " " "async" " " "function" "()" "{" "return" " " assignment_value "}" ";"])
+                                             (for_each (`t ["let" " " (prop (prop redefinitions reference_name) def_idx) "=" " " preamble.1 " " "function" "()" "{" "return" " " assignment_value "}" ";"])
                                                 (push acc t)))
                                          ;; if the name isn't shadowing declare it, so it can be used if referenced by others
                                          (not (prop block_declarations reference_name))
@@ -1941,7 +1942,7 @@
                                      (push (prop assignments
                                                   reference_name) 
                                            (if def_idx
-                                               ["await" " " (prop (prop redefinitions reference_name) def_idx) "()" ";" ]
+                                               [preamble.0 " " (prop (prop redefinitions reference_name) def_idx) "()" ";" ]
                                                assignment_value))))
                                            
                            (when need_sub_block                    
@@ -2005,7 +2006,18 @@
                                (do
                                 (prepend acc { `ctype: "letblock" })
                                 acc)))))
-       (`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
+	(`in_sync? (fn (ctx)
+		       (get_ctx ctx "__SYNCF__")))
+	(`await? (fn (ctx)
+		     (if (in_sync? ctx)
+			 ""
+		       "await")))
+	(`calling_preamble (fn (ctx)
+			     (if (in_sync? ctx)
+				 ["" "" { `ctype: "Function" } ]
+				 ["await" "async" { `ctype: "AsyncFunction" } ])))
+	(`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
+	
        (`compile_fn (fn (tokens ctx fn_opts)
                         (let
                             ((`acc [])
@@ -2218,7 +2230,9 @@
                           log
                           (defclog { `prefix: "compile_cond" `color: "white" `background: "darkblue"})))
        (`compile_cond (fn (tokens ctx)
-                          [{ `ctype: "AsyncFunction" }  "await" " " "async" " " "function" "()" "{" (compile_cond_inner tokens ctx) "}()"]))
+                        (let
+                            ((`preamble (calling_preamble ctx)))
+                          [preamble.2  preamble.0 " " preamble.1 " " "function" "()" "{" (compile_cond_inner tokens ctx) "}()"])))
        (`compile_cond_inner 
          (fn (tokens ctx)
              (let
@@ -2374,6 +2388,7 @@
                              (`compiled_true nil)
                              (`compiled_false nil)
                              (`if_false tokens.3)
+                             (`preamble (calling_preamble ctx))
                              (`needs_braces? false)
                              (`check_needs_return 
                                (fn (stmts)
@@ -2451,7 +2466,7 @@
                                    (prop (first compiled_test) `ctype)
                                    (is_string? (prop (first compiled_test) `ctype))
                                    (contains? "unction" (prop (first compiled_test) `ctype)))
-                              (for_each (`t ["if" " " "(check_true (" "await" " " compiled_test "()" "))"])
+                              (for_each (`t ["if" " " "(check_true (" preamble.0 " " compiled_test "()" "))"])
                                         (push acc t))
                               (for_each (`t ["if" " " "(check_true ("  compiled_test "))"])
                                         (push acc t)))
@@ -2513,6 +2528,7 @@
                                 (let
                                     ((`acc [])
                                      (`ctx ctx)
+                                     (`preamble (calling_preamble ctx))
                                      (`needs_await true))
                                   ;(cwrap_log "compile_wrapper_fn: tokens: block?" (is_block? tokens) "form?" (is_form? tokens) tokens)
                                   (cond
@@ -2531,7 +2547,7 @@
                                       (set_prop ctx
                                                 `return_point
                                                 1)
-                                      (= acc ["(" "async" " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
+                                      (= acc ["(" preamble.1 " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
                                     (and (is_object? tokens)
                                          (== tokens.val.0.name "if"))
                                     (do 
@@ -2539,7 +2555,7 @@
                                      (set_prop ctx
                                       `return_point
                                       1)
-                                      (for_each (`t ["(" "async" " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
+                                      (for_each (`t ["(" preamble.1 " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
                                                 (push acc t)))
                                     (is_array? tokens)
                                     (do
@@ -2556,12 +2572,13 @@
                                         ;(push acc "await")
                                         ;(push acc " "))
                                   (if needs_await 
-                                      ["await" " " acc]
+                                      [preamble.0 " " acc]
                                       [acc]))))
        
        (`compile_block_to_anon_fn (fn (tokens ctx opts)
                                       (let
                                           ((`acc [])
+                                           (`preamble (calling_preamble ctx))
                                            (`ctx (new_ctx ctx)))
                                         (set_prop ctx
                                                   `return_point
@@ -2577,7 +2594,7 @@
                                             `return_point
                                             0)
                                         ;(push acc "/* compile_block_to_anon_fn (block) */")
-                                            (for_each (`t ["(" "async" " " "function" "()" (compile_block tokens ctx) ")" "()" ])
+                                            (for_each (`t ["(" preamble.1 " " "function" "()" (compile_block tokens ctx) ")" "()" ])
                                                       (push acc t)))
                                           (== tokens.0.name "let")
                                           (do 
@@ -2587,7 +2604,7 @@
                                            (set_prop ctx
                                             `return_point
                                             0)
-                                            (for_each (`t ["(" "async" " " "function" "()" (compile tokens ctx) ")" "()"])
+                                            (for_each (`t ["(" preamble.1 " " "function" "()" (compile tokens ctx) ")" "()"])
                                                       (push acc t)))
                                           else
                                           (do
@@ -2598,7 +2615,7 @@
                                            (set_prop ctx
                                             `return_point
                                             0)
-                                            (for_each (`t ["(" "async" " " "function" "()" "{" " " "return"  " "(compile tokens ctx) " " "}" ")" "()"  ])
+                                            (for_each (`t ["(" preamble.1 " " "function" "()" "{" " " "return"  " "(compile tokens ctx) " " "}" ")" "()"  ])
                                                       (push acc t))))
                                         ;(log "compile_block_to_anon_fn: <-" (flatten acc))
                                         acc)))
@@ -2648,7 +2665,7 @@
                               (`new_arg_name nil)
                               (`args [])
                               (`ctx (new_ctx ctx))
-                              
+                              (`preamble (calling_preamble ctx))
                               (`new_opts (-> tokens `slice 2)))
                            (when (> comps.length 1)
                               (= target_type (path_to_js_syntax comps)))
@@ -2683,7 +2700,7 @@
                                (and (eq nil type_details.value)
                                     (not (eq nil root_type_details.value)))
                                (do
-                                   (for_each (`arg ["(" "await" " " "Environment.get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
+                                   (for_each (`arg ["(" preamble.0 " " "Environment.get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
                                        (push acc arg))
                                    (when (> args.length 0)
                                        (push acc ",")
@@ -2712,7 +2729,7 @@
                                                       "local"
                                                       (get_lisp_ctx tokens.1.name)
                                                       "global"))
-                                  (`target tokens.1.name)
+                                  (`target tokens.1.name)                                  
                                   (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
                                   (`operation (if in_infix
                                                   (cond
@@ -2760,7 +2777,9 @@
                      log
                      (defclog { `prefix: "compile_try"  `background: "violet" `color: `black })))                           
        (`compile_try (fn (tokens ctx)
-                         [ { `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" "{"  (compile_try_inner tokens ctx) "}" ")" "()" ]))
+                       (let
+                           ((`preamble (calling_preamble ctx)))
+                         [ preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" "{"  (compile_try_inner tokens ctx) "}" ")" "()" ])))
        
        (`compile_try_inner
          (fn (tokens ctx)
@@ -2981,6 +3000,7 @@
                                 (`target_arg nil)
                                 (`ctype nil)
                                 (`preceding_arg_ref nil)
+                                (`preamble (calling_preamble ctx))
                                 (`requires_await false)
                                 (`compiled_fun_resolver nil)
                                 (`args (-> tokens `slice 2)))
@@ -3029,14 +3049,13 @@
                                  
                                  
                                  ;; otherwise - just one arg (which presumably is an array) and so just construct the JS statement
-                                 (do
-                                     ;(apply_log "args is not an array - just one arg")
+                                 (do                                   
                                   (if (is_form? args)
                                       (do 
                                        (for_each (`t [ "let" " " args_ref "=" (wrap_assignment_value (compile args.val ctx)) ";" ])
                                                  (push acc t))
                                        (= complex? true)))
-                                  ;(apply_log "arguments <- " (clone acc))
+                                  
                                    (for_each (`t [ "return" " " "(" " " function_ref ")" "." "apply" "(" "this" ])
                                              (push acc t))
                                    (when args
@@ -3045,13 +3064,13 @@
                                          (push acc args_ref)
                                          (push acc (wrap_assignment_value (compile args ctx)))))
                                    (push acc ")")))
-                             ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
-                             ;(apply_log "<-" ["(" "async" " " "function" "()" "{" (clone acc) "}" ")" "()"])
-                             ["await" " " "(" "async" " " "function" "()" "{" acc "}" ")" "()"])))
+                             
+                             [ preamble.0 " " "(" preamble.1 " " "function" "()" "{" acc "}" ")" "()"])))
        
        (`compile_call (fn (tokens ctx)
                           (let
-                              ((`simple_target? (if (== tokens.1.ref true)
+                              ((`preamble (calling_preamble ctx))
+                               (`simple_target? (if (== tokens.1.ref true)
                                                     true
                                                     false))
                                (`simple_method? (if (== tokens.2.type "literal")
@@ -3061,18 +3080,19 @@
                              (cond
                                  (and simple_target?
                                       simple_method?)
-                                 (compile_call_inner tokens ctx { `type: 0 })
+                                 (compile_call_inner tokens ctx { `type: 0 `preamble: preamble })
                                  simple_target?
-                                 (compile_call_inner tokens ctx { `type: 0 })
+                                 (compile_call_inner tokens ctx { `type: 0 `preamble: preamble })
                                  else
-                                 [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
-                                             (compile_call_inner tokens ctx { `type: 2 })
+                                 [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" 
+                                             (compile_call_inner tokens ctx { `type: 2 `preamble: preamble })
                                              " " "}" ")" "()" ]))))
        (`compile_call_inner (fn (tokens ctx opts)
                           (let
                               ((`acc [])
                                (`target nil)
                                (`idx -1)
+                               (`preamble opts.preamble)
                                (`add_args (fn ()
                                               (for_each (`token (-> tokens `slice 3))
                                                 (do
@@ -3095,11 +3115,11 @@
                                 (do
                                     (cond 
                                           (== tokens.length 3)
-                                          (for_each (`t ["await" " " target "[" method "]" "()"])
+                                          (for_each (`t [preamble.0 " " target "[" method "]" "()"])
                                             (push acc t))
                                           else
                                           (do 
-                                              (for_each (`t ["await" " " target "[" method "]" ".call" "(" target ])
+                                              (for_each (`t [preamble.0 " " target "[" method "]" ".call" "(" target ])
                                                  (push acc t))
                                               (add_args)
                                               (push acc ")"))))
@@ -3109,11 +3129,11 @@
                                         (push acc t))
                                     (cond
                                       (== tokens.length 3)
-                                      (for_each (`t [ "return" " " "await" " " "__call_target__"  "[" "__call_method__" "]" "()"])
+                                      (for_each (`t [ "return" " " preamble.0 " " "__call_target__"  "[" "__call_method__" "]" "()"])
                                                 (push acc t))
                                       else
                                       (do 
-                                       (for_each (`t [ "return" " " "await" " " "__call_target__"   "[" "__call_method__" "]" "." "call" "(" "__call_target__"])
+                                       (for_each (`t [ "return" " " preamble.0 " " "__call_target__"   "[" "__call_method__" "]" "." "call" "(" "__call_target__"])
                                                  (push acc t))
                                         (add_args)
                                         (push acc ")")))
@@ -3199,6 +3219,7 @@
             (fn (tokens ctx)
                 (let
                     ((`from_tokens nil)
+                     (`preamble (calling_preamble ctx))
                      (`from_place nil)
                      (`acc []))
                  (= from_tokens tokens.1)
@@ -3206,7 +3227,7 @@
                  (push acc { `ctype: "statement" })
                  (= from_place (compile from_tokens ctx))
                  ;(console.log "compile_import: compiled from place: " from_place)
-                 (for_each (`t (flatten ["await" " " "import" " " "(" from_place ")"]))
+                 (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
                     (push acc t))
                 ;(console.log "compile_import: <- " (clone acc))
                 acc)))
@@ -3216,6 +3237,7 @@
              (let
                  ((`target tokens.1.name)
                   (`wrap_as_function? nil)
+                  (`preamble (calling_preamble ctx))
                   (`acc nil)
                   (`clog (if opts.quiet_mode
                              log
@@ -3256,7 +3278,7 @@
                                 else
                                 assignment_value.0.ctype))		    
                     (when wrap_as_function?
-                      (= assignment_value [ "await" " " "(" "async" " " "function" " " "()" assignment_value ")" "()" ])))
+                      (= assignment_value [ preamble.0 " " "(" preamble.1 " " "function" " " "()" assignment_value ")" "()" ])))
                    
                    else
                    (do 
@@ -3273,7 +3295,8 @@
 		 (clog "target: " (as_lisp target))
 		 (clog "assignment_value: " (as_lisp assignment_value)))
                  
-               (= acc [{ `ctype: "statement" } (if (== Function (prop root_ctx.defined_lisp_globals target))
+               (= acc [{ `ctype: "statement" } (if (or (== Function (prop root_ctx.defined_lisp_globals target))
+                                                       (in_sync? ctx))
                                                    ""
                                                    "await") 
                                                " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
@@ -3548,7 +3571,7 @@
                                 ((`acc [])
                                  (`pcm nil)
                                  (`encoded nil)
-                                 (`rval nil)
+                                 (`rval nil)                                
                                  (`is_arr? (is_array? lisp_struct.1)))
                               (= has_lisp_globals true)
                               ;(quotem_log " ->" (JSON.stringify lisp_struct))
@@ -3601,6 +3624,7 @@
              (let
                  ((`acc [])
                   (`tokens nil)
+                  (`preamble (calling_preamble ctx))
                   (`is_arr? (is_array? lisp_struct.1)))
                
                ;(evalq_log "lisp ->" lisp_struct)
@@ -3614,7 +3638,7 @@
                
                (= acc [(compile tokens ctx) ]) ;; pass the current ctx in
                (when is_arr? 
-                 (= acc ["async" " " "function" "()" ["{" "return" " " acc "}"]]))
+                 (= acc [preamble.1 " " "function" "()" ["{" "return" " " acc "}"]]))
                acc)))
        
        (`eval_log (if opts.quiet_mode
@@ -3630,6 +3654,7 @@
                  ((`assembly nil)
                   (`type_mark nil)
                   (`acc [])
+                  (`preamble (calling_preamble ctx))
                   (`result nil))
                ;(eval_log "->" (clone tokens))
                ;(console.log "compile_eval: -> " (clone tokens))
@@ -3639,19 +3664,23 @@
 		 (eval_log "assembly:" (clone assembly)))
                ;(console.log "compile_eval: assembly:" assembly)
                (= has_lisp_globals true)
-               (= result [ "Environment" "." "eval" "(" "await" " "  "async" " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
+               (= result [ "Environment" "." "eval" "(" preamble.0 " " preamble.1 " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
 	       
                result)))
        
        (`compile_debug (fn (tokens ctx)
                            [{ `ctype: "statement" } "debugger" ";"]))
+
        (`compile_for_each
-         (fn (tokens ctx)
-             [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
-             (compile_for_each_inner tokens ctx)
-             " " "}" ")" "()" ]))
+        (fn (tokens ctx)
+          (let
+              ((`preamble (calling_preamble ctx)))
+            [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" 
+             (compile_for_each_inner tokens ctx preamble)
+             " " "}" ")" "()" ])))
+       
        (`compile_for_each_inner 
-         (fn (tokens ctx)
+         (fn (tokens ctx preamble)
              (let
                  ((`acc [])
                   (`idx 0)
@@ -3672,6 +3701,7 @@
                                    0))
                   (`for_body tokens.2)
                   (`body_is_block? (is_block? for_body.val)))
+               (declare (array preamble))
                ;(log "compile_for_each: tokens: " tokens)
                ;(log "compile_for_each: # of iters: " iter_count)
                ;(log "compile_for_each: args: " for_args)
@@ -3715,7 +3745,9 @@
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push acc t))
                
-               (set_ctx ctx body_function_ref AsyncFunction)
+               (if (blank? preamble.0)
+                 (set_ctx ctx body_function_ref Function)
+                 (set_ctx ctx body_function_ref AsyncFunction))
                ;; for the simplest, fastest scenario, one binding variable to the list
                (cond
                  (and (== for_args.length 2) ;; simplest (for_each (`i my_array) ...
@@ -3725,7 +3757,7 @@
                   (for_each (`t ["for" "(" "let" " "  idx_iter " " "in" " " element_list ")" " " "{" ])
                    (push acc t))
                    
-                   (for_each (`t [ collector_ref "." "push" "(" "await" " " body_function_ref "(" element_list "[" idx_iter "]" ")" ")" ";" ])
+                   (for_each (`t [ collector_ref "." "push" "(" preamble.0 " " body_function_ref "(" element_list "[" idx_iter "]" ")" ")" ";" ])
                              (push acc t))
                    (for_each (`t ["if" "(" break_out ")" " " "{" " " collector_ref "." "pop" "()" ";" "break" ";" "}"])
                              (push acc t))
@@ -3747,42 +3779,42 @@
                  ((`acc [])
                   (`idx 0)
                   (`ctx (new_ctx ctx))
+                  (`preamble (calling_preamble ctx))
                   (`test_condition tokens.1)
                   (`test_condition_ref (gen_temp_name "test_condition"))
                   (`body tokens.2)
-                  (`body_ref (gen_temp_name "body_ref"))
-                  
-                                        ;(`rval_ref (gen_temp_name "return_val"))
+                  (`body_ref (gen_temp_name "body_ref"))                  
                   (`prebuild []))
-               ;(log "compile_while: tokens: " tokens)
-               ;(log "compile_while: test_condition: " test_condition.source)
+              
                (set_ctx ctx
                         break_out
                         true)
-               ;(push acc
-                ;     (+ "/* while: block_id: " ctx.block_id  " block_step:" ctx.block_step " */"))    
+               
                (if test_condition.ref
                    (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.name) ctx))
                    (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.val) ctx)))
-               ;(log "compile_while: test_condition:",(clone prebuild))
+              
                (push prebuild (compile (build_fn_with_assignment body_ref body.val) ctx))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push prebuild t))
-               (for_each (`t [ "while" "(" "await" " " test_condition_ref "()" ")" " " "{"  "await" " " body_ref "()" ";" " " "if" "(" break_out ")" " " "{" " " "break" ";" "}" "}" " " "" ";"])
+               (for_each (`t [ "while" "(" preamble.0 " " test_condition_ref "()" ")" " " "{"  preamble.0 " " body_ref "()" ";" " " "if" "(" break_out ")" " " "{" " " "break" ";" "}" "}" " " "" ";"])
                          (push prebuild t))
-               (for_each (`t [ "await" " " "(" "async" " " "function" "()" "{" " " prebuild "}" ")" "()" ])
+               (for_each (`t [ preamble.0 " " "(" preamble.1 " " "function" "()" "{" " " prebuild "}" ")" "()" ])
                          (push acc t))
                ;(log "compile_while: prebuild: " prebuild)
                ;(log "compile_while: <-" (clone acc))
                acc)))
            
        (`compile_for_with
-         (fn (tokens ctx)
-             [{ `ctype: "AsyncFunction"} "await" " " "(" "async" " " "function" "()" " " "{" 
-             (compile_for_with_inner tokens ctx)
-             " " "}" ")" "()" ]))
+         (fn (tokens ctx preamble)
+           (let
+               ((`preamble (calling_preamble ctx)))
+               [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" 
+             (compile_for_with_inner tokens ctx preamble)
+                " " "}" ")" "()" ])))
+       
        (`compile_for_with_inner 
-         (fn (tokens ctx)
+         (fn (tokens ctx preamble)
              (let
                  ((`acc [])
                   (`idx 0)
@@ -3803,11 +3835,9 @@
                                    0))
                   (`for_body tokens.2)
                   (`body_is_block? (is_block? for_body.val)))
-               ;(log "compile_for_with: tokens: " tokens)
-               ;(log "compile_for_with: # of iters: " iter_count)
-               ;(log "compile_for_with: args: " for_args)
-               ;(log "compile_for_with: elements: " elements)
-               ;(log "for_body: body is block?" (is_block? for_body) for_body)
+               
+               (declare (array preamble))
+               
                (when (< iter_count 1)
                  
                  (throw SyntaxError "Invalid for_each arguments"))
@@ -3819,10 +3849,7 @@
                            (clean_quoted_reference (prop (last idx_iters) `name))
                            ArgumentType)))
                
-               ;(log "compile_for_with: idx_iters: " idx_iters)
-               
-                                        ;(when for_args.1.ref
-                                        ;     (set_ctx ctx for_args.1.name ArgumentType))
+          
                (set_ctx ctx generator_expression "arg")
                (when (not body_is_block?)
                  ;; we need to make it a block for our function
@@ -3832,15 +3859,13 @@
                                                      for_body.val
                                                      idx_iters))
                
-                                        ; [iterator_ref]))
+                                        
                (set_prop ctx
                          `return_last_value
                          true)
                
                (push acc (compile prebuild ctx))
-               
-               ;(for_each (`t ["let" " " generator_expression "=" (wrap_assignment_value (compile elements ctx)) ";" ])
-                ;         (push acc t))
+                              
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push acc t))
                
@@ -3849,12 +3874,11 @@
                (cond
                  (and (== for_args.length 2) ;; simplest (for_each (`i my_array) ...
                       (not (is_array? for_args.1)))
-                 (do 
-                  ;(set_ctx ctx idx_iter Number)
-                  (for_each (`t ["for" " " "await" " " "(" "const" " "  iter_ref " " "of" " " (wrap_assignment_value (compile elements ctx)) ")" " " "{" ])
+                 (do                  
+                  (for_each (`t ["for" " " preamble.0 " " "(" "const" " "  iter_ref " " "of" " " (wrap_assignment_value (compile elements ctx)) ")" " " "{" ])
                    (push acc t))
                    
-                   (for_each (`t [ "await" " " body_function_ref "(" iter_ref ")"  ";" ])
+                   (for_each (`t [ preamble.0 " " body_function_ref "(" iter_ref ")"  ";" ])
                              (push acc t))
                    (for_each (`t ["if" "(" break_out ")" " "  "break" ";"])
                              (push acc t))
@@ -4001,11 +4025,16 @@
                                                           (== factor.0 "safety")
                                                           (set_declaration ctx "__SAFETY__" `level factor.1))
                                                       ;(declare_log "safety set: " (safety_level ctx))  
-                                                      ))
+                                                      )))
+
+                                            else
+                                            (do
+                                              (push warnings
+                                                    (+ "unknown declaration directive: " declaration))
+                                              (warn (+ "compiler: unknown declaration directive: " declaration))
                                                 
-                                                ))))
-                                            
-                                 ;(declare_log "<-" (clone acc))
+                                                ))))                                            
+                                        ;(declare_log "<-" (clone acc))
                                  acc)))
        (`safety_level (fn (ctx)
                           (when ctx
@@ -4019,6 +4048,7 @@
                                (if (== undefined rtype)
                                    (sub_type (get_lisp_ctx name))
                                    (sub_type rtype)))))
+      
        
        (`compile_scoped_reference
          (fn (tokens ctx)
@@ -4027,10 +4057,8 @@
                   (`idx 0)
                   (`ref_type nil)
                   (`rval nil)
-                  (`stmt nil)
-                  (`awaitw (if (get_ctx ctx "__SYNCF__")
-                            ""
-                            "await"))
+                  (`stmt nil)                  
+                  (`preamble (calling_preamble ctx))
                   (`sr_log (defclog { `prefix: (+ "compile_scoped_reference (" (or ctx.block_id "-") "):") `background: "steelblue" `color: `white}))
                   (`val nil)
                   (`call_type (cond 
@@ -4048,8 +4076,8 @@
                                               ;; return value established 
                                              
                                              (if (== stmt.0.ctype "ifblock")
-                                                [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " "{" " " stmt " " "}" " " ")" "()"]
-                                                [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
+                                                [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" " " stmt " " "}" " " ")" "()"]
+                                                [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " stmt " " ")" "()"]))
                                            
                                             stmt)))
                   (`token nil))
@@ -4091,7 +4119,7 @@
                   (cond
                     (== ref_type "AsyncFunction")
                     (do
-                     (push acc awaitw)
+                     (push acc preamble.0)
                      (push acc " ")
                       (push acc (if (== call_type `lisp)
                                     (compile_lisp_scoped_reference tokens.0.name ctx)
@@ -4111,7 +4139,7 @@
                      acc)
                     (== ref_type "Function")
                     (do
-                     (push acc awaitw)  ;; we don't know if the function returns a promise so we need to hedge our bets..
+                     (push acc preamble.0)  
                      (push acc " ")
                      (push acc (if (== call_type `lisp)
                                    (compile_lisp_scoped_reference tokens.0.name ctx)
@@ -4198,10 +4226,8 @@
              (let
                  ((`refval (get_lisp_ctx refname))
                   (`reftype (sub_type refval))
-                  (`declarations nil)
-                  (`awaitw (if (get_ctx ctx "__SYNCF__")
-                            ""
-                            "await"))
+                  (`declarations nil)                 
+                  (`preamble (calling_preamble ctx))
                   (`basename (get_object_path refname)))
                
                ;; if the function has been 'included' in local scope via 
@@ -4243,7 +4269,7 @@
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
                   (= has_lisp_globals true)
-                  [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" awaitw " " env_ref "get_global" "(\"" refname  "\")" ")"])
+                  [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"])
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
@@ -4382,6 +4408,7 @@
                   (`stmt nil)
                   (`has_valid_key_literals true)
                   (`token nil)
+                  (`preamble (calling_preamble ctx))
                   (`key nil)
                   (`tmp_name nil)
                   (`ctx (new_ctx ctx))
@@ -4390,8 +4417,8 @@
                                             (do 
                                              ;(comp_log "check_statement: needs wrap: " stmt.0.ctype (== stmt.0.ctype "ifblock") stmt)
                                              (if (== stmt.0.ctype "ifblock")
-                                                 [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" stmt "}" " " ")" "()"]
-                                                 [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
+                                                 [(+ {} preamble.2 { `marker: "ifblock"}) preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" stmt "}" " " ")" "()"]
+                                                 [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " stmt " " ")" "()"]))
                                             stmt)))
                   (`kvpair nil)
                   (`total_length (- tokens.val.length 1)))
@@ -4416,10 +4443,9 @@
                         (push acc "{")
                         (while (< idx total_length)
                          (do
-                          (inc idx)
-                          (= kvpair (prop tokens.val idx))
-                           ;(log "valid_key_literals: compile_obj_literal:" idx total_length  "kvpair: " kvpair)
-                                        ;(log "compile_obj_literal:" idx "is_block?" (is_block? kvpair.val.1) kvpair.val.1.val`)
+                           (inc idx)
+                           (= kvpair (prop tokens.val idx))
+                           
                            (= key (get_val kvpair.val.0 ctx))
                            (when
                               (and (== key.length 1)
@@ -4450,7 +4476,7 @@
                    (do
                     ;(log "compile_obj_literal: keys have invalid js chars")
                     (= tmp_name (gen_temp_name "obj"))
-                     (for_each (`t [{ `ctype:`statement }  "await" " " "(" " ""async" " " "function" "()" "{" "let" " " tmp_name "=" "new" " " "Object" "()" ";"])
+                     (for_each (`t [{ `ctype:`statement }  preamble.0 " " "(" " " preamble.1 " " "function" "()" "{" "let" " " tmp_name "=" "new" " " "Object" "()" ";"])
                                (push acc t))
                      (while (< idx total_length)
                             (do
@@ -4494,6 +4520,7 @@
                   (`rcv nil)
                   (`_cdepth (or _cdepth 100))
                   (`acc [])
+                  (`preamble (calling_preamble ctx))
                   (`tmp_name nil)
                   (`refval nil)
                   (`check_statement (fn (stmt)
@@ -4501,8 +4528,8 @@
                                             (do 
                                              ;(comp_log "check_statement: needs wrap: " stmt.0.ctype (== stmt.0.ctype "ifblock") stmt)
                                              (if (== stmt.0.ctype "ifblock")
-                                                 [{ `ctype: "AsyncFunction" `marker: "ifblock"} "await" " " "(" "async" " " "function" "()" " " "{" stmt "}" " " ")" "()"]
-                                                 [{ `ctype: "AsyncFunction" } "await" " " "(" "async" " " "function" "()" " " stmt " " ")" "()"]))
+                                                 [(+ {} preamble.2 { `marker: "ifblock"}) preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" stmt "}" " " ")" "()"]
+                                                 [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " stmt " " ")" "()"]))
                                             stmt)))
                   (`ref nil))
                
@@ -4623,13 +4650,13 @@
                                            
                                           (push symbolic_replacements
                                                 [ idx (gen_temp_name "array_arg") 
-                                                  [ { `ctype: "AsyncFunction"} "(" "async" " " "function" "()" " " compiled_element " " ")"]]))
+                                                  [ preamble.2 "(" preamble.1 " " "function" "()" " " compiled_element " " ")"]]))
                                         (== inst "ifblock")
                                         (do 
                                            ;(comp_log (+ "compile: " _cdepth " [array_literal]:" ) "received raw if block back at pos " idx "...need to wrap it but keep structural return value as an array")
                                            (push symbolic_replacements
                                                  [ idx (gen_temp_name "array_arg") 
-                                                   [{ `ctype: "AsyncFunction"} "(" "async" " " "function" "()" " " "{" compiled_element  "}" " " ")"]])))))
+                                                   [preamble.2 "(" preamble.1 " " "function" "()" " " "{" compiled_element  "}" " " ")"]])))))
                                 
                                 compiled_values)
                            
@@ -4646,7 +4673,7 @@
                                       (for_each (`t ["let" " " elem.1 "=" elem.2 ";"])
                                                 (push acc t))
                                       ;; splice in the reference
-                                      (-> compiled_values `splice elem.0 1 ["await" " " elem.1 "()"])))
+                                      (-> compiled_values `splice elem.0 1 [preamble.0 " " elem.1 "()"])))
                            
                            
                            ;; if we have symbolic replacements, we need to generate a block
@@ -4719,8 +4746,8 @@
                                      (push acc "return")
                                      (push acc " "))
                                    
-                                   (for_each (`t ["await" " " "(" "async" " " "function" "()" "{" "let" " " tmp_name "=" rcv ";" " "  "if" " " "(" tmp_name " " "instanceof" " " "Function" ")" "{"
-                                                 "return" " " "await" " " tmp_name "(" ])
+                                   (for_each (`t [preamble.0 " " "(" preamble.1 " " "function" "()" "{" "let" " " tmp_name "=" rcv ";" " "  "if" " " "(" tmp_name " " "instanceof" " " "Function" ")" "{"
+                                                 "return" " " preamble.0 " " tmp_name "(" ])
                                              (push acc t))
                                    (push_as_arg_list acc compiled_values)
                                             ; (for_each (`t (rest tokens))
