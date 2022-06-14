@@ -1,23 +1,25 @@
-(defun repl ()
+(defun repl (instream outstream opts)
   (let
       ((buffer nil)
        (lines [])
        (generator readline)
-       (stdin Deno.stdin)
-       (stdout Deno.stdout)
+       (instream (or instream Deno.stdin))
+       (outstream (or outstream Deno.stdout))
        (td (new TextDecoder))
        (te (new TextEncoder))
+       (prompt_text (either opts.prompt "λ-> "))
        (prompt nil)
-       (sigint_message (-> te `encode "\nsigint: type Ctrl-D to exit.\n"))
+       (subprompt_text (either opts.subprompt "     "))
+       (sigint_message (-> te `encode (either opts.sigint_message "\nsigint: type Ctrl-D to exit.\n")))
        (write writeAllSync)
        
        (sigint_handler (function ()
 			   (progn
-			     (write stdout sigint_message)
-			     (write stdout prompt))))
+			     (write outstream sigint_message)
+			     (write outstream prompt))))
        (return_stack []))
     (declare (function write))
-    (= prompt (-> te `encode "λ-> "))
+    (= prompt (-> te `encode prompt_text))
     (defglobal $ nil)
     (defglobal $$ nil)
     (defglobal $$$ nil)
@@ -25,10 +27,10 @@
      (Deno.addSignalListener `SIGINT sigint_handler)
      (catch Error (e)
 	    (warn "Unable to install sigint handler.")))
-    (write stdout prompt)
+    (write outstream prompt)
     (try
 
-    (for_with (`l (generator stdin))
+    (for_with (`l (generator instream))
 	      (progn		
 		(= l (-> td `decode l))			
 		(try
@@ -39,7 +41,7 @@
 		   (prepend return_stack
 			 (-> Environment `evaluate buffer))
 		   (console.log (first return_stack))
-		   (write stdout  prompt)
+		   (write outstream  prompt)
 		   (= lines [])
 		   (when (> return_stack.length 3)
 		     (pop return_stack))
@@ -56,7 +58,7 @@
 			 (progn
 			   (push lines l)
 			   ;(console.log "++: " lines)
-			   (writeAllSync Deno.stdout (-> te `encode "     "))
+			   (writeAllSync outstream (-> te `encode "     "))
 			   ))
 		  (catch Error (e)
 			 (console.error "ERROR: " e)))

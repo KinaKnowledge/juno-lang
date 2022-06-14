@@ -33,20 +33,19 @@ console.log("\nDLisp",env.version," (c) 2022 Kina, LLC");
 import { readline } from "https://deno.land/x/readline/mod.ts";
 import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
-
-const repl = Deno.readTextFileSync("repl.lisp");
-
 await env.set_global("readline",readline);
 await env.set_global("writeAllSync",writeAllSync);
 
 await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))")
 await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))")
 // await env.set_global("__VERBOSITY__",6);
+
 //await env.evaluate("(load-file \"io.lisp\")")
 await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
 await env.evaluate("(init_io.initializer Environment)");
 await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")")
 await env.evaluate ("(load-file \"./tests/test_harness.lisp\")")
-await env.evaluate(repl); // compile and load the repl
-await env.evaluate("(repl)"); // and call it..
+await env.evaluate ("(load-file \"repl.lisp\")")
+//await env.evaluate(repl); // compile and load the repl
+await env.evaluate("(repl Deno.stdin Deno.stdout)"); // and call it..
 
