@@ -4,8 +4,7 @@ if [ -z "$RLWRAP_EDITOR" ]; then
   export RLWRAP_EDITOR=/opt/local/bin/emacs
 fi
 
-if [ !  -d "./js" ]; then
-    echo "moving up - cannot find ./js"
+if [ !  -d "./js" ] && [ -d "../src" ]; then
    cd ..
 fi
 
@@ -14,6 +13,33 @@ if [ ! -d "./js" ]; then
     exit 1
 fi
 
+if [ -z "$1" ]; then
+    rlwrap -c -r -m -M .lisp  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
+elif [ "$1" = "-?" ] || [ "$1" = "--help" ]; then 
+    cat <<EOF
 
-rlwrap -c -r -m -M .lisp  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
+DLisp Command Line Utility (c) 2022 Kina LLC
+usage: [ --help | --no-debugger | --compile [output-file] ]
+
+ -? --help:     Print this help guide.
+
+ --no-debugger: Don't enable inspection and connection from Devtools. 
+                Inspection is enabled by default currently.
+
+--compile:      Build a standalone executable.
+                Note that dynamic_imports will not work in the emitted binary.
+
+EOF
+    
+elif [ "$1" = "--no-debugger" ]; then
+    rlwrap -c -r -m -M .lisp deno run --allow-write --allow-net --allow-read ./js/startup_deno.js
+elif [ $1 = "--compile" ]; then
+    if [ ! -z "$2" ]; then
+	COMP_FLAGS="--output $2"
+    else
+	COMP_FLAGS=""
+    fi
+    deno compile $COMP_FLAGS --allow-write --allow-read --allow-net ./js/startup_deno.js
+fi
+     
     

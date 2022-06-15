@@ -13,21 +13,19 @@ globalThis.get_next_environment_id=get_next_environment_id
 import { init_dlisp } from "./environment.js"
 import { init_compiler } from "./compiler.js"
 import { load_core } from "./core.js"
-
-//var { init_dlisp } = await import("./environment.js");
-//var { init_compiler } = await import("./compiler.js");
-//var { load_core } = await import("./core.js");
+import { initializer } from "./io.js"
 
 await init_dlisp()
 var env=await dlisp_env()
 import { environment_boot } from "./environment_boot.js"
-// var { environment_boot } = await import("./environment_boot.js")
+
 await environment_boot(env);
 await init_compiler(env)
 await load_core(env)
 var cca = await env.get_global("compiler")
 await env.set_compiler(cca)
 
+await initializer(env);
 // Ready - call env.evaluate("(my_lisp form)") beyond this point for compilation and evaluation of lisp forms
 
 // setup a simple repl from stdin
@@ -46,8 +44,8 @@ await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file
 // await env.set_global("__VERBOSITY__",6);
 
 //await env.evaluate("(load-file \"io.lisp\")")
-await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
-await env.evaluate("(init_io.initializer Environment)");
+// await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
+// await env.evaluate("(init_io.initializer Environment)");
 await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")")
 await env.evaluate ("(load-file \"./tests/test_harness.lisp\")")
 await env.evaluate ("(load-file \"./src/repl.lisp\")")
