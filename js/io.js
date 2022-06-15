@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-15 09:47:35
-// Version: 2022.06.15.09.47
-export const DLISP_ENV_VERSION='2022.06.15.09.47';
+// Build Time: 2022-06-15 10:30:08
+// Version: 2022.06.15.10.30
+export const DLISP_ENV_VERSION='2022.06.15.10.30';
 
 
 
@@ -262,8 +262,8 @@ export async function initializer(Environment)  {
         let source_path;
         let output_path;
         issues=[];
-        source_dir=((opts && opts["source_dir"])||".");
-        output_dir=((opts && opts["output_dir"])||".");
+        source_dir=((opts && opts["source_dir"])||"./src");
+        output_dir=((opts && opts["output_dir"])||"./js");
         dcomps=await (await Environment.get_global("date_components"))(new Date());
         version_tag=await (async function () {
              if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("blank?"))((opts && opts["version_tag"]))))){
