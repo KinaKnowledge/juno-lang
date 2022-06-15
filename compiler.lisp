@@ -134,10 +134,21 @@
        (`entry_signature nil)
        (`temp_fn_asn_template [{"type":"special","val":(quotel "=:defvar"),"ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":(quotel "=:fn"),"ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
        (`anon_fn_template (-> temp_fn_asn_template `slice 2))
-       (`build_fn_with_assignment (fn (tmp_var_name body args)
+       (`build_fn_with_assignment (fn (tmp_var_name body args ctx)
                                       (let
                                           ((`tmp_template (clone temp_fn_asn_template)))
+                                        ;; [ 2 0 ] path to fn keyword
                                         
+                                        (when (in_sync? ctx)
+                                          
+                                          (set_prop tmp_template.2.val.0
+                                                    `val
+                                                    (quotel "=:function"))
+                                          (set_prop tmp_template.2.val.0
+                                                    `name
+                                                    "function"))
+                                          
+                                                    
                                         (set_prop tmp_template.1
                                                   `name
                                                   tmp_var_name
@@ -151,7 +162,7 @@
                                                   `val
                                                   body)
                                         tmp_template)))
-       
+       ;; to do: remove
        (`build_anon_fn (fn (body args)
                            (let
                                ((`tmp_template (clone anon_fn_template)))
@@ -957,7 +968,7 @@
                                           `ref: true })
                                 (= stmts (compile tokens ctx))
                                 ;(log  "infix (overloaded +): <-" stmts)
-                                (= stmts (wrap_assignment_value stmts))
+                                (= stmts (wrap_assignment_value stmts ctx))
                                 ;; BACKTOHERE
                                 ;(log  "infix <- " stmts)
                                 stmts)
@@ -969,7 +980,7 @@
                                   (inc idx)
                                   (= token (prop tokens idx))
                                    (add_operand)
-                                   (push acc (wrap_assignment_value (compile token ctx)))))
+                                   (push acc (wrap_assignment_value (compile token ctx) ctx))))
                                    
                                    ; (log "infix <- " token (last acc))
                                      
@@ -991,7 +1002,7 @@
                                    (`idx 1))
                                 ;(log "compile_set_prop: tokens: " tokens)
                                 ;(log "compile_set_prop: target: " target) 
-                                (for_each (`t [preamble.0 " " preamble.1 " " "function" "()" "{" "let" " " target_reference "=" target ";" ] )
+                                (for_each (`t [preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" "let" " " target_reference "=" target ";" ] )
                                           (push wrapper t))
                                 (while (< idx (- tokens.length 1))
                                        (do
@@ -1000,7 +1011,7 @@
                                          (= token (prop tokens idx))
                                          ;(log "compile_set_prop: " target_reference  idx "token: " token)
                                          (push acc "[")
-                                         (= stmt (wrap_assignment_value (compile token ctx)))
+                                         (= stmt (wrap_assignment_value (compile token ctx) ctx))
                                          (push acc stmt)
                                          (push acc "]")
                                          (inc idx)
@@ -1008,7 +1019,7 @@
                                          (= token (prop tokens idx))
                                          (if (eq nil token)
                                              (throw Error "set_prop: odd number of arguments"))
-                                         (= stmt (wrap_assignment_value (compile token ctx)))
+                                         (= stmt (wrap_assignment_value (compile token ctx) ctx))
                                          (push acc stmt)
                                          ;(if (is_complex? token.val)
                                           ;   (push acc (compile_wrapper_fn token.val ctx))
@@ -1021,6 +1032,7 @@
                                 (push wrapper target_reference)
                                 (push wrapper ";")
                                 (push wrapper "}")
+                                (push wrapper preamble.4)
                                 (push wrapper "()")
                                 ;(log "compile_set_prop: " (join "" (flatten wrapper)))
                                 wrapper)))
@@ -1029,10 +1041,10 @@
        (`compile_prop  (fn (tokens ctx)
                            (let
                                ((`acc [])
-                                (`target (wrap_assignment_value (compile (second tokens) ctx)))
+                                (`target (wrap_assignment_value (compile (second tokens) ctx) ctx))
                                 (`target_val nil)
 				(`preamble (calling_preamble ctx))
-                                (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx))))
+                                (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx) ctx)))
                                 
                             ;(log "compile_prop: target: " target)
                             ;(log "compile_prop: idx_key: " idx_key)
@@ -1093,7 +1105,7 @@
                               (for_each (`token (-> tokens `slice 1))
                                  (do
                                      ;(inline_log "compiling: " token)
-                                     (= stmt (wrap_assignment_value (compile token ctx)))
+                                     (= stmt (wrap_assignment_value (compile token ctx) ctx))
                                      (push args stmt)))
                                      ;(= wrap_style (check_needs_wrap stmt))
                                      ;(cond 
@@ -1133,7 +1145,7 @@
                   (`compiled_values []))
                   
                (for_each (`t (-> tokens `slice 1))
-                  (push compiled_values (wrap_assignment_value (compile t ctx))))
+                  (push compiled_values (wrap_assignment_value (compile t ctx) ctx)))
                
                (push_as_arg_list acc compiled_values)
                (push acc "]")
@@ -1204,6 +1216,7 @@
                                      (`assignment_value nil)
                                      (`assignment_type nil)
                                      (`wrap_as_function? nil)
+                                     (`preamble (calling_preamble ctx))
                                      (`target (sanitize_js_ref_name 
                                               (cond
                                                 token.ref
@@ -1244,7 +1257,7 @@
                                               
                                            
                                   ;(log "compile_assignment: target is: " target " type: " assignment_type " value: " (clone assignment_value))
-                                  (= assignment_value (wrap_assignment_value assignment_value))
+                                  (= assignment_value (wrap_assignment_value assignment_value ctx))
                                    
                                    
                                   
@@ -1266,7 +1279,7 @@
                                        (push acc "=")
                                        (push acc assignment_value))
                                       (do
-                                       (for_each (`t [{ `ctype: "statement"} "await" " " "Environment" "." "set_global" "(" "\"" target "\"" "," assignment_value ")"])
+                                       (for_each (`t [{ `ctype: "statement"} preamble.0 " " "Environment" "." "set_global" "(" "\"" target "\"" "," assignment_value ")"])
                                                  (push acc t))))
                                   
                                   (set_prop ctx
@@ -1496,7 +1509,7 @@
                                         (== stmt_ctype "block")
                                         (do 
                                             ;(push stmts { `mark: "wrap-block" })
-                                            (push stmts (wrap_assignment_value stmt)))
+                                            (push stmts (wrap_assignment_value stmt ctx)))
                                         else
                                         (do 
                                             (push stmts { `mark: "standard" })
@@ -1606,7 +1619,7 @@
                                             target
                                             (map_ctype_to_value assignment_value.0.ctype assignment_value))
                                             
-                                   (= assignment_value (wrap_assignment_value assignment_value)))
+                                   (= assignment_value (wrap_assignment_value assignment_value ctx)))
                                    
                                   (is_function? assignment_type.value)
                                   (set_ctx ctx
@@ -1675,7 +1688,7 @@
                                             ;`declarations: (get_declarations ctx symname)
                                             `declared_global: true })))
        
-       (`wrap_assignment_value (fn (stmts)
+       (`wrap_assignment_value (fn (stmts ctx)
                                   (let
                                      ((`fst (+ "" (or (and (is_array? stmts)
                                                            (first stmts)
@@ -1826,10 +1839,7 @@
                                                   (set_prop shadowed_globals
                                                             alloc_set.0.name
                                                             true))))
-                                                   
-                                              
-                                            
-                                              
+                                                                                                                                                                                           
                                   ;; if it isn't an argument to a potential parent lambda, set the ctx 
                                   (when (not ctx_details.is_argument)
                                    ;; set a placeholder for the reference
@@ -1854,6 +1864,8 @@
                                     (= alloc_set (prop (prop allocations idx) `val))
                                     
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
+                                    (when (== "check_external_env" reference_name)
+                                      (debug))
                                     (= ctx_details (get_declaration_details ctx reference_name))
                                     ;(console.log "compiling:" reference_name " ctx_details:" ctx_details)
                                     
@@ -1911,7 +1923,7 @@
                                                       assignment_value)))
                                            
                                            
-                                     (= assignment_value (wrap_assignment_value assignment_value))
+                                     (= assignment_value (wrap_assignment_value assignment_value ctx))
                                      (when ctx_details.is_argument
                                            (set_prop block_declarations
                                                      reference_name
@@ -2014,8 +2026,8 @@
 		       "await")))
 	(`calling_preamble (fn (ctx)
 			     (if (in_sync? ctx)
-				 ["" "" { `ctype: "Function" } ]
-				 ["await" "async" { `ctype: "AsyncFunction" } ])))
+				 ["" "" { `ctype: "Function" } "(" ")" ]
+				 ["await" "async" { `ctype: "AsyncFunction" } "" "" ])))
 	(`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
 	
        (`compile_fn (fn (tokens ctx fn_opts)
@@ -2215,7 +2227,7 @@
                                (= expr
                                  (do 
                                   (compile tokens.1 ctx)))
-                               (push acc (wrap_assignment_value expr))
+                               (push acc (wrap_assignment_value expr ctx))
                                (push acc ";")
                                acc)))
                          
@@ -2232,7 +2244,7 @@
        (`compile_cond (fn (tokens ctx)
                         (let
                             ((`preamble (calling_preamble ctx)))
-                          [preamble.2  preamble.0 " " preamble.1 " " "function" "()" "{" (compile_cond_inner tokens ctx) "}()"])))
+                          [preamble.2  preamble.0 " " preamble.1 " " preamble.3 "function" "()" "{" (compile_cond_inner tokens ctx) "} " preamble.4 "()"])))
        (`compile_cond_inner 
          (fn (tokens ctx)
              (let
@@ -2285,6 +2297,7 @@
                   (`condition nil)
                   (`condition_block nil)
                   (`condition_tokens (-> tokens `slice 1)))
+               (declare (array preamble))
               (compiler_syntax_validation `compile_cond tokens errors ctx tree)
                ;(cond_log "->" condition_tokens)
                ;(console.log "compile_cond: " (clone tokens))
@@ -2677,7 +2690,7 @@
                              
                            (for_each (`opt_token (or new_opts []))
                                      (do                                      
-                                      (push args (wrap_assignment_value (compile opt_token ctx)))))
+                                      (push args (wrap_assignment_value (compile opt_token ctx) ctx))))
                                       
                            ;(log "compile_new: args: " args)
                            
@@ -3016,7 +3029,7 @@
                              (when (is_function? ctype.value)
                                  (= requires_await true))
                              ;(apply_log "compile_apply: function_ref: " (clone function_ref))
-                             (= function_ref (wrap_assignment_value function_ref))
+                             (= function_ref (wrap_assignment_value function_ref ctx))
                              ;(apply_log "compile_apply: compiled: function: " (clone function_ref))
                              ;; now handle the arguments 
                              ;; Dlisp allows for multiple arguments to apply, with the last argument must be an array.
@@ -3037,7 +3050,7 @@
                                               
                                               (if (is_form? token)
                                                   (do
-                                                   (for_each (`t [ "let" " " preceding_arg_ref "=" (wrap_assignment_value (compile token.val ctx)) ";" ])
+                                                   (for_each (`t [ "let" " " preceding_arg_ref "=" (wrap_assignment_value (compile token.val ctx) ctx) ";" ])
                                                              (push acc t)))
                                                   (= preceding_arg_ref (wrap_assignment_value (compile token ctx))))
                                                (push acc
@@ -3052,7 +3065,7 @@
                                  (do                                   
                                   (if (is_form? args)
                                       (do 
-                                       (for_each (`t [ "let" " " args_ref "=" (wrap_assignment_value (compile args.val ctx)) ";" ])
+                                       (for_each (`t [ "let" " " args_ref "=" (wrap_assignment_value (compile args.val ctx) ctx) ";" ])
                                                  (push acc t))
                                        (= complex? true)))
                                   
@@ -3062,7 +3075,7 @@
                                      (push acc ",")
                                      (if complex?
                                          (push acc args_ref)
-                                         (push acc (wrap_assignment_value (compile args ctx)))))
+                                         (push acc (wrap_assignment_value (compile args ctx) ctx))))
                                    (push acc ")")))
                              
                              [ preamble.0 " " "(" preamble.1 " " "function" "()" "{" acc "}" ")" "()"])))
@@ -3097,15 +3110,15 @@
                                               (for_each (`token (-> tokens `slice 3))
                                                 (do
                                                  (push acc ",")
-                                                 (push acc (wrap_assignment_value (compile token ctx)))))))
+                                                 (push acc (wrap_assignment_value (compile token ctx) ctx))))))
                                (`method nil))
                             ;(log "compile_call: " tokens)
                             (when (< tokens.length 3)
                               (throw SyntaxError (+ "call: missing arguments, requires at least 2")))
                             ;(console.log "compile_call: ->" (clone tokens))
                             
-                            (= target (wrap_assignment_value (compile tokens.1 ctx)))
-                            (= method (wrap_assignment_value (compile tokens.2 ctx)))
+                            (= target (wrap_assignment_value (compile tokens.1 ctx) ctx))
+                            (= method (wrap_assignment_value (compile tokens.2 ctx) ctx))
                             
                             ;(console.log "compile_call: target: " target)
                             ;(console.log "compile_call: method: " method)
@@ -3729,7 +3742,8 @@
                  
                (= prebuild (build_fn_with_assignment body_function_ref
                                                      for_body.val
-                                                     idx_iters))
+                                                     idx_iters
+                                                     ctx))
                
                                         ; [iterator_ref]))
                (set_prop ctx
@@ -3740,7 +3754,7 @@
                
                (push acc (compile prebuild ctx))
                ;(log "for_each: prebuild:" (clone (last acc)))
-               (for_each (`t ["let" " " collector_ref "=" "[]" "," element_list "=" (wrap_assignment_value (compile elements ctx)) ";" ])
+               (for_each (`t ["let" " " collector_ref "=" "[]" "," element_list "=" (wrap_assignment_value (compile elements ctx) ctx) ";" ])
                          (push acc t))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push acc t))
@@ -3791,10 +3805,10 @@
                         true)
                
                (if test_condition.ref
-                   (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.name) ctx))
-                   (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.val) ctx)))
+                   (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.name nil ctx) ctx))
+                   (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.val nil ctx) ctx)))
               
-               (push prebuild (compile (build_fn_with_assignment body_ref body.val) ctx))
+               (push prebuild (compile (build_fn_with_assignment body_ref body.val nil ctx) ctx))
                (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push prebuild t))
                (for_each (`t [ "while" "(" preamble.0 " " test_condition_ref "()" ")" " " "{"  preamble.0 " " body_ref "()" ";" " " "if" "(" break_out ")" " " "{" " " "break" ";" "}" "}" " " "" ";"])
@@ -3857,7 +3871,8 @@
                  
                (= prebuild (build_fn_with_assignment body_function_ref
                                                      for_body.val
-                                                     idx_iters))
+                                                     idx_iters
+                                                     ctx))
                
                                         
                (set_prop ctx
@@ -3875,7 +3890,7 @@
                  (and (== for_args.length 2) ;; simplest (for_each (`i my_array) ...
                       (not (is_array? for_args.1)))
                  (do                  
-                  (for_each (`t ["for" " " preamble.0 " " "(" "const" " "  iter_ref " " "of" " " (wrap_assignment_value (compile elements ctx)) ")" " " "{" ])
+                  (for_each (`t ["for" " " preamble.0 " " "(" "const" " "  iter_ref " " "of" " " (wrap_assignment_value (compile elements ctx) ctx) ")" " " "{" ])
                    (push acc t))
                    
                    (for_each (`t [ preamble.0 " " body_function_ref "(" iter_ref ")"  ";" ])

@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-06-14 07:13:37
-// Version: 2022.06.14.07.13
-export const DLISP_ENV_VERSION='2022.06.14.07.13';
+// Build Time: 2022-06-15 09:34:08
+// Version: 2022.06.15.09.34
+export const DLISP_ENV_VERSION='2022.06.15.09.34';
 
 
 
@@ -72,7 +72,7 @@ export async function load_core(Environment)  {
             } else  {
                  return [null,arg_array]
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"options_and_args\" \"fn_args\":\"(arg_array)\" \"usage\":(\"arg_array:array\") \"tags\":(\"arguments\" \"options\") \"description\":(+ \"Given an array of values, returns an array containing two values.  \" \"If the value at position 0 in the provided array is an non nil object, \" \"it will be in the position 0 of the returned value and the remaining \" \"values will be in position 1 of the returned array.\" \"If the value at position 0 in the provided array is not an object type,\" \"the value in position 0 of the returned array will be nil and \" \"all values will be placed in the returned array in position 1.\")}')));
     await Environment.set_global("enum",async function(value_list) {
         let e=new Object();
@@ -132,7 +132,7 @@ export async function load_core(Environment)  {
                     } 
                 })()
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"nth\" \"fn_args\":\"(idx collection)\" \"description\":(+ \"Based on the index or index list passed as the first argument, \" \"and a collection as a second argument, return the specified values \" \"from the collection. If an index value is negative, the value \" \"retrieved will be at the offset starting from the end of the array, \" \"i.e. -1 will return the last value in the array.\") \"tags\":(\"filter\" \"select\" \"pluck\" \"object\" \"list\" \"key\" \"array\") \"usage\":(\"idx:string|number|array\" \"collection:list|object\")}')));
     await Environment.set_global("macros",async function() {
         let __collector;
@@ -277,7 +277,7 @@ export async function load_core(Environment)  {
             } else  {
                  return data
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"only\" \"fn_args\":\"(fields data)\" \"usage\":(\"fields:array\" \"data:array|object\") \"description\":\"Given an array of objects, or a single object, return objects only containing the specified keys and the corresponging value.\" \"tags\":(\"pluck\" \"filter\" \"select\" \"object\" \"each\" \"list\" \"objects\" \"keys\")}')));
     await Environment.set_global("sleep",async function(seconds) {
          return  new Promise(async function(resolve) {
@@ -515,7 +515,7 @@ export async function load_core(Environment)  {
             } else  {
                  return null
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"remaining_in_range\" \"fn_args\":\"(value check_range)\" \"usage\":(\"value:number\" \"check_range:array\") \"description\":\"Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn\'t in range, the function will return nil.\" \"tags\":(\"range\" \"iteration\" \"loop\")}')));
     await Environment.set_global("range_inc",async function(start,end,step) {
         if (check_true (end)){
@@ -623,7 +623,7 @@ export async function load_core(Environment)  {
                     } else  {
                          return value
                     }
-                }()
+                } ()
             };
             ;
             await (async function() {
@@ -765,7 +765,7 @@ export async function load_core(Environment)  {
                             
                         }()
                     }
-                }()
+                } ()
             };
             let __BREAK__FLAG__=false;
             while(await __test_condition__66()) {
@@ -790,7 +790,7 @@ export async function load_core(Environment)  {
                     } else  {
                          return (output).push([null,item])
                     }
-                }()
+                } ()
             };
             let __array__73=[],__elements__71=input_array;
             let __BREAK__FLAG__=false;
@@ -1130,7 +1130,7 @@ export async function load_core(Environment)  {
                 } else  {
                      return (construction).push(key)
                 }
-            }();
+            } ();
              return  await async function(){
                 let __target_obj__97=format_desc;
                 __target_obj__97[key]=value;
@@ -1183,7 +1183,7 @@ export async function load_core(Environment)  {
                     } else  {
                          return (construction).push(c)
                     }
-                }()
+                } ()
             };
             let __array__101=[],__elements__99=comps;
             let __BREAK__FLAG__=false;
@@ -1268,7 +1268,7 @@ export async function load_core(Environment)  {
                  throw new Error("chop: container must be a string or array");
                 
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"chop_front\" \"fn_args\":\"(container amount)\" \"usage\":(\"container:array|string\" \"amount:integer\") \"mutates\":false \"tags\":(\"text\" \"string\" \"list\" \"reduce\") \"description\":\"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.\"}')));
     [];
     await Environment.set_global("compile_lisp",async function(text) {
@@ -1470,7 +1470,7 @@ export async function load_core(Environment)  {
                 } else  {
                      return (b-r)
                 }
-            }();
+            } ();
             h=await async function(){
                 if (check_true( (r===minRGB))) {
                      return 3
@@ -1479,7 +1479,7 @@ export async function load_core(Environment)  {
                 } else  {
                      return 5
                 }
-            }();
+            } ();
             await console.log("");
             computedH=((60*(h-(d/(maxRGB-minRGB))))/360);
             computedS=((maxRGB-minRGB)/maxRGB);
@@ -1579,12 +1579,12 @@ export async function load_core(Environment)  {
                             last_upper=0;
                              return  (v).toLowerCase()
                         }
-                    }()
+                    } ()
                 } else  {
                     last_upper=0;
                      return  v
                 }
-            }()
+            } ()
         },await (await Environment.get_global("split"))(val,""))).join("")
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"camel_case_to_lower\" \"fn_args\":\"(val)\" \"usage\":() \"description\":\"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.\" \"tags\":(\"text\" \"string\" \"conversion\" \"lowercase\" \"uppercase\")}')));
     await Environment.set_global("scan_list",async function(regex,container) {
@@ -1656,7 +1656,7 @@ export async function load_core(Environment)  {
                                 } 
                             })()
                         }
-                    }()
+                    } ()
                 },values))
             } else if (check_true( (values instanceof Object))) {
                  return await (async function(){
@@ -1666,7 +1666,7 @@ export async function load_core(Environment)  {
                     } 
                 })()
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"gather_up_prop\" \"fn_args\":\"(key values)\" \"usage\":(\"key:string\" \"values:array|object\") \"description\":\"Given a key and an object or array of objects, return all the values associated with the provided key.\" \"tags\":(\"key\" \"property\" \"objects\" \"iteration\")}')));
     await Environment.set_global("sum_up_prop",async function(key,values) {
          return  await (async function(){
@@ -1763,7 +1763,7 @@ export async function load_core(Environment)  {
             } else  {
                  return value
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"truncate\" \"fn_args\":\"(len value trailer)\" \"description\":(+ \"Given a length and a string or an array, return the value \" \"with a length no more than then the provided value. If \" \"the value is a string an optional trailer string can be \" \"provided that will be appeneded to the truncated string.\") \"usage\":(\"len:number\" \"value:array|string\" \"trailer?|string\") \"tags\":(\"array\" \"string\" \"length\" \"max\" \"min\")}')));
     await Environment.set_global("uniq",async function(values,handle_complex_types) {
         let s;
@@ -1811,7 +1811,7 @@ export async function load_core(Environment)  {
             } else if (check_true( (csv_data instanceof String || typeof csv_data==='string'))) {
                  return (await (await Environment.get_global("replace"))(new RegExp("[\r]+","g"),"",csv_data)).split("\n")
             }
-        }();
+        } ();
         total_lines=(lines && lines.length);
         if (check_true (interruptions)){
              await (await Environment.get_global("sleep"))(0.1)
@@ -2035,7 +2035,7 @@ export async function load_core(Environment)  {
             } else  {
                  return thing
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"show\" \"fn_args\":\"(thing)\" \"usage\":(\"thing:function\") \"description\":\"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.\" \"tags\":(\"compile\" \"source\" \"javascript\" \"js\" \"display\")}')));
      return  true
 }

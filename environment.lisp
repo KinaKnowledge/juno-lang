@@ -42,7 +42,7 @@
                    `externs:{}
                   })
                     
-         ; (defvar Environment this.Environment)
+         
           (defvar id  (get_next_environment_id))
           
           (if (eq undefined opts)
@@ -239,7 +239,7 @@
                                  `tags: ["list" "array" "conversion" "set" "object" "string" "pairs"]
                                 })
                             
-                  (slice (fn (target from to)
+                  (slice (function (target from to)
                              (cond
                                  to
                                  (-> target `slice from to)
@@ -247,7 +247,7 @@
                                  (-> target `slice from)
                                  else
                                  (throw SyntaxError "slice requires 2 or 3 arguments"))))
-                  (rest (fn (x)
+                  (rest (function (x)
                           (cond 
                             (instanceof x Array)
                             (-> x `slice 1)
@@ -273,22 +273,22 @@
                  
                   (flatten (new Function "x" "{ return x.flat(999999999999) } "))
                  
-                  (jslambda (fn (`& args)
+                  (jslambda (function (`& args)
                                (apply Function (flatten args))))
                            
-                  (join (fn (`& args)
+                  (join (function (`& args)
                             (cond
                                (== args.length 1)
                                (-> args.0 `join "")
                                else
                                (-> args.1 `join args.0))))
-                  (lowercase (fn (x)
+                  (lowercase (function (x)
                                  (-> x `toLowerCase)))
                              
-                  (uppercase (fn (x)
+                  (uppercase (function (x)
                                  (-> x `toUpperCase)))
                              
-                  (log (fn (`& args)
+                  (log (function (`& args)
                            (apply console.log args)))
                   (split (new Function "container" "token" "{ return container.split(token) }"))
                  
@@ -308,7 +308,7 @@
                                 `tags: ["type" "condition" "subtype" "value" "what" ]
                                 })
                             
-                  (is_number? (fn (x)
+                  (is_number? (function (x)
                                   (== (subtype x) "Number"))
                                {
                                 `description: "for the given value x, returns true if x is a number."
@@ -316,7 +316,7 @@
                                 `tags: ["type" "condition" "subtype" "value" "what" "function"]
                                 })
                               
-                  (is_function? (fn (x)
+                  (is_function? (function (x)
                                     (instanceof x Function))
                                 {
                                     `description: "for the given value x, returns true if x is a function."
@@ -338,7 +338,7 @@
                                 `tags: ["type" "condition" "subtype" "value" "what" ]
                                 })
                             
-                  (is_string? (fn (x)
+                  (is_string? (function (x)
                                   (or (instanceof x String) 
                                       (== (typeof x) "string")))
                               {
@@ -347,7 +347,7 @@
                                 `tags: ["type" "condition" "subtype" "value" "what" ]
                               })
                             
-                  (is_nil? (fn (x)
+                  (is_nil? (function (x)
                                (== x nil))
                            {
                              `description: "for the given value x, returns true if x is exactly equal to nil."
@@ -355,7 +355,7 @@
                              `tags: ["type" "condition" "subtype" "value" "what" ]
                             })
                   
-                  (is_regex? (fn (x)
+                  (is_regex? (function (x)
                                 (== (sub_type x) "RegExp"))
                            {
                             `description: "for the given value x, returns true if x is a Javascript regex object"
@@ -363,7 +363,7 @@
                             `tags: ["type" "condition" "subtype" "value" "what" ]
                             })
                    
-                  (is_date? (fn (x)
+                  (is_date? (function (x)
                                (== (sub_type x) "Date"))
                                {
                                 `description: "for the given value x, returns true if x is a Date object."
@@ -384,12 +384,12 @@
                                    "tags": ["string" "text" "list" "array" "filter" "reduce" "begin"]
                                 })
                   
-                  (blank? (fn (val)
+                  (blank? (function (val)
                               (or (eq val nil)
                                   (and (is_string? val)
                                        (== val "")))))
                                   
-                  (contains? (fn (value container)
+                  (contains? (function (value container)
                                (cond
                                  (and (not value)
                                       (not container))
@@ -407,7 +407,7 @@
                                  else
                                  (throw TypeError (+ "contains?: passed invalid container type: " (sub_type container))))))
                              
-                  (make_set (fn (vals)
+                  (make_set (function (vals)
                                (if (instanceof vals Array)
                                    (new Set vals)
                                    (let
@@ -449,7 +449,7 @@
                                           (-> Environment `eval result.description)))
                             result)))
                            
-                  (undefine (fn (quoted_symbol)
+                  (undefine (function (quoted_symbol)
                                 (if (prop Environment.global_ctx.scope quoted_symbol)
                                     (delete_prop Environment.global_ctx.scope quoted_symbol)
                                     false)))
@@ -480,7 +480,7 @@
                                         return rval;
                                     }}"))
                                 
-                  (range (fn (`& args)
+                  (range (function (`& args)
                            (let
                                ((`from_to (if args.1
                                               [ (int args.0) (int args.1) ]
@@ -579,10 +579,10 @@
                                  `tags: ["list","array","join" "merge"]
                                })
       
-                  (trim (fn (x)
+                  (trim (function (x)
                             (-> x `trim)))
                   
-                  (assert (fn (assertion_form failure_message)
+                  (assert (function (assertion_form failure_message)
                               (if assertion_form
                                   assertion_form
                                  (throw EvalError (or failure_message "assertion failure"))))
@@ -641,7 +641,7 @@
                   (check_external_env_default true)
          
                   (set_global 
-                      (fn (refname value meta)
+                      (function (refname value meta)
                            (progn
 			     (cond (not (== (typeof refname) "string"))
 				   (throw TypeError "reference name must be a string type")
@@ -662,7 +662,7 @@
                              (prop Environment.global_ctx.scope refname))))
                   
                   (get_global 
-                      (fn (refname value_if_not_found suppress_check_external_env)
+                      (function (refname value_if_not_found suppress_check_external_env)
                            (cond 
                                (not (== (typeof refname) "string"))
                                (throw TypeError "reference name must be a string type")
@@ -724,14 +724,18 @@
                   
                   (compile (fn (json_expression opts)
                                (let
-                                   ((opts (or opts {
+                                   ((opts (+ {
+                                              `env: Environment 
+                                              }
+                                             opts
+                                             {
                                               `meta: false
-                                               }))
+                                             }))
                                     (out nil))
                                 (if (is_function? json_expression)
                                     (throw SyntaxError "compile: non-JSON value (function) received as input"))
                                 (= out
-                                   (compiler json_expression { `env: Environment }))
+                                   (compiler json_expression opts))
                                 (cond
                                     (and (is_array? out)
                                          out.0.ctype

@@ -275,13 +275,25 @@
     
     (push build_headers
 	  (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
-    
+
+    ;; reload the reader as this is compiled directly into the environment itself
     
     (load (source_path "reader.lisp"))
+    (success "reloaded reader")
+
+    ;; compile the various core sources
+    
     (compile_file (source_path "compiler.lisp") "init_compiler"
 		  { `output_file: (output_path "compiler.js")
                    `include_source: include_source
                    `build_headers: build_headers })
+
+    
+    (compile_file (source_path "reader.lisp") nil 
+		  { `output_file: (output_path "reader.js")
+                   `include_source: include_source
+                   `build_headers: build_headers })
+    
     (compile_file (source_path "environment.lisp") "init_dlisp"
 		  { `output_file: (output_path "environment.js")
                    `include_source: include_source
@@ -298,7 +310,7 @@
 		  { `output_file: (output_path "io.js")
                    `include_source: include_source
                    `build_headers: build_headers })
-    (console.log "complete")
+    (success "complete")
     true
     ))
 

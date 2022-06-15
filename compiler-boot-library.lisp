@@ -151,7 +151,7 @@
        (prop globalThis
              symname))))  
          
-(defmacro `defun (name args body meta)
+(defmacro defun (name args body meta)
     (let
         ((fn_name name)
          (fn_args args)
@@ -169,6 +169,27 @@
      `(do
          (defglobal ,#fn_name
              (fn ,#fn_args
+                 ,#fn_body)
+             (quote ,#source_details)))))
+
+(defmacro defun_sync (name args body meta)
+    (let
+        ((fn_name name)
+         (fn_args args)
+         (fn_body body)
+         (source_details 
+                     (+
+                         {
+                            `name: (unquotify name)
+                            `fn_args: (as_lisp fn_args)
+                            ;`fn_body: (add_escape_encoding (as_lisp fn_body))
+                          }
+                         (if meta 
+                             meta
+                             {}))))
+     `(do
+         (defglobal ,#fn_name
+             (function ,#fn_args
                  ,#fn_body)
               (quote ,#source_details)))))
   
@@ -217,7 +238,7 @@
     ;                   (+ "{ try { if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } } catch (ex) { return undefined }}"))))
      ;               (fval refname))))
                 
-(defun `get_object_path_old (refname)
+(defun get_object_path_old (refname)
     (let
         ((`chars (split_by "" refname))
          (`comps [])
@@ -255,7 +276,7 @@
             (push comps (join "" name_acc)))
         comps))
 
-(defun `get_object_path (refname)
+(defun_sync get_object_path (refname)
   (if (or (> (-> refname `indexOf ".") -1)
           (> (-> refname `indexOf "[") -1))
     (let

@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-14 07:13:37
-// Version: 2022.06.14.07.13
-export const DLISP_ENV_VERSION='2022.06.14.07.13';
+// Build Time: 2022-06-15 09:34:08
+// Version: 2022.06.15.09.34
+export const DLISP_ENV_VERSION='2022.06.15.09.34';
 
 
 
@@ -43,7 +43,7 @@ export async function initializer(Environment)  {
                     json_in:true
                 })
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"load\" \"fn_args\":\"(filename)\" \"description\":(+ \"Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. \" \"The file contents are expected to be Lisp source code in text format.\") \"tags\":(\"compile\" \"read\" \"io\" \"file\") \"usage\":(\"filename:string\")}')));
     await Environment.set_global("write_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.writeTextFile")),(await Environment.get_global("Deno"))),{
         description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"]
@@ -240,7 +240,7 @@ export async function initializer(Environment)  {
                 await console.log("warning: unhandled return: ",compiled);
                  return  write_file=false
             }
-        }();
+        } ();
         if (check_true (write_file)){
             await (await Environment.get_global("write_text_file"))(output_filename,(segments).join("\n"));
             await (await Environment.get_global("success"))(("["+compile_time+"] compiled: "),lisp_file,"->",output_filename);
@@ -310,8 +310,12 @@ export async function initializer(Environment)  {
         (build_headers).push(("// Version: "+version_tag));
         (build_headers).push(("export const DLISP_ENV_VERSION='"+version_tag+"';"));
         await (await Environment.get_global("load"))(await source_path("reader.lisp"));
+        await (await Environment.get_global("success"))("reloaded reader");
         await (await Environment.get_global("compile_file"))(await source_path("compiler.lisp"),"init_compiler",{
             output_file:await output_path("compiler.js"),include_source:include_source,build_headers:build_headers
+        });
+        await (await Environment.get_global("compile_file"))(await source_path("reader.lisp"),null,{
+            output_file:await output_path("reader.js"),include_source:include_source,build_headers:build_headers
         });
         await (await Environment.get_global("compile_file"))(await source_path("environment.lisp"),"init_dlisp",{
             output_file:await output_path("environment.js"),include_source:include_source,build_headers:build_headers
@@ -325,7 +329,7 @@ export async function initializer(Environment)  {
         await (await Environment.get_global("compile_file"))(await source_path("io.lisp"),null,{
             output_file:await output_path("io.js"),include_source:include_source,build_headers:build_headers
         });
-        await console.log("complete");
+        await (await Environment.get_global("success"))("complete");
          return  true
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"rebuild_env\" \"fn_args\":\"(opts)\"}')));
      return  true

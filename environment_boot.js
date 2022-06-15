@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-14 07:13:37
-// Version: 2022.06.14.07.13
-export const DLISP_ENV_VERSION='2022.06.14.07.13';
+// Build Time: 2022-06-15 09:34:08
+// Version: 2022.06.15.09.34
+export const DLISP_ENV_VERSION='2022.06.15.09.34';
 
 
 
@@ -24,7 +24,7 @@ export async function environment_boot(Environment)  {
                         } else  {
                              return (acc).push(c)
                         }
-                    }()
+                    } ()
                 };
                 let __array__4=[],__elements__2=chars;
                 let __BREAK__FLAG__=false;
@@ -79,7 +79,7 @@ export async function environment_boot(Environment)  {
             } else if (check_true( (type===4))) {
                  return "=:)"
             }
-        }()
+        } ()
     });
     await Environment.set_global("defmacro",async function(name,arg_list,...body) {
         let macro_name;
@@ -137,7 +137,7 @@ export async function environment_boot(Environment)  {
             } else  {
                  return val
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"desym\" \"macro\":true \"fn_args\":\"(val)\"}')));
     await Environment.set_global("desym_ref",async function(val) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(+ \"\" (as_lisp ' + await Environment.as_lisp ( val ) + '))'))
@@ -179,6 +179,25 @@ export async function environment_boot(Environment)  {
         } )());
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(do (defglobal ' + await Environment.as_lisp ( fn_name ) + ' (fn ' + await Environment.as_lisp ( fn_args ) + ' ' + await Environment.as_lisp ( fn_body ) + ') (quote ' + await Environment.as_lisp ( source_details ) + ')))'))
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name args body meta)\"}')));
+    await Environment.set_global("defun_sync",async function(name,args,body,meta) {
+        let fn_name;
+        let fn_args;
+        let fn_body;
+        let source_details;
+        fn_name=name;
+        fn_args=args;
+        fn_body=body;
+        source_details=await (await Environment.get_global("add"))({
+            name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args)
+        },await (async function() {
+             if (check_true (meta)){
+                  return meta
+            } else {
+                  return new Object()
+            } 
+        } )());
+         return  await Environment.do_deferred_splice(await Environment.read_lisp('(do (defglobal ' + await Environment.as_lisp ( fn_name ) + ' (function ' + await Environment.as_lisp ( fn_args ) + ' ' + await Environment.as_lisp ( fn_body ) + ') (quote ' + await Environment.as_lisp ( source_details ) + ')))'))
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun_sync\" \"macro\":true \"fn_args\":\"(name args body meta)\"}')));
     await Environment.set_global("macroexpand",async function(quoted_form) {
         let macro_name;
         let macro_func;
@@ -258,7 +277,7 @@ export async function environment_boot(Environment)  {
                     } else  {
                          return (name_acc).push(c)
                     }
-                }()
+                } ()
             };
             let __array__21=[],__elements__19=chars;
             let __BREAK__FLAG__=false;
@@ -277,62 +296,64 @@ export async function environment_boot(Environment)  {
         };
          return  comps
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_object_path_old\" \"fn_args\":\"(refname)\"}')));
-    await Environment.set_global("get_object_path",async function(refname) {
-        if (check_true (((await refname["indexOf"].call(refname,".")>-1)||(await refname["indexOf"].call(refname,"[")>-1)))){
-            let chars;
-            let comps;
-            let mode;
-            let name_acc;
-            chars=(refname).split("");
-            comps=[];
-            mode=0;
-            name_acc=[];
-            await (async function() {
-                let __for_body__24=async function(c) {
-                     return  await async function(){
-                        if (check_true( ((c===".")&&(mode===0)))) {
-                            (comps).push((name_acc).join(""));
-                             return  name_acc=[]
-                        } else if (check_true( ((mode===0)&&(c==="[")))) {
-                            mode=1;
-                            (comps).push((name_acc).join(""));
-                             return  name_acc=[]
-                        } else if (check_true( ((mode===1)&&(c==="]")))) {
-                            mode=0;
-                            (comps).push((name_acc).join(""));
-                             return  name_acc=[]
-                        } else  {
-                             return (name_acc).push(c)
+    await (async function ()  {
+         return   Environment.set_global("get_object_path",function(refname) {
+            if (check_true ((( refname["indexOf"].call(refname,".")>-1)||( refname["indexOf"].call(refname,"[")>-1)))){
+                let chars;
+                let comps;
+                let mode;
+                let name_acc;
+                chars=(refname).split("");
+                comps=[];
+                mode=0;
+                name_acc=[];
+                 ( function() {
+                    let __for_body__24=function(c) {
+                         return    (function(){
+                            if (check_true( ((c===".")&&(mode===0)))) {
+                                (comps).push((name_acc).join(""));
+                                 return  name_acc=[]
+                            } else if (check_true( ((mode===0)&&(c==="[")))) {
+                                mode=1;
+                                (comps).push((name_acc).join(""));
+                                 return  name_acc=[]
+                            } else if (check_true( ((mode===1)&&(c==="]")))) {
+                                mode=0;
+                                (comps).push((name_acc).join(""));
+                                 return  name_acc=[]
+                            } else  {
+                                 return (name_acc).push(c)
+                            }
+                        } )()
+                    };
+                    let __array__25=[],__elements__23=chars;
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__22 in __elements__23) {
+                        __array__25.push( __for_body__24(__elements__23[__iter__22]));
+                        if(__BREAK__FLAG__) {
+                             __array__25.pop();
+                            break;
+                            
                         }
-                    }()
+                    }return __array__25;
+                     
+                })();
+                if (check_true (((name_acc && name_acc.length)>0))){
+                     (comps).push((name_acc).join(""))
                 };
-                let __array__25=[],__elements__23=chars;
-                let __BREAK__FLAG__=false;
-                for(let __iter__22 in __elements__23) {
-                    __array__25.push(await __for_body__24(__elements__23[__iter__22]));
-                    if(__BREAK__FLAG__) {
-                         __array__25.pop();
-                        break;
-                        
+                 return  comps
+            } else {
+                  return  ( function(){
+                    let __array_op_rval__26=refname;
+                     if (__array_op_rval__26 instanceof Function){
+                        return  __array_op_rval__26() 
+                    } else {
+                        return[__array_op_rval__26]
                     }
-                }return __array__25;
-                 
-            })();
-            if (check_true (((name_acc && name_acc.length)>0))){
-                 (comps).push((name_acc).join(""))
-            };
-             return  comps
-        } else {
-              return await (async function(){
-                let __array_op_rval__26=refname;
-                 if (__array_op_rval__26 instanceof Function){
-                    return await __array_op_rval__26() 
-                } else {
-                    return[__array_op_rval__26]
-                }
-            })()
-        }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_object_path\" \"fn_args\":\"(refname)\"}')));
+                })()
+            }
+        },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"get_object_path\" \"fn_args\":\"(refname)\"}')))
+    } )();
     await Environment.set_global("do_deferred_splice",async function(tree) {
         let rval;
         let idx;
@@ -408,7 +429,7 @@ export async function environment_boot(Environment)  {
             } else  {
                  return tree
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"do_deferred_splice\" \"fn_args\":\"(tree)\"}')));
     await Environment.set_global("define",async function(...defs) {
         let acc;
@@ -477,7 +498,7 @@ export async function environment_boot(Environment)  {
             } else  {
                  return typeof x
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"type\" \"fn_args\":\"(x)\" \"usage\":(\"value:*\") \"description\":\"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.\" \"tags\":(\"types\" \"value\" \"what\")}')));
     await Environment.set_global("destructure_list",async function(elems) {
         let idx;
@@ -513,7 +534,7 @@ export async function environment_boot(Environment)  {
                 } else  {
                      return (acc).push(_path_prefix)
                 }
-            }()
+            } ()
         };
         await follow_tree(structure,[]);
          return  acc
@@ -560,7 +581,7 @@ export async function environment_boot(Environment)  {
                             } 
                         })())).join(".")
                     }
-                }()])
+                } ()])
             };
             let __array__51=[],__elements__49=await (await Environment.get_global("range"))(await (await Environment.get_global("length"))(paths));
             let __BREAK__FLAG__=false;
@@ -845,7 +866,7 @@ export async function environment_boot(Environment)  {
                 } else if (check_true((the_ctx && the_ctx["parent"]))) {
                      return await find_in_ctx((the_ctx && the_ctx["parent"]))
                 }
-            }()
+            } ()
         };
         reference=(comps).shift();
         val_type=await find_in_ctx(ctx);
@@ -883,7 +904,7 @@ export async function environment_boot(Environment)  {
                      
                 })()))).join("")
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"expand_dot_accessor\" \"fn_args\":\"(val ctx)\"}')));
     await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
         if (check_true ((ctx&&(name instanceof String || typeof name==='string')))){
@@ -915,7 +936,7 @@ export async function environment_boot(Environment)  {
                 } else  {
                      return undefined
                 }
-            }()
+            } ()
         } else throw new Error("invalid call to get_ctx: missing argument/s");
         
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"getf_ctx\" \"fn_args\":\"(ctx name _value)\"}')));
@@ -1240,11 +1261,11 @@ export async function environment_boot(Environment)  {
                                     } else  {
                                          return (ntree).push(comp)
                                     }
-                                }()
+                                } ()
                             } else  {
                                  return (ntree).push(comp)
                             }
-                        }()
+                        } ()
                     };
                     let __array__102=[],__elements__100=js_tree;
                     let __BREAK__FLAG__=false;
@@ -1405,7 +1426,7 @@ export async function environment_boot(Environment)  {
             } else  {
                  return js_tree
             }
-        }()
+        } ()
     });
     await Environment.set_global("splice_in_return_b",async function(js_tree,_ctx,_depth) {
          return  await async function(){
@@ -1437,7 +1458,7 @@ export async function environment_boot(Environment)  {
                             } else  {
                                  return (ntree).push(comp)
                             }
-                        }();
+                        } ();
                          return  idx+=1
                     };
                     let __array__141=[],__elements__139=flattened;
@@ -1456,7 +1477,7 @@ export async function environment_boot(Environment)  {
             } else  {
                  return js_tree
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"splice_in_return_b\" \"fn_args\":\"(js_tree _ctx _depth)\"}')));
     await Environment.set_global("map_range",async function(n,from_range,to_range) {
          return  await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
@@ -1594,7 +1615,7 @@ export async function environment_boot(Environment)  {
                      
                 })()
             }
-        }();
+        } ();
          return  [`=:quote`,acc]
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"identify_symbols\" \"fn_args\":\"(quoted_form _state)\"}')));
     await Environment.set_global("unless",async function(condition,...forms) {
@@ -1690,11 +1711,11 @@ export async function environment_boot(Environment)  {
                             } 
                         })(),not_found)
                     }
-                }()
+                } ()
             } else  {
                  return not_found
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"resolve_multi_path\" \"fn_args\":\"(path obj not_found)\" \"tags\":(\"path\" \"wildcard\" \"tree\" \"structure\") \"usage\":(\"path:array\" \"obj:object\" \"not_found:?*\") \"description\":\"Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list.\"}')));
     await Environment.set_global("symbol_tree",async function(quoted_form,_state,_current_path) {
         let acc;
@@ -1884,7 +1905,7 @@ export async function environment_boot(Environment)  {
                       return acc
                 }
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"symbol_tree\" \"fn_args\":\"(quoted_form _state _current_path)\" \"description\":\"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.\" \"usage\":(\"quoted_form:quote\") \"tags\":(\"structure\" \"development\" \"analysis\")}')));
     await Environment.set_global("except_nil",async function(items) {
         let acc=[];
@@ -1969,7 +1990,7 @@ export async function environment_boot(Environment)  {
                                         } 
                                     })())
                                 }
-                            }()
+                            } ()
                         };
                         let __array__204=[],__elements__202=property;
                         let __BREAK__FLAG__=false;
@@ -2084,7 +2105,7 @@ export async function environment_boot(Environment)  {
                  throw new TypeError(("each: strings, arrays, and functions can be provided for the property name or names to extract - received: "+await (await Environment.get_global("sub_type"))(property)));
                 
             }
-        }()
+        } ()
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"each\" \"fn_args\":\"(items property)\" \"description\":(+ \"Provided a list of items, provide a property name or \" \"a list of property names to be extracted and returned from the source array as a new list.\" \"If property is an array, and contains values that are arrays, those arrays will be treated as a path.\") \"usage\":(\"items:list\" \"property:string|list|function|AsyncFunction\") \"tags\":(\"pluck\" \"element\" \"only\" \"list\" \"object\" \"property\")}')));
     await Environment.set_global("replace",async function(...args) {
         if (check_true (((args && args.length)<3)))throw new SyntaxError("Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)");
@@ -2165,7 +2186,7 @@ export async function environment_boot(Environment)  {
                                         })();
                                          return  rval=await rval["concat"].call(rval,sr_val)
                                     }
-                                }()
+                                } ()
                             };
                             let __array__225=[],__elements__223=work_values;
                             let __BREAK__FLAG__=false;
@@ -2225,7 +2246,7 @@ export async function environment_boot(Environment)  {
                             } else  {
                                  return ("["+"'"+comp+"'"+"]")
                             }
-                        }()
+                        } ()
                     }
                 },comps)).join("")
             } else {
@@ -2406,9 +2427,9 @@ export async function environment_boot(Environment)  {
                         } else  {
                              return elems
                         }
-                    }()
+                    } ()
                 }
-            }()
+            } ()
         };
          return  await follow_tree(structure,[],0)
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"form_structure\" \"fn_args\":\"(quoted_form max_depth)\" \"description\":(+ \"Given a form and an optional max_depth positive number, \" \"traverses the passed JSON form and produces a nested array structure that contains\" \"the contents of the form classified as either a \\"symbol\\", \\"number\\", \\"string\\", \\"boolean\\", \\"array\\", \\"object\\", or the elem itself. \" \"The returned structure will mirror the passed structure in form, except with the leaf contents \" \"being replaced with generalized categorizations.\") \"tags\":(\"validation\" \"compilation\" \"structure\") \"usage\":(\"quoted_form:*\" \"max_depth:?number\")}')));
@@ -2535,7 +2556,7 @@ export async function environment_boot(Environment)  {
                 } else if (check_true( (tokens instanceof Object))) {
                      return (tokens && tokens["path"])
                 }
-            }();
+            } ();
             if (check_true (await (await Environment.get_global("not"))((validation_results && validation_results["all_passed"])))){
                 await (async function() {
                     let __for_body__262=async function(problem) {
