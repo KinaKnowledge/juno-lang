@@ -54,7 +54,7 @@
                      ;(clog "START TEST:      " idx test.3)
                      ;(clog "TEST EXPRESSION: " idx (or opts.test_code
                       ;                                 (as_lisp test.0)))
-                     (sleep 0.01)
+                     ;(sleep 0.01)
                      (when (or opts.setup_code test.5)
                        (-> env `evaluate (or opts.setup_code
                                              test.5)))  ;; environmental setup
