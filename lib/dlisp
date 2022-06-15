@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+if [ -z "$RLWRAP_EDITOR" ]; then
+  export RLWRAP_EDITOR=/opt/local/bin/emacs
+fi
+
+if [ !  -d "./js" ]; then
+    echo "moving up - cannot find ./js"
+   cd ..
+fi
+
+if [ ! -d "./js" ]; then
+    echo "`basename $0`: not in the top level folder for dlisp. Currently: `pwd`" >&2
+    exit 1
+fi
+
+
+rlwrap -c -r -m -M .lisp  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
+    
