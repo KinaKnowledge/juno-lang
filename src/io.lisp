@@ -248,9 +248,9 @@
   (let
       ((issues [])
        (source_dir (or opts.source_dir
-		       "."))
+		       "./src"))
        (output_dir (or opts.output_dir
-                       "."))
+                       "./js"))
        (dcomps (date_components (new Date)))
        (version_tag (if (not (blank? opts.version_tag))
                       opts.version_tag

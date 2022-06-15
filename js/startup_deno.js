@@ -10,13 +10,18 @@ globalThis.check_true=check_true
 globalThis.clone=clone
 globalThis.get_next_environment_id=get_next_environment_id
 
-var { init_dlisp } = await import("./environment.js");
-var { init_compiler } = await import("./compiler.js");
-var { load_core } = await import("./core.js");
+import { init_dlisp } from "./environment.js"
+import { init_compiler } from "./compiler.js"
+import { load_core } from "./core.js"
+
+//var { init_dlisp } = await import("./environment.js");
+//var { init_compiler } = await import("./compiler.js");
+//var { load_core } = await import("./core.js");
 
 await init_dlisp()
 var env=await dlisp_env()
-var { environment_boot } = await import("./environment_boot.js")
+import { environment_boot } from "./environment_boot.js"
+// var { environment_boot } = await import("./environment_boot.js")
 await environment_boot(env);
 await init_compiler(env)
 await load_core(env)
@@ -45,7 +50,7 @@ await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
 await env.evaluate("(init_io.initializer Environment)");
 await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")")
 await env.evaluate ("(load-file \"./tests/test_harness.lisp\")")
-await env.evaluate ("(load-file \"repl.lisp\")")
+await env.evaluate ("(load-file \"./src/repl.lisp\")")
 //await env.evaluate(repl); // compile and load the repl
 await env.evaluate("(repl Deno.stdin Deno.stdout)"); // and call it..
 
