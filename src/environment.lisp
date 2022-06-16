@@ -8,7 +8,10 @@
 ;; It is the interface the top level function calls into as the compiler
 ;; is accessed via an environment object.  
 
-;; Use evaluate(lisp_text) to compile and evaluate lisp text and forms
+;; Use evaluate(lisp_text) to compile and evaluate lisp text and forms from
+;; javascript.
+
+;; 
 
 (defexternal 
      dlisp_env 
@@ -699,10 +702,10 @@
                                                     NOT_FOUND)))
                                   
                                   ;; based on the value of refval, return the value
-                                  (when (== undefined (prop Environment.externs comps.0))
-                                     (set_prop Environment.externs
-                                               comps.0
-                                               refval))
+                                  ;(when (== undefined (prop Environment.externs comps.0))
+                                   ;  (set_prop Environment.externs
+                                    ;           comps.0
+                                     ;          refval))
                                         
                                         
                                   (cond

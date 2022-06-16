@@ -823,7 +823,7 @@
                              (bind_and_call system_date_formatter system_date_formatter `formatToParts date_value))))
                 nil)
               {
-               `usage: ["date_value:Date" "date_formatter?:DateTimeFormat"] 
+               `usage: ["date_value:Date" "date_formatter:DateTimeFormat?"] 
                `description: "Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument."
                `tags: ["date" "time" "object" "component"]
                })
@@ -838,7 +838,7 @@
                     nil))
                 ;(-> dval `toString "yyyy-MM-d HH:mm:ss")
             {
-             `usage: ["dval:Date" "date_formatter?:DateTimeFormat"]
+             `usage: ["dval:Date" "date_formatter:DateTimeFormat?"]
              `description: "Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument."
              `tags:["date" "format" "time" "string"]
              })
@@ -888,7 +888,7 @@
                   (add_hours (clear_time (add_days d2 -1)) 24)])
         {
          `description: "This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night."
-         `usage: [""]
+         `usage: []
          `tags: ["time" "date" "range" "prior" "hours" "24"]
          })
     
@@ -899,7 +899,7 @@
                 (add_days dv (- 7 
                         (day_of_week dv)))))
         {
-         `usage:["date?:Date"]
+         `usage:["date:Date?"]
          `description: "Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date."
          `tags: ["time" "date" "range" "next" "week" "24"]
          })
@@ -910,7 +910,7 @@
             (clear_time 
                 (add_days dv (* -1 (day_of_week dv)))))
         {
-         `usage:["date?:Date"]
+         `usage:["date:Date?"]
          `description: "Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date."
          `tags: ["time" "date" "range" "prior" "week" "24"]
          })
@@ -923,7 +923,7 @@
                 [ d1 d2])
            {
             `description: "This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later."
-            `usage: [""]
+            `usage: []
             `tags: ["time" "date" "range" "prior" "hours" "24"]
             })
      
@@ -941,7 +941,7 @@
               ])
        {
         `description: "This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight."
-        `usage: [""]
+        `usage: []
         `tags: ["time" "date" "range" "prior" "hours" "24"]
         })
     
@@ -1484,7 +1484,7 @@
         (or
           (prop *LANGUAGE* default_text)
           default_text)
-       { `usage: ["text:string" "key?:string"]
+       { `usage: ["text:string" "key:string?"]
          `description: (+ "Given a default text string and an optional key, if a key "  
                           "exists in the global object *LANGUAGE*, return the text associated with the key. "
                           "If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. "
@@ -1593,7 +1593,7 @@
                       "with a length no more than then the provided value. If "
                       "the value is a string an optional trailer string can be "
                       "provided that will be appeneded to the truncated string.")
-     `usage: ["len:number" "value:array|string" "trailer?|string"]
+     `usage: ["len:number" "value:array|string" "trailer:string?"]
      `tags: ["array" "string" "length" "max" "min"]})
 
 (defun uniq (values handle_complex_types)
@@ -1693,7 +1693,7 @@
                       "the progress of work as a percentage of completion (0 - 1), the current count and the total rows.</td></tr></table>")
                         
                             
-     `usage: ["csv_data:string" "options?:object"]
+     `usage: ["csv_data:string" "options:object?"]
      `tags:["parse" "list" "values" "table" "tabular" "csv" ]
      
      })
@@ -1749,7 +1749,7 @@
      `description: (+ "Given a list of key values, an object (or nil) and an optional default value to be " 
                       "assigned each key, ensures that the object returned has the specified keys (if not already set) set to either "
                       "the specified default value, or nil.")
-     `usage: ["keylist" "obj:object" "default_value?:*"]
+     `usage: ["keylist" "obj:object" "default_value:*?"]
      `tags: [`object `keys `values `required `key ]
      })
  

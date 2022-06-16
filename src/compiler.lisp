@@ -4040,8 +4040,7 @@
                                                           (== factor.0 "safety")
                                                           (set_declaration ctx "__SAFETY__" `level factor.1))
                                                       ;(declare_log "safety set: " (safety_level ctx))  
-                                                      )))
-
+                                                      )))					    
                                             else
                                             (do
                                               (push warnings
