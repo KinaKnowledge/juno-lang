@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-15 18:44:00
-// Version: 2022.06.15.18.44
-export const DLISP_ENV_VERSION='2022.06.15.18.44';
+// Build Time: 2022-06-18 05:55:58
+// Version: 2022.06.18.05.55
+export const DLISP_ENV_VERSION='2022.06.18.05.55';
 
 
 
@@ -9,7 +9,7 @@ export const DLISP_ENV_VERSION='2022.06.15.18.44';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 export async function initializer(Environment)  {
 {
-    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))((typeof (await Environment.get_global("Deno"))==="undefined")))))throw new Error("IO requires Deno");
+    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
     ;
     await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.readTextFile")),(await Environment.get_global("Deno"))),{
         description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"]

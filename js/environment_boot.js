@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-15 18:44:00
-// Version: 2022.06.15.18.44
-export const DLISP_ENV_VERSION='2022.06.15.18.44';
+// Build Time: 2022-06-18 05:55:58
+// Version: 2022.06.18.05.55
+export const DLISP_ENV_VERSION='2022.06.18.05.55';
 
 
 
@@ -45,6 +45,7 @@ export async function environment_boot(Environment)  {
     });
     await Environment.set_global("get_outside_global",(await Environment.get_global("get_outside_global")));
     await Environment.set_global("true?",(await Environment.get_global("check_true")));
+    await Environment.set_global("subtype",(await Environment.get_global("sub_type")));
     await Environment.set_global("embed_compiled_quote",async function(type,tmp_name,tval) {
          return  await async function(){
             if (check_true( (type===0))) {
@@ -599,6 +600,19 @@ export async function environment_boot(Environment)  {
         acc=await (await Environment.get_global("conj"))(acc,forms);
          return  acc
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"destructuring_bind\" \"macro\":true \"fn_args\":\"(bind_vars expression \\"&\\" forms)\"}')));
+    await (async function ()  {
+         return   Environment.set_global("split_by_recurse",function(token,container) {
+             return    (function(){
+                if (check_true( (container instanceof String || typeof container==='string'))) {
+                     return (container).split(token)
+                } else if (check_true( (container instanceof Array))) {
+                     return  ( Environment.get_global("map"))(async function(elem) {
+                         return   ( Environment.get_global("split_by_recurse"))(token,elem)
+                    },container)
+                }
+            } )()
+        },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"split_by_recurse\" \"fn_args\":\"(token container)\" \"usage\":(\"token:string\" \"container:string|array\") \"description\":(+ \"Like split_by, splits the provided container at \" \"each token, returning an array of the split \" \"items.  If the container is an array, the function \" \"will recursively split the strings in the array \" \"and return an array containing the split values \" \"of that array.  The final returned array may contain \" \"strings and arrays.\") \"tags\":(\"split\" \"nested\" \"recursion\" \"array\" \"string\")}')))
+    } )();
     await Environment.set_global("defmacro",async function(name,lambda_list,...forms) {
         let macro_name;
         let macro_args;
@@ -708,7 +722,7 @@ export async function environment_boot(Environment)  {
         } else {
               return await Environment.do_deferred_splice(await Environment.read_lisp('(defglobal ' + await Environment.as_lisp ( fn_name ) + ' (fn ' + await Environment.as_lisp ( fn_args ) + ' ' + await Environment.as_lisp ( fn_body ) + ') (quote ' + await Environment.as_lisp ( source_details ) + '))'))
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name lambda_list body meta)\" \"description\":(+ \"Defines a top level function in the current environment.  Given a name, lambda_list,\" \"body, and a meta data description, builds, compiles and installs the function in the\" \"environment under the provided name.  The body isn\'t an explicit progn, and must be\" \"within a block structure, such as progn, let or do.\") \"usage\":(\"name:string\" \"lambda_list:array\" \"body:array\" \"meta:object\") \"tags\":(\"function\" \"lambda\" \"define\" \"environment\")}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"defun\" \"macro\":true \"fn_args\":\"(name lambda_list body meta)\" \"description\":(+ \"Defines a top level function in the current environment.  Given a name, lambda_list,\" \"body, and a meta data description, builds, compiles and installs the function in the\" \"environment under the provided name.  The body isn\'t an explicit progn, and must be\" \"within a block structure, such as progn, let or do.\") \"usage\":(\"name:string:required\" \"lambda_list:array:required\" \"body:array:required\" \"meta:object\") \"tags\":(\"function\" \"lambda\" \"define\" \"environment\")}')));
     await Environment.set_global("reduce",async function(...args) {
         let elem;
         let item_list;
@@ -2646,7 +2660,77 @@ export async function environment_boot(Environment)  {
                 }
             }
         }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_value?\" \"fn_args\":\"(val)\" \"description\":\"Returns true for anything that is not nil or undefined.\" \"usage\":(\"val:*\") \"tags\":(\"if\" \"value\" \"truthy\" false true)}')));
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"is_value?\" \"fn_args\":\"(val)\" \"description\":\"Returns true for anything that is not nil or undefined or false.\" \"usage\":(\"val:*\") \"tags\":(\"if\" \"value\" \"truthy\" false true)}')));
+    await Environment.set_global("sort",async function(elems,options) {
+        let opts;
+        let sort_fn;
+        let sort_fn_inner;
+        let keyed;
+        let reverser;
+        let comparitor;
+        let key_path_a;
+        let key_path_b;
+        opts=(((options instanceof Object)&&options)||new Object());
+        sort_fn=null;
+        sort_fn_inner=null;
+        keyed=false;
+        reverser=await (async function () {
+             if (check_true ((opts && opts["reversed"]))){
+                  return -1
+            } else {
+                  return 1
+            } 
+        })();
+        comparitor=await async function(){
+            if (check_true( (opts && opts["comparitor"]) instanceof Function)) {
+                 return (opts && opts["comparitor"])
+            } else  {
+                 return function(a,b) {
+                     return    (function(){
+                        if (check_true( (a instanceof String || typeof a==='string'))) {
+                             if (check_true ((b instanceof String || typeof b==='string'))){
+                                  return (reverser* a["localeCompare"].call(a,b))
+                            } else {
+                                  return (reverser* a["localeCompare"].call(a,(""+b)))
+                            }
+                        } else if (check_true( (b instanceof String || typeof b==='string'))) {
+                             return (reverser* ( function() {
+                                {
+                                     let __call_target__=(""+a), __call_method__="localeCompare";
+                                    return  __call_target__[__call_method__].call(__call_target__,b)
+                                } 
+                            })())
+                        } else if (check_true((opts && opts["reversed"]))) {
+                             return (b-a)
+                        } else  {
+                             return (a-b)
+                        }
+                    } )()
+                }
+            }
+        } ();
+        key_path_a="aval";
+        key_path_b="bval";
+        await (await Environment.get_global("assert"))((elems instanceof Array),"sort: elements must be an array");
+        await (await Environment.get_global("assert"))((await subtype(comparitor)==="Function"),("sort: invalid comparitor provided : "+await subtype(comparitor)+" - must be a synchronous function, or evaluate to a synchronous function."));
+        await (await Environment.get_global("assert"))((((opts && opts["comparitor"])&&await (await Environment.get_global("not"))((opts && opts["reversed"])))||(await (await Environment.get_global("not"))((opts && opts["comparitor"]))&&(opts && opts["reversed"]))||(await (await Environment.get_global("not"))((opts && opts["comparitor"]))&&await (await Environment.get_global("not"))((opts && opts["reversed"])))),"sort: comparitor option cannot be combined with reversed option");
+        await async function(){
+            if (check_true( ((opts && opts["key"]) instanceof String || typeof (opts && opts["key"])==='string'))) {
+                keyed=true;
+                key_path_a=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("get_object_path"))(("aval."+(opts && opts["key"]))));
+                 return  key_path_b=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("get_object_path"))(("bval."+(opts && opts["key"]))))
+            } else if (check_true( ((opts && opts["key"]) instanceof Array))) {
+                keyed=true;
+                key_path_a=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(["aval"],(opts && opts["key"])));
+                 return  key_path_b=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(["bval"],(opts && opts["key"])))
+            }
+        } ();
+        sort_fn_inner=new Function("aval","bval","comparitor",("return comparitor( "+key_path_a+","+key_path_b+")"));
+        sort_fn=function(aval,bval) {
+             return   sort_fn_inner(aval,bval,comparitor)
+        };
+         return  await elems["sort"].call(elems,sort_fn)
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"sort\" \"fn_args\":\"(elems options)\" \"description\":(+ \"Given an array of elements, and an optional options object, returns a new sorted array.\" \"With no options provided, the elements are sorted in ascending order.  If the key \" \"reversed is set to true in options, then the elements are reverse sorted. \" \"<br>\" \"An optional synchronous function can be provided (defined by the comparitor key) which is expected to take \" \"two values and return the difference between them as can be used by the sort method of \" \"JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array \" \"which will be used to bind (destructure) the a and b values to be compared to nested values in the elements \" \"of the array.\" \"<br>\" \"<br>\" \"Options:<br>\" \"reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then \" \"this key cannot be present, as the comparitor should deal with the sorting order.<br>\" \"key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period \" \"separated values.  If it is an array, each component of the array is a successive path value in the element to be \" \"sorted. <br>\" \"comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take \" \"two arguments, and return the difference between the arguments, either a positive or negative.\") \"usage\":(\"elements:array\" \"options:object?\") \"tags\":(\"array\" \"sorting\" \"order\" \"reverse\" \"comparison\" \"objects\")}')));
     await Environment.set_global("and*",async function(...vals) {
         if (check_true (((vals && vals.length)>0))){
             let rval=true;
@@ -2727,12 +2811,8 @@ export async function environment_boot(Environment)  {
          return  rval
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"either\" \"fn_args\":\"(\\"&\\" args)\" \"description\":(+ \"Similar to or, but unlike or, returns the first non nil \" \"or undefined value in the argument list whereas or returns \" \"the first truthy value.\") \"usage\":(\"values:*\") \"tags\":(\"nil\" \"truthy\" \"logic\" \"or\" \"undefined\")}')));
     await Environment.set_global("is_symbol?",async function(symbol_to_find) {
-        if (check_true (await (await Environment.get_global("starts_with?"))("=:",symbol_to_find))){
-              return await Environment.do_deferred_splice(await Environment.read_lisp('(not (== (typeof ' + await Environment.as_lisp ( symbol_to_find ) + ') \"undefined\"))'))
-        } else {
-              return await Environment.do_deferred_splice(await Environment.read_lisp('(not (instanceof (-> Environment \"get_global\" ' + await Environment.as_lisp ( symbol_to_find ) + ') ReferenceError))'))
-        }
-    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"is_symbol?\" \"macro\":true \"fn_args\":\"(symbol_to_find)\" \"usage\":(\"symbol:string|*\") \"description\":(+ \"If provided a quoted symbol, will return true if the symbol can be found \" \"in the global context,  or false if it cannot be found.  \" \"If a non quoted symbol is provided to this macro, if the symbol is defined and \" \"refers to a defined value, returns true, otherwise false.\") \"tags\":(\"context\" \"env\" \"def\")}')));
+         return  await Environment.do_deferred_splice(await Environment.read_lisp('(not (or (== (typeof ' + await Environment.as_lisp ( symbol_to_find ) + ') \"undefined\") (instanceof (-> Environment \"get_global\" ' + await Environment.as_lisp ( symbol_to_find ) + ') ReferenceError)))'))
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"is_symbol?\" \"macro\":true \"fn_args\":\"(symbol_to_find)\" \"usage\":(\"symbol:string|*\") \"description\":(+ \"If provided a quoted symbol, will return true if the symbol can be found \" \"in the local or global contexts.\") \"tags\":(\"context\" \"env\" \"def\")}')));
     await Environment.set_global("get_function_args",async function(f) {
         let r;
         let s;

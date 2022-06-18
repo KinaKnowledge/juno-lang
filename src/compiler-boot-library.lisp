@@ -32,7 +32,7 @@
 (defglobal get_outside_global get_outside_global)      
 
 (defglobal true? check_true)
-
+(defglobal subtype sub_type)
    
   
        
@@ -456,9 +456,29 @@
           (= acc (conj acc
                        forms))
           acc))
-  
-  
 
+(defun_sync split_by_recurse (token container)  
+    (cond
+      (is_string? container)
+      (split_by token container)
+      (is_array? container)
+      (map (fn (elem)
+             (split_by_recurse token elem))
+           container))
+  {
+   `usage: ["token:string" "container:string|array"]
+   `description: (+ "Like split_by, splits the provided container at "
+                    "each token, returning an array of the split "
+                    "items.  If the container is an array, the function "
+                    "will recursively split the strings in the array "
+                    "and return an array containing the split values "
+                    "of that array.  The final returned array may contain "
+                    "strings and arrays.")
+   `tags: [ `split `nested `recursion `array `string ]
+   })
+
+
+;; Rebuild defmacro to use destructuring 
   
 (defglobal defmacro
    (fn (name lambda_list `& forms)
@@ -470,7 +490,7 @@
              (macro_meta (if (and (is_object? final_form)
                                   (not (blank? final_form.description))
                                   (not (blank? final_form.usage)))
-                             (pop forms)))
+                           (pop forms)))             
              (complex_lambda_list (or_args (for_each (`elem lambda_list)
                                                 (> (length (flatten (destructure_list elem))) 0))))
                                      
@@ -513,11 +533,12 @@
     })  
 
 
-;; Build Alpha environment (code below) at this point on bring up, then compile from defmacro above through to the Alpha environment 
+
+;; Recreate the defun function now that we have destructuring installed
 
 
 (defmacro defun (name lambda_list body meta)
-    (let
+  (let
         ((fn_name name)
          (fn_args lambda_list)
          (fn_body body)
@@ -541,7 +562,7 @@
                                                 fn_meta.description))
                                   fn_meta)
                              {}))))
-    
+      
         (if complex_lambda_list
           `(defglobal ,#fn_name 
                   (fn (`& args)
@@ -558,9 +579,8 @@
                       "body, and a meta data description, builds, compiles and installs the function in the"
                       "environment under the provided name.  The body isn't an explicit progn, and must be"
                       "within a block structure, such as progn, let or do.")
-     `usage: ["name:string" "lambda_list:array" "body:array" "meta:object"]
-     `tags: ["function" "lambda" "define" "environment"]
-     
+     `usage: ["name:string:required" "lambda_list:array:required" "body:array:required" "meta:object"]
+     `tags: ["function" "lambda" "define" "environment"]     
      })
   
 (defmacro reduce ((elem item_list) form)
@@ -1711,16 +1731,101 @@
         (if (== val undefined)
             false
             (if (isNaN val)
-                true
+                true                
                 (if val
-                    true
-                    false))))
+                  true
+                  false))))
     {
-     `description: "Returns true for anything that is not nil or undefined."
+     `description: "Returns true for anything that is not nil or undefined or false."
      `usage: ["val:*"]
      `tags: [`if `value `truthy `false `true ]
      })
- 
+
+(defun sort (elems options)
+  (let
+      ((opts (or (and (is_object? options)
+                          options)
+                 {}))
+       (sort_fn nil)
+       (sort_fn_inner nil)
+       (keyed false)
+       (reverser   (if opts.reversed
+                     -1
+                     1))
+       (comparitor (cond
+                     (is_function? opts.comparitor)
+                     opts.comparitor                     
+                     else
+                     ;; we don't know what the elements can be so we need to have some detection work done
+                     ;; for efficiency supply an explicit comparitor function for the elements.
+                     (function (a b)
+                               (cond
+                                 (is_string? a)
+                                 (if (is_string? b)
+                                   (* reverser (-> a `localeCompare b))
+                                   (* reverser (-> a `localeCompare (+ "" b))))
+                                 
+                                 (is_string? b)
+                                 (* reverser (-> (+ "" a) `localeCompare b))
+
+                                 opts.reversed
+                                 (- b a)
+                                 else
+                                 (- a b)))))                                                                                           
+       (key_path_a "aval")
+       (key_path_b "bval"))
+    
+    ;; confirm we have an array for elements 
+    (assert (is_array? elems) "sort: elements must be an array")
+    (assert (== (subtype comparitor) "Function") (+ "sort: invalid comparitor provided : " (subtype comparitor) " - must be a synchronous function, or evaluate to a synchronous function."))
+    
+    (assert (or (and opts.comparitor (not opts.reversed))
+                (and (not opts.comparitor) opts.reversed)
+                (and (not opts.comparitor) (not opts.reversed)))
+            "sort: comparitor option cannot be combined with reversed option")
+    
+
+    ;; build up our structures so we can create a fast sort lambda
+    (cond
+      (is_string? opts.key)
+      (do
+        (= keyed true)
+        (= key_path_a (path_to_js_syntax (get_object_path (+ "aval." opts.key))))
+        (= key_path_b (path_to_js_syntax (get_object_path (+ "bval." opts.key)))))
+      (is_array? opts.key)
+      (do
+        (= keyed true)
+        (= key_path_a (path_to_js_syntax (conj ["aval"] opts.key)))
+        (= key_path_b (path_to_js_syntax (conj ["bval"] opts.key)))))
+  
+    (= sort_fn_inner (new Function "aval" "bval" "comparitor" (+ "return comparitor( " key_path_a "," key_path_b ")")))
+    (= sort_fn (function (aval bval)
+                         (sort_fn_inner aval bval comparitor)))
+    (-> elems `sort sort_fn))
+  {
+   `description: (+ "Given an array of elements, and an optional options object, returns a new sorted array."
+                    "With no options provided, the elements are sorted in ascending order.  If the key "
+                    "reversed is set to true in options, then the elements are reverse sorted. "
+                    "<br>"
+                    "An optional synchronous function can be provided (defined by the comparitor key) which is expected to take "
+                    "two values and return the difference between them as can be used by the sort method of "
+                    "JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array "
+                    "which will be used to bind (destructure) the a and b values to be compared to nested values in the elements "
+                    "of the array."
+                    "<br>"
+                    "<br>"
+                    "Options:<br>"
+                    "reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then "
+                    "this key cannot be present, as the comparitor should deal with the sorting order.<br>"
+                    "key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period "
+                    "separated values.  If it is an array, each component of the array is a successive path value in the element to be "
+                    "sorted. <br>"
+                    "comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take "
+                    "two arguments, and return the difference between the arguments, either a positive or negative.")
+   `usage: ["elements:array" "options:object?"]
+   `tags: [`array `sorting `order `reverse `comparison `objects]                    
+   })
+
 (defun and* (`& vals)
    (when (> vals.length 0)
        (defvar rval true)
@@ -1777,17 +1882,14 @@
             
        
 (defmacro is_symbol? (symbol_to_find)
-    (if (starts_with? "=:" symbol_to_find)
-        `(not (== (typeof ,#symbol_to_find) "undefined"))
-        `(not (instanceof (-> Environment `get_global ,#symbol_to_find) ReferenceError)))
-             
-          { 
+    `(not (or (== (typeof ,#symbol_to_find) "undefined")
+              (instanceof (-> Environment `get_global ,#symbol_to_find) ReferenceError)))
+
+          {
             `usage: ["symbol:string|*"]
-            `description: (+ "If provided a quoted symbol, will return true if the symbol can be found " 
-                             "in the global context,  or false if it cannot be found.  " 
-                             "If a non quoted symbol is provided to this macro, if the symbol is defined and "
-                             "refers to a defined value, returns true, otherwise false.")
-    
+            `description: (+ "If provided a quoted symbol, will return true if the symbol can be found "
+                             "in the local or global contexts.")
+
             `tags: ["context" "env" "def"]
            })
 

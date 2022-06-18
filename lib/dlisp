@@ -13,6 +13,8 @@ if [ ! -d "./js" ]; then
     exit 1
 fi
 
+
+
 if [ -z "$1" ]; then
     rlwrap -c -r -m -M .lisp  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
 elif [ "$1" = "-?" ] || [ "$1" = "--help" ]; then 

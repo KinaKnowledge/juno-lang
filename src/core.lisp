@@ -28,13 +28,13 @@
         })
        
     
-    (if (is_symbol? d3)
+    (if (is_symbol? `d3)
          (defglobal `d3 d3))
         
     
     (defglobal `COPY_DATA nil)
     
-    (if (is_symbol? uuid)
+    (if (is_symbol? `uuid)
         (defglobal uuid uuid
         {
             `description: "Generates and returns a string that is a newly generated uuid."

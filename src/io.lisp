@@ -1,5 +1,5 @@
 
-(if (not (is_symbol? Deno))
+(if (not (is_symbol? `Deno))
   (throw "IO requires Deno"))
 
 (defglobal read_text_file

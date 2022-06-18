@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-15 18:44:00
-// Version: 2022.06.15.18.44
-export const DLISP_ENV_VERSION='2022.06.15.18.44';
+// Build Time: 2022-06-18 05:55:58
+// Version: 2022.06.18.05.55
+export const DLISP_ENV_VERSION='2022.06.18.05.55';
 
 
 
@@ -146,10 +146,7 @@ export async function init_compiler(Environment) {
             let not=function anonymous(x) {
 { if (check_true(x)) { return false } else { return true } }
 };
-            let sub_type=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";
-  else if (value instanceof Array) return "array";
-  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
-    return value.constructor.name;
+            let sub_type=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;
   }
   return typeof value;
 };
@@ -185,11 +182,7 @@ export async function init_compiler(Environment) {
                                 return acc;
                              }
 };
-            let subtype=function subtype(value) {  if (value === null) return "null";
-  else if (value === undefined) return "undefined";
-  else if (value instanceof Array) return "array";
-  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
-    return value.constructor.name;
+            let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;
   }
   return typeof value;
 };
@@ -2055,7 +2048,15 @@ export async function init_compiler(Environment) {
                      return  acc
                 };
                 compile_typeof=async function(tokens,ctx) {
-                    if (check_true (((tokens && tokens["1"] && tokens["1"]["type"])==="arg"))){
+                    let local_details=await (async function () {
+                         if (check_true ((tokens && tokens["1"] && tokens["1"]["ref"]))){
+                              return await get_ctx_val(ctx,(tokens && tokens["1"] && tokens["1"]["name"]))
+                        } else {
+                              return null
+                        } 
+                    })();
+                    ;
+                    if (check_true (((tokens && tokens["1"] && tokens["1"]["ref"])&&local_details))){
                           return ["typeof"," ",(tokens && tokens["1"] && tokens["1"]["name"])]
                     } else {
                           return ["typeof"," ",await compile_elem((tokens && tokens["1"]),ctx)]

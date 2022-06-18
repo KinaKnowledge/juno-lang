@@ -1011,8 +1011,28 @@
     [ "(fn () [ (typeof \"Alex\") (typeof 123) (typeof false) (typeof {}) (typeof []) ])"
     []
     `["string" "number" "boolean" "object" "object"]
-    "typeof"
+    "typeof various types"
     ]
+ [
+  "(progn
+       (defglobal bb \"Hello\")
+       (typeof bb))"
+  []
+  "string"
+  "typeof global value"
+  ]
+ [
+  "(let
+     ((bbc 123)
+      (checker (fn ()
+           (progn
+             (typeof bbc)))))
+   [ (typeof bbc)
+     (checker) ])"
+  []
+  `["number" "number"]
+  "typeof resolution in local outer scope and local scope"
+  ]
     [ "(do
            (defglobal \"when2\"
                (fn (condition `& mbody) 

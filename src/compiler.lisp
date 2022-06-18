@@ -1151,12 +1151,18 @@
                (push acc "]")
                acc)))
        (`compile_typeof
-         (fn (tokens ctx)
-             (do 
-                 ;(log "compile_typeof: " (clone tokens))
-                 (if (== tokens.1.type "arg")
-                     ["typeof" " " tokens.1.name ]
-                     ["typeof" " " (compile_elem tokens.1 ctx) ]))))
+        (fn (tokens ctx)
+          (do            
+            
+            (defvar local_details (if tokens.1.ref
+                                    (get_ctx_val ctx tokens.1.name)
+                                    nil))
+            ;(defvar comp_time_global_details (if (get_lisp_ctx tokens.1.name))
+
+            (if (and tokens.1.ref
+                     local_details)
+              ["typeof" " " tokens.1.name]
+              ["typeof" " " (compile_elem tokens.1 ctx) ]))))
        (`compile_instanceof 
          (fn (tokens ctx)
              (let
