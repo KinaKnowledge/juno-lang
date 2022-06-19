@@ -41,14 +41,15 @@ await env.set_global("writeAllSync",writeAllSync);
 
 await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))")
 await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))")
-// await env.set_global("__VERBOSITY__",6);
 
-//await env.evaluate("(load-file \"io.lisp\")")
-// await env.evaluate("(defglobal init_io (dynamic_import \"./io.js\"))")
-// await env.evaluate("(init_io.initializer Environment)");
 await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")")
 await env.evaluate ("(load-file \"./tests/test_harness.lisp\")")
 await env.evaluate ("(load-file \"./src/repl.lisp\")")
 //await env.evaluate(repl); // compile and load the repl
-await env.evaluate("(repl Deno.stdin Deno.stdout)"); // and call it..
+
+try {
+  await env.evaluate("(repl Deno.stdin Deno.stdout)"); // and call it..
+} catch (error) {
+  console.error("unable to start the repl",error);
+}
 

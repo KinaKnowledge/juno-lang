@@ -129,13 +129,13 @@
 	      opts.toplevel)
       (push segments "if (typeof AsyncFunction === \"undefined\") {\n  globalThis.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;\n}"))
 
-    (= input_buffer (read_text_file lisp_file))
+    (= input_buffer (read_text_file lisp_file ))
     
     
     ;; convert to JSON for the compiler if lisp
     
     (if (== input_components.ext ".lisp")
-      (= input_buffer (read_lisp input_buffer { `implicit_progn: false } )))
+      (= input_buffer (read_lisp input_buffer { `implicit_progn: false  { `source_name: input_filename } } )))
 
     
     (if (and (is_array? input_buffer)
@@ -146,7 +146,7 @@
     
     ;; now compile the json
 
-    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `include_source: include_source } opts)))
+    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `include_source: include_source `source_name: input_filename } opts)))
     (= compile_time (+ (-> (/ (- (time_in_millis) start_time) 1000) `toFixed 3) "s"))
     (cond
       compiled.error

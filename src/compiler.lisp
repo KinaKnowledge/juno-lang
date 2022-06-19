@@ -47,7 +47,11 @@
 ;;                    stream.
 ;;
 ;; include_source - if true attach the source form as comments for the compiled expressions.
-;;                  
+;;
+;; source_name - represents the location (file,uri) of the lisp form the compiler is
+;;               working with.  When provided it is referenced in thrown Errors.
+
+
 
 
 (defglobal `compiler 
@@ -64,9 +68,9 @@
                    
        (`expanded_tree (clone tree))
        (`op nil)
-      
-       (`default_safety_level (or Environment.declarations.safety.level 1))
        
+       (`default_safety_level (or Environment.declarations.safety.level 1))
+       (`source_name (or opts.source_name "anonymous"))
        (`build_environment_mode (or opts.build_environment false))
        (`env_ref (if build_environment_mode
                      ""
@@ -905,12 +909,10 @@
                          )))
                    (if (eq nil ntree)
                        (push warnings (+ "compile time function " (-> lisp_tree.0 `substr 2) " returned nil"))
-                       (do
-                         ;(comp_time_log "applied:" ntree)						  
+                       (do                        					  
 			(= ntree (do_deferred_splice ntree))			
 		        (when (not (== (JSON.stringify ntree)
-				       (JSON.stringify lisp_tree)))
-			    ;(console.log "expanding all macros: " (as_lisp ntree))
+				       (JSON.stringify lisp_tree)))			    
 			    (= ntree (compile_time_eval ctx ntree)))
 			(when (verbosity ctx)
                           (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp ntree)))))
@@ -1163,6 +1165,7 @@
                      local_details)
               ["typeof" " " tokens.1.name]
               ["typeof" " " (compile_elem tokens.1 ctx) ]))))
+       
        (`compile_instanceof 
          (fn (tokens ctx)
              (let

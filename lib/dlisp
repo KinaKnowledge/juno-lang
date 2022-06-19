@@ -16,7 +16,7 @@ fi
 
 
 if [ -z "$1" ]; then
-    rlwrap -c -r -m -M .lisp  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
+    rlwrap -c -r -m -q'"' -M .clj  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
 elif [ "$1" = "-?" ] || [ "$1" = "--help" ]; then 
     cat <<EOF
 
@@ -34,7 +34,7 @@ usage: [ --help | --no-debugger | --compile [output-file] ]
 EOF
     
 elif [ "$1" = "--no-debugger" ]; then
-    rlwrap -c -r -m -M .lisp deno run --allow-write --allow-net --allow-read ./js/startup_deno.js
+    rlwrap -c -r -m -q'"'  -M .clj deno run --allow-write --allow-net --allow-read ./js/startup_deno.js
 elif [ $1 = "--compile" ]; then
     if [ ! -z "$2" ]; then
 	COMP_FLAGS="--output $2"

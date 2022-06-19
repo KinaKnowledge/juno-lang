@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-18 05:55:58
-// Version: 2022.06.18.05.55
-export const DLISP_ENV_VERSION='2022.06.18.05.55';
+// Build Time: 2022-06-19 06:04:09
+// Version: 2022.06.19.06.04
+export const DLISP_ENV_VERSION='2022.06.19.06.04';
 
 
 
@@ -146,7 +146,8 @@ export async function init_compiler(Environment) {
             let not=function anonymous(x) {
 { if (check_true(x)) { return false } else { return true } }
 };
-            let sub_type=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;
+            let sub_type=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
+    return value.constructor.name;
   }
   return typeof value;
 };
@@ -182,7 +183,8 @@ export async function init_compiler(Environment) {
                                 return acc;
                              }
 };
-            let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;
+            let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
+    return value.constructor.name;
   }
   return typeof value;
 };
@@ -234,6 +236,7 @@ export async function init_compiler(Environment) {
             let expanded_tree;
             let op;
             let default_safety_level;
+            let source_name;
             let build_environment_mode;
             let env_ref;
             let operator;
@@ -483,6 +486,7 @@ export async function init_compiler(Environment) {
                 expanded_tree=await clone(tree);
                 op=null;
                 default_safety_level=((Environment && Environment["declarations"] && Environment["declarations"]["safety"] && Environment["declarations"]["safety"]["level"])||1);
+                source_name=((opts && opts["source_name"])||"anonymous");
                 build_environment_mode=((opts && opts["build_environment"])||false);
                 env_ref=await (async function () {
                      if (check_true (build_environment_mode)){
