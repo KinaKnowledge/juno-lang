@@ -1904,7 +1904,7 @@
                     "to store the evaluation of the test form or expression.  It is then available "
                     "in the eval_when_true form and, if provided, the eval_when_false expression.")
    `usage: ["test_expression:*" "eval_when_true:*" "eval_when_false:*?"]
-   `tags: [ 'conditional 'logic `anaphoric `if `it ]
+   `tags: [ `conditional `logic `anaphoric `if `it ]
    })
 
 (defun get_function_args (f)

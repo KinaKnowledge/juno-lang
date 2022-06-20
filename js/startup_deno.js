@@ -48,6 +48,7 @@ try {
   await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")",null, opts)
   await env.evaluate ("(load-file \"./tests/test_harness.lisp\")",null,opts)
   await env.evaluate ("(load-file \"./src/repl.lisp\")",null, opts)
+  await env.evaluate ("(load \"./doc/help.lisp\")")
 } catch (error) {
   console.error("initialization error: ",error);
   Deno.exit(1);

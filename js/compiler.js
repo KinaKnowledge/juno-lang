@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-20 12:46:17
-// Version: 2022.06.20.12.46
-export const DLISP_ENV_VERSION='2022.06.20.12.46';
+// Build Time: 2022-06-20 12:57:51
+// Version: 2022.06.20.12.57
+export const DLISP_ENV_VERSION='2022.06.20.12.57';
 
 
 

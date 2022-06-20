@@ -203,7 +203,8 @@
       (help_log "Please provide a tag or tags as an additional argument, such as: (help" args.0 "string)")
       (progn
        (= findings (find_tags (-> args `slice 1)))
-       findings))
+       (console.table findings)
+       (length findings)))
 
     (or (== args.0 "symbol")
         (starts_with? "sym" args.0))
@@ -249,5 +250,7 @@
    `usage: ["topic_or_name:string|symbol?"]
    `tags: [ `help `info `information `assist `documentation `docs]
    })
+
+(console.log "\nHelp loaded. Enter (help) for more information.")
 
 
