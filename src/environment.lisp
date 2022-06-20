@@ -779,10 +779,12 @@
                          (= compiled
                             (compiler (if opts.json_in
                                         expression
-                                        (-> Environment `read_lisp expression))
-                                      {   `env: Environment 
+                                        (-> Environment `read_lisp expression { `source_name: opts.source_name }))
+                                      {
+                                       `env: Environment 
                                        `ctx: ctx 
                                        `formatted_output: true
+                                       `source_name: opts.source_name
                                        `throw_on_error: opts.throw_on_error
                                        `error_report: (or opts.error_report nil)
                                        `quiet_mode: (or opts.quiet_mode false) }))
@@ -803,7 +805,7 @@
                                   {
                                    `error: (sub_type e)
                                    `message:  e.message
-                                   `stack: e.stack
+                                   `stack: e.stack                                   
                                    `form: (cond 
                                             (and (is_string? expression)
                                                  (> expression.length 100))
@@ -811,6 +813,7 @@
                                             else
                                             (as_lisp expression))
                                    `parent_forms: []
+                                   `source_name: opts.source_name
                                    `invalid: true
                                    }))
                              (if opts.error_report
@@ -824,7 +827,7 @@
                        (opts.on_compilation_complete compiled))
                                         ;(console.log "env: <- compiled: " (clone compiled))
                      (try
-                       (do     
+                       (do                             
                          (= result
                             (cond
                               compiled.error  ;; compiler error

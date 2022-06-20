@@ -739,7 +739,7 @@
            (getf_ctx ctx.parent name _value)
            else
            undefined)
-       (throw "invalid call to get_ctx: missing argument/s")))
+       (throw "invalid call to getf_ctx: missing argument/s")))
 
 (defun setf_ctx (ctx name value)
     (let
@@ -1691,11 +1691,10 @@
             (when (not validation_results.all_passed)
                (for_each (`problem (or validation_results.invalid []))
                   (push errors  {     `error: "SyntaxError"
-                                      `message:  problem
-                                      `form: (if (> (length cpath) 0)
-                                                 (as_lisp (resolve_path cpath tree))
-                                                 "")
-                                      `parent_forms: (compiler_source_chain cpath tree)
+                                       `message:  problem
+                                      `source_name: (getf_ctx ctx "__SOURCE_NAME__")
+                                      `form: (first (compiler_source_chain cpath tree))
+                                      `parent_forms: (rest (compiler_source_chain cpath tree))
                                       `invalid: true
                                    }))
                (= syntax_error (new SyntaxError "invalid syntax"))

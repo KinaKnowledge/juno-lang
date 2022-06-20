@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-06-20 12:57:51
-// Version: 2022.06.20.12.57
-export const DLISP_ENV_VERSION='2022.06.20.12.57';
+// Build Time: 2022-06-20 14:51:49
+// Version: 2022.06.20.14.51
+export const DLISP_ENV_VERSION='2022.06.20.14.51';
 
 
 
@@ -1353,10 +1353,12 @@ export async function init_dlisp(Environment)  {
                                          if (check_true (opts.json_in)){
                                               return expression
                                         } else {
-                                              return await Environment["read_lisp"].call(Environment,expression)
+                                              return await Environment["read_lisp"].call(Environment,expression,{
+                                                source_name:opts.source_name
+                                            })
                                         } 
                                     } )(),{
-                                        env:Environment,ctx:ctx,formatted_output:true,throw_on_error:opts.throw_on_error,error_report:(opts.error_report||null),quiet_mode:(opts.quiet_mode||false)
+                                        env:Environment,ctx:ctx,formatted_output:true,source_name:opts.source_name,throw_on_error:opts.throw_on_error,error_report:(opts.error_report||null),quiet_mode:(opts.quiet_mode||false)
                                     }) 
                                 } catch(__exception__141) {
                                       if (__exception__141 instanceof Error) {
@@ -1387,7 +1389,7 @@ export async function init_dlisp(Environment)  {
                                                             } else  {
                                                                  return await (await get_global("as_lisp"))(expression)
                                                             }
-                                                        } (),parent_forms:[],invalid:true
+                                                        } (),parent_forms:[],source_name:opts.source_name,invalid:true
                                                     }
                                                 }
                                             } ();

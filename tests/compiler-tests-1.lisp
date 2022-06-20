@@ -888,7 +888,7 @@
               (do 
                   e.message)))))"
     []
-    [{"error":"ReferenceError" "message":"compile: unknown reference: x" "form":"x" "parent_forms":("(+ x y)") "invalid":true}]
+    [{"error":"ReferenceError" "source_name":"anonymous" "message":"compile: unknown reference: x" "form":"x" "parent_forms":("(+ x y)") "invalid":true}]
     "let returning quoted closure then eval"
     nil
     "(-> env `set_check_external_env false)"

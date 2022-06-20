@@ -24,7 +24,7 @@
     
     (cond
       (== comps.ext ".lisp")
-      (evaluate (read_text_file fname))
+      (evaluate (read_text_file fname) nil { `source_name: fname })
       (== comps.ext ".js")
       (progn
        (= js_mod (dynamic_import fname))
@@ -32,7 +32,7 @@
          (js_mod.initializer Environment)
          (throw EvalError "load: unable to find function named initializer in export, use dynamic_import for this.")))
       (== comps.ext ".json")
-      (evaluate (JSON.parse (read_text_file fname)) { `json_in: true })))
+      (evaluate (JSON.parse (read_text_file fname)) nil { `json_in: true })))
   { `description: (+ "Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. "
 		     "The file contents are expected to be Lisp source code in text format.")
    `tags: [`compile `read `io `file ]

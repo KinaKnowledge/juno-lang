@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-20 12:57:51
-// Version: 2022.06.20.12.57
-export const DLISP_ENV_VERSION='2022.06.20.12.57';
+// Build Time: 2022-06-20 14:51:49
+// Version: 2022.06.20.14.51
+export const DLISP_ENV_VERSION='2022.06.20.14.51';
 
 
 
@@ -951,7 +951,7 @@ export async function environment_boot(Environment)  {
                      return undefined
                 }
             } ()
-        } else throw new Error("invalid call to get_ctx: missing argument/s");
+        } else throw new Error("invalid call to getf_ctx: missing argument/s");
         
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"name\":\"getf_ctx\" \"fn_args\":\"(ctx name _value)\"}')));
     await Environment.set_global("setf_ctx",async function(ctx,name,value) {
@@ -2575,13 +2575,7 @@ export async function environment_boot(Environment)  {
                 await (async function() {
                     let __for_body__262=async function(problem) {
                          return  (errors).push({
-                            error:"SyntaxError",message:problem,form:await (async function() {
-                                if (check_true ((await (await Environment.get_global("length"))(cpath)>0))){
-                                      return await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))(cpath,tree))
-                                } else {
-                                      return ""
-                                }
-                            } )(),parent_forms:await (await Environment.get_global("compiler_source_chain"))(cpath,tree),invalid:true
+                            error:"SyntaxError",message:problem,source_name:await (await Environment.get_global("getf_ctx"))(ctx,"__SOURCE_NAME__"),form:await (await Environment.get_global("first"))(await (await Environment.get_global("compiler_source_chain"))(cpath,tree)),parent_forms:await (await Environment.get_global("rest"))(await (await Environment.get_global("compiler_source_chain"))(cpath,tree)),invalid:true
                         })
                     };
                     let __array__263=[],__elements__261=((validation_results && validation_results["invalid"])||[]);

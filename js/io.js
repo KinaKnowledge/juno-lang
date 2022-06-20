@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-20 12:57:51
-// Version: 2022.06.20.12.57
-export const DLISP_ENV_VERSION='2022.06.20.12.57';
+// Build Time: 2022-06-20 14:51:49
+// Version: 2022.06.20.14.51
+export const DLISP_ENV_VERSION='2022.06.20.14.51';
 
 
 
@@ -24,7 +24,9 @@ export async function initializer(Environment)  {
         comps=await (await Environment.get_global("path.parse"))(fname);
          return  await async function(){
             if (check_true( ((comps && comps["ext"])===".lisp"))) {
-                 return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname))
+                 return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname),null,{
+                    source_name:fname
+                })
             } else if (check_true( ((comps && comps["ext"])===".js"))) {
                 js_mod=await import (fname);
                 if (check_true ((js_mod && js_mod["initializer"]))){
@@ -39,7 +41,7 @@ export async function initializer(Environment)  {
                 } else throw new EvalError("load: unable to find function named initializer in export, use dynamic_import for this.");
                 
             } else if (check_true( ((comps && comps["ext"])===".json"))) {
-                 return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),{
+                 return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),null,{
                     json_in:true
                 })
             }

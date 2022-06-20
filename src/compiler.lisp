@@ -82,6 +82,8 @@
        (`tokens [])
        (`tokenized nil)
        (`errors [])
+       (`signal_error (fn (message)
+                        (new LispSyntaxError message)))
        (`warnings [])
        (`blk_counter 0)
        (`ctx nil)
@@ -904,12 +906,16 @@
                          (set_prop e
                                    `handled true)
                          (push errors
-                               {  `error: e.name
-                                  `message: e.message
-                                  `form: (source_chain [0] [lisp_tree])
-                                  `parent_forms: []
-                                  `invalid: true
-                               })
+                               {
+                                `error: e.name
+                                `message: e.message
+                                `source_name: source_name
+                                `precompilation: true
+                                `form: lisp_tree
+                                `parent_forms: []
+                                `invalid: true
+                                `stack: e.stack
+                                })                         
                          (throw e)
                          )))
                    (if (eq nil ntree)
@@ -4925,15 +4931,18 @@
                 (catch Error (`e)
                        (do
                         (setq is_error {
-                              `error: e.name
-                              `message: e.message
-                              `form: (source_from_tokens tokens expanded_tree)
-                              `parent_forms: (source_from_tokens tokens expanded_tree true)
-                              `invalid: true
-                              })
+                                        `error: e.name
+                                        `source_name: source_name                                        
+                                        `message: e.message
+                                        `form: (source_from_tokens tokens expanded_tree)
+                                        `parent_forms: (source_from_tokens tokens expanded_tree true)
+                                        `invalid: true
+                                        })                        
                         (if (not e.handled)
                             (push errors
-                               (clone is_error)))))))))
+                                  is_error))
+                        ;(main_log "error is_error: " is_error (last errors))
+                        ))))))
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
@@ -5050,7 +5059,6 @@
 	  ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))	   
 	(when (> verbosity_level 0)	     
 	  (= verbosity check_verbosity))))
-       
     
     ;; setup key values in the context for flow control operations 
     ;; break - the looping constructs will return down the stack if
@@ -5063,6 +5071,10 @@
     (set_prop root_ctx
               `defined_lisp_globals
               {})
+
+    (set_ctx root_ctx
+              `__SOURCE_NAME__
+              source_name)
        
     (set_ctx root_ctx
              `__LAMBDA_STEP__
@@ -5167,9 +5179,7 @@
                        (take assembly))
                    (assemble_output assembly)]
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
-    ;(main_log "<-" (clone output))
-    ;(when (> errors.length 0)
-    ;  (main_log "ERRORS:" (clone errors)))
+    
     (when opts.error_report
           (opts.error_report { `errors: errors `warnings: warnings}))
           
