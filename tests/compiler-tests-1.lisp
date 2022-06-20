@@ -1043,7 +1043,7 @@
                 {`eval_when:{ `compile_time: true }})
             (describe `when2))"
     []
-    `{"type":"AsyncFunction" "location":"global" "eval_when":{"compile_time":true}}
+    `{"type":"AsyncFunction" "location":"global" "name":"when2" "eval_when":{"compile_time":true}}
     "register compile time function"
     ]
     [ "(when2 (> 4 0) \"positive number\")"
