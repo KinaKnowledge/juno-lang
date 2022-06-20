@@ -47,8 +47,14 @@
                            "anonymous"))
 	   (`opts (or opts {}))
 	   (`len (- (length text) 1))
-	   (`debugmode (if (> __VERBOSITY__ 6)
+	   (`debugmode (cond
+                         opts.verbose
+                         true
+                         (== opts.verbose false)
+                         false                         
+                         (> __VERBOSITY__ 6)
 			 true
+                         else
 			 false))
 	   (`in_buffer (split_by "" text))
 	   (`in_code 0)
@@ -145,7 +151,7 @@
 	   (`get_char (fn (pos)
 			(prop in_buffer pos)))
            (`error (fn (type message offset)                    
-                     (throw SyntaxError (JSON.stringify {
+                     (throw LispSyntaxError {
                                                          `message: message
                                                          `position: (position offset)
                                                          `pos: { `line: line_number `column: (+ column_number (or offset 0)) }
@@ -153,7 +159,7 @@
                                                          `local_text: (local_text)
                                                          `source_name: source_name
                                                          `type: type
-                                                         }))))
+                                                         })))
 	   (`handle_escape_char (fn (c)
 				  (let
 				      ((`ccode (-> c `charCodeAt 0)))

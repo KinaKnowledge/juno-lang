@@ -50,6 +50,8 @@
 ;;
 ;; source_name - represents the location (file,uri) of the lisp form the compiler is
 ;;               working with.  When provided it is referenced in thrown Errors.
+;; throw_on_error - if true, instead of returning a fail structure, throw an Error
+;;                  
 
 
 
@@ -763,7 +765,7 @@
                                `val: (conj [ { `type: `special `val: (quote "=:quotel") `ref: true `name: "quotel" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }))))
        ;; pass 1: build up a structure containing categorizations of the code to be compiled.
        
-       (`tokenize   (fn (args ctx _path)
+       (`tokenize   (fn (args ctx _path _suppress_comptime_eval)
                         (let
                             ((`argtype nil)
                              (`rval nil)
@@ -776,13 +778,15 @@
                              (`argvalue nil)
                                         ;(`tstate (or tstate { `in_quotem: false } ))
                              (`is_ref nil))
-                          ;(log "tokenize:" (sub_type args) args)
+                          
+                          ;; (log "tokenize ->" (sub_type args) args)
                           (when (eq nil ctx)
                                 (console.error "tokenize: nil ctx passed: " (clone args))
                                 (throw ReferenceError "nil/undefined ctx passed to tokenize"))
-                          (when (is_array? args)
+                          (when (and (is_array? args)
+                                     (not _suppress_comptime_eval))
                             ;; check to see this is an eval_when compile function, and evaluate it if so.
-                            (= args (compile_time_eval ctx args))
+                            (= args (compile_time_eval ctx args _path))
                             (cond
                                 (> _path.length 1)
                                 (do
@@ -802,7 +806,7 @@
                             (or (is_string? args)
                                 (is_number? args)
                                 (or (== args true) (== args false)))
-                            (first (tokenize [ args ] ctx _path))
+                            (first (tokenize [ args ] ctx _path true))
                             (and (is_array? args)
                                  (or (== args.0 (quote "=:quotem"))
                                      (== args.0 (quote "=:quote"))
@@ -877,7 +881,7 @@
        ;; structure 
        (`comp_time_log (defclog { `prefix: "compile_time_eval" `background: "#C0C0C0" `color: "darkblue" }))
        (`compile_time_eval 
-         (fn (ctx lisp_tree)
+         (fn (ctx lisp_tree path)
              (if (and (is_array? lisp_tree)
                       (is_reference? lisp_tree.0)
                       ;; is this a compile time function?  Check the definition in our environment..
@@ -887,7 +891,8 @@
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
 
 		   
-                   ;(comp_time_log "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1))
+                   (when (verbosity ctx)
+                     (comp_time_log path "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1)) )
                    ;(comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
                    
                    (try
@@ -913,7 +918,7 @@
 			(= ntree (do_deferred_splice ntree))			
 		        (when (not (== (JSON.stringify ntree)
 				       (JSON.stringify lisp_tree)))			    
-			    (= ntree (compile_time_eval ctx ntree)))
+			    (= ntree (compile_time_eval ctx ntree path)))
 			(when (verbosity ctx)
                           (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp ntree)))))
                          ;(comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
@@ -1163,7 +1168,7 @@
 
             (if (and tokens.1.ref
                      local_details)
-              ["typeof" " " tokens.1.name]
+              ["typeof" " " (compile tokens.1 ctx)]
               ["typeof" " " (compile_elem tokens.1 ctx) ]))))
        
        (`compile_instanceof 
@@ -5030,7 +5035,9 @@
              (local check_true clone))
             
       
-    
+
+    ;; We need an environment object in order to find and set
+    ;; resources.  If one isn't passed, throw an error.
    
     (if (eq nil Environment)
         (throw EvalError "Compiler: No environment passed in options."))
@@ -5043,8 +5050,6 @@
 	  ((`verbosity_level (-> Environment `get_global "__VERBOSITY__")))	   
 	(when (> verbosity_level 0)	     
 	  (= verbosity check_verbosity))))
-       
-
        
     
     ;; setup key values in the context for flow control operations 
@@ -5084,7 +5089,9 @@
                     (= is_error e)))
                     
             
-            (cond 
+            (cond
+              (and is_error opts.throw_on_error)
+              (throw is_error)
               (instanceof is_error SyntaxError)
               (do (push errors
                        is_error)

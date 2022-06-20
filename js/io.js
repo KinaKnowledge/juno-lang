@@ -1,12 +1,12 @@
 // Source: io.lisp  
-// Build Time: 2022-06-19 06:04:09
-// Version: 2022.06.19.06.04
-export const DLISP_ENV_VERSION='2022.06.19.06.04';
+// Build Time: 2022-06-20 12:46:17
+// Version: 2022.06.20.12.46
+export const DLISP_ENV_VERSION='2022.06.20.12.46';
 
 
 
 
-var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
+var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function initializer(Environment)  {
 {
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
@@ -107,7 +107,7 @@ export async function initializer(Environment)  {
         input_buffer=null;
         invalid_js_ref_chars="+?-%&^#!*[]~{}|";
         invalid_js_ref_chars_regex=new RegExp("[%+[>?<\}{&#^=~*!)(-]+");
-        boilerplate="var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import(\"./lisp_writer.js\");";
+        boilerplate="var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");";
         compiled_js=null;
         if (check_true ((await (await Environment.get_global("length"))(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,export_function_name))>0))){
             throw new SyntaxError(("export function name contains an invalid JS character: "+export_function_name+", cannot contain: "+invalid_js_ref_chars));
@@ -162,7 +162,7 @@ export async function initializer(Environment)  {
         input_buffer=await (await Environment.get_global("read_text_file"))(lisp_file);
         if (check_true (((input_components && input_components["ext"])===".lisp"))){
              input_buffer=await (await Environment.get_global("read_lisp"))(input_buffer,{
-                implicit_progn:false
+                implicit_progn:false,source_name:input_filename
             })
         };
         if (check_true (((input_buffer instanceof Array)&&((input_buffer && input_buffer["0"])==="=:iprogn")))){
@@ -174,7 +174,7 @@ export async function initializer(Environment)  {
             }()
         };
         compiled=await (await Environment.get_global("compiler"))(input_buffer,await (await Environment.get_global("add"))({
-            env:Environment,formatted_output:true,include_source:include_source
+            env:Environment,formatted_output:true,include_source:include_source,source_name:input_filename
         },opts));
         compile_time=await (await Environment.get_global("add"))(await (async function() {
             {

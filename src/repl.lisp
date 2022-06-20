@@ -36,7 +36,7 @@
 		 (= l (-> td `decode l))			
 		 (try
 		   (progn
-		    (reader (join "\n" (add lines l))) ;; this will throw an exception if we cannot read all lines correctly
+		    (reader (join "\n" (add lines l)) { `verbose: false } ) ;; this will throw an exception if we cannot read all lines correctly
 		    (= buffer (join "\n" (add lines l))) ;; ..otherwise build the buffer and present to be evaluated
 		    
 		    (prepend return_stack
@@ -55,7 +55,7 @@
 		    (= $ (first return_stack))
 		    (= $$ (second return_stack))
 		    (= $$$ return_stack.2))
-		   (catch SyntaxError (e)
+		   (catch LispSyntaxError (e)
 		     (progn                      
                       (= last_exception (JSON.parse e.message))                    
 		      (cond

@@ -35,6 +35,8 @@ EOF
     
 elif [ "$1" = "--no-debugger" ]; then
     rlwrap -c -r -m -q'"'  -M .clj deno run --allow-write --allow-net --allow-read ./js/startup_deno.js
+elif [ "$1" = "--inspect-brk" ]; then
+     rlwrap -c -r -m -q'"' -M .clj  deno run --inspect-brk=$2 --allow-write --allow-net --allow-read ./js/startup_deno.js
 elif [ $1 = "--compile" ]; then
     if [ ! -z "$2" ]; then
 	COMP_FLAGS="--output $2"

@@ -95,7 +95,7 @@
        (input_buffer nil)
        (invalid_js_ref_chars "+?-%&^#!*[]~{}|")
        (invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+"))
-       (boilerplate "var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import(\"./lisp_writer.js\");")
+       (boilerplate "var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");")
        (compiled_js nil))
 
     ;; check the export name for being valid...
@@ -135,7 +135,7 @@
     ;; convert to JSON for the compiler if lisp
     
     (if (== input_components.ext ".lisp")
-      (= input_buffer (read_lisp input_buffer { `implicit_progn: false  { `source_name: input_filename } } )))
+      (= input_buffer (read_lisp input_buffer { `implicit_progn: false  `source_name: input_filename }  )))
 
     
     (if (and (is_array? input_buffer)

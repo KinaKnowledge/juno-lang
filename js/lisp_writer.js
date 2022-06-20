@@ -26,6 +26,16 @@ export function subtype(value) {
 
 globalThis.dlisp_environment_count=0;
 
+export class LispSyntaxError extends SyntaxError {
+  constructor(json_structure) {
+    super(JSON.stringify(json_structure));
+    this.name = 'LispSyntaxError';
+  }
+}
+
+// make it available to the global JS environment
+globalThis.LispSyntaxError=LispSyntaxError
+
 export function get_next_environment_id() {
     globalThis.dlisp_environment_count++;
     return globalThis.dlisp_environment_count;

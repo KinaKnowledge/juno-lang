@@ -1882,16 +1882,30 @@
             
        
 (defmacro is_symbol? (symbol_to_find)
-    `(not (or (== (typeof ,#symbol_to_find) "undefined")
-              (instanceof (-> Environment `get_global ,#symbol_to_find) ReferenceError)))
+  `(not (or (== (typeof ,#symbol_to_find) "undefined")
+            (instanceof (-> Environment `get_global ,#symbol_to_find) ReferenceError)))
 
-          {
-            `usage: ["symbol:string|*"]
-            `description: (+ "If provided a quoted symbol, will return true if the symbol can be found "
-                             "in the local or global contexts.")
+  {
+   `usage: ["symbol:string|*"]
+   `description: (+ "If provided a quoted symbol, will return true if the symbol can be found "
+                    "in the local or global contexts.")
 
-            `tags: ["context" "env" "def"]
-           })
+   `tags: ["context" "env" "def"]
+   })
+
+(defmacro aif (test_expr eval_when_true eval_when_false)
+  `(let
+       ((it ,#test_expr))   ;; capture the result of the if in `it and make it available in scope
+     (if it
+       ,#eval_when_true
+         ,#eval_when_false))
+  {
+   `description: (+ "Anaphoric If - This macro defines a scope in which the symbol `it is used "
+                    "to store the evaluation of the test form or expression.  It is then available "
+                    "in the eval_when_true form and, if provided, the eval_when_false expression.")
+   `usage: ["test_expression:*" "eval_when_true:*" "eval_when_false:*?"]
+   `tags: [ 'conditional 'logic `anaphoric `if `it ]
+   })
 
 (defun get_function_args (f)
     (let

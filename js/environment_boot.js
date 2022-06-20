@@ -1,12 +1,12 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-19 06:04:09
-// Version: 2022.06.19.06.04
-export const DLISP_ENV_VERSION='2022.06.19.06.04';
+// Build Time: 2022-06-20 12:46:17
+// Version: 2022.06.20.12.46
+export const DLISP_ENV_VERSION='2022.06.20.12.46';
 
 
 
 
-var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
+var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function environment_boot(Environment)  {
 {
     await Environment.set_global("add_escape_encoding",async function(text) {
@@ -2813,6 +2813,9 @@ export async function environment_boot(Environment)  {
     await Environment.set_global("is_symbol?",async function(symbol_to_find) {
          return  await Environment.do_deferred_splice(await Environment.read_lisp('(not (or (== (typeof ' + await Environment.as_lisp ( symbol_to_find ) + ') \"undefined\") (instanceof (-> Environment \"get_global\" ' + await Environment.as_lisp ( symbol_to_find ) + ') ReferenceError)))'))
     },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"is_symbol?\" \"macro\":true \"fn_args\":\"(symbol_to_find)\" \"usage\":(\"symbol:string|*\") \"description\":(+ \"If provided a quoted symbol, will return true if the symbol can be found \" \"in the local or global contexts.\") \"tags\":(\"context\" \"env\" \"def\")}')));
+    await Environment.set_global("aif",async function(test_expr,eval_when_true,eval_when_false) {
+         return  await Environment.do_deferred_splice(await Environment.read_lisp('(let ((it ' + await Environment.as_lisp ( test_expr ) + ')) (if it ' + await Environment.as_lisp ( eval_when_true ) + ' ' + await Environment.as_lisp ( eval_when_false ) + '))'))
+    },await Environment.do_deferred_splice(await Environment.read_lisp('{\"eval_when\":{\"compile_time\":true} \"name\":\"aif\" \"macro\":true \"fn_args\":\"(test_expr eval_when_true eval_when_false)\" \"description\":(+ \"Anaphoric If - This macro defines a scope in which the symbol `it is used \" \"to store the evaluation of the test form or expression.  It is then available \" \"in the eval_when_true form and, if provided, the eval_when_false expression.\") \"usage\":(\"test_expression:*\" \"eval_when_true:*\" \"eval_when_false:*?\") \"tags\":(\"conditional \" logic \"anaphoric\" \"if\" \"it\")}')));
     await Environment.set_global("get_function_args",async function(f) {
         let r;
         let s;

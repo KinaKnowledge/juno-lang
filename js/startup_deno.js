@@ -4,7 +4,7 @@
 // This code assumes a fully compiled environment is already made and available in Javascript
 
 //var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
-import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } from "./lisp_writer.js";
+import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } from "./lisp_writer.js";
 globalThis.subtype=subtype
 globalThis.check_true=check_true
 globalThis.clone=clone
@@ -32,24 +32,31 @@ await initializer(env);
 
 console.log("\nDLisp",env.version," (c) 2022 Kina, LLC");
 
+let opts={
+  throw_on_error: true
+}
 
 import { readline } from "https://deno.land/x/readline/mod.ts";
 import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
 await env.set_global("readline",readline);
 await env.set_global("writeAllSync",writeAllSync);
+try {
+  await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))",null, opts)
+  await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)
 
-await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))")
-await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))")
-
-await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")")
-await env.evaluate ("(load-file \"./tests/test_harness.lisp\")")
-await env.evaluate ("(load-file \"./src/repl.lisp\")")
+  await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")",null, opts)
+  await env.evaluate ("(load-file \"./tests/test_harness.lisp\")",null,opts)
+  await env.evaluate ("(load-file \"./src/repl.lisp\")",null, opts)
+} catch (error) {
+  console.error("initialization error: ",error);
+  Deno.exit(1);
+}
 //await env.evaluate(repl); // compile and load the repl
 
 try {
-  await env.evaluate("(repl Deno.stdin Deno.stdout)"); // and call it..
+  await env.evaluate("(repl Deno.stdin Deno.stdout)",null, opts); // and call it..
 } catch (error) {
-  console.error("unable to start the repl",error);
+  console.error("repl error",error);
 }
 
