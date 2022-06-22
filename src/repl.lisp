@@ -57,7 +57,7 @@
 		    (= $$$ return_stack.2))
 		   (catch LispSyntaxError (e)
 		     (progn                      
-                      (= last_exception (JSON.parse e.message))                    
+                      (= last_exception (JSON.parse e.message))
 		      (cond
                         (not (== last_exception.type "premature end"))
                         (progn

@@ -129,10 +129,11 @@
 (defun report_tests ()
   (progn
     (defvar results  (run_tests { `quiet_mode: true `fails: true } ))
-    (cc)
+					;(cc)
+    (console.log "")
     (if (== 0 results.length)
 	(progn
-	  (console.log "%cALL TESTS PASS"  "color: green")
+	  (console.log "%cALL TESTS PASS"  "color: darkgreen")
 	  true)
 	(progn
 	  (console.log "%cFAIL"  "color: red")

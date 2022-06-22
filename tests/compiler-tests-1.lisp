@@ -1937,7 +1937,7 @@
         ((a 1)
          (b 2)))"
     []
-   `({"error":"SyntaxError" "message":"let missing block" "form":"" "parent_forms":("(let ((a 1) (b 2)))") "invalid":true})
+   `({"error":"SyntaxError" "message":"let missing block" "source_name":"anonymous" "form":"(let ((a 1) (b 2)))" "parent_forms":() "invalid":true})
    "Invalid let form structure"
       ]
    ["(do

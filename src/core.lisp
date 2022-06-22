@@ -1155,7 +1155,9 @@
              `mutates: false
              `tags: ["text" "string" "list" "reduce"]
              `description: "Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container."
-             })     
+             })
+
+    
     
     (if_compile_time_defined `client
       (if client.logc
