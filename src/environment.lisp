@@ -29,8 +29,7 @@
        Environment
        {
         `global_ctx:{
-                     `scope:{                             
-                             }
+                     `scope:{}
                      }
         `version: (javascript DLISP_ENV_VERSION)
         `definitions: {

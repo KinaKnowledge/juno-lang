@@ -140,6 +140,8 @@
        (`return_marker (fn ()
                            { `mark: "rval" }))
        (`entry_signature nil)
+       ;; TODO: Need to add pathing to the following structure, or instead, deprecate and use a
+       ;; more direct approach.  Relevant to build_fn_with_assignment and build_anon_fn
        (`temp_fn_asn_template [{"type":"special","val":(quotel "=:defvar"),"ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":(quotel "=:fn"),"ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
        (`anon_fn_template (-> temp_fn_asn_template `slice 2))
        (`build_fn_with_assignment (fn (tmp_var_name body args ctx)
@@ -174,6 +176,9 @@
        (`build_anon_fn (fn (body args)
                            (let
                                ((`tmp_template (clone anon_fn_template)))
+                             (when (verbosity ctx)
+                               (console.log "build_anon_function: -> body: " body)
+                               (console.log "build_anon_function: -> args: " args))
                              (when (is_array? args)
                                (set_prop tmp_template.0.val.1
                                          `val
@@ -261,8 +266,8 @@
                                   Function
                                   (== ctype "AsyncFunction")
                                   AsyncFunction
-                                  (== ctype "Number")
-                                  Number
+                                  ;(== ctype "Number")
+                                  ;Number
                                   (== ctype "expression")
                                   Expression 
                                   (and (is_string? ctype)
@@ -270,8 +275,8 @@
                                   UnknownType
                                   (== ctype "array")
                                   Array
-                                  (== ctype "Boolean")
-                                  Boolean
+                                  ;(== ctype "Boolean")
+                                  ;Boolean
                                   (== ctype "nil")
                                   NilType
                                   (is_function? ctype)
@@ -317,7 +322,7 @@
                                       (== value.0.ctype "expression")
                                       Expression
                                       else
-                                      value.0.ctype))
+                                      value))
                           (set_prop ctx.scope
                                     sanitized_name
                                     value)))))
@@ -726,12 +731,17 @@
                       (cond
                         token.ref
                         (do 
-                            (defvar `comps (split_by "." token.name))
-                            ;(log "get_val: " (safe_access token ctx sanitize_js_ref_name))
+                          (defvar `comps (split_by "." token.name))                          
+                          (when (verbosity ctx)
+                            (log "get_val: reference: " (safe_access token ctx sanitize_js_ref_name)))
+                          (defvar `ref_name
                             (if (and (> (safety_level ctx) 1)
                                      (> comps.length 1))
-                                (safe_access token ctx sanitize_js_ref_name)
-                                (sanitize_js_ref_name (expand_dot_accessor token.name ctx))))
+                              (safe_access token ctx sanitize_js_ref_name)
+                              (sanitize_js_ref_name (expand_dot_accessor token.name ctx))))
+                          (if (get_ctx ctx "__IN_QUOTEM__")
+                            (get_ctx ctx ref_name)  ;; get the value from the context now instead of returning the bound symbol
+                            ref_name))
                         else
                         token.val))))
        (`has_lisp_globals false)
@@ -761,7 +771,7 @@
                                {`type: `arr `__token__:true `source: (as_lisp args) `val: (conj [ { `type: `special `val: (quote "=:quote") `ref: true `name: "quote" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil  `path: _path}
                                (== args.0 (quote "=:quotem"))
                                {`type: `arr `__token__:true `source: (as_lisp args) 
-                               `val: (conj [ { `type: `special `val: (quote "=:quotem") `ref: true `name: "quotem" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }
+                               `val: (conj [ { `type: `special `path: (conj _path [0]) `val: (quote "=:quotem") `ref: true `name: "quotem" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }
                                else
                                {`type: `arr `__token__:true `source: (as_lisp args) 
                                `val: (conj [ { `type: `special `val: (quote "=:quotel") `ref: true `name: "quotel" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }))))
@@ -959,9 +969,12 @@
                            (set_ctx ctx
                                     `__COMP_INFIX_OPS__
                                     true)
+                           (when (and (is_array? symbol_ctx_val)
+                                      symbol_ctx_val.0.ctype)
+                             (= symbol_ctx_val symbol_ctx_val.0.ctype))
                            ;(log "infix + declaration: " declaration " ctx value: " )
                            (when (and (or (== declaration.type Array)
-                                          (== declaration.type Object)
+                                          (== declaration.type Object)                                          
                                           (== symbol_ctx_val `objliteral)                     
                                           (== symbol_ctx_val Expression)
                                           (== symbol_ctx_val ArgumentType)
@@ -1915,7 +1928,8 @@
                                        ;(clog "compiling simple assignment value for " reference_name  ": " alloc_set.1)
                                        (= assignment_value (compile alloc_set.1 ctx))
                                        
-                                       ;(clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value))
+                                       (when (verbosity ctx)
+                                         (clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value)))
                                        ))
                                    
                                     
@@ -1943,7 +1957,8 @@
                                                       assignment_value)))
                                            
                                            
-                                     (= assignment_value (wrap_assignment_value assignment_value ctx))
+                                    (= assignment_value (wrap_assignment_value assignment_value ctx))
+                                    
                                      (when ctx_details.is_argument
                                            (set_prop block_declarations
                                                      reference_name
@@ -3368,8 +3383,9 @@
                           (let
                               ((`assembly nil)
                                (`result nil)
-                               (`fst nil)
+                               (`fst nil)                               
                                (`needs_braces? false)
+                               (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
                                (`run_log (if opts.quiet_mode
                                              log
                                              (defclog { `prefix: "wrap_and_run" `background: "#703030" `color: "white" } )))
@@ -3401,16 +3417,25 @@
                                (`assembled nil))
                             (= assembled (splice_in_return_b (splice_in_return_a js_code)))
                             (= assembled (assemble_output assembled))
-                           
+                            
                             (= assembled (+ (if needs_braces? "{" "")
                                             (if needs_return? " return " "")
                                             assembled
                                             (if needs_braces? "}" "")))
-                          
-                            (= assembly (new AsyncFunction "Environment" assembled))
+                            
+                            
+
+                            (when (verbosity ctx)
+                              (run_log "in quotem: " in_quotem "needs_braces? " needs_braces? "needs_return?" needs_return?)
+                              (run_log "assembled: " assembled))
+                            
+                            (= assembly (new AsyncFunction "Environment"  assembled))
                             (when run_opts.bind_mode
-                                (= assembly (bind_function assembly Environment)))
+                              (= assembly (bind_function assembly Environment)))
+                            (debug)
                             (= result (assembly Environment))
+                            (when (verbosity ctx)
+                              (run_log "<- " result))
                             result)))            
        
        (`follow_log (if opts.quiet_mode
@@ -3422,6 +3447,7 @@
                             (`tlength 0)
                             (`idx 0)
                             (`tval nil)
+                            (`vmode (verbosity ctx))
                             (`tmp_name nil)
                             (`check_return_tree 
                                     (fn (stmts)
@@ -3462,11 +3488,12 @@
                             (while (< idx tlength)
                              (do 
                               (= tval (prop tree idx))
-                              ;(follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@")))
+                              (when vmode
+                                (follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@"))))
                                (cond 
                                  (== tval (quote "=$,@"))                                     
                                  (do
-                                  (inc idx)
+                                   (inc idx)
                                   (= tval (prop tree idx))
                                   ;(follow_log "splice operation: idx now:" idx  "tval:" (clone tval))
                                    
@@ -3498,10 +3525,13 @@
                                               ;(follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
                                               (if (is_object? tval)
                                                   (do 
-                                                   (push ntree (embed_compiled_quote 4))
-                                                   (= ntree (compile (tokenize tval ctx) ctx))
-                                                   (= ntree (check_return_tree ntree))
-                                                    ;(follow_log "spliced: <-" ntree)
+                                                    (push ntree (embed_compiled_quote 4))
+                                                    (when vmode
+                                                      (follow_log "splicing: " ntree))
+                                                    (= ntree (compile (tokenize tval ctx) ctx))
+                                                    (= ntree (check_return_tree ntree))
+                                                    (when vmode
+                                                      (follow_log "spliced: <-" ntree))
                                                     
                                                     (= ntree (wrap_and_run ntree ctx)))
                                                   (do
@@ -3510,10 +3540,12 @@
                                             
                                             
                                             (do 
-                                             ;(follow_log "not in lambda: tokenizing, compiling: " (clone tval))
+                                              (when vmode
+                                                (follow_log "not in lambda: tokenizing, compiling: " (clone tval)))
                                              (= ntree (compile (tokenize tval ctx) ctx))
                                              (= ntree (check_return_tree ntree))
-                                             
+                                             (when vmode
+                                               (follow_log "compiled tree <- " ntree))
                                              (when (is_object? ntree)
                                                  (= ntree (wrap_and_run ntree ctx)))))
                                         
@@ -3604,15 +3636,19 @@
                                 ((`acc [])
                                  (`pcm nil)
                                  (`encoded nil)
+                                 (`ctx (new_ctx ctx))
                                  (`rval nil)                                
                                  (`is_arr? (is_array? lisp_struct.1)))
                               (= has_lisp_globals true)
-                              ;(quotem_log " ->" (JSON.stringify lisp_struct))
+                              (set_ctx ctx "__IN_QUOTEM__" true)
+                              (when (verbosity ctx)
+                                (quotem_log " ->" (JSON.stringify lisp_struct)))
                               (if (contains? lisp_struct.1 [ (+ "=" ":" "(") (+ "=" ":" ")") (+ "=" ":" "'") (+ "=" ":") ])
                                   (+ "\"" lisp_struct.1 "\"")
                                   (do
                                      (= pcm (follow_tree lisp_struct.1 ctx))
-                                     ;(quotem_log "post follow_tree: " (clone pcm))
+                                     (when (verbosity ctx)
+                                       (quotem_log "post follow_tree: " (clone pcm)))
                                      (cond
                                        (is_string? pcm)
                                        (do 
@@ -3628,7 +3664,8 @@
                                           (= encoded (add_escape_encoding encoded))
                                           (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
                                               (push acc t))))
-                                      ;(quotem_log "<-  " (join "" acc))
+                                     (when (verbosity ctx)
+                                       (quotem_log "<-  " (join "" acc)))
                                       acc)))))
        
        
@@ -4125,8 +4162,10 @@
                  (= ref_type (get_ctx ctx tokens.0.name))
                  else
                  (= ref_type ArgumentType))
-               (when (verbosity ctx)
-                     (sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name))
+               (when (verbosity ctx)                 
+                 (sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name)
+                 (when (get_ctx ctx "__IN_QUOTEM__")
+                   (sr_log "in quotem")))
                (cond (== ref_type AsyncFunction)
                      (= ref_type "AsyncFunction")
                      (== ref_type Expression)
@@ -4148,7 +4187,8 @@
                
                
                ;(sr_log "call_type: " call_type "decoded ref_type: " ref_type)
-               ;(sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local"))
+               ;(when (verbosity ctx)
+                ; (sr_log "call:" tokens.0.name (if (== "lisp" call_type) (get_lisp_ctx tokens.0.name) "local")))
                (= rval
                   (cond
                     (== ref_type "AsyncFunction")
@@ -4853,7 +4893,10 @@
                           (== tokens.type "arg")
                           (== tokens.type "null"))
                       (do 
-                       ;(comp_log (+ "compile: " _cdepth " singleton: ") tokens)
+                        (when (verbosity ctx)
+                          (comp_log (+ "compile: " _cdepth " singleton: ") tokens)
+                          (when (get_ctx ctx "__IN_QUOTEM__")
+                            (comp_log (+ "compile: " _cdepth " singleton: ") "in quotem")))
                        ;(comp_log "    ctx: " (clone ctx))
                        (defvar `snt_name nil)
                        (defvar `snt_value nil)
@@ -4905,7 +4948,8 @@
                             (= refval snt_value) ;(get_ctx ctx (sanitize_js_ref_name tokens.name)))
                             (when (== refval ArgumentType)
                               (= refval snt_name)) ;tokens.name))
-                            ;(comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval))
+                            (when (verbosity ctx)
+                              (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval)))
                                         ;(comp_log "compile: singleton: get_declaration_details: " (get_declaration_details ctx tokens.name))
                             (cond 
                                   (== tokens.type "literal")

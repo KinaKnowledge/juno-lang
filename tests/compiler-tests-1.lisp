@@ -892,7 +892,17 @@
     "let returning quoted closure then eval"
     nil
     "(-> env `set_check_external_env false)"
-    ]
+     ]
+ ["(let ((tabcd 123)) `(list ,#tabcd 456))"
+  []
+  `[list 123 456]
+  "backquote with unquoted local reference"
+  ]
+ ["(let ((tabcd (list 789 123))) `(list ,@(last tabcd) 456))"
+  []
+  `[list 123 456]
+  "backquote with unquoted spliced reference and operator"
+  ]
     ["(let
      ((`ntree nil)
       (`precompile_function (fn (v)
