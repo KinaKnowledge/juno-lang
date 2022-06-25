@@ -1067,7 +1067,21 @@
           ntree)
       else
       js_tree))                       
-       
+
+(defmacro aif (test_expr eval_when_true eval_when_false)
+  `(let
+       ((it ,#test_expr))   ;; capture the result of the if in `it and make it available in scope
+     (if it
+       ,#eval_when_true
+         ,#eval_when_false))
+  {
+   `description: (+ "Anaphoric If - This macro defines a scope in which the symbol `it is used "
+                    "to store the evaluation of the test form or expression.  It is then available "
+                    "in the eval_when_true form and, if provided, the eval_when_false expression.")
+   `usage: ["test_expression:*" "eval_when_true:*" "eval_when_false:*?"]
+   `tags: [ `conditional `logic `anaphoric `if `it ]
+   })
+
 (defun map_range (n from_range to_range)
             (+ to_range.0
                (* (/ (- n from_range.0)
@@ -1892,19 +1906,7 @@
    `tags: ["context" "env" "def"]
    })
 
-(defmacro aif (test_expr eval_when_true eval_when_false)
-  `(let
-       ((it ,#test_expr))   ;; capture the result of the if in `it and make it available in scope
-     (if it
-       ,#eval_when_true
-         ,#eval_when_false))
-  {
-   `description: (+ "Anaphoric If - This macro defines a scope in which the symbol `it is used "
-                    "to store the evaluation of the test form or expression.  It is then available "
-                    "in the eval_when_true form and, if provided, the eval_when_false expression.")
-   `usage: ["test_expression:*" "eval_when_true:*" "eval_when_false:*?"]
-   `tags: [ `conditional `logic `anaphoric `if `it ]
-   })
+
 
 (defun get_function_args (f)
     (let

@@ -590,6 +590,8 @@
                                                 (sub_type global)
                                                 (and ref symname)
                                                 "unbound"
+                                                (== name undefined)
+                                                "literal"
                                                 else
                                                 (do
                                                  (error_log "find_in_context: unknown type: " name)
@@ -606,7 +608,10 @@
                                                 name)
                                             else
                                             nil)
-                               `val: val
+                                `val: (if (== val undefined)
+                                        "=:undefined"
+                                        val)
+                                          
                                `ref: (if ref true false)
                                `local: (or local nil)
                                `global: (or (and global
@@ -739,8 +744,14 @@
                                      (> comps.length 1))
                               (safe_access token ctx sanitize_js_ref_name)
                               (sanitize_js_ref_name (expand_dot_accessor token.name ctx))))
-                          (if (get_ctx ctx "__IN_QUOTEM__")
+                          (cond
+                            (and (get_ctx ctx "__IN_QUOTEM__")
+                                 (not (get_ctx ctx "__IN_LAMBDA__")))
                             (get_ctx ctx ref_name)  ;; get the value from the context now instead of returning the bound symbol
+                            (and false (get_ctx ctx "__IN_QUOTEM__")
+                                 (get_ctx ctx "__IN_LAMBDA__"))
+                            (+ "await ctx_access(\"" ref_name "\")")
+                            else
                             ref_name))
                         else
                         token.val))))
@@ -901,7 +912,7 @@
                  (let
                      ((`ntree nil)		      
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
-
+                   
 		   
                    (when (verbosity ctx)
                      (comp_time_log path "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1)) )
@@ -2699,6 +2710,8 @@
                                            (push place ","))))
                                     args)
                                place)))
+       
+                                                    
        (`compile_new (fn (tokens ctx)
                          (let
                              ((`acc [])
@@ -3383,7 +3396,8 @@
                           (let
                               ((`assembly nil)
                                (`result nil)
-                               (`fst nil)                               
+                               (`fst nil)
+                               (`ctx_access nil)
                                (`needs_braces? false)
                                (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
                                (`run_log (if opts.quiet_mode
@@ -3422,252 +3436,172 @@
                                             (if needs_return? " return " "")
                                             assembled
                                             (if needs_braces? "}" "")))
-                            
-                            
-
+                            (when (and false in_quotem
+                                       (get_ctx ctx "__IN_LAMBDA__"))
+                              (= ctx_access (fn (val)
+                                              (progn
+                                               (defvar rval (get_ctx ctx val))
+                                               (console.log "ctx_access for: " val "->" rval)
+                                               
+                                               (get_ctx ctx val)))))
                             (when (verbosity ctx)
                               (run_log "in quotem: " in_quotem "needs_braces? " needs_braces? "needs_return?" needs_return?)
                               (run_log "assembled: " assembled))
-                            
-                            (= assembly (new AsyncFunction "Environment"  assembled))
+                            (if ctx_access
+                              (= assembly (new AsyncFunction "Environment" "ctx_access" assembled))
+                              (= assembly (new AsyncFunction "Environment"  assembled)))
                             (when run_opts.bind_mode
                               (= assembly (bind_function assembly Environment)))
-                            (debug)
-                            (= result (assembly Environment))
+                            
+                            (if ctx_access
+                              (= result (assembly Environment ctx_access))
+                              (= result (assembly Environment)))
                             (when (verbosity ctx)
                               (run_log "<- " result))
                             result)))            
        
-       (`follow_log (if opts.quiet_mode
-                        log
-                        (defclog { `prefix: "follow_tree" `background: "#603060" `color: "white" } )))
-       (`follow_tree (fn (tree ctx)
-                       (let
-                           ((`meta nil)
-                            (`tlength 0)
-                            (`idx 0)
-                            (`tval nil)
-                            (`vmode (verbosity ctx))
-                            (`tmp_name nil)
-                            (`check_return_tree 
-                                    (fn (stmts)
-                                        (let
-                                            ((`fst (if (and (is_array? ntree)
-                                                            (is_object? ntree.0)
-                                                            (prop ntree.0 `ctype))
-                                                       (prop (first ntree) `ctype)
-                                                       nil))
-                                             (`rval nil))
-                                            (= rval 
-                                             (cond
-                                                (== fst nil)
-                                                stmts
-                                                (== fst "Boolean")
-                                                (+ "" stmts.1)
-                                                (== fst "nil")
-                                                "null"
-                                                (== fst "Number")
-                                                stmts.1
-                                                (== fst "undefined")
-                                                "undefined"
-                                                else
-                                                stmts))
-                                            ;(follow_log "check_return_tree: " fst " returning: " (sub_type rval) (clone rval))
-                                            rval)))
-                            (`result nil)
-                            (`subacc [])
-                            (`ntree nil))
-                         ;(follow_log "->" (clone tree))
-                         (when (eq nil ctx)
-                               (throw ReferenceError "follow_tree received nil/undefined ctx"))
-                         (cond
-                           (is_array? tree)
-                           (do
-                            (= tlength tree.length)
-                            ;(follow_log "array with " tlength "elements")
-                            (while (< idx tlength)
-                             (do 
-                              (= tval (prop tree idx))
-                              (when vmode
-                                (follow_log "in_lambda:" (get_ctx_val ctx `__IN_LAMBDA__) "idx: " idx "tval:" (clone tval) (== tval (quote "=$,@"))))
-                               (cond 
-                                 (== tval (quote "=$,@"))                                     
-                                 (do
-                                   (inc idx)
-                                  (= tval (prop tree idx))
-                                  ;(follow_log "splice operation: idx now:" idx  "tval:" (clone tval))
-                                   
-                                   ;; the theory of the splice
-                                   
-                                   ;; in quotem mode, if a ,@ is encountered, whatever thing that follows it or members of thing
-                                   ;; become elements in the current list at the position of the ,@ symbol ( "=$,@" in JSON).
-                                   ;; This is implemented by serializing the JSON into lisp text and embedding it in a call to
-                                   ;; to the reader, where when the piece of code is activated, it is rehydrated as JSON and then
-                                   ;; compiled in the present environment top level context.  
-                                   
-                                   
-                                   
-                                   (if (not (eq undefined tval))
-                                       (do 
-                                        (if (get_ctx_val ctx `__IN_LAMBDA__)
-                                            (do 
-                                             (= ntree [])
-                                             (if (is_object? tval)
-                                                 (do
-                                                  (= tmp_name (gen_temp_name "tval"))
-                                                  
-                                                  (for_each (`t (flatten (embed_compiled_quote 0 tmp_name tval)))
-                                                   (push ntree t)))
-                                                 
-                                                 (do 
-                                                     (for_each (`t (flatten (embed_compiled_quote 1 tmp_name tval)))
-                                                           (push subacc t))))
-                                              ;(follow_log "splice operation: subacc: " (clone subacc) (as_lisp subacc))
-                                              (if (is_object? tval)
-                                                  (do 
-                                                    (push ntree (embed_compiled_quote 4))
-                                                    (when vmode
-                                                      (follow_log "splicing: " ntree))
-                                                    (= ntree (compile (tokenize tval ctx) ctx))
-                                                    (= ntree (check_return_tree ntree))
-                                                    (when vmode
-                                                      (follow_log "spliced: <-" ntree))
-                                                    
-                                                    (= ntree (wrap_and_run ntree ctx)))
-                                                  (do
-                                                      ;(follow_log "not compiling, tval is simple value:" (clone tval))
-                                                      )))
-                                            
-                                            
-                                            (do 
-                                              (when vmode
-                                                (follow_log "not in lambda: tokenizing, compiling: " (clone tval)))
-                                             (= ntree (compile (tokenize tval ctx) ctx))
-                                             (= ntree (check_return_tree ntree))
-                                             (when vmode
-                                               (follow_log "compiled tree <- " ntree))
-                                             (when (is_object? ntree)
-                                                 (= ntree (wrap_and_run ntree ctx)))))
-                                        
+       
 
-                                        (= subacc (-> subacc `concat ntree)))
-                                       (throw SyntaxError "invalid splice operator position")))
-                                 (and (not ctx.hard_quote_mode)
-                                      (or (== tval (quote "=:##"))
-                                          (== tval (quote "=:unquotem"))))
-                                
-                                 (do
-                                  (inc idx)
-                                  (= tval (prop tree idx))
-                                  ;(follow_log "insert-operation (non-splice): idx now:" idx  "tval:" (clone tval))
-                                   (if (not (eq undefined tval))
-                                       (do 
-                                        (if (get_ctx_val ctx `__IN_LAMBDA__)
-                                            (do
-                                             ;(follow_log "in_lambda: non splice: " tval )   
-                                             (= ntree [])
-                                              (if (is_object? tval)
-                                                  (do
-                                                   (= tmp_name (gen_temp_name "tval"))
-                                                  
-                                                   (for_each (`t (flatten (embed_compiled_quote 2 tmp_name tval)))
-                                                    (push ntree t)))
-                                                  
-                                                  (for_each (`t (flatten (embed_compiled_quote 3 tmp_name tval)))
-                                                            (push ntree t)))
-                                              
+       ;; quote_tree 
+       ;; convert the hierarchical tree to a flattened, serializable
+       ;; javascript representation which when evaluated
+       ;; returns the quoted appropriate structure
+       ;; when unquote operations are encountered, turn back on
+       ;; compilation and store the result in the position
+       ;; of the tree element
+       
+       (`quote_tree (fn (lisp_tree ctx _acc)
+                      (let
+                          ((acc (or _acc []))
+                           (mode 0)
+                           (in_concat false)
+                           (in_lambda? false )) ;(get_ctx ctx "__IN_LAMBDA__")))
+                        ;(console.log "quote_tree: -> " lisp_tree)
+                        (cond                          
+                          (is_array? lisp_tree)
+                          (do
+                            (push acc
+                                  "[")
 
-                                              (when (is_object? tval)
-                                                (push ntree (embed_compiled_quote 4))
-                                                ;(follow_log "to compile: " (clone tval) (as_lisp tval) "ctx:" (clone ctx))
-                                                
-                                                (= ntree (compile (tokenize tval ctx) ctx))
-                                                ;(follow_log "compiled ntree: " ntree)
-                                                ;(follow_log "evaluating: " (clone ntree) (clone ctx))
-                                                (= ntree (wrap_and_run ntree ctx)))
-            ;(push subacc ntree) ;; this is original
-                                              (= subacc (-> subacc `concat ntree)))
-                                              ;(follow_log "subacc: " (JSON.stringify subacc) (as_lisp subacc)))
-                                              
+                            ;; build out the serialized representation of JS...
+                            
+                            (map (fn (elem i t)
+                                   (if (== mode 1)
+                                     (do
+                                       ;(console.log "quote_tree: resetting mode to 0 - skipping: " (as_lisp elem))
+                                       (= mode 0))
+                                     (do
+                                       ;; check for special operators, splice and unquotem
+                                       ;; if they do exist, the next element is compiled and
+                                       ;; placed in the appropriate position in the accumulator.
+                                       ;; essentially we switch back to compile mode as we
+                                       ;; process the tree.
+                                       ;(console.log "quote_tree: [" in_concat "]  elem: " (as_lisp elem))
+                                       (cond
+
+                                         ;; unquotem and ,# operators - place the resulting operation
+                                         ;; directly in the tree
+                                         
+                                         (or (== (quote "=:##") elem)
+                                             (== (quote "=:unquotem") elem))
+                                         (do 
+                                           (if in_concat
+                                             (push acc
+                                                   (compile_wrapper_fn (tokenize [ (prop lisp_tree (+ i 1)) ] ctx) ctx))
+                                             (push acc
+                                                   (compile_wrapper_fn (tokenize (prop lisp_tree (+ i 1)) ctx) ctx)))
+                                           ;; skip the next element since we compiled it 
+                                           (= mode 1))
+
+                                         ;; splice operation - take the resulting compilation operation
+                                         ;; and concatenate to the array if the result is an array
+                                         
+                                         (== (quote "=$,@") elem)
+                                         (do                                           
+                                           (if (not in_concat)
+                                             (push acc
+                                                   "].concat("))
+                                           (push acc
+                                                 (compile_wrapper_fn (tokenize (prop lisp_tree (+ i 1)) ctx) ctx))
+                                           (= in_concat true)
+                                           (= mode 1))   ;; and suppress the next element since we just processed it 
+
+                                         
+                                         ;; normal quoted element 
+                                         else                                        
+                                         (do
+                                           (if in_concat
+                                             (quote_tree [ elem ] ctx acc)  ;; the concat function expects an array so if we don't put wrapper it will splice 
+                                             (quote_tree elem ctx acc))))
                                             
-                                            (do 
-                                              ;(follow_log "not in lambda: non splice: compiling: " tval)
-                                              (= ntree (compile (tokenize tval ctx) ctx))
-                                             
-                                              (= ntree (check_return_tree ntree))
-                                              ;(follow_log "post compile:" ntree)
-                                              (= ntree (wrap_and_run ntree ctx))
-                                             ; (follow_log "evaled: " (clone ntree))
-                                              
-                                              (push subacc ntree))))
-                                       (throw SyntaxError "invalid unquotem operator position")))
-                                 else
-                                 (do 
-                                     ;(follow_log "calling follow_tree: " tval)
-                                     (= tval (follow_tree tval ctx))
-                                     ;(follow_log "pushing to subacc: " tval)
-                                     (push subacc tval)))
-                               (inc idx)))
-                             ;(follow_log "<-" (clone subacc))
-                            subacc)
-                           (or (is_number? tree)
-                               (is_string? tree)
-                               (== false  tree)
-                               (== true tree)
-                               (== null tree)
-                               (== undefined tree))
-                           tree
-                           (and (is_object? tree)
-                                (not (is_function? tree)))
-                           (do 
-                               (for_each (`k (keys tree))
-                                     (set_prop tree
-                                        k (follow_tree (prop tree k) ctx)))
-                                tree)
-                           (is_function? tree)
-                           tree))))
-                       
+                                       (if (< i (- t 1))
+                                         (push acc ",")))))                                       
+                                 lisp_tree)
+
+                            ;; if we have gone to concatenate mode, close with a paren
+                            ;; otherwise close with a bracket
+
+                            ;; remove any trailing commas 
+                            (if (== "," (last acc))
+                              (pop acc))
+                            (if in_concat
+                              (push acc
+                                    ")")
+                              (push acc
+                                    "]")))
+                          (is_object? lisp_tree)
+                          (do
+                            (push acc
+                                  "{ ")
+                            (map (fn (k i t) 
+                                   (do
+                                     (push acc (JSON.stringify k))
+                                     (push acc ":")
+                                     (quote_tree (prop lisp_tree k) ctx acc)
+                                     (if (< i (- t 1))
+                                       (push acc ","))))                                     
+                                 (keys lisp_tree))
+                            (push acc
+                                  "}"))
+                          (is_string? lisp_tree)
+                          (push acc (JSON.stringify lisp_tree))
+                          else
+                          (push acc lisp_tree))
+                        acc)))
+
+       ;(`escape_quotes (fn (text)
+        ;                 (replace (new RegExp "`" `g)
+                                  
+       
        (`quotem_log (if opts.quiet_mode
                         log
                         (defclog {`prefix: "compile_quotem" `background: "#503090" `color: "white" } )))
                     
+
        (`compile_quotem (fn (lisp_struct ctx)
-                            (let
-                                ((`acc [])
-                                 (`pcm nil)
-                                 (`encoded nil)
-                                 (`ctx (new_ctx ctx))
-                                 (`rval nil)                                
-                                 (`is_arr? (is_array? lisp_struct.1)))
-                              (= has_lisp_globals true)
-                              (set_ctx ctx "__IN_QUOTEM__" true)
-                              (when (verbosity ctx)
-                                (quotem_log " ->" (JSON.stringify lisp_struct)))
-                              (if (contains? lisp_struct.1 [ (+ "=" ":" "(") (+ "=" ":" ")") (+ "=" ":" "'") (+ "=" ":") ])
-                                  (+ "\"" lisp_struct.1 "\"")
-                                  (do
-                                     (= pcm (follow_tree lisp_struct.1 ctx))
-                                     (when (verbosity ctx)
-                                       (quotem_log "post follow_tree: " (clone pcm)))
-                                     (cond
-                                       (is_string? pcm)
-                                       (do 
-                                          (for_each (`t [ (+ "`" pcm "`") ])
-                                             (push acc t)))
-                                       (is_number? pcm)
-                                       (push acc pcm)
-                                       (or (== pcm false) (== pcm true))
-                                       (push acc pcm)
-                                       else
-                                       (do 
-                                          (= encoded (-> Environment `as_lisp pcm))
-                                          (= encoded (add_escape_encoding encoded))
-                                          (for_each (`t ["await" " " "Environment.do_deferred_splice" "(" "await" " " "Environment.read_lisp" "(" "'" encoded "'" ")" ")"]) ;; add_escape_encoding was here surrounding (lisp_writer ..)
-                                              (push acc t))))
-                                     (when (verbosity ctx)
-                                       (quotem_log "<-  " (join "" acc)))
-                                      acc)))))
-       
+                          (let
+                              ((`acc [])                              
+                               (`ctx (new_ctx ctx))                               
+                               (`quoted_js nil))                               
+                            (set_ctx ctx "__IN_QUOTEM__" true)
+                            (when (verbosity ctx)
+                              (quotem_log "->" (if (get_ctx ctx "__IN_LAMBDA__") "[IN LAMBDA]" "") (JSON.stringify lisp_struct.1)))
+                           
+                            ;; enter quote mode->
+                            (if (get_ctx ctx "__IN_LAMBDA__")
+                              (do
+                                ;; quote_tree (follow_tree2) returns a series of JS tokens, not a lisp tree
+                                ;; once it is this form it can be attached to the compilation structure
+                                ;; since all the compile_ functions are expected to return javascript
+                                ;; tokens.
+                                (= quoted_js (quote_tree lisp_struct.1 ctx)))                                                                
+                              (= quoted_js (quote_tree lisp_struct.1 ctx)))
+                            
+                            (when (verbosity ctx)
+                              (quotem_log "<-" (as_lisp quoted_js)))
+                            quoted_js)))
+                        
+                                                                        
        
        (`unq_log (if opts.quiet_mode
                      log
@@ -4992,7 +4926,7 @@
                       log
                       (defclog { `prefix: "compiler:" `background: "green" `color: "black" } )))
        (`assemble_output
-         (fn (js_tree)
+         (fn (js_tree suppress_join)
              (let
                  ((`text [])
                   (`in_quotes false)
@@ -5078,7 +5012,9 @@
                                                (push text t))))))))
                (do 
                 (assemble (flatten [js_tree]))
-                (join "" text))))))
+                (if suppress_join
+                  text
+                  (join "" text)))))))
     
     (declare (optimize (safety 2))
              (include length first second map do_deferred_splice

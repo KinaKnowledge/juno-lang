@@ -850,7 +850,7 @@
     [ "(quotem (unquotem false))"
     []
     [false]
-    "quotem/unquotem true statement in function"]
+    "quotem/unquotem false statement"]
     [ "(fn () (quotem (unquotem false)))"
     []
     [false]
@@ -2031,6 +2031,52 @@
     (testf 2)"
     []
     4
-    "Defglobal correctly passes on assignment type to global compiler context."]
-    
+   "Defglobal correctly passes on assignment type to global compiler context."]
+  ["(let 
+       ((tt1 (fn (v) (let ((abc (list 789 123))) `(list ,@(last abc) 456 ,#v))))) (tt1 12))"
+   []
+   `[ "=:list", 123, 456, 12 ]
+   "Properly handling a function bound unquote and splice to local scoped and function arguments"]
+ ["(let 
+       ((tt1 (fn (v) (let ((abc (list 789 123))) `(list ,@(last abc) 456 ,#v))))) (tt1 [ 16 ]))"
+  []
+  `[ "=:list", 123, 456, [ 16 ] ]
+  "Properly handling a function bound unquote with an array"
+  ]
+ ["(let ((abc (list 789 123))) `(list ,@(last abc) 456 ,#(+ 2 2)))"
+  []
+  `[ "=:list", 123, 456, 4]
+  "Properly quoting and unquoting top level local scope bindings"
+  ]
+ ["(let ((abc (list 789 123))) `(list ,@(last abc) 456 ,#(+ 2 2)))"
+  []
+  `[ "=:list", 123, 456, 4]
+  "Properly quoting and unquoting top level local scope bindings"
+  ]
+ ["(let () `(list 456 ,#[\"Something\" (+ 2 2)]))"
+  []
+  `[ "=:list", 456, [ "Something", 4 ] ]
+  "Properly handle top level unquoting of an array"]
+ ["(let  ((tt1 (fn (v) (let () `(list 456 (unquotem v))))))   (tt1 true  ))"
+  []
+  `[ "=:list", 456, [ true ] ]
+  "Properly handle unquotem of simple value"]
+ ["`(unquotem 4)"
+  []
+  `[ 4 ]
+  "Proper unquotem behavior for simple value"]
+ ["`(\"Hello\")"
+  []
+  `["Hello"]
+  "Proper string quoting behavior"]
+ ["((fn () `(unquotem 4)))"
+  []
+  `[4]
+  "Proper handling of unquotem for simple value"]
+ ["((fn () `(,#(+ 4 2))))"
+  []
+  [6]
+  "Proper handling of unquotem for expression in function"]
+ 
+ 
 ])
