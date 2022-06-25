@@ -1082,6 +1082,17 @@
    `tags: [ `conditional `logic `anaphoric `if `it ]
    })
 
+(defmacro ifa (test thenclause elseclause)
+    `(let 
+          ((it ,#test))
+         (if it ,#thenclause ,#elseclause))
+  {
+      `description: "Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause."
+      `usage: ["test:*" "thenclause:*" "elseclause:*"]
+      `tags: ["cond" "it" "if" "anaphoric"]
+  })  
+
+
 (defun map_range (n from_range to_range)
             (+ to_range.0
                (* (/ (- n from_range.0)
@@ -1152,15 +1163,7 @@
         (flatten_ctx ctx.parent var_table))
       var_table))) 
              
-(defmacro ifa (test thenclause elseclause)
-    `(let 
-          ((it ,#test))
-         (if it ,#thenclause ,#elseclause))
-  {
-      `description: "Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause."
-      `usage: ["test:*" "thenclause:*" "elseclause:*"]
-      `tags: ["cond" "it" "if" "anaphoric"]
-  })              
+            
   
 (defun identify_symbols (quoted_form _state)
     (let

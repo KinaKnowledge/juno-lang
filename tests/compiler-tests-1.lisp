@@ -543,7 +543,30 @@
     1015
     "global scope increment - lambda"
     
-    ]
+     ]
+    [ "(fn (v)
+           (dec test_set1 v))"
+    [5]
+    1010
+    "global scope decrement - lambda"
+    
+     ]
+    ["(progn
+        (defglobal _t1_ 0)
+        (dec _t1_ -2)
+        _t1_)"
+     []
+     2
+     "top level global scope value decrement"
+     ]
+    ["(progn
+        (defglobal _t1_ 1)
+        (inc _t1_ 2)
+        _t1_)"
+     []
+     3
+     "top level global scope value increment"
+     ]
     [ "(do
          (defglobal `abc { `abc: 123} )
          (= abc 123)
@@ -2077,6 +2100,20 @@
   []
   [6]
   "Proper handling of unquotem for expression in function"]
- 
+ [ "\"Hello 'there'\""
+  []
+  "Hello 'there'"
+  "Top level handling of single quotes in text string"
+  ]
+ [ "(fn () \"Hello 'there'\")"
+  []
+  "Hello 'there'"
+  "Single quotes in text string - lambda"
+  ]
+ [ "(fn () `(\"Hello 'there'\"))"
+  []
+  `["Hello 'there'"]
+  "Quoted single quotes in text string - lambda"
+  ]
  
 ])
