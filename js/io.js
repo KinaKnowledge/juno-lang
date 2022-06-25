@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-25 09:58:43
-// Version: 2022.06.25.09.58
-export const DLISP_ENV_VERSION='2022.06.25.09.58';
+// Build Time: 2022-06-25 11:06:09
+// Version: 2022.06.25.11.06
+export const DLISP_ENV_VERSION='2022.06.25.11.06';
 
 
 
@@ -111,7 +111,7 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
     compiled=null;
     input_buffer=null;
     invalid_js_ref_chars="+?-%&^#!*[]~{}|";
-    invalid_js_ref_chars_regex=new RegExp("[%+[>?<\}{&#^=~*!)(-]+");
+    invalid_js_ref_chars_regex=new RegExp("[\%\+\[\>\?\<\\}\{&\#\^\=\~\*\!\)\(\-]+");
     boilerplate="var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");";
     compiled_js=null;
     if (check_true ((await (await Environment.get_global("length"))(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,export_function_name))>0))){

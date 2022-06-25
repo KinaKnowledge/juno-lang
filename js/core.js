@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-06-25 09:58:43
-// Version: 2022.06.25.09.58
-export const DLISP_ENV_VERSION='2022.06.25.09.58';
+// Build Time: 2022-06-25 11:06:09
+// Version: 2022.06.25.11.06
+export const DLISP_ENV_VERSION='2022.06.25.11.06';
 
 
 
@@ -1183,7 +1183,7 @@ await Environment.set_global("date_to_string",async function(date_val,str_layout
     let formatter;
     let add_formatter;
     let format_desc;
-    split_regex=new RegExp("([.: T/, -]+)","g");
+    split_regex=new RegExp("([\.:\ T/, \-]+)","g");
     comps=(((str_layout instanceof String || typeof str_layout==='string')&&(str_layout).split(split_regex))||[]);
     t_flag=null;
     construction=[];

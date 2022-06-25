@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-25 09:58:43
-// Version: 2022.06.25.09.58
-export const DLISP_ENV_VERSION='2022.06.25.09.58';
+// Build Time: 2022-06-25 11:06:09
+// Version: 2022.06.25.11.06
+export const DLISP_ENV_VERSION='2022.06.25.11.06';
 
 
 
@@ -1910,7 +1910,7 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
                     if (check_true (it)){
                           return (acc).push(it)
                     } else {
-                          return undefined
+                          return 
                     }
                 }
             },quoted_form);
@@ -1939,7 +1939,7 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
                         if (check_true (it)){
                               return (acc).push(it)
                         } else {
-                              return undefined
+                              return 
                         }
                     }
                 };
@@ -2881,7 +2881,7 @@ await Environment.set_global("is_symbol?",async function(symbol_to_find) {
 await Environment.set_global("get_function_args",async function(f) {
     let r;
     let s;
-    r=new RegExp("^[a-zA-Z_]+ [a-zA-Z ]*\\(([a-zA-Z 0-9_,\\.\\n]*)\\)","gm");
+    r=new RegExp("^[a-zA-Z_]+ [a-zA-Z ]*\\\\(([a-zA-Z 0-9_,\\\\.\\\\n]*)\\\\)","gm");
     s=await f["toString"]();
     r=await (await Environment.get_global("scan_str"))(r,s);
     if (check_true ((((r && r.length)>0)&&((r && r["0"]) instanceof Object)))){

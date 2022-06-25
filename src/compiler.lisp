@@ -2816,16 +2816,15 @@
                                   (`how_much (or (and tokens.2
                                                       (compile tokens.2 ctx)) 
                                                  1)))
-                               ;(log "compile_val_mod: " target operation target_location tokens)
+                               ;(log "compile_val_mod: " target operation target_location "by: " how_much tokens)
                                (cond 
                                   (== target_location "global")
                                   (do
                                     (= has_lisp_globals true)
-                                    (= mod_source (+ "(" operation " " target " " how_much ")"))
-                                    ["await" " " "Environment.set_global(\"" target "\","
-                                     (compile (tokenize (read_lisp mod_source)
-                                                        ctx)
-                                              ctx) ")"])
+                                    ;(= mod_source (+ "(" operation " " target " " how_much ")"))
+                                    ["(" "await" " " "Environment.set_global(\"" target "\","
+                                     "await" " " "Environment.get_global(\"" target "\")" " " operation " " how_much "))"])
+                                               
                                   
                                   in_infix
                                   (do 
