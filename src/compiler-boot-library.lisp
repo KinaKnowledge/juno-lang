@@ -1968,7 +1968,19 @@
         `usage: ["compiler_function:function"]
         `tags:["compilation" "environment" "compiler"]
     })
- 
+
+(defun show (thing)
+    (cond
+      (is_function? thing)
+      (-> thing `toString)
+      else
+      thing)
+    { `usage: ["thing:function"]
+    `description: "Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument."
+    `tags:["compile" "source" "javascript" "js" "display" ]
+    
+    })
+
 (if_compile_time_defined
    `Deno
    (defglobal read_text_file

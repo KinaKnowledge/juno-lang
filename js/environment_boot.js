@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-25 20:10:11
-// Version: 2022.06.25.20.10
-export const DLISP_ENV_VERSION='2022.06.25.20.10';
+// Build Time: 2022-06-26 09:38:48
+// Version: 2022.06.26.09.38
+export const DLISP_ENV_VERSION='2022.06.26.09.38';
 
 
 
@@ -2916,6 +2916,16 @@ await Environment.set_global("set_compiler",async function(compiler_function) {
          return  compiler_function
     }
 },{ "name":"set_compiler","fn_args":"(compiler_function)","description":["=:+","Given a compiled compiler function, installs the provided function as the ","environment's compiler, and returns the compiler function."],"usage":["compiler_function:function"],"tags":["compilation","environment","compiler"]
+});
+await Environment.set_global("show",async function(thing) {
+     return  await async function(){
+        if (check_true( thing instanceof Function)) {
+             return await thing["toString"]()
+        } else  {
+             return thing
+        }
+    } ()
+},{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"]
 });
 await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.readTextFile")),(await Environment.get_global("Deno"))),{
     description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"]
