@@ -1,4 +1,4 @@
-;; DLisp λ to Javascript Compiler
+;; DLisp to Javascript Compiler
 ;; (c) 2022 Kina
 
 ;; **
@@ -13,13 +13,13 @@
 ;; Javascript representation as text.
 
 ;; The compiler takes an Environment, which is an object that
-;; is the "root closure".  The environment contains information
+;; provides a global context.  The environment contains information
 ;; on global definitions, compilation declarations, and provides
-;; evaluation functions.
+;; evaluation functions and external API access.
 
 ;; The function returns an array with two elements, the first
 ;; element is an instruction marker, which is an object that
-;; contains various keys which describe, in semantic terms, the
+;; contains keys which describe, in semantic terms, the
 ;; returned compiled source, which is the second element in
 ;; the array.
 
@@ -27,16 +27,17 @@
 ;; of the compilation mechanism, where each specialized compilation
 ;; function returns an array, where the first element is, in most cases,
 ;; an instruction signal providing context for WHAT type of compiled
-;; output is being returned by the specialized compilation function.
+;; output is being returned by the specialized compilation functions.
 
 ;; [ { INSTRUCTION OBJECT } STATEMENTS ]
 ;; [ { `ctype: "block" }     "{" "let" [...] "}" ]
 
 
-;; Options:
+;; Keys:
 
 ;; error_report (fn (errors)) - when compilation is completed, this function is called
 ;;                              with the accumulated compilation errors and warnings
+;;
 ;; env - environment object to use for the compilation environment
 ;; 
 ;; root_environment - if true, indicates that this is the Environment object being compiled
@@ -54,7 +55,12 @@
 ;;                  
 
 
-
+;; Note that this source was originially written in an earlier version of this lisp,
+;; which needed symbols to be quoted explicitly in certain form types, principally when
+;; they are being initially defined, such as in let.  This is no longer the case
+;; and the rules have been relaxed.  Once this compiler reached a consistently
+;; self hosted stage, the relaxed rules have been allowed, but in most cases
+;; the older quoted declarations are used for consistency.
 
 (defglobal `compiler 
   (fn (quoted_lisp opts)
@@ -62,7 +68,7 @@
 	((`get_global opts.env.get_global)
 	 (`Environment opts.env))      
      (let
-      ((`tree quoted_lisp)  ;; the JSON source
+      ((`tree quoted_lisp)  ;; the JSON source provided
        
        ;; when we are compiling forms that are compile time manipulated by functions, 
        ;; expanded_tree will hold the tree structure that is the result of those
@@ -140,8 +146,10 @@
        (`return_marker (fn ()
                            { `mark: "rval" }))
        (`entry_signature nil)
+       
        ;; TODO: Need to add pathing to the following structure, or instead, deprecate and use a
        ;; more direct approach.  Relevant to build_fn_with_assignment and build_anon_fn
+       
        (`temp_fn_asn_template [{"type":"special","val":(quotel "=:defvar"),"ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":(quotel "=:fn"),"ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
        (`anon_fn_template (-> temp_fn_asn_template `slice 2))
        (`build_fn_with_assignment (fn (tmp_var_name body args ctx)
@@ -283,7 +291,8 @@
                                   ctype
                                   else
                                   value)))
-       ;; sets a value in the current compilation context
+       
+       
        (`map_value_to_ctype (fn (value)
                                 (cond
                                   (== Function value)
@@ -304,12 +313,15 @@
                                   "Object"
                                   else
                                   value)))
+
+       ;; Spaghetti stack (aka saguaro stack) is implemented
+       ;; to represent lexical references in the block and functional scopes..
+       
+       ;; Sets a value in the current compilation context
+       
        (`set_ctx (fn (ctx name value)
                      (do
-                      (defvar `sanitized_name (sanitize_js_ref_name name))
-                      ;(set_ctx_log "set_ctx:  ref:" sanitized_name "type: " (sub_type value) "val: " (clone value))
-                      
-                                        ;(= name (sanitize_js_ref_name name))
+                      (defvar `sanitized_name (sanitize_js_ref_name name))                      
                       (if (and (is_array? value)
                                value.0.ctype)
                           (set_prop ctx.scope
@@ -331,9 +343,7 @@
        
        (`get_ctx (fn (ctx name)
                      (let
-                         ((`ref_name nil))
-                         
-                                        ;(log "get_ctx: " (sub_type name) name)
+                         ((`ref_name nil))                                                 
                        (cond 
                          (is_nil? name)
                          (throw SyntaxError (+ "get_ctx: nil identifier passed: " (sub_type name)))
@@ -350,6 +360,7 @@
                             (prop ctx.scope ref_name)
                             ctx.parent
                             (get_ctx ctx.parent ref_name)))))))
+       
        ;; preferred entry point                  
        (`get_ctx_val (fn (ctx name)
                          (let
@@ -387,7 +398,15 @@
                                       (prop ctx.scope ref_name)
                                       ctx.parent
                                       (get_ctx ctx.parent ref_name)))))))))
+
        
+       ;; Symbols at the current scope can be declared to be a certain type, which assists
+       ;; with compilation optimization, especially with regard to whether something is
+       ;; a function or not.
+
+       ;; The declare compiler directive (declare ...) is the lisp method. Internal
+       ;; compiler functions use the following functions to manipulate
+       ;; the declarations.
        
        (`get_declarations (fn (ctx name _tagged)
                          (let
@@ -410,8 +429,7 @@
                               (if (starts_with? (quote "=:") name)
                                   (= ref_name (-> name `substr 2))
                                   (= ref_name name))
-                              ;(console.log "get_declarations: refname: " ref_name oname (prop ctx.declared_types ref_name))
-                              ;(= ref_name (first (get_object_path ref_name)))
+                              
                                (cond
                                  (prop op_lookup ref_name)
                                  nil
@@ -438,7 +456,10 @@
                                  (prop ctx.declared_types
                                        sname))))
        
-       
+       ;; If a variable isn't declared, it can cause ambiguity in knowing
+       ;; the value it represents after being assigned to by a function.
+       ;; Therefore any implicit type inferences can be marked ambigous
+       ;; at points by the compiler.
 
        
        (`is_ambiguous? (fn (ctx name)
@@ -471,7 +492,10 @@
        (`unset_ambiguous (fn (ctx name)
                            (delete_prop ctx.ambiguous
                                      name)))                        
-                                
+
+       ;; Lisp symbol names can be broader in allowable symbols then JS, so we need to be able
+       ;; to deal with managing this mismatch...
+       
        (`invalid_js_ref_chars "+?-%&^#!*[]~{}|")
        (`invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+" `g))
        
@@ -483,7 +507,8 @@
                                     (> (length (scan_str invalid_js_ref_chars_regex (-> symname `substr 2))) 0)
                                     else
                                     (> (length (scan_str invalid_js_ref_chars_regex symname)) 0))))
-       
+
+       ;; Ensure that allowed lisp symbols are transformed into allowed Javascript representations       
        (`sanitize_js_ref_name (fn (symname)
                                   (cond 
                                     (not (is_string? symname))
@@ -535,8 +560,7 @@
                                                   (is_string? name)
                                                   name
                                                   else
-                                                  nil))
-                                        ;(`cannot_be_js_global (check_invalid_js_ref symname))
+                                                  nil))                                  
                                   (`ref (and symname (is_reference? name)))
                                   (`is_literal? (or (is_number? name)
                                                     (and (not ref) (is_string? name))
@@ -546,8 +570,7 @@
                                                     (and ref (== "else" symname))
                                                     (and ref (== "catch" symname))
                                                     (== true name)
-                                                    (== false name)))  ;; literals 
-                                        ;(`nada (log "find_in_context: symname: " symname "ref: " ref "is_literal?" is_literal?))
+                                                    (== false name)))  ;; literals                                         
                                   (`special (and ref symname (contains? symname (conj ["unquotem" "quotem"] (keys op_lookup)))))
                                   (`local (and (not special)
                                                (not is_literal?)
@@ -558,7 +581,7 @@
                                                 (not is_literal?)
                                                 ref
                                                 symname 
-                                                (get_lisp_ctx symname))) ;(prop Environment.context.scope symname)))
+                                                (get_lisp_ctx symname))) 
                                   (`val (cond is_literal?
                                           name
                                           (is_array? name)
@@ -627,19 +650,22 @@
                                         (= cpath (chop cpath))
                                         (= source (as_lisp (resolve_path cpath tree)))
                                         (if (> source.length 80)
-                                            (= source (+ (-> source `substr 0 80) "...")))
-                                        ;(console.log "compiler_source_chain: cpath: " cpath "source: " source "tree: " tree sources)
+                                            (= source (+ (-> source `substr 0 80) "...")))                                        
                                         (when (not (blank? source))
                                           (push sources source))
                                         (if (and (> cpath.length 0)
                                                  (< sources.length 4))
                                             (source_chain cpath tree sources))
                                         sources))))
+       
+       ;; When we need to go the original tree to retrieve the
+       ;; JSON source component, such as for error reporting
+       ;; this function takes the path value from the tokens
+       ;; and returns the value from the source tree.
+
        (`source_from_tokens (fn (tokens tree collect_parents?)
                                (let
-                                   ()
-                                   ;(console.log "source_from_tokens: tokens: " (clone tokens) "tree: " (clone tree) "expanded_tree: " (clone expanded_tree))
-                                   ;(debug)
+                                   ()                                  
                                    (cond
                                        (and tokens.path
                                             collect_parents?)
@@ -661,13 +687,27 @@
                                          (when (verbosity ctx)
                                            (console.warn "source_from_tokens: unable to determine source path from: " (clone tokens)))
                                            "")))))
-       (`source_comment (fn (tokens){ `comment: (source_from_tokens tokens expanded_tree) }))
-       (`NOT_FOUND  "__!NOT_FOUND!__")
-       (`THIS_REFERENCE (fn () "this"))
-       (`NOT_FOUND_THING (fn () true))
+       (`source_comment    (fn (tokens){ `comment: (source_from_tokens tokens expanded_tree) }))
+
+       
+       ;; the signal from the passed environment when an item is not found
+       
+       (`NOT_FOUND         "__!NOT_FOUND!__")
+       
+       (`THIS_REFERENCE    (fn () "this"))
+
+       ;; internal compiler representation of the meaning something wasn't found 
+       
+       (`NOT_FOUND_THING   (fn () true))
+              
        (`get_lisp_ctx_log (if opts.quiet_mode
                               log
                               (defclog { `prefix: "get_lisp_ctx"  `color: "darkgreen"  `background: "#A0A0A0"} )))
+
+
+       ;; used to get or find a lisp global in the environment...
+       ;; or an "external" reference, such as a globalThis thing.
+       
        (`get_lisp_ctx (fn (name)
                           (if (not (is_string? name))
                               (throw Error "Compiler Error: get_lisp_ctx passed a non string identifier")
@@ -683,28 +723,20 @@
 								(== global_ref "statement"))
 							    (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
 							    global_ref)))))
-                                
-                                
-                                ;(get_lisp_ctx_log "symbol name:" ref_name "type:" (if (== NOT_FOUND_THING ref_type) "[NOT FOUND]" ref_type) "extern_safe:" (not cannot_be_js_global)  "found in external env:" (not (== NOT_FOUND_THING ref_type)))
+                                                                                                
                                 (when (and (not (== NOT_FOUND_THING ref_type))
                                            (not (contains? ref_name standard_types))
                                     (set_prop referenced_global_symbols
                                               ref_name
                                               ref_type)))
-                                ;(log "get_lisp_ctx: found in Environment? " (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global))
-                                ;(log "    root_ctx: " (clone root_ctx))
+                                
                                 (cond 
-                                  (== NOT_FOUND_THING ref_type)
-                                  (do 
-                                    ;(get_lisp_ctx_log "returning undefined for " name)      
-                                    undefined ); ref_type
+                                  (== NOT_FOUND_THING ref_type)                                                                       
+                                  undefined 
                                   (== ref_type THIS_REFERENCE)
                                   ref_type
                                   (== comps.length 0)
-                                  (do 
-                                      ;(log "get_lisp_ctx: [basic reference]" name " returning: " ref_type)
-                                      ref_type)
-                                  
+                                  ref_type                                  
                                   (and (== comps.length 1)
                                        (is_object? ref_type)
                                        (contains? comps.0 (object_methods ref_type)))
@@ -723,13 +755,11 @@
                                   
                                   else
                                   (do
-                                   (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)
-                                   ;(console.error "compile: get_lisp_ctx: symbol not found: " name)
-                                   ;(error_log "get_lisp_ctx: unhandled name structure: " name)
-                                   undefined)
-                                   ;(throw SyntaxError (+ "get_lisp_ctx: unhandled name structure: " name))
+                                   (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)                                  
+                                   undefined)                                  
                                    )))))
-       
+
+       ;; internally used to get a local value in a compilation scope..
        
        (`get_val (fn (token ctx)
                      (do
@@ -755,28 +785,53 @@
                             ref_name))
                         else
                         token.val))))
+
+       ;; if the compiler determines that what it has been asked to compile
+       ;; references something in the environment, this is set to true
+       ;; It is returned in the metadata by the compiler to signal that
+       ;; the code will require an environment object to be passed
+       ;; to it explicitly.
+       
+       ;; Typically the function is wrapped in a closure that has
+       ;; the environment bound in, and then the compiler produced
+       ;; function is called with the bound environment.
+       
        (`has_lisp_globals false)
+
+       ;; The global context for everything inside a compilation.
+       ;; This can be passed in with the parameters object (opts)
+       ;; to allow for specific functions or values to be
+       ;; included in the code or to be referenced by the code
+       ;; distinct from the passed environment, which is
+       ;; passed in separately and is kept distinct from the root
+       ;; compiler context.
+       
        (`root_ctx   (new_ctx (or opts.ctx)))
+       
        (`lisp_global_ctx_handle Environment.context)
+
+
+       ;; Tokenization starts here, as the first pass.  The tree is read, each
+       ;; JSON element is categorized and tagged.
+       ;; Note that as part of this pass, if a form is encountered with an
+       ;; operator that refers to an eval_when: compile_time function,
+       ;; that function will be called, and the results of the compilation
+       ;; are tokenized instead, effectively replacing the form.
+
+       ;; This is how defmacro and the macro facilty are actualized.
+       
        (`tokenize_object (fn (obj ctx _path)
                              (do
-                              (= _path (or _path []))
-                              ;(log "tokenize_object: " (keys obj) (as_lisp obj))
+                              (= _path (or _path []))                             
                               (if  (== (JSON.stringify obj) "{}")
-                                   (do 
-                                        ;(log "tokenize_object: returning {}")
+                                   (do                                        
                                     { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true  `path: _path})
                                    (for_each (`pset (pairs obj))
-                                             (do
-                                        ;(log "pset: " pset)
-                                              {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))
-                                        ;{`type: `value `val:(tokenize pset.1) `ref: (is_reference? pset.1) `name: (desym pset.1) } ])))) )
-       
+                                             (do                                       
+                                              {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))                                              
        
        (`tokenize_quote (fn (args _path)
-                            (do
-                                        ;(log "tokenize_quote->" args)
-                                        ;(console.log "tokenize_quote->" args)
+                            (do                              
                              (cond
                                (== args.0 (quote "=:quote"))
                                {`type: `arr `__token__:true `source: (as_lisp args) `val: (conj [ { `type: `special `val: (quote "=:quote") `ref: true `name: "quote" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil  `path: _path}
@@ -786,7 +841,9 @@
                                else
                                {`type: `arr `__token__:true `source: (as_lisp args) 
                                `val: (conj [ { `type: `special `val: (quote "=:quotel") `ref: true `name: "quotel" `__token__:true } ] (-> args `slice 1)) `ref: (is_reference? args) `name: nil `path: _path }))))
-       ;; pass 1: build up a structure containing categorizations of the code to be compiled.
+
+       ;; The entry point to this recursive process
+       ;; Build up a structure containing categorizations of the code to be compiled...
        
        (`tokenize   (fn (args ctx _path _suppress_comptime_eval)
                         (let
@@ -798,18 +855,18 @@
                              (`idx -1)
                              (`tobject nil)
                              (`argdetails nil)
-                             (`argvalue nil)
-                                        ;(`tstate (or tstate { `in_quotem: false } ))
+                             (`argvalue nil)                                       
                              (`is_ref nil))
                           
-                          ;; (log "tokenize ->" (sub_type args) args)
                           (when (eq nil ctx)
                                 (console.error "tokenize: nil ctx passed: " (clone args))
                                 (throw ReferenceError "nil/undefined ctx passed to tokenize"))
                           (when (and (is_array? args)
                                      (not _suppress_comptime_eval))
+
                             ;; check to see this is an eval_when compile function, and evaluate it if so.
                             (= args (compile_time_eval ctx args _path))
+                            
                             (cond
                                 (> _path.length 1)
                                 (do
@@ -830,24 +887,26 @@
                                 (is_number? args)
                                 (or (== args true) (== args false)))
                             (first (tokenize [ args ] ctx _path true))
+                            
                             (and (is_array? args)
                                  (or (== args.0 (quote "=:quotem"))
                                      (== args.0 (quote "=:quote"))
                                      (== args.0 (quote "=:quotel"))))
-                            (do
-                                        ;(log "tokenize -> " args)
-                             (= rval (tokenize_quote args _path))
-                             ;(console.log "tokenize: A: returning quote/m:" rval)
+                            (do                                      
+                             (= rval (tokenize_quote args _path))                             
                              rval)
+                            
                             (and (is_array? args)				
                                  (not (get_ctx_val ctx `__IN_LAMBDA__))
                                  (== args.0 (quote "=:iprogn")))				 
                             (do			     
                                 (= rval (compile_toplevel args ctx))
                                 (tokenize rval ctx _path))
+                            
                             (and (not (is_array? args))
                                  (is_object? args))
                             (first (tokenize [args] ctx (+ _path 0)))
+                            
                             else
                             (do
                              (when (or (== args.0 (quote "=:fn"))
@@ -857,20 +916,17 @@
                                  (set_ctx ctx
                                           `__IN_LAMBDA__
                                           true))
-                             ;(log "tokenize:<-" (sub_type args) args)
+                            
                              (for_each (`arg args)
                               (do
                                (inc idx)
                                (= argdetails (find_in_context ctx arg))
-                               
-                               ;(log "tokenize: argdetails: " (clone argdetails))
-                                (= argvalue argdetails.val)
-                                (= argtype argdetails.type)
+                                                              
+                               (= argvalue argdetails.val)
+                               (= argtype argdetails.type)
                                 
-                                (= is_ref argdetails.ref)
-                                        ;(log "tokenize: " arg argtype argvalue)
-                                        ;(console.log "tokenize->: " arg)
-                                (cond
+                               (= is_ref argdetails.ref)                                      
+                               (cond
                                   (== (sub_type arg) "array")
                                   {`type: `arr `__token__:true  `val: (tokenize arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx) }
                                   (== argtype "Function")
@@ -894,14 +950,13 @@
                                   {`type: "arg" `__token__:true `val: arg `ref: true `name: (clean_quoted_reference (desym_ref arg)) `path: (+ _path idx)}
                                   (and (== argtype "unbound") is_ref)
                                   {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (clean_quoted_reference (sanitize_js_ref_name (desym_ref arg))) `path: (+ _path idx)}
-                                  
-                                        ;(== argtype "Boolean")
-                                        ;{`type: `bool `__token__:true `val: argvalue `ref: false `name: arg}
                                   else
                                   {`type: argtype `__token__:true  `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx)}))))))))
+       
        ;; checks to see if the first argument to the passed array is 
        ;; a compile time function, as registered in the environment's definitions 
-       ;; structure 
+       ;; structure
+       
        (`comp_time_log (defclog { `prefix: "compile_time_eval" `background: "#C0C0C0" `color: "darkblue" }))
        (`compile_time_eval 
          (fn (ctx lisp_tree path)
@@ -916,14 +971,12 @@
 		   
                    (when (verbosity ctx)
                      (comp_time_log path "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1)) )
-                   ;(comp_time_log "Environment ID: " (-> Environment `id) "precompile function to use: " precompile_function)
                    
                    (try
                       (= ntree (apply precompile_function (-> lisp_tree `slice 1)))
                       
                       (catch Error (`e)
-                        (do
-                         ;(console.error "precompilation error: " e)
+                        (do                       
                          (set_prop e
                                    `handled true)
                          (push errors
@@ -937,8 +990,7 @@
                                 `invalid: true
                                 `stack: e.stack
                                 })                         
-                         (throw e)
-                         )))
+                         (throw e))))
                    (if (eq nil ntree)
                        (push warnings (+ "compile time function " (-> lisp_tree.0 `substr 2) " returned nil"))
                        (do                        					  
@@ -947,19 +999,20 @@
 				       (JSON.stringify lisp_tree)))			    
 			    (= ntree (compile_time_eval ctx ntree path)))
 			(when (verbosity ctx)
-                          (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp ntree)))))
-                         ;(comp_time_log (-> lisp_tree.0 `substr 2) "<-", (clone ntree))))
+                          (comp_time_log (-> lisp_tree.0 `substr 2) "<- lisp: ", (as_lisp ntree)))))                         
                    ntree)
                  
                  lisp_tree)))
+
+       ;; Handles prefix to infix transformations
+       
        (`infix_ops   (fn (tokens ctx opts)
                          (let
                              ((`op_translation {
                                                `or: "||"
                                                `and: "&&"
                                                })
-                              (`ctx (new_ctx ctx))
-                              ;(`nada (log "infix_ops: ->" tokens ctx opts))
+                              (`ctx (new_ctx ctx))                             
                               (`math_op_a (prop (first tokens) `name))
                               (`math_op (or (prop op_translation math_op_a) math_op_a))
                               (`idx 0)
@@ -977,13 +1030,14 @@
                                                            (< idx (- tokens.length 0)))
                                                   (push acc math_op))))
                               (`acc [{"ctype":"expression"}]))
+                           
                            (set_ctx ctx
                                     `__COMP_INFIX_OPS__
                                     true)
                            (when (and (is_array? symbol_ctx_val)
                                       symbol_ctx_val.0.ctype)
                              (= symbol_ctx_val symbol_ctx_val.0.ctype))
-                           ;(log "infix + declaration: " declaration " ctx value: " )
+                           
                            (when (and (or (== declaration.type Array)
                                           (== declaration.type Object)                                          
                                           (== symbol_ctx_val `objliteral)                     
@@ -993,21 +1047,18 @@
                                           (== tokens.1.type `arr))
                                       (== math_op `+))
                              (= is_overloaded true))
-                           
-                           ;(log "infix +> op:" math_op "overloaded: " is_overloaded (rest tokens))
+                                                      
                            (if is_overloaded
                                (do
-                                (set_prop tokens
-                                          0
-                                          { `type: "function"
-                                          `val: (+ (quote "=:") `add)
-                                          `name: "add"
-                                          `ref: true })
+                                 (set_prop tokens
+                                           0
+                                           { `type: "function"
+                                            `val: (+ (quote "=:") `add)
+                                            `name: "add"
+                                            `ref: true })
                                 (= stmts (compile tokens ctx))
-                                ;(log  "infix (overloaded +): <-" stmts)
-                                (= stmts (wrap_assignment_value stmts ctx))
-                                ;; BACKTOHERE
-                                ;(log  "infix <- " stmts)
+                                
+                                (= stmts (wrap_assignment_value stmts ctx))                               
                                 stmts)
                                 
                                (do
@@ -1017,12 +1068,17 @@
                                   (inc idx)
                                   (= token (prop tokens idx))
                                    (add_operand)
-                                   (push acc (wrap_assignment_value (compile token ctx) ctx))))
-                                   
-                                   ; (log "infix <- " token (last acc))
+                                   (push acc (wrap_assignment_value (compile token ctx) ctx))))                                   
                                      
                                  (push acc ")")
                                 acc)))))
+
+
+       ;; The compile_* series of functions perform the various implementations of the
+       ;; language features.  Each take the tokens, and the current context structure and
+       ;; return arrays containing javascript tokens.  The returned arrays can be nested
+       ;; but the nesting is completely flattened when the javascript tokens are assembled
+       ;; into the final output text.
        
        (`compile_set_prop (fn (tokens ctx)
                               (let
@@ -1037,16 +1093,14 @@
                                                 (compile_wrapper_fn token.val ctx)
                                                 (compile token ctx)))
                                    (`idx 1))
-                                ;(log "compile_set_prop: tokens: " tokens)
-                                ;(log "compile_set_prop: target: " target) 
+                                
                                 (for_each (`t [preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" "let" " " target_reference "=" target ";" ] )
                                           (push wrapper t))
                                 (while (< idx (- tokens.length 1))
                                        (do
                                         (inc idx)
                                         (push acc target_reference)
-                                         (= token (prop tokens idx))
-                                         ;(log "compile_set_prop: " target_reference  idx "token: " token)
+                                         (= token (prop tokens idx))                                        
                                          (push acc "[")
                                          (= stmt (wrap_assignment_value (compile token ctx) ctx))
                                          (push acc stmt)
@@ -1057,10 +1111,7 @@
                                          (if (eq nil token)
                                              (throw Error "set_prop: odd number of arguments"))
                                          (= stmt (wrap_assignment_value (compile token ctx) ctx))
-                                         (push acc stmt)
-                                         ;(if (is_complex? token.val)
-                                          ;   (push acc (compile_wrapper_fn token.val ctx))
-                                           ;  (push acc (compile token ctx)))
+                                         (push acc stmt)                                        
                                          (push acc ";")))
                                 
                                 (push wrapper acc)
@@ -1071,7 +1122,7 @@
                                 (push wrapper "}")
                                 (push wrapper preamble.4)
                                 (push wrapper "()")
-                                ;(log "compile_set_prop: " (join "" (flatten wrapper)))
+                               
                                 wrapper)))
        
        
@@ -1082,9 +1133,7 @@
                                 (`target_val nil)
 				(`preamble (calling_preamble ctx))
                                 (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx) ctx)))
-                                
-                            ;(log "compile_prop: target: " target)
-                            ;(log "compile_prop: idx_key: " idx_key)
+                                                          
                             (if (> (safety_level ctx) 1)
                                 (do
                                     (= target_val (gen_temp_name "targ"))

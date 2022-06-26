@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-25 11:06:09
-// Version: 2022.06.25.11.06
-export const DLISP_ENV_VERSION='2022.06.25.11.06';
+// Build Time: 2022-06-25 20:10:11
+// Version: 2022.06.25.20.10
+export const DLISP_ENV_VERSION='2022.06.25.20.10';
 
 
 
@@ -1527,6 +1527,11 @@ await Environment.set_global("aif",async function(test_expr,eval_when_true,eval_
 },{ "eval_when":{ "compile_time":true
 },"name":"aif","macro":true,"fn_args":"(test_expr eval_when_true eval_when_false)","description":["=:+","Anaphoric If - This macro defines a scope in which the symbol `it is used ","to store the evaluation of the test form or expression.  It is then available ","in the eval_when_true form and, if provided, the eval_when_false expression."],"usage":["test_expression:*","eval_when_true:*","eval_when_false:*?"],"tags":["conditional","logic","anaphoric","if","it"]
 });
+await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
+     return  ["=:let",[["=:it",test]],["=:if","=:it",thenclause,elseclause]]
+},{ "eval_when":{ "compile_time":true
+},"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"]
+});
 await Environment.set_global("map_range",async function(n,from_range,to_range) {
      return  await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
 },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "]
@@ -1610,11 +1615,6 @@ await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
          return  var_table
     }
 },{ "name":"flatten_ctx","fn_args":"(ctx _var_table)"
-});
-await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
-     return  ["=:let",[["=:it",test]],["=:if","=:it",thenclause,elseclause]]
-},{ "eval_when":{ "compile_time":true
-},"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"]
 });
 await Environment.set_global("identify_symbols",async function(quoted_form,_state) {
     let acc;

@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-25 11:06:09
-// Version: 2022.06.25.11.06
-export const DLISP_ENV_VERSION='2022.06.25.11.06';
+// Build Time: 2022-06-25 20:10:11
+// Version: 2022.06.25.20.10
+export const DLISP_ENV_VERSION='2022.06.25.20.10';
 
 
 
@@ -1293,11 +1293,11 @@ export async function init_compiler(Environment) {
                         };
                          return  await async function(){
                             if (check_true( (NOT_FOUND_THING===ref_type))) {
-                                 return  undefined
+                                 return undefined
                             } else if (check_true( (ref_type===THIS_REFERENCE))) {
                                  return ref_type
                             } else if (check_true( ((comps && comps.length)===0))) {
-                                 return  ref_type
+                                 return ref_type
                             } else if (check_true( (((comps && comps.length)===1)&&(ref_type instanceof Object)&&await contains_ques_((comps && comps["0"]),await (await Environment.get_global("object_methods"))(ref_type))))) {
                                  return await (async function(){
                                     let __targ__54=ref_type;
