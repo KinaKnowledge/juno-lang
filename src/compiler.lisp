@@ -4734,7 +4734,9 @@
                                         `form: (source_from_tokens tokens expanded_tree)
                                         `parent_forms: (source_from_tokens tokens expanded_tree true)
                                         `invalid: true
-                                        })                        
+                                        })
+                        (if opts.throw_on_error
+                          (throw is_error))
                         (if (not e.handled)
                             (push errors
                                   is_error))))))))

@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-26 09:38:48
-// Version: 2022.06.26.09.38
-export const DLISP_ENV_VERSION='2022.06.26.09.38';
+// Build Time: 2022-06-26 09:51:29
+// Version: 2022.06.26.09.51
+export const DLISP_ENV_VERSION='2022.06.26.09.51';
 
 
 
@@ -7809,6 +7809,8 @@ export async function init_compiler(Environment) {
                                         is_error={
                                             error:(e && e.name),source_name:source_name,message:(e && e.message),form:await source_from_tokens(tokens,expanded_tree),parent_forms:await source_from_tokens(tokens,expanded_tree,true),invalid:true
                                         };
+                                        if (check_true ((opts && opts["throw_on_error"])))throw is_error;
+                                        ;
                                         if (check_true (await not((e && e["handled"])))){
                                               return (errors).push(is_error)
                                         }
