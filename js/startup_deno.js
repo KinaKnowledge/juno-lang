@@ -53,7 +53,6 @@ try {
   console.error("initialization error: ",error);
   Deno.exit(1);
 }
-//await env.evaluate(repl); // compile and load the repl
 
 try {
   await env.evaluate("(repl Deno.stdin Deno.stdout)",null, opts); // and call it..
