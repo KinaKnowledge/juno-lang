@@ -10,9 +10,10 @@ As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `
 
 Topics
 
+
 ## About Juno
 
-It's a JSON based lisp.  The lisp engine works on JSON as an input and manipulates the tree as a JSON representation, and returns a JSON structure as output.  This means the Object { } structure is a first class citizen.  Therefore this is completely legal out of the box:
+Juno is a JSON based lisp.  The lisp engine works on JSON as an input and manipulates the tree as a JSON representation, and returns a JSON structure as output.  This means the Object { } structure is a first class citizen.  Therefore this is completely legal out of the box:
 
 ```clojure
 (setq record
@@ -27,7 +28,7 @@ The above code example is in the Juno Lisp format, which allows for a broader sy
 
 The above is transformed into the following JSON structure:
 
-```json
+```JSON
 [
   "=:setq",
   "=:record",
@@ -59,11 +60,17 @@ But nobody wants to sit and write JSON all day, because it is tedious and ineffi
 | (        | Array Start     | [      
 | )        | Array End       | ] 
 | ;        | Comment         | 
-| |        | Multi Line String | " " 
+| \|       | Multi Line String | " " 
 | ,        | Whitespace      | space 
 
-Everything else is the same, and therefore, JSON can be embdedded directly in Juno notation.  This makes it easy to wrap JSON structures with functions and use them as templates, data sources or other purposes.
+Everything else is the same, and therefore, JSON can be embdedded directly in Juno notation.  This makes it easy to wrap JSON structures with functions and use them as templates, data sources or for other purposes.  The reader can be extended to support other extensions in the Juno notation style, by adding an entry to it's readtable object.
 
+Another nice benefit of using a JSON tree as a source structure, is the ease of which DOM structures can be established and manipulated, without having to weld multiple language styles together.  For example, here is a simple HTML:
 
+```Clojure
+(detail { `class: `standard }
+  (summary "A simple way to embed HTML into documents")
+  (paragraph { `class: `intro-style } "In this case the html P tag is referenced by the paragraph symbol, though html/p could also be used."))
+```
 		         
 
