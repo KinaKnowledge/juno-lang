@@ -65,7 +65,7 @@ But nobody wants to sit and write JSON all day, because it is tedious and ineffi
 
 Everything else is the same, and therefore, JSON can be embdedded directly in Juno notation.  This makes it easy to wrap JSON structures with functions and use them as templates, data sources or for other purposes.  The reader can be extended to support other extensions in the Juno notation style, by adding an entry to it's readtable object.
 
-Another nice benefit of using a JSON tree as a source structure, is the ease of which DOM structures can be established and manipulated, without having to weld multiple language styles together.  For example, here is a simple HTML:
+Another nice benefit of using a JSON tree as a source structure, is the ease of which DOM structures can be established and manipulated, without having to weld multiple language styles together.  For example, the following shows the standard way Juno constructs DOM structures, where tags are represented as function calls with tag attributes being represented by optional objects as the first argument of the tag function.
 
 ```Clojure
 (detail { `class: `standard }
@@ -73,5 +73,10 @@ Another nice benefit of using a JSON tree as a source structure, is the ease of 
   (paragraph { `class: `intro-style } 
              (content_for "Embeding HTML")))
 ```
-		         
+
+Because this is standard Juno notation it can be placed anywhere in your source, and the programmer doesn't have to wrangle with multiple source formats in the same concern.  
+
+When [Javascript was first being developed](https://web.archive.org/web/20200227184037/https://speakingjs.com/es5/ch04.html), Brendan Eich was hired to write it in a Scheme based language, which can easily work with HTML, which can be considered a simple LISP with XML notation, since all tag elements evaluate as a DOM result and are a list structure inside each other.  Instead, a Java-like language was developed to align with Sun Microsystem's Java and embedded "applets".  Nevertheless, if the DOM is considered the center of the browser, a Scheme-like language fits beautifully around it as a DOM manipulation language, and could be seamlessly embedded, providing an elegant way to naturally extend the declarative nature of HTML with custom tags, macros and imperative logic.  This is one of Juno's aims: to provide a lisp centered on the Browser and browser-like run-times such as [Deno](https://deno.land).  Of course, Juno can be used outside of this context as well.
+
+
 
