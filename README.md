@@ -28,7 +28,7 @@ The above code example is in the Juno Lisp format, which allows for a broader sy
 
 The above is transformed into the following JSON structure:
 
-```JSON
+```
 [
   "=:setq",
   "=:record",
@@ -70,7 +70,8 @@ Another nice benefit of using a JSON tree as a source structure, is the ease of 
 ```Clojure
 (detail { `class: `standard }
   (summary "A simple way to embed HTML into documents")
-  (paragraph { `class: `intro-style } "In this case the html P tag is referenced by the paragraph symbol, though html/p could also be used."))
+  (paragraph { `class: `intro-style } 
+             (content_for "Embeding HTML")))
 ```
 		         
 
