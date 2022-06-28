@@ -39,8 +39,7 @@
                         `safety: {
                                   `level: 2
                                   }
-                        }
-        `externs:{}
+                        }       
         })
      
      
@@ -578,8 +577,8 @@
                                           (push rval (prop (prop args j) i))))
                       rval))
                   { `usage: ["list0:array" "list1:array" "listn?:array"] 
-                    `description: "Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ..." 
-                    `tags: ["list","array","join" "merge"]
+                   `description: "Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ..." 
+                   `tags: ["list","array","join" "merge"]
                    })
        
        (trim (function (x)
@@ -696,8 +695,7 @@
                       (if (and (== undefined refval)
                                check_external_env)
                         (= refval (if check_external_env
-                                    (or (prop Environment.externs comps.0)
-                                        (get_outside_global comps.0)
+                                    (or (get_outside_global comps.0)
                                         NOT_FOUND)
                                     NOT_FOUND)))
                       
@@ -999,11 +997,11 @@
                                     ["(" args.0 ")" ".shift" "()" ])
                            `prepend: (fn (args)
                                        [ "(" args.0 ")" ".unshift" "(" args.1 ")"])
-                                        
+                           
                            `trim: (fn (args)
                                     [ "(" args.0 ")" ".trim()"])
 
-                                   
+                           
                            `lowercase: (fn (args)
                                          ["(" args.0 ")" ".toLowerCase()"])
                            `uppercase: (fn (args)
@@ -1076,5 +1074,5 @@
                                            check_external_env_default))
                `check_external_env (fn ()
                                      check_external_env_default))
-                                             
+     
      Environment)))

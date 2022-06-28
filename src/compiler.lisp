@@ -811,9 +811,6 @@
        
        (`root_ctx   (new_ctx (or opts.ctx)))
        
-       (`lisp_global_ctx_handle Environment.context)
-
-
        ;; Tokenization starts here, as the first pass.  The tree is read, each
        ;; JSON element is categorized and tagged.
        ;; Note that as part of this pass, if a form is encountered with an

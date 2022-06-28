@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-26 09:51:29
-// Version: 2022.06.26.09.51
-export const DLISP_ENV_VERSION='2022.06.26.09.51';
+// Build Time: 2022-06-28 08:20:54
+// Version: 2022.06.28.08.20
+export const DLISP_ENV_VERSION='2022.06.28.08.20';
 
 
 
@@ -319,7 +319,6 @@ export async function init_compiler(Environment) {
             let get_val;
             let has_lisp_globals;
             let root_ctx;
-            let lisp_global_ctx_handle;
             let tokenize_object;
             let tokenize_quote;
             let tokenize;
@@ -1348,7 +1347,6 @@ export async function init_compiler(Environment) {
                 };
                 has_lisp_globals=false;
                 root_ctx=await new_ctx(((opts && opts["ctx"])));
-                lisp_global_ctx_handle=(Environment && Environment["context"]);
                 tokenize_object=async function(obj,ctx,_path) {
                     _path=(_path||[]);
                     if (check_true ((await JSON.stringify(obj)==="{}"))){
