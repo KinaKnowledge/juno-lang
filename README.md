@@ -17,11 +17,11 @@ Juno is a JSON based lisp.  The lisp engine works on JSON as an input and manipu
 
 ```clojure
 (setq record
-      { `name: (name user)
-        `date: (new Date)
-        `tasks: [  "Take Walk"
-                   "Eat Dinner"
-                   "Write Documentation" ] })
+      { name: (name user)
+        date: (new Date)
+        tasks: [  "Take Walk"
+                  "Eat Dinner"
+                  "Write Documentation" ] })
 ```
 
 The above code example is in the Juno Lisp format, which allows for a broader syntax then JSON allows, but yet can be easily transformed into JSON (stripping the comments and adding commas).  The Juno reader operates on the above syntax and transforms it into a JSON structure that is then compiled and evaluated.  The response is returned in JSON form.  
@@ -68,9 +68,9 @@ Everything else is the same, and therefore, JSON can be embdedded directly in Ju
 Another nice benefit of using a JSON tree as a source structure, is the ease with which Document Object Model (DOM) structures can be established and manipulated, without having to weld multiple languages together.  For example, the following shows the standard way Juno constructs DOM structures, where tags are represented as function calls with tag attributes being represented by optional objects as the first argument of the tag function.
 
 ```Clojure
-(detail { `class: `standard }
+(detail { class: `standard }
   (summary "A simple way to embed HTML into documents")
-  (paragraph { `class: `intro-style } 
+  (paragraph { class: `intro-style } 
              (content_for "Embeding HTML")))
 ```
 
