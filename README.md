@@ -18,10 +18,10 @@ Juno is a JSON based lisp.  The lisp engine works on JSON as an input and manipu
 ```clojure
 (setq record
       { `name: (name user)
-	    `date: (new Date)
-	    `tasks: [  "Take Walk"
-		           "Eat Dinner"
-				   "Write Documentation" ] })
+        `date: (new Date)
+        `tasks: [  "Take Walk"
+                   "Eat Dinner"
+                   "Write Documentation" ] })
 ```
 
 The above code example is in the Juno Lisp format, which allows for a broader syntax then JSON allows, but yet can be easily transformed into JSON (stripping the comments and adding commas).  The Juno reader operates on the above syntax and transforms it into a JSON structure that is then compiled and evaluated.  The response is returned in JSON form.  
@@ -35,7 +35,7 @@ The above is transformed into the following JSON structure:
   {
     name: [ "=:name", "=:user" ],
     date: [ "=:new", "=:Date" ],
-    tasks: [ "Take Walk","Eat Dinner","Write Documentation" ]
+    tasks: [ "Take Walk", "Eat Dinner", "Write Documentation" ]
   }
 ]
 ```
