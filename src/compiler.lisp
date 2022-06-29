@@ -528,7 +528,7 @@
                                                       (== t "?")
                                                       (push acc "_ques_")
                                                       (== t "-")
-                                                      (push acc "_dash_")
+                                                      (push acc "_")
                                                       (== t "&")
                                                       (push acc "_amper_")
                                                       (== t "^")
@@ -563,12 +563,12 @@
                                                   (is_string? name)
                                                   name
                                                   else
-                                                  nil))                                  
+                                                  "nil"))                                  
                                   (`ref (and symname (is_reference? name)))
                                   (`is_literal? (or (is_number? name)
-                                                    (and (not ref) (is_string? name))
-                                                    (and ref (== "nil" symname))
-                                                    (and ref (== "null" symname))
+                                                    (and (not ref) (is_string? name))                                                    
+                                                    (== "nil" symname)
+                                                    (== "null" symname)
                                                     (and ref (== "undefined" symname))
                                                     (and ref (== "else" symname))
                                                     (and ref (== "catch" symname))
@@ -619,8 +619,9 @@
                                                 (== name undefined)
                                                 "literal"
                                                 else
-                                                (do
-                                                 (error_log "find_in_context: unknown type: " name)
+                                                (do                                                  
+                                                  (error_log "find_in_context: unknown type: " name)
+                                                  (debug)
                                                  "??")
                                                 )
                                `name: (cond (and symname

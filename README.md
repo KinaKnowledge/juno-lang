@@ -5,7 +5,7 @@ Juno is a self-hosted Lisp with zero dependencies that compiles to Javascript.  
 
 This dialect of Lisp straddles two worlds: Javascript features and conventions, and the composability and expressiveness of Lisp.  Javascript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, and generators.  Since Juno doesn't have different language constructs, this makes it easy to access and work with Javascript libraries and functions.  In fact you can inline javascript code if you so desired as part of your Lisp forms.
 
-As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `defun` or `defmacro`.  Since ultimately the code being produced is Javascript, there are some differences as well.  For example, Juno uses `snake_case` vs. `hyphenated-case` as in Lisp because hyphens can't be part of variable names.  You can use hyphenated names, but these will be sanitized for the Javascript world and harder to follow along in the debugger/inspection environment.
+As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `defun` or `defmacro`.  Since ultimately the code being produced is Javascript, there are some differences as well.  For example, Juno uses `snake_case` vs. `hyphenated-case` as in Lisp because hyphens can't be part of variable names in Javascript.  You can use hyphenated names, but these will be sanitized for Javascript language rules with underscores replacing the hyphens.
 
 
 Topics
@@ -57,7 +57,7 @@ But nobody wants to sit and write JSON all day, because it is tedious and ineffi
 
 | Notation | Meaning         | In JSON
 | -------- | --------------- | -------
-| (        | Array Start     | [      
+| (        | Array Start     | [ 
 | )        | Array End       | ] 
 | ;        | Comment         | 
 | \|       | Multi Line String | " " 

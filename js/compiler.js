@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-29 14:11:47
-// Version: 2022.06.29.14.11
-export const DLISP_ENV_VERSION='2022.06.29.14.11';
+// Build Time: 2022-06-29 18:14:18
+// Version: 2022.06.29.18.14
+export const DLISP_ENV_VERSION='2022.06.29.18.14';
 
 
 
@@ -1031,7 +1031,7 @@ export async function init_compiler(Environment) {
                                         } else if (check_true( (t==="?"))) {
                                              return (acc).push("_ques_")
                                         } else if (check_true( (t==="-"))) {
-                                             return (acc).push("_dash_")
+                                             return (acc).push("_")
                                         } else if (check_true( (t==="&"))) {
                                              return (acc).push("_amper_")
                                         } else if (check_true( (t==="^"))) {
@@ -1076,7 +1076,7 @@ export async function init_compiler(Environment) {
                     let symname;
                     let ref;
                     let __is_literal_ques___49= async function(){
-                        return (await is_number_ques_(name)||(await not(ref)&&(name instanceof String || typeof name==='string'))||(ref&&("nil"===symname))||(ref&&("null"===symname))||(ref&&("undefined"===symname))||(ref&&("else"===symname))||(ref&&("catch"===symname))||(true===name)||(false===name))
+                        return (await is_number_ques_(name)||(await not(ref)&&(name instanceof String || typeof name==='string'))||("nil"===symname)||("null"===symname)||(ref&&("undefined"===symname))||(ref&&("else"===symname))||(ref&&("catch"===symname))||(true===name)||(false===name))
                     };
                     let special;
                     let local;
@@ -1089,7 +1089,7 @@ export async function init_compiler(Environment) {
                             } else if (check_true( (name instanceof String || typeof name==='string'))) {
                                  return name
                             } else  {
-                                 return null
+                                 return "nil"
                             }
                         } ();
                         ref=(symname&&((name instanceof String || typeof name==='string')&&(await length(name)>2)&&await starts_with_ques_("=:",name)));
@@ -1135,6 +1135,8 @@ export async function init_compiler(Environment) {
                                      return "literal"
                                 } else  {
                                     (error_log)("find_in_context: unknown type: ",name);
+                                    debugger;
+                                    ;
                                      return  "??"
                                 }
                             } (),name:await async function(){
