@@ -1330,7 +1330,7 @@
                                                 token.ref
                                                 token.name
                                                 else
-                                                (throw Error (+ "assignment: invalid target: " token.name)))))
+                                                (throw SyntaxError (+ "assignment: invalid target: " token.name)))))
                                      (`target_details (get_declaration_details ctx target))
                                      (`target_location_compile_time (cond
                                                                       target_details.is_argument
@@ -1339,7 +1339,10 @@
                                                                       "global"
                                                                       else
                                                                       "local")))
-                                  (declare (string preamble.0))                                                                   
+                                  (declare (string preamble.0))
+                                  
+                                  (compiler_syntax_validation `compile_assignment tokens errors ctx expanded_tree)
+                                  
                                   (unset_ambiguous ctx target)
                                   
                                   (set_prop ctx
@@ -1834,7 +1837,7 @@
                            
                            ;; validate the let structure if we have the functionality
                            
-                           (compiler_syntax_validation `compile_let tokens errors ctx tree)
+                           (compiler_syntax_validation `compile_let tokens errors ctx expanded_tree)
                                 
                            
                            (set_prop ctx
@@ -2354,7 +2357,7 @@
                   (`condition_block nil)
                   (`condition_tokens (-> tokens `slice 1)))
                (declare (string preamble.0 preamble.1 preamble.2))
-               (compiler_syntax_validation `compile_cond tokens errors ctx tree)
+               (compiler_syntax_validation `compile_cond tokens errors ctx expanded_tree)
                (cond 
                  (not (== (% condition_tokens.length 2) 0))
                  (throw SyntaxError "cond: Invalid syntax: missing condition block")

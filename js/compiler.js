@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-29 10:02:50
-// Version: 2022.06.29.10.02
-export const DLISP_ENV_VERSION='2022.06.29.10.02';
+// Build Time: 2022-06-29 14:11:47
+// Version: 2022.06.29.14.11
+export const DLISP_ENV_VERSION='2022.06.29.14.11';
 
 
 
@@ -2137,7 +2137,7 @@ export async function init_compiler(Environment) {
                         if (check_true((token && token["ref"]))) {
                              return (token && token["name"])
                         } else  {
-                             throw new Error(("assignment: invalid target: "+(token && token["name"])));
+                             throw new SyntaxError(("assignment: invalid target: "+(token && token["name"])));
                             
                         }
                     } ());
@@ -2152,6 +2152,7 @@ export async function init_compiler(Environment) {
                         }
                     } ();
                     ;
+                    await (await Environment.get_global("compiler_syntax_validation"))("compile_assignment",tokens,errors,ctx,expanded_tree);
                     await unset_ambiguous(ctx,target);
                     await async function(){
                         let __target_obj__117=ctx;
@@ -2858,7 +2859,7 @@ export async function init_compiler(Environment) {
                     syntax_error=null;
                     idx=-1;
                     ;
-                    await (await Environment.get_global("compiler_syntax_validation"))("compile_let",tokens,errors,ctx,tree);
+                    await (await Environment.get_global("compiler_syntax_validation"))("compile_let",tokens,errors,ctx,expanded_tree);
                     await async function(){
                         let __target_obj__162=ctx;
                         __target_obj__162["return_last_value"]=true;
@@ -3694,7 +3695,7 @@ export async function init_compiler(Environment) {
                     condition_block=null;
                     condition_tokens=await tokens["slice"].call(tokens,1);
                     ;
-                    await (await Environment.get_global("compiler_syntax_validation"))("compile_cond",tokens,errors,ctx,tree);
+                    await (await Environment.get_global("compiler_syntax_validation"))("compile_cond",tokens,errors,ctx,expanded_tree);
                     await async function(){
                         if (check_true( await not((((condition_tokens && condition_tokens.length)%2)===0)))) {
                              throw new SyntaxError("cond: Invalid syntax: missing condition block");

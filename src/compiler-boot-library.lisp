@@ -121,12 +121,34 @@
 (defmacro desym_ref (val)
    `(+ "" (as_lisp ,#val)))
  
-
+(defmacro deref (val)
+  `(let
+      ((mval ,#val))
+    (if (and (is_string? mval)
+             (starts_with? "=:" mval))
+      (-> mval `substr 2)
+      mval))
+  {
+   `description: (+ "If the value that the symbol references is a binding value, aka starting with '=:', then return the symbol value "
+                    "instead of the value that is referenced by the symbol. This is useful in macros where a value in a form is "
+                    "to be used for it's symbolic name vs. it's referenced value, which may be undefined if the symbol being "
+                    "de-referenced is not bound to any value.")
+   `tags: ["symbol" "reference" "syntax" "dereference" "desym" ]
+   `usage: ["symbol:string"]
+                    
+   })
 
 (defmacro when (condition `& mbody) 
      `(if ,#condition
           (do
-              ,@mbody)))
+            ,@mbody))
+  {
+   `description: (+ "Similar to if, but the body forms are evaluated in an implicit progn, if the condition form or expression is true. "
+                    "The function when will return the last form value.  There is no evaluation of the body if the conditional expression "
+                    "is false.")
+   `usage: ["condition:*" "body:*"]
+   `tags: ["if" "condition" "logic" "true" "progn" "conditional"]                    
+   })
 
 
 (defmacro if_compile_time_defined (quoted_symbol exists_form not_exists_form)
@@ -1666,6 +1688,8 @@
       `compile_let:  [ [[0 1 `val] (list is_array?) "let allocation section"]
                        [[0 2] (list (fn (v) (not (== v undefined)))) "let missing block"]]
       `compile_cond: [ [[0] (list (fn (v) (== (% (length (rest v)) 2) 0))) "cond: odd number of arguments" ]]
+      `compile_assignment: [[[0 1] (list (fn (v) (not (== v undefined)))) "assignment is missing target and values"]
+                            [[0 2] (list (fn (v) (not (== v undefined)))) "assignment is missing value"]]
       })
 
 (defun compiler_source_chain (cpath tree sources)

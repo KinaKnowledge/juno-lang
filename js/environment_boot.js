@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-29 10:02:50
-// Version: 2022.06.29.10.02
-export const DLISP_ENV_VERSION='2022.06.29.10.02';
+// Build Time: 2022-06-29 14:11:47
+// Version: 2022.06.29.14.11
+export const DLISP_ENV_VERSION='2022.06.29.14.11';
 
 
 
@@ -126,10 +126,15 @@ await Environment.set_global("desym_ref",async function(val) {
 },{ "eval_when":{ "compile_time":true
 },"name":"desym_ref","macro":true,"fn_args":"(val)"
 });
+await Environment.set_global("deref",async function(val) {
+     return  ["=:let",[["=:mval",val]],["=:if",["=:and",["=:is_string?","=:mval"],["=:starts_with?","=:","=:mval"]],["=:->","=:mval","substr",2],"=:mval"]]
+},{ "eval_when":{ "compile_time":true
+},"name":"deref","macro":true,"fn_args":"(val)","description":["=:+","If the value that the symbol references is a binding value, aka starting with '=:', then return the symbol value ","instead of the value that is referenced by the symbol. This is useful in macros where a value in a form is ","to be used for it's symbolic name vs. it's referenced value, which may be undefined if the symbol being ","de-referenced is not bound to any value."],"tags":["symbol","reference","syntax","dereference","desym"],"usage":["symbol:string"]
+});
 await Environment.set_global("when",async function(condition,...mbody) {
      return  ["=:if",condition,["=:do",].concat(mbody)]
 },{ "eval_when":{ "compile_time":true
-},"name":"when","macro":true,"fn_args":"(condition \"&\" mbody)"
+},"name":"when","macro":true,"fn_args":"(condition \"&\" mbody)","description":["=:+","Similar to if, but the body forms are evaluated in an implicit progn, if the condition form or expression is true. ","The function when will return the last form value.  There is no evaluation of the body if the conditional expression ","is false."],"usage":["condition:*","body:*"],"tags":["if","condition","logic","true","progn","conditional"]
 });
 await Environment.set_global("if_compile_time_defined",async function(quoted_symbol,exists_form,not_exists_form) {
     if (check_true ((await (async function(){
@@ -2580,7 +2585,11 @@ await Environment.set_global("*compiler_syntax_rules*",{
          return  await (await Environment.get_global("not"))((v===undefined))
     }],"let missing block"]],compile_cond:[[[0],[async function(v) {
          return  ((await (await Environment.get_global("length"))(await (await Environment.get_global("rest"))(v))%2)===0)
-    }],"cond: odd number of arguments"]]
+    }],"cond: odd number of arguments"]],compile_assignment:[[[0,1],[async function(v) {
+         return  await (await Environment.get_global("not"))((v===undefined))
+    }],"assignment is missing target and values"],[[0,2],[async function(v) {
+         return  await (await Environment.get_global("not"))((v===undefined))
+    }],"assignment is missing value"]]
 });
 await Environment.set_global("compiler_source_chain",async function(cpath,tree,sources) {
     if (check_true (((cpath instanceof Array)&&tree))){
