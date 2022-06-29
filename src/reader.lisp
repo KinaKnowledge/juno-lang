@@ -61,6 +61,10 @@
 	   (`in_quotes 1)
 	   (`in_long_text 2)
 	   (`in_comment 3)
+           (`in_single_quote 4)
+           (`reading_object false)
+           (`mode in_code)  ;; start out in code
+           
 	   (`local_text (fn ()
 			  (let
 			      ((`start (Math.max 0 (- idx 10)))
@@ -71,12 +75,16 @@
                                                               (+ column_number offset)
                                                               column_number))))
 	   
-	   (`in_single_quote 4)
-	   (`mode in_code)  ;; start out in code
-	   (`read_table {                             
+	   
+	  
+	   (`read_table (+ {}
+			   (if opts.read_table_entries
+			       opts.read_table_entries
+			       {})
+			   {                             
                          "(":[")" (fn (block)
 				    (do 
-				      block))]
+				      block))]                         
 			 "[":["]" (fn (block)
 				    (do 
 				      block))]
@@ -91,7 +99,8 @@
 					 (`value nil)
 					 (`cpos nil)
 					 (`state key_mode)
-					 (`block_length (- (length block) 1)))					
+					 (`block_length (- (length block) 1)))
+                                      (= reading_object false)
 				      (while (< idx block_length)
 					(do
 					  (inc idx) ; move to next position - assumption we positioned for the key
@@ -122,6 +131,7 @@
 					      (= cpos (-> key `indexOf ":"))
 					      (= value (-> key `substr (+ cpos 1)))
 					      (= key (-> key `substr 0 cpos))
+                                              (= value (process_word (split_by "" value) 0))
 					      (set_prop obj
 							key
 							value))
@@ -140,14 +150,17 @@
 					      (set_prop obj
 							key
 							(prop block idx))))))
-				      obj))]
+				      obj))
+                              (fn ()
+                                (do                                  
+                                  (= reading_object true)))]
 			 
 			 "\"":["\"" (fn (block)
 				      (do 
 					;(log "got quote block:" block)
 					["quotes" block]))]
 			 
-			 })
+			 }))
 	   (`get_char (fn (pos)
 			(prop in_buffer pos)))
            (`error (fn (type message offset)                    
@@ -184,7 +197,7 @@
 	   (`process_word (fn (word_acc backtick_mode)
 			    (let
 				((`word (join "" word_acc))
-				 (`word_as_number (parseFloat word)))
+				 (`word_as_number (Number word))) ;(parseFloat word)))
                               (when debugmode
 				(log "process_word: " word word_as_number backtick_mode))
 			      (cond
@@ -279,7 +292,7 @@
 				
 				(cond 				  
 				  (and (== next_c undefined)
-                                       (not (== (prop (last handler_stack) 0) undefined))
+                                       (not (== (prop (last handler_stack) 0) undefined))				       
 				       (or (not (== c (prop (last handler_stack) 0)))
 					   (> handler_stack.length 1)))
                                   (error "premature end"
@@ -444,9 +457,13 @@
 				       (prop read_table c)
 				       (first (prop read_table c)))
 				  (do 
-					;(log _depth "new handler key: " c "pushing into handler_stack.." (prop read_table c))
-				    
-				    (push handler_stack 
+					;(log _depth "new handler key: " c "pushing into handler_stack.." (prop read_table c))				   
+                                    (when (prop (prop read_table c) 2)
+                                      (= handler (prop (prop read_table c) 2))
+                                      (handler)
+                                      (= handler nil))
+
+                                    (push handler_stack 
 					  (prop read_table c))
                                     
 				    (if (> word_acc.length 0)
@@ -482,7 +499,8 @@
 					(= word_acc [])))
 				    (= backtick_mode 1))
 				  
-				  (and (== mode in_code)
+				  (and 
+                                       (== mode in_code)
 				       (== c ":")
 				       (== word_acc.length 0)
 				       (> acc.length 0)
@@ -554,3 +572,4 @@
 	    (first [output_structure]))
 					;(when opts.debug (console.log "read<-" (first output_structure)))
 	  (first output_structure))))))
+

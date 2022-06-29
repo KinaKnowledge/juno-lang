@@ -66,7 +66,24 @@
     []
     `[]
     "primitive compilation: array"
-    ]
+     ]
+ [ "{ `abc: 123 `def:true `ghi:\"ok\" `jkl: nil}"
+  []
+  `{ abc: 123, def: true, ghi: "ok" `jkl: null }
+  "basic object definition with keys and primitive types" ]
+ [ "{ 0:1 }"
+  []
+  `{ "0": 1 }
+  "numeric keys handled properly" ]
+ [ "{ keys_are_not_evaluated: true }"
+  []
+  `{ keys_are_not_evaluated: true }
+  "object keys are not evaluated" ]
+ [ "(Number \"123.456\")"
+  []
+  123.456
+  "Numbers converted properly" ]
+ 
     [ "(fn ()
            true)"
     []

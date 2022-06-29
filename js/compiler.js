@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-28 08:20:54
-// Version: 2022.06.28.08.20
-export const DLISP_ENV_VERSION='2022.06.28.08.20';
+// Build Time: 2022-06-29 10:02:50
+// Version: 2022.06.29.10.02
+export const DLISP_ENV_VERSION='2022.06.29.10.02';
 
 
 
@@ -342,6 +342,8 @@ export async function init_compiler(Environment) {
             let compile_block;
             let Expression;
             let Statement;
+            let NumberType;
+            let StringType;
             let NilType;
             let UnknownType;
             let ArgumentType;
@@ -721,8 +723,8 @@ export async function init_compiler(Environment) {
                              return "Function"
                         } else if (check_true( (AsyncFunction===value))) {
                              return "AsyncFunction"
-                        } else if (check_true( (Number===value))) {
-                             return "Number"
+                        } else if (check_true( (NumberType===value))) {
+                             return "NumberType"
                         } else if (check_true( (Expression===value))) {
                              return "Expression"
                         } else if (check_true( (Array===value))) {
@@ -2546,6 +2548,8 @@ export async function init_compiler(Environment) {
                 };
                 Expression=new Function("","{ return \"expression\" }");
                 Statement=new Function("","{ return \"statement\" }");
+                NumberType=new Function("","{ return \"number\" }");
+                StringType=new Function("","{ return \"string\" }");
                 NilType=new Function("","{ return \"nil\" }");
                 UnknownType=new Function(""," { return \"unknown\"} ");
                 ArgumentType=new Function(""," { return \"argument\" }");
@@ -5539,7 +5543,7 @@ export async function init_compiler(Environment) {
                                     } else if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="AsyncFunction"))) {
                                          return AsyncFunction
                                     } else if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="Number"))) {
-                                         return Number
+                                         return NumberType
                                     } else if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="expression"))) {
                                          return Expression
                                     } else  {
@@ -6079,7 +6083,7 @@ export async function init_compiler(Environment) {
                     };
                     await async function(){
                         if (check_true( (((for_args && for_args.length)===2)&&await not(((for_args && for_args["1"]) instanceof Array))))) {
-                            await set_ctx(ctx,idx_iter,Number);
+                            await set_ctx(ctx,idx_iter,NumberType);
                             await (async function() {
                                 let __for_body__509=async function(t) {
                                      return  (acc).push(t)
@@ -6609,7 +6613,7 @@ export async function init_compiler(Environment) {
                                 } else if (check_true( (declaration==="number"))) {
                                      return  await (async function() {
                                         let __for_body__590=async function(name) {
-                                             return  await set_declaration(ctx,name,"type",Number)
+                                             return  await set_declaration(ctx,name,"type",NumberType)
                                         };
                                         let __array__591=[],__elements__589=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
@@ -6626,7 +6630,7 @@ export async function init_compiler(Environment) {
                                 } else if (check_true( (declaration==="string"))) {
                                      return  await (async function() {
                                         let __for_body__594=async function(name) {
-                                             return  await set_declaration(ctx,name,"type",String)
+                                             return  await set_declaration(ctx,name,"type",StringType)
                                         };
                                         let __array__595=[],__elements__593=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
@@ -6830,10 +6834,10 @@ export async function init_compiler(Environment) {
                              return ref_type="Array"
                         } else if (check_true( (ref_type===NilType))) {
                              return ref_type="nil"
-                        } else if (check_true( (ref_type===Number))) {
+                        } else if (check_true( (ref_type===NumberType))) {
                              return ref_type=ArgumentType
-                        } else if (check_true( (ref_type===String))) {
-                             return ref_type="String"
+                        } else if (check_true( (ref_type===StringType))) {
+                             return ref_type="StringType"
                         } else if (check_true( (ref_type===ArgumentType))) {
                              return true
                         } else  {
@@ -6925,7 +6929,7 @@ export async function init_compiler(Environment) {
                             })();
                             (acc).push(")");
                              return  acc
-                        } else if (check_true( ((call_type==="local")&&((ref_type==="Number")||(ref_type==="String")||(ref_type==="Boolean"))))) {
+                        } else if (check_true( ((call_type==="local")&&((ref_type==="NumberType")||(ref_type==="StringType")||(ref_type==="Boolean"))))) {
                             (acc).push((tokens && tokens["0"] && tokens["0"]["name"]));
                              return  acc
                         } else if (check_true( ((call_type==="local")&&await not((ref_type===ArgumentType))&&(tokens instanceof Array)))) {
@@ -7003,7 +7007,7 @@ export async function init_compiler(Environment) {
                     if (check_true ((declarations && declarations["inlined"]))){
                          refname=await sanitize_js_ref_name(refname)
                     };
-                    if (check_true (((reftype==="String")&&await not((refval===undefined))))){
+                    if (check_true (((reftype==="StringType")&&await not((refval===undefined))))){
                          refval="text"
                     };
                      return  await async function(){
@@ -7599,9 +7603,9 @@ export async function init_compiler(Environment) {
                                                             })();
                                                             await push_as_arg_list(acc,compiled_values);
                                                              return  (acc).push(")")
-                                                        } else if (check_true( ((null==(declared_type && declared_type["type"]))&&(((tokens && tokens["0"] && tokens["0"]["type"])==="arg")||((rcv instanceof String || typeof rcv==='string')&&await get_declaration_details(ctx,rcv))||((rcv instanceof Array)&&((rcv && rcv["0"]) instanceof Object)&&((rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof String || typeof (rcv && rcv["0"] && rcv["0"]["ctype"])==='string')&&((rcv && rcv["0"] && rcv["0"]["ctype"])&&(await not(await contains_ques_("unction",(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("string"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("String"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("nil"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("Number"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("undefined"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("objliteral"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("Boolean"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("array"===(rcv && rcv["0"] && rcv["0"]["ctype"])))))))))) {
+                                                        } else if (check_true( ((null==(declared_type && declared_type["type"]))&&(((tokens && tokens["0"] && tokens["0"]["type"])==="arg")||((rcv instanceof String || typeof rcv==='string')&&await get_declaration_details(ctx,rcv))||((rcv instanceof Array)&&((rcv && rcv["0"]) instanceof Object)&&((rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof String || typeof (rcv && rcv["0"] && rcv["0"]["ctype"])==='string')&&((rcv && rcv["0"] && rcv["0"]["ctype"])&&(await not(await contains_ques_("unction",(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("string"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("StringType"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("nil"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("NumberType"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("undefined"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("objliteral"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("Boolean"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("array"===(rcv && rcv["0"] && rcv["0"]["ctype"])))))))))) {
                                                             if (check_true (show_hints)){
-                                                                 (comp_warn)("value ambiguity - use declare to clarify: ",(await source_from_tokens(tokens,expanded_tree,true)||await (await Environment.get_global("as_lisp"))(rcv)))
+                                                                 (comp_warn)("value ambiguity - use declare to clarify: ",await source_from_tokens(tokens,expanded_tree,true)," ",await (await Environment.get_global("as_lisp"))(rcv))
                                                             };
                                                             tmp_name=await gen_temp_name("array_op_rval");
                                                             if (check_true ((((rcv && rcv["0"]) instanceof Object)&&((rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof String || typeof (rcv && rcv["0"] && rcv["0"]["ctype"])==='string')&&await contains_ques_("block",((rcv && rcv["0"] && rcv["0"]["ctype"])||""))))){
@@ -7739,9 +7743,15 @@ export async function init_compiler(Environment) {
                                                             ctype:"string"
                                                         },("\""+await cl_encode_string((tokens && tokens["val"]))+"\"")]
                                                     } else {
-                                                          return [{
-                                                            ctype:await sub_type((tokens && tokens["val"]))
-                                                        },(tokens && tokens["val"])]
+                                                         if (check_true (await is_number_ques_((tokens && tokens["val"])))){
+                                                              return [{
+                                                                ctype:"NumberType"
+                                                            },(tokens && tokens["val"])]
+                                                        } else {
+                                                              return [{
+                                                                ctype:await sub_type((tokens && tokens["val"]))
+                                                            },(tokens && tokens["val"])]
+                                                        }
                                                     }
                                                 } else if (check_true( ((tokens && tokens["ref"])&&(opts && opts["root_environment"])))) {
                                                      return  await (await Environment.get_global("path_to_js_syntax"))((await sanitize_js_ref_name((tokens && tokens.name))).split("."))

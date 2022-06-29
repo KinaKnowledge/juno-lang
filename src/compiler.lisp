@@ -302,8 +302,8 @@
                                   "Function"
                                   (== AsyncFunction value)
                                   "AsyncFunction"
-                                  (== Number value)
-                                  "Number"
+                                  (== NumberType value)
+                                  "NumberType"
                                   (== Expression value)
                                   "Expression"
                                   (== Array value)
@@ -1641,6 +1641,8 @@
        
        (`Expression (new Function "" "{ return \"expression\" }"))
        (`Statement (new Function "" "{ return \"statement\" }"))
+       (`NumberType (new Function "" "{ return \"number\" }"))
+       (`StringType (new Function "" "{ return \"string\" }"))
        (`NilType (new Function "" "{ return \"nil\" }"))
        (`UnknownType (new Function "" " { return \"unknown\"} "))
        (`ArgumentType (new Function "" " { return \"argument\" }"))
@@ -3273,7 +3275,7 @@
                                 (== assignment_value.0.ctype "AsyncFunction")
                                 AsyncFunction
                                 (== assignment_value.0.ctype "Number")
-                                Number
+                                NumberType
                                 (== assignment_value.0.ctype "expression")
                                 Expression 
                                 else
@@ -3645,7 +3647,7 @@
                  (and (== for_args.length 2) ;; simplest (for_each (`i my_array) ...
                       (not (is_array? for_args.1)))
                  (do 
-                  (set_ctx ctx idx_iter Number)
+                  (set_ctx ctx idx_iter NumberType)
                   (for_each (`t ["for" "(" "let" " "  idx_iter " " "in" " " element_list ")" " " "{" ])
                    (push acc t))
                    
@@ -3886,11 +3888,11 @@
                                             (== declaration "number")
                                             (do
                                                (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type Number)))
+                                                  (set_declaration ctx name `type NumberType)))
                                             (== declaration "string")
                                             (do
                                                (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type String)))
+                                                  (set_declaration ctx name `type StringType)))
                                             (== declaration "boolean")
                                             (do
                                                (for_each (`name (each targeted `name))
@@ -3986,10 +3988,10 @@
                      (= ref_type "Array")
                      (== ref_type NilType)
                      (= ref_type "nil")
-                     (== ref_type Number)
+                     (== ref_type NumberType)
                      (= ref_type ArgumentType)
-                     (== ref_type String)
-                     (= ref_type "String")
+                     (== ref_type StringType)
+                     (= ref_type "StringType")
                      (== ref_type ArgumentType)
                      true
                      else
@@ -4039,8 +4041,8 @@
                     
                     (and 
                          (== call_type "local")
-                         (or (== ref_type "Number")
-                             (== ref_type "String")
+                         (or (== ref_type "NumberType")
+                             (== ref_type "StringType")
                              (== ref_type "Boolean")))
                     (do
                         ;(sr_log "<- local scoped reference is: " tokens.0.name)
@@ -4130,7 +4132,7 @@
                ;; object key to determine how to handle, so things like "block" or "Function"
                ;; will cause problems
                
-               (when (and (== reftype "String")
+               (when (and (== reftype "StringType")
                           (not (== refval undefined)))
                           ;(not (== refval "__!NOT_FOUND!__")))
                  (= refval "text"))  
@@ -4563,9 +4565,9 @@
                                           (and rcv.0.ctype
                                                (and (not (contains? "unction" rcv.0.ctype))
                                                     (not (== "string" rcv.0.ctype))
-                                                    (not (== "String" rcv.0.ctype))
+                                                    (not (== "StringType" rcv.0.ctype))
                                                     (not (== "nil" rcv.0.ctype))
-                                                    (not (== "Number" rcv.0.ctype))
+                                                    (not (== "NumberType" rcv.0.ctype))
                                                     (not (== "undefined" rcv.0.ctype))
                                                     (not (== "objliteral" rcv.0.ctype))
                                                     (not (== "Boolean" rcv.0.ctype))
@@ -4578,8 +4580,8 @@
                               
                               (do
                                 (when show_hints
-                                  (comp_warn "value ambiguity - use declare to clarify: " (or (source_from_tokens tokens expanded_tree true)
-                                                                                              (as_lisp rcv))))
+                                  (comp_warn "value ambiguity - use declare to clarify: " (source_from_tokens tokens expanded_tree true) " " 
+                                                                                              (as_lisp rcv)))
                                 (= tmp_name (gen_temp_name "array_op_rval"))
                                 
                                 (if (and (is_object? rcv.0)
@@ -4678,7 +4680,9 @@
                           (if (and (== tokens.type "literal")
                                    (is_string? tokens.val))                             
                                [ { `ctype: "string" } (+ "\"" (cl_encode_string tokens.val) "\"") ]                        
-                               [{ `ctype: (sub_type tokens.val)  } tokens.val ])  ;; straight value
+                               (if (is_number? tokens.val)
+                                 [{ `ctype: "NumberType" } tokens.val ]   ;; Number is also a function that can be used so we use NumberType to represent literal numbers
+                                 [{ `ctype: (sub_type tokens.val)  } tokens.val ]))  ;; straight value
                           
                           (and tokens.ref
                                opts.root_environment)
