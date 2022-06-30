@@ -277,7 +277,24 @@
     []
     false
     "undefine symbol to invalid reference"
-    ]
+     ]
+ ["(defconst my_constant 123) (describe `my_constant)"
+  []
+  `{ type: "Number", location: "global", name: "my_constant", constant: true }
+  "global constant definition is mark as a constant" ]
+ ["(undefine `my_constant) (defconst my_constant 123) (undefine `my_constant) (describe `my_constant)"
+  []
+  `{ type: "undefined", location: null, name: "my_constant" }
+  "global constant allowed to be undefined."
+  ]
+ ["(defconst my_constant 456)"
+  []
+  456
+  "global constant definition returns value" ]
+ ["(undefine `my_constant) (defconst my_constant 434) (try (= my_constant 444) (catch TypeError (`e) \"nope!\"))"
+  []
+  "nope!"
+  "receive TypeError when constant is attempted to be changed" ]
     [ "(fn (val)
               (do 
                   (if (< val 0)
@@ -2132,5 +2149,13 @@
   `["Hello 'there'"]
   "Quoted single quotes in text string - lambda"
   ]
+ [ "(compile `(let () (defconst my_new_constant 123)))"
+  []
+  "{const my_new_constant=123;}"
+  "defconst in local scope creates a const allocation."]
+ [ "(compile `(progn (defconst my_new_constant 123)))"
+  []
+  "{const __GG__=Environment.get_global; return  await Environment.set_global(\"my_new_constant\",123,null,true)}"
+  "defconst in top-level progn compiles to set global scope"]
  
 ])

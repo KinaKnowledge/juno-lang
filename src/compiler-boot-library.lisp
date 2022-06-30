@@ -215,50 +215,7 @@
      })
          
 
-;(defexternal get_outside_global 
- ;            (fn (refname)
-  ;                (let
-   ;                 ((`fval (new Function "refname"
-    ;                   (+ "{ try { if (typeof " refname " === 'undefined') { return undefined } else { return  " refname " } } catch (ex) { return undefined }}"))))
-     ;               (fval refname))))
-                
-(defun get_object_path_old (refname)
-    (let
-        ((`chars (split_by "" refname))
-         (`comps [])
-         (`mode 0)
-         (`name_acc []))
-        ;(declare (include length))
-                 
-        (for_each (`c chars)
-          (do
-            (cond
-                (and (== c ".")
-                     (== mode 0))
-                (do 
-                    (push comps
-                          (join "" name_acc))
-                    (= name_acc []))
-                (and (== mode 0)
-                     (== c "["))
-                (do
-                   (= mode 1)
-                   (push comps
-                         (join "" name_acc))
-                   (= name_acc []))
-                (and (== mode 1)
-                     (== c "]"))
-                         
-                (do
-                   (= mode 0)
-                   (push comps
-                         (join "" name_acc))
-                   (= name_acc []))
-                else
-                (push name_acc c))))
-        (if (> (length name_acc) 0)
-            (push comps (join "" name_acc)))
-        comps))
+              
 
 (defun_sync get_object_path (refname)
   (if (or (> (-> refname `indexOf ".") -1)
@@ -303,7 +260,7 @@
              
 
 
-(defun `do_deferred_splice (tree)
+(defun do_deferred_splice (tree)
     (let
         ((`rval nil)
          (`idx 0)
@@ -381,7 +338,7 @@
                                        defset.2])))))
      acc))
 
-(defun `type (x)
+(defun type (x)
     (cond
         (== nil x) "null"
         (== undefined x) "undefined"
@@ -610,7 +567,7 @@
        (> (length ,#val) 2)
        (starts_with? (quote "=:") ,#val))) 
     
-(defun `scan_str (regex search_string)
+(defun scan_str (regex search_string)
      (let
         ((`result      nil)
          (`last_result nil)
@@ -684,8 +641,7 @@
                            (find_in_ctx the_ctx.parent))))
        (`reference (take comps))
        (`val_type (find_in_ctx ctx))) ;; contains the named reference, comps now will have the path components
-    
-                                        ;(log "expand_dot_accessor: " val reference val_type comps)
+          
     (cond
       (== 0 comps.length)
       reference
@@ -699,15 +655,8 @@
                   (flatten (for_each (`comp comps)
                                      (if (is_number? comp)
                                          [ "[" comp "]" ]
-                                         [ "[\"" comp "\"]" ])))))))) 
+                                         [ "[\"" comp "\"]" ]))))))))
  
-
-
-
-
-
-
-
 (defun getf_ctx (ctx name _value)
     (if (and ctx (is_string? name))
         (cond
@@ -818,12 +767,7 @@
           (`_ctx (or _ctx (new_ctx nil)))
           (`splice_log (defclog { `prefix:(+ "splice_return [" _ctx.scope.level "]") `color: "black" `background: "#20F0F0"  }))
           (`next_val nil))
-     
-      
          
-      ;(if (== _depth 0)
-      ;    (splice_log "->" (clone js_tree)))
-      
       (for_each (`comp js_tree)
           (do
               (inc idx)
@@ -1880,7 +1824,7 @@
                        "the first truthy value.")
       `usage: ["values:*"]
       `tags: ["nil" "truthy" "logic" "or" "undefined"]
-  })       
+  })
             
        
 (defmacro is_symbol? (symbol_to_find)

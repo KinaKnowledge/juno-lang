@@ -1,11 +1,11 @@
 Juno 
-----
+====
 
 Juno is a self-hosted Lisp with zero dependencies that compiles to Javascript.  It aims to provide fast execution and ease of use, while facilitating features such as a macro facility modeled on Common Lisp.  Juno provides a browser-native Lisp computing environment, which can extend into other similar environments, such as Deno.
 
 This dialect of Lisp straddles two worlds: leverage Javascript's features and libraries with the composability and expressiveness of Lisp.  Javascript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, generators and the like.  Juno doesn't have different language constructs, and this makes it easy to access and work with Javascript libraries and functions.  In fact you can inline javascript code if you so desired as part of your Lisp forms.
 
-As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `defun` or `defmacro`.  Since ultimately the code being produced is Javascript, there are some differences as well.  For example, Juno uses `snake_case` vs. `hyphenated-case` as in Lisp because hyphens can't be part of variable names in Javascript.  You can use hyphenated names, but these will be sanitized for Javascript language rules with underscores replacing the hyphens.
+As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `defun` or `defmacro`.  There are some exceptions, such as the predicate names, which by convention end with a question mark (?).  Ultimately the code being produced is Javascript, and you will undoudably sthere are some differences as well.  For example, Juno uses `snake_case` vs. `hyphenated-case` as in Common Lisp because hyphens can't be part of variable names in Javascript.  You can use hyphenated names, but these will be sanitized for Javascript language rules with underscores replacing the hyphens.  
 
 
 
@@ -13,13 +13,20 @@ Topics
 
 The Language
 - What is Juno?
-
+- What does a Lisp bring to the table?
+- The Environment and the compiler
 - Symbols and References, literals, base types are the JSON types.
 - Numbers
 - Functions
 - Special functions
 - The Core
-- 
+- Macros 
+- Interaction with Javascript
+- Different Environments 
+..* Browser
+..* Deno
+- API Reference
+
 
 
 
@@ -91,4 +98,6 @@ Because this is standard Juno notation it can be placed anywhere in your source,
 When [Javascript was being conceived](https://web.archive.org/web/20200227184037/https://speakingjs.com/es5/ch04.html) at Netscape, Brendan Eich was to write it in a Scheme based language, which can easily work with HTML. HTML is technically a simple Lisp with XML notation, since all tag elements evaluate as a DOM result and are a list structure inside each other.  Instead, an alternative approach was chosen.  A Java-like language was developed to align with Sun Microsystem's Java and Netscape's decision to include embedded Java "applets".  Nevertheless, if the DOM is considered the center of the browser, a Scheme-like language fits beautifully around the DOM, and could be seamlessly embedded, providing an elegant way to naturally extend the declarative nature of HTML with custom tags, macros and imperative logic.  This is one of Juno's aims: to provide a lisp centered on the Browser and browser-like run-times such as [Deno](https://deno.land).  Of course, Juno can be used outside of this context as well.
 
 
+### Namespaces
 
+A namespace is a global context that is established in an e

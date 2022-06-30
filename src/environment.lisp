@@ -453,7 +453,9 @@
        
        (undefine (function (quoted_symbol)
                            (if (prop Environment.global_ctx.scope quoted_symbol)
-                             (delete_prop Environment.global_ctx.scope quoted_symbol)
+                             (progn
+                              (delete_prop Environment.definitions quoted_symbol)
+                              (delete_prop Environment.global_ctx.scope quoted_symbol))                              
                              false)))
        
        (eval_exp (fn (expression)
@@ -643,7 +645,7 @@
        (check_external_env_default true)
        
        (set_global 
-        (function (refname value meta)
+        (function (refname value meta is_constant)
                   (progn
 		   (cond (not (== (typeof refname) "string"))
 			 (throw TypeError "reference name must be a string type")
@@ -651,16 +653,29 @@
 			     (== Environment.global_ctx value)
 			     (== Environment.global_ctx.scope value))
 			 (throw EvalError "cannot set the environment scope as a global value"))
-		   
-                                        ;(log "Environment: set_global: " refname value)
+		                                  
+                   (when (resolve_path [ refname `constant ] Environment.definitions)
+                     (throw TypeError (+ "Assignment to constant variable " refname )))
+                     
                    (set_prop Environment.global_ctx.scope 
                              refname
                              value)
                    (if (and (is_object? meta)
                             (not (is_array? meta)))
-                     (set_prop Environment.definitions
-                               refname
-                               meta))
+                     (do
+                       (when is_constant
+                         (set_prop meta
+                                   `constant
+                                   true))
+                       (set_prop Environment.definitions
+                                 refname
+                                 meta))
+                     (when is_constant
+                       (set_prop Environment.definitions
+                                 refname
+                                 {
+                                  `constant: true
+                                  })))
                    (prop Environment.global_ctx.scope refname))))
        
        (get_global 
@@ -699,12 +714,7 @@
                                         NOT_FOUND)
                                     NOT_FOUND)))
                       
-                      ;; based on the value of refval, return the value
-                                        ;(when (== undefined (prop Environment.externs comps.0))
-                                        ;  (set_prop Environment.externs
-                                        ;           comps.0
-                                        ;          refval))
-                      
+                      ;; based on the value of refval, return the value                                        
                       
                       (cond
                         (== NOT_FOUND refval)
@@ -754,12 +764,9 @@
                  `usage: ["json_expression:*" "opts:object"]
                  `tags:["macro" "quote" "quotes" "desym"]
                  })
-       
-       
-       
-       
-       
+                                   
        (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
+
        (evaluate (fn (expression ctx opts)
                    (let
                        ((opts (or opts
@@ -767,9 +774,7 @@
                         (compiled nil)
                         (error_data nil)
                         (result nil))
-                                        ;(env_log "-> expression: " expression) 
-                                        ;(env_log "-> ctx: " (sub_type ctx) ctx)
-                                        ;(debug)
+                                        
                      (if opts.compiled_source
                        (= compiled expression)
                        (try 
@@ -940,9 +945,7 @@
      (set_prop Environment.global_ctx.scope
 	       `set_compiler
 	       set_compiler)
-
-     
-     
+          
      (set_prop Environment.global_ctx.scope
 	       `clone
 	       (fn (val)

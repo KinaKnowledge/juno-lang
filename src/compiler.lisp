@@ -1684,11 +1684,14 @@
        (`UnknownType (new Function "" " { return \"unknown\"} "))
        (`ArgumentType (new Function "" " { return \"argument\" }"))
        
-       (`compile_defvar (fn (tokens ctx )
+       (`compile_defvar (fn (tokens ctx opts)
                             (let
                                 ((`target (clean_quoted_reference (sanitize_js_ref_name tokens.1.name)))
                                  (`wrap_as_function? nil)
                                  (`ctx_details nil)
+                                 (`allocation_type (if opts.constant
+                                                     "const"
+                                                     "let"))
                                  (`assignment_type nil)
                                  (`check_needs_wrap 
                                    (fn (stmts)
@@ -1744,13 +1747,13 @@
                                   (do
                                     (delete_prop ctx
                                                  `defvar_eval)
-                                    [{ `ctype: "assignment"  } "let" " " target "=" assignment_value "()" ";"])
+                                    [{ `ctype: "assignment"  } allocation_type " " target "=" assignment_value "()" ";"])
                                   
                                   [ { `ctype: "assignment"  } 
                                     (if (and ctx_details.is_argument
                                              (==  ctx_details.levels_up 1))
                                          ""
-                                         "let ") 
+                                         (+ allocation_type " "))
                                    "" target "=" (list assignment_value) ";"]))))
 
        
@@ -1878,6 +1881,10 @@
                            (set_prop ctx
                                      `return_last_value
                                      true)
+
+                           (set_ctx ctx `local_scope
+                                    true)
+                                     
                            
                            ;; start the main block 
                            (push acc "{")
@@ -3278,7 +3285,7 @@
                 acc)))
                      
        (`compile_set_global 
-         (fn (tokens ctx)
+         (fn (tokens ctx opts)
              (let
                  ((`target tokens.1.name)
                   (`wrap_as_function? nil)
@@ -3343,7 +3350,16 @@
                                                        (in_sync? ctx))
                                                    ""
                                                    "await") 
-                                               " " "Environment" "." "set_global" "(" """\"" tokens.1.name "\"" "," assignment_value (if metavalue "," "") (if metavalue metavalue "") ")" ])
+                       " " "Environment" "." "set_global"
+                       "(" """\"" tokens.1.name "\"" ","
+                       assignment_value
+                       (if (or metavalue opts.constant) "," "") (if metavalue
+                                                                    metavalue
+                                                                    (if opts.constant
+                                                                        "null"
+                                                                        ""))
+                       (if opts.constant "," "") (if opts.constant "true" "")
+                       ")" ])
                
                acc)))
        
@@ -4285,7 +4301,11 @@
                     "try": compile_try
                     "throw": compile_throw
                     "let": compile_let
-                    "defvar": compile_defvar
+                     "defvar": compile_defvar
+                     "defconst": (fn (tokens ctx)
+                                   (if (get_ctx ctx `local_scope)
+                                     (compile_defvar tokens ctx { `constant: true })
+                                     (compile_set_global tokens ctx { `constant: true })))
                     "while": compile_while
                     "for_each": compile_for_each
                     "if": compile_if
