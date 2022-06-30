@@ -238,7 +238,7 @@
                     "NOTE: this function's API is unstable and subject to change due to "
                     "the early phase of this language.")
    `usage: ["input_file:string" "initializer_function:string?" "options:object?"]
-   `tags: ["compile" "environment" "building" "javascript" "lisp" "file"]
+   `tags: ["compile" "environment" "building" "javascript" "lisp" "file" "export" ]
    })
 
 ;; Rebuilds the environment as a series of JS files
@@ -311,11 +311,18 @@
                    `include_source: include_source
                    `build_headers: build_headers })
     (success "complete")
-    true
-    ))
-
-
-
+    true)
+  {
+   `description: (+ "Builds the lisp environment from the Lisp sources and produces the Javascript output files "
+                    "necessary for initializing the environment. Options: <br>"
+                    "source_dir:string:The directory of the Lisp sources, the default is './src'.<br>"
+                    "output_dir:string:The directory to where the output Javascript files are placed.  The default is './js'.<br>"
+                    "include_source:boolean:If true, the compiler will include comments of the lisp source (not fully supported yet).<br>"
+                    "version_tag:string:A string based label signifying the text to use as the version.  If not specified, the version "
+                    "tag uses the format year.month.day.hour.minute.<br>")
+   `usage: [ "options:object?" ]
+   `tags: [ "compile" "export" "build" "environment" "javascript" ]
+   })
 
 ;; return true as the last value so the console output isn't overwhelmed.
 true

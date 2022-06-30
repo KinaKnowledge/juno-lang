@@ -563,28 +563,42 @@
                                                   (is_string? name)
                                                   name
                                                   else
-                                                  "nil"))                                  
+                                                  "nil"))
+                                  ;; does it start with "=:"?
                                   (`ref (and symname (is_reference? name)))
+
+                                  ;; Rules for determining if a thing coming in from the JSON is
+                                  ;; considered a literal vs a symbol
+                                  
                                   (`is_literal? (or (is_number? name)
                                                     (and (not ref) (is_string? name))                                                    
-                                                    (== "nil" symname)
+                                                    (== "nil" symname)  
                                                     (== "null" symname)
                                                     (and ref (== "undefined" symname))
                                                     (and ref (== "else" symname))
                                                     (and ref (== "catch" symname))
                                                     (== true name)
-                                                    (== false name)))  ;; literals                                         
+                                                    (== false name)))  ;; literals
+
+                                  ;; is it one of our built in opcodes? 
                                   (`special (and ref symname (contains? symname (conj ["unquotem" "quotem"] (keys op_lookup)))))
+
+                                  ;; to be local is to be declared within the scope of compilation..
                                   (`local (and (not special)
                                                (not is_literal?)
                                                symname 
                                                ref
                                                (get_ctx_val ctx symname)))
+                                  
+                                  ;; a global is one which is found either in the passed Environment global context,
+                                  ;; or one that is external to the lisp altogether, found somewhere in globalThis.                                  
                                   (`global (and (not special) 
                                                 (not is_literal?)
                                                 ref
                                                 symname 
-                                                (get_lisp_ctx symname))) 
+                                                (get_lisp_ctx symname)))
+                                  
+                                  ;; ok - how are going to represent it's value?
                                   (`val (cond is_literal?
                                           name
                                           (is_array? name)
@@ -601,9 +615,10 @@
                                           global
                                           (== symname name)
                                           name)))
-                               
+                               ;; put together the return structure..
+                               ;; what type of thing is it? a string description...
                                {   `type: (cond (is_array? name)
-                                                "arr"
+                                                "arr"    ;; TODO - change this to be "Array"
                                                 (is_object? name)
                                                 (sub_type name)
                                                 special
@@ -621,9 +636,10 @@
                                                 else
                                                 (do                                                  
                                                   (error_log "find_in_context: unknown type: " name)
-                                                  (debug)
-                                                 "??")
-                                                )
+                                                  (debug)  ;; ok..what did we miss?
+                                                  "??"))
+
+                                ;; what are we going to call it?
                                `name: (cond (and symname
                                                  ref)
                                             (sanitize_js_ref_name symname)
@@ -637,14 +653,16 @@
                                             nil)
                                 `val: (if (== val undefined)
                                         "=:undefined"
-                                        val)
-                                          
+                                        val)                                          
                                `ref: (if ref true false)
                                `local: (or local nil)
                                `global: (or (and global
                                                  (not (== NOT_FOUND global)))
                                             nil)
-                               })))
+                                })))
+       ;; returns the original back trace from the token structure
+       ;; which means that it is source code after all macro expansions
+       
        (`source_chain (fn (cpath tree sources)
                                   (if (and (is_array? cpath)
                                            tree)
@@ -4377,6 +4395,7 @@
                              (== false val)
                              (== true val))))
        (`comp_warn (defclog { `prefix: "compile: [warn]:" `background: "#fcffc8" `color: "brown" } ))
+       ;; main entry wrapper for the compilation function - all call this, not compile_inner
        (`compile (fn (tokens ctx _cdepth)
                      (if is_error
                          is_error   ;; unwind 
@@ -4391,7 +4410,7 @@
 				     (comp_warn "<-"  (or _cdepth "-")   "unknown/undeclared type returned: " (as_lisp rval))
 				     (comp_warn "  "  (or _cdepth "-")   "for given: "  (source_from_tokens tokens expanded_tree)))))
                          rval))))
-                         
+       ;; main recursive structure                   
        (`compile_inner
          (fn (tokens ctx _cdepth)
              (let
@@ -4582,8 +4601,8 @@
                               ;; create a function that checks the first symbol in the array is a function
                               ;; if the first symbol in the array is a reference.
                               
-                              (do
-                                (when show_hints
+                              (do ;; tell the user of this opportunity if they want to know...
+                                (when show_hints  
                                   (comp_warn "value ambiguity - use declare to clarify: " (source_from_tokens tokens expanded_tree true) " " 
                                                                                               (as_lisp rcv)))
                                 (= tmp_name (gen_temp_name "array_op_rval"))
@@ -4594,11 +4613,9 @@
                                   (do
                                     ;; received raw block back...need to wrap it but keep structural return value as an array                                    
                                     (= rcv (check_statement rcv))))
-                                
-                                        
+                                                               
                                 (when (> symbolic_replacements.length 0)
                                   ;; this means it is a block and we need to return the last value
-                                  ;; in this case it is the 
                                   (push acc { `ctype: "block" })
                                   (push acc "return")
                                   (push acc " "))
@@ -4721,8 +4738,7 @@
                           ;; check global scope
                           (not (== undefined (get_lisp_ctx tokens.name)))
                           (compile_lisp_scoped_reference tokens.name ctx)
-                                                   
-                          
+                                                                             
                           else
                           (do 
                               (throw ReferenceError (+ "compile: unknown reference: " tokens.name)))))
@@ -4744,8 +4760,7 @@
                           (throw is_error))
                         (if (not e.handled)
                             (push errors
-                                  is_error))))))))
-       
+                                  is_error))))))))       
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
@@ -4847,8 +4862,7 @@
              (function error_log comp_time_log inline_log clog                       
                        run_log quotem_log top_level_log eval_log
                        declare_log opts.error_report comp_warn
-                       sr_log comp_log)
-                       
+                       sr_log comp_log)                       
              (local check_true clone))
             
     ;; We need an environment object in order to find and set
@@ -4858,7 +4872,7 @@
         (throw EvalError "Compiler: No environment passed in options."))
 
     ;; showing of hints can be turned on via a compiler option passed
-    ;; 'show_hints' or by a verbosity setting above 3
+    ;; 'show_hints' or by a verbosity setting 4 or higher
     
     (when opts.show_hints
       (= show_hints true))
@@ -4907,7 +4921,6 @@
          
          is_error
          [{ `ctype: `CompileError } is_error]
-         
          
          else
          (do
