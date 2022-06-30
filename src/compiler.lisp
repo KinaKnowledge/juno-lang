@@ -89,7 +89,9 @@
        (`break_out "__BREAK__FLAG__")
        (`tokens [])
        (`tokenized nil)
-       (`errors [])
+       (`errors [])       
+       (`first_level_setup [])
+       (`needs_first_level true)
        (`signal_error (fn (message)
                         (new LispSyntaxError message)))
        (`warnings [])
@@ -236,9 +238,9 @@
                          (set_prop ctx_obj
                                    `defvar_eval
                                    true))
-                       (when parent.hard_quote_mode
+                       (when parent.has_first_level
                          (set_prop ctx_obj
-                                   `hard_quote_mode
+                                   `has_first_level
                                    true))
                        (when parent.block_step
                          (set_prop ctx_obj
@@ -1488,8 +1490,13 @@
                                      (while (< idx num_non_return_statements)
                                         (do
                                           (inc idx)
+                                          ;; since we are in a top level mode we need to reset the has_first_level flag
+                                          ;; or we will get reference errors on subsequent compilations for __GG__
+
+                                          (set_ctx ctx `__TOP_LEVEL__ true)
+                                          
                                           ;; since we have the source lisp tree, first tokenize each statement and 
-                                          ;; then compile and then evaluate it.
+                                          ;; then compile and then evaluate it.                                          
                                           (if (verbosity ctx)
                                               (progn
 						(console.log "")
@@ -1497,9 +1504,7 @@
                                           (= tokens (tokenize (prop lisp_tree idx) ctx))
                                           
                                           (= stmt (compile tokens ctx))
-                                          
-                                          
-                                             
+                                                                                                                                 
                                           (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
                                           (when (verbosity ctx)
 					      (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " (as_lisp stmt))
@@ -1524,6 +1529,7 @@
                                           (new_ctx ctx))) ;; get a local reference
                                 (`token nil)
                                 (`last_stmt nil)
+                                (`is_first_level false)
                                 (`return_last ctx.return_last_value)
                                 (`stmt nil)
                                 (`stmt_ctype nil)
@@ -1531,7 +1537,13 @@
                                 (`stmts [])
                                 (`idx 0))
                              (when (eq nil ctx)
-                                   (throw ReferenceError "undefined ctx passed to compile block"))
+                               (throw ReferenceError "undefined ctx passed to compile block"))
+                             
+                             (when needs_first_level                                   
+                               (= is_first_level true)
+                               (set_ctx ctx `has_first_level true)
+                               (= needs_first_level false))  ;; set a rapid way to determine this since we only do this once per compilation
+                             
                              (when opts.include_source
                                (when (and tokens.path
                                           (> tokens.path.length 0))
@@ -1549,7 +1561,10 @@
 
                              (when (not block_options.no_scope_boundary)
                                (push acc "{"))
-                               
+
+                             (when is_first_level
+                               (push acc first_level_setup ))
+                             
                              (while (< idx (- tokens.length 1))
                                     (do
                                      (inc idx)
@@ -1840,6 +1855,7 @@
                               (`reference_name nil)
                               (`shadowed_globals {})
                               (`alloc_set nil)
+                              (`is_first_level false)
                               (`sub_block_count 0)
                               (`ctx_details nil)
                               (`preamble (calling_preamble ctx))
@@ -1866,21 +1882,24 @@
                            ;; start the main block 
                            (push acc "{")
                            (inc sub_block_count)
-                           
-                           ;;(when ctx.source (push acc { `comment: (+ "let start " ctx.source " " ) }))
-                           
+                                                     
                            ;; let must be two pass, because we need to know all the symbol names being defined in the 
                            ;; allocation block because let allows us to refer to symbol names out of order, similar to
                            ;; let* in Common Lisp.  
-                           
-                           
-                           
+                                                                                 
                            ;; Check declaration details if they exist in the first form of the block form
                            
                            (when (== block.0.val.0.name "declare")
                               (= declarations_handled true)
                               (push acc (compile_declare block.0.val ctx)))
-                              
+
+                           (when needs_first_level                       ;; if we are on the first level, do some setup for aliases for easier code reading, etc..            
+                             (= is_first_level true)
+                             (set_ctx ctx `has_first_level true)
+                             (= needs_first_level false)
+                             (when is_first_level
+                               (push acc first_level_setup)))
+                           
                            ;; In let allocation forms, we need to check each allocated symbol's (AS) assignment
                            ;; form for the symbol name in enclosing scope, because any operations that are
                            ;; performed as part of the symbol value assignment are actually references to
@@ -1982,7 +2001,7 @@
                                            (prop shadowed_globals alloc_set.0.name))
                                                   
                                       (do
-                                          (= assignment_value [{`ctype: ctx_details.value } "await" " " "Environment.get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
+                                          (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
                                       else
                                       (do                                        
                                        (= assignment_value (compile alloc_set.1 ctx))
@@ -2117,13 +2136,13 @@
 			     (if (in_sync? ctx)
 				 ["" "" { `ctype: "Function" } "(" ")" ]
 				 ["await" "async" { `ctype: "AsyncFunction" } "" "" ])))
-	(`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
+       (`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
 	
        (`compile_fn (fn (tokens ctx fn_opts)
                         (let
                             ((`acc [])
                              (`idx -1)
-                             (`arg nil)
+                             (`arg nil)                             
                              (`ctx (new_ctx ctx))
                              (`fn_args tokens.1.val)
                              (`body tokens.2)                             
@@ -2136,7 +2155,7 @@
                           (set_prop ctx
                                     `return_point
                                     0)
-                          
+                                                   
                           (set_ctx ctx
                                    `__IN_LAMBDA__
                                    true)
@@ -2758,7 +2777,7 @@
                                (and (eq nil type_details.value)
                                     (not (eq nil root_type_details.value)))
                                (do
-                                   (for_each (`arg ["(" preamble.0 " " "Environment.get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
+                                   (for_each (`arg ["(" preamble.0 " " env_ref "get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
                                        (push acc arg))
                                    (when (> args.length 0)
                                        (push acc ",")
@@ -2814,8 +2833,8 @@
                                   (== target_location "global")
                                   (do
                                     (= has_lisp_globals true)                                    
-                                    ["(" "await" " " "Environment.set_global(\"" target "\","
-                                     "await" " " "Environment.get_global(\"" target "\")" " " operation " " how_much "))"])                                                                                 
+                                    ["(" "await" " " env_ref "set_global(\"" target "\","
+                                     "await" " " env_ref "get_global(\"" target "\")" " " operation " " how_much "))"])                                                                                 
                                   in_infix
                                   (do 
                                      ["(" target "=" target operation how_much ")"])
@@ -3338,10 +3357,7 @@
        (`compile_quote (fn (lisp_struct ctx)
                            (let
                                ((`acc [])
-                                (`ctx (new_ctx ctx)))                                                                                                
-                             (set_prop ctx
-                                       `hard_quote_mode
-                                       true)
+                                (`ctx (new_ctx ctx)))                                                                                                                             
                              (= acc (compile_quotem lisp_struct ctx))
                              acc)))
        
@@ -3358,7 +3374,7 @@
                               ((`assembly nil)
                                (`result nil)
                                (`fst nil)
-                               (`ctx_access nil)
+                               
                                (`needs_braces? false)
                                (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
                                (`run_log (if opts.quiet_mode
@@ -3391,7 +3407,10 @@
                                 
                                (`assembled nil))
                             (declare (boolean needs_return?))
-                            
+                            (if (and (not opts.root_environment)
+                                     has_lisp_globals)
+                              (push first_level_setup
+                                    ["const __GG__=" env_ref "get_global" ";" ]))
                             (= assembled (splice_in_return_b (splice_in_return_a js_code)))
                             (= assembled (assemble_output assembled))
                             
@@ -3399,26 +3418,19 @@
                                             (if needs_return? " return " "")
                                             assembled
                                             (if needs_braces? "}" "")))
-                            (when (and false in_quotem
-                                       (get_ctx ctx "__IN_LAMBDA__"))
-                              (= ctx_access (fn (val)
-                                              (progn
-                                               (defvar rval (get_ctx ctx val))
-                                               (console.log "ctx_access for: " val "->" rval)
-                                               
-                                               (get_ctx ctx val)))))
+                            
                             (when (verbosity ctx)
                               (run_log "in quotem: " in_quotem "needs_braces? " needs_braces? "needs_return?" needs_return?)
                               (run_log "assembled: " assembled))
-                            (if ctx_access
-                              (= assembly (new AsyncFunction "Environment" "ctx_access" assembled))
-                              (= assembly (new AsyncFunction "Environment"  assembled)))
+                            ;(if ctx_access
+                             ; (= assembly (new AsyncFunction "Environment" "ctx_access" assembled))
+                            (= assembly (new AsyncFunction "Environment"  assembled))
                             (when run_opts.bind_mode
                               (= assembly (bind_function assembly Environment)))
                             
-                            (if ctx_access
-                              (= result (assembly Environment ctx_access))
-                              (= result (assembly Environment)))
+                            ;(if ctx_access
+                             ; (= result (assembly Environment ctx_access))
+                            (= result (assembly Environment))
                             (when (verbosity ctx)
                               (run_log "<- " result))
                             result)))            
@@ -4173,8 +4185,13 @@
                  ;(contains? basename.0 (keys Environment.context.scope))    
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
-                  (= has_lisp_globals true)
-                  [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"])
+                   (= has_lisp_globals true)
+                   (when (verbosity ctx)
+                     (console.log "compile_lisp_scoped_reference: has_first_level? " (get_ctx ctx `has_first_level) ": " refname))
+                   (if (and (get_ctx ctx `has_first_level) (not opts.root_environment))
+                     [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " "__GG__" "(\"" refname  "\")" ")"]
+                     [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"]
+                     ))
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
@@ -4949,11 +4966,23 @@
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))
+
+                  ;; add any first level scope stuff into the first_level_setup array
+                  ;; so it is included in the right place in the scope
+                  (if (and (not opts.root_environment)
+                           has_lisp_globals)
+                    (push first_level_setup
+                          ["const __GG__=" env_ref "get_global" ";"]))
+                    
                   (= assembly (splice_in_return_a assembly))
-                  (= assembly (splice_in_return_b assembly))))          
-           (when opts.root_environment
-                 (= has_lisp_globals false))
-           ;(main_log "assembly: " (assemble_output assembly))
+                  (= assembly (splice_in_return_b assembly))))
+            
+            ;; if we are compiling with the root_environment option as true
+           ;; we don't have a pre-existing environment, because we are
+           ;; compiling the environment.
+            (when opts.root_environment
+              (= has_lisp_globals false))
+                      
            (when (and assembly.0.ctype
                      (is_function? assembly.0.ctype))
                (set_prop assembly.0
@@ -4989,11 +5018,8 @@
 	     is_error
 	     (eq nil assembly)
 	     (= assembly []))
-           ;; if we are compiling with the root_environment option as true
-           ;; we don't have a pre-existing environment, because we are
-           ;; compiling the environment.
-           (when opts.root_environment
-                (= has_lisp_globals false))
+          
+           
            (if is_error
                (do                 
                 [ { `ctype: "FAIL" }  errors])

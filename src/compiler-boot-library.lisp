@@ -11,51 +11,13 @@
 ;; **
 
 
-
-(defglobal `add_escape_encoding 
-  (fn (text)
-    (if (is_string? text)
-        (let
-            ((`chars (split_by "" text))
-             (`acc []))
-            (for_each (`c chars)
-               (cond 
-                 (and (== (-> c `charCodeAt 0) 34)) 
-                 (do 
-                    (push acc (String.fromCharCode 92))
-                    (push acc c))
-                 else
-                   (push acc c)))
-            (join "" acc))
-        text)))
     
 (defglobal get_outside_global get_outside_global)      
 
 (defglobal true? check_true)
 (defglobal subtype sub_type)
    
-  
-       
 
-;; Convenience function with embedded quoting for the compiler
-
-(defglobal embed_compiled_quote  
-  (fn (type tmp_name tval)
-    (cond
-        (== type 0)
-        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
-        (== type 1)
-        [ (quote "=$&!") (quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp")  (quote "=:(")  tval (quote "=:)") (quote "=:+") (quote "=:'") ]
-        (== type 2)
-        [(quote "=:(") (quote "=:let") (quote "=:(") (quote "=:(")  tmp_name (+  (quote "=:") (as_lisp tval)) (quote "=:)") (quote "=:)") (+ (quote "=:") tmp_name) ]
-        (== type 3)
-        [(quote "=:'") (quote "=:+") (quote "=:await") (quote "=:Environment.as_lisp") (quote "=:(") tval (quote "=:)") (quote "=:+") (quote "=:'") ]
-        (== type 4)
-        (quote "=:)"))))
-     
-     
-
- 
 ;; This function will be executed at the time of the compile of code.
 ;; if called, it will be called with the arguments in the place of the
 ;; argument list of the defmacro function.

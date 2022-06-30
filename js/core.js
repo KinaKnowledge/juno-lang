@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-06-30 06:52:24
-// Version: 2022.06.30.06.52
-export const DLISP_ENV_VERSION='2022.06.30.06.52';
+// Build Time: 2022-06-30 09:08:01
+// Version: 2022.06.30.09.08
+export const DLISP_ENV_VERSION='2022.06.30.09.08';
 
 
 
@@ -9,6 +9,7 @@ export const DLISP_ENV_VERSION='2022.06.30.06.52';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function load_core(Environment)  {
 {
+    const __GG__=Environment.get_global;
     await Environment.set_global("if_undefined",async function(value,replacer) {
          return  ["=:if",["=:==","=:undefined",value],replacer,value]
     },{ "eval_when":{ "compile_time":true
@@ -18,12 +19,12 @@ await Environment.set_global("str",async function(...args) {
      return  (args).join(" ")
 },{ "name":"str","fn_args":"(\"&\" \"args\")","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"]
 });
-if (check_true (await (await Environment.get_global("not"))(((typeof "d3"==="undefined")||(await Environment["get_global"].call(Environment,"d3") instanceof ReferenceError))))){
-     await Environment.set_global("d3",(await Environment.get_global("d3")))
+if (check_true (await (await __GG__("not"))(((typeof "d3"==="undefined")||(await Environment["get_global"].call(Environment,"d3") instanceof ReferenceError))))){
+     await Environment.set_global("d3",(await __GG__("d3")))
 };
 await Environment.set_global("COPY_DATA",null);
-if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")||(await Environment["get_global"].call(Environment,"uuid") instanceof ReferenceError))))){
-     await Environment.set_global("uuid",(await Environment.get_global("uuid")),{
+if (check_true (await (await __GG__("not"))(((typeof "uuid"==="undefined")||(await Environment["get_global"].call(Environment,"uuid") instanceof ReferenceError))))){
+     await Environment.set_global("uuid",(await __GG__("uuid")),{
         description:"Generates and returns a string that is a newly generated uuid.",usage:[],tags:["id","unique","crypto"]
     })
 };
@@ -35,7 +36,7 @@ await Environment.set_global("assert",async function(assertion_form,failure_mess
 },{ "name":"assert","fn_args":"(assertion_form failure_message)","description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]
 });
 await Environment.set_global("bind_and_call",async function(target_object,this_object,method,...args) {
-    let boundf=await (await Environment.get_global("bind"))(await (async function(){
+    let boundf=await (await __GG__("bind"))(await (async function(){
         let __targ__1=target_object;
         if (__targ__1){
              return(__targ__1)[method]
@@ -68,13 +69,13 @@ await Environment.set_global("sum",async function(vals) {
 await Environment.set_global("options_and_args",async function(arg_array) {
      return  await async function(){
         if (check_true( (arg_array&&(arg_array instanceof Array)))) {
-            if (check_true ((await (await Environment.get_global("type"))((arg_array && arg_array["0"]))==="object"))){
+            if (check_true ((await (await __GG__("type"))((arg_array && arg_array["0"]))==="object"))){
                   return await (async function(){
                     let __array_op_rval__4=(arg_array && arg_array["0"]);
                      if (__array_op_rval__4 instanceof Function){
-                        return await __array_op_rval__4(await (await Environment.get_global("slice"))(arg_array,1)) 
+                        return await __array_op_rval__4(await (await __GG__("slice"))(arg_array,1)) 
                     } else {
-                        return[__array_op_rval__4,await (await Environment.get_global("slice"))(arg_array,1)]
+                        return[__array_op_rval__4,await (await __GG__("slice"))(arg_array,1)]
                     }
                 })()
             } else {
@@ -91,7 +92,7 @@ await Environment.set_global("enum",async function(value_list) {
     ;
     let i=-1;
     ;
-    await (await Environment.get_global("assert"))((value_list instanceof Array),"Value_list must be an array");
+    await (await __GG__("assert"))((value_list instanceof Array),"Value_list must be an array");
     await (async function() {
         let __for_body__7=async function(v) {
              return  await async function(){
@@ -128,17 +129,17 @@ await Environment.set_global("gen_id",async function(prefix) {
 await Environment.set_global("nth",async function(idx,collection) {
      return  await async function(){
         if (check_true( (idx instanceof Array))) {
-             return await (await Environment.get_global("map"))(async function(v) {
-                 return  await (await Environment.get_global("nth"))(v,collection)
+             return await (await __GG__("map"))(async function(v) {
+                 return  await (await __GG__("nth"))(v,collection)
             },idx)
-        } else if (check_true( (await (await Environment.get_global("is_number?"))(idx)&&(idx<0)&&(await (await Environment.get_global("length"))(collection)>=(-1*idx))))) {
+        } else if (check_true( (await (await __GG__("is_number?"))(idx)&&(idx<0)&&(await (await __GG__("length"))(collection)>=(-1*idx))))) {
              return await (async function(){
                 let __targ__10=collection;
                 if (__targ__10){
-                     return(__targ__10)[await (await Environment.get_global("add"))(await (await Environment.get_global("length"))(collection),idx)]
+                     return(__targ__10)[await (await __GG__("add"))(await (await __GG__("length"))(collection),idx)]
                 } 
             })()
-        } else if (check_true( (await (await Environment.get_global("is_number?"))(idx)&&(idx<0)&&(await (await Environment.get_global("length"))(collection)<(-1*idx))))) {
+        } else if (check_true( (await (await __GG__("is_number?"))(idx)&&(idx<0)&&(await (await __GG__("length"))(collection)<(-1*idx))))) {
              return undefined
         } else  {
              return await (async function(){
@@ -170,7 +171,7 @@ await Environment.set_global("macros",async function() {
                   return (__collector).push(__result)
             }
         };
-        let __array__15=[],__elements__13=await (await Environment.get_global("pairs"))(Environment.definitions);
+        let __array__15=[],__elements__13=await (await __GG__("pairs"))(Environment.definitions);
         let __BREAK__FLAG__=false;
         for(let __iter__12 in __elements__13) {
             __array__15.push(await __for_body__14(__elements__13[__iter__12]));
@@ -216,7 +217,7 @@ await Environment.set_global("objects_from_list",async function(key_path,objects
             let __for_body__20=async function(o) {
                  return  await async function(){
                     let __target_obj__22=obj;
-                    __target_obj__22[await (await Environment.get_global("resolve_path"))(path,o)]=o;
+                    __target_obj__22[await (await __GG__("resolve_path"))(path,o)]=o;
                     return __target_obj__22;
                     
                 }()
@@ -268,7 +269,7 @@ await Environment.set_global("pairs_from_list",async function(value_list,size) {
         }return __array__26;
          
     })();
-    if (check_true ((await (await Environment.get_global("length"))(pset)>0))){
+    if (check_true ((await (await __GG__("length"))(pset)>0))){
          (container).push(pset)
     };
      return  container
@@ -278,25 +279,25 @@ await Environment.set_global("reorder_keys",async function(key_list,obj) {
     let objkeys;
     let rval;
     let __values__27= async function(){
-        return await (await Environment.get_global("nth"))(key_list,obj)
+        return await (await __GG__("nth"))(key_list,obj)
     };
     {
-        objkeys=await (await Environment.get_global("keys"))(obj);
+        objkeys=await (await __GG__("keys"))(obj);
         rval=new Object();
         let values=await __values__27();
         ;
-         return  await (await Environment.get_global("to_object"))(await (await Environment.get_global("pairs_from_list"))(await (await Environment.get_global("interlace"))(key_list,values)))
+         return  await (await __GG__("to_object"))(await (await __GG__("pairs_from_list"))(await (await __GG__("interlace"))(key_list,values)))
     }
 },{ "name":"reorder_keys","fn_args":"(key_list obj)","description":"Given a list of keys, returns a new object that has the keys in the order of the provided key list.","usage":["key_list:array","obj:object"],"tags":["list","object","key","order"]
 });
 await Environment.set_global("only",async function(fields,data) {
      return  await async function(){
         if (check_true( (data instanceof Array))) {
-             return await (await Environment.get_global("map"))(async function(v) {
-                 return  await (await Environment.get_global("reorder_keys"))(fields,v)
+             return await (await __GG__("map"))(async function(v) {
+                 return  await (await __GG__("reorder_keys"))(fields,v)
             },data)
         } else if (check_true( (data instanceof Object))) {
-             return await (await Environment.get_global("reorder_keys"))(fields,data)
+             return await (await __GG__("reorder_keys"))(fields,data)
         } else  {
              return data
         }
@@ -336,14 +337,14 @@ await Environment.set_global("+=",async function(symbol,...args) {
 await Environment.set_global("minmax",async function(container) {
     let value_found=false;
     ;
-    let smallest=(await Environment.get_global("MAX_SAFE_INTEGER"));
+    let smallest=(await __GG__("MAX_SAFE_INTEGER"));
     ;
-    let biggest=(-1*(await Environment.get_global("MAX_SAFE_INTEGER")));
+    let biggest=(-1*(await __GG__("MAX_SAFE_INTEGER")));
     ;
-    if (check_true ((container&&(container instanceof Array)&&(await (await Environment.get_global("length"))(container)>0)))){
+    if (check_true ((container&&(container instanceof Array)&&(await (await __GG__("length"))(container)>0)))){
         await (async function() {
             let __for_body__31=async function(value) {
-                 return  (await (await Environment.get_global("is_number?"))(value)&&await (async function ()  {
+                 return  (await (await __GG__("is_number?"))(value)&&await (async function ()  {
                     value_found=true;
                     smallest=await Math.min(value,smallest);
                      return  biggest=await Math.max(value,biggest)
@@ -387,14 +388,14 @@ await Environment.set_global("minmax_index",async function(container) {
     ;
     let idx=0;
     ;
-    let smallest=(await Environment.get_global("MAX_SAFE_INTEGER"));
+    let smallest=(await __GG__("MAX_SAFE_INTEGER"));
     ;
-    let biggest=(-1*(await Environment.get_global("MAX_SAFE_INTEGER")));
+    let biggest=(-1*(await __GG__("MAX_SAFE_INTEGER")));
     ;
-    if (check_true ((container&&(container instanceof Array)&&(await (await Environment.get_global("length"))(container)>0)))){
+    if (check_true ((container&&(container instanceof Array)&&(await (await __GG__("length"))(container)>0)))){
         await (async function() {
             let __for_body__36=async function(value) {
-                 return  (await (await Environment.get_global("is_number?"))(value)&&await (async function ()  {
+                 return  (await (await __GG__("is_number?"))(value)&&await (async function ()  {
                     value_found=true;
                     if (check_true ((value<smallest))){
                         smallest=value;
@@ -438,7 +439,7 @@ await Environment.set_global("minmax_index",async function(container) {
 });
 await Environment.set_global("invert_pairs",async function(value) {
     if (check_true ((value instanceof Array))){
-          return await (await Environment.get_global("map"))(async function(v) {
+          return await (await __GG__("map"))(async function(v) {
              return  await (async function(){
                 let __array_op_rval__39=(v && v["1"]);
                  if (__array_op_rval__39 instanceof Function){
@@ -462,7 +463,7 @@ await Environment.set_global("object_methods",async function(obj) {
              return  current_obj
         };
         let __body_ref__41=async function() {
-            await (await Environment.get_global("map"))(async function(item) {
+            await (await __GG__("map"))(async function(item) {
                  return  await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
              return  current_obj=await Object.getPrototypeOf(current_obj)
@@ -492,21 +493,21 @@ await Environment.set_global("noop",async function(val) {
 },{ "name":"noop","fn_args":"(val)","usage":["val:*"],"description":"No operation, just returns the value.  To be used as a placeholder operation, such as in apply_operator_list.","tags":["apply","value"]
 });
 await Environment.set_global("apply_list_to_list",async function(operator,list1,list2) {
-     return  await (await Environment.get_global("map"))(async function(val,idx) {
+     return  await (await __GG__("map"))(async function(val,idx) {
          return  await (async function(){
             let __array_op_rval__43=operator;
              if (__array_op_rval__43 instanceof Function){
                 return await __array_op_rval__43(val,await (async function(){
                     let __targ__42=list1;
                     if (__targ__42){
-                         return(__targ__42)[(idx%await (await Environment.get_global("length"))(list1))]
+                         return(__targ__42)[(idx%await (await __GG__("length"))(list1))]
                     } 
                 })()) 
             } else {
                 return[__array_op_rval__43,val,await (async function(){
                     let __targ__42=list1;
                     if (__targ__42){
-                         return(__targ__42)[(idx%await (await Environment.get_global("length"))(list1))]
+                         return(__targ__42)[(idx%await (await __GG__("length"))(list1))]
                     } 
                 })()]
             }
@@ -515,11 +516,11 @@ await Environment.set_global("apply_list_to_list",async function(operator,list1,
 },{ "name":"apply_list_to_list","fn_args":"(operator list1 list2)","usage":["operator:function","modifier_list:array","target_list:array"],"description":["=:+","Given an operator (function), a list of values to be applied (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the operator function with ","each value from the target list with the values from the modifier list. The operator function is called ","with <code>(operator source_value modifer_value)</code>."],"tags":["map","list","array","apply","range","index"]
 });
 await Environment.set_global("apply_operator_list",async function(modifier_list,target_list) {
-     return  await (await Environment.get_global("map"))(async function(val,idx) {
+     return  await (await __GG__("map"))(async function(val,idx) {
         let op=await Environment["eval"].call(Environment,("=:"+await (async function(){
             let __targ__44=modifier_list;
             if (__targ__44){
-                 return(__targ__44)[(idx%await (await Environment.get_global("length"))(modifier_list))]
+                 return(__targ__44)[(idx%await (await __GG__("length"))(modifier_list))]
             } 
         })()));
         ;
@@ -556,14 +557,14 @@ await Environment.set_global("remaining_in_range",async function(value,check_ran
 });
 await Environment.set_global("range_inc",async function(start,end,step) {
     if (check_true (end)){
-          return await (await Environment.get_global("range"))(start,await (await Environment.get_global("add"))(end,1),step)
+          return await (await __GG__("range"))(start,await (await __GG__("add"))(end,1),step)
     } else {
-          return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
+          return await (await __GG__("range"))(await (await __GG__("add"))(start,1))
     }
 },{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Givin","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
 });
 await Environment.set_global("form_id",async function(name) {
-     return  await (await Environment.get_global("replace"))(new RegExp("W","g"),"_",await (await Environment.get_global("replace"))(new RegExp("[+?':]","g"),"sssymss1",await (await Environment.get_global("replace"))("!","sexcs1",await (await Environment.get_global("replace"))("<","slts1",await (await Environment.get_global("replace"))(">","sgts1",(await (await Environment.get_global("split"))((name).toLowerCase()," ")).join("_"))))))
+     return  await (await __GG__("replace"))(new RegExp("W","g"),"_",await (await __GG__("replace"))(new RegExp("[+?':]","g"),"sssymss1",await (await __GG__("replace"))("!","sexcs1",await (await __GG__("replace"))("<","slts1",await (await __GG__("replace"))(">","sgts1",(await (await __GG__("split"))((name).toLowerCase()," ")).join("_"))))))
 },{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms."
 });
 await Environment.set_global("from_key",async function(value,sep_ques_,ignore_ques_) {
@@ -573,7 +574,7 @@ await Environment.set_global("from_key",async function(value,sep_ques_,ignore_qu
             
         };
         sep_ques_=(sep_ques_||"_");
-         return  await (await Environment.get_global("dtext"))((await (await Environment.get_global("map"))(async function(v) {
+         return  await (await __GG__("dtext"))((await (await __GG__("map"))(async function(v) {
              return  (""+await (async function() {
                 {
                      let __call_target__=await v["charAt"].call(v,0), __call_method__="toUpperCase";
@@ -587,7 +588,7 @@ await Environment.set_global("from_key",async function(value,sep_ques_,ignore_qu
 },{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"]
 });
 await Environment.set_global("from_key1",async function(v) {
-     return  await (await Environment.get_global("from_key"))(v)
+     return  await (await __GG__("from_key"))(v)
 },{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"]
 });
 await Environment.set_global("to_key",async function(value,sep_ques_,ignore_ques_) {
@@ -597,7 +598,7 @@ await Environment.set_global("to_key",async function(value,sep_ques_,ignore_ques
             
         };
         sep_ques_="_";
-        let tokens=await (await Environment.get_global("map"))(async function(v) {
+        let tokens=await (await __GG__("map"))(async function(v) {
              return  (""+(v).toLowerCase())
         },(value).split(" "));
         ;
@@ -610,7 +611,7 @@ await Environment.set_global("to_key",async function(value,sep_ques_,ignore_ques
 },{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"]
 });
 await Environment.set_global("is_date?",async function(x) {
-     return  (await (await Environment.get_global("sub_type"))(x)==="Date")
+     return  (await (await __GG__("sub_type"))(x)==="Date")
 },{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 });
 await Environment.set_global("is_nil?",async function(value) {
@@ -629,7 +630,7 @@ await Environment.set_global("extend",async function(target_object,source_object
                     
                 }()
             };
-            let __array__51=[],__elements__49=await (await Environment.get_global("pairs"))(source_object);
+            let __array__51=[],__elements__49=await (await __GG__("pairs"))(source_object);
             let __BREAK__FLAG__=false;
             for(let __iter__48 in __elements__49) {
                 __array__51.push(await __for_body__50(__elements__49[__iter__48]));
@@ -648,9 +649,9 @@ await Environment.set_global("extend",async function(target_object,source_object
 },{ "name":"extend","fn_args":"(target_object source_object)","description":"Given a target object and a source object, add the keys and values of the source object to the target object.","usage":["target_object:object","source_object:object"],"tags":["object","extension","keys","add","values"]
 });
 await Environment.set_global("no_empties",async function(items) {
-    let item_type=await (await Environment.get_global("sub_type"))(items);
+    let item_type=await (await __GG__("sub_type"))(items);
     ;
-    if (check_true (await (await Environment.get_global("not"))((item_type=="array")))){
+    if (check_true (await (await __GG__("not"))((item_type=="array")))){
          items=[items]
     };
     {
@@ -707,7 +708,7 @@ await Environment.set_global("first_with",async function(prop_list,data_value) {
                      return(__targ__61)[p]
                 } 
             })();
-            if (check_true (await (await Environment.get_global("not"))((null==rval)))){
+            if (check_true (await (await __GG__("not"))((null==rval)))){
                 found=true;
                 __BREAK__FLAG__=true;
                 return
@@ -753,12 +754,12 @@ await Environment.set_global("fixed",async function(v,p) {
 await Environment.set_global("except_nil",async function(items) {
     let acc=[];
     ;
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(items)==="array")))){
+    if (check_true (await (await __GG__("not"))((await (await __GG__("sub_type"))(items)==="array")))){
          items=[items]
     };
     await (async function() {
         let __for_body__64=async function(value) {
-            if (check_true (await (await Environment.get_global("not"))((null==value)))){
+            if (check_true (await (await __GG__("not"))((null==value)))){
                   return (acc).push(value)
             }
         };
@@ -786,20 +787,20 @@ await Environment.set_global("array_to_object",async function(input_array) {
     let output;
     let working_array;
     count=0;
-    output=await (await Environment.get_global("clone"))(new Object());
-    working_array=await (await Environment.get_global("clone"))(input_array);
+    output=await (await __GG__("clone"))(new Object());
+    working_array=await (await __GG__("clone"))(input_array);
     await (async function(){
          let __test_condition__66=async function() {
-             return  (await (await Environment.get_global("length"))(working_array)>0)
+             return  (await (await __GG__("length"))(working_array)>0)
         };
         let __body_ref__67=async function() {
             let v1=(working_array).shift();
             ;
-            let v1t=await (await Environment.get_global("type"))(v1);
+            let v1t=await (await __GG__("type"))(v1);
             ;
              return  await async function(){
                 if (check_true( (v1t==="object"))) {
-                     return output=await (await Environment.get_global("add"))(await (async function(){
+                     return output=await (await __GG__("add"))(await (async function(){
                         let __array_op_rval__68=output;
                          if (__array_op_rval__68 instanceof Function){
                             return await __array_op_rval__68(v1) 
@@ -837,7 +838,7 @@ await Environment.set_global("split_text_in_array",async function(split_element,
         let __for_body__72=async function(item) {
              return  await async function(){
                 if (check_true( (item instanceof String || typeof item==='string'))) {
-                     return (output).push(await (await Environment.get_global("split"))(item,split_element))
+                     return (output).push(await (await __GG__("split"))(item,split_element))
                 } else  {
                      return (output).push([null,item])
                 }
@@ -859,10 +860,10 @@ await Environment.set_global("split_text_in_array",async function(split_element,
 },{ "name":"split_text_in_array","fn_args":"(split_element input_array)","usage":["split_element:text","input_array:array"],"tags":["text","string","split","separate","parse"],"description":"Takes the provided array, and split_element, and returns an array of arrays which contain the split text strings of the input list."
 });
 await Environment.set_global("words_and_quotes",async function(text) {
-    if (check_true (await (await Environment.get_global("not"))((text==null)))){
-          return await (await Environment.get_global("map"))(async function(x,i) {
+    if (check_true (await (await __GG__("not"))((text==null)))){
+          return await (await __GG__("map"))(async function(x,i) {
             if (check_true ((0===(i%2)))){
-                  return (await (await Environment.get_global("no_empties"))(((x).trim()).split(" "))).join(" ")
+                  return (await (await __GG__("no_empties"))(((x).trim()).split(" "))).join(" ")
             } else {
                   return x
             }
@@ -873,9 +874,9 @@ await Environment.set_global("words_and_quotes",async function(text) {
 },{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"]
 });
 await Environment.set_global("split_words",async function(text_string) {
-     return  await (await Environment.get_global("no_empties"))(await (await Environment.get_global("map"))(async function(x,i) {
+     return  await (await __GG__("no_empties"))(await (await __GG__("map"))(async function(x,i) {
         if (check_true ((0===(i%2)))){
-              return await (await Environment.get_global("no_empties"))(((x).trim()).split(" "))
+              return await (await __GG__("no_empties"))(((x).trim()).split(" "))
         } else {
               return await (async function(){
                 let __array_op_rval__74=x;
@@ -886,7 +887,7 @@ await Environment.set_global("split_words",async function(text_string) {
                 }
             })()
         }
-    },await (await Environment.get_global("words_and_quotes"))(text_string)))
+    },await (await __GG__("words_and_quotes"))(text_string)))
 },{ "name":"split_words","fn_args":"(text_string)","description":"Like words and quotes, splits the text string into words and quoted words, but the unquoted words are split by spaces.  Both the unquoted words and the quoted words inhabit their own array.","usage":["text:string"],"tags":["text","string","split","separate","words","parse"]
 });
 await Environment.set_global("from_style_text",async function(text) {
@@ -894,13 +895,13 @@ await Environment.set_global("from_style_text",async function(text) {
     let colon_reg;
     semi_reg=await RegExp(";\n ","g");
     colon_reg=await RegExp(": ","g");
-     return  await (await Environment.get_global("no_empties"))(await (await Environment.get_global("map"))(async function(x) {
+     return  await (await __GG__("no_empties"))(await (await __GG__("map"))(async function(x) {
          return  [((x && x["0"])).trim(),(x && x["1"])]
-    },await (await Environment.get_global("map"))(async function(v) {
-         return  (await (await Environment.get_global("replace"))(colon_reg,":",v)).split(":")
-    },await (await Environment.get_global("flatten"))(await (await Environment.get_global("map"))(async function(v) {
-         return  (await (await Environment.get_global("replace"))(semi_reg,";",v)).split(";")
-    },await (await Environment.get_global("words_and_quotes"))(text))))))
+    },await (await __GG__("map"))(async function(v) {
+         return  (await (await __GG__("replace"))(colon_reg,":",v)).split(":")
+    },await (await __GG__("flatten"))(await (await __GG__("map"))(async function(v) {
+         return  (await (await __GG__("replace"))(semi_reg,";",v)).split(";")
+    },await (await __GG__("words_and_quotes"))(text))))))
 },{ "name":"from_style_text","fn_args":"(text)","usage":["text:string"],"description":"Given a string or text in the format of an Element style attribute: \"css_attrib:value; css_attrib2:value\", split into pairs containing attribute name and value.","tags":["text","css","style","pairs","string","array","list","ui","html"]
 });
 await Environment.set_global("remove_if",async function(f,container) {
@@ -910,7 +911,7 @@ await Environment.set_global("remove_if",async function(f,container) {
     __collector=[];
     __result=null;
     __action=async function(v) {
-        if (check_true (await (await Environment.get_global("not"))(await (async function(){
+        if (check_true (await (await __GG__("not"))(await (async function(){
             let __array_op_rval__75=f;
              if (__array_op_rval__75 instanceof Function){
                 return await __array_op_rval__75(v) 
@@ -988,11 +989,11 @@ await Environment.set_global("filter",async function(f,container) {
 await Environment.set_global("max_value",async function(v) {
     let m;
     m=0;
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(v)==="array"))))throw new TypeError("argument is not an array");
+    if (check_true (await (await __GG__("not"))((await (await __GG__("sub_type"))(v)==="array"))))throw new TypeError("argument is not an array");
     ;
     await (async function() {
         let __for_body__87=async function(x) {
-            if (check_true (await (await Environment.get_global("not"))(await isNaN(x)))){
+            if (check_true (await (await __GG__("not"))(await isNaN(x)))){
                   return m=await Math.max(x,m)
             }
         };
@@ -1013,12 +1014,12 @@ await Environment.set_global("max_value",async function(v) {
 });
 await Environment.set_global("min_value",async function(v) {
     let m;
-    m=(await Environment.get_global("MAX_SAFE_INTEGER"));
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(v)==="array"))))throw new TypeError("argument is not an array");
+    m=(await __GG__("MAX_SAFE_INTEGER"));
+    if (check_true (await (await __GG__("not"))((await (await __GG__("sub_type"))(v)==="array"))))throw new TypeError("argument is not an array");
     ;
     await (async function() {
         let __for_body__91=async function(x) {
-            if (check_true (await (await Environment.get_global("not"))(await isNaN(x)))){
+            if (check_true (await (await __GG__("not"))(await isNaN(x)))){
                   return m=await Math.min(x,m)
             }
         };
@@ -1034,7 +1035,7 @@ await Environment.set_global("min_value",async function(v) {
         }return __array__92;
          
     })();
-    if (check_true ((m===(await Environment.get_global("MAX_SAFE_INTEGER"))))){
+    if (check_true ((m===(await __GG__("MAX_SAFE_INTEGER"))))){
           return 0
     } else {
           return m
@@ -1054,8 +1055,8 @@ await Environment.set_global("tzoffset",async function() {
 },{ "name":"tzoffset","fn_args":"()","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"]
 });
 await Environment.set_global("date_components",async function(date_value,date_formatter) {
-    if (check_true (await (await Environment.get_global("is_date?"))(date_value))){
-          return await (await Environment.get_global("to_object"))(await (await Environment.get_global("map"))(async function(x) {
+    if (check_true (await (await __GG__("is_date?"))(date_value))){
+          return await (await __GG__("to_object"))(await (await __GG__("map"))(async function(x) {
              return  await (async function(){
                 let __array_op_rval__93=(x && x["type"]);
                  if (__array_op_rval__93 instanceof Function){
@@ -1066,9 +1067,9 @@ await Environment.set_global("date_components",async function(date_value,date_fo
             })()
         },await (async function() {
              if (check_true (date_formatter)){
-                  return await (await Environment.get_global("bind_and_call"))(date_formatter,date_formatter,"formatToParts",date_value)
+                  return await (await __GG__("bind_and_call"))(date_formatter,date_formatter,"formatToParts",date_value)
             } else {
-                  return await (await Environment.get_global("bind_and_call"))((await Environment.get_global("system_date_formatter")),(await Environment.get_global("system_date_formatter")),"formatToParts",date_value)
+                  return await (await __GG__("bind_and_call"))((await __GG__("system_date_formatter")),(await __GG__("system_date_formatter")),"formatToParts",date_value)
             } 
         } )()))
     } else {
@@ -1078,10 +1079,10 @@ await Environment.set_global("date_components",async function(date_value,date_fo
 });
 await Environment.set_global("formatted_date",async function(dval,date_formatter) {
     let comps;
-    comps=await (await Environment.get_global("date_components"))(dval,date_formatter);
+    comps=await (await __GG__("date_components"))(dval,date_formatter);
     if (check_true (comps)){
          if (check_true (date_formatter)){
-              return (await (await Environment.get_global("values"))(comps)).join("")
+              return (await (await __GG__("values"))(comps)).join("")
         } else {
               return (""+(comps && comps["year"])+"-"+(comps && comps["month"])+"-"+(comps && comps["day"])+" "+(comps && comps["hour"])+":"+(comps && comps["minute"])+":"+(comps && comps["second"]))
         }
@@ -1091,7 +1092,7 @@ await Environment.set_global("formatted_date",async function(dval,date_formatter
 },{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"]
 });
 await Environment.set_global("add_days",async function(date_obj,num_days) {
-    await date_obj["setDate"].call(date_obj,await (await Environment.get_global("add"))(await date_obj["getDate"](),num_days));
+    await date_obj["setDate"].call(date_obj,await (await __GG__("add"))(await date_obj["getDate"](),num_days));
      return  date_obj
 },{ "name":"add_days","fn_args":"(date_obj num_days)","usage":["date_obj:Date","num_days:number"],"description":"Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","days","add"]
 });
@@ -1114,26 +1115,26 @@ await Environment.set_global("yesterday",async function() {
     let d2;
     d1=new Date();
     d2=new Date();
-     return  [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d1,-1)),await (await Environment.get_global("add_hours"))(await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d2,-1)),24)]
+     return  [await (await __GG__("clear_time"))(await (await __GG__("add_days"))(d1,-1)),await (await __GG__("add_hours"))(await (await __GG__("clear_time"))(await (await __GG__("add_days"))(d2,-1)),24)]
 },{ "name":"yesterday","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"]
 });
 await Environment.set_global("next_sunday",async function(dval) {
     let dv=(dval||new Date());
     ;
-     return  await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(dv,(7-await (await Environment.get_global("day_of_week"))(dv))))
+     return  await (await __GG__("clear_time"))(await (await __GG__("add_days"))(dv,(7-await (await __GG__("day_of_week"))(dv))))
 },{ "name":"next_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date.","tags":["time","date","range","next","week","24"]
 });
 await Environment.set_global("last_sunday",async function(dval) {
     let dv=(dval||new Date());
     ;
-     return  await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(dv,(-1*await (await Environment.get_global("day_of_week"))(dv))))
+     return  await (await __GG__("clear_time"))(await (await __GG__("add_days"))(dv,(-1*await (await __GG__("day_of_week"))(dv))))
 },{ "name":"last_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date.","tags":["time","date","range","prior","week","24"]
 });
 await Environment.set_global("day_before_yesterday",async function() {
     let d1;
     let d2;
-    d1=await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(new Date(),-2));
-    d2=await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(new Date(),-1));
+    d1=await (await __GG__("clear_time"))(await (await __GG__("add_days"))(new Date(),-2));
+    d2=await (await __GG__("clear_time"))(await (await __GG__("add_days"))(new Date(),-1));
      return  await (async function(){
         let __array_op_rval__94=d1;
          if (__array_op_rval__94 instanceof Function){
@@ -1149,20 +1150,20 @@ await Environment.set_global("last_week",async function() {
     let d2;
     d1=new Date();
     d2=new Date();
-     return  [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(await (await Environment.get_global("next_sunday"))(),-14)),await (await Environment.get_global("last_sunday"))()]
+     return  [await (await __GG__("clear_time"))(await (await __GG__("add_days"))(await (await __GG__("next_sunday"))(),-14)),await (await __GG__("last_sunday"))()]
 },{ "name":"last_week","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"]
 });
 await Environment.set_global("midnight-to-midnight",async function(dval) {
     let d1;
     let d2;
-    d1=await (await Environment.get_global("clear_time"))(new Date(dval));
-    d2=await (await Environment.get_global("clear_time"))(new Date(dval));
+    d1=await (await __GG__("clear_time"))(new Date(dval));
+    d2=await (await __GG__("clear_time"))(new Date(dval));
      return  await (async function(){
         let __array_op_rval__95=d1;
          if (__array_op_rval__95 instanceof Function){
-            return await __array_op_rval__95(await (await Environment.get_global("add_hours"))(d2,24)) 
+            return await __array_op_rval__95(await (await __GG__("add_hours"))(d2,24)) 
         } else {
-            return[__array_op_rval__95,await (await Environment.get_global("add_hours"))(d2,24)]
+            return[__array_op_rval__95,await (await __GG__("add_hours"))(d2,24)]
         }
     })()
 },{ "name":"midnight-to-midnight","fn_args":"(dval)","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":["val:Date"],"tags":["time","date","range","prior","hours","24"]
@@ -1270,7 +1271,7 @@ await Environment.set_global("date_to_string",async function(date_val,str_layout
          
     })();
     formatter=new Intl.DateTimeFormat([],format_desc);
-    date_comps=await (await Environment.get_global("date_components"))(date_val,formatter);
+    date_comps=await (await __GG__("date_components"))(date_val,formatter);
      return  (await (async function() {
         let __for_body__104=async function(key) {
              return  (await (async function(){
@@ -1306,8 +1307,8 @@ await Environment.set_global("set_path_value",async function(root,path,value) {
     if (check_true ((path instanceof Array))){
         let idx;
         let parent;
-        idx=await (await Environment.get_global("last"))(path);
-        parent=await (await Environment.get_global("resolve_path"))(await (await Environment.get_global("chop"))(path),root);
+        idx=await (await __GG__("last"))(path);
+        parent=await (await __GG__("resolve_path"))(await (await __GG__("chop"))(path),root);
         if (check_true (parent)){
              await async function(){
                 let __target_obj__107=parent;
@@ -1323,7 +1324,7 @@ await Environment.set_global("set_path_value",async function(root,path,value) {
 },{ "name":"set_path_value","fn_args":"(root path value)","description":"Given an object (the root), a path array, and a value to set, sets the value at the path point in the root object.","usage":["root:object","path:list","value:*"],"tags":["object","path","resolve","assign"]
 });
 await Environment.set_global("has_items?",async function(value) {
-    if (check_true ((await (await Environment.get_global("not"))((null===value))&&(await (await Environment.get_global("length"))(value)>0)))){
+    if (check_true ((await (await __GG__("not"))((null===value))&&(await (await __GG__("length"))(value)>0)))){
           return true
     } else {
           return false
@@ -1332,7 +1333,7 @@ await Environment.set_global("has_items?",async function(value) {
 });
  Environment.set_global("match_all_js",new Function("regex_str","search_string","let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_string)) !== null) {rval.push(m);  if (m.index === regex.lastIndex) {  regex.lastIndex++; }  } return rval;"));
 await Environment.set_global("match_all",async function(regex_str,search_string) {
-     return  await (await Environment.get_global("match_all_js"))(regex_str,search_string)
+     return  await (await __GG__("match_all_js"))(regex_str,search_string)
 },{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"]
 });
 await Environment.set_global("chop_front",async function(container,amount) {
@@ -1352,7 +1353,7 @@ await Environment.set_global("chop_front",async function(container,amount) {
 [];
 await Environment.set_global("compile_lisp",async function(text) {
     if (check_true (text)){
-          return await (await Environment.get_global("reader"))(text)
+          return await (await __GG__("reader"))(text)
     } else {
           return text
     }
@@ -1364,7 +1365,7 @@ await Environment.set_global("has_the_keys?",async function(key_list,obj) {
     {
         await (async function() {
             let __for_body__110=async function(item) {
-                 return  is_fit=((await (await Environment.get_global("resolve_path"))(item,obj)||false)&&is_fit)
+                 return  is_fit=((await (await __GG__("resolve_path"))(item,obj)||false)&&is_fit)
             };
             let __array__111=[],__elements__109=key_list;
             let __BREAK__FLAG__=false;
@@ -1394,8 +1395,8 @@ await Environment.set_global("demarked_number",async function(value,separator,pr
     let sign;
     abs_value=await Math.abs(value);
     vf=await Math.floor(abs_value);
-    comps=(await (await Environment.get_global("split"))((""+vf),"")).slice(0).reverse();
-    l=await (await Environment.get_global("length"))(comps);
+    comps=(await (await __GG__("split"))((""+vf),"")).slice(0).reverse();
+    l=await (await __GG__("length"))(comps);
     sep=(separator||",");
     prec=(await (async function () {
          if (check_true ((null==precision))){
@@ -1403,7 +1404,7 @@ await Environment.set_global("demarked_number",async function(value,separator,pr
         } 
     })()||precision);
     sign=await (async function () {
-         if (check_true (((value<0)&&await (await Environment.get_global("not"))(no_show_sign)))){
+         if (check_true (((value<0)&&await (await __GG__("not"))(no_show_sign)))){
               return "-"
         } else {
               return ""
@@ -1414,7 +1415,7 @@ await Environment.set_global("demarked_number",async function(value,separator,pr
             let __for_body__114=async function(p) {
                  return  await comps["splice"].call(comps,p,0,sep)
             };
-            let __array__115=[],__elements__113=(await (await Environment.get_global("range"))(3,l,3)).slice(0).reverse();
+            let __array__115=[],__elements__113=(await (await __GG__("range"))(3,l,3)).slice(0).reverse();
             let __BREAK__FLAG__=false;
             for(let __iter__112 in __elements__113) {
                 __array__115.push(await __for_body__114(__elements__113[__iter__112]));
@@ -1427,7 +1428,7 @@ await Environment.set_global("demarked_number",async function(value,separator,pr
              
         })()
     };
-     return  (sign+((comps).slice(0).reverse()).join("")+await (await Environment.get_global("chop_front"))(await (async function() {
+     return  (sign+((comps).slice(0).reverse()).join("")+await (await __GG__("chop_front"))(await (async function() {
         {
              let __call_target__=(abs_value%vf), __call_method__="toFixed";
             return await __call_target__[__call_method__].call(__call_target__,prec)
@@ -1449,7 +1450,7 @@ await Environment.set_global("compare_list_ends",async function(l1,l2) {
     let idx;
     let matcher;
     long_short=await (async function () {
-         if (check_true ((await (await Environment.get_global("length"))(l1)>await (await Environment.get_global("length"))(l2)))){
+         if (check_true ((await (await __GG__("length"))(l1)>await (await __GG__("length"))(l2)))){
               return [l1,l2]
         } else {
               return [l2,l1]
@@ -1470,8 +1471,8 @@ await Environment.set_global("compare_list_ends",async function(l1,l2) {
         };
          return  idx=(idx+1)
     };
-    await (await Environment.get_global("map"))(matcher,short);
-    if (check_true ((match_count===await (await Environment.get_global("length"))(short)))){
+    await (await __GG__("map"))(matcher,short);
+    if (check_true ((match_count===await (await __GG__("length"))(short)))){
           return true
     } else {
           return false
@@ -1491,7 +1492,7 @@ await Environment.set_global("rgb_to_text",async function(rgb) {
                 } 
             })();
             ;
-            if (check_true ((await (await Environment.get_global("length"))(vs)===1))){
+            if (check_true ((await (await __GG__("length"))(vs)===1))){
                   return ("0"+vs)
             } else {
                   return vs
@@ -1514,11 +1515,11 @@ await Environment.set_global("rgb_to_text",async function(rgb) {
 await Environment.set_global("text_to_rgb",async function(rgb_string) {
     if (check_true (rgb_string)){
           return await (async function(){
-            let __array_op_rval__121=(await parseInt((await (await Environment.get_global("nth"))([0,1],rgb_string)).join(''),16)/255);
+            let __array_op_rval__121=(await parseInt((await (await __GG__("nth"))([0,1],rgb_string)).join(''),16)/255);
              if (__array_op_rval__121 instanceof Function){
-                return await __array_op_rval__121((await parseInt((await (await Environment.get_global("nth"))([2,3],rgb_string)).join(''),16)/255),(await parseInt((await (await Environment.get_global("nth"))([4,5],rgb_string)).join(''),16)/255)) 
+                return await __array_op_rval__121((await parseInt((await (await __GG__("nth"))([2,3],rgb_string)).join(''),16)/255),(await parseInt((await (await __GG__("nth"))([4,5],rgb_string)).join(''),16)/255)) 
             } else {
-                return[__array_op_rval__121,(await parseInt((await (await Environment.get_global("nth"))([2,3],rgb_string)).join(''),16)/255),(await parseInt((await (await Environment.get_global("nth"))([4,5],rgb_string)).join(''),16)/255)]
+                return[__array_op_rval__121,(await parseInt((await (await __GG__("nth"))([2,3],rgb_string)).join(''),16)/255),(await parseInt((await (await __GG__("nth"))([4,5],rgb_string)).join(''),16)/255)]
             }
         })()
     } else {
@@ -1590,7 +1591,7 @@ await Environment.set_global("tint_rgb",async function(rgb,tint_factor) {
           return await (async function() {
             let __for_body__126=async function(c) {
                 c=(255*c);
-                 return  (await (await Environment.get_global("add"))(c,((255-c)*tint_factor))/255)
+                 return  (await (await __GG__("add"))(c,((255-c)*tint_factor))/255)
             };
             let __array__127=[],__elements__125=rgb;
             let __BREAK__FLAG__=false;
@@ -1635,9 +1636,9 @@ await Environment.set_global("shade_rgb",async function(rgb,shade_factor) {
 });
 await Environment.set_global("modify_color_ts",async function(rgb,factor) {
     if (check_true ((0<=factor))){
-          return await (await Environment.get_global("tint_rgb"))(rgb,await Math.abs(factor))
+          return await (await __GG__("tint_rgb"))(rgb,await Math.abs(factor))
     } else {
-          return await (await Environment.get_global("shade_rgb"))(rgb,await Math.abs(factor))
+          return await (await __GG__("shade_rgb"))(rgb,await Math.abs(factor))
     }
 },{ "name":"modify_color_ts","fn_args":"(rgb factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided factor to the color and return the result as an rgb array.","The provided factor should be in the range -1 to 1: -1 to 0 applies shade to the color and 0 to 1 applies tinting to the color."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"]
 });
@@ -1656,17 +1657,17 @@ await Environment.set_global("is_upper?",async function(v) {
 await Environment.set_global("camel_case_to_lower",async function(val) {
     let last_upper=0;
     ;
-     return  (await (await Environment.get_global("map"))(async function(v,i) {
+     return  (await (await __GG__("map"))(async function(v,i) {
          return  await async function(){
-            if (check_true( ((i>0)&&await (await Environment.get_global("is_upper?"))(v)&&(0===last_upper)))) {
+            if (check_true( ((i>0)&&await (await __GG__("is_upper?"))(v)&&(0===last_upper)))) {
                 last_upper=1;
                  return  ("_"+(v).toLowerCase())
-            } else if (check_true( ((i>0)&&await (await Environment.get_global("is_upper?"))(v)&&(last_upper>0)))) {
+            } else if (check_true( ((i>0)&&await (await __GG__("is_upper?"))(v)&&(last_upper>0)))) {
                 last_upper=2;
                  return  (v).toLowerCase()
-            } else if (check_true( ((i===0)&&await (await Environment.get_global("is_upper?"))(v)))) {
+            } else if (check_true( ((i===0)&&await (await __GG__("is_upper?"))(v)))) {
                  return (v).toLowerCase()
-            } else if (check_true( await (await Environment.get_global("is_lower?"))(v))) {
+            } else if (check_true( await (await __GG__("is_lower?"))(v))) {
                  return  await async function(){
                     if (check_true( (last_upper===2))) {
                         last_upper=0;
@@ -1681,13 +1682,13 @@ await Environment.set_global("camel_case_to_lower",async function(val) {
                  return  v
             }
         } ()
-    },await (await Environment.get_global("split"))(val,""))).join("")
+    },await (await __GG__("split"))(val,""))).join("")
 },{ "name":"camel_case_to_lower","fn_args":"(val)","usage":[],"description":"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.","tags":["text","string","conversion","lowercase","uppercase"]
 });
 await Environment.set_global("scan_list",async function(regex,container) {
     let expr=regex;
     ;
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(regex)==="RegExp")))){
+    if (check_true (await (await __GG__("not"))((await (await __GG__("sub_type"))(regex)==="RegExp")))){
          expr=new RegExp(regex)
     };
     let cnt=0;
@@ -1733,7 +1734,7 @@ await Environment.set_global("scan_list",async function(regex,container) {
 await Environment.set_global("*LANGUAGE*",new Object());
 await Environment.set_global("dtext",async function(default_text) {
      return  (await (async function(){
-        let __targ__136=(await Environment.get_global("*LANGUAGE*"));
+        let __targ__136=(await __GG__("*LANGUAGE*"));
         if (__targ__136){
              return(__targ__136)[default_text]
         } 
@@ -1743,10 +1744,10 @@ await Environment.set_global("dtext",async function(default_text) {
 await Environment.set_global("gather_up_prop",async function(key,values) {
      return  await async function(){
         if (check_true( (values instanceof Array))) {
-             return await (await Environment.get_global("no_empties"))(await (await Environment.get_global("map"))(async function(v) {
+             return await (await __GG__("no_empties"))(await (await __GG__("map"))(async function(v) {
                  return  await async function(){
                     if (check_true( (v instanceof Array))) {
-                         return await (await Environment.get_global("gather_up_prop"))(key,v)
+                         return await (await __GG__("gather_up_prop"))(key,v)
                     } else if (check_true( (v instanceof Object))) {
                          return await (async function(){
                             let __targ__137=v;
@@ -1770,8 +1771,8 @@ await Environment.set_global("gather_up_prop",async function(key,values) {
 });
 await Environment.set_global("sum_up_prop",async function(key,values) {
      return  await (async function(){
-        let __apply_args__139=await (await Environment.get_global("flatten"))(await (await Environment.get_global("gather_up_prop"))(key,values));
-        return ( (await Environment.get_global("add"))).apply(this,__apply_args__139)
+        let __apply_args__139=await (await __GG__("flatten"))(await (await __GG__("gather_up_prop"))(key,values));
+        return ( (await __GG__("add"))).apply(this,__apply_args__139)
     })()
 },{ "name":"sum_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return the total sum amount of the given key.","tags":["sum","key","property","objects","iteration"]
 });
@@ -1857,7 +1858,7 @@ await Environment.set_global("truncate",async function(len,value,trailer) {
      return  await async function(){
         if (check_true( (value instanceof String || typeof value==='string'))) {
              if (check_true (((value && value.length)>len))){
-                  return await (await Environment.get_global("add"))(await value["substr"].call(value,0,len),trailer)
+                  return await (await __GG__("add"))(await value["substr"].call(value,0,len),trailer)
             } else {
                   return value
             }
@@ -1873,17 +1874,17 @@ await Environment.set_global("uniq",async function(values,handle_complex_types) 
     let s;
     s=new Set();
     if (check_true (handle_complex_types)){
-        await (await Environment.get_global("map"))(async function(x) {
+        await (await __GG__("map"))(async function(x) {
              return  await s["add"].call(s,await JSON.stringify(x))
         },(values||[]));
-         return  await (await Environment.get_global("map"))(async function(x) {
+         return  await (await __GG__("map"))(async function(x) {
              return  await JSON.parse(x)
-        },await (await Environment.get_global("to_array"))(s))
+        },await (await __GG__("to_array"))(s))
     } else {
-        await (await Environment.get_global("map"))(async function(x) {
+        await (await __GG__("map"))(async function(x) {
              return  await s["add"].call(s,x)
         },(values||[]));
-         return  await (await Environment.get_global("to_array"))(s)
+         return  await (await __GG__("to_array"))(s)
     }
 },{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"]
 });
@@ -1914,19 +1915,19 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
         if (check_true( (csv_data instanceof Array))) {
              return csv_data
         } else if (check_true( (csv_data instanceof String || typeof csv_data==='string'))) {
-             return (await (await Environment.get_global("replace"))(new RegExp("[\r]+","g"),"",csv_data)).split("\n")
+             return (await (await __GG__("replace"))(new RegExp("[\r]+","g"),"",csv_data)).split("\n")
         }
     } ();
     total_lines=(lines && lines.length);
     if (check_true (interruptions)){
-         await (await Environment.get_global("sleep"))(0.1)
+         await (await __GG__("sleep"))(0.1)
     };
      return  await (async function() {
         let __for_body__152=async function(v) {
             if (check_true (interruptions)){
                 count+=1;
                 if (check_true (((count%1000)===0))){
-                    await (await Environment.get_global("sleep"))(0.1);
+                    await (await __GG__("sleep"))(0.1);
                     if (check_true ((options && options["notifier"]))){
                          await (async function(){
                             let __array_op_rval__154=(options && options["notifier"]);
@@ -1939,7 +1940,7 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
                     }
                 }
             };
-            match_list=(await (await Environment.get_global("scan_str"))(new RegExp("\"([A-Za-z0-9, .  :;]+)\"","g"),v)).slice(0).reverse();
+            match_list=(await (await __GG__("scan_str"))(new RegExp("\"([A-Za-z0-9, .  :;]+)\"","g"),v)).slice(0).reverse();
             line=await (async function () {
                  if (check_true (((match_list && match_list.length)>0))){
                     rval=[];
@@ -1948,7 +1949,7 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
                              return  (rval).push(await (async function(){
                                 let __array_op_rval__161=(m && m["index"]);
                                  if (__array_op_rval__161 instanceof Function){
-                                    return await __array_op_rval__161(await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",await (async function(){
+                                    return await __array_op_rval__161(await (await __GG__("replace"))(sepval_r,"!SEPVAL!",await (async function(){
                                         let __targ__159=m;
                                         if (__targ__159){
                                              return(__targ__159)["1"]
@@ -1960,7 +1961,7 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
                                         } 
                                     })()) 
                                 } else {
-                                    return[__array_op_rval__161,await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",await (async function(){
+                                    return[__array_op_rval__161,await (await __GG__("replace"))(sepval_r,"!SEPVAL!",await (async function(){
                                         let __targ__159=m;
                                         if (__targ__159){
                                              return(__targ__159)["1"]
@@ -1989,7 +1990,7 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
                     tmp=v;
                     await (async function() {
                         let __for_body__164=async function(r) {
-                             return  tmp=(""+await tmp["substr"].call(tmp,0,(r && r["0"]))+(r && r["1"])+await tmp["substr"].call(tmp,(2+(r && r["0"])+await (await Environment.get_global("length"))((r && r["2"])))))
+                             return  tmp=(""+await tmp["substr"].call(tmp,0,(r && r["0"]))+(r && r["1"])+await tmp["substr"].call(tmp,(2+(r && r["0"])+await (await __GG__("length"))((r && r["2"])))))
                         };
                         let __array__165=[],__elements__163=rval;
                         let __BREAK__FLAG__=false;
@@ -2010,7 +2011,7 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
             })();
              return  await (async function() {
                 let __for_body__168=async function(segment) {
-                     return  await (await Environment.get_global("replace"))(fixer_r,sepval,segment)
+                     return  await (await __GG__("replace"))(fixer_r,sepval,segment)
                 };
                 let __array__169=[],__elements__167=(line).split(sepval);
                 let __BREAK__FLAG__=false;
@@ -2044,9 +2045,9 @@ await Environment.set_global("to_csv",async function(rows,delimiter) {
     ;
      return  (await (async function() {
         let __for_body__172=async function(row) {
-             return  (await (await Environment.get_global("map"))(async function(v) {
-                if (check_true (((v instanceof String || typeof v==='string')&&(await (await Environment.get_global("contains?"))(" ",(""+v+""))||await (await Environment.get_global("contains?"))(delimiter,v)||await (await Environment.get_global("contains?"))("\"",v))))){
-                      return ("\""+await (await Environment.get_global("replace"))(quote_quoter,"\"\"",v)+"\"")
+             return  (await (await __GG__("map"))(async function(v) {
+                if (check_true (((v instanceof String || typeof v==='string')&&(await (await __GG__("contains?"))(" ",(""+v+""))||await (await __GG__("contains?"))(delimiter,v)||await (await __GG__("contains?"))("\"",v))))){
+                      return ("\""+await (await __GG__("replace"))(quote_quoter,"\"\"",v)+"\"")
                 } else {
                       return (""+v+"")
                 }
@@ -2073,7 +2074,7 @@ await Environment.set_global("to_csv",async function(rows,delimiter) {
 },{ "name":"to_csv","fn_args":"(\"rows\" delimiter)","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"]
 });
 await Environment.set_global("squeeze",async function(s) {
-     return  await (await Environment.get_global("replace"))(new RegExp(" ","g"),"",s)
+     return  await (await __GG__("replace"))(new RegExp(" ","g"),"",s)
 },{ "name":"squeeze","fn_args":"(s)","usage":["string_value:string"],"description":"Returns a string that has all spaces removed from the supplied string value.","tags":["text","space","trim","remove"]
 });
 await Environment.set_global("ensure_keys",async function(keylist,obj,default_value) {
@@ -2122,7 +2123,7 @@ await Environment.set_global("ensure_keys",async function(keylist,obj,default_va
     description:("Given an integer value representing seconds of a time duration, return a string "+"representing the time in words, such as 2 mins.  If the key longForm is set to "+"true in options return full words instead of contracted forms.  For example min vs. minute."),usage:["seconds:integer","options:object"],tags:["time","date","format","string","elapsed"]
 });
 await Environment.set_global("ago",async function(dval) {
-     return  await (await Environment.get_global("show_time_in_words"))(((await (async function() {
+     return  await (await __GG__("show_time_in_words"))(((await (async function() {
         {
              let __call_target__=new Date(), __call_method__="getTime";
             return await __call_target__[__call_method__]()
@@ -2131,7 +2132,7 @@ await Environment.set_global("ago",async function(dval) {
 },{ "name":"ago","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.","tags":["date","format","time","string","elapsed"]
 });
 await Environment.set_global("lifespan",async function(dval) {
-     return  await (await Environment.get_global("show_time_in_words"))(((await dval["getTime"]()-await (async function() {
+     return  await (await __GG__("show_time_in_words"))(((await dval["getTime"]()-await (async function() {
         {
              let __call_target__=new Date(), __call_method__="getTime";
             return await __call_target__[__call_method__]()
