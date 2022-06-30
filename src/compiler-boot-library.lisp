@@ -2005,28 +2005,29 @@
     
     })
 
-(if_compile_time_defined
-   `Deno
-   (defglobal read_text_file
-       (bind Deno.readTextFile Deno)
-       {
+(when (is_symbol? `Deno)
+  (if_compile_time_defined
+      `Deno
+    (defglobal read_text_file
+      (bind Deno.readTextFile Deno)
+      {
        `description: (+ "Given an accessible filename including " 
 			"path with read permissions returns the file contents as a string.")
        `usage:["filename:string" "options:object" ]
        `tags:["file" "read" "text" "input" "io"]
        })
-   false)
-   
-(if_compile_time_defined
-   `Deno
+    false)
+  
+  (if_compile_time_defined
+      `Deno
     (defun load (filename)       
-	  (evaluate (read_text_file filename))
-       { `description: (+ "Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. "
-			  "The file contents are expected to be Lisp source code in text format.")
+      (evaluate (read_text_file filename))
+      { `description: (+ "Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. "
+                         "The file contents are expected to be Lisp source code in text format.")
        `tags: [`compile `read `io `file ]
        `usage: ["filename:string"] 
        })
-   false)
+    false))
 
 
 

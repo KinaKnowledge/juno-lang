@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-29 18:14:18
-// Version: 2022.06.29.18.14
-export const DLISP_ENV_VERSION='2022.06.29.18.14';
+// Build Time: 2022-06-30 06:47:16
+// Version: 2022.06.30.06.47
+export const DLISP_ENV_VERSION='2022.06.30.06.47';
 
 
 
@@ -254,7 +254,7 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
         await (await Environment.get_global("warn"))("input file ",lisp_file," not compiled.");
          return  null
     }
-},{ "name":"compile_file","fn_args":"(lisp_file export_function_name options)","description":["=:+","Given an input lisp file, and an optional initalizer function name and options ","object, compile the lisp file into a javascript file. The options object will ","allow the specification of an output path and filename, given by the key ","output_file.  If the initializer function isn't specified it is named ","initializer, which when used with load, will be automatically called ","one the file is loaded.  Otherwise the initializer function should be ","called when after dynamically importing, using dynamic_import. If the ","options object is to be used, with a default initializer, nil should be ","used as a placeholder for the initializer_function name.<br><br>","Options are as follows:<br><br>","js_headers: array: If provided, this is an array of strings that represent","lines to be inserted at the top of the file.","include_source: boolean: If provided will append the block forms and ","expressions within the text as comments.","output_file: string: If provided the path and filename of the compiled ","javascript file to be produced.","include_boilerplate: boolean: If set to false explicity, the boilerplate","code will be not be included in the build.","<br><br>","NOTE: this function's API is unstable and subject to change due to ","the early phase of this language."],"usage":["input_file:string","initializer_function:string?","options:object?"],"tags":["compile","environment","building","javascript","lisp","file"]
+},{ "name":"compile_file","fn_args":"(lisp_file export_function_name options)","description":["=:+","Given an input lisp file, and an optional initalizer function name and options ","object, compile the lisp file into a javascript file. The options object will ","allow the specification of an output path and filename, given by the key ","output_file.  If the initializer function isn't specified it is named ","initializer, which when used with load, will be automatically called ","one the file is loaded.  Otherwise the initializer function should be ","called when after dynamically importing, using dynamic_import. If the ","options object is to be used, with a default initializer, nil should be ","used as a placeholder for the initializer_function name.<br><br>","Options are as follows:<br><br>","js_headers: array: If provided, this is an array of strings that represent","lines to be inserted at the top of the file.","include_source: boolean: If provided will append the block forms and ","expressions within the text as comments.","output_file: string: If provided the path and filename of the compiled ","javascript file to be produced.","include_boilerplate: boolean: If set to false explicity, the boilerplate","code will be not be included in the build.","<br><br>","NOTE: this function's API is unstable and subject to change due to ","the early phase of this language."],"usage":["input_file:string","initializer_function:string?","options:object?"],"tags":["compile","environment","building","javascript","lisp","file","export"]
 });
 await Environment.set_global("rebuild_env",async function(opts) {
     let issues;
@@ -337,7 +337,7 @@ await Environment.set_global("rebuild_env",async function(opts) {
     });
     await (await Environment.get_global("success"))("complete");
      return  true
-},{ "name":"rebuild_env","fn_args":"(opts)"
+},{ "name":"rebuild_env","fn_args":"(opts)","description":["=:+","Builds the lisp environment from the Lisp sources and produces the Javascript output files ","necessary for initializing the environment. Options: <br>","source_dir:string:The directory of the Lisp sources, the default is './src'.<br>","output_dir:string:The directory to where the output Javascript files are placed.  The default is './js'.<br>","include_source:boolean:If true, the compiler will include comments of the lisp source (not fully supported yet).<br>","version_tag:string:A string based label signifying the text to use as the version.  If not specified, the version ","tag uses the format year.month.day.hour.minute.<br>"],"usage":["options:object?"],"tags":["compile","export","build","environment","javascript"]
 });
  return  true
 }

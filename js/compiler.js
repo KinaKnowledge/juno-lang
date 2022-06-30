@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-06-29 18:14:18
-// Version: 2022.06.29.18.14
-export const DLISP_ENV_VERSION='2022.06.29.18.14';
+// Build Time: 2022-06-30 06:47:16
+// Version: 2022.06.30.06.47
+export const DLISP_ENV_VERSION='2022.06.30.06.47';
 
 
 
@@ -926,7 +926,7 @@ export async function init_compiler(Environment) {
                     dec_struct=await get_declarations(ctx,sname);
                     if (check_true (await (await Environment.get_global("blank?"))(dec_struct))){
                          dec_struct={
-                            type:"undefined",inlined:false
+                            type:undefined,inlined:false
                         }
                     };
                     await async function(){
@@ -1355,13 +1355,13 @@ export async function init_compiler(Environment) {
                     _path=(_path||[]);
                     if (check_true ((await JSON.stringify(obj)==="{}"))){
                          return  {
-                            type:"object",ref:false,val:"{}",name:"{}",__token__:"true",path:_path
+                            type:"object",ref:false,val:"{}",name:"{}",__token__:true,path:_path
                         }
                     } else {
                           return await (async function() {
                             let __for_body__59=async function(pset) {
                                  return  {
-                                    type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:"true"
+                                    type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
                                 }
                             };
                             let __array__60=[],__elements__58=await (await Environment.get_global("pairs"))(obj);
@@ -1382,20 +1382,20 @@ export async function init_compiler(Environment) {
                      return  await async function(){
                         if (check_true( ((args && args["0"])==="=:quote"))) {
                              return {
-                                type:"arr",__token__:"true",source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
-                                    type:"special",val:"=:quote",ref:true,name:"quote",__token__:"true"
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
+                                    type:"special",val:"=:quote",ref:true,name:"quote",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&&(await length(args)>2)&&await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         } else if (check_true( ((args && args["0"])==="=:quotem"))) {
                              return {
-                                type:"arr",__token__:"true",source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
-                                    type:"special",path:await (await Environment.get_global("conj"))(_path,[0]),val:"=:quotem",ref:true,name:"quotem",__token__:"true"
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
+                                    type:"special",path:await (await Environment.get_global("conj"))(_path,[0]),val:"=:quotem",ref:true,name:"quotem",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&&(await length(args)>2)&&await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         } else  {
                              return {
-                                type:"arr",__token__:"true",source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
-                                    type:"special",val:"=:quotel",ref:true,name:"quotel",__token__:"true"
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
+                                    type:"special",val:"=:quotel",ref:true,name:"quotel",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&&(await length(args)>2)&&await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         }
@@ -1477,51 +1477,51 @@ export async function init_compiler(Environment) {
                                      return  await async function(){
                                         if (check_true( (await sub_type(arg)==="array"))) {
                                              return {
-                                                type:"arr",__token__:"true",val:await tokenize(arg,ctx,await add(_path,idx)),ref:is_ref,name:null,path:await add(_path,idx)
+                                                type:"arr",__token__:true,val:await tokenize(arg,ctx,await add(_path,idx)),ref:is_ref,name:null,path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="Function"))) {
                                              return {
-                                                type:"fun",__token__:"true",val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"fun",__token__:true,val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="AsyncFunction"))) {
                                              return {
-                                                type:"asf",__token__:"true",val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"asf",__token__:true,val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="array"))) {
                                              return {
-                                                type:"array",__token__:"true",val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"array",__token__:true,val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="Number"))) {
                                              return {
-                                                type:"num",__token__:"true",val:argvalue,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"num",__token__:true,val:argvalue,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="String")&&is_ref))) {
                                              return {
-                                                type:"arg",__token__:"true",val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
+                                                type:"arg",__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="String"))) {
                                              return {
-                                                type:"literal",__token__:"true",val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
+                                                type:"literal",__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (arg instanceof Object))) {
                                              return  {
-                                                type:"objlit",__token__:"true",val:await tokenize_object(arg,ctx,await add(_path,idx)),ref:is_ref,name:null,path:await add(_path,idx)
+                                                type:"objlit",__token__:true,val:await tokenize_object(arg,ctx,await add(_path,idx)),ref:is_ref,name:null,path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="literal")&&is_ref&&((""+await (await Environment.get_global("as_lisp"))(arg))==="nil")))) {
                                              return {
-                                                type:"null",__token__:"true",val:null,ref:true,name:"null",path:await add(_path,idx)
+                                                type:"null",__token__:true,val:null,ref:true,name:"null",path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="unbound")&&is_ref&&(null==argvalue)))) {
                                              return {
-                                                type:"arg",__token__:"true",val:arg,ref:true,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),path:await add(_path,idx)
+                                                type:"arg",__token__:true,val:arg,ref:true,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="unbound")&&is_ref))) {
                                              return {
-                                                type:await sub_type(argvalue),__token__:"true",val:argvalue,ref:true,name:await clean_quoted_reference(await sanitize_js_ref_name((""+await (await Environment.get_global("as_lisp"))(arg)))),path:await add(_path,idx)
+                                                type:await sub_type(argvalue),__token__:true,val:argvalue,ref:true,name:await clean_quoted_reference(await sanitize_js_ref_name((""+await (await Environment.get_global("as_lisp"))(arg)))),path:await add(_path,idx)
                                             }
                                         } else  {
                                              return {
-                                                type:argtype,__token__:"true",val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
+                                                type:argtype,__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
                                             }
                                         }
                                     } ()
@@ -7100,7 +7100,7 @@ export async function init_compiler(Environment) {
                     __obj__625["progn"]=compile_block;
                     __obj__625["progl"]=async function(tokens,ctx) {
                          return  await compile_block(tokens,ctx,{
-                            no_scope_boundary:true,suppress_return:"true"
+                            no_scope_boundary:true,suppress_return:true
                         })
                     };
                     __obj__625["break"]=compile_break;
