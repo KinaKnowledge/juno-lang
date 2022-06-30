@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-30 12:09:19
-// Version: 2022.06.30.12.09
-export const DLISP_ENV_VERSION='2022.06.30.12.09';
+// Build Time: 2022-06-30 14:54:56
+// Version: 2022.06.30.14.54
+export const DLISP_ENV_VERSION='2022.06.30.14.54';
 
 
 
@@ -347,13 +347,15 @@ await Environment.set_global("do_deferred_splice",async function(tree) {
 await Environment.set_global("define",async function(...defs) {
     let acc;
     let symname;
+    let namespace;
     acc=["=:progl"];
     symname=null;
+    namespace=namespace;
     await (async function() {
         let __for_body__27=async function(defset) {
             (acc).push(["=:defvar",(defset && defset["0"]),(defset && defset["1"])]);
             symname=(defset && defset["0"]);
-            (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await __GG__("as_lisp"))(symname)),symname]);
+            (acc).push(["=:set_prop",["=:prop",["=:prop","=:Environment.global_ctx",namespace],"scope"],(""+await (await __GG__("as_lisp"))(symname)),symname]);
             if (check_true (((defset && defset["2"]) instanceof Object))){
                  return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await __GG__("as_lisp"))(symname)+""),(defset && defset["2"])]])
             }
@@ -383,7 +385,7 @@ await Environment.set_global("define_env",async function(...defs) {
         let __for_body__31=async function(defset) {
             (acc).push(["=:defvar",(defset && defset["0"]),(defset && defset["1"])]);
             symname=(defset && defset["0"]);
-            (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await __GG__("as_lisp"))(symname)),symname]);
+            (acc).push(["=:set_prop","=:Environment.global_ctx.core.scope",(""+await (await __GG__("as_lisp"))(symname)),symname]);
             if (check_true (((defset && defset["2"]) instanceof Object))){
                  return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await __GG__("as_lisp"))(symname)+""),(defset && defset["2"])]])
             }

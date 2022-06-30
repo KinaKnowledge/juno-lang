@@ -301,13 +301,15 @@
 (defmacro define (`& defs)
     (let
         ((acc [(quote progl)])
-         (symname nil))
+         (symname nil)
+         (namespace namespace))
+         
      
      (for_each (`defset defs)
         (do
             (push acc [(quote defvar) defset.0 defset.1])
             (= symname defset.0)
-            (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
+            (push acc [(quote set_prop) `(prop (prop Environment.global_ctx ,#namespace) `scope) (+ "" (as_lisp symname)) symname])
             (when (is_object? defset.2)
                   (push acc ([(quote set_prop) (quote Environment.definitions)
                                        (+ "" (as_lisp symname) "")
@@ -331,7 +333,7 @@
         (do
             (push acc [(quote defvar) defset.0 defset.1])
             (= symname defset.0)
-            (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
+            (push acc [(quote set_prop) (quote Environment.global_ctx.core.scope) (+ "" (as_lisp symname)) symname])
             (when (is_object? defset.2)
                   (push acc ([(quote set_prop) (quote Environment.definitions)
                                        (+ "" (as_lisp symname) "")

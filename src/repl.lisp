@@ -49,7 +49,8 @@
 		    
 		    (when (or (== (first return_stack) Environment)
 			      (== (first return_stack) Environment.global_ctx)
-			      (== (first return_stack) Environment.global_ctx.scope))
+			      (== (first return_stack) (prop Environment.global_ctx *namespace*))
+                              (== (first return_stack) (prop (prop Environment.global_ctx *namespace*) `scope)))
 		      (set_prop return_stack 0 nil))
 		    
 		    (= $ (first return_stack))

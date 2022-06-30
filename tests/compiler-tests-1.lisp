@@ -278,10 +278,10 @@
     false
     "undefine symbol to invalid reference"
      ]
- ["(defconst my_constant 123) (describe `my_constant)"
+ ["(undefine `my_constant) (defconst my_constant 123) (describe `my_constant)"
   []
   `{ type: "Number", location: "global", name: "my_constant", constant: true }
-  "global constant definition is mark as a constant" ]
+  "global constant definition is marked as a constant" ]
  ["(undefine `my_constant) (defconst my_constant 123) (undefine `my_constant) (describe `my_constant)"
   []
   `{ type: "undefined", location: null, name: "my_constant" }

@@ -984,7 +984,8 @@
              (if (and (is_array? lisp_tree)
                       (is_reference? lisp_tree.0)
                       ;; is this a compile time function?  Check the definition in our environment..
-                      (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
+                      (resolve_path [`eval_when `compile_time] (-> Environment `get_definition (-> lisp_tree.0 `substr 2))))
+                      ;(resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
                  (let
                      ((`ntree nil)		      
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
@@ -3882,10 +3883,10 @@
                                                                 (push acc t))
                                                              (cond
                                                                  (and (is_function? dec_struct.value)
-                                                                      (prop (prop Environment.definitions name)
+                                                                      (prop (-> Environment `get_definition name)
                                                                             `fn_body))
                                                                  (do
-                                                                     (= details (prop Environment.definitions name))
+                                                                     (= details (-> Environment `get_definition name))
                                                                      (= source (+ "(fn " details.fn_args " " details.fn_body ")"))
                                                                      
                                                                      (= source (compile (tokenize (read_lisp source) ctx) ctx 1000))

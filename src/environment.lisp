@@ -23,17 +23,21 @@
      (declare (toplevel true)
               (include subtype)
               (local get_object_path get_outside_global clone))
+
+     (defvar namespace "core")
      
      ;; Construct the environment
      (defvar
        Environment
        {
         `global_ctx:{
-                     `scope:{}
+                     `core:{
+                            `scope:{}
+                            }
                      }
         `version: (javascript DLISP_ENV_VERSION)
-        `definitions: {
-                       
+        `ns_definitions: {
+                       `core: { }
                        }
         `declarations: { 
                         `safety: {
@@ -50,9 +54,43 @@
      
      (set_prop Environment
                `context
-               Environment.global_ctx)
+               (prop Environment.global_ctx namespace)
+               `definitions
+               (prop Environment.ns_definitions `core))
      
      
+     (defvar set_namespace (function (name)                                     
+                                     (if (prop Environment.global_ctx name)
+                                       (progn 
+                                        (set_prop Environment `context
+                                                  (prop Environment.global_ctx name))
+                                        (= namespace name)                                        
+                                        (set_prop Environment.context.scope
+                                                  "*namespace*"
+                                                  name)
+                                        (set_prop Environment `definitions
+                                                  (prop Environment.ns_definitions name))
+                                        name)
+                                       (throw EvalError (+ "invalid namespace: " name)))))
+       
+
+     (defvar create_namespace (function (name)
+                                        (if (prop Environment.global_ctx name)
+                                          (throw EvalError (+ "namespace already exists: " name))
+                                          (progn
+                                           (set_prop Environment.ns_definitions
+                                                     name
+                                                     {
+                                                      
+                                                      })
+                                           (set_prop Environment.global_ctx
+                                                     name
+                                                     {
+                                                      `scope: {
+
+                                                               }
+                                                      })
+                                           name))))
      
      (defvar compiler (fn () true))
      
@@ -66,6 +104,7 @@
        (MAX_SAFE_INTEGER 9007199254740991)
        (LispSyntaxError globalThis.LispSyntaxError)
        (sub_type subtype)
+       (*namespace* namespace)
        (__VERBOSITY__ 0
                       { 
                        `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -82,6 +121,7 @@
                `description: "Convenience method for parseFloat, should be used in map vs. directly calling parseFloat, which will not work directly"
                `tags: ["conversion" "number"]
                })
+
        
        (values (new Function "...args"
                     "{
@@ -423,7 +463,7 @@
         (fn (quoted_symbol)
           (let
               ((not_found { `not_found: true })
-               (location (cond (prop Environment.global_ctx.scope quoted_symbol)
+               (location (cond (prop Environment.context.scope quoted_symbol)
                                "global"
                                (not (== undefined (get_outside_global quoted_symbol)))
                                "external"
@@ -434,11 +474,11 @@
                (+ {
                    `type: (cond
                             (== location "global")
-                            (sub_type (prop Environment.global_ctx.scope quoted_symbol))
+                            (sub_type (prop Environment.context.scope quoted_symbol))
                             (== location "external")
                             (sub_type (get_outside_global quoted_symbol))
                             else
-                            "undefined")
+                            "undefined")                   
                    `location: location
                    `name: quoted_symbol
                    }                  
@@ -452,10 +492,10 @@
             result)))
        
        (undefine (function (quoted_symbol)
-                           (if (prop Environment.global_ctx.scope quoted_symbol)
+                           (if (prop Environment.context.scope quoted_symbol)
                              (progn
                               (delete_prop Environment.definitions quoted_symbol)
-                              (delete_prop Environment.global_ctx.scope quoted_symbol))                              
+                              (delete_prop Environment.context.scope quoted_symbol))                              
                              false)))
        
        (eval_exp (fn (expression)
@@ -650,14 +690,14 @@
 		   (cond (not (== (typeof refname) "string"))
 			 (throw TypeError "reference name must be a string type")
 			 (or (== Environment value)
-			     (== Environment.global_ctx value)
-			     (== Environment.global_ctx.scope value))
+			     (== Environment.context value)
+			     (== Environment.context.scope value))
 			 (throw EvalError "cannot set the environment scope as a global value"))
 		                                  
                    (when (resolve_path [ refname `constant ] Environment.definitions)
                      (throw TypeError (+ "Assignment to constant variable " refname )))
                      
-                   (set_prop Environment.global_ctx.scope 
+                   (set_prop Environment.context.scope 
                              refname
                              value)
                    (if (and (is_object? meta)
@@ -676,7 +716,7 @@
                                  {
                                   `constant: true
                                   })))
-                   (prop Environment.global_ctx.scope refname))))
+                   (prop Environment.context.scope refname))))
        
        (get_global 
         (function (refname value_if_not_found suppress_check_external_env)
@@ -694,6 +734,7 @@
                     (let
                         ((`comps (get_object_path refname))
                          (`refval nil)
+                         (`namespace_identifier (split_by "/" comps.0))
                          
                          ;; shadow the environments scope check if the suppress_check_external_env is set to true
                          ;; this is useful when we have reference names that are not legal js reference names
@@ -705,8 +746,17 @@
                       ;; search path is to first check the global Lisp Environment
                       ;; and if the check_external_env flag is true, then go to the
                       ;; external JS environment.
-                      (= refval (prop Environment.global_ctx.scope comps.0))
+                      (if (> namespace_identifier.length 1)
+                        (= refval (prop (prop (prop Environment.global_ctx namespace_identifier.0) `scope) namespace_identifier.1))
+                        (do
+                          (= refval (prop Environment.context.scope comps.0))
+
+                      ;; if not found in the namespace, check core
                       
+                          (if (== undefined refval)
+                            (= refval (prop Environment.global_ctx.core.scope comps.0)))))
+                               
+                               
                       (if (and (== undefined refval)
                                check_external_env)
                         (= refval (if check_external_env
@@ -937,16 +987,21 @@
                               (= compiler compiler_function)
                               (= compiler_operators
                                  (compiler [] { `special_operators: true `env: Environment }))
-                              (set_prop Environment.global_ctx.scope
+                              (set_prop Environment.global_ctx.core.scope
                                         "compiler"
                                         compiler)
 	                      compiler)))	  
+
+     (defvar get_definition (fn (name)
+                              (or (prop Environment.definitions name)
+                                  (prop Environment.ns_definitions.core name))))
+                                
      
-     (set_prop Environment.global_ctx.scope
+     (set_prop Environment.global_ctx.core.scope
 	       `set_compiler
 	       set_compiler)
           
-     (set_prop Environment.global_ctx.scope
+     (set_prop Environment.global_ctx.core.scope
 	       `clone
 	       (fn (val)
 		 (if (== val Environment)
@@ -971,7 +1026,7 @@
      (defvar as_lisp lisp_writer)
      (defvar read_lisp reader)
      
-     (set_prop Environment.global_ctx.scope
+     (set_prop Environment.global_ctx.core.scope
                `eval eval_exp
                `reader reader
                `add_escape_encoding add_escape_encoding
@@ -1060,9 +1115,12 @@
                `identify subtype
                `meta_for_symbol meta_for_symbol
                `set_compiler set_compiler
+               `create_namespace create_namespace
+               `set_namespace set_namespace
+               `get_definition get_definition
                `read_lisp reader
                `as_lisp as_lisp
-               `inlines inlines
+               `inlines inlines               
                `special_operators special_operators
                `definitions Environment.definitions
                `declarations Environment.declarations
