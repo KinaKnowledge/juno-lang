@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-30 06:47:16
-// Version: 2022.06.30.06.47
-export const DLISP_ENV_VERSION='2022.06.30.06.47';
+// Build Time: 2022-06-30 06:52:24
+// Version: 2022.06.30.06.52
+export const DLISP_ENV_VERSION='2022.06.30.06.52';
 
 
 
@@ -2936,15 +2936,6 @@ await Environment.set_global("show",async function(thing) {
     } ()
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"]
 });
-if (check_true (await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))){
-    await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.readTextFile")),(await Environment.get_global("Deno"))),{
-        description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"]
-    });
-     await Environment.set_global("load",async function(filename) {
-         return  await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(filename))
-    },{ "name":"load","fn_args":"(filename)","description":["=:+","Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. ","The file contents are expected to be Lisp source code in text format."],"tags":["compile","read","io","file"],"usage":["filename:string"]
-})
-};
  return  true
 }
 }
