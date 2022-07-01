@@ -34,10 +34,14 @@
                      `core:{
                             `scope:{}
                             }
+                     `user:{
+                            `scope:{}
+                            }
                      }
         `version: (javascript DLISP_ENV_VERSION)
         `ns_definitions: {
-                       `core: { }
+                          `core: {}
+                          `user: {}
                        }
         `declarations: { 
                         `safety: {
@@ -91,6 +95,21 @@
                                                                }
                                                       })
                                            name))))
+
+     (defvar delete_namespace (function (name)
+                                        (cond
+                                          (== namespace name)                                          
+                                          (throw EvalError "namespace to be removed cannot be the current namespace")
+                                          (== name "core")
+                                          (throw EvalError "cannot remove the core namespace")
+                                          (prop Environment.global_ctx name)
+                                          (progn
+                                           (delete_prop Environment.ns_definitions name)
+                                           (delete_prop Environment.global_ctx name)
+                                           true)
+                                          else
+                                          (throw EvalError (+ "namespace doesn't exist: " name)))))
+
      
      (defvar compiler (fn () true))
      
@@ -104,7 +123,7 @@
        (MAX_SAFE_INTEGER 9007199254740991)
        (LispSyntaxError globalThis.LispSyntaxError)
        (sub_type subtype)
-       (*namespace* namespace)
+       (*namespace* namespace)       
        (__VERBOSITY__ 0
                       { 
                        `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -687,19 +706,52 @@
        (set_global 
         (function (refname value meta is_constant)
                   (progn
+                       
 		   (cond (not (== (typeof refname) "string"))
 			 (throw TypeError "reference name must be a string type")
 			 (or (== Environment value)
 			     (== Environment.context value)
 			     (== Environment.context.scope value))
 			 (throw EvalError "cannot set the environment scope as a global value"))
-		                                  
-                   (when (resolve_path [ refname `constant ] Environment.definitions)
-                     (throw TypeError (+ "Assignment to constant variable " refname )))
-                     
-                   (set_prop Environment.context.scope 
-                             refname
-                             value)
+                   (let
+                      ((comps (get_object_path refname))
+                       (namespace_identifier (split_by "/" comps.0))
+                       (target_ctx nil)
+                       (target_defs nil)
+                       (target_path nil)
+                       (target_namespace nil)
+                       (symname nil))
+                                                           
+                     ;; if we have been given a namespace directly check to see if it is defined
+                     (if (> namespace_identifier.length 1)
+                       (do
+                         (when (not (prop  Environment.global_ctx namespace_identifier.0))
+                           (throw EvalError (+ "invalid namespace: " namespace_identifier.0)))
+                         (debug)
+                         (= target_namespace namespace_identifier.0)
+                         (= target_ctx (resolve_path [ target_namespace `scope ] Environment.global_ctx))
+                         (= target_defs (prop Environment.ns_definitions target_namespace))
+                         (= target_path (rest comps))
+                         (= symname namespace_identifier.1))
+                       (do ;; not qualified -  use the default namespace 
+                         (= target_namespace namespace)
+                         (= target_ctx Environment.context.scope)
+                         (= target_defs Environment.definitions)
+                         (= target_path (rest comps))
+                         (= symname namespace_identifier.0)))
+                                                               
+                   ;; are we trying to change a value marked as constant?
+                   (when (resolve_path [target_namespace symname `constant ] Environment.ns_definitions)
+                     (throw TypeError (+ "Assignment to constant variable " symname)))
+
+                   (if (and (> target_path.length 0))  ;; we have a path value to set
+                     (set_path_value (prop target_ctx symname) ;; root object
+                                     target_path
+                                     value)
+                     (set_prop target_ctx
+                               symname
+                               value))
+                   
                    (if (and (is_object? meta)
                             (not (is_array? meta)))
                      (do
@@ -707,16 +759,16 @@
                          (set_prop meta
                                    `constant
                                    true))
-                       (set_prop Environment.definitions
+                       (set_prop target_defs
                                  refname
                                  meta))
                      (when is_constant
-                       (set_prop Environment.definitions
+                       (set_prop target_defs
                                  refname
                                  {
                                   `constant: true
                                   })))
-                   (prop Environment.context.scope refname))))
+                   (prop target_ctx refname)))))
        
        (get_global 
         (function (refname value_if_not_found suppress_check_external_env)
@@ -995,11 +1047,23 @@
      (defvar get_definition (fn (name)
                               (or (prop Environment.definitions name)
                                   (prop Environment.ns_definitions.core name))))
-                                
+
+     ;; fast symbol validation mainly for the compiler 
+     (defvar is_global? (function (name)
+                          (or (not (== undefined (prop Environment.context.scope name)))
+                              (not (== undefined (prop Environment.global_ctx.core.scope name))))))
+
+     ;; available namespaces
+     (defvar namespaces (function ()
+                                  (keys Environment.global_ctx)))
      
+     ;; expose our environment utility functions to core scope...
      (set_prop Environment.global_ctx.core.scope
-	       `set_compiler
-	       set_compiler)
+	       `set_compiler set_compiler
+               `set_namespace set_namespace
+               `create_namespace create_namespace
+               `delete_namespace delete_namespace
+               `namespaces namespaces)
           
      (set_prop Environment.global_ctx.core.scope
 	       `clone
@@ -1117,9 +1181,11 @@
                `set_compiler set_compiler
                `create_namespace create_namespace
                `set_namespace set_namespace
+               `namespaces namespaces
                `get_definition get_definition
                `read_lisp reader
                `as_lisp as_lisp
+               `is_global? is_global?
                `inlines inlines               
                `special_operators special_operators
                `definitions Environment.definitions

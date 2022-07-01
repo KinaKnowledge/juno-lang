@@ -6,11 +6,28 @@
        (instream (or instream Deno.stdin))
        (outstream (or outstream Deno.stdout))
        (td (new TextDecoder))
-       (te (new TextEncoder))
-       (prompt_text (either opts.prompt "λ-> "))
-       (prompt nil)
+       (te (new TextEncoder))       
+       (prompt_text (cond
+                      (is_function? opts.prompt)
+                      opts.prompt
+                      (is_string? opts.prompt)
+                      (function () opts.prompt)
+                      else
+                      (function () (+ "[" *namespace* "] λ-> "))))
+       (prompt (fn ()
+                 (-> te `encode (prompt_text))))
        (last_exception nil)
-       (subprompt_text (either opts.subprompt "     "))
+       (subprompt_text (cond
+                         (is_function? opts.subprompt)
+                         opts.subprompt
+                         (is_string? opts.prompt)
+                         (function () opts.prompt)
+                         else
+                         (fn () 
+                                  (+ "     " (join "" (map (fn (v) " " )  (range (+ 2 (length *namespace*))))) (join "" (map (fn (v) " ") (range_inc (or last_exception.depth 1))))))))
+       (subprompt (fn ()
+                    (-> te `encode (subprompt_text))))
+                        
        (sigint_message (-> te `encode (either opts.sigint_message "\nsigint: input canceled. type ctrl-d to exit.\n")))
        (write writeAllSync)
        
@@ -20,8 +37,7 @@
                                   (= lines [])
 			          (write outstream prompt))))
        (return_stack []))
-    (declare (function write))    
-    (= prompt (-> te `encode prompt_text))
+    (declare (function write))        
     (defglobal $ nil)
     (defglobal $$ nil)
     (defglobal $$$ nil)
@@ -29,7 +45,7 @@
       (Deno.addSignalListener `SIGINT sigint_handler)
       (catch Error (e)
 	(warn "Unable to install sigint handler.")))
-    (write outstream prompt)
+    (write outstream (prompt))
     (try      
       (for_with (`l (generator instream))
 	        (progn		
@@ -42,7 +58,7 @@
 		    (prepend return_stack
 			     (-> Environment `evaluate buffer))
 		    (console.log (first return_stack))
-		    (write outstream  prompt)
+		    (write outstream  (prompt))
 		    (= lines [])
 		    (when (> return_stack.length 3)
 		      (pop return_stack))
@@ -59,17 +75,18 @@
 		   (catch LispSyntaxError (e)
 		     (progn                      
                       (= last_exception (JSON.parse e.message))
+                      (defglobal *last_exception* last_exception)
 		      (cond
                         (not (== last_exception.type "premature end"))
                         (progn
                          (warn (+ last_exception.message ", position: " last_exception.position "\n    -->" last_exception.local_text "<--"))
                          (= lines [])
-                         (write outstream prompt))
+                         (write outstream (prompt)))
                         else
                         (progn                         
 			 (push lines l)                         
 			 (writeAllSync outstream
-                                       (-> te `encode (join "" (map (fn (v) " ") (range_inc (* (or last_exception.depth 1) "    "))))))
+                                       (subprompt))
                          ))))
 		   (catch Error (e)
 		     (console.error "ERROR: " e)))

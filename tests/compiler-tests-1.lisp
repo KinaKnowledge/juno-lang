@@ -83,6 +83,30 @@
   []
   123.456
   "Numbers converted properly" ]
+ [ "(create_namespace `tests)"
+  []
+  "tests"
+  "Create namespace"]
+ [ "(set_namespace `tests)"
+  []
+  "tests"
+  "Set namespace"]
+ [ "*namespace*"
+  []
+  "tests"
+  "*namespace* symbol should be set to the current namespace"]
+ [ "(set_namespace `core)"
+  []
+  "core"
+  "can set namespace back to core"] 
+ [ "(delete_namespace `tests)"
+  []
+  true
+  "deletion of namespace returns true"]
+ [ "(create_namespace `tests) (set_namespace `tests)"
+  []
+  "tests"
+  "create and set namespace to tests"]
  
     [ "(fn ()
            true)"

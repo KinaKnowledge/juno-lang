@@ -2004,12 +2004,17 @@
                                       
                                       ;; local shadow of a globally declared variable
                                       (and (is_string? alloc_set.1.name)
-                                           (prop Environment.context.scope alloc_set.1.name)
+                                           ;(prop Environment.context.scope alloc_set.1.name)
+                                           ;(not (== (-> Environment `get_global alloc_set.1.name NOT_FOUND_THING) NOT_FOUND_THING))
+                                           
+                                           (-> Environment `is_global? alloc_set.1.name)
                                            (not ctx_details.is_argument)
                                            (prop shadowed_globals alloc_set.0.name))
                                                   
                                       (do
-                                          (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
+                                        (when (verbosity ctx)
+                                          (clog "local shadow of a globally declared symbol: " alloc_set.0.name "->" alloc_set.1.name))
+                                        (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
                                       else
                                       (do                                        
                                        (= assignment_value (compile alloc_set.1 ctx))

@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-06-30 14:54:56
-// Version: 2022.06.30.14.54
-export const DLISP_ENV_VERSION='2022.06.30.14.54';
+// Build Time: 2022-07-01 09:20:27
+// Version: 2022.07.01.09.20
+export const DLISP_ENV_VERSION='2022.07.01.09.20';
 
 
 
@@ -10,6 +10,7 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function environment_boot(Environment)  {
 {
     const __GG__=Environment.get_global;
+    await (await __GG__("set_namespace"))("core");
     await Environment.set_global("get_outside_global",(await __GG__("get_outside_global")));
     await Environment.set_global("true?",(await __GG__("check_true")));
     await Environment.set_global("subtype",(await __GG__("sub_type")));
@@ -2534,50 +2535,7 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
         } 
     })();
     if (check_true (rules)){
-        validation_results=await (await __GG__("validate_form_structure"))(rules,await (async function(){
-            let __array_op_rval__248=tokens;
-             if (__array_op_rval__248 instanceof Function){
-                return await __array_op_rval__248() 
-            } else {
-                return[__array_op_rval__248]
-            }
-        })());
-        cpath=await async function(){
-            if (check_true( (tokens instanceof Array))) {
-                 return await (await __GG__("chop"))((tokens && tokens["0"] && tokens["0"]["path"]))
-            } else if (check_true( (tokens instanceof Object))) {
-                 return (tokens && tokens["path"])
-            }
-        } ();
-        if (check_true (await (await __GG__("not"))((validation_results && validation_results["all_passed"])))){
-            await (async function() {
-                let __for_body__251=async function(problem) {
-                     return  (errors).push({
-                        error:"SyntaxError",message:problem,source_name:await (await __GG__("getf_ctx"))(ctx,"__SOURCE_NAME__"),form:await (await __GG__("first"))(await (await __GG__("compiler_source_chain"))(cpath,tree)),parent_forms:await (await __GG__("rest"))(await (await __GG__("compiler_source_chain"))(cpath,tree)),invalid:true
-                    })
-                };
-                let __array__252=[],__elements__250=((validation_results && validation_results["invalid"])||[]);
-                let __BREAK__FLAG__=false;
-                for(let __iter__249 in __elements__250) {
-                    __array__252.push(await __for_body__251(__elements__250[__iter__249]));
-                    if(__BREAK__FLAG__) {
-                         __array__252.pop();
-                        break;
-                        
-                    }
-                }return __array__252;
-                 
-            })();
-            syntax_error=new SyntaxError("invalid syntax");
-            await async function(){
-                let __target_obj__253=syntax_error;
-                __target_obj__253["handled"]=true;
-                return __target_obj__253;
-                
-            }();
-            throw syntax_error;
-            
-        }
+         []
     } else {
          await console.log("compiler_syntax_validation: no rules for: ",validator_key," -> tokens: ",tokens,"tree: ",tree)
     };
@@ -2590,30 +2548,30 @@ await Environment.set_global("symbols",async function() {
 });
 await Environment.set_global("describe_all",async function() {
      return  await (async function(){
-        let __apply_args__254=await (async function() {
-            let __for_body__258=async function(s) {
+        let __apply_args__248=await (async function() {
+            let __for_body__252=async function(s) {
                  return  await (await __GG__("to_object"))([await (async function(){
-                    let __array_op_rval__260=s;
-                     if (__array_op_rval__260 instanceof Function){
-                        return await __array_op_rval__260(await (await __GG__("describe"))(s)) 
+                    let __array_op_rval__254=s;
+                     if (__array_op_rval__254 instanceof Function){
+                        return await __array_op_rval__254(await (await __GG__("describe"))(s)) 
                     } else {
-                        return[__array_op_rval__260,await (await __GG__("describe"))(s)]
+                        return[__array_op_rval__254,await (await __GG__("describe"))(s)]
                     }
                 })()])
             };
-            let __array__259=[],__elements__257=await (await __GG__("symbols"))();
+            let __array__253=[],__elements__251=await (await __GG__("symbols"))();
             let __BREAK__FLAG__=false;
-            for(let __iter__256 in __elements__257) {
-                __array__259.push(await __for_body__258(__elements__257[__iter__256]));
+            for(let __iter__250 in __elements__251) {
+                __array__253.push(await __for_body__252(__elements__251[__iter__250]));
                 if(__BREAK__FLAG__) {
-                     __array__259.pop();
+                     __array__253.pop();
                     break;
                     
                 }
-            }return __array__259;
+            }return __array__253;
              
         })();
-        return ( (await __GG__("add"))).apply(this,__apply_args__254)
+        return ( (await __GG__("add"))).apply(this,__apply_args__248)
     })()
 },{ "name":"describe_all","fn_args":"()","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"]
 });
@@ -2713,23 +2671,23 @@ await Environment.set_global("and*",async function(...vals) {
         let rval=true;
         ;
         await (async function() {
-            let __for_body__263=async function(v) {
+            let __for_body__257=async function(v) {
                 if (check_true (await (await __GG__("not"))(await (await __GG__("is_value?"))(v)))){
                     rval=false;
                     __BREAK__FLAG__=true;
                     return
                 }
             };
-            let __array__264=[],__elements__262=vals;
+            let __array__258=[],__elements__256=vals;
             let __BREAK__FLAG__=false;
-            for(let __iter__261 in __elements__262) {
-                __array__264.push(await __for_body__263(__elements__262[__iter__261]));
+            for(let __iter__255 in __elements__256) {
+                __array__258.push(await __for_body__257(__elements__256[__iter__255]));
                 if(__BREAK__FLAG__) {
-                     __array__264.pop();
+                     __array__258.pop();
                     break;
                     
                 }
-            }return __array__264;
+            }return __array__258;
              
         })();
          return  rval
@@ -2741,23 +2699,23 @@ await Environment.set_global("or*",async function(...vals) {
         let rval=false;
         ;
         await (async function() {
-            let __for_body__267=async function(v) {
+            let __for_body__261=async function(v) {
                 if (check_true (await (await __GG__("is_value?"))(v))){
                     rval=true;
                     __BREAK__FLAG__=true;
                     return
                 }
             };
-            let __array__268=[],__elements__266=vals;
+            let __array__262=[],__elements__260=vals;
             let __BREAK__FLAG__=false;
-            for(let __iter__265 in __elements__266) {
-                __array__268.push(await __for_body__267(__elements__266[__iter__265]));
+            for(let __iter__259 in __elements__260) {
+                __array__262.push(await __for_body__261(__elements__260[__iter__259]));
                 if(__BREAK__FLAG__) {
-                     __array__268.pop();
+                     __array__262.pop();
                     break;
                     
                 }
-            }return __array__268;
+            }return __array__262;
              
         })();
          return  rval
@@ -2768,23 +2726,23 @@ await Environment.set_global("either",async function(...args) {
     let rval;
     rval=null;
     await (async function() {
-        let __for_body__271=async function(arg) {
+        let __for_body__265=async function(arg) {
             rval=arg;
             if (check_true ((await (await __GG__("not"))((undefined===arg))&&await (await __GG__("not"))((null===arg))))){
                 __BREAK__FLAG__=true;
                 return
             }
         };
-        let __array__272=[],__elements__270=args;
+        let __array__266=[],__elements__264=args;
         let __BREAK__FLAG__=false;
-        for(let __iter__269 in __elements__270) {
-            __array__272.push(await __for_body__271(__elements__270[__iter__269]));
+        for(let __iter__263 in __elements__264) {
+            __array__266.push(await __for_body__265(__elements__264[__iter__263]));
             if(__BREAK__FLAG__) {
-                 __array__272.pop();
+                 __array__266.pop();
                 break;
                 
             }
-        }return __array__272;
+        }return __array__266;
          
     })();
      return  rval
@@ -2843,6 +2801,11 @@ await Environment.set_global("show",async function(thing) {
         }
     } ()
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"]
+});
+await Environment.set_global("with_namespace",async function(name,...body) {
+     return  ["=:let",[["=:previous_namespace","=:*namespace*"],["=:rval","=:nil"]],["=:set_namespace",name],["=:try",["=:=","=:rval",["=:progn",].concat(body)],["=:catch","=:Error",["e"],["=:progn",["=:set_namespace","=:previous_namespace"],["=:throw","=:e"]]]],["=:set_namespace","=:previous_namespace"],"=:rval"]
+},{ "eval_when":{ "compile_time":true
+},"name":"with_namespace","macro":true,"fn_args":"(name \"&\" body)"
 });
  return  true
 }

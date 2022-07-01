@@ -1,17 +1,9 @@
-
-;; Once the Alpha Environment is brought up this file should be imported into it
-
-;; Initial build of environment
-;; Build all forms in the starter environment
-;; up to random_int
-
-;; add_escape_encoding is used for quoting purposes and providing escaped
-;; double quotes to quoted lisp in compiled Javascript
+;; Juno Core Language Runtime Library (c) 2022 Kina
+;; Provides the core functionality required for the Juno language
 
 ;; **
 
-
-    
+(set_namespace "core")    
 (defglobal get_outside_global get_outside_global)      
 
 (defglobal true? check_true)
@@ -1913,9 +1905,28 @@
     
     })
 
+(defmacro with_namespace (name `& body)  
+  `(let
+       ((previous_namespace *namespace*)       
+        (rval nil))     
+     (set_namespace ,#name)
+     (try
+       (= rval
+          (progn
+           ,@body))
+       (catch Error (`e)
+         (progn
+          (set_namespace previous_namespace)
+          (throw e))))
+     ;; return to the previous namespace
+     (set_namespace previous_namespace)
+     rval))
 
 
 
+
+
+;(set_namespace "user")
 
 true
    
