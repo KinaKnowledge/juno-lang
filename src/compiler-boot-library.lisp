@@ -1,9 +1,17 @@
-;; Juno Core Language Runtime Library (c) 2022 Kina
-;; Provides the core functionality required for the Juno language
+
+;; Once the Alpha Environment is brought up this file should be imported into it
+
+;; Initial build of environment
+;; Build all forms in the starter environment
+;; up to random_int
+
+;; add_escape_encoding is used for quoting purposes and providing escaped
+;; double quotes to quoted lisp in compiled Javascript
 
 ;; **
 
-(set_namespace "core")    
+
+    
 (defglobal get_outside_global get_outside_global)      
 
 (defglobal true? check_true)
@@ -293,15 +301,13 @@
 (defmacro define (`& defs)
     (let
         ((acc [(quote progl)])
-         (symname nil)
-         (namespace namespace))
-         
+         (symname nil))
      
      (for_each (`defset defs)
         (do
             (push acc [(quote defvar) defset.0 defset.1])
             (= symname defset.0)
-            (push acc [(quote set_prop) `(prop (prop Environment.global_ctx ,#namespace) `scope) (+ "" (as_lisp symname)) symname])
+            (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
             (when (is_object? defset.2)
                   (push acc ([(quote set_prop) (quote Environment.definitions)
                                        (+ "" (as_lisp symname) "")
@@ -325,7 +331,7 @@
         (do
             (push acc [(quote defvar) defset.0 defset.1])
             (= symname defset.0)
-            (push acc [(quote set_prop) (quote Environment.global_ctx.core.scope) (+ "" (as_lisp symname)) symname])
+            (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
             (when (is_object? defset.2)
                   (push acc ([(quote set_prop) (quote Environment.definitions)
                                        (+ "" (as_lisp symname) "")
@@ -1905,28 +1911,9 @@
     
     })
 
-(defmacro with_namespace (name `& body)  
-  `(let
-       ((previous_namespace *namespace*)       
-        (rval nil))     
-     (set_namespace ,#name)
-     (try
-       (= rval
-          (progn
-           ,@body))
-       (catch Error (`e)
-         (progn
-          (set_namespace previous_namespace)
-          (throw e))))
-     ;; return to the previous namespace
-     (set_namespace previous_namespace)
-     rval))
 
 
 
-
-
-;(set_namespace "user")
 
 true
    

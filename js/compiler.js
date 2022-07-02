@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-01 09:20:27
-// Version: 2022.07.01.09.20
-export const DLISP_ENV_VERSION='2022.07.01.09.20';
+// Build Time: 2022-06-30 12:09:19
+// Version: 2022.06.30.12.09
+export const DLISP_ENV_VERSION='2022.06.30.12.09';
 
 
 
@@ -80,22 +80,22 @@ export async function init_compiler(Environment) {
         if (check_true( (tree instanceof Array))) {
             rval=[];
             await (async function(){
-                 let __test_condition__16=async function() {
+                 let __test_condition__24=async function() {
                      return  (idx<(tree && tree.length))
                 };
-                let __body_ref__17=async function() {
+                let __body_ref__25=async function() {
                     tval=await (async function(){
-                        let __targ__18=tree;
-                        if (__targ__18){
-                             return(__targ__18)[idx]
+                        let __targ__26=tree;
+                        if (__targ__26){
+                             return(__targ__26)[idx]
                         } 
                     })();
                     if (check_true ((tval===deferred_operator))){
                         idx+=1;
                         tval=await (async function(){
-                            let __targ__19=tree;
-                            if (__targ__19){
-                                 return(__targ__19)[idx]
+                            let __targ__27=tree;
+                            if (__targ__27){
+                                 return(__targ__27)[idx]
                             } 
                         })();
                          rval=await rval["concat"].call(rval,await do_deferred_splice(tval))
@@ -105,8 +105,8 @@ export async function init_compiler(Environment) {
                      return  idx+=1
                 };
                 let __BREAK__FLAG__=false;
-                while(await __test_condition__16()) {
-                    await __body_ref__17();
+                while(await __test_condition__24()) {
+                    await __body_ref__25();
                      if(__BREAK__FLAG__) {
                          break;
                         
@@ -118,24 +118,24 @@ export async function init_compiler(Environment) {
         } else if (check_true( (tree instanceof Object))) {
             rval=new Object();
             await (async function() {
-                let __for_body__22=async function(pset) {
+                let __for_body__30=async function(pset) {
                      return  await async function(){
-                        let __target_obj__24=rval;
-                        __target_obj__24[(pset && pset["0"])]=await do_deferred_splice((pset && pset["1"]));
-                        return __target_obj__24;
+                        let __target_obj__32=rval;
+                        __target_obj__32[(pset && pset["0"])]=await do_deferred_splice((pset && pset["1"]));
+                        return __target_obj__32;
                         
                     }()
                 };
-                let __array__23=[],__elements__21=await (await __GG__("pairs"))(tree);
+                let __array__31=[],__elements__29=await (await __GG__("pairs"))(tree);
                 let __BREAK__FLAG__=false;
-                for(let __iter__20 in __elements__21) {
-                    __array__23.push(await __for_body__22(__elements__21[__iter__20]));
+                for(let __iter__28 in __elements__29) {
+                    __array__31.push(await __for_body__30(__elements__29[__iter__28]));
                     if(__BREAK__FLAG__) {
-                         __array__23.pop();
+                         __array__31.pop();
                         break;
                         
                     }
-                }return __array__23;
+                }return __array__31;
                  
             })();
              return  rval
@@ -435,9 +435,9 @@ export async function init_compiler(Environment) {
                         ;
                         if (check_true (false)){
                              if (check_true (((rval instanceof Array)&&((rval && rval["0"]) instanceof Object)&&await (async function(){
-                                let __targ__649=(rval && rval["0"]);
-                                if (__targ__649){
-                                     return(__targ__649)["ctype"]
+                                let __targ__652=(rval && rval["0"]);
+                                if (__targ__652){
+                                     return(__targ__652)["ctype"]
                                 } 
                             })()))){
                                  true
@@ -1550,7 +1550,7 @@ export async function init_compiler(Environment) {
                     prefix:"compile_time_eval",background:"#C0C0C0",color:"darkblue"
                 });
                 compile_time_eval=async function(ctx,lisp_tree,path) {
-                    if (check_true (((lisp_tree instanceof Array)&&(((lisp_tree && lisp_tree["0"]) instanceof String || typeof (lisp_tree && lisp_tree["0"])==='string')&&(await length((lisp_tree && lisp_tree["0"]))>2)&&await starts_with_ques_("=:",(lisp_tree && lisp_tree["0"])))&&await (await __GG__("resolve_path"))(["eval_when","compile_time"],await Environment["get_definition"].call(Environment,await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2)))))){
+                    if (check_true (((lisp_tree instanceof Array)&&(((lisp_tree && lisp_tree["0"]) instanceof String || typeof (lisp_tree && lisp_tree["0"])==='string')&&(await length((lisp_tree && lisp_tree["0"]))>2)&&await starts_with_ques_("=:",(lisp_tree && lisp_tree["0"])))&&await (await __GG__("resolve_path"))(["definitions",await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"eval_when","compile_time"],Environment)))){
                         let ntree;
                         let precompile_function;
                         ntree=null;
@@ -3015,15 +3015,17 @@ export async function init_compiler(Environment) {
                                         return __target_obj__176;
                                         
                                     }()
-                                } else if (check_true( (((alloc_set && alloc_set["1"] && alloc_set["1"]["name"]) instanceof String || typeof (alloc_set && alloc_set["1"] && alloc_set["1"]["name"])==='string')&&await Environment["is_global?"].call(Environment,(alloc_set && alloc_set["1"] && alloc_set["1"]["name"]))&&await not((ctx_details && ctx_details["is_argument"]))&&await (async function(){
-                                    let __targ__177=shadowed_globals;
+                                } else if (check_true( (((alloc_set && alloc_set["1"] && alloc_set["1"]["name"]) instanceof String || typeof (alloc_set && alloc_set["1"] && alloc_set["1"]["name"])==='string')&&await (async function(){
+                                    let __targ__177=(Environment && Environment["context"] && Environment["context"]["scope"]);
                                     if (__targ__177){
-                                         return(__targ__177)[(alloc_set && alloc_set["0"] && alloc_set["0"]["name"])]
+                                         return(__targ__177)[(alloc_set && alloc_set["1"] && alloc_set["1"]["name"])]
+                                    } 
+                                })()&&await not((ctx_details && ctx_details["is_argument"]))&&await (async function(){
+                                    let __targ__178=shadowed_globals;
+                                    if (__targ__178){
+                                         return(__targ__178)[(alloc_set && alloc_set["0"] && alloc_set["0"]["name"])]
                                     } 
                                 })()))) {
-                                    if (check_true (await verbosity(ctx))){
-                                         (clog)("local shadow of a globally declared symbol: ",(alloc_set && alloc_set["0"] && alloc_set["0"]["name"]),"->",(alloc_set && alloc_set["1"] && alloc_set["1"]["name"]))
-                                    };
                                      return  assignment_value=[{
                                         ctype:(ctx_details && ctx_details["value"])
                                     },"await"," ",env_ref,"get_global","(","\"",(alloc_set && alloc_set["0"] && alloc_set["0"]["name"]),"\"",")"]
@@ -3046,128 +3048,128 @@ export async function init_compiler(Environment) {
                             assignment_value=await wrap_assignment_value(assignment_value,ctx);
                             if (check_true ((ctx_details && ctx_details["is_argument"]))){
                                  await async function(){
-                                    let __target_obj__178=block_declarations;
-                                    __target_obj__178[reference_name]=true;
-                                    return __target_obj__178;
+                                    let __target_obj__179=block_declarations;
+                                    __target_obj__179[reference_name]=true;
+                                    return __target_obj__179;
                                     
                                 }()
                             };
                             def_idx=null;
                             await async function(){
                                 if (check_true( (await (async function(){
-                                    let __targ__179=redefinitions;
-                                    if (__targ__179){
-                                         return(__targ__179)[reference_name]
-                                    } 
-                                })()&&await first(await (async function(){
                                     let __targ__180=redefinitions;
                                     if (__targ__180){
                                          return(__targ__180)[reference_name]
                                     } 
+                                })()&&await first(await (async function(){
+                                    let __targ__181=redefinitions;
+                                    if (__targ__181){
+                                         return(__targ__181)[reference_name]
+                                    } 
                                 })())))) {
                                     def_idx=await first(await (async function(){
-                                        let __targ__181=redefinitions;
-                                        if (__targ__181){
-                                             return(__targ__181)[reference_name]
+                                        let __targ__182=redefinitions;
+                                        if (__targ__182){
+                                             return(__targ__182)[reference_name]
                                         } 
                                     })());
                                     def_idx+=1;
                                     await async function(){
-                                        let __target_obj__182=await (async function(){
-                                            let __targ__183=redefinitions;
-                                            if (__targ__183){
-                                                 return(__targ__183)[reference_name]
+                                        let __target_obj__183=await (async function(){
+                                            let __targ__184=redefinitions;
+                                            if (__targ__184){
+                                                 return(__targ__184)[reference_name]
                                             } 
                                         })();
-                                        __target_obj__182[0]=def_idx;
-                                        return __target_obj__182;
+                                        __target_obj__183[0]=def_idx;
+                                        return __target_obj__183;
                                         
                                     }();
                                      return  await (async function() {
-                                        let __for_body__186=async function(t) {
+                                        let __for_body__187=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__187=[],__elements__185=["let"," ",await (async function(){
-                                            let __targ__189=await (async function(){
-                                                let __targ__188=redefinitions;
-                                                if (__targ__188){
-                                                     return(__targ__188)[reference_name]
+                                        let __array__188=[],__elements__186=["let"," ",await (async function(){
+                                            let __targ__190=await (async function(){
+                                                let __targ__189=redefinitions;
+                                                if (__targ__189){
+                                                     return(__targ__189)[reference_name]
                                                 } 
                                             })();
-                                            if (__targ__189){
-                                                 return(__targ__189)[def_idx]
+                                            if (__targ__190){
+                                                 return(__targ__190)[def_idx]
                                             } 
                                         })(),"="," ",(preamble && preamble["1"])," ","function","()","{","return"," ",assignment_value,"}",";"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__184 in __elements__185) {
-                                            __array__187.push(await __for_body__186(__elements__185[__iter__184]));
+                                        for(let __iter__185 in __elements__186) {
+                                            __array__188.push(await __for_body__187(__elements__186[__iter__185]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__187.pop();
+                                                 __array__188.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__187;
+                                        }return __array__188;
                                          
                                     })()
                                 } else if (check_true( await not(await (async function(){
-                                    let __targ__190=block_declarations;
-                                    if (__targ__190){
-                                         return(__targ__190)[reference_name]
+                                    let __targ__191=block_declarations;
+                                    if (__targ__191){
+                                         return(__targ__191)[reference_name]
                                     } 
                                 })()))) {
                                     await (async function() {
-                                        let __for_body__193=async function(t) {
+                                        let __for_body__194=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__194=[],__elements__192=["let"," ",reference_name,";"];
+                                        let __array__195=[],__elements__193=["let"," ",reference_name,";"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__191 in __elements__192) {
-                                            __array__194.push(await __for_body__193(__elements__192[__iter__191]));
+                                        for(let __iter__192 in __elements__193) {
+                                            __array__195.push(await __for_body__194(__elements__193[__iter__192]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__194.pop();
+                                                 __array__195.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__194;
+                                        }return __array__195;
                                          
                                     })();
                                      return  await async function(){
-                                        let __target_obj__195=block_declarations;
-                                        __target_obj__195[reference_name]=true;
-                                        return __target_obj__195;
+                                        let __target_obj__196=block_declarations;
+                                        __target_obj__196[reference_name]=true;
+                                        return __target_obj__196;
                                         
                                     }()
                                 }
                             } ();
                             if (check_true (await not(await (async function(){
-                                let __targ__196=assignments;
-                                if (__targ__196){
-                                     return(__targ__196)[reference_name]
+                                let __targ__197=assignments;
+                                if (__targ__197){
+                                     return(__targ__197)[reference_name]
                                 } 
                             })()))){
                                  await async function(){
-                                    let __target_obj__197=assignments;
-                                    __target_obj__197[reference_name]=[];
-                                    return __target_obj__197;
+                                    let __target_obj__198=assignments;
+                                    __target_obj__198[reference_name]=[];
+                                    return __target_obj__198;
                                     
                                 }()
                             };
                              return  (await (async function(){
-                                let __targ__198=assignments;
-                                if (__targ__198){
-                                     return(__targ__198)[reference_name]
+                                let __targ__199=assignments;
+                                if (__targ__199){
+                                     return(__targ__199)[reference_name]
                                 } 
                             })()).push(await (async function () {
                                  if (check_true (def_idx)){
                                       return [(preamble && preamble["0"])," ",await (async function(){
-                                        let __targ__200=await (async function(){
-                                            let __targ__199=redefinitions;
-                                            if (__targ__199){
-                                                 return(__targ__199)[reference_name]
+                                        let __targ__201=await (async function(){
+                                            let __targ__200=redefinitions;
+                                            if (__targ__200){
+                                                 return(__targ__200)[reference_name]
                                             } 
                                         })();
-                                        if (__targ__200){
-                                             return(__targ__200)[def_idx]
+                                        if (__targ__201){
+                                             return(__targ__201)[def_idx]
                                         } 
                                     })(),"()",";"]
                                 } else {
@@ -3187,39 +3189,39 @@ export async function init_compiler(Environment) {
                     })();
                     if (check_true (need_sub_block)){
                          await (async function() {
-                            let __for_body__203=async function(pset) {
+                            let __for_body__204=async function(pset) {
                                  return  await (async function() {
-                                    let __for_body__207=async function(redef) {
+                                    let __for_body__208=async function(redef) {
                                          return  (await (async function(){
-                                            let __targ__209=redefinitions;
-                                            if (__targ__209){
-                                                 return(__targ__209)[(pset && pset["0"])]
+                                            let __targ__210=redefinitions;
+                                            if (__targ__210){
+                                                 return(__targ__210)[(pset && pset["0"])]
                                             } 
                                         })()).shift()
                                     };
-                                    let __array__208=[],__elements__206=(pset && pset["1"]);
+                                    let __array__209=[],__elements__207=(pset && pset["1"]);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__205 in __elements__206) {
-                                        __array__208.push(await __for_body__207(__elements__206[__iter__205]));
+                                    for(let __iter__206 in __elements__207) {
+                                        __array__209.push(await __for_body__208(__elements__207[__iter__206]));
                                         if(__BREAK__FLAG__) {
-                                             __array__208.pop();
+                                             __array__209.pop();
                                             break;
                                             
                                         }
-                                    }return __array__208;
+                                    }return __array__209;
                                      
                                 })()
                             };
-                            let __array__204=[],__elements__202=await (await __GG__("pairs"))(redefinitions);
+                            let __array__205=[],__elements__203=await (await __GG__("pairs"))(redefinitions);
                             let __BREAK__FLAG__=false;
-                            for(let __iter__201 in __elements__202) {
-                                __array__204.push(await __for_body__203(__elements__202[__iter__201]));
+                            for(let __iter__202 in __elements__203) {
+                                __array__205.push(await __for_body__204(__elements__203[__iter__202]));
                                 if(__BREAK__FLAG__) {
-                                     __array__204.pop();
+                                     __array__205.pop();
                                     break;
                                     
                                 }
-                            }return __array__204;
+                            }return __array__205;
                              
                         })()
                     };
@@ -3229,37 +3231,37 @@ export async function init_compiler(Environment) {
                     };
                     idx=-1;
                     await (async function(){
-                         let __test_condition__210=async function() {
+                         let __test_condition__211=async function() {
                              return  (idx<((allocations && allocations.length)-1))
                         };
-                        let __body_ref__211=async function() {
+                        let __body_ref__212=async function() {
                             idx+=1;
                             def_idx=null;
                             stmt=[];
                             alloc_set=await (async function(){
-                                let __targ__213=await (async function(){
-                                    let __targ__212=allocations;
-                                    if (__targ__212){
-                                         return(__targ__212)[idx]
+                                let __targ__214=await (async function(){
+                                    let __targ__213=allocations;
+                                    if (__targ__213){
+                                         return(__targ__213)[idx]
                                     } 
                                 })();
-                                if (__targ__213){
-                                     return(__targ__213)["val"]
+                                if (__targ__214){
+                                     return(__targ__214)["val"]
                                 } 
                             })();
                             reference_name=await clean_quoted_reference(await sanitize_js_ref_name((alloc_set && alloc_set["0"] && alloc_set["0"]["name"])));
                             ctx_details=await get_declaration_details(ctx,reference_name);
                             assignment_value=(await (async function(){
-                                let __targ__214=assignments;
-                                if (__targ__214){
-                                     return(__targ__214)[reference_name]
+                                let __targ__215=assignments;
+                                if (__targ__215){
+                                     return(__targ__215)[reference_name]
                                 } 
                             })()).shift();
                             await async function(){
                                 if (check_true( await (async function(){
-                                    let __targ__215=block_declarations;
-                                    if (__targ__215){
-                                         return(__targ__215)[reference_name]
+                                    let __targ__216=block_declarations;
+                                    if (__targ__216){
+                                         return(__targ__216)[reference_name]
                                     } 
                                 })())) {
                                      return true
@@ -3270,9 +3272,9 @@ export async function init_compiler(Environment) {
                             } ();
                             (stmt).push(reference_name);
                             await async function(){
-                                let __target_obj__216=block_declarations;
-                                __target_obj__216[reference_name]=true;
-                                return __target_obj__216;
+                                let __target_obj__217=block_declarations;
+                                __target_obj__217[reference_name]=true;
+                                return __target_obj__217;
                                 
                             }();
                             (stmt).push("=");
@@ -3281,8 +3283,8 @@ export async function init_compiler(Environment) {
                              return  (acc).push(stmt)
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__210()) {
-                            await __body_ref__211();
+                        while(await __test_condition__211()) {
+                            await __body_ref__212();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -3294,19 +3296,19 @@ export async function init_compiler(Environment) {
                         no_scope_boundary:true,ignore_declarations:declarations_handled
                     }));
                     await (async function() {
-                        let __for_body__219=async function(i) {
+                        let __for_body__220=async function(i) {
                              return  (acc).push("}")
                         };
-                        let __array__220=[],__elements__218=await (await __GG__("range"))(sub_block_count);
+                        let __array__221=[],__elements__219=await (await __GG__("range"))(sub_block_count);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__217 in __elements__218) {
-                            __array__220.push(await __for_body__219(__elements__218[__iter__217]));
+                        for(let __iter__218 in __elements__219) {
+                            __array__221.push(await __for_body__220(__elements__219[__iter__218]));
                             if(__BREAK__FLAG__) {
-                                 __array__220.pop();
+                                 __array__221.pop();
                                 break;
                                 
                             }
-                        }return __array__220;
+                        }return __array__221;
                          
                     })();
                     if (check_true (((ctx && ctx["return_point"])===1))){
@@ -3323,11 +3325,11 @@ export async function init_compiler(Environment) {
                 };
                 await_ques_=async function(ctx) {
                     if (check_true (await (async function(){
-                        let __array_op_rval__221=in_sync_ques_;
-                         if (__array_op_rval__221 instanceof Function){
-                            return await __array_op_rval__221(ctx) 
+                        let __array_op_rval__222=in_sync_ques_;
+                         if (__array_op_rval__222 instanceof Function){
+                            return await __array_op_rval__222(ctx) 
                         } else {
-                            return[__array_op_rval__221,ctx]
+                            return[__array_op_rval__222,ctx]
                         }
                     })())){
                           return ""
@@ -3337,11 +3339,11 @@ export async function init_compiler(Environment) {
                 };
                 calling_preamble=async function(ctx) {
                     if (check_true (await (async function(){
-                        let __array_op_rval__222=in_sync_ques_;
-                         if (__array_op_rval__222 instanceof Function){
-                            return await __array_op_rval__222(ctx) 
+                        let __array_op_rval__223=in_sync_ques_;
+                         if (__array_op_rval__223 instanceof Function){
+                            return await __array_op_rval__223(ctx) 
                         } else {
-                            return[__array_op_rval__222,ctx]
+                            return[__array_op_rval__223,ctx]
                         }
                     })())){
                           return ["","",{
@@ -3373,29 +3375,29 @@ export async function init_compiler(Environment) {
                     type_mark=null;
                     nbody=null;
                     await async function(){
-                        let __target_obj__223=ctx;
-                        __target_obj__223["return_last_value"]=true;
-                        return __target_obj__223;
+                        let __target_obj__224=ctx;
+                        __target_obj__224["return_last_value"]=true;
+                        return __target_obj__224;
                         
                     }();
                     await async function(){
-                        let __target_obj__224=ctx;
-                        __target_obj__224["return_point"]=0;
-                        return __target_obj__224;
+                        let __target_obj__225=ctx;
+                        __target_obj__225["return_point"]=0;
+                        return __target_obj__225;
                         
                     }();
                     await set_ctx(ctx,"__IN_LAMBDA__",true);
                     await set_ctx(ctx,"__LAMBDA_STEP__",-1);
                     await async function(){
-                        let __target_obj__225=ctx;
-                        __target_obj__225["lambda_scope"]=true;
-                        return __target_obj__225;
+                        let __target_obj__226=ctx;
+                        __target_obj__226["lambda_scope"]=true;
+                        return __target_obj__226;
                         
                     }();
                     await async function(){
-                        let __target_obj__226=ctx;
-                        __target_obj__226["suppress_return"]=false;
-                        return __target_obj__226;
+                        let __target_obj__227=ctx;
+                        __target_obj__227["suppress_return"]=false;
+                        return __target_obj__227;
                         
                     }();
                     await async function(){
@@ -3419,9 +3421,9 @@ export async function init_compiler(Environment) {
                         }
                     } ();
                     await async function(){
-                        let __target_obj__227=type_mark;
-                        __target_obj__227["args"]=[];
-                        return __target_obj__227;
+                        let __target_obj__228=type_mark;
+                        __target_obj__228["args"]=[];
+                        return __target_obj__228;
                         
                     }();
                     await async function(){
@@ -3435,23 +3437,23 @@ export async function init_compiler(Environment) {
                     } ();
                     (acc).push("(");
                     await (async function(){
-                         let __test_condition__228=async function() {
+                         let __test_condition__229=async function() {
                              return  (idx<((fn_args && fn_args.length)-1))
                         };
-                        let __body_ref__229=async function() {
+                        let __body_ref__230=async function() {
                             idx+=1;
                             arg=await (async function(){
-                                let __targ__230=fn_args;
-                                if (__targ__230){
-                                     return(__targ__230)[idx]
+                                let __targ__231=fn_args;
+                                if (__targ__231){
+                                     return(__targ__231)[idx]
                                 } 
                             })();
                             if (check_true (((arg && arg.name)==="&"))){
                                 idx+=1;
                                 arg=await (async function(){
-                                    let __targ__231=fn_args;
-                                    if (__targ__231){
-                                         return(__targ__231)[idx]
+                                    let __targ__232=fn_args;
+                                    if (__targ__232){
+                                         return(__targ__232)[idx]
                                     } 
                                 })();
                                 if (check_true ((null==arg))){
@@ -3460,9 +3462,9 @@ export async function init_compiler(Environment) {
                                 };
                                 await set_ctx(ctx,(arg && arg.name),ArgumentType);
                                  await async function(){
-                                    let __target_obj__232=arg;
-                                    __target_obj__232["name"]=("..."+(arg && arg.name));
-                                    return __target_obj__232;
+                                    let __target_obj__233=arg;
+                                    __target_obj__233["name"]=("..."+(arg && arg.name));
+                                    return __target_obj__233;
                                     
                                 }()
                             } else {
@@ -3475,8 +3477,8 @@ export async function init_compiler(Environment) {
                             }
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__228()) {
-                            await __body_ref__229();
+                        while(await __test_condition__229()) {
+                            await __body_ref__230();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -3491,16 +3493,16 @@ export async function init_compiler(Environment) {
                     };
                     if (check_true ((fn_opts && fn_opts["generator"]))){
                          await async function(){
-                            let __target_obj__233=ctx;
-                            __target_obj__233["return_last_value"]=false;
-                            return __target_obj__233;
+                            let __target_obj__234=ctx;
+                            __target_obj__234["return_last_value"]=false;
+                            return __target_obj__234;
                             
                         }()
                     } else {
                          await async function(){
-                            let __target_obj__234=ctx;
-                            __target_obj__234["return_last_value"]=true;
-                            return __target_obj__234;
+                            let __target_obj__235=ctx;
+                            __target_obj__235["return_last_value"]=true;
+                            return __target_obj__235;
                             
                         }()
                     };
@@ -3514,9 +3516,9 @@ export async function init_compiler(Environment) {
                                 type:"special",val:"=:do",ref:true,name:"do"
                             },body];
                             await async function(){
-                                let __target_obj__235=ctx;
-                                __target_obj__235["return_last_value"]=true;
-                                return __target_obj__235;
+                                let __target_obj__236=ctx;
+                                __target_obj__236["return_last_value"]=true;
+                                return __target_obj__236;
                                 
                             }();
                             (acc).push({
@@ -3544,31 +3546,31 @@ export async function init_compiler(Environment) {
                     type_mark=await type_marker("Function");
                     (acc).push(type_mark);
                     await (async function() {
-                        let __for_body__238=async function(t) {
+                        let __for_body__239=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__239=[],__elements__237=["new"," ","Function","("];
+                        let __array__240=[],__elements__238=["new"," ","Function","("];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__236 in __elements__237) {
-                            __array__239.push(await __for_body__238(__elements__237[__iter__236]));
+                        for(let __iter__237 in __elements__238) {
+                            __array__240.push(await __for_body__239(__elements__238[__iter__237]));
                             if(__BREAK__FLAG__) {
-                                 __array__239.pop();
+                                 __array__240.pop();
                                 break;
                                 
                             }
-                        }return __array__239;
+                        }return __array__240;
                          
                     })();
                     await (async function(){
-                         let __test_condition__240=async function() {
+                         let __test_condition__241=async function() {
                              return  (idx<((fn_args && fn_args.length)-1))
                         };
-                        let __body_ref__241=async function() {
+                        let __body_ref__242=async function() {
                             idx+=1;
                             arg=await (async function(){
-                                let __targ__242=fn_args;
-                                if (__targ__242){
-                                     return(__targ__242)[idx]
+                                let __targ__243=fn_args;
+                                if (__targ__243){
+                                     return(__targ__243)[idx]
                                 } 
                             })();
                             await set_ctx(ctx,(arg && arg.name),ArgumentType);
@@ -3577,8 +3579,8 @@ export async function init_compiler(Environment) {
                              return  (acc).push(",")
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__240()) {
-                            await __body_ref__241();
+                        while(await __test_condition__241()) {
+                            await __body_ref__242();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -3588,7 +3590,7 @@ export async function init_compiler(Environment) {
                     })();
                     (acc).push("\"");
                     await (async function() {
-                        let __for_body__245=async function(c) {
+                        let __for_body__246=async function(c) {
                             if (check_true (await not((c==="\n"),(c==="\r")))){
                                 if (check_true ((c==="\""))){
                                      (quoted_body).push(await String.fromCharCode(92))
@@ -3596,16 +3598,16 @@ export async function init_compiler(Environment) {
                                  return  (quoted_body).push(c)
                             }
                         };
-                        let __array__246=[],__elements__244=(body).split("");
+                        let __array__247=[],__elements__245=(body).split("");
                         let __BREAK__FLAG__=false;
-                        for(let __iter__243 in __elements__244) {
-                            __array__246.push(await __for_body__245(__elements__244[__iter__243]));
+                        for(let __iter__244 in __elements__245) {
+                            __array__247.push(await __for_body__246(__elements__245[__iter__244]));
                             if(__BREAK__FLAG__) {
-                                 __array__246.pop();
+                                 __array__247.pop();
                                 break;
                                 
                             }
-                        }return __array__246;
+                        }return __array__247;
                          
                     })();
                     (acc).push((await flatten(quoted_body)).join(""));
@@ -3674,33 +3676,33 @@ export async function init_compiler(Environment) {
                     needs_braces_ques_=false;
                     check_needs_return=async function(stmts) {
                         fst=(""+(((stmts instanceof Array)&&await first(stmts)&&(await first(stmts) instanceof Object)&&await (async function(){
-                            let __targ__247=await first(stmts);
-                            if (__targ__247){
-                                 return(__targ__247)["ctype"]
+                            let __targ__248=await first(stmts);
+                            if (__targ__248){
+                                 return(__targ__248)["ctype"]
                             } 
                         })()&&await async function(){
                             if (check_true( (await (async function(){
-                                let __targ__248=await first(stmts);
-                                if (__targ__248){
-                                     return(__targ__248)["ctype"]
+                                let __targ__249=await first(stmts);
+                                if (__targ__249){
+                                     return(__targ__249)["ctype"]
                                 } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__248=await first(stmts);
-                                if (__targ__248){
-                                     return(__targ__248)["ctype"]
+                                let __targ__249=await first(stmts);
+                                if (__targ__249){
+                                     return(__targ__249)["ctype"]
                                 } 
                             })()==='string'))) {
                                  return await (async function(){
-                                    let __targ__249=await first(stmts);
-                                    if (__targ__249){
-                                         return(__targ__249)["ctype"]
+                                    let __targ__250=await first(stmts);
+                                    if (__targ__250){
+                                         return(__targ__250)["ctype"]
                                     } 
                                 })()
                             } else  {
                                  return await sub_type(await (async function(){
-                                    let __targ__250=await first(stmts);
-                                    if (__targ__250){
-                                         return(__targ__250)["ctype"]
+                                    let __targ__251=await first(stmts);
+                                    if (__targ__251){
+                                         return(__targ__251)["ctype"]
                                     } 
                                 })())
                             }
@@ -3742,22 +3744,22 @@ export async function init_compiler(Environment) {
                     } ();
                     await set_ctx(ctx,"__LAMBDA_STEP__",-1);
                     await (async function(){
-                         let __test_condition__251=async function() {
+                         let __test_condition__252=async function() {
                              return  (idx<(condition_tokens && condition_tokens.length))
                         };
-                        let __body_ref__252=async function() {
+                        let __body_ref__253=async function() {
                             inject_return=false;
                             condition=await (async function(){
-                                let __targ__253=condition_tokens;
-                                if (__targ__253){
-                                     return(__targ__253)[idx]
+                                let __targ__254=condition_tokens;
+                                if (__targ__254){
+                                     return(__targ__254)[idx]
                                 } 
                             })();
                             idx+=1;
                             condition_block=await (async function(){
-                                let __targ__254=condition_tokens;
-                                if (__targ__254){
-                                     return(__targ__254)[idx]
+                                let __targ__255=condition_tokens;
+                                if (__targ__255){
+                                     return(__targ__255)[idx]
                                 } 
                             })();
                             if (check_true ((idx>2))){
@@ -3775,11 +3777,11 @@ export async function init_compiler(Environment) {
                             };
                             await async function(){
                                 if (check_true( await (async function(){
-                                    let __array_op_rval__255=is_form_ques_;
-                                     if (__array_op_rval__255 instanceof Function){
-                                        return await __array_op_rval__255(condition) 
+                                    let __array_op_rval__256=is_form_ques_;
+                                     if (__array_op_rval__256 instanceof Function){
+                                        return await __array_op_rval__256(condition) 
                                     } else {
-                                        return[__array_op_rval__255,condition]
+                                        return[__array_op_rval__256,condition]
                                     }
                                 })())) {
                                     stmts=await compile(condition,ctx);
@@ -3825,8 +3827,8 @@ export async function init_compiler(Environment) {
                              return  idx+=1
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__251()) {
-                            await __body_ref__252();
+                        while(await __test_condition__252()) {
+                            await __body_ref__253();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -3840,7 +3842,7 @@ export async function init_compiler(Environment) {
                     let acc;
                     let stmts;
                     let fst;
-                    let __if_id__256= async function(){
+                    let __if_id__257= async function(){
                         return if_id+=1
                     };
                     let inject_return;
@@ -3859,7 +3861,7 @@ export async function init_compiler(Environment) {
                         acc=[];
                         stmts=null;
                         fst=null;
-                        let if_id=await __if_id__256();
+                        let if_id=await __if_id__257();
                         ;
                         inject_return=false;
                         block_stmts=null;
@@ -3874,33 +3876,33 @@ export async function init_compiler(Environment) {
                         needs_braces_ques_=false;
                         check_needs_return=async function(stmts) {
                             fst=(""+(((stmts instanceof Array)&&await first(stmts)&&(await first(stmts) instanceof Object)&&await (async function(){
-                                let __targ__257=await first(stmts);
-                                if (__targ__257){
-                                     return(__targ__257)["ctype"]
+                                let __targ__258=await first(stmts);
+                                if (__targ__258){
+                                     return(__targ__258)["ctype"]
                                 } 
                             })()&&await async function(){
                                 if (check_true( (await (async function(){
-                                    let __targ__258=await first(stmts);
-                                    if (__targ__258){
-                                         return(__targ__258)["ctype"]
+                                    let __targ__259=await first(stmts);
+                                    if (__targ__259){
+                                         return(__targ__259)["ctype"]
                                     } 
                                 })() instanceof String || typeof await (async function(){
-                                    let __targ__258=await first(stmts);
-                                    if (__targ__258){
-                                         return(__targ__258)["ctype"]
+                                    let __targ__259=await first(stmts);
+                                    if (__targ__259){
+                                         return(__targ__259)["ctype"]
                                     } 
                                 })()==='string'))) {
                                      return await (async function(){
-                                        let __targ__259=await first(stmts);
-                                        if (__targ__259){
-                                             return(__targ__259)["ctype"]
+                                        let __targ__260=await first(stmts);
+                                        if (__targ__260){
+                                             return(__targ__260)["ctype"]
                                         } 
                                     })()
                                 } else  {
                                      return await sub_type(await (async function(){
-                                        let __targ__260=await first(stmts);
-                                        if (__targ__260){
-                                             return(__targ__260)["ctype"]
+                                        let __targ__261=await first(stmts);
+                                        if (__targ__261){
+                                             return(__targ__261)["ctype"]
                                         } 
                                     })())
                                 }
@@ -3934,9 +3936,9 @@ export async function init_compiler(Environment) {
                         ;
                         if (check_true (((ctx && ctx["block_step"])===undefined))){
                              await async function(){
-                                let __target_obj__261=ctx;
-                                __target_obj__261["block_step"]=0;
-                                return __target_obj__261;
+                                let __target_obj__262=ctx;
+                                __target_obj__262["block_step"]=0;
+                                return __target_obj__262;
                                 
                             }()
                         };
@@ -3951,64 +3953,64 @@ export async function init_compiler(Environment) {
                         await set_ctx(ctx,"__IF_BLOCK__",if_id);
                         if (check_true (((ctx && ctx["block_step"])>0))){
                              await async function(){
-                                let __target_obj__262=ctx;
-                                __target_obj__262["suppress_return"]=true;
-                                return __target_obj__262;
+                                let __target_obj__263=ctx;
+                                __target_obj__263["suppress_return"]=true;
+                                return __target_obj__263;
                                 
                             }()
                         };
                         if (check_true (((await first(compiled_test) instanceof Object)&&await (async function(){
-                            let __targ__263=await first(compiled_test);
-                            if (__targ__263){
-                                 return(__targ__263)["ctype"]
+                            let __targ__264=await first(compiled_test);
+                            if (__targ__264){
+                                 return(__targ__264)["ctype"]
                             } 
                         })()&&(await (async function(){
-                            let __targ__264=await first(compiled_test);
-                            if (__targ__264){
-                                 return(__targ__264)["ctype"]
-                            } 
-                        })() instanceof String || typeof await (async function(){
-                            let __targ__264=await first(compiled_test);
-                            if (__targ__264){
-                                 return(__targ__264)["ctype"]
-                            } 
-                        })()==='string')&&await contains_ques_("unction",await (async function(){
                             let __targ__265=await first(compiled_test);
                             if (__targ__265){
                                  return(__targ__265)["ctype"]
                             } 
+                        })() instanceof String || typeof await (async function(){
+                            let __targ__265=await first(compiled_test);
+                            if (__targ__265){
+                                 return(__targ__265)["ctype"]
+                            } 
+                        })()==='string')&&await contains_ques_("unction",await (async function(){
+                            let __targ__266=await first(compiled_test);
+                            if (__targ__266){
+                                 return(__targ__266)["ctype"]
+                            } 
                         })())))){
                              await (async function() {
-                                let __for_body__268=async function(t) {
+                                let __for_body__269=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__269=[],__elements__267=["if"," ","(check_true (",(preamble && preamble["0"])," ",compiled_test,"()","))"];
+                                let __array__270=[],__elements__268=["if"," ","(check_true (",(preamble && preamble["0"])," ",compiled_test,"()","))"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__266 in __elements__267) {
-                                    __array__269.push(await __for_body__268(__elements__267[__iter__266]));
+                                for(let __iter__267 in __elements__268) {
+                                    __array__270.push(await __for_body__269(__elements__268[__iter__267]));
                                     if(__BREAK__FLAG__) {
-                                         __array__269.pop();
+                                         __array__270.pop();
                                         break;
                                         
                                     }
-                                }return __array__269;
+                                }return __array__270;
                                  
                             })()
                         } else {
                              await (async function() {
-                                let __for_body__272=async function(t) {
+                                let __for_body__273=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__273=[],__elements__271=["if"," ","(check_true (",compiled_test,"))"];
+                                let __array__274=[],__elements__272=["if"," ","(check_true (",compiled_test,"))"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__270 in __elements__271) {
-                                    __array__273.push(await __for_body__272(__elements__271[__iter__270]));
+                                for(let __iter__271 in __elements__272) {
+                                    __array__274.push(await __for_body__273(__elements__272[__iter__271]));
                                     if(__BREAK__FLAG__) {
-                                         __array__273.pop();
+                                         __array__274.pop();
                                         break;
                                         
                                     }
-                                }return __array__273;
+                                }return __array__274;
                                  
                             })()
                         };
@@ -4069,9 +4071,9 @@ export async function init_compiler(Environment) {
                         };
                         await set_ctx(ctx,"__IF_BLOCK__",undefined);
                         await async function(){
-                            let __target_obj__274=ctx;
-                            __target_obj__274["suppress_return"]=in_suppress_ques_;
-                            return __target_obj__274;
+                            let __target_obj__275=ctx;
+                            __target_obj__275["suppress_return"]=in_suppress_ques_;
+                            return __target_obj__275;
                             
                         }();
                          return  acc
@@ -4091,22 +4093,13 @@ export async function init_compiler(Environment) {
                             needs_await=false;
                              return  acc=[await compile(tokens,ctx)]
                         } else if (check_true( await (async function(){
-                            let __array_op_rval__275=is_block_ques_;
-                             if (__array_op_rval__275 instanceof Function){
-                                return await __array_op_rval__275(tokens) 
+                            let __array_op_rval__276=is_block_ques_;
+                             if (__array_op_rval__276 instanceof Function){
+                                return await __array_op_rval__276(tokens) 
                             } else {
-                                return[__array_op_rval__275,tokens]
+                                return[__array_op_rval__276,tokens]
                             }
                         })())) {
-                            ctx=await new_ctx(ctx);
-                            await async function(){
-                                let __target_obj__276=ctx;
-                                __target_obj__276["return_point"]=1;
-                                return __target_obj__276;
-                                
-                            }();
-                             return  acc=["(",(preamble && preamble["1"])," ","function","()","{",await compile(tokens,ctx),"}",")","()"]
-                        } else if (check_true( ((tokens instanceof Object)&&((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"])==="if")))) {
                             ctx=await new_ctx(ctx);
                             await async function(){
                                 let __target_obj__277=ctx;
@@ -4114,20 +4107,29 @@ export async function init_compiler(Environment) {
                                 return __target_obj__277;
                                 
                             }();
+                             return  acc=["(",(preamble && preamble["1"])," ","function","()","{",await compile(tokens,ctx),"}",")","()"]
+                        } else if (check_true( ((tokens instanceof Object)&&((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"])==="if")))) {
+                            ctx=await new_ctx(ctx);
+                            await async function(){
+                                let __target_obj__278=ctx;
+                                __target_obj__278["return_point"]=1;
+                                return __target_obj__278;
+                                
+                            }();
                              return  await (async function() {
-                                let __for_body__280=async function(t) {
+                                let __for_body__281=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__281=[],__elements__279=["(",(preamble && preamble["1"])," ","function","()","{",await compile_if((tokens && tokens["val"]),ctx),"}",")","()"];
+                                let __array__282=[],__elements__280=["(",(preamble && preamble["1"])," ","function","()","{",await compile_if((tokens && tokens["val"]),ctx),"}",")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__278 in __elements__279) {
-                                    __array__281.push(await __for_body__280(__elements__279[__iter__278]));
+                                for(let __iter__279 in __elements__280) {
+                                    __array__282.push(await __for_body__281(__elements__280[__iter__279]));
                                     if(__BREAK__FLAG__) {
-                                         __array__281.pop();
+                                         __array__282.pop();
                                         break;
                                         
                                     }
-                                }return __array__281;
+                                }return __array__282;
                                  
                             })()
                         } else if (check_true( (tokens instanceof Array))) {
@@ -4140,11 +4142,11 @@ export async function init_compiler(Environment) {
                           return [(preamble && preamble["0"])," ",acc]
                     } else {
                           return await (async function(){
-                            let __array_op_rval__282=acc;
-                             if (__array_op_rval__282 instanceof Function){
-                                return await __array_op_rval__282() 
+                            let __array_op_rval__283=acc;
+                             if (__array_op_rval__283 instanceof Function){
+                                return await __array_op_rval__283() 
                             } else {
-                                return[__array_op_rval__282]
+                                return[__array_op_rval__283]
                             }
                         })()
                     }
@@ -4156,104 +4158,104 @@ export async function init_compiler(Environment) {
                     preamble=await calling_preamble(ctx);
                     ctx=await new_ctx(ctx);
                     await async function(){
-                        let __target_obj__283=ctx;
-                        __target_obj__283["return_point"]=0;
-                        return __target_obj__283;
+                        let __target_obj__284=ctx;
+                        __target_obj__284["return_point"]=0;
+                        return __target_obj__284;
                         
                     }();
                     await async function(){
                         if (check_true( await (async function(){
-                            let __array_op_rval__284=is_block_ques_;
-                             if (__array_op_rval__284 instanceof Function){
-                                return await __array_op_rval__284(tokens) 
+                            let __array_op_rval__285=is_block_ques_;
+                             if (__array_op_rval__285 instanceof Function){
+                                return await __array_op_rval__285(tokens) 
                             } else {
-                                return[__array_op_rval__284,tokens]
+                                return[__array_op_rval__285,tokens]
                             }
                         })())) {
                             await async function(){
-                                let __target_obj__285=ctx;
-                                __target_obj__285["return_last_value"]=true;
-                                return __target_obj__285;
-                                
-                            }();
-                            await async function(){
                                 let __target_obj__286=ctx;
-                                __target_obj__286["return_point"]=0;
+                                __target_obj__286["return_last_value"]=true;
                                 return __target_obj__286;
                                 
                             }();
+                            await async function(){
+                                let __target_obj__287=ctx;
+                                __target_obj__287["return_point"]=0;
+                                return __target_obj__287;
+                                
+                            }();
                              return  await (async function() {
-                                let __for_body__289=async function(t) {
+                                let __for_body__290=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__290=[],__elements__288=["(",(preamble && preamble["1"])," ","function","()",await compile_block(tokens,ctx),")","()"];
+                                let __array__291=[],__elements__289=["(",(preamble && preamble["1"])," ","function","()",await compile_block(tokens,ctx),")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__287 in __elements__288) {
-                                    __array__290.push(await __for_body__289(__elements__288[__iter__287]));
+                                for(let __iter__288 in __elements__289) {
+                                    __array__291.push(await __for_body__290(__elements__289[__iter__288]));
                                     if(__BREAK__FLAG__) {
-                                         __array__290.pop();
+                                         __array__291.pop();
                                         break;
                                         
                                     }
-                                }return __array__290;
+                                }return __array__291;
                                  
                             })()
                         } else if (check_true( ((tokens && tokens["0"] && tokens["0"]["name"])==="let"))) {
                             await async function(){
-                                let __target_obj__291=ctx;
-                                __target_obj__291["return_last_value"]=true;
-                                return __target_obj__291;
-                                
-                            }();
-                            await async function(){
                                 let __target_obj__292=ctx;
-                                __target_obj__292["return_point"]=0;
+                                __target_obj__292["return_last_value"]=true;
                                 return __target_obj__292;
                                 
                             }();
+                            await async function(){
+                                let __target_obj__293=ctx;
+                                __target_obj__293["return_point"]=0;
+                                return __target_obj__293;
+                                
+                            }();
                              return  await (async function() {
-                                let __for_body__295=async function(t) {
+                                let __for_body__296=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__296=[],__elements__294=["(",(preamble && preamble["1"])," ","function","()",await compile(tokens,ctx),")","()"];
+                                let __array__297=[],__elements__295=["(",(preamble && preamble["1"])," ","function","()",await compile(tokens,ctx),")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__293 in __elements__294) {
-                                    __array__296.push(await __for_body__295(__elements__294[__iter__293]));
+                                for(let __iter__294 in __elements__295) {
+                                    __array__297.push(await __for_body__296(__elements__295[__iter__294]));
                                     if(__BREAK__FLAG__) {
-                                         __array__296.pop();
+                                         __array__297.pop();
                                         break;
                                         
                                     }
-                                }return __array__296;
+                                }return __array__297;
                                  
                             })()
                         } else  {
                             await async function(){
-                                let __target_obj__297=ctx;
-                                __target_obj__297["return_last_value"]=true;
-                                return __target_obj__297;
-                                
-                            }();
-                            await async function(){
                                 let __target_obj__298=ctx;
-                                __target_obj__298["return_point"]=0;
+                                __target_obj__298["return_last_value"]=true;
                                 return __target_obj__298;
                                 
                             }();
+                            await async function(){
+                                let __target_obj__299=ctx;
+                                __target_obj__299["return_point"]=0;
+                                return __target_obj__299;
+                                
+                            }();
                              return  await (async function() {
-                                let __for_body__301=async function(t) {
+                                let __for_body__302=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__302=[],__elements__300=["(",(preamble && preamble["1"])," ","function","()","{"," ","return"," ",await compile(tokens,ctx)," ","}",")","()"];
+                                let __array__303=[],__elements__301=["(",(preamble && preamble["1"])," ","function","()","{"," ","return"," ",await compile(tokens,ctx)," ","}",")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__299 in __elements__300) {
-                                    __array__302.push(await __for_body__301(__elements__300[__iter__299]));
+                                for(let __iter__300 in __elements__301) {
+                                    __array__303.push(await __for_body__302(__elements__301[__iter__300]));
                                     if(__BREAK__FLAG__) {
-                                         __array__302.pop();
+                                         __array__303.pop();
                                         break;
                                         
                                     }
-                                }return __array__302;
+                                }return __array__303;
                                  
                             })()
                         }
@@ -4273,43 +4275,43 @@ export async function init_compiler(Environment) {
                     await async function(){
                         if (check_true( (tokens instanceof Array))) {
                              return await (async function() {
-                                let __for_body__305=async function(token) {
+                                let __for_body__306=async function(token) {
                                      return  (place).push(token)
                                 };
-                                let __array__306=[],__elements__304=tokens;
+                                let __array__307=[],__elements__305=tokens;
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__303 in __elements__304) {
-                                    __array__306.push(await __for_body__305(__elements__304[__iter__303]));
+                                for(let __iter__304 in __elements__305) {
+                                    __array__307.push(await __for_body__306(__elements__305[__iter__304]));
                                     if(__BREAK__FLAG__) {
-                                         __array__306.pop();
+                                         __array__307.pop();
                                         break;
                                         
                                     }
-                                }return __array__306;
+                                }return __array__307;
                                  
                             })()
                         } else  {
                              return await (async function() {
-                                let __for_body__309=async function(token) {
+                                let __for_body__310=async function(token) {
                                      return  (place).push(token)
                                 };
-                                let __array__310=[],__elements__308=await (async function(){
-                                    let __array_op_rval__311=tokens;
-                                     if (__array_op_rval__311 instanceof Function){
-                                        return await __array_op_rval__311() 
+                                let __array__311=[],__elements__309=await (async function(){
+                                    let __array_op_rval__312=tokens;
+                                     if (__array_op_rval__312 instanceof Function){
+                                        return await __array_op_rval__312() 
                                     } else {
-                                        return[__array_op_rval__311]
+                                        return[__array_op_rval__312]
                                     }
                                 })();
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__307 in __elements__308) {
-                                    __array__310.push(await __for_body__309(__elements__308[__iter__307]));
+                                for(let __iter__308 in __elements__309) {
+                                    __array__311.push(await __for_body__310(__elements__309[__iter__308]));
                                     if(__BREAK__FLAG__) {
-                                         __array__310.pop();
+                                         __array__311.pop();
                                         break;
                                         
                                     }
-                                }return __array__310;
+                                }return __array__311;
                                  
                             })()
                         }
@@ -4359,75 +4361,75 @@ export async function init_compiler(Environment) {
                          target_type=await (await __GG__("path_to_js_syntax"))(comps)
                     };
                     await (async function() {
-                        let __for_body__314=async function(opt_token) {
+                        let __for_body__315=async function(opt_token) {
                              return  (args).push(await wrap_assignment_value(await compile(opt_token,ctx),ctx))
                         };
-                        let __array__315=[],__elements__313=(new_opts||[]);
+                        let __array__316=[],__elements__314=(new_opts||[]);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__312 in __elements__313) {
-                            __array__315.push(await __for_body__314(__elements__313[__iter__312]));
+                        for(let __iter__313 in __elements__314) {
+                            __array__316.push(await __for_body__315(__elements__314[__iter__313]));
                             if(__BREAK__FLAG__) {
-                                 __array__315.pop();
+                                 __array__316.pop();
                                 break;
                                 
                             }
-                        }return __array__315;
+                        }return __array__316;
                          
                     })();
                     await async function(){
                         if (check_true( (await not((null==(type_details && type_details["value"])))&&(type_details && type_details["declared_global"])))) {
                             await (async function() {
-                                let __for_body__318=async function(arg) {
+                                let __for_body__319=async function(arg) {
                                      return  (acc).push(arg)
                                 };
-                                let __array__319=[],__elements__317=["new"," ",await compile((tokens && tokens["1"]),ctx),"("];
+                                let __array__320=[],__elements__318=["new"," ",await compile((tokens && tokens["1"]),ctx),"("];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__316 in __elements__317) {
-                                    __array__319.push(await __for_body__318(__elements__317[__iter__316]));
+                                for(let __iter__317 in __elements__318) {
+                                    __array__320.push(await __for_body__319(__elements__318[__iter__317]));
                                     if(__BREAK__FLAG__) {
-                                         __array__319.pop();
+                                         __array__320.pop();
                                         break;
                                         
                                     }
-                                }return __array__319;
+                                }return __array__320;
                                  
                             })();
                             await push_as_arg_list(acc,args);
                              return  (acc).push(")")
                         } else if (check_true( (await not((null==(type_details && type_details["value"])))&&(type_details && type_details["value"]) instanceof Function))) {
                             await (async function() {
-                                let __for_body__322=async function(arg) {
+                                let __for_body__323=async function(arg) {
                                      return  (acc).push(arg)
                                 };
-                                let __array__323=[],__elements__321=["new"," ",target_type,"("];
+                                let __array__324=[],__elements__322=["new"," ",target_type,"("];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__320 in __elements__321) {
-                                    __array__323.push(await __for_body__322(__elements__321[__iter__320]));
+                                for(let __iter__321 in __elements__322) {
+                                    __array__324.push(await __for_body__323(__elements__322[__iter__321]));
                                     if(__BREAK__FLAG__) {
-                                         __array__323.pop();
+                                         __array__324.pop();
                                         break;
                                         
                                     }
-                                }return __array__323;
+                                }return __array__324;
                                  
                             })();
                             await push_as_arg_list(acc,args);
                              return  (acc).push(")")
                         } else if (check_true( ((null==(type_details && type_details["value"]))&&await not((null==(root_type_details && root_type_details["value"])))))) {
                             await (async function() {
-                                let __for_body__326=async function(arg) {
+                                let __for_body__327=async function(arg) {
                                      return  (acc).push(arg)
                                 };
-                                let __array__327=[],__elements__325=["(",(preamble && preamble["0"])," ",env_ref,"get_global","(","\"","indirect_new","\"",")",")","(",target_type];
+                                let __array__328=[],__elements__326=["(",(preamble && preamble["0"])," ",env_ref,"get_global","(","\"","indirect_new","\"",")",")","(",target_type];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__324 in __elements__325) {
-                                    __array__327.push(await __for_body__326(__elements__325[__iter__324]));
+                                for(let __iter__325 in __elements__326) {
+                                    __array__328.push(await __for_body__327(__elements__326[__iter__325]));
                                     if(__BREAK__FLAG__) {
-                                         __array__327.pop();
+                                         __array__328.pop();
                                         break;
                                         
                                     }
-                                }return __array__327;
+                                }return __array__328;
                                  
                             })();
                             if (check_true (((args && args.length)>0))){
@@ -4438,9 +4440,9 @@ export async function init_compiler(Environment) {
                         }
                     } ();
                     target_return_type=(await get_ctx_val(ctx,target_type)||await (async function(){
-                        let __targ__328=(await get_declarations(ctx,target_type)||new Object());
-                        if (__targ__328){
-                             return(__targ__328)["type"]
+                        let __targ__329=(await get_declarations(ctx,target_type)||new Object());
+                        if (__targ__329){
+                             return(__targ__329)["type"]
                         } 
                     })()||await (await __GG__("get_outside_global"))(target_type)||UnknownType);
                     (acc).unshift({
@@ -4500,11 +4502,11 @@ export async function init_compiler(Environment) {
                              return  ["(",target,"=",target,operation,how_much,")"]
                         } else  {
                              return await (async function(){
-                                let __array_op_rval__329=target;
-                                 if (__array_op_rval__329 instanceof Function){
-                                    return await __array_op_rval__329(operation,how_much) 
+                                let __array_op_rval__330=target;
+                                 if (__array_op_rval__330 instanceof Function){
+                                    return await __array_op_rval__330(operation,how_much) 
                                 } else {
-                                    return[__array_op_rval__329,operation,how_much]
+                                    return[__array_op_rval__330,operation,how_much]
                                 }
                             })()
                         }
@@ -4552,33 +4554,33 @@ export async function init_compiler(Environment) {
                     needs_braces_ques_=false;
                     check_needs_return=async function(stmts) {
                         fst=(""+(((stmts instanceof Array)&&await first(stmts)&&(await first(stmts) instanceof Object)&&await (async function(){
-                            let __targ__330=await first(stmts);
-                            if (__targ__330){
-                                 return(__targ__330)["ctype"]
+                            let __targ__331=await first(stmts);
+                            if (__targ__331){
+                                 return(__targ__331)["ctype"]
                             } 
                         })()&&await async function(){
                             if (check_true( (await (async function(){
-                                let __targ__331=await first(stmts);
-                                if (__targ__331){
-                                     return(__targ__331)["ctype"]
+                                let __targ__332=await first(stmts);
+                                if (__targ__332){
+                                     return(__targ__332)["ctype"]
                                 } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__331=await first(stmts);
-                                if (__targ__331){
-                                     return(__targ__331)["ctype"]
+                                let __targ__332=await first(stmts);
+                                if (__targ__332){
+                                     return(__targ__332)["ctype"]
                                 } 
                             })()==='string'))) {
                                  return await (async function(){
-                                    let __targ__332=await first(stmts);
-                                    if (__targ__332){
-                                         return(__targ__332)["ctype"]
+                                    let __targ__333=await first(stmts);
+                                    if (__targ__333){
+                                         return(__targ__333)["ctype"]
                                     } 
                                 })()
                             } else  {
                                  return await sub_type(await (async function(){
-                                    let __targ__333=await first(stmts);
-                                    if (__targ__333){
-                                         return(__targ__333)["ctype"]
+                                    let __targ__334=await first(stmts);
+                                    if (__targ__334){
+                                         return(__targ__334)["ctype"]
                                     } 
                                 })())
                             }
@@ -4600,19 +4602,19 @@ export async function init_compiler(Environment) {
                         complete=false;
                         if (check_true (((err_data && err_data["idx"])===0))){
                              await (async function() {
-                                let __for_body__336=async function(t) {
+                                let __for_body__337=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__337=[],__elements__335=[" ","catch","(",the_exception_ref,")"," ","{"," "];
+                                let __array__338=[],__elements__336=[" ","catch","(",the_exception_ref,")"," ","{"," "];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__334 in __elements__335) {
-                                    __array__337.push(await __for_body__336(__elements__335[__iter__334]));
+                                for(let __iter__335 in __elements__336) {
+                                    __array__338.push(await __for_body__337(__elements__336[__iter__335]));
                                     if(__BREAK__FLAG__) {
-                                         __array__337.pop();
+                                         __array__338.pop();
                                         break;
                                         
                                     }
-                                }return __array__337;
+                                }return __array__338;
                                  
                             })()
                         };
@@ -4624,36 +4626,36 @@ export async function init_compiler(Environment) {
                         };
                         if (check_true (((err_data && err_data["idx"])>0))){
                              await (async function() {
-                                let __for_body__340=async function(t) {
+                                let __for_body__341=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__341=[],__elements__339=[" ","else"," "];
+                                let __array__342=[],__elements__340=[" ","else"," "];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__338 in __elements__339) {
-                                    __array__341.push(await __for_body__340(__elements__339[__iter__338]));
+                                for(let __iter__339 in __elements__340) {
+                                    __array__342.push(await __for_body__341(__elements__340[__iter__339]));
                                     if(__BREAK__FLAG__) {
-                                         __array__341.pop();
+                                         __array__342.pop();
                                         break;
                                         
                                     }
-                                }return __array__341;
+                                }return __array__342;
                                  
                             })()
                         };
                         await (async function() {
-                            let __for_body__344=async function(t) {
+                            let __for_body__345=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__345=[],__elements__343=[" ","if"," ","(",the_exception_ref," ","instanceof"," ",(err_data && err_data["error_type"]),")"," ","{"," ","let"," ",(err_data && err_data["error_ref"]),"=",the_exception_ref,";"," "];
+                            let __array__346=[],__elements__344=[" ","if"," ","(",the_exception_ref," ","instanceof"," ",(err_data && err_data["error_type"]),")"," ","{"," ","let"," ",(err_data && err_data["error_ref"]),"=",the_exception_ref,";"," "];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__342 in __elements__343) {
-                                __array__345.push(await __for_body__344(__elements__343[__iter__342]));
+                            for(let __iter__343 in __elements__344) {
+                                __array__346.push(await __for_body__345(__elements__344[__iter__343]));
                                 if(__BREAK__FLAG__) {
-                                     __array__345.pop();
+                                     __array__346.pop();
                                     break;
                                     
                                 }
-                            }return __array__345;
+                            }return __array__346;
                              
                         })();
                         if (check_true ((err_data && err_data["insert_return"]))){
@@ -4665,37 +4667,37 @@ export async function init_compiler(Environment) {
                         (acc).push("}");
                         if (check_true ((((err_data && err_data["idx"])===((err_data && err_data["total_catches"])-1))&&await not(base_error_caught)))){
                              await (async function() {
-                                let __for_body__348=async function(t) {
+                                let __for_body__349=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__349=[],__elements__347=[" ","else"," ","throw"," ",the_exception_ref,";"];
+                                let __array__350=[],__elements__348=[" ","else"," ","throw"," ",the_exception_ref,";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__346 in __elements__347) {
-                                    __array__349.push(await __for_body__348(__elements__347[__iter__346]));
+                                for(let __iter__347 in __elements__348) {
+                                    __array__350.push(await __for_body__349(__elements__348[__iter__347]));
                                     if(__BREAK__FLAG__) {
-                                         __array__349.pop();
+                                         __array__350.pop();
                                         break;
                                         
                                     }
-                                }return __array__349;
+                                }return __array__350;
                                  
                             })()
                         };
                         if (check_true (complete)){
                              await (async function() {
-                                let __for_body__352=async function(t) {
+                                let __for_body__353=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__353=[],__elements__351=[" ","}"];
+                                let __array__354=[],__elements__352=[" ","}"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__350 in __elements__351) {
-                                    __array__353.push(await __for_body__352(__elements__351[__iter__350]));
+                                for(let __iter__351 in __elements__352) {
+                                    __array__354.push(await __for_body__353(__elements__352[__iter__351]));
                                     if(__BREAK__FLAG__) {
-                                         __array__353.pop();
+                                         __array__354.pop();
                                         break;
                                         
                                     }
-                                }return __array__353;
+                                }return __array__354;
                                  
                             })()
                         };
@@ -4713,15 +4715,15 @@ export async function init_compiler(Environment) {
                         
                     };
                     await async function(){
-                        let __target_obj__354=ctx;
-                        __target_obj__354["return_last_value"]=true;
-                        return __target_obj__354;
+                        let __target_obj__355=ctx;
+                        __target_obj__355["return_last_value"]=true;
+                        return __target_obj__355;
                         
                     }();
                     await async function(){
-                        let __target_obj__355=ctx;
-                        __target_obj__355["in_try"]=true;
-                        return __target_obj__355;
+                        let __target_obj__356=ctx;
+                        __target_obj__356["in_try"]=true;
+                        return __target_obj__356;
                         
                     }();
                     stmts=await compile(try_block,ctx);
@@ -4729,36 +4731,36 @@ export async function init_compiler(Environment) {
                          (stmts).unshift("await")
                     };
                     if (check_true (await (async function(){
-                        let __array_op_rval__356=is_complex_ques_;
-                         if (__array_op_rval__356 instanceof Function){
-                            return await __array_op_rval__356(try_block) 
+                        let __array_op_rval__357=is_complex_ques_;
+                         if (__array_op_rval__357 instanceof Function){
+                            return await __array_op_rval__357(try_block) 
                         } else {
-                            return[__array_op_rval__356,try_block]
+                            return[__array_op_rval__357,try_block]
                         }
                     })())){
                          await (async function() {
-                            let __for_body__359=async function(t) {
+                            let __for_body__360=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__360=[],__elements__358=["try"," ","/* TRY COMPLEX */ ",stmts," "];
+                            let __array__361=[],__elements__359=["try"," ","/* TRY COMPLEX */ ",stmts," "];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__357 in __elements__358) {
-                                __array__360.push(await __for_body__359(__elements__358[__iter__357]));
+                            for(let __iter__358 in __elements__359) {
+                                __array__361.push(await __for_body__360(__elements__359[__iter__358]));
                                 if(__BREAK__FLAG__) {
-                                     __array__360.pop();
+                                     __array__361.pop();
                                     break;
                                     
                                 }
-                            }return __array__360;
+                            }return __array__361;
                              
                         })()
                     } else {
                          await (async function() {
-                            let __for_body__363=async function(t) {
+                            let __for_body__364=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__364=[],__elements__362=await (async function ()  {
-                                let __array_arg__365=(async function() {
+                            let __array__365=[],__elements__363=await (async function ()  {
+                                let __array_arg__366=(async function() {
                                     if (check_true ((await get_ctx_val(ctx,"__LAMBDA_STEP__")===0))){
                                           return {
                                             mark:"final-return"
@@ -4769,34 +4771,34 @@ export async function init_compiler(Environment) {
                                         }
                                     }
                                 } );
-                                return ["try"," ","/* TRY SIMPLE */ ","{"," ",await __array_arg__365(),stmts," ","}"]
+                                return ["try"," ","/* TRY SIMPLE */ ","{"," ",await __array_arg__366(),stmts," ","}"]
                             } )();
                             let __BREAK__FLAG__=false;
-                            for(let __iter__361 in __elements__362) {
-                                __array__364.push(await __for_body__363(__elements__362[__iter__361]));
+                            for(let __iter__362 in __elements__363) {
+                                __array__365.push(await __for_body__364(__elements__363[__iter__362]));
                                 if(__BREAK__FLAG__) {
-                                     __array__364.pop();
+                                     __array__365.pop();
                                     break;
                                     
                                 }
-                            }return __array__364;
+                            }return __array__365;
                              
                         })()
                     };
                     await (async function(){
-                         let __test_condition__366=async function() {
+                         let __test_condition__367=async function() {
                              return  (idx<(catches && catches.length))
                         };
-                        let __body_ref__367=async function() {
+                        let __body_ref__368=async function() {
                             catch_block=await (async function(){
-                                let __targ__369=await (async function(){
-                                    let __targ__368=catches;
-                                    if (__targ__368){
-                                         return(__targ__368)[idx]
+                                let __targ__370=await (async function(){
+                                    let __targ__369=catches;
+                                    if (__targ__369){
+                                         return(__targ__369)[idx]
                                     } 
                                 })();
-                                if (__targ__369){
-                                     return(__targ__369)["val"]
+                                if (__targ__370){
+                                     return(__targ__370)["val"]
                                 } 
                             })();
                             await set_ctx(ctx,(catch_block && catch_block["2"] && catch_block["2"]["val"] && catch_block["2"]["val"]["0"] && catch_block["2"]["val"]["0"]["name"]),(await Environment.get_global("indirect_new"))(catch_block['1'].name));
@@ -4811,8 +4813,8 @@ export async function init_compiler(Environment) {
                              return  idx+=1
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__366()) {
-                            await __body_ref__367();
+                        while(await __test_condition__367()) {
+                            await __body_ref__368();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -4848,36 +4850,36 @@ export async function init_compiler(Environment) {
                     } ();
                     if (check_true ((mode===0))){
                          await (async function() {
-                            let __for_body__372=async function(t) {
+                            let __for_body__373=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__373=[],__elements__371=["throw"," ",error_instance,";"];
+                            let __array__374=[],__elements__372=["throw"," ",error_instance,";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__370 in __elements__371) {
-                                __array__373.push(await __for_body__372(__elements__371[__iter__370]));
+                            for(let __iter__371 in __elements__372) {
+                                __array__374.push(await __for_body__373(__elements__372[__iter__371]));
                                 if(__BREAK__FLAG__) {
-                                     __array__373.pop();
+                                     __array__374.pop();
                                     break;
                                     
                                 }
-                            }return __array__373;
+                            }return __array__374;
                              
                         })()
                     } else {
                          await (async function() {
-                            let __for_body__376=async function(t) {
+                            let __for_body__377=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__377=[],__elements__375=["throw"," ","new"," ",error_instance,"(",error_message,")",";"];
+                            let __array__378=[],__elements__376=["throw"," ","new"," ",error_instance,"(",error_message,")",";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__374 in __elements__375) {
-                                __array__377.push(await __for_body__376(__elements__375[__iter__374]));
+                            for(let __iter__375 in __elements__376) {
+                                __array__378.push(await __for_body__377(__elements__376[__iter__375]));
                                 if(__BREAK__FLAG__) {
-                                     __array__377.pop();
+                                     __array__378.pop();
                                     break;
                                     
                                 }
-                            }return __array__377;
+                            }return __array__378;
                              
                         })()
                     };
@@ -4885,11 +4887,11 @@ export async function init_compiler(Environment) {
                 };
                 compile_break=async function(tokens,ctx) {
                      return  await (async function(){
-                        let __array_op_rval__378=break_out;
-                         if (__array_op_rval__378 instanceof Function){
-                            return await __array_op_rval__378("=","true",";","return") 
+                        let __array_op_rval__379=break_out;
+                         if (__array_op_rval__379 instanceof Function){
+                            return await __array_op_rval__379("=","true",";","return") 
                         } else {
-                            return[__array_op_rval__378,"=","true",";","return"]
+                            return[__array_op_rval__379,"=","true",";","return"]
                         }
                     })()
                 };
@@ -4904,44 +4906,44 @@ export async function init_compiler(Environment) {
                         mark:"forced_return"
                     });
                     if (check_true (await (async function(){
-                        let __array_op_rval__379=is_block_ques_;
-                         if (__array_op_rval__379 instanceof Function){
-                            return await __array_op_rval__379((tokens && tokens["1"] && tokens["1"]["val"])) 
+                        let __array_op_rval__380=is_block_ques_;
+                         if (__array_op_rval__380 instanceof Function){
+                            return await __array_op_rval__380((tokens && tokens["1"] && tokens["1"]["val"])) 
                         } else {
-                            return[__array_op_rval__379,(tokens && tokens["1"] && tokens["1"]["val"])]
+                            return[__array_op_rval__380,(tokens && tokens["1"] && tokens["1"]["val"])]
                         }
                     })())){
                          await (async function() {
-                            let __for_body__382=async function(t) {
+                            let __for_body__383=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__383=[],__elements__381=["let"," ",return_val_reference,"=",await compile((tokens && tokens["1"] && tokens["1"]["val"]),ctx),";","return"," ",return_val_reference,";"];
+                            let __array__384=[],__elements__382=["let"," ",return_val_reference,"=",await compile((tokens && tokens["1"] && tokens["1"]["val"]),ctx),";","return"," ",return_val_reference,";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__380 in __elements__381) {
-                                __array__383.push(await __for_body__382(__elements__381[__iter__380]));
+                            for(let __iter__381 in __elements__382) {
+                                __array__384.push(await __for_body__383(__elements__382[__iter__381]));
                                 if(__BREAK__FLAG__) {
-                                     __array__383.pop();
+                                     __array__384.pop();
                                     break;
                                     
                                 }
-                            }return __array__383;
+                            }return __array__384;
                              
                         })()
                     } else {
                          await (async function() {
-                            let __for_body__386=async function(t) {
+                            let __for_body__387=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__387=[],__elements__385=["return"," ",await compile((tokens && tokens["1"]),ctx),";"];
+                            let __array__388=[],__elements__386=["return"," ",await compile((tokens && tokens["1"]),ctx),";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__384 in __elements__385) {
-                                __array__387.push(await __for_body__386(__elements__385[__iter__384]));
+                            for(let __iter__385 in __elements__386) {
+                                __array__388.push(await __for_body__387(__elements__386[__iter__385]));
                                 if(__BREAK__FLAG__) {
-                                     __array__387.pop();
+                                     __array__388.pop();
                                     break;
                                     
                                 }
-                            }return __array__387;
+                            }return __array__388;
                              
                         })()
                     };
@@ -4999,145 +5001,145 @@ export async function init_compiler(Environment) {
                         target_argument_ref=await gen_temp_name("target_arg");
                         target_arg=(args).pop();
                         await (async function() {
-                            let __for_body__390=async function(t) {
+                            let __for_body__391=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__391=[],__elements__389=["let"," ",target_argument_ref,"=","[]",".concat","(",await compile(target_arg,ctx),")",";"];
+                            let __array__392=[],__elements__390=["let"," ",target_argument_ref,"=","[]",".concat","(",await compile(target_arg,ctx),")",";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__388 in __elements__389) {
-                                __array__391.push(await __for_body__390(__elements__389[__iter__388]));
+                            for(let __iter__389 in __elements__390) {
+                                __array__392.push(await __for_body__391(__elements__390[__iter__389]));
                                 if(__BREAK__FLAG__) {
-                                     __array__391.pop();
+                                     __array__392.pop();
                                     break;
                                     
                                 }
-                            }return __array__391;
+                            }return __array__392;
                              
                         })();
                         await (async function() {
-                            let __for_body__394=async function(t) {
+                            let __for_body__395=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__395=[],__elements__393=["if","(","!",target_argument_ref," ","instanceof"," ","Array",")","{","throw"," ","new"," ","TypeError","(","\"Invalid final argument to apply - an array is required\"",")","}"];
+                            let __array__396=[],__elements__394=["if","(","!",target_argument_ref," ","instanceof"," ","Array",")","{","throw"," ","new"," ","TypeError","(","\"Invalid final argument to apply - an array is required\"",")","}"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__392 in __elements__393) {
-                                __array__395.push(await __for_body__394(__elements__393[__iter__392]));
+                            for(let __iter__393 in __elements__394) {
+                                __array__396.push(await __for_body__395(__elements__394[__iter__393]));
                                 if(__BREAK__FLAG__) {
-                                     __array__395.pop();
+                                     __array__396.pop();
                                     break;
                                     
                                 }
-                            }return __array__395;
+                            }return __array__396;
                              
                         })();
                         await (async function() {
-                            let __for_body__398=async function(token) {
+                            let __for_body__399=async function(token) {
                                 preceding_arg_ref=await gen_temp_name("pre_arg");
                                 if (check_true (await (async function(){
-                                    let __array_op_rval__400=is_form_ques_;
-                                     if (__array_op_rval__400 instanceof Function){
-                                        return await __array_op_rval__400(token) 
+                                    let __array_op_rval__401=is_form_ques_;
+                                     if (__array_op_rval__401 instanceof Function){
+                                        return await __array_op_rval__401(token) 
                                     } else {
-                                        return[__array_op_rval__400,token]
+                                        return[__array_op_rval__401,token]
                                     }
                                 })())){
                                      await (async function() {
-                                        let __for_body__403=async function(t) {
+                                        let __for_body__404=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__404=[],__elements__402=["let"," ",preceding_arg_ref,"=",await wrap_assignment_value(await compile((token && token["val"]),ctx),ctx),";"];
+                                        let __array__405=[],__elements__403=["let"," ",preceding_arg_ref,"=",await wrap_assignment_value(await compile((token && token["val"]),ctx),ctx),";"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__401 in __elements__402) {
-                                            __array__404.push(await __for_body__403(__elements__402[__iter__401]));
+                                        for(let __iter__402 in __elements__403) {
+                                            __array__405.push(await __for_body__404(__elements__403[__iter__402]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__404.pop();
+                                                 __array__405.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__404;
+                                        }return __array__405;
                                          
                                     })()
                                 } else {
                                      preceding_arg_ref=await wrap_assignment_value(await compile(token,ctx))
                                 };
                                  return  (acc).push(await (async function(){
-                                    let __array_op_rval__405=target_argument_ref;
-                                     if (__array_op_rval__405 instanceof Function){
-                                        return await __array_op_rval__405(".unshift","(",preceding_arg_ref,")",";") 
+                                    let __array_op_rval__406=target_argument_ref;
+                                     if (__array_op_rval__406 instanceof Function){
+                                        return await __array_op_rval__406(".unshift","(",preceding_arg_ref,")",";") 
                                     } else {
-                                        return[__array_op_rval__405,".unshift","(",preceding_arg_ref,")",";"]
+                                        return[__array_op_rval__406,".unshift","(",preceding_arg_ref,")",";"]
                                     }
                                 })())
                             };
-                            let __array__399=[],__elements__397=args;
+                            let __array__400=[],__elements__398=args;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__396 in __elements__397) {
-                                __array__399.push(await __for_body__398(__elements__397[__iter__396]));
+                            for(let __iter__397 in __elements__398) {
+                                __array__400.push(await __for_body__399(__elements__398[__iter__397]));
                                 if(__BREAK__FLAG__) {
-                                     __array__399.pop();
+                                     __array__400.pop();
                                     break;
                                     
                                 }
-                            }return __array__399;
+                            }return __array__400;
                              
                         })();
                          await (async function() {
-                            let __for_body__408=async function(t) {
+                            let __for_body__409=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__409=[],__elements__407=["return"," ","(",function_ref,")",".","apply","(","this",",",target_argument_ref,")"];
+                            let __array__410=[],__elements__408=["return"," ","(",function_ref,")",".","apply","(","this",",",target_argument_ref,")"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__406 in __elements__407) {
-                                __array__409.push(await __for_body__408(__elements__407[__iter__406]));
+                            for(let __iter__407 in __elements__408) {
+                                __array__410.push(await __for_body__409(__elements__408[__iter__407]));
                                 if(__BREAK__FLAG__) {
-                                     __array__409.pop();
+                                     __array__410.pop();
                                     break;
                                     
                                 }
-                            }return __array__409;
+                            }return __array__410;
                              
                         })()
                     } else {
                         if (check_true (await (async function(){
-                            let __array_op_rval__410=is_form_ques_;
-                             if (__array_op_rval__410 instanceof Function){
-                                return await __array_op_rval__410(args) 
+                            let __array_op_rval__411=is_form_ques_;
+                             if (__array_op_rval__411 instanceof Function){
+                                return await __array_op_rval__411(args) 
                             } else {
-                                return[__array_op_rval__410,args]
+                                return[__array_op_rval__411,args]
                             }
                         })())){
                             await (async function() {
-                                let __for_body__413=async function(t) {
+                                let __for_body__414=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__414=[],__elements__412=["let"," ",args_ref,"=",await wrap_assignment_value(await compile((args && args["val"]),ctx),ctx),";"];
+                                let __array__415=[],__elements__413=["let"," ",args_ref,"=",await wrap_assignment_value(await compile((args && args["val"]),ctx),ctx),";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__411 in __elements__412) {
-                                    __array__414.push(await __for_body__413(__elements__412[__iter__411]));
+                                for(let __iter__412 in __elements__413) {
+                                    __array__415.push(await __for_body__414(__elements__413[__iter__412]));
                                     if(__BREAK__FLAG__) {
-                                         __array__414.pop();
+                                         __array__415.pop();
                                         break;
                                         
                                     }
-                                }return __array__414;
+                                }return __array__415;
                                  
                             })();
                              complex_ques_=true
                         };
                         await (async function() {
-                            let __for_body__417=async function(t) {
+                            let __for_body__418=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__418=[],__elements__416=["return"," ","("," ",function_ref,")",".","apply","(","this"];
+                            let __array__419=[],__elements__417=["return"," ","("," ",function_ref,")",".","apply","(","this"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__415 in __elements__416) {
-                                __array__418.push(await __for_body__417(__elements__416[__iter__415]));
+                            for(let __iter__416 in __elements__417) {
+                                __array__419.push(await __for_body__418(__elements__417[__iter__416]));
                                 if(__BREAK__FLAG__) {
-                                     __array__418.pop();
+                                     __array__419.pop();
                                     break;
                                     
                                 }
-                            }return __array__418;
+                            }return __array__419;
                              
                         })();
                         if (check_true (args)){
@@ -5201,20 +5203,20 @@ export async function init_compiler(Environment) {
                     preamble=(opts && opts["preamble"]);
                     add_args=async function() {
                          return  await (async function() {
-                            let __for_body__421=async function(token) {
+                            let __for_body__422=async function(token) {
                                 (acc).push(",");
                                  return  (acc).push(await wrap_assignment_value(await compile(token,ctx),ctx))
                             };
-                            let __array__422=[],__elements__420=await tokens["slice"].call(tokens,3);
+                            let __array__423=[],__elements__421=await tokens["slice"].call(tokens,3);
                             let __BREAK__FLAG__=false;
-                            for(let __iter__419 in __elements__420) {
-                                __array__422.push(await __for_body__421(__elements__420[__iter__419]));
+                            for(let __iter__420 in __elements__421) {
+                                __array__423.push(await __for_body__422(__elements__421[__iter__420]));
                                 if(__BREAK__FLAG__) {
-                                     __array__422.pop();
+                                     __array__423.pop();
                                     break;
                                     
                                 }
-                            }return __array__422;
+                            }return __array__423;
                              
                         })()
                     };
@@ -5230,50 +5232,50 @@ export async function init_compiler(Environment) {
                              return  await async function(){
                                 if (check_true( ((tokens && tokens.length)===3))) {
                                      return await (async function() {
-                                        let __for_body__425=async function(t) {
+                                        let __for_body__426=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__426=[],__elements__424=await (async function(){
-                                            let __array_op_rval__427=(preamble && preamble["0"]);
-                                             if (__array_op_rval__427 instanceof Function){
-                                                return await __array_op_rval__427(" ",target,"[",method,"]","()") 
+                                        let __array__427=[],__elements__425=await (async function(){
+                                            let __array_op_rval__428=(preamble && preamble["0"]);
+                                             if (__array_op_rval__428 instanceof Function){
+                                                return await __array_op_rval__428(" ",target,"[",method,"]","()") 
                                             } else {
-                                                return[__array_op_rval__427," ",target,"[",method,"]","()"]
+                                                return[__array_op_rval__428," ",target,"[",method,"]","()"]
                                             }
                                         })();
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__423 in __elements__424) {
-                                            __array__426.push(await __for_body__425(__elements__424[__iter__423]));
+                                        for(let __iter__424 in __elements__425) {
+                                            __array__427.push(await __for_body__426(__elements__425[__iter__424]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__426.pop();
+                                                 __array__427.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__426;
+                                        }return __array__427;
                                          
                                     })()
                                 } else  {
                                     await (async function() {
-                                        let __for_body__430=async function(t) {
+                                        let __for_body__431=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__431=[],__elements__429=await (async function(){
-                                            let __array_op_rval__432=(preamble && preamble["0"]);
-                                             if (__array_op_rval__432 instanceof Function){
-                                                return await __array_op_rval__432(" ",target,"[",method,"]",".call","(",target) 
+                                        let __array__432=[],__elements__430=await (async function(){
+                                            let __array_op_rval__433=(preamble && preamble["0"]);
+                                             if (__array_op_rval__433 instanceof Function){
+                                                return await __array_op_rval__433(" ",target,"[",method,"]",".call","(",target) 
                                             } else {
-                                                return[__array_op_rval__432," ",target,"[",method,"]",".call","(",target]
+                                                return[__array_op_rval__433," ",target,"[",method,"]",".call","(",target]
                                             }
                                         })();
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__428 in __elements__429) {
-                                            __array__431.push(await __for_body__430(__elements__429[__iter__428]));
+                                        for(let __iter__429 in __elements__430) {
+                                            __array__432.push(await __for_body__431(__elements__430[__iter__429]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__431.pop();
+                                                 __array__432.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__431;
+                                        }return __array__432;
                                          
                                     })();
                                     await add_args();
@@ -5282,54 +5284,54 @@ export async function init_compiler(Environment) {
                             } ()
                         } else if (check_true( ((opts && opts["type"])===2))) {
                             await (async function() {
-                                let __for_body__435=async function(t) {
+                                let __for_body__436=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__436=[],__elements__434=["{"," ","let"," ","__call_target__","=",target,","," ","__call_method__","=",method,";"];
+                                let __array__437=[],__elements__435=["{"," ","let"," ","__call_target__","=",target,","," ","__call_method__","=",method,";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__433 in __elements__434) {
-                                    __array__436.push(await __for_body__435(__elements__434[__iter__433]));
+                                for(let __iter__434 in __elements__435) {
+                                    __array__437.push(await __for_body__436(__elements__435[__iter__434]));
                                     if(__BREAK__FLAG__) {
-                                         __array__436.pop();
+                                         __array__437.pop();
                                         break;
                                         
                                     }
-                                }return __array__436;
+                                }return __array__437;
                                  
                             })();
                             await async function(){
                                 if (check_true( ((tokens && tokens.length)===3))) {
                                      return await (async function() {
-                                        let __for_body__439=async function(t) {
+                                        let __for_body__440=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__440=[],__elements__438=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]","()"];
+                                        let __array__441=[],__elements__439=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]","()"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__437 in __elements__438) {
-                                            __array__440.push(await __for_body__439(__elements__438[__iter__437]));
+                                        for(let __iter__438 in __elements__439) {
+                                            __array__441.push(await __for_body__440(__elements__439[__iter__438]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__440.pop();
+                                                 __array__441.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__440;
+                                        }return __array__441;
                                          
                                     })()
                                 } else  {
                                     await (async function() {
-                                        let __for_body__443=async function(t) {
+                                        let __for_body__444=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__444=[],__elements__442=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]",".","call","(","__call_target__"];
+                                        let __array__445=[],__elements__443=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]",".","call","(","__call_target__"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__441 in __elements__442) {
-                                            __array__444.push(await __for_body__443(__elements__442[__iter__441]));
+                                        for(let __iter__442 in __elements__443) {
+                                            __array__445.push(await __for_body__444(__elements__443[__iter__442]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__444.pop();
+                                                 __array__445.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__444;
+                                        }return __array__445;
                                          
                                     })();
                                     await add_args();
@@ -5344,38 +5346,38 @@ export async function init_compiler(Environment) {
                 check_needs_wrap=async function(stmts) {
                     let fst;
                     fst=(((stmts instanceof Array)&&await first(stmts)&&(await first(stmts) instanceof Object)&&await not(await (async function(){
-                        let __targ__445=await first(stmts);
-                        if (__targ__445){
-                             return(__targ__445)["ctype"]
-                        } 
-                    })() instanceof Function)&&await (async function(){
                         let __targ__446=await first(stmts);
                         if (__targ__446){
                              return(__targ__446)["ctype"]
                         } 
+                    })() instanceof Function)&&await (async function(){
+                        let __targ__447=await first(stmts);
+                        if (__targ__447){
+                             return(__targ__447)["ctype"]
+                        } 
                     })()&&await async function(){
                         if (check_true( (await (async function(){
-                            let __targ__447=await first(stmts);
-                            if (__targ__447){
-                                 return(__targ__447)["ctype"]
+                            let __targ__448=await first(stmts);
+                            if (__targ__448){
+                                 return(__targ__448)["ctype"]
                             } 
                         })() instanceof String || typeof await (async function(){
-                            let __targ__447=await first(stmts);
-                            if (__targ__447){
-                                 return(__targ__447)["ctype"]
+                            let __targ__448=await first(stmts);
+                            if (__targ__448){
+                                 return(__targ__448)["ctype"]
                             } 
                         })()==='string'))) {
                              return await (async function(){
-                                let __targ__448=await first(stmts);
-                                if (__targ__448){
-                                     return(__targ__448)["ctype"]
+                                let __targ__449=await first(stmts);
+                                if (__targ__449){
+                                     return(__targ__449)["ctype"]
                                 } 
                             })()
                         } else  {
                              return await sub_type(await (async function(){
-                                let __targ__449=await first(stmts);
-                                if (__targ__449){
-                                     return(__targ__449)["ctype"]
+                                let __targ__450=await first(stmts);
+                                if (__targ__450){
+                                     return(__targ__450)["ctype"]
                                 } 
                             })())
                         }
@@ -5390,7 +5392,7 @@ export async function init_compiler(Environment) {
                 };
                 compile_import=async function(tokens,ctx) {
                     let symbol_tokens;
-                    let __symbols__450= async function(){
+                    let __symbols__451= async function(){
                         return []
                     };
                     let from_tokens;
@@ -5398,7 +5400,7 @@ export async function init_compiler(Environment) {
                     let acc;
                     {
                         symbol_tokens=(tokens && tokens["1"]);
-                        let symbols=await __symbols__450();
+                        let symbols=await __symbols__451();
                         ;
                         from_tokens=null;
                         from_place=null;
@@ -5417,35 +5419,35 @@ export async function init_compiler(Environment) {
                         await async function(){
                             if (check_true( ((symbol_tokens && symbol_tokens["val"]) instanceof Array))) {
                                 await (async function() {
-                                    let __for_body__453=async function(s) {
+                                    let __for_body__454=async function(s) {
                                          return  (symbols).push(await compile(s,ctx))
                                     };
-                                    let __array__454=[],__elements__452=(symbol_tokens && symbol_tokens["val"]);
+                                    let __array__455=[],__elements__453=(symbol_tokens && symbol_tokens["val"]);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__451 in __elements__452) {
-                                        __array__454.push(await __for_body__453(__elements__452[__iter__451]));
+                                    for(let __iter__452 in __elements__453) {
+                                        __array__455.push(await __for_body__454(__elements__453[__iter__452]));
                                         if(__BREAK__FLAG__) {
-                                             __array__454.pop();
+                                             __array__455.pop();
                                             break;
                                             
                                         }
-                                    }return __array__454;
+                                    }return __array__455;
                                      
                                 })();
                                  return  await (async function() {
-                                    let __for_body__457=async function(t) {
+                                    let __for_body__458=async function(t) {
                                          return  (acc).push(t)
                                     };
-                                    let __array__458=[],__elements__456=await flatten(["{"," ",symbols," ","}"," ","from"," ",from_place]);
+                                    let __array__459=[],__elements__457=await flatten(["{"," ",symbols," ","}"," ","from"," ",from_place]);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__455 in __elements__456) {
-                                        __array__458.push(await __for_body__457(__elements__456[__iter__455]));
+                                    for(let __iter__456 in __elements__457) {
+                                        __array__459.push(await __for_body__458(__elements__457[__iter__456]));
                                         if(__BREAK__FLAG__) {
-                                             __array__458.pop();
+                                             __array__459.pop();
                                             break;
                                             
                                         }
-                                    }return __array__458;
+                                    }return __array__459;
                                      
                                 })()
                             }
@@ -5460,7 +5462,7 @@ export async function init_compiler(Environment) {
                     acc=[];
                     text=null;
                     await (async function() {
-                        let __for_body__461=async function(t) {
+                        let __for_body__462=async function(t) {
                              return  await async function(){
                                 if (check_true((t && t["ref"]))) {
                                      return (acc).push((t && t.name))
@@ -5471,16 +5473,16 @@ export async function init_compiler(Environment) {
                                 }
                             } ()
                         };
-                        let __array__462=[],__elements__460=(await (await __GG__("rest"))(tokens)||[]);
+                        let __array__463=[],__elements__461=(await (await __GG__("rest"))(tokens)||[]);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__459 in __elements__460) {
-                            __array__462.push(await __for_body__461(__elements__460[__iter__459]));
+                        for(let __iter__460 in __elements__461) {
+                            __array__463.push(await __for_body__462(__elements__461[__iter__460]));
                             if(__BREAK__FLAG__) {
-                                 __array__462.pop();
+                                 __array__463.pop();
                                 break;
                                 
                             }
-                        }return __array__462;
+                        }return __array__463;
                          
                     })();
                      return  acc
@@ -5501,19 +5503,19 @@ export async function init_compiler(Environment) {
                     });
                     from_place=await compile(from_tokens,ctx);
                     await (async function() {
-                        let __for_body__465=async function(t) {
+                        let __for_body__466=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__466=[],__elements__464=await flatten([(preamble && preamble["0"])," ","import"," ","(",from_place,")"]);
+                        let __array__467=[],__elements__465=await flatten([(preamble && preamble["0"])," ","import"," ","(",from_place,")"]);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__463 in __elements__464) {
-                            __array__466.push(await __for_body__465(__elements__464[__iter__463]));
+                        for(let __iter__464 in __elements__465) {
+                            __array__467.push(await __for_body__466(__elements__465[__iter__464]));
                             if(__BREAK__FLAG__) {
-                                 __array__466.pop();
+                                 __array__467.pop();
                                 break;
                                 
                             }
-                        }return __array__466;
+                        }return __array__467;
                          
                     })();
                      return  acc
@@ -5544,19 +5546,19 @@ export async function init_compiler(Environment) {
                     ;
                     has_lisp_globals=true;
                     await async function(){
-                        let __target_obj__467=(root_ctx && root_ctx["defined_lisp_globals"]);
-                        __target_obj__467[target]=AsyncFunction;
-                        return __target_obj__467;
+                        let __target_obj__468=(root_ctx && root_ctx["defined_lisp_globals"]);
+                        __target_obj__468[target]=AsyncFunction;
+                        return __target_obj__468;
                         
                     }();
                     if (check_true ((tokens && tokens["3"]))){
                          metavalue=await (async function () {
                              if (check_true (await (async function(){
-                                let __array_op_rval__468=is_complex_ques_;
-                                 if (__array_op_rval__468 instanceof Function){
-                                    return await __array_op_rval__468((tokens && tokens["3"])) 
+                                let __array_op_rval__469=is_complex_ques_;
+                                 if (__array_op_rval__469 instanceof Function){
+                                    return await __array_op_rval__469((tokens && tokens["3"])) 
                                 } else {
-                                    return[__array_op_rval__468,(tokens && tokens["3"])]
+                                    return[__array_op_rval__469,(tokens && tokens["3"])]
                                 }
                             })())){
                                   return await compile_wrapper_fn((tokens && tokens["3"]),ctx)
@@ -5572,8 +5574,8 @@ export async function init_compiler(Environment) {
                     await async function(){
                         if (check_true( (((assignment_value && assignment_value["0"]) instanceof Object)&&(assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])))) {
                             await async function(){
-                                let __target_obj__469=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                __target_obj__469[target]=await async function(){
+                                let __target_obj__470=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                __target_obj__470[target]=await async function(){
                                     if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="Function"))) {
                                          return Function
                                     } else if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="AsyncFunction"))) {
@@ -5586,7 +5588,7 @@ export async function init_compiler(Environment) {
                                          return (assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])
                                     }
                                 } ();
-                                return __target_obj__469;
+                                return __target_obj__470;
                                 
                             }();
                             if (check_true (wrap_as_function_ques_)){
@@ -5595,16 +5597,16 @@ export async function init_compiler(Environment) {
                         } else  {
                             if (check_true (((assignment_value instanceof Array)&&((assignment_value && assignment_value["0"])==="await")))){
                                   return await async function(){
-                                    let __target_obj__470=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                    __target_obj__470[target]=AsyncFunction;
-                                    return __target_obj__470;
+                                    let __target_obj__471=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                    __target_obj__471[target]=AsyncFunction;
+                                    return __target_obj__471;
                                     
                                 }()
                             } else {
                                   return await async function(){
-                                    let __target_obj__471=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                    __target_obj__471[target]=assignment_value;
-                                    return __target_obj__471;
+                                    let __target_obj__472=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                    __target_obj__472[target]=assignment_value;
+                                    return __target_obj__472;
                                     
                                 }()
                             }
@@ -5615,18 +5617,18 @@ export async function init_compiler(Environment) {
                          (clog)("assignment_value: ",await (await __GG__("as_lisp"))(assignment_value))
                     };
                     acc=await (async function ()  {
-                        let __array_arg__474=(async function() {
+                        let __array_arg__475=(async function() {
                             if (check_true (((Function===await (async function(){
-                                let __targ__472=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                if (__targ__472){
-                                     return(__targ__472)[target]
+                                let __targ__473=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                if (__targ__473){
+                                     return(__targ__473)[target]
                                 } 
                             })())||await (async function(){
-                                let __array_op_rval__473=in_sync_ques_;
-                                 if (__array_op_rval__473 instanceof Function){
-                                    return await __array_op_rval__473(ctx) 
+                                let __array_op_rval__474=in_sync_ques_;
+                                 if (__array_op_rval__474 instanceof Function){
+                                    return await __array_op_rval__474(ctx) 
                                 } else {
-                                    return[__array_op_rval__473,ctx]
+                                    return[__array_op_rval__474,ctx]
                                 }
                             })()))){
                                   return ""
@@ -5634,14 +5636,14 @@ export async function init_compiler(Environment) {
                                   return "await"
                             }
                         } );
-                        let __array_arg__475=(async function() {
+                        let __array_arg__476=(async function() {
                             if (check_true ((metavalue||(opts && opts["constant"])))){
                                   return ","
                             } else {
                                   return ""
                             }
                         } );
-                        let __array_arg__476=(async function() {
+                        let __array_arg__477=(async function() {
                             if (check_true (metavalue)){
                                   return metavalue
                             } else {
@@ -5652,14 +5654,14 @@ export async function init_compiler(Environment) {
                                 }
                             }
                         } );
-                        let __array_arg__477=(async function() {
+                        let __array_arg__478=(async function() {
                             if (check_true ((opts && opts["constant"]))){
                                   return ","
                             } else {
                                   return ""
                             }
                         } );
-                        let __array_arg__478=(async function() {
+                        let __array_arg__479=(async function() {
                             if (check_true ((opts && opts["constant"]))){
                                   return "true"
                             } else {
@@ -5668,7 +5670,7 @@ export async function init_compiler(Environment) {
                         } );
                         return [{
                             ctype:"statement"
-                        },await __array_arg__474()," ","Environment",".","set_global","(","","\"",(tokens && tokens["1"] && tokens["1"]["name"]),"\"",",",assignment_value,await __array_arg__475(),await __array_arg__476(),await __array_arg__477(),await __array_arg__478(),")"]
+                        },await __array_arg__475()," ","Environment",".","set_global","(","","\"",(tokens && tokens["1"] && tokens["1"]["name"]),"\"",",",assignment_value,await __array_arg__476(),await __array_arg__477(),await __array_arg__478(),await __array_arg__479(),")"]
                     } )();
                      return  acc
                 };
@@ -5687,16 +5689,16 @@ export async function init_compiler(Environment) {
                     acc=[];
                     acc=await JSON.stringify((lisp_struct && lisp_struct["1"]));
                      return  await (async function(){
-                        let __array_op_rval__479=acc;
-                         if (__array_op_rval__479 instanceof Function){
-                            return await __array_op_rval__479() 
+                        let __array_op_rval__480=acc;
+                         if (__array_op_rval__480 instanceof Function){
+                            return await __array_op_rval__480() 
                         } else {
-                            return[__array_op_rval__479]
+                            return[__array_op_rval__480]
                         }
                     })()
                 };
                 wrap_and_run=async function(js_code,ctx,run_opts) {
-                    let __assembly__480= async function(){
+                    let __assembly__481= async function(){
                         return null
                     };
                     let result;
@@ -5704,12 +5706,12 @@ export async function init_compiler(Environment) {
                     let needs_braces_ques_;
                     let in_quotem;
                     let run_log;
-                    let __needs_return_ques___481= async function(){
+                    let __needs_return_ques___482= async function(){
                         return await (async function ()  {
                             fst=(""+(((js_code instanceof Array)&&await first(js_code)&&(await first(js_code) instanceof Object)&&await (async function(){
-                                let __targ__482=await first(js_code);
-                                if (__targ__482){
-                                     return(__targ__482)["ctype"]
+                                let __targ__483=await first(js_code);
+                                if (__targ__483){
+                                     return(__targ__483)["ctype"]
                                 } 
                             })())||""));
                             if (check_true (fst instanceof Function)){
@@ -5735,7 +5737,7 @@ export async function init_compiler(Environment) {
                     };
                     let assembled;
                     {
-                        let assembly=await __assembly__480();
+                        let assembly=await __assembly__481();
                         ;
                         result=null;
                         fst=null;
@@ -5750,7 +5752,7 @@ export async function init_compiler(Environment) {
                                 })
                             } 
                         })();
-                        let needs_return_ques_=await __needs_return_ques___481();
+                        let needs_return_ques_=await __needs_return_ques___482();
                         ;
                         assembled=null;
                         ;
@@ -5813,16 +5815,16 @@ export async function init_compiler(Environment) {
                                         if (check_true( (("=:##"===elem)||("=:unquotem"===elem)))) {
                                             if (check_true (in_concat)){
                                                  (acc).push(await compile_wrapper_fn(await tokenize([await (async function(){
-                                                    let __targ__483=lisp_tree;
-                                                    if (__targ__483){
-                                                         return(__targ__483)[await add(i,1)]
+                                                    let __targ__484=lisp_tree;
+                                                    if (__targ__484){
+                                                         return(__targ__484)[await add(i,1)]
                                                     } 
                                                 })()],ctx),ctx))
                                             } else {
                                                  (acc).push(await compile_wrapper_fn(await tokenize(await (async function(){
-                                                    let __targ__484=lisp_tree;
-                                                    if (__targ__484){
-                                                         return(__targ__484)[await add(i,1)]
+                                                    let __targ__485=lisp_tree;
+                                                    if (__targ__485){
+                                                         return(__targ__485)[await add(i,1)]
                                                     } 
                                                 })(),ctx),ctx))
                                             };
@@ -5832,9 +5834,9 @@ export async function init_compiler(Environment) {
                                                  (acc).push("].concat(")
                                             };
                                             (acc).push(await compile_wrapper_fn(await tokenize(await (async function(){
-                                                let __targ__485=lisp_tree;
-                                                if (__targ__485){
-                                                     return(__targ__485)[await add(i,1)]
+                                                let __targ__486=lisp_tree;
+                                                if (__targ__486){
+                                                     return(__targ__486)[await add(i,1)]
                                                 } 
                                             })(),ctx),ctx));
                                             in_concat=true;
@@ -5842,11 +5844,11 @@ export async function init_compiler(Environment) {
                                         } else  {
                                             if (check_true (in_concat)){
                                                   return await quote_tree(await (async function(){
-                                                    let __array_op_rval__486=elem;
-                                                     if (__array_op_rval__486 instanceof Function){
-                                                        return await __array_op_rval__486() 
+                                                    let __array_op_rval__487=elem;
+                                                     if (__array_op_rval__487 instanceof Function){
+                                                        return await __array_op_rval__487() 
                                                     } else {
-                                                        return[__array_op_rval__486]
+                                                        return[__array_op_rval__487]
                                                     }
                                                 })(),ctx,acc)
                                             } else {
@@ -5873,9 +5875,9 @@ export async function init_compiler(Environment) {
                                 (acc).push(await JSON.stringify(k));
                                 (acc).push(":");
                                 await quote_tree(await (async function(){
-                                    let __targ__487=lisp_tree;
-                                    if (__targ__487){
-                                         return(__targ__487)[k]
+                                    let __targ__488=lisp_tree;
+                                    if (__targ__488){
+                                         return(__targ__488)[k]
                                     } 
                                 })(),ctx,acc);
                                 if (check_true ((i<(t-1)))){
@@ -5909,14 +5911,14 @@ export async function init_compiler(Environment) {
                     await set_ctx(ctx,"__IN_QUOTEM__",true);
                     if (check_true (await verbosity(ctx))){
                         {
-                            let __array_arg__488=(async function() {
+                            let __array_arg__489=(async function() {
                                 if (check_true (await get_ctx(ctx,"__IN_LAMBDA__"))){
                                       return "[IN LAMBDA]"
                                 } else {
                                       return ""
                                 }
                             } );
-                            (quotem_log)("->",await __array_arg__488(),await JSON.stringify((lisp_struct && lisp_struct["1"])))
+                            (quotem_log)("->",await __array_arg__489(),await JSON.stringify((lisp_struct && lisp_struct["1"])))
                         }
                     };
                     if (check_true (await get_ctx(ctx,"__IN_LAMBDA__"))){
@@ -5945,7 +5947,7 @@ export async function init_compiler(Environment) {
                     } 
                 })();
                 compile_eval=async function(tokens,ctx) {
-                    let __assembly__489= async function(){
+                    let __assembly__490= async function(){
                         return null
                     };
                     let type_mark;
@@ -5953,7 +5955,7 @@ export async function init_compiler(Environment) {
                     let preamble;
                     let result;
                     {
-                        let assembly=await __assembly__489();
+                        let assembly=await __assembly__490();
                         ;
                         type_mark=null;
                         acc=[];
@@ -5978,11 +5980,11 @@ export async function init_compiler(Environment) {
                     preamble=await calling_preamble(ctx);
                     ;
                      return  await (async function(){
-                        let __array_op_rval__490=(preamble && preamble["2"]);
-                         if (__array_op_rval__490 instanceof Function){
-                            return await __array_op_rval__490((preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()") 
+                        let __array_op_rval__491=(preamble && preamble["2"]);
+                         if (__array_op_rval__491 instanceof Function){
+                            return await __array_op_rval__491((preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()") 
                         } else {
-                            return[__array_op_rval__490,(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()"]
+                            return[__array_op_rval__491,(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()"]
                         }
                     })()
                 };
@@ -6024,11 +6026,11 @@ export async function init_compiler(Environment) {
                     })();
                     for_body=(tokens && tokens["2"]);
                     body_is_block_ques_=await (async function(){
-                        let __array_op_rval__491=is_block_ques_;
-                         if (__array_op_rval__491 instanceof Function){
-                            return await __array_op_rval__491((for_body && for_body["val"])) 
+                        let __array_op_rval__492=is_block_ques_;
+                         if (__array_op_rval__492 instanceof Function){
+                            return await __array_op_rval__492((for_body && for_body["val"])) 
                         } else {
-                            return[__array_op_rval__491,(for_body && for_body["val"])]
+                            return[__array_op_rval__492,(for_body && for_body["val"])]
                         }
                     })();
                     if (check_true ((iter_count<1))){
@@ -6036,30 +6038,30 @@ export async function init_compiler(Environment) {
                         
                     };
                     await (async function() {
-                        let __for_body__494=async function(iter_idx) {
+                        let __for_body__495=async function(iter_idx) {
                             (idx_iters).push(await (async function(){
-                                let __targ__496=for_args;
-                                if (__targ__496){
-                                     return(__targ__496)[iter_idx]
+                                let __targ__497=for_args;
+                                if (__targ__497){
+                                     return(__targ__497)[iter_idx]
                                 } 
                             })());
                              return  await set_ctx(ctx,await clean_quoted_reference(await (async function(){
-                                let __targ__497=await last(idx_iters);
-                                if (__targ__497){
-                                     return(__targ__497)["name"]
+                                let __targ__498=await last(idx_iters);
+                                if (__targ__498){
+                                     return(__targ__498)["name"]
                                 } 
                             })()),ArgumentType)
                         };
-                        let __array__495=[],__elements__493=await (await __GG__("range"))(iter_count);
+                        let __array__496=[],__elements__494=await (await __GG__("range"))(iter_count);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__492 in __elements__493) {
-                            __array__495.push(await __for_body__494(__elements__493[__iter__492]));
+                        for(let __iter__493 in __elements__494) {
+                            __array__496.push(await __for_body__495(__elements__494[__iter__493]));
                             if(__BREAK__FLAG__) {
-                                 __array__495.pop();
+                                 __array__496.pop();
                                 break;
                                 
                             }
-                        }return __array__495;
+                        }return __array__496;
                          
                     })();
                     await set_ctx(ctx,collector_ref,ArgumentType);
@@ -6069,42 +6071,42 @@ export async function init_compiler(Environment) {
                     };
                     prebuild=await build_fn_with_assignment(body_function_ref,(for_body && for_body["val"]),idx_iters,ctx);
                     await async function(){
-                        let __target_obj__498=ctx;
-                        __target_obj__498["return_last_value"]=true;
-                        return __target_obj__498;
+                        let __target_obj__499=ctx;
+                        __target_obj__499["return_last_value"]=true;
+                        return __target_obj__499;
                         
                     }();
                     (acc).push(await compile(prebuild,ctx));
                     await (async function() {
-                        let __for_body__501=async function(t) {
+                        let __for_body__502=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__502=[],__elements__500=["let"," ",collector_ref,"=","[]",",",element_list,"=",await wrap_assignment_value(await compile(elements,ctx),ctx),";"];
+                        let __array__503=[],__elements__501=["let"," ",collector_ref,"=","[]",",",element_list,"=",await wrap_assignment_value(await compile(elements,ctx),ctx),";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__499 in __elements__500) {
-                            __array__502.push(await __for_body__501(__elements__500[__iter__499]));
+                        for(let __iter__500 in __elements__501) {
+                            __array__503.push(await __for_body__502(__elements__501[__iter__500]));
                             if(__BREAK__FLAG__) {
-                                 __array__502.pop();
+                                 __array__503.pop();
                                 break;
                                 
                             }
-                        }return __array__502;
+                        }return __array__503;
                          
                     })();
                     await (async function() {
-                        let __for_body__505=async function(t) {
+                        let __for_body__506=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__506=[],__elements__504=["let"," ",break_out,"=","false",";"];
+                        let __array__507=[],__elements__505=["let"," ",break_out,"=","false",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__503 in __elements__504) {
-                            __array__506.push(await __for_body__505(__elements__504[__iter__503]));
+                        for(let __iter__504 in __elements__505) {
+                            __array__507.push(await __for_body__506(__elements__505[__iter__504]));
                             if(__BREAK__FLAG__) {
-                                 __array__506.pop();
+                                 __array__507.pop();
                                 break;
                                 
                             }
-                        }return __array__506;
+                        }return __array__507;
                          
                     })();
                     if (check_true (await (await __GG__("blank?"))((preamble && preamble["0"])))){
@@ -6116,58 +6118,58 @@ export async function init_compiler(Environment) {
                         if (check_true( (((for_args && for_args.length)===2)&&await not(((for_args && for_args["1"]) instanceof Array))))) {
                             await set_ctx(ctx,idx_iter,NumberType);
                             await (async function() {
-                                let __for_body__509=async function(t) {
+                                let __for_body__510=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__510=[],__elements__508=["for","(","let"," ",idx_iter," ","in"," ",element_list,")"," ","{"];
+                                let __array__511=[],__elements__509=["for","(","let"," ",idx_iter," ","in"," ",element_list,")"," ","{"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__507 in __elements__508) {
-                                    __array__510.push(await __for_body__509(__elements__508[__iter__507]));
+                                for(let __iter__508 in __elements__509) {
+                                    __array__511.push(await __for_body__510(__elements__509[__iter__508]));
                                     if(__BREAK__FLAG__) {
-                                         __array__510.pop();
+                                         __array__511.pop();
                                         break;
                                         
                                     }
-                                }return __array__510;
+                                }return __array__511;
                                  
                             })();
                             await (async function() {
-                                let __for_body__513=async function(t) {
+                                let __for_body__514=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__514=[],__elements__512=await (async function(){
-                                    let __array_op_rval__515=collector_ref;
-                                     if (__array_op_rval__515 instanceof Function){
-                                        return await __array_op_rval__515(".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";") 
+                                let __array__515=[],__elements__513=await (async function(){
+                                    let __array_op_rval__516=collector_ref;
+                                     if (__array_op_rval__516 instanceof Function){
+                                        return await __array_op_rval__516(".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";") 
                                     } else {
-                                        return[__array_op_rval__515,".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";"]
+                                        return[__array_op_rval__516,".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";"]
                                     }
                                 })();
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__511 in __elements__512) {
-                                    __array__514.push(await __for_body__513(__elements__512[__iter__511]));
+                                for(let __iter__512 in __elements__513) {
+                                    __array__515.push(await __for_body__514(__elements__513[__iter__512]));
                                     if(__BREAK__FLAG__) {
-                                         __array__514.pop();
+                                         __array__515.pop();
                                         break;
                                         
                                     }
-                                }return __array__514;
+                                }return __array__515;
                                  
                             })();
                             await (async function() {
-                                let __for_body__518=async function(t) {
+                                let __for_body__519=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__519=[],__elements__517=["if","(",break_out,")"," ","{"," ",collector_ref,".","pop","()",";","break",";","}"];
+                                let __array__520=[],__elements__518=["if","(",break_out,")"," ","{"," ",collector_ref,".","pop","()",";","break",";","}"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__516 in __elements__517) {
-                                    __array__519.push(await __for_body__518(__elements__517[__iter__516]));
+                                for(let __iter__517 in __elements__518) {
+                                    __array__520.push(await __for_body__519(__elements__518[__iter__517]));
                                     if(__BREAK__FLAG__) {
-                                         __array__519.pop();
+                                         __array__520.pop();
                                         break;
                                         
                                     }
-                                }return __array__519;
+                                }return __array__520;
                                  
                             })();
                              return  (acc).push("}")
@@ -6206,51 +6208,51 @@ export async function init_compiler(Environment) {
                     };
                     (prebuild).push(await compile(await build_fn_with_assignment(body_ref,(body && body["val"]),null,ctx),ctx));
                     await (async function() {
-                        let __for_body__522=async function(t) {
+                        let __for_body__523=async function(t) {
                              return  (prebuild).push(t)
                         };
-                        let __array__523=[],__elements__521=["let"," ",break_out,"=","false",";"];
+                        let __array__524=[],__elements__522=["let"," ",break_out,"=","false",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__520 in __elements__521) {
-                            __array__523.push(await __for_body__522(__elements__521[__iter__520]));
+                        for(let __iter__521 in __elements__522) {
+                            __array__524.push(await __for_body__523(__elements__522[__iter__521]));
                             if(__BREAK__FLAG__) {
-                                 __array__523.pop();
+                                 __array__524.pop();
                                 break;
                                 
                             }
-                        }return __array__523;
+                        }return __array__524;
                          
                     })();
                     await (async function() {
-                        let __for_body__526=async function(t) {
+                        let __for_body__527=async function(t) {
                              return  (prebuild).push(t)
                         };
-                        let __array__527=[],__elements__525=["while","(",(preamble && preamble["0"])," ",test_condition_ref,"()",")"," ","{",(preamble && preamble["0"])," ",body_ref,"()",";"," ","if","(",break_out,")"," ","{"," ","break",";","}","}"," ","",";"];
+                        let __array__528=[],__elements__526=["while","(",(preamble && preamble["0"])," ",test_condition_ref,"()",")"," ","{",(preamble && preamble["0"])," ",body_ref,"()",";"," ","if","(",break_out,")"," ","{"," ","break",";","}","}"," ","",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__524 in __elements__525) {
-                            __array__527.push(await __for_body__526(__elements__525[__iter__524]));
+                        for(let __iter__525 in __elements__526) {
+                            __array__528.push(await __for_body__527(__elements__526[__iter__525]));
                             if(__BREAK__FLAG__) {
-                                 __array__527.pop();
+                                 __array__528.pop();
                                 break;
                                 
                             }
-                        }return __array__527;
+                        }return __array__528;
                          
                     })();
                     await (async function() {
-                        let __for_body__530=async function(t) {
+                        let __for_body__531=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__531=[],__elements__529=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{"," ",prebuild,"}",")","()"];
+                        let __array__532=[],__elements__530=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{"," ",prebuild,"}",")","()"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__528 in __elements__529) {
-                            __array__531.push(await __for_body__530(__elements__529[__iter__528]));
+                        for(let __iter__529 in __elements__530) {
+                            __array__532.push(await __for_body__531(__elements__530[__iter__529]));
                             if(__BREAK__FLAG__) {
-                                 __array__531.pop();
+                                 __array__532.pop();
                                 break;
                                 
                             }
-                        }return __array__531;
+                        }return __array__532;
                          
                     })();
                      return  acc
@@ -6296,11 +6298,11 @@ export async function init_compiler(Environment) {
                     })();
                     for_body=(tokens && tokens["2"]);
                     body_is_block_ques_=await (async function(){
-                        let __array_op_rval__532=is_block_ques_;
-                         if (__array_op_rval__532 instanceof Function){
-                            return await __array_op_rval__532((for_body && for_body["val"])) 
+                        let __array_op_rval__533=is_block_ques_;
+                         if (__array_op_rval__533 instanceof Function){
+                            return await __array_op_rval__533((for_body && for_body["val"])) 
                         } else {
-                            return[__array_op_rval__532,(for_body && for_body["val"])]
+                            return[__array_op_rval__533,(for_body && for_body["val"])]
                         }
                     })();
                     if (check_true ((iter_count<1))){
@@ -6308,30 +6310,30 @@ export async function init_compiler(Environment) {
                         
                     };
                     await (async function() {
-                        let __for_body__535=async function(iter_ref) {
+                        let __for_body__536=async function(iter_ref) {
                             (idx_iters).push(await (async function(){
-                                let __targ__537=for_args;
-                                if (__targ__537){
-                                     return(__targ__537)[iter_ref]
+                                let __targ__538=for_args;
+                                if (__targ__538){
+                                     return(__targ__538)[iter_ref]
                                 } 
                             })());
                              return  await set_ctx(ctx,await clean_quoted_reference(await (async function(){
-                                let __targ__538=await last(idx_iters);
-                                if (__targ__538){
-                                     return(__targ__538)["name"]
+                                let __targ__539=await last(idx_iters);
+                                if (__targ__539){
+                                     return(__targ__539)["name"]
                                 } 
                             })()),ArgumentType)
                         };
-                        let __array__536=[],__elements__534=await (await __GG__("range"))(iter_count);
+                        let __array__537=[],__elements__535=await (await __GG__("range"))(iter_count);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__533 in __elements__534) {
-                            __array__536.push(await __for_body__535(__elements__534[__iter__533]));
+                        for(let __iter__534 in __elements__535) {
+                            __array__537.push(await __for_body__536(__elements__535[__iter__534]));
                             if(__BREAK__FLAG__) {
-                                 __array__536.pop();
+                                 __array__537.pop();
                                 break;
                                 
                             }
-                        }return __array__536;
+                        }return __array__537;
                          
                     })();
                     await set_ctx(ctx,generator_expression,"arg");
@@ -6340,84 +6342,84 @@ export async function init_compiler(Environment) {
                     };
                     prebuild=await build_fn_with_assignment(body_function_ref,(for_body && for_body["val"]),idx_iters,ctx);
                     await async function(){
-                        let __target_obj__539=ctx;
-                        __target_obj__539["return_last_value"]=true;
-                        return __target_obj__539;
+                        let __target_obj__540=ctx;
+                        __target_obj__540["return_last_value"]=true;
+                        return __target_obj__540;
                         
                     }();
                     (acc).push(await compile(prebuild,ctx));
                     await (async function() {
-                        let __for_body__542=async function(t) {
+                        let __for_body__543=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__543=[],__elements__541=["let"," ",break_out,"=","false",";"];
+                        let __array__544=[],__elements__542=["let"," ",break_out,"=","false",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__540 in __elements__541) {
-                            __array__543.push(await __for_body__542(__elements__541[__iter__540]));
+                        for(let __iter__541 in __elements__542) {
+                            __array__544.push(await __for_body__543(__elements__542[__iter__541]));
                             if(__BREAK__FLAG__) {
-                                 __array__543.pop();
+                                 __array__544.pop();
                                 break;
                                 
                             }
-                        }return __array__543;
+                        }return __array__544;
                          
                     })();
                     await set_ctx(ctx,body_function_ref,AsyncFunction);
                     await async function(){
                         if (check_true( (((for_args && for_args.length)===2)&&await not(((for_args && for_args["1"]) instanceof Array))))) {
                             await (async function() {
-                                let __for_body__546=async function(t) {
+                                let __for_body__547=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__547=[],__elements__545=["for"," ",(preamble && preamble["0"])," ","(","const"," ",iter_ref," ","of"," ",await wrap_assignment_value(await compile(elements,ctx),ctx),")"," ","{"];
+                                let __array__548=[],__elements__546=["for"," ",(preamble && preamble["0"])," ","(","const"," ",iter_ref," ","of"," ",await wrap_assignment_value(await compile(elements,ctx),ctx),")"," ","{"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__544 in __elements__545) {
-                                    __array__547.push(await __for_body__546(__elements__545[__iter__544]));
+                                for(let __iter__545 in __elements__546) {
+                                    __array__548.push(await __for_body__547(__elements__546[__iter__545]));
                                     if(__BREAK__FLAG__) {
-                                         __array__547.pop();
+                                         __array__548.pop();
                                         break;
                                         
                                     }
-                                }return __array__547;
+                                }return __array__548;
                                  
                             })();
                             await (async function() {
-                                let __for_body__550=async function(t) {
+                                let __for_body__551=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__551=[],__elements__549=await (async function(){
-                                    let __array_op_rval__552=(preamble && preamble["0"]);
-                                     if (__array_op_rval__552 instanceof Function){
-                                        return await __array_op_rval__552(" ",body_function_ref,"(",iter_ref,")",";") 
+                                let __array__552=[],__elements__550=await (async function(){
+                                    let __array_op_rval__553=(preamble && preamble["0"]);
+                                     if (__array_op_rval__553 instanceof Function){
+                                        return await __array_op_rval__553(" ",body_function_ref,"(",iter_ref,")",";") 
                                     } else {
-                                        return[__array_op_rval__552," ",body_function_ref,"(",iter_ref,")",";"]
+                                        return[__array_op_rval__553," ",body_function_ref,"(",iter_ref,")",";"]
                                     }
                                 })();
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__548 in __elements__549) {
-                                    __array__551.push(await __for_body__550(__elements__549[__iter__548]));
+                                for(let __iter__549 in __elements__550) {
+                                    __array__552.push(await __for_body__551(__elements__550[__iter__549]));
                                     if(__BREAK__FLAG__) {
-                                         __array__551.pop();
+                                         __array__552.pop();
                                         break;
                                         
                                     }
-                                }return __array__551;
+                                }return __array__552;
                                  
                             })();
                             await (async function() {
-                                let __for_body__555=async function(t) {
+                                let __for_body__556=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__556=[],__elements__554=["if","(",break_out,")"," ","break",";"];
+                                let __array__557=[],__elements__555=["if","(",break_out,")"," ","break",";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__553 in __elements__554) {
-                                    __array__556.push(await __for_body__555(__elements__554[__iter__553]));
+                                for(let __iter__554 in __elements__555) {
+                                    __array__557.push(await __for_body__556(__elements__555[__iter__554]));
                                     if(__BREAK__FLAG__) {
-                                         __array__556.pop();
+                                         __array__557.pop();
                                         break;
                                         
                                     }
-                                }return __array__556;
+                                }return __array__557;
                                  
                             })();
                              return  (acc).push("}")
@@ -6459,15 +6461,15 @@ export async function init_compiler(Environment) {
                     declaration=null;
                     dec_struct=null;
                     await (async function() {
-                        let __for_body__559=async function(exp) {
+                        let __for_body__560=async function(exp) {
                             declaration=(exp && exp["val"] && exp["val"]["0"] && exp["val"]["0"]["name"]);
                             targeted=await (await __GG__("rest"))((exp && exp["val"]));
                             if (check_true (await (async function(){
-                                let __array_op_rval__561=verbosity;
-                                 if (__array_op_rval__561 instanceof Function){
-                                    return await __array_op_rval__561(ctx) 
+                                let __array_op_rval__562=verbosity;
+                                 if (__array_op_rval__562 instanceof Function){
+                                    return await __array_op_rval__562(ctx) 
                                 } else {
-                                    return[__array_op_rval__561,ctx]
+                                    return[__array_op_rval__562,ctx]
                                 }
                             })())){
                                  (declare_log)("declaration: ",declaration,"targeted: ",await (await __GG__("each"))(targeted,"name"),targeted)
@@ -6475,9 +6477,9 @@ export async function init_compiler(Environment) {
                              return  await async function(){
                                 if (check_true( (declaration==="toplevel"))) {
                                     await async function(){
-                                        let __target_obj__562=opts;
-                                        __target_obj__562["root_environment"]=(targeted && targeted["0"]);
-                                        return __target_obj__562;
+                                        let __target_obj__563=opts;
+                                        __target_obj__563["root_environment"]=(targeted && targeted["0"]);
+                                        return __target_obj__563;
                                         
                                     }();
                                     if (check_true ((opts && opts["root_environment"]))){
@@ -6487,34 +6489,44 @@ export async function init_compiler(Environment) {
                                     }
                                 } else if (check_true( (declaration==="include"))) {
                                      return  await (async function() {
-                                        let __for_body__565=async function(name) {
+                                        let __for_body__566=async function(name) {
                                             sanitized_name=await sanitize_js_ref_name(name);
                                             dec_struct=await get_declaration_details(ctx,name);
                                             if (check_true (dec_struct)){
                                                 await (async function() {
-                                                    let __for_body__569=async function(t) {
+                                                    let __for_body__570=async function(t) {
                                                          return  (acc).push(t)
                                                     };
-                                                    let __array__570=[],__elements__568=["let"," ",sanitized_name,"="];
+                                                    let __array__571=[],__elements__569=["let"," ",sanitized_name,"="];
                                                     let __BREAK__FLAG__=false;
-                                                    for(let __iter__567 in __elements__568) {
-                                                        __array__570.push(await __for_body__569(__elements__568[__iter__567]));
+                                                    for(let __iter__568 in __elements__569) {
+                                                        __array__571.push(await __for_body__570(__elements__569[__iter__568]));
                                                         if(__BREAK__FLAG__) {
-                                                             __array__570.pop();
+                                                             __array__571.pop();
                                                             break;
                                                             
                                                         }
-                                                    }return __array__570;
+                                                    }return __array__571;
                                                      
                                                 })();
                                                 await async function(){
                                                     if (check_true( ((dec_struct && dec_struct["value"]) instanceof Function&&await (async function(){
-                                                        let __targ__571=await Environment["get_definition"].call(Environment,name);
-                                                        if (__targ__571){
-                                                             return(__targ__571)["fn_body"]
+                                                        let __targ__573=await (async function(){
+                                                            let __targ__572=(Environment && Environment["definitions"]);
+                                                            if (__targ__572){
+                                                                 return(__targ__572)[name]
+                                                            } 
+                                                        })();
+                                                        if (__targ__573){
+                                                             return(__targ__573)["fn_body"]
                                                         } 
                                                     })()))) {
-                                                        details=await Environment["get_definition"].call(Environment,name);
+                                                        details=await (async function(){
+                                                            let __targ__574=(Environment && Environment["definitions"]);
+                                                            if (__targ__574){
+                                                                 return(__targ__574)[name]
+                                                            } 
+                                                        })();
                                                         source=("(fn "+(details && details["fn_args"])+" "+(details && details["fn_body"])+")");
                                                         source=await compile(await tokenize(await (await __GG__("read_lisp"))(source),ctx),ctx,1000);
                                                         (acc).push(source);
@@ -6536,24 +6548,24 @@ export async function init_compiler(Environment) {
                                             };
                                             await set_declaration(ctx,name,"inlined",true);
                                             if (check_true ((("undefined"===await (async function(){
-                                                let __targ__572=await get_declarations(ctx,name);
-                                                if (__targ__572){
-                                                     return(__targ__572)["type"]
+                                                let __targ__575=await get_declarations(ctx,name);
+                                                if (__targ__575){
+                                                     return(__targ__575)["type"]
                                                 } 
                                             })())&&(dec_struct && dec_struct["value"]) instanceof Function))){
                                                   return await set_declaration(ctx,name,"type",Function)
                                             }
                                         };
-                                        let __array__566=[],__elements__564=await (await __GG__("each"))(targeted,"name");
+                                        let __array__567=[],__elements__565=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__563 in __elements__564) {
-                                            __array__566.push(await __for_body__565(__elements__564[__iter__563]));
+                                        for(let __iter__564 in __elements__565) {
+                                            __array__567.push(await __for_body__566(__elements__565[__iter__564]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__566.pop();
+                                                 __array__567.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__566;
+                                        }return __array__567;
                                          
                                     })()
                                 } else if (check_true( (declaration==="verbose"))) {
@@ -6569,11 +6581,11 @@ export async function init_compiler(Environment) {
                                         };
                                         verbosity=check_verbosity;
                                          return  (declare_log)("compiler: verbosity set: ",await (async function(){
-                                            let __array_op_rval__573=verbosity;
-                                             if (__array_op_rval__573 instanceof Function){
-                                                return await __array_op_rval__573(ctx) 
+                                            let __array_op_rval__576=verbosity;
+                                             if (__array_op_rval__576 instanceof Function){
+                                                return await __array_op_rval__576(ctx) 
                                             } else {
-                                                return[__array_op_rval__573,ctx]
+                                                return[__array_op_rval__576,ctx]
                                             }
                                         })())
                                     } else {
@@ -6581,144 +6593,144 @@ export async function init_compiler(Environment) {
                                     }
                                 } else if (check_true( (declaration==="local"))) {
                                      return await (async function() {
-                                        let __for_body__576=async function(name) {
+                                        let __for_body__579=async function(name) {
                                             dec_struct=await get_declaration_details(ctx,name);
                                              return  await set_ctx(ctx,name,(dec_struct && dec_struct["value"]))
                                         };
-                                        let __array__577=[],__elements__575=await (await __GG__("each"))(targeted,"name");
+                                        let __array__580=[],__elements__578=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__574 in __elements__575) {
-                                            __array__577.push(await __for_body__576(__elements__575[__iter__574]));
+                                        for(let __iter__577 in __elements__578) {
+                                            __array__580.push(await __for_body__579(__elements__578[__iter__577]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__577.pop();
+                                                 __array__580.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__577;
+                                        }return __array__580;
                                          
                                     })()
                                 } else if (check_true( (declaration==="function"))) {
                                      return  await (async function() {
-                                        let __for_body__580=async function(name) {
+                                        let __for_body__583=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Function)
                                         };
-                                        let __array__581=[],__elements__579=await (await __GG__("each"))(targeted,"name");
+                                        let __array__584=[],__elements__582=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__578 in __elements__579) {
-                                            __array__581.push(await __for_body__580(__elements__579[__iter__578]));
+                                        for(let __iter__581 in __elements__582) {
+                                            __array__584.push(await __for_body__583(__elements__582[__iter__581]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__581.pop();
+                                                 __array__584.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__581;
+                                        }return __array__584;
                                          
                                     })()
                                 } else if (check_true( (declaration==="array"))) {
                                      return  await (async function() {
-                                        let __for_body__584=async function(name) {
+                                        let __for_body__587=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Array)
                                         };
-                                        let __array__585=[],__elements__583=await (await __GG__("each"))(targeted,"name");
+                                        let __array__588=[],__elements__586=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__582 in __elements__583) {
-                                            __array__585.push(await __for_body__584(__elements__583[__iter__582]));
+                                        for(let __iter__585 in __elements__586) {
+                                            __array__588.push(await __for_body__587(__elements__586[__iter__585]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__585.pop();
+                                                 __array__588.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__585;
+                                        }return __array__588;
                                          
                                     })()
                                 } else if (check_true( (declaration==="number"))) {
                                      return  await (async function() {
-                                        let __for_body__588=async function(name) {
+                                        let __for_body__591=async function(name) {
                                              return  await set_declaration(ctx,name,"type",NumberType)
                                         };
-                                        let __array__589=[],__elements__587=await (await __GG__("each"))(targeted,"name");
+                                        let __array__592=[],__elements__590=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__586 in __elements__587) {
-                                            __array__589.push(await __for_body__588(__elements__587[__iter__586]));
+                                        for(let __iter__589 in __elements__590) {
+                                            __array__592.push(await __for_body__591(__elements__590[__iter__589]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__589.pop();
+                                                 __array__592.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__589;
+                                        }return __array__592;
                                          
                                     })()
                                 } else if (check_true( (declaration==="string"))) {
                                      return  await (async function() {
-                                        let __for_body__592=async function(name) {
+                                        let __for_body__595=async function(name) {
                                              return  await set_declaration(ctx,name,"type",StringType)
                                         };
-                                        let __array__593=[],__elements__591=await (await __GG__("each"))(targeted,"name");
+                                        let __array__596=[],__elements__594=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__590 in __elements__591) {
-                                            __array__593.push(await __for_body__592(__elements__591[__iter__590]));
+                                        for(let __iter__593 in __elements__594) {
+                                            __array__596.push(await __for_body__595(__elements__594[__iter__593]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__593.pop();
+                                                 __array__596.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__593;
+                                        }return __array__596;
                                          
                                     })()
                                 } else if (check_true( (declaration==="boolean"))) {
                                      return  await (async function() {
-                                        let __for_body__596=async function(name) {
+                                        let __for_body__599=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Boolean)
                                         };
-                                        let __array__597=[],__elements__595=await (await __GG__("each"))(targeted,"name");
+                                        let __array__600=[],__elements__598=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__594 in __elements__595) {
-                                            __array__597.push(await __for_body__596(__elements__595[__iter__594]));
+                                        for(let __iter__597 in __elements__598) {
+                                            __array__600.push(await __for_body__599(__elements__598[__iter__597]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__597.pop();
+                                                 __array__600.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__597;
+                                        }return __array__600;
                                          
                                     })()
                                 } else if (check_true( (declaration==="regexp"))) {
                                      return  await (async function() {
-                                        let __for_body__600=async function(name) {
+                                        let __for_body__603=async function(name) {
                                              return  await set_declaration(ctx,name,"type",RegExp)
                                         };
-                                        let __array__601=[],__elements__599=await (await __GG__("each"))(targeted,"name");
+                                        let __array__604=[],__elements__602=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__598 in __elements__599) {
-                                            __array__601.push(await __for_body__600(__elements__599[__iter__598]));
+                                        for(let __iter__601 in __elements__602) {
+                                            __array__604.push(await __for_body__603(__elements__602[__iter__601]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__601.pop();
+                                                 __array__604.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__601;
+                                        }return __array__604;
                                          
                                     })()
                                 } else if (check_true( (declaration==="object"))) {
                                      return  await (async function() {
-                                        let __for_body__604=async function(name) {
+                                        let __for_body__607=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Object)
                                         };
-                                        let __array__605=[],__elements__603=await (await __GG__("each"))(targeted,"name");
+                                        let __array__608=[],__elements__606=await (await __GG__("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__602 in __elements__603) {
-                                            __array__605.push(await __for_body__604(__elements__603[__iter__602]));
+                                        for(let __iter__605 in __elements__606) {
+                                            __array__608.push(await __for_body__607(__elements__606[__iter__605]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__605.pop();
+                                                 __array__608.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__605;
+                                        }return __array__608;
                                          
                                     })()
                                 } else if (check_true( (declaration==="optimize"))) {
                                      return  await (async function() {
-                                        let __for_body__608=async function(factor) {
+                                        let __for_body__611=async function(factor) {
                                             factor=await (await __GG__("each"))(factor,"name");
                                              return  await async function(){
                                                 if (check_true( ((factor && factor["0"])==="safety"))) {
@@ -6726,16 +6738,16 @@ export async function init_compiler(Environment) {
                                                 }
                                             } ()
                                         };
-                                        let __array__609=[],__elements__607=await (await __GG__("each"))(targeted,"val");
+                                        let __array__612=[],__elements__610=await (await __GG__("each"))(targeted,"val");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__606 in __elements__607) {
-                                            __array__609.push(await __for_body__608(__elements__607[__iter__606]));
+                                        for(let __iter__609 in __elements__610) {
+                                            __array__612.push(await __for_body__611(__elements__610[__iter__609]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__609.pop();
+                                                 __array__612.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__609;
+                                        }return __array__612;
                                          
                                     })()
                                 } else  {
@@ -6744,16 +6756,16 @@ export async function init_compiler(Environment) {
                                 }
                             } ()
                         };
-                        let __array__560=[],__elements__558=expressions;
+                        let __array__561=[],__elements__559=expressions;
                         let __BREAK__FLAG__=false;
-                        for(let __iter__557 in __elements__558) {
-                            __array__560.push(await __for_body__559(__elements__558[__iter__557]));
+                        for(let __iter__558 in __elements__559) {
+                            __array__561.push(await __for_body__560(__elements__559[__iter__558]));
                             if(__BREAK__FLAG__) {
-                                 __array__560.pop();
+                                 __array__561.pop();
                                 break;
                                 
                             }
-                        }return __array__560;
+                        }return __array__561;
                          
                     })();
                      return  acc
@@ -6832,11 +6844,11 @@ export async function init_compiler(Environment) {
                         }
                     } ();
                     if (check_true (await (async function(){
-                        let __array_op_rval__610=verbosity;
-                         if (__array_op_rval__610 instanceof Function){
-                            return await __array_op_rval__610(ctx) 
+                        let __array_op_rval__613=verbosity;
+                         if (__array_op_rval__613 instanceof Function){
+                            return await __array_op_rval__613(ctx) 
                         } else {
-                            return[__array_op_rval__610,ctx]
+                            return[__array_op_rval__613,ctx]
                         }
                     })())){
                         (sr_log)("where/what->",call_type,"/",ref_type,"for symbol: ",(tokens && tokens["0"] && tokens["0"]["name"]));
@@ -6878,48 +6890,6 @@ export async function init_compiler(Environment) {
                             })());
                             (acc).push("(");
                             await (async function(){
-                                 let __test_condition__611=async function() {
-                                     return  (idx<((tokens && tokens.length)-1))
-                                };
-                                let __body_ref__612=async function() {
-                                    idx+=1;
-                                    token=await (async function(){
-                                        let __targ__613=tokens;
-                                        if (__targ__613){
-                                             return(__targ__613)[idx]
-                                        } 
-                                    })();
-                                    stmt=await compile(token,ctx);
-                                    stmt=await check_statement(stmt);
-                                    (acc).push(stmt);
-                                    if (check_true ((idx<((tokens && tokens.length)-1)))){
-                                         return  (acc).push(",")
-                                    }
-                                };
-                                let __BREAK__FLAG__=false;
-                                while(await __test_condition__611()) {
-                                    await __body_ref__612();
-                                     if(__BREAK__FLAG__) {
-                                         break;
-                                        
-                                    }
-                                } ;
-                                
-                            })();
-                            (acc).push(")");
-                             return  acc
-                        } else if (check_true( (ref_type==="Function"))) {
-                            (acc).push((preamble && preamble["0"]));
-                            (acc).push(" ");
-                            (acc).push(await (async function () {
-                                 if (check_true ((call_type==="lisp"))){
-                                      return await compile_lisp_scoped_reference((tokens && tokens["0"] && tokens["0"]["name"]),ctx)
-                                } else {
-                                      return (tokens && tokens["0"] && tokens["0"]["name"])
-                                } 
-                            })());
-                            (acc).push("(");
-                            await (async function(){
                                  let __test_condition__614=async function() {
                                      return  (idx<((tokens && tokens.length)-1))
                                 };
@@ -6950,6 +6920,48 @@ export async function init_compiler(Environment) {
                             })();
                             (acc).push(")");
                              return  acc
+                        } else if (check_true( (ref_type==="Function"))) {
+                            (acc).push((preamble && preamble["0"]));
+                            (acc).push(" ");
+                            (acc).push(await (async function () {
+                                 if (check_true ((call_type==="lisp"))){
+                                      return await compile_lisp_scoped_reference((tokens && tokens["0"] && tokens["0"]["name"]),ctx)
+                                } else {
+                                      return (tokens && tokens["0"] && tokens["0"]["name"])
+                                } 
+                            })());
+                            (acc).push("(");
+                            await (async function(){
+                                 let __test_condition__617=async function() {
+                                     return  (idx<((tokens && tokens.length)-1))
+                                };
+                                let __body_ref__618=async function() {
+                                    idx+=1;
+                                    token=await (async function(){
+                                        let __targ__619=tokens;
+                                        if (__targ__619){
+                                             return(__targ__619)[idx]
+                                        } 
+                                    })();
+                                    stmt=await compile(token,ctx);
+                                    stmt=await check_statement(stmt);
+                                    (acc).push(stmt);
+                                    if (check_true ((idx<((tokens && tokens.length)-1)))){
+                                         return  (acc).push(",")
+                                    }
+                                };
+                                let __BREAK__FLAG__=false;
+                                while(await __test_condition__617()) {
+                                    await __body_ref__618();
+                                     if(__BREAK__FLAG__) {
+                                         break;
+                                        
+                                    }
+                                } ;
+                                
+                            })();
+                            (acc).push(")");
+                             return  acc
                         } else if (check_true( ((call_type==="local")&&((ref_type==="NumberType")||(ref_type==="StringType")||(ref_type==="Boolean"))))) {
                             (acc).push((tokens && tokens["0"] && tokens["0"]["name"]));
                              return  acc
@@ -6960,14 +6972,14 @@ export async function init_compiler(Environment) {
                         } else if (check_true( ((ref_type===ArgumentType)&&(tokens instanceof Array)))) {
                             (acc).push("[");
                             await (async function(){
-                                 let __test_condition__617=async function() {
+                                 let __test_condition__620=async function() {
                                      return  (idx<(tokens && tokens.length))
                                 };
-                                let __body_ref__618=async function() {
+                                let __body_ref__621=async function() {
                                     token=await (async function(){
-                                        let __targ__619=tokens;
-                                        if (__targ__619){
-                                             return(__targ__619)[idx]
+                                        let __targ__622=tokens;
+                                        if (__targ__622){
+                                             return(__targ__622)[idx]
                                         } 
                                     })();
                                     (acc).push(await compile(token,ctx));
@@ -6977,8 +6989,8 @@ export async function init_compiler(Environment) {
                                      return  idx+=1
                                 };
                                 let __BREAK__FLAG__=false;
-                                while(await __test_condition__617()) {
-                                    await __body_ref__618();
+                                while(await __test_condition__620()) {
+                                    await __body_ref__621();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -7039,11 +7051,11 @@ export async function init_compiler(Environment) {
                         } else if (check_true( await not((refval===undefined)))) {
                             has_lisp_globals=true;
                             if (check_true (await (async function(){
-                                let __array_op_rval__620=verbosity;
-                                 if (__array_op_rval__620 instanceof Function){
-                                    return await __array_op_rval__620(ctx) 
+                                let __array_op_rval__623=verbosity;
+                                 if (__array_op_rval__623 instanceof Function){
+                                    return await __array_op_rval__623(ctx) 
                                 } else {
-                                    return[__array_op_rval__620,ctx]
+                                    return[__array_op_rval__623,ctx]
                                 }
                             })())){
                                  await console.log("compile_lisp_scoped_reference: has_first_level? ",await get_ctx(ctx,"has_first_level"),": ",refname)
@@ -7083,74 +7095,74 @@ export async function init_compiler(Environment) {
                 is_complex_ques_=async function(tokens) {
                     let rval;
                     rval=(await (async function(){
-                        let __array_op_rval__621=is_block_ques_;
-                         if (__array_op_rval__621 instanceof Function){
-                            return await __array_op_rval__621(tokens) 
+                        let __array_op_rval__624=is_block_ques_;
+                         if (__array_op_rval__624 instanceof Function){
+                            return await __array_op_rval__624(tokens) 
                         } else {
-                            return[__array_op_rval__621,tokens]
+                            return[__array_op_rval__624,tokens]
                         }
                     })()||(((tokens && tokens["type"])==="arr")&&await (async function(){
-                        let __array_op_rval__622=is_block_ques_;
-                         if (__array_op_rval__622 instanceof Function){
-                            return await __array_op_rval__622((tokens && tokens["val"])) 
+                        let __array_op_rval__625=is_block_ques_;
+                         if (__array_op_rval__625 instanceof Function){
+                            return await __array_op_rval__625((tokens && tokens["val"])) 
                         } else {
-                            return[__array_op_rval__622,(tokens && tokens["val"])]
+                            return[__array_op_rval__625,(tokens && tokens["val"])]
                         }
                     })())||((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"])==="if")||((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"])==="let"));
                      return  rval
                 };
                 is_form_ques_=async function(token) {
                      return  (((token && token["val"]) instanceof Array)||await (async function(){
-                        let __array_op_rval__623=is_block_ques_;
-                         if (__array_op_rval__623 instanceof Function){
-                            return await __array_op_rval__623((token && token["val"])) 
+                        let __array_op_rval__626=is_block_ques_;
+                         if (__array_op_rval__626 instanceof Function){
+                            return await __array_op_rval__626((token && token["val"])) 
                         } else {
-                            return[__array_op_rval__623,(token && token["val"])]
+                            return[__array_op_rval__626,(token && token["val"])]
                         }
                     })())
                 };
                 op_lookup=await ( async function(){
-                    let __obj__624=new Object();
-                    __obj__624["+"]=infix_ops;
-                    __obj__624["*"]=infix_ops;
-                    __obj__624["/"]=infix_ops;
-                    __obj__624["-"]=infix_ops;
-                    __obj__624["**"]=infix_ops;
-                    __obj__624["%"]=infix_ops;
-                    __obj__624["<<"]=infix_ops;
-                    __obj__624[">>"]=infix_ops;
-                    __obj__624["and"]=infix_ops;
-                    __obj__624["or"]=infix_ops;
-                    __obj__624["apply"]=compile_apply;
-                    __obj__624["call"]=compile_call;
-                    __obj__624["->"]=compile_call;
-                    __obj__624["set_prop"]=compile_set_prop;
-                    __obj__624["prop"]=compile_prop;
-                    __obj__624["="]=compile_assignment;
-                    __obj__624["setq"]=compile_assignment;
-                    __obj__624["=="]=compile_compare;
-                    __obj__624["eq"]=compile_compare;
-                    __obj__624[">"]=compile_compare;
-                    __obj__624["<"]=compile_compare;
-                    __obj__624["<="]=compile_compare;
-                    __obj__624[">="]=compile_compare;
-                    __obj__624["return"]=compile_return;
-                    __obj__624["new"]=compile_new;
-                    __obj__624["do"]=compile_block;
-                    __obj__624["progn"]=compile_block;
-                    __obj__624["progl"]=async function(tokens,ctx) {
+                    let __obj__627=new Object();
+                    __obj__627["+"]=infix_ops;
+                    __obj__627["*"]=infix_ops;
+                    __obj__627["/"]=infix_ops;
+                    __obj__627["-"]=infix_ops;
+                    __obj__627["**"]=infix_ops;
+                    __obj__627["%"]=infix_ops;
+                    __obj__627["<<"]=infix_ops;
+                    __obj__627[">>"]=infix_ops;
+                    __obj__627["and"]=infix_ops;
+                    __obj__627["or"]=infix_ops;
+                    __obj__627["apply"]=compile_apply;
+                    __obj__627["call"]=compile_call;
+                    __obj__627["->"]=compile_call;
+                    __obj__627["set_prop"]=compile_set_prop;
+                    __obj__627["prop"]=compile_prop;
+                    __obj__627["="]=compile_assignment;
+                    __obj__627["setq"]=compile_assignment;
+                    __obj__627["=="]=compile_compare;
+                    __obj__627["eq"]=compile_compare;
+                    __obj__627[">"]=compile_compare;
+                    __obj__627["<"]=compile_compare;
+                    __obj__627["<="]=compile_compare;
+                    __obj__627[">="]=compile_compare;
+                    __obj__627["return"]=compile_return;
+                    __obj__627["new"]=compile_new;
+                    __obj__627["do"]=compile_block;
+                    __obj__627["progn"]=compile_block;
+                    __obj__627["progl"]=async function(tokens,ctx) {
                          return  await compile_block(tokens,ctx,{
                             no_scope_boundary:true,suppress_return:true
                         })
                     };
-                    __obj__624["break"]=compile_break;
-                    __obj__624["inc"]=compile_val_mod;
-                    __obj__624["dec"]=compile_val_mod;
-                    __obj__624["try"]=compile_try;
-                    __obj__624["throw"]=compile_throw;
-                    __obj__624["let"]=compile_let;
-                    __obj__624["defvar"]=compile_defvar;
-                    __obj__624["defconst"]=async function(tokens,ctx) {
+                    __obj__627["break"]=compile_break;
+                    __obj__627["inc"]=compile_val_mod;
+                    __obj__627["dec"]=compile_val_mod;
+                    __obj__627["try"]=compile_try;
+                    __obj__627["throw"]=compile_throw;
+                    __obj__627["let"]=compile_let;
+                    __obj__627["defvar"]=compile_defvar;
+                    __obj__627["defconst"]=async function(tokens,ctx) {
                         if (check_true (await get_ctx(ctx,"local_scope"))){
                               return await compile_defvar(tokens,ctx,{
                                 constant:true
@@ -7161,45 +7173,45 @@ export async function init_compiler(Environment) {
                             })
                         }
                     };
-                    __obj__624["while"]=compile_while;
-                    __obj__624["for_each"]=compile_for_each;
-                    __obj__624["if"]=compile_if;
-                    __obj__624["cond"]=compile_cond;
-                    __obj__624["fn"]=compile_fn;
-                    __obj__624["lambda"]=compile_fn;
-                    __obj__624["function*"]=async function(tokens,ctx) {
+                    __obj__627["while"]=compile_while;
+                    __obj__627["for_each"]=compile_for_each;
+                    __obj__627["if"]=compile_if;
+                    __obj__627["cond"]=compile_cond;
+                    __obj__627["fn"]=compile_fn;
+                    __obj__627["lambda"]=compile_fn;
+                    __obj__627["function*"]=async function(tokens,ctx) {
                          return  await compile_fn(tokens,ctx,{
                             generator:true
                         })
                     };
-                    __obj__624["defglobal"]=compile_set_global;
-                    __obj__624["list"]=compile_list;
-                    __obj__624["function"]=async function(tokens,ctx) {
+                    __obj__627["defglobal"]=compile_set_global;
+                    __obj__627["list"]=compile_list;
+                    __obj__627["function"]=async function(tokens,ctx) {
                          return  await compile_fn(tokens,ctx,{
                             synchronous:true
                         })
                     };
-                    __obj__624["=>"]=async function(tokens,ctx) {
+                    __obj__627["=>"]=async function(tokens,ctx) {
                          return  await compile_fn(tokens,ctx,{
                             arrow:true
                         })
                     };
-                    __obj__624["yield"]=compile_yield;
-                    __obj__624["for_with"]=compile_for_with;
-                    __obj__624["quotem"]=compile_quotem;
-                    __obj__624["quote"]=compile_quote;
-                    __obj__624["quotel"]=compile_quotel;
-                    __obj__624["eval"]=compile_eval;
-                    __obj__624["jslambda"]=compile_jslambda;
-                    __obj__624["javascript"]=compile_javascript;
-                    __obj__624["instanceof"]=compile_instanceof;
-                    __obj__624["typeof"]=compile_typeof;
-                    __obj__624["unquotem"]=compile_unquotem;
-                    __obj__624["debug"]=compile_debug;
-                    __obj__624["declare"]=compile_declare;
-                    __obj__624["import"]=compile_import;
-                    __obj__624["dynamic_import"]=compile_dynamic_import;
-                    return __obj__624;
+                    __obj__627["yield"]=compile_yield;
+                    __obj__627["for_with"]=compile_for_with;
+                    __obj__627["quotem"]=compile_quotem;
+                    __obj__627["quote"]=compile_quote;
+                    __obj__627["quotel"]=compile_quotel;
+                    __obj__627["eval"]=compile_eval;
+                    __obj__627["jslambda"]=compile_jslambda;
+                    __obj__627["javascript"]=compile_javascript;
+                    __obj__627["instanceof"]=compile_instanceof;
+                    __obj__627["typeof"]=compile_typeof;
+                    __obj__627["unquotem"]=compile_unquotem;
+                    __obj__627["debug"]=compile_debug;
+                    __obj__627["declare"]=compile_declare;
+                    __obj__627["import"]=compile_import;
+                    __obj__627["dynamic_import"]=compile_dynamic_import;
+                    return __obj__627;
                     
                 })();
                 comp_log=await (async function () {
@@ -7250,29 +7262,29 @@ export async function init_compiler(Environment) {
                     total_length=((tokens && tokens["val"] && tokens["val"]["length"])-1);
                     ;
                     await async function(){
-                        let __target_obj__625=ctx;
-                        __target_obj__625["in_obj_literal"]=true;
-                        return __target_obj__625;
+                        let __target_obj__628=ctx;
+                        __target_obj__628["in_obj_literal"]=true;
+                        return __target_obj__628;
                         
                     }();
                     await (async function() {
-                        let __for_body__628=async function(token) {
+                        let __for_body__631=async function(token) {
                             if (check_true ((((token && token["type"])==="keyval")&&await check_invalid_js_ref((token && token.name))))){
                                 has_valid_key_literals=false;
                                 __BREAK__FLAG__=true;
                                 return
                             }
                         };
-                        let __array__629=[],__elements__627=((tokens && tokens["val"])||[]);
+                        let __array__632=[],__elements__630=((tokens && tokens["val"])||[]);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__626 in __elements__627) {
-                            __array__629.push(await __for_body__628(__elements__627[__iter__626]));
+                        for(let __iter__629 in __elements__630) {
+                            __array__632.push(await __for_body__631(__elements__630[__iter__629]));
                             if(__BREAK__FLAG__) {
-                                 __array__629.pop();
+                                 __array__632.pop();
                                 break;
                                 
                             }
-                        }return __array__629;
+                        }return __array__632;
                          
                     })();
                     if (check_true (has_valid_key_literals)){
@@ -7283,15 +7295,15 @@ export async function init_compiler(Environment) {
                         } else {
                             (acc).push("{");
                             await (async function(){
-                                 let __test_condition__630=async function() {
+                                 let __test_condition__633=async function() {
                                      return  (idx<total_length)
                                 };
-                                let __body_ref__631=async function() {
+                                let __body_ref__634=async function() {
                                     idx+=1;
                                     kvpair=await (async function(){
-                                        let __targ__632=(tokens && tokens["val"]);
-                                        if (__targ__632){
-                                             return(__targ__632)[idx]
+                                        let __targ__635=(tokens && tokens["val"]);
+                                        if (__targ__635){
+                                             return(__targ__635)[idx]
                                         } 
                                     })();
                                     key=await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx);
@@ -7309,8 +7321,8 @@ export async function init_compiler(Environment) {
                                     }
                                 };
                                 let __BREAK__FLAG__=false;
-                                while(await __test_condition__630()) {
-                                    await __body_ref__631();
+                                while(await __test_condition__633()) {
+                                    await __body_ref__634();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -7326,62 +7338,62 @@ export async function init_compiler(Environment) {
                     } else {
                         tmp_name=await gen_temp_name("obj");
                         await (async function() {
-                            let __for_body__635=async function(t) {
+                            let __for_body__638=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__636=[],__elements__634=[{
+                            let __array__639=[],__elements__637=[{
                                 ctype:"statement"
                             },(preamble && preamble["0"])," ","("," ",(preamble && preamble["1"])," ","function","()","{","let"," ",tmp_name,"=","new"," ","Object","()",";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__633 in __elements__634) {
-                                __array__636.push(await __for_body__635(__elements__634[__iter__633]));
+                            for(let __iter__636 in __elements__637) {
+                                __array__639.push(await __for_body__638(__elements__637[__iter__636]));
                                 if(__BREAK__FLAG__) {
-                                     __array__636.pop();
+                                     __array__639.pop();
                                     break;
                                     
                                 }
-                            }return __array__636;
+                            }return __array__639;
                              
                         })();
                         await (async function(){
-                             let __test_condition__637=async function() {
+                             let __test_condition__640=async function() {
                                  return  (idx<total_length)
                             };
-                            let __body_ref__638=async function() {
+                            let __body_ref__641=async function() {
                                 idx+=1;
                                 kvpair=await (async function(){
-                                    let __targ__639=(tokens && tokens["val"]);
-                                    if (__targ__639){
-                                         return(__targ__639)[idx]
+                                    let __targ__642=(tokens && tokens["val"]);
+                                    if (__targ__642){
+                                         return(__targ__642)[idx]
                                     } 
                                 })();
                                  return  await (async function() {
-                                    let __for_body__642=async function(t) {
+                                    let __for_body__645=async function(t) {
                                          return  (acc).push(t)
                                     };
-                                    let __array__643=[],__elements__641=await (async function(){
-                                        let __array_op_rval__644=tmp_name;
-                                         if (__array_op_rval__644 instanceof Function){
-                                            return await __array_op_rval__644("[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";") 
+                                    let __array__646=[],__elements__644=await (async function(){
+                                        let __array_op_rval__647=tmp_name;
+                                         if (__array_op_rval__647 instanceof Function){
+                                            return await __array_op_rval__647("[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";") 
                                         } else {
-                                            return[__array_op_rval__644,"[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";"]
+                                            return[__array_op_rval__647,"[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";"]
                                         }
                                     })();
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__640 in __elements__641) {
-                                        __array__643.push(await __for_body__642(__elements__641[__iter__640]));
+                                    for(let __iter__643 in __elements__644) {
+                                        __array__646.push(await __for_body__645(__elements__644[__iter__643]));
                                         if(__BREAK__FLAG__) {
-                                             __array__643.pop();
+                                             __array__646.pop();
                                             break;
                                             
                                         }
-                                    }return __array__643;
+                                    }return __array__646;
                                      
                                 })()
                             };
                             let __BREAK__FLAG__=false;
-                            while(await __test_condition__637()) {
-                                await __body_ref__638();
+                            while(await __test_condition__640()) {
+                                await __body_ref__641();
                                  if(__BREAK__FLAG__) {
                                      break;
                                     
@@ -7390,19 +7402,19 @@ export async function init_compiler(Environment) {
                             
                         })();
                         await (async function() {
-                            let __for_body__647=async function(t) {
+                            let __for_body__650=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__648=[],__elements__646=["return"," ",tmp_name,";","}",")","()"];
+                            let __array__651=[],__elements__649=["return"," ",tmp_name,";","}",")","()"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__645 in __elements__646) {
-                                __array__648.push(await __for_body__647(__elements__646[__iter__645]));
+                            for(let __iter__648 in __elements__649) {
+                                __array__651.push(await __for_body__650(__elements__649[__iter__648]));
                                 if(__BREAK__FLAG__) {
-                                     __array__648.pop();
+                                     __array__651.pop();
                                     break;
                                     
                                 }
-                            }return __array__648;
+                            }return __array__651;
                              
                         })();
                          return  acc
@@ -7420,7 +7432,7 @@ export async function init_compiler(Environment) {
                     let operator_type;
                     let op_token;
                     let rcv;
-                    let __op__650= async function(){
+                    let __op__653= async function(){
                         return null
                     };
                     let acc;
@@ -7433,7 +7445,7 @@ export async function init_compiler(Environment) {
                         operator_type=null;
                         op_token=null;
                         rcv=null;
-                        let op=await __op__650();
+                        let op=await __op__653();
                         ;
                         _cdepth=(_cdepth||100);
                         acc=[];
@@ -7466,48 +7478,48 @@ export async function init_compiler(Environment) {
                                         if (check_true( (await is_number_ques_(tokens)||(tokens instanceof String || typeof tokens==='string')||(await sub_type(tokens)==="Boolean")))) {
                                              return tokens
                                         } else if (check_true( ((tokens instanceof Array)&&(tokens && tokens["0"] && tokens["0"]["ref"])&&await not((await get_ctx(ctx,(tokens && tokens["0"] && tokens["0"]["name"]))===UnknownType))&&(await (async function(){
-                                            let __targ__652=op_lookup;
-                                            if (__targ__652){
-                                                 return(__targ__652)[(tokens && tokens["0"] && tokens["0"]["name"])]
+                                            let __targ__655=op_lookup;
+                                            if (__targ__655){
+                                                 return(__targ__655)[(tokens && tokens["0"] && tokens["0"]["name"])]
                                             } 
                                         })()||(Function===await get_ctx(ctx,(tokens && tokens["0"] && tokens["0"]["name"])))||(AsyncFunction===await get_ctx(ctx,(tokens && tokens["0"] && tokens["0"]["name"])))||("function"===typeof await (async function(){
-                                            let __targ__653=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                            if (__targ__653){
-                                                 return(__targ__653)[(tokens && tokens["0"] && tokens["0"]["name"])]
+                                            let __targ__656=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                            if (__targ__656){
+                                                 return(__targ__656)[(tokens && tokens["0"] && tokens["0"]["name"])]
                                             } 
                                         })())||await get_lisp_ctx((tokens && tokens["0"] && tokens["0"]["name"])) instanceof Function)))) {
                                             op_token=await first(tokens);
                                             operator=await (async function(){
-                                                let __targ__654=op_token;
-                                                if (__targ__654){
-                                                     return(__targ__654)["name"]
+                                                let __targ__657=op_token;
+                                                if (__targ__657){
+                                                     return(__targ__657)["name"]
                                                 } 
                                             })();
                                             operator_type=await (async function(){
-                                                let __targ__655=op_token;
-                                                if (__targ__655){
-                                                     return(__targ__655)["val"]
+                                                let __targ__658=op_token;
+                                                if (__targ__658){
+                                                     return(__targ__658)["val"]
                                                 } 
                                             })();
                                             ref=await (async function(){
-                                                let __targ__656=op_token;
-                                                if (__targ__656){
-                                                     return(__targ__656)["ref"]
+                                                let __targ__659=op_token;
+                                                if (__targ__659){
+                                                     return(__targ__659)["ref"]
                                                 } 
                                             })();
                                             op=await (async function(){
-                                                let __targ__657=op_lookup;
-                                                if (__targ__657){
-                                                     return(__targ__657)[operator]
+                                                let __targ__660=op_lookup;
+                                                if (__targ__660){
+                                                     return(__targ__660)[operator]
                                                 } 
                                             })();
                                              return  await async function(){
                                                 if (check_true(op)) {
                                                      return (op)(tokens,ctx)
                                                 } else if (check_true( await (async function(){
-                                                    let __targ__658=(Environment && Environment["inlines"]);
-                                                    if (__targ__658){
-                                                         return(__targ__658)[operator]
+                                                    let __targ__661=(Environment && Environment["inlines"]);
+                                                    if (__targ__661){
+                                                         return(__targ__661)[operator]
                                                     } 
                                                 })())) {
                                                      return await compile_inline(tokens,ctx)
@@ -7539,37 +7551,37 @@ export async function init_compiler(Environment) {
                                                          declared_type=await get_declarations(ctx,(tokens && tokens["0"] && tokens["0"]["name"]))
                                                     };
                                                     await (async function() {
-                                                        let __for_body__661=async function(t) {
+                                                        let __for_body__664=async function(t) {
                                                             if (check_true (await not(await get_ctx_val(ctx,"__IN_LAMBDA__")))){
                                                                  await set_ctx(ctx,"__LAMBDA_STEP__",0)
                                                             };
                                                              return  (compiled_values).push(await compile(t,ctx,await add(_cdepth,1)))
                                                         };
-                                                        let __array__662=[],__elements__660=await (await __GG__("rest"))(tokens);
+                                                        let __array__665=[],__elements__663=await (await __GG__("rest"))(tokens);
                                                         let __BREAK__FLAG__=false;
-                                                        for(let __iter__659 in __elements__660) {
-                                                            __array__662.push(await __for_body__661(__elements__660[__iter__659]));
+                                                        for(let __iter__662 in __elements__663) {
+                                                            __array__665.push(await __for_body__664(__elements__663[__iter__662]));
                                                             if(__BREAK__FLAG__) {
-                                                                 __array__662.pop();
+                                                                 __array__665.pop();
                                                                 break;
                                                                 
                                                             }
-                                                        }return __array__662;
+                                                        }return __array__665;
                                                          
                                                     })();
                                                     await map(async function(compiled_element,idx) {
                                                         let inst;
                                                         inst=await (async function () {
                                                              if (check_true ((((compiled_element && compiled_element["0"]) instanceof Object)&&await (async function(){
-                                                                let __targ__663=(compiled_element && compiled_element["0"]);
-                                                                if (__targ__663){
-                                                                     return(__targ__663)["ctype"]
+                                                                let __targ__666=(compiled_element && compiled_element["0"]);
+                                                                if (__targ__666){
+                                                                     return(__targ__666)["ctype"]
                                                                 } 
                                                             })()))){
                                                                   return await (async function(){
-                                                                    let __targ__664=(compiled_element && compiled_element["0"]);
-                                                                    if (__targ__664){
-                                                                         return(__targ__664)["ctype"]
+                                                                    let __targ__667=(compiled_element && compiled_element["0"]);
+                                                                    if (__targ__667){
+                                                                         return(__targ__667)["ctype"]
                                                                     } 
                                                                 })()
                                                             } else {
@@ -7579,55 +7591,55 @@ export async function init_compiler(Environment) {
                                                          return  await async function(){
                                                             if (check_true( ((inst==="block")||(inst==="letblock")))) {
                                                                  return  (symbolic_replacements).push(await (async function(){
-                                                                    let __array_op_rval__665=idx;
-                                                                     if (__array_op_rval__665 instanceof Function){
-                                                                        return await __array_op_rval__665(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]) 
+                                                                    let __array_op_rval__668=idx;
+                                                                     if (__array_op_rval__668 instanceof Function){
+                                                                        return await __array_op_rval__668(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]) 
                                                                     } else {
-                                                                        return[__array_op_rval__665,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]]
+                                                                        return[__array_op_rval__668,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]]
                                                                     }
                                                                 })())
                                                             } else if (check_true( (inst==="ifblock"))) {
                                                                  return  (symbolic_replacements).push(await (async function(){
-                                                                    let __array_op_rval__666=idx;
-                                                                     if (__array_op_rval__666 instanceof Function){
-                                                                        return await __array_op_rval__666(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]) 
+                                                                    let __array_op_rval__669=idx;
+                                                                     if (__array_op_rval__669 instanceof Function){
+                                                                        return await __array_op_rval__669(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]) 
                                                                     } else {
-                                                                        return[__array_op_rval__666,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]]
+                                                                        return[__array_op_rval__669,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]]
                                                                     }
                                                                 })())
                                                             }
                                                         } ()
                                                     },compiled_values);
                                                     await (async function() {
-                                                        let __for_body__669=async function(elem) {
+                                                        let __for_body__672=async function(elem) {
                                                             await (async function() {
-                                                                let __for_body__673=async function(t) {
+                                                                let __for_body__676=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__674=[],__elements__672=["let"," ",(elem && elem["1"]),"=",(elem && elem["2"]),";"];
+                                                                let __array__677=[],__elements__675=["let"," ",(elem && elem["1"]),"=",(elem && elem["2"]),";"];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__671 in __elements__672) {
-                                                                    __array__674.push(await __for_body__673(__elements__672[__iter__671]));
+                                                                for(let __iter__674 in __elements__675) {
+                                                                    __array__677.push(await __for_body__676(__elements__675[__iter__674]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__674.pop();
+                                                                         __array__677.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__674;
+                                                                }return __array__677;
                                                                  
                                                             })();
                                                              return  await compiled_values["splice"].call(compiled_values,(elem && elem["0"]),1,[(preamble && preamble["0"])," ",(elem && elem["1"]),"()"])
                                                         };
-                                                        let __array__670=[],__elements__668=symbolic_replacements;
+                                                        let __array__673=[],__elements__671=symbolic_replacements;
                                                         let __BREAK__FLAG__=false;
-                                                        for(let __iter__667 in __elements__668) {
-                                                            __array__670.push(await __for_body__669(__elements__668[__iter__667]));
+                                                        for(let __iter__670 in __elements__671) {
+                                                            __array__673.push(await __for_body__672(__elements__671[__iter__670]));
                                                             if(__BREAK__FLAG__) {
-                                                                 __array__670.pop();
+                                                                 __array__673.pop();
                                                                 break;
                                                                 
                                                             }
-                                                        }return __array__670;
+                                                        }return __array__673;
                                                          
                                                     })();
                                                     if (check_true (((symbolic_replacements && symbolic_replacements.length)>0))){
@@ -7640,19 +7652,19 @@ export async function init_compiler(Environment) {
                                                         if (check_true( (((declared_type && declared_type["type"])===Function)||(((rcv && rcv["0"]) instanceof Object)&&(rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof Function)||(((rcv && rcv["0"]) instanceof Object)&&await not(((rcv && rcv["0"]) instanceof Array))&&((rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof String || typeof (rcv && rcv["0"] && rcv["0"]["ctype"])==='string')&&await contains_ques_("unction",(rcv && rcv["0"] && rcv["0"]["ctype"])))))) {
                                                             is_operation=true;
                                                             await (async function() {
-                                                                let __for_body__677=async function(t) {
+                                                                let __for_body__680=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__678=[],__elements__676=["(",rcv,")","("];
+                                                                let __array__681=[],__elements__679=["(",rcv,")","("];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__675 in __elements__676) {
-                                                                    __array__678.push(await __for_body__677(__elements__676[__iter__675]));
+                                                                for(let __iter__678 in __elements__679) {
+                                                                    __array__681.push(await __for_body__680(__elements__679[__iter__678]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__678.pop();
+                                                                         __array__681.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__678;
+                                                                }return __array__681;
                                                                  
                                                             })();
                                                             await push_as_arg_list(acc,compiled_values);
@@ -7673,36 +7685,36 @@ export async function init_compiler(Environment) {
                                                                  (acc).push(" ")
                                                             };
                                                             await (async function() {
-                                                                let __for_body__681=async function(t) {
+                                                                let __for_body__684=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__682=[],__elements__680=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{","let"," ",tmp_name,"=",rcv,";"," ","if"," ","(",tmp_name," ","instanceof"," ","Function",")","{","return"," ",(preamble && preamble["0"])," ",tmp_name,"("];
+                                                                let __array__685=[],__elements__683=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{","let"," ",tmp_name,"=",rcv,";"," ","if"," ","(",tmp_name," ","instanceof"," ","Function",")","{","return"," ",(preamble && preamble["0"])," ",tmp_name,"("];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__679 in __elements__680) {
-                                                                    __array__682.push(await __for_body__681(__elements__680[__iter__679]));
+                                                                for(let __iter__682 in __elements__683) {
+                                                                    __array__685.push(await __for_body__684(__elements__683[__iter__682]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__682.pop();
+                                                                         __array__685.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__682;
+                                                                }return __array__685;
                                                                  
                                                             })();
                                                             await push_as_arg_list(acc,compiled_values);
                                                             await (async function() {
-                                                                let __for_body__685=async function(t) {
+                                                                let __for_body__688=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__686=[],__elements__684=[")"," ","}"," ","else"," ","{","return","[",tmp_name];
+                                                                let __array__689=[],__elements__687=[")"," ","}"," ","else"," ","{","return","[",tmp_name];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__683 in __elements__684) {
-                                                                    __array__686.push(await __for_body__685(__elements__684[__iter__683]));
+                                                                for(let __iter__686 in __elements__687) {
+                                                                    __array__689.push(await __for_body__688(__elements__687[__iter__686]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__686.pop();
+                                                                         __array__689.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__686;
+                                                                }return __array__689;
                                                                  
                                                             })();
                                                             if (check_true ((await length(await (await __GG__("rest"))(tokens))>0))){
@@ -7710,39 +7722,39 @@ export async function init_compiler(Environment) {
                                                                  await push_as_arg_list(acc,compiled_values)
                                                             };
                                                              return  await (async function() {
-                                                                let __for_body__689=async function(t) {
+                                                                let __for_body__692=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__690=[],__elements__688=["]","}","}",")","()"];
+                                                                let __array__693=[],__elements__691=["]","}","}",")","()"];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__687 in __elements__688) {
-                                                                    __array__690.push(await __for_body__689(__elements__688[__iter__687]));
+                                                                for(let __iter__690 in __elements__691) {
+                                                                    __array__693.push(await __for_body__692(__elements__691[__iter__690]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__690.pop();
+                                                                         __array__693.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__690;
+                                                                }return __array__693;
                                                                  
                                                             })()
                                                         } else  {
-                                                            let __array_arg__691=(async function() {
+                                                            let __array_arg__694=(async function() {
                                                                 if (check_true ((await length(await (await __GG__("rest"))(tokens))>0))){
                                                                     (acc).push(",");
                                                                      await push_as_arg_list(acc,compiled_values)
                                                                 }
                                                             } );
                                                             return await (async function(){
-                                                                let __array_op_rval__692=await (async function() {
+                                                                let __array_op_rval__695=await (async function() {
                                                                     if (check_true (((symbolic_replacements && symbolic_replacements.length)>0))){
                                                                         (acc).push("return");
                                                                          (acc).push(" ")
                                                                     }
                                                                 } )();
-                                                                 if (__array_op_rval__692 instanceof Function){
-                                                                    return await __array_op_rval__692((acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__691(),(acc).push("]")) 
+                                                                 if (__array_op_rval__695 instanceof Function){
+                                                                    return await __array_op_rval__695((acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__694(),(acc).push("]")) 
                                                                 } else {
-                                                                    return[__array_op_rval__692,(acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__691(),(acc).push("]")]
+                                                                    return[__array_op_rval__695,(acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__694(),(acc).push("]")]
                                                                 }
                                                             })()
                                                         }
@@ -7755,20 +7767,20 @@ export async function init_compiler(Environment) {
                                             } ()
                                         } else if (check_true( ((tokens instanceof Object)&&((tokens && tokens["val"]) instanceof Array)&&(tokens && tokens["type"])))) {
                                             await async function(){
-                                                let __target_obj__693=ctx;
-                                                __target_obj__693["source"]=(tokens && tokens["source"]);
-                                                return __target_obj__693;
+                                                let __target_obj__696=ctx;
+                                                __target_obj__696["source"]=(tokens && tokens["source"]);
+                                                return __target_obj__696;
                                                 
                                             }();
                                             rcv=await compile((tokens && tokens["val"]),ctx,await add(_cdepth,1));
                                              return  rcv
                                         } else if (check_true( (((tokens instanceof Object)&&await check_true((tokens && tokens["val"]))&&(tokens && tokens["type"]))||((tokens && tokens["type"])==="literal")||((tokens && tokens["type"])==="arg")||((tokens && tokens["type"])==="null")))) {
                                             if (check_true (await (async function(){
-                                                let __array_op_rval__694=verbosity;
-                                                 if (__array_op_rval__694 instanceof Function){
-                                                    return await __array_op_rval__694(ctx) 
+                                                let __array_op_rval__697=verbosity;
+                                                 if (__array_op_rval__697 instanceof Function){
+                                                    return await __array_op_rval__697(ctx) 
                                                 } else {
-                                                    return[__array_op_rval__694,ctx]
+                                                    return[__array_op_rval__697,ctx]
                                                 }
                                             })())){
                                                 (comp_log)(("compile: "+_cdepth+" singleton: "),tokens);
@@ -7810,9 +7822,9 @@ export async function init_compiler(Environment) {
                                                 } else if (check_true( ((tokens && tokens["ref"])&&(opts && opts["root_environment"])))) {
                                                      return  await (await __GG__("path_to_js_syntax"))((await sanitize_js_ref_name((tokens && tokens.name))).split("."))
                                                 } else if (check_true( ((tokens && tokens["ref"])&&await (async function(){
-                                                    let __targ__695=op_lookup;
-                                                    if (__targ__695){
-                                                         return(__targ__695)[(tokens && tokens.name)]
+                                                    let __targ__698=op_lookup;
+                                                    if (__targ__698){
+                                                         return(__targ__698)[(tokens && tokens.name)]
                                                     } 
                                                 })()))) {
                                                      return (tokens && tokens.name)
@@ -7826,19 +7838,19 @@ export async function init_compiler(Environment) {
                                                          refval=snt_name
                                                     };
                                                     if (check_true (await (async function(){
-                                                        let __array_op_rval__696=verbosity;
-                                                         if (__array_op_rval__696 instanceof Function){
-                                                            return await __array_op_rval__696(ctx) 
+                                                        let __array_op_rval__699=verbosity;
+                                                         if (__array_op_rval__699 instanceof Function){
+                                                            return await __array_op_rval__699(ctx) 
                                                         } else {
-                                                            return[__array_op_rval__696,ctx]
+                                                            return[__array_op_rval__699,ctx]
                                                         }
                                                     })())){
                                                          (comp_log)("compile: singleton: found local context: ",refval,"literal?",await (async function(){
-                                                            let __array_op_rval__697=is_literal_ques_;
-                                                             if (__array_op_rval__697 instanceof Function){
-                                                                return await __array_op_rval__697(refval) 
+                                                            let __array_op_rval__700=is_literal_ques_;
+                                                             if (__array_op_rval__700 instanceof Function){
+                                                                return await __array_op_rval__700(refval) 
                                                             } else {
-                                                                return[__array_op_rval__697,refval]
+                                                                return[__array_op_rval__700,refval]
                                                             }
                                                         })())
                                                     };
@@ -7864,9 +7876,9 @@ export async function init_compiler(Environment) {
                                         }
                                     } ()
                                 } 
-                            } catch(__exception__651) {
-                                  if (__exception__651 instanceof Error) {
-                                     let e=__exception__651;
+                            } catch(__exception__654) {
+                                  if (__exception__654 instanceof Error) {
+                                     let e=__exception__654;
                                      {
                                         is_error={
                                             error:(e && e.name),source_name:source_name,message:(e && e.message),form:await source_from_tokens(tokens,expanded_tree),parent_forms:await source_from_tokens(tokens,expanded_tree,true),invalid:true
@@ -7911,19 +7923,19 @@ export async function init_compiler(Environment) {
                     insert_indent=async function() {
                         (text).push("\n");
                          return  await (async function() {
-                            let __for_body__700=async function(spacer) {
+                            let __for_body__703=async function(spacer) {
                                  return  (text).push(spacer)
                             };
-                            let __array__701=[],__elements__699=format_depth;
+                            let __array__704=[],__elements__702=format_depth;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__698 in __elements__699) {
-                                __array__701.push(await __for_body__700(__elements__699[__iter__698]));
+                            for(let __iter__701 in __elements__702) {
+                                __array__704.push(await __for_body__703(__elements__702[__iter__701]));
                                 if(__BREAK__FLAG__) {
-                                     __array__701.pop();
+                                     __array__704.pop();
                                     break;
                                     
                                 }
-                            }return __array__701;
+                            }return __array__704;
                              
                         })()
                     };
@@ -7960,7 +7972,7 @@ export async function init_compiler(Environment) {
                     };
                     assemble=async function(js_tokens) {
                          return  await (async function() {
-                            let __for_body__704=async function(t) {
+                            let __for_body__707=async function(t) {
                                  return  await async function(){
                                     if (check_true( (t instanceof Array))) {
                                          return  await assemble(t)
@@ -7978,26 +7990,26 @@ export async function init_compiler(Environment) {
                                     }
                                 } ()
                             };
-                            let __array__705=[],__elements__703=js_tokens;
+                            let __array__708=[],__elements__706=js_tokens;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__702 in __elements__703) {
-                                __array__705.push(await __for_body__704(__elements__703[__iter__702]));
+                            for(let __iter__705 in __elements__706) {
+                                __array__708.push(await __for_body__707(__elements__706[__iter__705]));
                                 if(__BREAK__FLAG__) {
-                                     __array__705.pop();
+                                     __array__708.pop();
                                     break;
                                     
                                 }
-                            }return __array__705;
+                            }return __array__708;
                              
                         })()
                     };
                     {
                         await assemble(await flatten(await (async function(){
-                            let __array_op_rval__706=js_tree;
-                             if (__array_op_rval__706 instanceof Function){
-                                return await __array_op_rval__706() 
+                            let __array_op_rval__709=js_tree;
+                             if (__array_op_rval__709 instanceof Function){
+                                return await __array_op_rval__709() 
                             } else {
-                                return[__array_op_rval__706]
+                                return[__array_op_rval__709]
                             }
                         })()));
                         if (check_true (suppress_join)){
@@ -8029,9 +8041,9 @@ export async function init_compiler(Environment) {
                 };
                 await set_ctx(root_ctx,break_out,false);
                 await async function(){
-                    let __target_obj__707=root_ctx;
-                    __target_obj__707["defined_lisp_globals"]=new Object();
-                    return __target_obj__707;
+                    let __target_obj__710=root_ctx;
+                    __target_obj__710["defined_lisp_globals"]=new Object();
+                    return __target_obj__710;
                     
                 }();
                 await set_ctx(root_ctx,"__SOURCE_NAME__",source_name);
@@ -8049,9 +8061,9 @@ export async function init_compiler(Environment) {
                         await (async function(){
                             try /* TRY COMPLEX */ {
                                  return  final_token_assembly=await tokenize(tree,root_ctx)
-                            }  catch(__exception__708) {
-                                  if (__exception__708 instanceof Error) {
-                                     let e=__exception__708;
+                            }  catch(__exception__711) {
+                                  if (__exception__711 instanceof Error) {
+                                     let e=__exception__711;
                                       return is_error=e
                                 } 
                             }
@@ -8082,42 +8094,42 @@ export async function init_compiler(Environment) {
                         };
                         if (check_true (((assembly && assembly["0"] && assembly["0"]["ctype"])&&(assembly && assembly["0"] && assembly["0"]["ctype"]) instanceof Function))){
                              await async function(){
-                                let __target_obj__709=(assembly && assembly["0"]);
-                                __target_obj__709["ctype"]=await map_value_to_ctype((assembly && assembly["0"] && assembly["0"]["ctype"]));
-                                return __target_obj__709;
+                                let __target_obj__712=(assembly && assembly["0"]);
+                                __target_obj__712["ctype"]=await map_value_to_ctype((assembly && assembly["0"] && assembly["0"]["ctype"]));
+                                return __target_obj__712;
                                 
                             }()
                         };
                         await async function(){
                             if (check_true( (await not(is_error)&&assembly&&(await first(assembly) instanceof Object)&&await (async function(){
-                                let __targ__710=await first(assembly);
-                                if (__targ__710){
-                                     return(__targ__710)["ctype"]
+                                let __targ__713=await first(assembly);
+                                if (__targ__713){
+                                     return(__targ__713)["ctype"]
                                 } 
                             })()&&(await not((await (async function(){
-                                let __targ__711=await first(assembly);
-                                if (__targ__711){
-                                     return(__targ__711)["ctype"]
+                                let __targ__714=await first(assembly);
+                                if (__targ__714){
+                                     return(__targ__714)["ctype"]
                                 } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__711=await first(assembly);
-                                if (__targ__711){
-                                     return(__targ__711)["ctype"]
+                                let __targ__714=await first(assembly);
+                                if (__targ__714){
+                                     return(__targ__714)["ctype"]
                                 } 
                             })()==='string'))||await (async function ()  {
                                 let val;
                                 val=await (async function(){
-                                    let __targ__712=await first(assembly);
-                                    if (__targ__712){
-                                         return(__targ__712)["ctype"]
+                                    let __targ__715=await first(assembly);
+                                    if (__targ__715){
+                                         return(__targ__715)["ctype"]
                                     } 
                                 })();
                                  return  (await not((val==="assignment"))&&await not(await contains_ques_("block",val))&&await not(await contains_ques_("unction",val)))
                             } )())))) {
                                  return await async function(){
-                                    let __target_obj__713=(assembly && assembly["0"]);
-                                    __target_obj__713["ctype"]="statement";
-                                    return __target_obj__713;
+                                    let __target_obj__716=(assembly && assembly["0"]);
+                                    __target_obj__716["ctype"]="statement";
+                                    return __target_obj__716;
                                     
                                 }()
                             } else if (check_true( (assembly&&(await first(assembly) instanceof String || typeof await first(assembly)==='string')&&(await first(assembly)==="throw")))) {
@@ -8125,9 +8137,9 @@ export async function init_compiler(Environment) {
                                     ctype:"block"
                                 },assembly]
                             } else if (check_true( (await not(is_error)&&assembly&&(await not((await first(assembly) instanceof Object))||await not(await (async function(){
-                                let __targ__714=await first(assembly);
-                                if (__targ__714){
-                                     return(__targ__714)["ctype"]
+                                let __targ__717=await first(assembly);
+                                if (__targ__717){
+                                     return(__targ__717)["ctype"]
                                 } 
                             })()))))) {
                                  return assembly=[{

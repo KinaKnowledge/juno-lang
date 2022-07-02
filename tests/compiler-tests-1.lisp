@@ -83,30 +83,6 @@
   []
   123.456
   "Numbers converted properly" ]
- [ "(create_namespace `tests)"
-  []
-  "tests"
-  "Create namespace"]
- [ "(set_namespace `tests)"
-  []
-  "tests"
-  "Set namespace"]
- [ "*namespace*"
-  []
-  "tests"
-  "*namespace* symbol should be set to the current namespace"]
- [ "(set_namespace `core)"
-  []
-  "core"
-  "can set namespace back to core"] 
- [ "(delete_namespace `tests)"
-  []
-  true
-  "deletion of namespace returns true"]
- [ "(create_namespace `tests) (set_namespace `tests)"
-  []
-  "tests"
-  "create and set namespace to tests"]
  
     [ "(fn ()
            true)"
@@ -302,10 +278,10 @@
     false
     "undefine symbol to invalid reference"
      ]
- ["(undefine `my_constant) (defconst my_constant 123) (describe `my_constant)"
+ ["(defconst my_constant 123) (describe `my_constant)"
   []
   `{ type: "Number", location: "global", name: "my_constant", constant: true }
-  "global constant definition is marked as a constant" ]
+  "global constant definition is mark as a constant" ]
  ["(undefine `my_constant) (defconst my_constant 123) (undefine `my_constant) (describe `my_constant)"
   []
   `{ type: "undefined", location: null, name: "my_constant" }

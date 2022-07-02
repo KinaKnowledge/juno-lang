@@ -984,8 +984,7 @@
              (if (and (is_array? lisp_tree)
                       (is_reference? lisp_tree.0)
                       ;; is this a compile time function?  Check the definition in our environment..
-                      (resolve_path [`eval_when `compile_time] (-> Environment `get_definition (-> lisp_tree.0 `substr 2))))
-                      ;(resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
+                      (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
                  (let
                      ((`ntree nil)		      
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
@@ -2004,17 +2003,12 @@
                                       
                                       ;; local shadow of a globally declared variable
                                       (and (is_string? alloc_set.1.name)
-                                           ;(prop Environment.context.scope alloc_set.1.name)
-                                           ;(not (== (-> Environment `get_global alloc_set.1.name NOT_FOUND_THING) NOT_FOUND_THING))
-                                           
-                                           (-> Environment `is_global? alloc_set.1.name)
+                                           (prop Environment.context.scope alloc_set.1.name)
                                            (not ctx_details.is_argument)
                                            (prop shadowed_globals alloc_set.0.name))
                                                   
                                       (do
-                                        (when (verbosity ctx)
-                                          (clog "local shadow of a globally declared symbol: " alloc_set.0.name "->" alloc_set.1.name))
-                                        (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
+                                          (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
                                       else
                                       (do                                        
                                        (= assignment_value (compile alloc_set.1 ctx))
@@ -3888,10 +3882,10 @@
                                                                 (push acc t))
                                                              (cond
                                                                  (and (is_function? dec_struct.value)
-                                                                      (prop (-> Environment `get_definition name)
+                                                                      (prop (prop Environment.definitions name)
                                                                             `fn_body))
                                                                  (do
-                                                                     (= details (-> Environment `get_definition name))
+                                                                     (= details (prop Environment.definitions name))
                                                                      (= source (+ "(fn " details.fn_args " " details.fn_body ")"))
                                                                      
                                                                      (= source (compile (tokenize (read_lisp source) ctx) ctx 1000))

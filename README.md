@@ -100,6 +100,4 @@ When [Javascript was being conceived](https://web.archive.org/web/20200227184037
 
 ### Namespaces
 
-A namespace is a global context that is established in a Juno Environment which provides a mechanism for storing symbols distinct from the core namespace.  They can be established via `defnamespace`, which creates a new namespace in the current environment based on the parameters provided.  Once a namespace has been defined, they can be activated in a dynamic fashion (non lexical) with `in-namespace` or accessed in a qualified manner via a slash in the symbol name, e.g. namespace/symbol_name.  The global variable `*namespace*` is always set to the currently active namespace.
-
-Namespaces 
+A namespace is a global context that is established in an e

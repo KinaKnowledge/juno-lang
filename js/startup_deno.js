@@ -1,4 +1,4 @@
-// Juno Environment Setup for Deno environments
+// DLisp Environment Setup for Deno environments
 // (c) 2022 Kina, LLC
 
 // This code assumes a fully compiled environment is already made and available in Javascript
@@ -17,12 +17,9 @@ import { initializer } from "./io.js"
 
 await init_dlisp()
 var env=await dlisp_env()
-
 import { environment_boot } from "./environment_boot.js"
 
-
 await environment_boot(env);
-
 await init_compiler(env)
 await load_core(env)
 var cca = await env.get_global("compiler")
@@ -32,9 +29,8 @@ await initializer(env);
 // Ready - call env.evaluate("(my_lisp form)") beyond this point for compilation and evaluation of lisp forms
 
 // setup a simple repl from stdin
-await env.set_namespace("user")
 
-console.log("\nJuno ",env.version," (c) 2022 Kina, LLC");
+console.log("\nDLisp",env.version," (c) 2022 Kina, LLC");
 
 let opts={
   throw_on_error: true
