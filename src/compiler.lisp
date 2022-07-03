@@ -121,8 +121,10 @@
                          true)
                         false))
        (`show_hints nil)       
-       (`error_log (defclog { `prefix: "Compile Error" `background: "#CA3040" `color: "white" } ))
-       (`assembly [])
+       (`error_log (defclog { `prefix: "Compile Error" `background: "#CA3040" `color: "white" } ))       
+
+       (`assembly []) ;; the output structure that holds the compiled code
+       
        (`async_function_type_placeholder (fn () true))
        (`function_type_placeholder (function () true))
        
@@ -230,11 +232,11 @@
                                  `declared_types (new Object)
                                  `defs [])
                       (when parent
-                       (when parent.source
-                         (set_prop ctx_obj
-                                   `source
-                                   parent.source))
-                       (when parent.defvar_eval
+                       
+                        (set_prop ctx_obj.scope
+                                  `namespace
+                                  parent.scope.namespace)
+                        (when parent.defvar_eval             ;; TODO - REMOVE NOT USED 
                          (set_prop ctx_obj
                                    `defvar_eval
                                    true))
@@ -738,11 +740,11 @@
                               (let
                                   ((`comps (get_object_path name))
                                    (`cannot_be_js_global (check_invalid_js_ref comps.0))
-                                   (`ref_name (take comps))
+                                   (`ref_name (take comps))                                   
                                    (`ref_type (if (== ref_name "this")
                                                       THIS_REFERENCE
                                                       (progn
-							(defvar `global_ref (prop root_ctx.defined_lisp_globals ref_name))
+						       (defvar `global_ref (prop root_ctx.defined_lisp_globals ref_name))                                                       
 							(if (or (eq undefined global_ref)
 								(== global_ref "statement"))
 							    (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
@@ -1108,32 +1110,43 @@
                                    (`stmt nil)
 				   (`preamble (calling_preamble ctx))
                                    (`token (second tokens))
-                                   (`target_reference (gen_temp_name "target_obj"))
                                    (`complicated (is_complex? token.val))
                                    (`target (if complicated
                                                 (compile_wrapper_fn token.val ctx)
                                                 (compile token ctx)))
+                                   (`target_reference (gen_temp_name "target_obj"))
                                    (`idx 1))
                                 (declare (string preamble.0 preamble.1))
-                                (for_each (`t [preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" "let" " " target_reference "=" target ";" ] )
+                                ;(when (verbosity ctx)
+                                 ; (console.log "compile_set_prop: target=" (as_lisp target)))
+                                ;(set_prop ctx
+                                        ;           `in_assignment true)
+                                
+                                
+                                (for_each (`t [ preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" ])
                                           (push wrapper t))
+                                (if (not (is_string? target))
+                                  (for_each (`t [ "let" " " target_reference "=" target ";" ] )
+                                            (push wrapper t))
+                                  (do
+                                    (= target_reference target)))
                                 (while (< idx (- tokens.length 1))
-                                       (do
-                                        (inc idx)
-                                        (push acc target_reference)
-                                         (= token (prop tokens idx))                                        
-                                         (push acc "[")
-                                         (= stmt (wrap_assignment_value (compile token ctx) ctx))
-                                         (push acc stmt)
-                                         (push acc "]")
-                                         (inc idx)
-                                         (push acc "=")
-                                         (= token (prop tokens idx))
-                                         (if (eq nil token)
-                                             (throw Error "set_prop: odd number of arguments"))
-                                         (= stmt (wrap_assignment_value (compile token ctx) ctx))
-                                         (push acc stmt)                                        
-                                         (push acc ";")))
+                                  (do
+                                    (inc idx)
+                                    (push acc target_reference)
+                                    (= token (prop tokens idx))                                        
+                                    (push acc "[")
+                                    (= stmt (wrap_assignment_value (compile token ctx) ctx))
+                                    (push acc stmt)
+                                    (push acc "]")
+                                    (inc idx)
+                                    (push acc "=")
+                                    (= token (prop tokens idx))
+                                    (if (eq nil token)
+                                      (throw Error "set_prop: odd number of arguments"))
+                                    (= stmt (wrap_assignment_value (compile token ctx) ctx))
+                                    (push acc stmt)                                        
+                                    (push acc ";")))
                                 
                                 (push wrapper acc)
                                 (push wrapper "return")
@@ -1143,25 +1156,30 @@
                                 (push wrapper "}")
                                 (push wrapper preamble.4)
                                 (push wrapper "()")
-                               
+                                
                                 wrapper)))
        
        
        (`compile_prop  (fn (tokens ctx)
                            (let
-                               ((`acc [])
-                                (`target (wrap_assignment_value (compile (second tokens) ctx) ctx))
+                               ((`acc [])                                
+                                (`target (wrap_assignment_value (compile (second tokens) ctx) ctx))                                
                                 (`target_val nil)
 				(`preamble (calling_preamble ctx))
                                 (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx) ctx)))
                             (declare (string preamble.0))                              
                             (if (> (safety_level ctx) 1)
+                              (cond
+                                (is_string? target)                                    
+                                (do
+                                  [ target "[" idx_key "]" ])
+                                else
                                 (do
                                     (= target_val (gen_temp_name "targ"))
                                     [preamble.0 " " "(" preamble.1 " " "function" "()" "{" 
                                                                                    "let" " " target_val "=" target ";" 
-                                                                                   "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ])
-                                [ "(" target ")" "[" idx_key "]"]))))
+                                                                                   "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ]))
+                              [ "(" target ")" "[" idx_key "]"]))))
        
        (`compile_elem (fn (token ctx)
                           (let

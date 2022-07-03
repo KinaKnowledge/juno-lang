@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-06-30 12:09:19
-// Version: 2022.06.30.12.09
-export const DLISP_ENV_VERSION='2022.06.30.12.09';
+// Build Time: 2022-07-03 07:45:13
+// Version: 2022.07.03.07.45
+export const DLISP_ENV_VERSION='2022.07.03.07.45';
 
 
 
@@ -173,9 +173,8 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
     };
     if (check_true (((input_buffer instanceof Array)&&((input_buffer && input_buffer["0"])==="=:iprogn")))){
          await async function(){
-            let __target_obj__10=input_buffer;
-            __target_obj__10[0]="=:progn";
-            return __target_obj__10;
+            input_buffer[0]="=:progn";
+            return input_buffer;
             
         }()
     };

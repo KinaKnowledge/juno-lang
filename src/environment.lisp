@@ -22,14 +22,33 @@
      
      (declare (toplevel true)
               (include subtype)
-              (local get_object_path get_outside_global clone))
+              (local get_object_path get_outside_global clone get_next_environment_id))
+
+     ;; NOTICE:
+     ;; We do not have access to the Environment things at this point, so we are
+     ;; very limited until after (define_env)...
+     ;; --------------------------------------------------------------------
+     
+     (if (eq undefined opts)
+       (= opts {}))
      
      ;; Construct the environment
+     ;; Are we the core, or are we a namespace off of the core?
+     
+     (defvar namespace (or opts.namespace "core"))
+    
+     (defvar parent_environment (if (== namespace "core")
+                                  nil
+                                  opts.parent_environment))
+
+     ;; Set up our initial skeleton..
+
      (defvar
        Environment
        {
         `global_ctx:{
-                     `scope:{}
+                     `scope: {}
+                     `name:  namespace              
                      }
         `version: (javascript DLISP_ENV_VERSION)
         `definitions: {
@@ -41,18 +60,16 @@
                                   }
                         }       
         })
-     
+          
      
      (defvar id  (get_next_environment_id))
-     
-     (if (eq undefined opts)
-       (= opts {}))
-     
+
+     ;; if we have a namespace other than core we should
+     ;; have a parent environment
+              
      (set_prop Environment
                `context
                Environment.global_ctx)
-     
-     
      
      (defvar compiler (fn () true))
      
@@ -60,12 +77,16 @@
      (defvar special_identity (fn (v)
                                 v))
 
+     ;; ------- End Limited Zone --------------------------------
      
+     ;; the define_env macro populates global_ctx scope object to local values in our
+     ;; closure
      
      (define_env 
        (MAX_SAFE_INTEGER 9007199254740991)
        (LispSyntaxError globalThis.LispSyntaxError)
        (sub_type subtype)
+       (*namespace* namespace)
        (__VERBOSITY__ 0
                       { 
                        `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -77,6 +98,7 @@
              `description: "Convenience method for parseInt, should be used in map vs. directly calling parseInt, which will not work directly"
              `tags: ["conversion" "number"]
              })
+       
        (float parseFloat
               { `usage: "value:string|number" 
                `description: "Convenience method for parseFloat, should be used in map vs. directly calling parseFloat, which will not work directly"
@@ -389,25 +411,17 @@
                          (or (eq val nil)
                              (and (is_string? val)
                                   (== val "")))))
-       
-       (contains? (function (value container)
-                            (cond
-                              (and (not value)
-                                   (not container))
-                              false
-                              (eq container nil)
-                              (throw TypeError "contains?: passed nil/undefined container value")
-                              (is_string? container)
-                              (if (is_number? value)
-                                (> (-> container `indexOf (+ "" value)) -1)
-                                (> (-> container `indexOf value) -1))
-                              (is_array? container)
-                              (-> container `includes value)
-                              (is_set? container)
-                              (-> container `has value)
-                              else
-                              (throw TypeError (+ "contains?: passed invalid container type: " (sub_type container))))))
-       
+       (contains? (new Function "value" "container"
+                       "{ if (!value && !container) { return false }
+                           else if (container === null) { throw new TypeError(\"contains?: passed nil/undefined container value\"); }
+                           else if ((container instanceof String) || typeof container === \"string\") {
+                                if (subtype(value) === \"Number\") return container.indexOf(\"\"+value)>-1;
+                                else return container.indexOf(value)>-1;
+                           }
+                           else if (container instanceof Array) return container.includes(value);
+                           else if (container instanceof Set) return container.has(value);
+                           else throw new TypeError(\"contains?: passed invalid container type: \"+subtype(container)) }"))
+              
        (make_set (function (vals)
                            (if (instanceof vals Array)
                              (new Set vals)
@@ -638,14 +652,12 @@
                                                    (take args)))
                              (conj [ style ]
                                    args))))))
-       
-       
-       
+                     
        (NOT_FOUND (new ReferenceError "not found"))
-       (check_external_env_default true)
+       (check_external_env_default (if (== namespace "core") true false))
        
        (set_global 
-        (function (refname value meta is_constant)
+        (function (refname value meta is_constant target_namespace)
                   (progn
 		   (cond (not (== (typeof refname) "string"))
 			 (throw TypeError "reference name must be a string type")
@@ -656,30 +668,53 @@
 		                                  
                    (when (resolve_path [ refname `constant ] Environment.definitions)
                      (throw TypeError (+ "Assignment to constant variable " refname )))
-                     
-                   (set_prop Environment.global_ctx.scope 
-                             refname
-                             value)
-                   (if (and (is_object? meta)
-                            (not (is_array? meta)))
+
+                   ;; we need to determine what we've been given.  We could have:
+                   ;; 1. refname by itself, with no name space, so we need to check
+                   ;;    if it is us, and if it is not, hand it up to our parent
+                   ;; 2. fully/qualified refname - nead to split and then check
+                   ;; 3. refname and target_namespace - if us we deal with or
+                   ;;    send onwards if not us.
+
+                   (defvar namespace_identity (if target_namespace
+                                                [target_namespace refname]
+                                                (split_by "/" refname)))
+                                    
+                   (cond
+                     ;; check if we already have an explicit namespace and it isn't us,
+                     ;; send it to our parent to deal with..
+                   
+                     (and parent_environment
+                          (> namespace_identity.length 1)
+                          (not (== namespace namespace_identity.0)))
+                     (-> parent_environment `get_global namespace_identity.1 value meta is_constant namespace_identity.0)
+
+                     else
                      (do
-                       (when is_constant
-                         (set_prop meta
-                                   `constant
-                                   true))
-                       (set_prop Environment.definitions
+                                                            
+                       (set_prop Environment.global_ctx.scope 
                                  refname
-                                 meta))
-                     (when is_constant
-                       (set_prop Environment.definitions
-                                 refname
-                                 {
-                                  `constant: true
-                                  })))
-                   (prop Environment.global_ctx.scope refname))))
+                                 value)
+                       (if (and (is_object? meta)
+                                (not (is_array? meta)))
+                         (do
+                           (when is_constant
+                             (set_prop meta
+                                       `constant
+                                       true))
+                           (set_prop Environment.definitions
+                                     refname
+                                     meta))
+                         (when is_constant
+                           (set_prop Environment.definitions
+                                     refname
+                                     {
+                                      `constant: true
+                                      })))
+                       (prop Environment.global_ctx.scope refname))))))
        
        (get_global 
-        (function (refname value_if_not_found suppress_check_external_env)
+        (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps)
                   (cond 
                     (not (== (typeof refname) "string"))
                     (throw TypeError "reference name must be a string type")
@@ -689,49 +724,73 @@
                     
                     (-> compiler_operators `has refname)
                     special_identity
-                    
+
                     else
                     (let
-                        ((`comps (get_object_path refname))
+                        ((`namespace_identity (if target_namespace
+                                                [target_namespace refname]  ;; already has been split or explicitly specified, so use it
+                                                (split_by "/" refname)))    ;; otherwise split..namespace_identity may only have 1 component though
+                         (`comps (or path_comps
+                                     (get_object_path (if (== 1 namespace_identity.length)
+                                                        namespace_identity.0
+                                                        namespace_identity.1))))
                          (`refval nil)
-                         
+                         (`symbol_name nil)
                          ;; shadow the environments scope check if the suppress_check_external_env is set to true
                          ;; this is useful when we have reference names that are not legal js reference names
                          
                          (`check_external_env (if suppress_check_external_env
                                                 false
-                                                check_external_env_default)))
-                      
-                      ;; search path is to first check the global Lisp Environment
-                      ;; and if the check_external_env flag is true, then go to the
-                      ;; external JS environment.
-                      (= refval (prop Environment.global_ctx.scope comps.0))
-                      
-                      (if (and (== undefined refval)
-                               check_external_env)
-                        (= refval (if check_external_env
-                                    (or (get_outside_global comps.0)
-                                        NOT_FOUND)
-                                    NOT_FOUND)))
-                      
-                      ;; based on the value of refval, return the value                                        
-                      
+                                                check_external_env_default)))                     
                       (cond
-                        (== NOT_FOUND refval)
-                        (or value_if_not_found
-                            NOT_FOUND)
+                        ;; given a fully qualified name, if not us, pass it up
+                        (and parent_environment
+                             (> namespace_identity.length 1)
+                             (not (== namespace_identity.0 namespace)))
                         
-                        (== comps.length 1)
-                        refval
-                        
-                        (> comps.length 1)
-                        (do 
-                          (resolve_path (rest comps) refval))
+                        (-> parent_environment `get_global namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)      
                         
                         else
                         (do
-                          (console.warn "get_global: condition fall through: " comps)
-                          NOT_FOUND))))))
+                          
+                          
+                          ;; search path is to first check the global Lisp Environment
+                          ;; and if the check_external_env flag is true, then go to the
+                          ;; external JS environment.
+                      
+                          (= refval (prop Environment.global_ctx.scope comps.0))
+
+                          (if (and (== undefined refval)             ;; if we didn't find anything here, and if the refname was
+                                   (== namespace_identity.length 1)  ;; non-qualified we need to check upward
+                                   parent_environment)               ;; if possible..
+                            (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps)
+                            (do
+                              ;; this is us
+                              (if (and (== undefined refval)
+                                       check_external_env)
+                                (= refval (if check_external_env
+                                            (or (get_outside_global comps.0)
+                                                NOT_FOUND)
+                                            NOT_FOUND)))
+                              
+                              ;; based on the value of refval, return the value                                        
+                              
+                              (cond
+                                (== NOT_FOUND refval)
+                                (or value_if_not_found
+                                    NOT_FOUND)
+                                
+                                (== comps.length 1)
+                                refval
+                                
+                                (> comps.length 1)
+                                (do 
+                                  (resolve_path (rest comps) refval))
+                                
+                                else
+                                (do
+                                  (console.warn "get_global: condition fall through: " comps)
+                                  NOT_FOUND))))))))))
        
        (compile (fn (json_expression opts)
                   (let
