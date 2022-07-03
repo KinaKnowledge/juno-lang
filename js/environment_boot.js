@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-03 07:45:13
-// Version: 2022.07.03.07.45
-export const DLISP_ENV_VERSION='2022.07.03.07.45';
+// Build Time: 2022-07-03 12:12:44
+// Version: 2022.07.03.12.12
+export const DLISP_ENV_VERSION='2022.07.03.12.12';
 
 
 
@@ -10,9 +10,9 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function environment_boot(Environment)  {
 {
     const __GG__=Environment.get_global;
-    await Environment.set_global("get_outside_global",(await __GG__("get_outside_global")));
-    await Environment.set_global("true?",(await __GG__("check_true")));
-    await Environment.set_global("subtype",(await __GG__("sub_type")));
+    await Environment.set_global("get_outside_global",(await Environment.get_global("get_outside_global")));
+    await Environment.set_global("true?",(await Environment.get_global("check_true")));
+    await Environment.set_global("subtype",(await Environment.get_global("sub_type")));
     await Environment.set_global("defmacro",async function(name,arg_list,...body) {
         let macro_name;
         let macro_args;
@@ -25,12 +25,12 @@ export async function environment_boot(Environment)  {
             eval_when:{
                 compile_time:true
             },name:await (async function() {
-                if (check_true (await (await __GG__("starts_with?"))("=:",name))){
+                if (check_true (await (await Environment.get_global("starts_with?"))("=:",name))){
                       return await name["substr"].call(name,2)
                 } else {
                       return name
                 }
-            } )(),macro:true,fn_args:await (await __GG__("as_lisp"))(macro_args)
+            } )(),macro:true,fn_args:await (await Environment.get_global("as_lisp"))(macro_args)
         };
         {
              return  ["=:defglobal",macro_name,["=:fn",macro_args,].concat(macro_body),["=:quote",source_details]]
@@ -40,11 +40,11 @@ export async function environment_boot(Environment)  {
             compile_time:true
         }
     });
-    await Environment.set_global("read_lisp",(await __GG__("reader")));
+    await Environment.set_global("read_lisp",(await Environment.get_global("reader")));
     await Environment.set_global("desym",async function(val) {
         let strip;
         strip=async function(v) {
-             return  (""+await (await __GG__("as_lisp"))(v))
+             return  (""+await (await Environment.get_global("as_lisp"))(v))
         };
          return  await async function(){
             if (check_true( (val instanceof String || typeof val==='string'))) {
@@ -90,7 +90,7 @@ await Environment.set_global("when",async function(condition,...mbody) {
 });
 await Environment.set_global("if_compile_time_defined",async function(quoted_symbol,exists_form,not_exists_form) {
     if (check_true ((await (async function(){
-        let __targ__5=await (await __GG__("describe"))(quoted_symbol);
+        let __targ__5=await (await Environment.get_global("describe"))(quoted_symbol);
         if (__targ__5){
              return(__targ__5)["location"]
         } 
@@ -115,8 +115,8 @@ await Environment.set_global("defun",async function(name,args,body,meta) {
     fn_name=name;
     fn_args=args;
     fn_body=body;
-    source_details=await (await __GG__("add"))({
-        name:await (await __GG__("unquotify"))(name),fn_args:await (await __GG__("as_lisp"))(fn_args)
+    source_details=await (await Environment.get_global("add"))({
+        name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args)
     },await (async function() {
          if (check_true (meta)){
               return meta
@@ -136,8 +136,8 @@ await Environment.set_global("defun_sync",async function(name,args,body,meta) {
     fn_name=name;
     fn_args=args;
     fn_body=body;
-    source_details=await (await __GG__("add"))({
-        name:await (await __GG__("unquotify"))(name),fn_args:await (await __GG__("as_lisp"))(fn_args)
+    source_details=await (await Environment.get_global("add"))({
+        name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args)
     },await (async function() {
          if (check_true (meta)){
               return meta
@@ -309,7 +309,7 @@ await Environment.set_global("do_deferred_splice",async function(tree) {
                         
                     }()
                 };
-                let __array__20=[],__elements__18=await (await __GG__("pairs"))(tree);
+                let __array__20=[],__elements__18=await (await Environment.get_global("pairs"))(tree);
                 let __BREAK__FLAG__=false;
                 for(let __iter__17 in __elements__18) {
                     __array__20.push(await __for_body__19(__elements__18[__iter__17]));
@@ -337,9 +337,9 @@ await Environment.set_global("define",async function(...defs) {
         let __for_body__24=async function(defset) {
             (acc).push(["=:defvar",(defset && defset["0"]),(defset && defset["1"])]);
             symname=(defset && defset["0"]);
-            (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await __GG__("as_lisp"))(symname)),symname]);
+            (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await Environment.get_global("as_lisp"))(symname)),symname]);
             if (check_true (((defset && defset["2"]) instanceof Object))){
-                 return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await __GG__("as_lisp"))(symname)+""),(defset && defset["2"])]])
+                 return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await Environment.get_global("as_lisp"))(symname)+""),(defset && defset["2"])]])
             }
         };
         let __array__25=[],__elements__23=defs;
@@ -367,9 +367,9 @@ await Environment.set_global("define_env",async function(...defs) {
         let __for_body__28=async function(defset) {
             (acc).push(["=:defvar",(defset && defset["0"]),(defset && defset["1"])]);
             symname=(defset && defset["0"]);
-            (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await __GG__("as_lisp"))(symname)),symname]);
+            (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await Environment.get_global("as_lisp"))(symname)),symname]);
             if (check_true (((defset && defset["2"]) instanceof Object))){
-                 return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await __GG__("as_lisp"))(symname)+""),(defset && defset["2"])]])
+                 return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await Environment.get_global("as_lisp"))(symname)+""),(defset && defset["2"])]])
             }
         };
         let __array__29=[],__elements__27=defs;
@@ -413,15 +413,15 @@ await Environment.set_global("destructure_list",async function(elems) {
     follow_tree=async function(elems,_path_prefix) {
          return  await async function(){
             if (check_true( (elems instanceof Array))) {
-                 return await (await __GG__("map"))(async function(elem,idx) {
-                     return  await follow_tree(elem,await (await __GG__("add"))(_path_prefix,idx))
+                 return await (await Environment.get_global("map"))(async function(elem,idx) {
+                     return  await follow_tree(elem,await (await Environment.get_global("add"))(_path_prefix,idx))
                 },elems)
             } else if (check_true( (elems instanceof Object))) {
                  return await (async function() {
                     let __for_body__32=async function(pset) {
-                         return  await follow_tree((pset && pset["1"]),await (await __GG__("add"))(_path_prefix,(pset && pset["0"])))
+                         return  await follow_tree((pset && pset["1"]),await (await Environment.get_global("add"))(_path_prefix,(pset && pset["0"])))
                     };
-                    let __array__33=[],__elements__31=await (await __GG__("pairs"))(elems);
+                    let __array__33=[],__elements__31=await (await Environment.get_global("pairs"))(elems);
                     let __BREAK__FLAG__=false;
                     for(let __iter__30 in __elements__31) {
                         __array__33.push(await __for_body__32(__elements__31[__iter__30]));
@@ -449,18 +449,18 @@ await Environment.set_global("destructuring_bind",async function(bind_vars,expre
     let allocations;
     let acc;
     binding_vars=bind_vars;
-    paths=await (await __GG__("destructure_list"))(binding_vars);
+    paths=await (await Environment.get_global("destructure_list"))(binding_vars);
     bound_expression=expression;
     allocations=[];
     acc=["=:let"];
-    await (await __GG__("assert"))(((bind_vars instanceof Array)&&await (await __GG__("is_value?"))(expression)&&await (await __GG__("is_value?"))(forms)),"destructuring_bind: requires 3 arguments");
+    await (await Environment.get_global("assert"))(((bind_vars instanceof Array)&&await (await Environment.get_global("is_value?"))(expression)&&await (await Environment.get_global("is_value?"))(forms)),"destructuring_bind: requires 3 arguments");
     await (async function() {
         let __for_body__36=async function(idx) {
-             return  (allocations).push([await (await __GG__("resolve_path"))(paths[idx],binding_vars),await async function(){
+             return  (allocations).push([await (await Environment.get_global("resolve_path"))(paths[idx],binding_vars),await async function(){
                 if (check_true( (expression instanceof Object))) {
-                     return await (await __GG__("resolve_path"))(paths[idx],expression)
+                     return await (await Environment.get_global("resolve_path"))(paths[idx],expression)
                 } else  {
-                     return (await (await __GG__("conj"))(await (async function(){
+                     return (await (await Environment.get_global("conj"))(await (async function(){
                         let __array_op_rval__38=expression;
                          if (__array_op_rval__38 instanceof Function){
                             return await __array_op_rval__38() 
@@ -471,7 +471,7 @@ await Environment.set_global("destructuring_bind",async function(bind_vars,expre
                 }
             } ()])
         };
-        let __array__37=[],__elements__35=await (await __GG__("range"))(await (await __GG__("length"))(paths));
+        let __array__37=[],__elements__35=await (await Environment.get_global("range"))(await (await Environment.get_global("length"))(paths));
         let __BREAK__FLAG__=false;
         for(let __iter__34 in __elements__35) {
             __array__37.push(await __for_body__36(__elements__35[__iter__34]));
@@ -484,7 +484,7 @@ await Environment.set_global("destructuring_bind",async function(bind_vars,expre
          
     })();
     (acc).push(allocations);
-    acc=await (await __GG__("conj"))(acc,forms);
+    acc=await (await Environment.get_global("conj"))(acc,forms);
      return  acc
 },{ "eval_when":{ "compile_time":true
 },"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)"
@@ -495,8 +495,8 @@ await (async function ()  {
             if (check_true( (container instanceof String || typeof container==='string'))) {
                  return (container).split(token)
             } else if (check_true( (container instanceof Array))) {
-                 return  ( __GG__("map"))(async function(elem) {
-                     return   ( __GG__("split_by_recurse"))(token,elem)
+                 return  ( Environment.get_global("map"))(async function(elem) {
+                     return   ( Environment.get_global("split_by_recurse"))(token,elem)
                 },container)
             }
         } )()
@@ -514,15 +514,15 @@ await Environment.set_global("defmacro",async function(name,lambda_list,...forms
     macro_name=name;
     macro_args=lambda_list;
     macro_body=forms;
-    final_form=await (await __GG__("last"))(forms);
+    final_form=await (await Environment.get_global("last"))(forms);
     macro_meta=await (async function () {
-         if (check_true (((final_form instanceof Object)&&await (await __GG__("not"))(await (await __GG__("blank?"))((final_form && final_form["description"])))&&await (await __GG__("not"))(await (await __GG__("blank?"))((final_form && final_form["usage"])))))){
+         if (check_true (((final_form instanceof Object)&&await (await Environment.get_global("not"))(await (await Environment.get_global("blank?"))((final_form && final_form["description"])))&&await (await Environment.get_global("not"))(await (await Environment.get_global("blank?"))((final_form && final_form["usage"])))))){
               return (forms).pop()
         } 
     })();
-    complex_lambda_list=await (await __GG__("or_args"))(await (async function() {
+    complex_lambda_list=await (await Environment.get_global("or_args"))(await (async function() {
         let __for_body__41=async function(elem) {
-             return  (await (await __GG__("length"))(await (await __GG__("flatten"))(await (await __GG__("destructure_list"))(elem)))>0)
+             return  (await (await Environment.get_global("length"))(await (await Environment.get_global("flatten"))(await (await Environment.get_global("destructure_list"))(elem)))>0)
         };
         let __array__42=[],__elements__40=lambda_list;
         let __BREAK__FLAG__=false;
@@ -536,16 +536,16 @@ await Environment.set_global("defmacro",async function(name,lambda_list,...forms
         }return __array__42;
          
     })());
-    source_details=await (await __GG__("add"))({
+    source_details=await (await Environment.get_global("add"))({
         eval_when:{
             compile_time:true
         },name:await (async function() {
-            if (check_true (await (await __GG__("starts_with?"))("=:",name))){
+            if (check_true (await (await Environment.get_global("starts_with?"))("=:",name))){
                   return await name["substr"].call(name,2)
             } else {
                   return name
             }
-        } )(),macro:true,fn_args:await (await __GG__("as_lisp"))(macro_args)
+        } )(),macro:true,fn_args:await (await Environment.get_global("as_lisp"))(macro_args)
     },await (async function() {
          if (check_true (macro_meta)){
               return macro_meta
@@ -574,9 +574,9 @@ await Environment.set_global("defun",async function(name,lambda_list,body,meta) 
     fn_args=lambda_list;
     fn_body=body;
     fn_meta=meta;
-    complex_lambda_list=await (await __GG__("or_args"))(await (async function() {
+    complex_lambda_list=await (await Environment.get_global("or_args"))(await (async function() {
         let __for_body__45=async function(elem) {
-             return  (await (await __GG__("length"))(await (await __GG__("flatten"))(await (await __GG__("destructure_list"))(elem)))>0)
+             return  (await (await Environment.get_global("length"))(await (await Environment.get_global("flatten"))(await (await Environment.get_global("destructure_list"))(elem)))>0)
         };
         let __array__46=[],__elements__44=lambda_list;
         let __BREAK__FLAG__=false;
@@ -590,8 +590,8 @@ await Environment.set_global("defun",async function(name,lambda_list,body,meta) 
         }return __array__46;
          
     })());
-    source_details=await (await __GG__("add"))({
-        name:await (await __GG__("unquotify"))(name),fn_args:await (await __GG__("as_lisp"))(fn_args)
+    source_details=await (await Environment.get_global("add"))({
+        name:await (await Environment.get_global("unquotify"))(name),fn_args:await (await Environment.get_global("as_lisp"))(fn_args)
     },await (async function() {
          if (check_true (fn_meta)){
             if (check_true ((fn_meta && fn_meta["description"]))){
@@ -630,10 +630,10 @@ await Environment.set_global("is_nil?",async function(value) {
 },{ "name":"is_nil?","fn_args":"(\"value\")","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 });
 await Environment.set_global("is_regex?",async function(x) {
-     return  (await (await __GG__("sub_type"))(x)==="RegExp")
+     return  (await (await Environment.get_global("sub_type"))(x)==="RegExp")
 },{ "name":"is_regex?","fn_args":"(x)","description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 });
-await Environment.set_global("bind_function",(await __GG__("bind")));
+await Environment.set_global("bind_function",(await Environment.get_global("bind")));
 await Environment.set_global("is_reference?",async function(val) {
      return  ["=:and",["=:is_string?",val],["=:>",["=:length",val],2],["=:starts_with?",["=:quote","=:"],val]]
 },{ "eval_when":{ "compile_time":true
@@ -648,7 +648,7 @@ await Environment.set_global("scan_str",async function(regex,search_string) {
     last_result=null;
     totals=[];
     strs=(""+search_string);
-    if (check_true (await (await __GG__("is_regex?"))(regex))){
+    if (check_true (await (await Environment.get_global("is_regex?"))(regex))){
         regex.lastIndex=0;
          await (async function(){
              let __test_condition__48=async function() {
@@ -657,7 +657,7 @@ await Environment.set_global("scan_str",async function(regex,search_string) {
                      return  true
                 } )()&&result&&await (async function () {
                      if (check_true (last_result)){
-                          return await (await __GG__("not"))(((result && result["0"])===(last_result && last_result["0"])))
+                          return await (await Environment.get_global("not"))(((result && result["0"])===(last_result && last_result["0"])))
                     } else {
                           return true
                     } 
@@ -665,7 +665,7 @@ await Environment.set_global("scan_str",async function(regex,search_string) {
             };
             let __body_ref__49=async function() {
                 last_result=result;
-                 return  (totals).push(await (await __GG__("to_object"))(await (await __GG__("map"))(async function(v) {
+                 return  (totals).push(await (await Environment.get_global("to_object"))(await (await Environment.get_global("map"))(async function(v) {
                      return  await (async function(){
                         let __array_op_rval__50=v;
                          if (__array_op_rval__50 instanceof Function){
@@ -674,7 +674,7 @@ await Environment.set_global("scan_str",async function(regex,search_string) {
                             return[__array_op_rval__50,result[v]]
                         }
                     })()
-                },await (await __GG__("keys"))(result))))
+                },await (await Environment.get_global("keys"))(result))))
             };
             let __BREAK__FLAG__=false;
             while(await __test_condition__48()) {
@@ -692,11 +692,11 @@ await Environment.set_global("scan_str",async function(regex,search_string) {
 },{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"]
 });
 await Environment.set_global("remove_prop",async function(obj,key) {
-    if (check_true (await (await __GG__("not"))((undefined===obj[key])))){
+    if (check_true (await (await Environment.get_global("not"))((undefined===obj[key])))){
         {
             let val;
             val=obj[key];
-            await (await __GG__("delete_prop"))(obj,key);
+            await (await Environment.get_global("delete_prop"))(obj,key);
              return  val
         }
     }
@@ -712,7 +712,7 @@ await Environment.set_global("object_methods",async function(obj) {
              return  current_obj
         };
         let __body_ref__52=async function() {
-            await (await __GG__("map"))(async function(item) {
+            await (await Environment.get_global("map"))(async function(item) {
                  return  await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
              return  current_obj=await Object.getPrototypeOf(current_obj)
@@ -767,19 +767,19 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
      return  await async function(){
         if (check_true( (0===(comps && comps.length)))) {
              return reference
-        } else if (check_true( ((val_type instanceof Object)&&await (await __GG__("contains?"))((comps && comps["0"]),await (await __GG__("object_methods"))(val_type))&&await (await __GG__("not"))(await val_type["propertyIsEnumerable"].call(val_type,(comps && comps["0"])))))) {
+        } else if (check_true( ((val_type instanceof Object)&&await (await Environment.get_global("contains?"))((comps && comps["0"]),await (await Environment.get_global("object_methods"))(val_type))&&await (await Environment.get_global("not"))(await val_type["propertyIsEnumerable"].call(val_type,(comps && comps["0"])))))) {
              return val
         } else  {
-             return (await (await __GG__("conj"))(await (async function(){
+             return (await (await Environment.get_global("conj"))(await (async function(){
                 let __array_op_rval__55=reference;
                  if (__array_op_rval__55 instanceof Function){
                     return await __array_op_rval__55() 
                 } else {
                     return[__array_op_rval__55]
                 }
-            })(),await (await __GG__("flatten"))(await (async function() {
+            })(),await (await Environment.get_global("flatten"))(await (async function() {
                 let __for_body__58=async function(comp) {
-                    if (check_true (await (await __GG__("is_number?"))(comp))){
+                    if (check_true (await (await Environment.get_global("is_number?"))(comp))){
                           return ["[",comp,"]"]
                     } else {
                           return ["[\"",comp,"\"]"]
@@ -804,13 +804,13 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
 await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
     if (check_true ((ctx&&(name instanceof String || typeof name==='string')))){
           return await async function(){
-            if (check_true( await (await __GG__("not"))((undefined===await (async function(){
+            if (check_true( await (await Environment.get_global("not"))((undefined===await (async function(){
                 let __targ__60=(ctx && ctx["scope"]);
                 if (__targ__60){
                      return(__targ__60)[name]
                 } 
             })())))) {
-                 if (check_true (await (await __GG__("not"))((_value===undefined)))){
+                 if (check_true (await (await Environment.get_global("not"))((_value===undefined)))){
                     await async function(){
                         let __target_obj__61=(ctx && ctx["scope"]);
                         __target_obj__61[name]=_value;
@@ -827,7 +827,7 @@ await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
                     })()
                 }
             } else if (check_true((ctx && ctx["parent"]))) {
-                 return await (await __GG__("getf_ctx"))((ctx && ctx["parent"]),name,_value)
+                 return await (await Environment.get_global("getf_ctx"))((ctx && ctx["parent"]),name,_value)
             } else  {
                  return undefined
             }
@@ -838,7 +838,7 @@ await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
 });
 await Environment.set_global("setf_ctx",async function(ctx,name,value) {
     let found_val;
-    found_val=await (await __GG__("getf_ctx"))(ctx,name,value);
+    found_val=await (await Environment.get_global("getf_ctx"))(ctx,name,value);
     if (check_true ((found_val===undefined))){
          await async function(){
             let __target_obj__63=(ctx && ctx["scope"]);
@@ -855,11 +855,11 @@ await Environment.set_global("set_path",async function(path,obj,value) {
     let idx;
     let rpath;
     let target_obj;
-    fpath=await (await __GG__("clone"))(path);
+    fpath=await (await Environment.get_global("clone"))(path);
     idx=(fpath).pop();
     rpath=fpath;
     target_obj=null;
-    target_obj=await (await __GG__("resolve_path"))(rpath,obj);
+    target_obj=await (await Environment.get_global("resolve_path"))(rpath,obj);
     if (check_true (target_obj)){
          return  await async function(){
             target_obj[idx]=value;
@@ -875,12 +875,12 @@ await Environment.set_global("minmax",async function(container) {
     let smallest;
     let biggest;
     value_found=false;
-    smallest=(await __GG__("MAX_SAFE_INTEGER"));
-    biggest=(-1*(await __GG__("MAX_SAFE_INTEGER")));
-    if (check_true ((container&&(container instanceof Array)&&(await (await __GG__("length"))(container)>0)))){
+    smallest=(await Environment.get_global("MAX_SAFE_INTEGER"));
+    biggest=(-1*(await Environment.get_global("MAX_SAFE_INTEGER")));
+    if (check_true ((container&&(container instanceof Array)&&(await (await Environment.get_global("length"))(container)>0)))){
         await (async function() {
             let __for_body__67=async function(value) {
-                 return  (await (await __GG__("is_number?"))(value)&&await (async function ()  {
+                 return  (await (await Environment.get_global("is_number?"))(value)&&await (async function ()  {
                     value_found=true;
                     smallest=await Math.min(value,smallest);
                      return  biggest=await Math.max(value,biggest)
@@ -933,7 +933,7 @@ await Environment.set_global("gen_multiples",async function(len,multiple_ques_) 
         let __for_body__73=async function(r) {
              return  (acc).push(val=(val*mult))
         };
-        let __array__74=[],__elements__72=await (await __GG__("range"))(len);
+        let __array__74=[],__elements__72=await (await Environment.get_global("range"))(len);
         let __BREAK__FLAG__=false;
         for(let __iter__71 in __elements__72) {
             __array__74.push(await __for_body__73(__elements__72[__iter__71]));
@@ -952,12 +952,12 @@ await Environment.set_global("path_multiply",async function(path,multiple_ques_)
     let acc;
     let multiples;
     acc=0;
-    multiples=await (await __GG__("gen_multiples"))(await (await __GG__("length"))(path),multiple_ques_);
+    multiples=await (await Environment.get_global("gen_multiples"))(await (await Environment.get_global("length"))(path),multiple_ques_);
     await (async function() {
         let __for_body__77=async function(pset) {
              return  acc=(acc+((pset && pset["0"])*(pset && pset["1"])))
         };
-        let __array__78=[],__elements__76=await (await __GG__("pairs"))(await (await __GG__("interlace"))(path,multiples));
+        let __array__78=[],__elements__76=await (await Environment.get_global("pairs"))(await (await Environment.get_global("interlace"))(path,multiples));
         let __BREAK__FLAG__=false;
         for(let __iter__75 in __elements__76) {
             __array__78.push(await __for_body__77(__elements__76[__iter__75]));
@@ -1003,23 +1003,23 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                     parent:ctx,scope:{
                         level:await (async function() {
                             if (check_true ((ctx && ctx["scope"] && ctx["scope"]["level"]))){
-                                  return await (await __GG__("add"))((ctx && ctx["scope"] && ctx["scope"]["level"]),1)
+                                  return await (await Environment.get_global("add"))((ctx && ctx["scope"] && ctx["scope"]["level"]),1)
                             } else {
                                   return 0
                             }
-                        } )(),viable_return_points:[],base_path:await (await __GG__("clone"))(_path),potential_return_points:[],return_found:false,if_links:new Object()
+                        } )(),viable_return_points:[],base_path:await (await Environment.get_global("clone"))(_path),potential_return_points:[],return_found:false,if_links:new Object()
                     }
                 }
             };
             _ctx=(_ctx||await new_ctx(null));
-            splice_log=await (await __GG__("defclog"))({
+            splice_log=await (await Environment.get_global("defclog"))({
                 prefix:("splice_return ["+(_ctx && _ctx["scope"] && _ctx["scope"]["level"])+"]"),color:"black",background:"#20F0F0"
             });
             next_val=null;
             await (async function() {
                 let __for_body__81=async function(comp) {
                     idx+=1;
-                    last_path=await (await __GG__("conj"))(_path,await (async function(){
+                    last_path=await (await Environment.get_global("conj"))(_path,await (async function(){
                         let __array_op_rval__83=idx;
                          if (__array_op_rval__83 instanceof Function){
                             return await __array_op_rval__83() 
@@ -1029,7 +1029,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                     })());
                      return  await async function(){
                         if (check_true( (comp instanceof Array))) {
-                             return (ntree).push(await (await __GG__("splice_in_return_a"))(comp,_ctx,await (await __GG__("add"))(_depth,1),await (await __GG__("conj"))(_path,await (async function(){
+                             return (ntree).push(await (await Environment.get_global("splice_in_return_a"))(comp,_ctx,await (await Environment.get_global("add"))(_depth,1),await (await Environment.get_global("conj"))(_path,await (async function(){
                                 let __array_op_rval__84=idx;
                                  if (__array_op_rval__84 instanceof Function){
                                     return await __array_op_rval__84() 
@@ -1037,7 +1037,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                     return[__array_op_rval__84]
                                 }
                             })())))
-                        } else if (check_true( ((comp instanceof String || typeof comp==='string')||await (await __GG__("is_number?"))(comp)||comp instanceof Function))) {
+                        } else if (check_true( ((comp instanceof String || typeof comp==='string')||await (await Environment.get_global("is_number?"))(comp)||comp instanceof Function))) {
                              return (ntree).push(comp)
                         } else if (check_true( (comp instanceof Object))) {
                              return await async function(){
@@ -1049,24 +1049,24 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                     function_block_ques_=true;
                                      return  (ntree).push(comp)
                                 } else if (check_true( ((comp && comp["mark"])==="rval"))) {
-                                    (await (await __GG__("getf_ctx"))(_ctx,"potential_return_points")).push({
-                                        path:await (await __GG__("conj"))(_path,await (async function(){
+                                    (await (await Environment.get_global("getf_ctx"))(_ctx,"potential_return_points")).push({
+                                        path:await (await Environment.get_global("conj"))(_path,await (async function(){
                                             let __array_op_rval__85=idx;
                                              if (__array_op_rval__85 instanceof Function){
                                                 return await __array_op_rval__85() 
                                             } else {
                                                 return[__array_op_rval__85]
                                             }
-                                        })()),type:(comp && comp["mark"]),block_step:(comp && comp["block_step"]),if_id:(comp && comp["if_id"]),source:await JSON.stringify(await (await __GG__("clone"))(await (await __GG__("slice"))(js_tree,idx))),lambda_step:(comp && comp["lambda_step"])
+                                        })()),type:(comp && comp["mark"]),block_step:(comp && comp["block_step"]),if_id:(comp && comp["if_id"]),source:await JSON.stringify(await (await Environment.get_global("clone"))(await (await Environment.get_global("slice"))(js_tree,idx))),lambda_step:(comp && comp["lambda_step"])
                                     });
                                     if (check_true (((comp && comp["if_id"])&&(null==await (async function(){
-                                        let __targ__86=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                        let __targ__86=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                         if (__targ__86){
                                              return(__targ__86)[(comp && comp["if_id"])]
                                         } 
                                     })())))){
                                          await async function(){
-                                            let __target_obj__87=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __target_obj__87=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             __target_obj__87[(comp && comp["if_id"])]=[];
                                             return __target_obj__87;
                                             
@@ -1074,32 +1074,32 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                     };
                                     if (check_true ((comp && comp["if_id"]))){
                                          (await (async function(){
-                                            let __targ__88=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __targ__88=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             if (__targ__88){
                                                  return(__targ__88)[(comp && comp["if_id"])]
                                             } 
-                                        })()).push(await (await __GG__("last"))(await (await __GG__("getf_ctx"))(_ctx,"potential_return_points")))
+                                        })()).push(await (await Environment.get_global("last"))(await (await Environment.get_global("getf_ctx"))(_ctx,"potential_return_points")))
                                     };
                                      return  (ntree).push(comp)
                                 } else if (check_true( ((comp && comp["mark"])==="forced_return"))) {
-                                    (await (await __GG__("getf_ctx"))(_ctx,"viable_return_points")).push({
-                                        path:await (await __GG__("conj"))(_path,await (async function(){
+                                    (await (await Environment.get_global("getf_ctx"))(_ctx,"viable_return_points")).push({
+                                        path:await (await Environment.get_global("conj"))(_path,await (async function(){
                                             let __array_op_rval__89=idx;
                                              if (__array_op_rval__89 instanceof Function){
                                                 return await __array_op_rval__89() 
                                             } else {
                                                 return[__array_op_rval__89]
                                             }
-                                        })()),if_id:(comp && comp["if_id"]),block_step:(comp && comp["block_step"]),lambda_step:(comp && comp["lambda_step"]),source:await JSON.stringify(await (await __GG__("clone"))(await (await __GG__("slice"))(js_tree,idx))),type:(comp && comp["mark"])
+                                        })()),if_id:(comp && comp["if_id"]),block_step:(comp && comp["block_step"]),lambda_step:(comp && comp["lambda_step"]),source:await JSON.stringify(await (await Environment.get_global("clone"))(await (await Environment.get_global("slice"))(js_tree,idx))),type:(comp && comp["mark"])
                                     });
                                     if (check_true (((comp && comp["if_id"])&&(null==await (async function(){
-                                        let __targ__90=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                        let __targ__90=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                         if (__targ__90){
                                              return(__targ__90)[(comp && comp["if_id"])]
                                         } 
                                     })())))){
                                          await async function(){
-                                            let __target_obj__91=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __target_obj__91=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             __target_obj__91[(comp && comp["if_id"])]=[];
                                             return __target_obj__91;
                                             
@@ -1107,32 +1107,32 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                     };
                                     if (check_true ((comp && comp["if_id"]))){
                                          (await (async function(){
-                                            let __targ__92=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __targ__92=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             if (__targ__92){
                                                  return(__targ__92)[(comp && comp["if_id"])]
                                             } 
-                                        })()).push(await (await __GG__("last"))(await (await __GG__("getf_ctx"))(_ctx,"viable_return_points")))
+                                        })()).push(await (await Environment.get_global("last"))(await (await Environment.get_global("getf_ctx"))(_ctx,"viable_return_points")))
                                     };
                                      return  (ntree).push(comp)
                                 } else if (check_true( ((comp && comp["mark"])==="final-return"))) {
-                                    (await (await __GG__("getf_ctx"))(_ctx,"viable_return_points")).push({
-                                        path:await (await __GG__("conj"))(_path,await (async function(){
+                                    (await (await Environment.get_global("getf_ctx"))(_ctx,"viable_return_points")).push({
+                                        path:await (await Environment.get_global("conj"))(_path,await (async function(){
                                             let __array_op_rval__93=idx;
                                              if (__array_op_rval__93 instanceof Function){
                                                 return await __array_op_rval__93() 
                                             } else {
                                                 return[__array_op_rval__93]
                                             }
-                                        })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),source:await JSON.stringify(await (await __GG__("clone"))(await (await __GG__("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
+                                        })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),source:await JSON.stringify(await (await Environment.get_global("clone"))(await (await Environment.get_global("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
                                     });
                                     if (check_true (((comp && comp["if_id"])&&(null==await (async function(){
-                                        let __targ__94=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                        let __targ__94=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                         if (__targ__94){
                                              return(__targ__94)[(comp && comp["if_id"])]
                                         } 
                                     })())))){
                                          await async function(){
-                                            let __target_obj__95=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __target_obj__95=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             __target_obj__95[(comp && comp["if_id"])]=[];
                                             return __target_obj__95;
                                             
@@ -1140,23 +1140,23 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                     };
                                     if (check_true ((comp && comp["if_id"]))){
                                         (await (async function(){
-                                            let __targ__96=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __targ__96=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             if (__targ__96){
                                                  return(__targ__96)[(comp && comp["if_id"])]
                                             } 
-                                        })()).push(await (await __GG__("last"))(await (await __GG__("getf_ctx"))(_ctx,"viable_return_points")));
-                                         (await (await __GG__("getf_ctx"))(_ctx,"potential_return_points")).push({
-                                            path:await (await __GG__("conj"))(_path,await (async function(){
+                                        })()).push(await (await Environment.get_global("last"))(await (await Environment.get_global("getf_ctx"))(_ctx,"viable_return_points")));
+                                         (await (await Environment.get_global("getf_ctx"))(_ctx,"potential_return_points")).push({
+                                            path:await (await Environment.get_global("conj"))(_path,await (async function(){
                                                 let __array_op_rval__97=idx;
                                                  if (__array_op_rval__97 instanceof Function){
                                                     return await __array_op_rval__97() 
                                                 } else {
                                                     return[__array_op_rval__97]
                                                 }
-                                            })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),source:await JSON.stringify(await (await __GG__("clone"))(await (await __GG__("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
+                                            })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),source:await JSON.stringify(await (await Environment.get_global("clone"))(await (await Environment.get_global("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
                                         })
                                     };
-                                    await (await __GG__("setf_ctx"))(_ctx,"return_found",true);
+                                    await (await Environment.get_global("setf_ctx"))(_ctx,"return_found",true);
                                      return  (ntree).push(comp)
                                 } else  {
                                      return (ntree).push(comp)
@@ -1191,12 +1191,12 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                     let if_paths;
                     let max_path_segment_length;
                     let final_return_found;
-                    viables=((await (await __GG__("getf_ctx"))(_ctx,"viable_return_points")||[])).slice(0).reverse();
-                    potentials=((await (await __GG__("getf_ctx"))(_ctx,"potential_return_points")||[])).slice(0).reverse();
-                    base_path=await (await __GG__("getf_ctx"))(_ctx,"base_path");
+                    viables=((await (await Environment.get_global("getf_ctx"))(_ctx,"viable_return_points")||[])).slice(0).reverse();
+                    potentials=((await (await Environment.get_global("getf_ctx"))(_ctx,"potential_return_points")||[])).slice(0).reverse();
+                    base_path=await (await Environment.get_global("getf_ctx"))(_ctx,"base_path");
                     base_addr=null;
-                    final_viable_path=(viables&&await (await __GG__("first"))(viables)&&await (async function(){
-                        let __targ__98=await (await __GG__("first"))(viables);
+                    final_viable_path=(viables&&await (await Environment.get_global("first"))(viables)&&await (async function(){
+                        let __targ__98=await (await Environment.get_global("first"))(viables);
                         if (__targ__98){
                              return(__targ__98)["path"]
                         } 
@@ -1205,10 +1205,10 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                     plength=0;
                     if_paths=[];
                     max_path_segment_length=null;
-                    final_return_found=await (await __GG__("getf_ctx"))(_ctx,"return_found");
+                    final_return_found=await (await Environment.get_global("getf_ctx"))(_ctx,"return_found");
                     await (async function() {
                         let __for_body__101=async function(v) {
-                             return  await (await __GG__("set_path"))((v && v["path"]),ntree,{
+                             return  await (await Environment.get_global("set_path"))((v && v["path"]),ntree,{
                                 mark:"return_point"
                             })
                         };
@@ -1226,53 +1226,53 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                     })();
                      await (async function() {
                         let __for_body__105=async function(p) {
-                            plength=await Math.min(await (await __GG__("length"))((p && p["path"])),await (await __GG__("length"))(final_viable_path));
-                            let ppath=await (await __GG__("slice"))((p && p["path"]),0,plength);
+                            plength=await Math.min(await (await Environment.get_global("length"))((p && p["path"])),await (await Environment.get_global("length"))(final_viable_path));
+                            let ppath=await (await Environment.get_global("slice"))((p && p["path"]),0,plength);
                             ;
                             let vpath=await (async function () {
                                  if (check_true (final_viable_path)){
-                                      return await (await __GG__("slice"))(final_viable_path,0,plength)
+                                      return await (await Environment.get_global("slice"))(final_viable_path,0,plength)
                                 } else {
                                       return []
                                 } 
                             })();
                             ;
                             max_path_segment_length=await Math.max(8,(1+await (async function(){
-                                let __targ__107=await (await __GG__("minmax"))(ppath);
+                                let __targ__107=await (await Environment.get_global("minmax"))(ppath);
                                 if (__targ__107){
                                      return(__targ__107)[1]
                                 } 
                             })()),(1+await (async function(){
-                                let __targ__108=await (await __GG__("minmax"))(vpath);
+                                let __targ__108=await (await Environment.get_global("minmax"))(vpath);
                                 if (__targ__108){
                                      return(__targ__108)[1]
                                 } 
                             })()));
-                            if (check_true (((await (await __GG__("path_multiply"))(ppath,max_path_segment_length)>await (await __GG__("path_multiply"))(vpath,max_path_segment_length))||(((p && p["block_step"])===0)&&((p && p["lambda_step"])===0))||(0===await (await __GG__("length"))(viables))))){
-                                await (await __GG__("set_path"))((p && p["path"]),ntree,{
+                            if (check_true (((await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length)>await (await Environment.get_global("path_multiply"))(vpath,max_path_segment_length))||(((p && p["block_step"])===0)&&((p && p["lambda_step"])===0))||(0===await (await Environment.get_global("length"))(viables))))){
+                                await (await Environment.get_global("set_path"))((p && p["path"]),ntree,{
                                     mark:"return_point"
                                 });
                                 if (check_true (((p && p["if_id"])&&await (async function(){
-                                    let __targ__109=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                    let __targ__109=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                     if (__targ__109){
                                          return(__targ__109)[(p && p["if_id"])]
                                     } 
                                 })()))){
                                      return  await (async function() {
                                         let __for_body__112=async function(pinfo) {
-                                            if (check_true ((undefined===if_paths[await (await __GG__("as_lisp"))((pinfo && pinfo["path"]))]))){
+                                            if (check_true ((undefined===if_paths[await (await Environment.get_global("as_lisp"))((pinfo && pinfo["path"]))]))){
                                                 await async function(){
-                                                    if_paths[await (await __GG__("as_lisp"))((pinfo && pinfo["path"]))]=true;
+                                                    if_paths[await (await Environment.get_global("as_lisp"))((pinfo && pinfo["path"]))]=true;
                                                     return if_paths;
                                                     
                                                 }();
-                                                 return  await (await __GG__("set_path"))((pinfo && pinfo["path"]),ntree,{
+                                                 return  await (await Environment.get_global("set_path"))((pinfo && pinfo["path"]),ntree,{
                                                     mark:"return_point"
                                                 })
                                             }
                                         };
                                         let __array__113=[],__elements__111=await (async function(){
-                                            let __targ__115=await (await __GG__("getf_ctx"))(_ctx,"if_links");
+                                            let __targ__115=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                             if (__targ__115){
                                                  return(__targ__115)[(p && p["if_id"])]
                                             } 
@@ -1290,8 +1290,8 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                     })()
                                 }
                             } else {
-                                if (check_true (((undefined===if_paths[await (await __GG__("as_lisp"))((p && p["path"]))])&&await (await __GG__("not"))(((p && p["type"])==="final-return"))))){
-                                     return  await (await __GG__("set_path"))((p && p["path"]),ntree,{
+                                if (check_true (((undefined===if_paths[await (await Environment.get_global("as_lisp"))((p && p["path"]))])&&await (await Environment.get_global("not"))(((p && p["type"])==="final-return"))))){
+                                     return  await (await Environment.get_global("set_path"))((p && p["path"]),ntree,{
                                         mark:"ignore"
                                     })
                                 }
@@ -1328,14 +1328,14 @@ await Environment.set_global("splice_in_return_b",async function(js_tree,_ctx,_d
             ntree=[];
             _ctx=(_ctx||new Object());
             next_val=null;
-            flattened=await (await __GG__("flatten"))(js_tree);
+            flattened=await (await Environment.get_global("flatten"))(js_tree);
             await (async function() {
                 let __for_body__118=async function(comp) {
                     next_val=flattened[(idx+1)];
                     await async function(){
                         if (check_true( (comp instanceof Array))) {
-                             return (ntree).push(await (await __GG__("splice_in_return_b"))(comp,_ctx,await (await __GG__("add"))((_depth||0),1)))
-                        } else if (check_true( ((comp instanceof Object)&&((comp && comp["mark"])==="return_point")&&(await (await __GG__("not"))(("return"===next_val))&&await (await __GG__("not"))(("throw"===next_val))&&await (await __GG__("not"))(("yield"===next_val))&&await (await __GG__("not"))(((next_val instanceof Object)&&((next_val && next_val["ctype"]) instanceof String || typeof (next_val && next_val["ctype"])==='string')&&await (await __GG__("contains?"))("block",((next_val && next_val["ctype"])||"")))))))) {
+                             return (ntree).push(await (await Environment.get_global("splice_in_return_b"))(comp,_ctx,await (await Environment.get_global("add"))((_depth||0),1)))
+                        } else if (check_true( ((comp instanceof Object)&&((comp && comp["mark"])==="return_point")&&(await (await Environment.get_global("not"))(("return"===next_val))&&await (await Environment.get_global("not"))(("throw"===next_val))&&await (await Environment.get_global("not"))(("yield"===next_val))&&await (await Environment.get_global("not"))(((next_val instanceof Object)&&((next_val && next_val["ctype"]) instanceof String || typeof (next_val && next_val["ctype"])==='string')&&await (await Environment.get_global("contains?"))("block",((next_val && next_val["ctype"])||"")))))))) {
                             (ntree).push(" ");
                             (ntree).push("return");
                              return  (ntree).push(" ")
@@ -1375,7 +1375,7 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
 },"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"]
 });
 await Environment.set_global("map_range",async function(n,from_range,to_range) {
-     return  await (await __GG__("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
+     return  await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
 },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "]
 });
  Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
@@ -1391,9 +1391,9 @@ await Environment.set_global("color_for_number",async function(num,saturation,br
     rgb=null;
     v=color_key[pos];
     ;
-    h=await (await __GG__("map_range"))((360%(28*h)),[0,360],[0,1]);
-    v=await (await __GG__("map_range"))([v,[0,7],[0.92,1]]);
-    rgb=await (await __GG__("HSV_to_RGB"))(h,saturation,brightness);
+    h=await (await Environment.get_global("map_range"))((360%(28*h)),[0,360],[0,1]);
+    v=await (await Environment.get_global("map_range"))([v,[0,7],[0.92,1]]);
+    rgb=await (await Environment.get_global("HSV_to_RGB"))(h,saturation,brightness);
      return  ("#"+await (async function() {
         {
              let __call_target__=await (rgb && rgb["r"])["toString"].call((rgb && rgb["r"]),16), __call_method__="padStart";
@@ -1416,11 +1416,11 @@ await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
     let var_table;
     let ctx_keys;
     var_table=(_var_table||new Object());
-    ctx_keys=await (await __GG__("keys"))(var_table);
+    ctx_keys=await (await Environment.get_global("keys"))(var_table);
     if (check_true ((ctx && ctx["scope"]))){
         await (async function() {
             let __for_body__122=async function(k) {
-                if (check_true (await (await __GG__("not"))(await (await __GG__("contains?"))(k,ctx_keys)))){
+                if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(k,ctx_keys)))){
                      return  await async function(){
                         var_table[k]=await (async function(){
                             let __targ__125=(ctx && ctx["scope"]);
@@ -1433,7 +1433,7 @@ await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
                     }()
                 }
             };
-            let __array__123=[],__elements__121=await (await __GG__("keys"))((ctx && ctx["scope"]));
+            let __array__123=[],__elements__121=await (await Environment.get_global("keys"))((ctx && ctx["scope"]));
             let __BREAK__FLAG__=false;
             for(let __iter__120 in __elements__121) {
                 __array__123.push(await __for_body__122(__elements__121[__iter__120]));
@@ -1446,7 +1446,7 @@ await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
              
         })();
         if (check_true ((ctx && ctx["parent"]))){
-             await (await __GG__("flatten_ctx"))((ctx && ctx["parent"]),var_table)
+             await (await Environment.get_global("flatten_ctx"))((ctx && ctx["parent"]),var_table)
         };
          return  var_table
     }
@@ -1468,7 +1468,7 @@ await Environment.set_global("identify_symbols",async function(quoted_form,_stat
         if (check_true( (quoted_form instanceof Array))) {
              return  await (async function() {
                 let __for_body__128=async function(elem) {
-                     return  (acc).push(await (await __GG__("identify_symbols"))(elem,_state))
+                     return  (acc).push(await (await Environment.get_global("identify_symbols"))(elem,_state))
                 };
                 let __array__129=[],__elements__127=quoted_form;
                 let __BREAK__FLAG__=false;
@@ -1482,16 +1482,16 @@ await Environment.set_global("identify_symbols",async function(quoted_form,_stat
                 }return __array__129;
                  
             })()
-        } else if (check_true( ((quoted_form instanceof String || typeof quoted_form==='string')&&await (await __GG__("starts_with?"))("=:",quoted_form)))) {
+        } else if (check_true( ((quoted_form instanceof String || typeof quoted_form==='string')&&await (await Environment.get_global("starts_with?"))("=:",quoted_form)))) {
              return (acc).push({
-                name:await (await __GG__("as_lisp"))(quoted_form),where:await (await __GG__("describe"))(await (await __GG__("as_lisp"))(quoted_form))
+                name:await (await Environment.get_global("as_lisp"))(quoted_form),where:await (await Environment.get_global("describe"))(await (await Environment.get_global("as_lisp"))(quoted_form))
             })
         } else if (check_true( (quoted_form instanceof Object))) {
              return await (async function() {
                 let __for_body__132=async function(elem) {
-                     return  (acc).push(await (await __GG__("identify_symbols"))(elem,_state))
+                     return  (acc).push(await (await Environment.get_global("identify_symbols"))(elem,_state))
                 };
-                let __array__133=[],__elements__131=await (await __GG__("values"))(quoted_form);
+                let __array__133=[],__elements__131=await (await Environment.get_global("values"))(quoted_form);
                 let __BREAK__FLAG__=false;
                 for(let __iter__130 in __elements__131) {
                     __array__133.push(await __for_body__132(__elements__131[__iter__130]));
@@ -1518,29 +1518,29 @@ await Environment.set_global("random_int",async function(...args) {
     let bottom;
     top=0;
     bottom=0;
-    if (check_true ((await (await __GG__("length"))(args)>1))){
+    if (check_true ((await (await Environment.get_global("length"))(args)>1))){
         top=await parseInt((args && args["1"]));
          bottom=await parseInt((args && args["0"]))
     } else {
          top=await parseInt((args && args["0"]))
     };
-     return  await parseInt(await (await __GG__("add"))((await Math.random()*(top-bottom)),bottom))
+     return  await parseInt(await (await Environment.get_global("add"))((await Math.random()*(top-bottom)),bottom))
 },{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"]
 });
 await Environment.set_global("resolve_multi_path",async function(path,obj,not_found) {
      return  await async function(){
         if (check_true( (obj instanceof Object))) {
              return await async function(){
-                if (check_true( ((await (await __GG__("length"))(path)===1)&&("*"===await (await __GG__("first"))(path))))) {
+                if (check_true( ((await (await Environment.get_global("length"))(path)===1)&&("*"===await (await Environment.get_global("first"))(path))))) {
                      return (obj||not_found)
-                } else if (check_true( ((await (await __GG__("length"))(path)===1)&&(obj[await (await __GG__("first"))(path)] instanceof Object)))) {
-                     return (obj[await (await __GG__("first"))(path)]||not_found)
-                } else if (check_true( ((await (await __GG__("length"))(path)===1)&&await (await __GG__("not"))((obj[await (await __GG__("first"))(path)] instanceof Object))&&await (await __GG__("not"))((null==obj[await (await __GG__("first"))(path)]))))) {
-                     return obj[await (await __GG__("first"))(path)]
-                } else if (check_true( ((obj instanceof Array)&&("*"===await (await __GG__("first"))(path))))) {
+                } else if (check_true( ((await (await Environment.get_global("length"))(path)===1)&&(obj[await (await Environment.get_global("first"))(path)] instanceof Object)))) {
+                     return (obj[await (await Environment.get_global("first"))(path)]||not_found)
+                } else if (check_true( ((await (await Environment.get_global("length"))(path)===1)&&await (await Environment.get_global("not"))((obj[await (await Environment.get_global("first"))(path)] instanceof Object))&&await (await Environment.get_global("not"))((null==obj[await (await Environment.get_global("first"))(path)]))))) {
+                     return obj[await (await Environment.get_global("first"))(path)]
+                } else if (check_true( ((obj instanceof Array)&&("*"===await (await Environment.get_global("first"))(path))))) {
                      return await (async function() {
                         let __for_body__136=async function(val) {
-                             return  await (await __GG__("resolve_multi_path"))(await (await __GG__("rest"))(path),val,not_found)
+                             return  await (await Environment.get_global("resolve_multi_path"))(await (await Environment.get_global("rest"))(path),val,not_found)
                         };
                         let __array__137=[],__elements__135=obj;
                         let __BREAK__FLAG__=false;
@@ -1554,12 +1554,12 @@ await Environment.set_global("resolve_multi_path",async function(path,obj,not_fo
                         }return __array__137;
                          
                     })()
-                } else if (check_true( ((obj instanceof Object)&&("*"===await (await __GG__("first"))(path))))) {
+                } else if (check_true( ((obj instanceof Object)&&("*"===await (await Environment.get_global("first"))(path))))) {
                      return await (async function() {
                         let __for_body__140=async function(val) {
-                             return  await (await __GG__("resolve_multi_path"))(await (await __GG__("rest"))(path),val,not_found)
+                             return  await (await Environment.get_global("resolve_multi_path"))(await (await Environment.get_global("rest"))(path),val,not_found)
                         };
-                        let __array__141=[],__elements__139=await (await __GG__("values"))(obj);
+                        let __array__141=[],__elements__139=await (await Environment.get_global("values"))(obj);
                         let __BREAK__FLAG__=false;
                         for(let __iter__138 in __elements__139) {
                             __array__141.push(await __for_body__140(__elements__139[__iter__138]));
@@ -1571,8 +1571,8 @@ await Environment.set_global("resolve_multi_path",async function(path,obj,not_fo
                         }return __array__141;
                          
                     })()
-                } else if (check_true( (await (await __GG__("length"))(path)>1))) {
-                     return await (await __GG__("resolve_multi_path"))(await (await __GG__("rest"))(path),obj[await (await __GG__("first"))(path)],not_found)
+                } else if (check_true( (await (await Environment.get_global("length"))(path)>1))) {
+                     return await (await Environment.get_global("resolve_multi_path"))(await (await Environment.get_global("rest"))(path),obj[await (await Environment.get_global("first"))(path)],not_found)
                 }
             } ()
         } else  {
@@ -1596,17 +1596,17 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
     };
     uop=null;
     get_allocations=async function() {
-        sym_paths=allocators[await (await __GG__("unquotify"))((quoted_form && quoted_form["0"]))];
+        sym_paths=allocators[await (await Environment.get_global("unquotify"))((quoted_form && quoted_form["0"]))];
         if (check_true (sym_paths)){
              return  await (async function() {
                 let __for_body__144=async function(sym_path) {
-                    fval=await (await __GG__("resolve_multi_path"))(sym_path,quoted_form);
+                    fval=await (await Environment.get_global("resolve_multi_path"))(sym_path,quoted_form);
                     await console.log("Fval is: ",fval,"sym_path: ",sym_path,"current_path: ",_current_path," ",quoted_form);
-                    uop=await (await __GG__("unquotify"))((quoted_form && quoted_form["0"]));
+                    uop=await (await Environment.get_global("unquotify"))((quoted_form && quoted_form["0"]));
                     if (check_true ((fval instanceof Array))){
                           return await (async function() {
                             let __for_body__148=async function(s) {
-                                s=await (await __GG__("unquotify"))(s);
+                                s=await (await Environment.get_global("unquotify"))(s);
                                 if (check_true ((null==await (async function(){
                                     let __targ__150=(_state && _state["definitions"]);
                                     if (__targ__150){
@@ -1704,10 +1704,10 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
     await get_allocations();
      return  await async function(){
         if (check_true( (quoted_form instanceof Array))) {
-            await (await __GG__("map"))(async function(elem,idx) {
+            await (await Environment.get_global("map"))(async function(elem,idx) {
                 {
                     let it;
-                    it=await (await __GG__("symbol_tree"))(elem,_state,await (await __GG__("conj"))(_current_path,idx));
+                    it=await (await Environment.get_global("symbol_tree"))(elem,_state,await (await Environment.get_global("conj"))(_current_path,idx));
                     if (check_true (it)){
                           return (acc).push(it)
                     } else {
@@ -1716,20 +1716,20 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
                 }
             },quoted_form);
             if (check_true (is_root)){
-                  return await (await __GG__("add"))({
+                  return await (await Environment.get_global("add"))({
                     tree:acc
                 },_state)
             } else {
                   return acc
             }
-        } else if (check_true( ((quoted_form instanceof String || typeof quoted_form==='string')&&await (await __GG__("starts_with?"))("=:",quoted_form)))) {
-             return  await (await __GG__("unquotify"))(quoted_form)
+        } else if (check_true( ((quoted_form instanceof String || typeof quoted_form==='string')&&await (await Environment.get_global("starts_with?"))("=:",quoted_form)))) {
+             return  await (await Environment.get_global("unquotify"))(quoted_form)
         } else if (check_true( (quoted_form instanceof Object))) {
             await (async function() {
                 let __for_body__158=async function(pset) {
                     {
                         let it;
-                        it=await (await __GG__("symbol_tree"))((pset && pset["1"]),_state,await (await __GG__("conj"))(_current_path,await (async function(){
+                        it=await (await Environment.get_global("symbol_tree"))((pset && pset["1"]),_state,await (await Environment.get_global("conj"))(_current_path,await (async function(){
                             let __array_op_rval__160=(pset && pset["1"]);
                              if (__array_op_rval__160 instanceof Function){
                                 return await __array_op_rval__160() 
@@ -1744,7 +1744,7 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
                         }
                     }
                 };
-                let __array__159=[],__elements__157=await (await __GG__("pairs"))(quoted_form);
+                let __array__159=[],__elements__157=await (await Environment.get_global("pairs"))(quoted_form);
                 let __BREAK__FLAG__=false;
                 for(let __iter__156 in __elements__157) {
                     __array__159.push(await __for_body__158(__elements__157[__iter__156]));
@@ -1757,7 +1757,7 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
                  
             })();
             if (check_true (is_root)){
-                  return await (await __GG__("add"))({
+                  return await (await Environment.get_global("add"))({
                     tree:acc
                 },_state)
             } else {
@@ -1770,12 +1770,12 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
 await Environment.set_global("except_nil",async function(items) {
     let acc=[];
     ;
-    if (check_true (await (await __GG__("not"))((await (await __GG__("sub_type"))(items)=="array")))){
+    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(items)=="array")))){
          items=[items]
     };
     await (async function() {
         let __for_body__163=async function(value) {
-            if (check_true (await (await __GG__("not"))((null==value)))){
+            if (check_true (await (await Environment.get_global("not"))((null==value)))){
                   return (acc).push(value)
             }
         };
@@ -1796,8 +1796,8 @@ await Environment.set_global("except_nil",async function(items) {
 });
 await Environment.set_global("each",async function(items,property) {
      return  await async function(){
-        if (check_true( ((property instanceof String || typeof property==='string')||await (await __GG__("is_number?"))(property)))) {
-             return await (await __GG__("except_nil"))(await (async function() {
+        if (check_true( ((property instanceof String || typeof property==='string')||await (await Environment.get_global("is_number?"))(property)))) {
+             return await (await Environment.get_global("except_nil"))(await (async function() {
                 let __for_body__167=async function(item) {
                     if (check_true (item)){
                          return  item[property]
@@ -1815,7 +1815,7 @@ await Environment.set_global("each",async function(items,property) {
                 }return __array__168;
                  
             })())
-        } else if (check_true( (await (await __GG__("sub_type"))(property)=="array"))) {
+        } else if (check_true( (await (await Environment.get_global("sub_type"))(property)=="array"))) {
             let __collector;
             let __result;
             let __action;
@@ -1828,7 +1828,7 @@ await Environment.set_global("each",async function(items,property) {
                     let __for_body__171=async function(p) {
                          return  await async function(){
                             if (check_true( (p instanceof Array))) {
-                                 return (nl).push(await (await __GG__("resolve_path"))(p,item))
+                                 return (nl).push(await (await Environment.get_global("resolve_path"))(p,item))
                             } else if (check_true( p instanceof Function)) {
                                  return (nl).push(await (async function(){
                                     let __array_op_rval__173=p;
@@ -1878,7 +1878,7 @@ await Environment.set_global("each",async function(items,property) {
                  
             })();
              return  __collector
-        } else if (check_true( (await (await __GG__("sub_type"))(property)=="AsyncFunction"))) {
+        } else if (check_true( (await (await Environment.get_global("sub_type"))(property)=="AsyncFunction"))) {
             let __collector;
             let __result;
             let __action;
@@ -1915,7 +1915,7 @@ await Environment.set_global("each",async function(items,property) {
                  
             })();
              return  __collector
-        } else if (check_true( (await (await __GG__("sub_type"))(property)=="Function"))) {
+        } else if (check_true( (await (await Environment.get_global("sub_type"))(property)=="Function"))) {
             let __collector;
             let __result;
             let __action;
@@ -1953,7 +1953,7 @@ await Environment.set_global("each",async function(items,property) {
             })();
              return  __collector
         } else  {
-             throw new TypeError(("each: strings, arrays, and functions can be provided for the property name or names to extract - received: "+await (await __GG__("sub_type"))(property)));
+             throw new TypeError(("each: strings, arrays, and functions can be provided for the property name or names to extract - received: "+await (await Environment.get_global("sub_type"))(property)));
             
         }
     } ()
@@ -1974,7 +1974,7 @@ await Environment.set_global("replace",async function(...args) {
                     let rval;
                     target=(args && args["0"]);
                     replacement=(args && args["1"]);
-                    work_values=await (await __GG__("slice"))(args,2);
+                    work_values=await (await Environment.get_global("slice"))(args,2);
                     value_type=null;
                     sr_val=null;
                     arg_value_type=await subtype((args && args["2"]));
@@ -1992,7 +1992,7 @@ await Environment.set_global("replace",async function(...args) {
                                 } else if (check_true( (value_type==="array"))) {
                                      return await (async function() {
                                         let __for_body__195=async function(elem) {
-                                             return  (rval).push(await (await __GG__("replace"))(target,replacement,elem))
+                                             return  (rval).push(await (await Environment.get_global("replace"))(target,replacement,elem))
                                         };
                                         let __array__196=[],__elements__194=value;
                                         let __BREAK__FLAG__=false;
@@ -2012,13 +2012,13 @@ await Environment.set_global("replace",async function(...args) {
                                         let __for_body__199=async function(k) {
                                             if (check_true (await value["hasOwnProperty"].call(value,k))){
                                                  return  await async function(){
-                                                    sr_val[k]=await (await __GG__("replace"))(target,replacement,value[k]);
+                                                    sr_val[k]=await (await Environment.get_global("replace"))(target,replacement,value[k]);
                                                     return sr_val;
                                                     
                                                 }()
                                             }
                                         };
-                                        let __array__200=[],__elements__198=await (await __GG__("keys"))(value);
+                                        let __array__200=[],__elements__198=await (await Environment.get_global("keys"))(value);
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__197 in __elements__198) {
                                             __array__200.push(await __for_body__199(__elements__198[__iter__197]));
@@ -2046,8 +2046,8 @@ await Environment.set_global("replace",async function(...args) {
                         }return __array__192;
                          
                     })();
-                    if (check_true ((await (await __GG__("not"))((arg_value_type==="array"))&&await (await __GG__("not"))((arg_value_type==="object"))))){
-                          return await (await __GG__("first"))(rval)
+                    if (check_true ((await (await Environment.get_global("not"))((arg_value_type==="array"))&&await (await Environment.get_global("not"))((arg_value_type==="object"))))){
+                          return await (await Environment.get_global("first"))(rval)
                     } else {
                           return rval
                     }
@@ -2068,10 +2068,10 @@ await Environment.set_global("cl_encode_string",async function(text) {
         let nq;
         let step1;
         let snq;
-        escaped=await (await __GG__("replace"))(new RegExp("\n","g"),await (await __GG__("add"))(await String.fromCharCode(92),"n"),text);
-        escaped=await (await __GG__("replace"))(new RegExp("\r","g"),await (await __GG__("add"))(await String.fromCharCode(92),"r"),escaped);
+        escaped=await (await Environment.get_global("replace"))(new RegExp("\n","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"n"),text);
+        escaped=await (await Environment.get_global("replace"))(new RegExp("\r","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"r"),escaped);
         nq=(escaped).split(await String.fromCharCode(34));
-        step1=(nq).join(await (await __GG__("add"))(await String.fromCharCode(92),await String.fromCharCode(34)));
+        step1=(nq).join(await (await Environment.get_global("add"))(await String.fromCharCode(92),await String.fromCharCode(34)));
         snq=(step1).split(await String.fromCharCode(39));
          return  step1
     } else {
@@ -2082,12 +2082,12 @@ await Environment.set_global("cl_encode_string",async function(text) {
 await Environment.set_global("path_to_js_syntax",async function(comps) {
     if (check_true ((comps instanceof Array))){
          if (check_true (((comps && comps.length)>1))){
-              return (await (await __GG__("map"))(async function(comp,idx) {
+              return (await (await Environment.get_global("map"))(async function(comp,idx) {
                 if (check_true ((idx===0))){
                       return comp
                 } else {
                       return await async function(){
-                        if (check_true( (await isNaN(parseInt(comp))&&await (await __GG__("starts_with?"))("\"",comp)))) {
+                        if (check_true( (await isNaN(parseInt(comp))&&await (await Environment.get_global("starts_with?"))("\"",comp)))) {
                              return ("["+comp+"]")
                         } else if (check_true( await isNaN(parseInt(comp)))) {
                              return ("."+comp)
@@ -2100,7 +2100,7 @@ await Environment.set_global("path_to_js_syntax",async function(comps) {
         } else {
               return (comps && comps["0"])
         }
-    } else throw new TypeError(("path_to_js_syntax: need array - given "+await (await __GG__("sub_type"))(comps)));
+    } else throw new TypeError(("path_to_js_syntax: need array - given "+await (await Environment.get_global("sub_type"))(comps)));
     
 },{ "name":"path_to_js_syntax","fn_args":"(comps)"
 });
@@ -2150,9 +2150,9 @@ await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_
             let __body_ref__205=async function() {
                 (acc).push((comps).shift());
                 if (check_true (((comps && comps.length)>0))){
-                      return (acc_full).push((["check_true(",await (await __GG__("expand_dot_accessor"))((acc).join("."),ctx),")"]).join(""))
+                      return (acc_full).push((["check_true(",await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx),")"]).join(""))
                 } else {
-                      return (acc_full).push(await (await __GG__("expand_dot_accessor"))((acc).join("."),ctx))
+                      return (acc_full).push(await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx))
                 }
             };
             let __BREAK__FLAG__=false;
@@ -2165,7 +2165,7 @@ await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_
             } ;
             
         })();
-        rval=await (await __GG__("flatten"))(["(",(acc_full).join(" && "),")"]);
+        rval=await (await Environment.get_global("flatten"))(["(",(acc_full).join(" && "),")"]);
          return  rval
     }
 },{ "name":"safe_access_2","fn_args":"(token ctx sanitizer_fn)"
@@ -2203,7 +2203,7 @@ await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn
             };
             let __body_ref__209=async function() {
                 (acc).push((comps).shift());
-                 return  (acc_full).push(await (await __GG__("expand_dot_accessor"))((acc).join("."),ctx))
+                 return  (acc_full).push(await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx))
             };
             let __BREAK__FLAG__=false;
             while(await __test_condition__208()) {
@@ -2215,7 +2215,7 @@ await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn
             } ;
             
         })();
-        rval=await (await __GG__("flatten"))(["(",(acc_full).join(" && "),")"]);
+        rval=await (await Environment.get_global("flatten"))(["(",(acc_full).join(" && "),")"]);
          return  rval
     }
 },{ "name":"safe_access","fn_args":"(token ctx sanitizer_fn)"
@@ -2238,7 +2238,7 @@ await Environment.set_global("form_structure",async function(quoted_form,max_dep
     let follow_tree;
     idx=0;
     acc=[];
-    max_depth=(max_depth||(await __GG__("MAX_SAFE_INTEGER")));
+    max_depth=(max_depth||(await Environment.get_global("MAX_SAFE_INTEGER")));
     structure=quoted_form;
     follow_tree=async function(elems,acc,_depth) {
          return  await async function(){
@@ -2249,15 +2249,15 @@ await Environment.set_global("form_structure",async function(quoted_form,max_dep
                       return "object"
                 }
             } else if (check_true( (elems instanceof Array))) {
-                 return await (await __GG__("map"))(async function(elem,idx) {
-                     return  await follow_tree(elem,[],await (await __GG__("add"))(_depth,1))
+                 return await (await Environment.get_global("map"))(async function(elem,idx) {
+                     return  await follow_tree(elem,[],await (await Environment.get_global("add"))(_depth,1))
                 },elems)
             } else if (check_true( (elems instanceof Object))) {
                  return  await (async function() {
                     let __for_body__212=async function(pset) {
-                         return  await follow_tree((pset && pset["1"]),[],await (await __GG__("add"))(_depth,1))
+                         return  await follow_tree((pset && pset["1"]),[],await (await Environment.get_global("add"))(_depth,1))
                     };
-                    let __array__213=[],__elements__211=await (await __GG__("pairs"))(elems);
+                    let __array__213=[],__elements__211=await (await Environment.get_global("pairs"))(elems);
                     let __BREAK__FLAG__=false;
                     for(let __iter__210 in __elements__211) {
                         __array__213.push(await __for_body__212(__elements__211[__iter__210]));
@@ -2271,9 +2271,9 @@ await Environment.set_global("form_structure",async function(quoted_form,max_dep
                 })()
             } else  {
                  return await async function(){
-                    if (check_true( ((elems instanceof String || typeof elems==='string')&&await (await __GG__("starts_with?"))("=:",elems)))) {
+                    if (check_true( ((elems instanceof String || typeof elems==='string')&&await (await Environment.get_global("starts_with?"))("=:",elems)))) {
                          return "symbol"
-                    } else if (check_true( await (await __GG__("is_number?"))(elems))) {
+                    } else if (check_true( await (await Environment.get_global("is_number?"))(elems))) {
                          return "number"
                     } else if (check_true( (elems instanceof String || typeof elems==='string'))) {
                          return "string"
@@ -2294,7 +2294,7 @@ await Environment.set_global("validate_form_structure",async function(validation
     let all_valid;
     let target;
     results={
-        valid:[],invalid:[],rule_count:await (await __GG__("length"))(validation_rules),all_passed:false
+        valid:[],invalid:[],rule_count:await (await Environment.get_global("length"))(validation_rules),all_passed:false
     };
     all_valid=null;
     target=null;
@@ -2302,10 +2302,10 @@ await Environment.set_global("validate_form_structure",async function(validation
         let __for_body__216=async function(rule) {
             if (check_true (((rule instanceof Array)&&((rule && rule.length)>1)&&((rule && rule["0"]) instanceof Array)&&((rule && rule["1"]) instanceof Array)))){
                 all_valid=true;
-                target=await (await __GG__("resolve_path"))((rule && rule["0"]),quoted_form);
+                target=await (await Environment.get_global("resolve_path"))((rule && rule["0"]),quoted_form);
                 await (async function() {
                     let __for_body__220=async function(validation) {
-                        if (check_true (await (await __GG__("not"))(await (async function(){
+                        if (check_true (await (await Environment.get_global("not"))(await (async function(){
                             let __array_op_rval__222=validation;
                              if (__array_op_rval__222 instanceof Function){
                                 return await __array_op_rval__222(target) 
@@ -2350,7 +2350,7 @@ await Environment.set_global("validate_form_structure",async function(validation
          
     })();
     await async function(){
-        results["all_passed"]=(await (await __GG__("length"))((results && results["valid"]))===(results && results["rule_count"]));
+        results["all_passed"]=(await (await Environment.get_global("length"))((results && results["valid"]))===(results && results["rule_count"]));
         return results;
         
     }();
@@ -2358,14 +2358,14 @@ await Environment.set_global("validate_form_structure",async function(validation
 },{ "name":"validate_form_structure","fn_args":"(validation_rules quoted_form)","description":["=:+","Given a validation rule structure and a quoted form to analyze returns an object with ","two keys, valid and invalid, which are arrays containing the outcome of the rule ","evaluation, a rule_count key containing the total rules passed, and an all_passed key","which will be set to true if all rules passed, otherwise it will fail.","If the rule evaluates successfully, valid is populated with the rule path, ","otherwise the rule path is placed in the invalid array.<br><br>","Rule structure is as follows:<br><code>","[ [path [validation validation ...] \"rule_name\"] [path [validation ...] \"rule_name\"] ]<br>","</code>","where path is an array with the index path and ","validation is a single argument lambda (fn (v) v) that must either ","return true or false. If true, the validation is considered correct, ","false for incorrect.  The result of the rule application will be put in the valid array, ","otherwise the result will be put in invalid."],"tags":["validation","rules","form","structure"],"usage":["validation_rules:array","quoted_form:*"]
 });
 await Environment.set_global("*compiler_syntax_rules*",{
-    compile_let:[[[0,1,"val"],[(await __GG__("is_array?"))],"let allocation section"],[[0,2],[async function(v) {
-         return  await (await __GG__("not"))((v===undefined))
+    compile_let:[[[0,1,"val"],[(await Environment.get_global("is_array?"))],"let allocation section"],[[0,2],[async function(v) {
+         return  await (await Environment.get_global("not"))((v===undefined))
     }],"let missing block"]],compile_cond:[[[0],[async function(v) {
-         return  ((await (await __GG__("length"))(await (await __GG__("rest"))(v))%2)===0)
+         return  ((await (await Environment.get_global("length"))(await (await Environment.get_global("rest"))(v))%2)===0)
     }],"cond: odd number of arguments"]],compile_assignment:[[[0,1],[async function(v) {
-         return  await (await __GG__("not"))((v===undefined))
+         return  await (await Environment.get_global("not"))((v===undefined))
     }],"assignment is missing target and values"],[[0,2],[async function(v) {
-         return  await (await __GG__("not"))((v===undefined))
+         return  await (await Environment.get_global("not"))((v===undefined))
     }],"assignment is missing value"]]
 });
 await Environment.set_global("compiler_source_chain",async function(cpath,tree,sources) {
@@ -2373,16 +2373,16 @@ await Environment.set_global("compiler_source_chain",async function(cpath,tree,s
         let source;
         sources=(sources||[]);
         source=null;
-        cpath=await (await __GG__("chop"))(cpath);
-        source=await (await __GG__("as_lisp"))(await (await __GG__("resolve_path"))(cpath,tree));
+        cpath=await (await Environment.get_global("chop"))(cpath);
+        source=await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))(cpath,tree));
         if (check_true (((source && source.length)>80))){
-             source=await (await __GG__("add"))(await source["substr"].call(source,0,80),"...")
+             source=await (await Environment.get_global("add"))(await source["substr"].call(source,0,80),"...")
         };
-        if (check_true (await (await __GG__("not"))(await (await __GG__("blank?"))(source)))){
+        if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("blank?"))(source)))){
              (sources).push(source)
         };
         if (check_true ((((cpath && cpath.length)>0)&&((sources && sources.length)<2)))){
-             await (await __GG__("compiler_source_chain"))(cpath,tree,sources)
+             await (await Environment.get_global("compiler_source_chain"))(cpath,tree,sources)
         };
          return  sources
     }
@@ -2397,13 +2397,13 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
     syntax_error=null;
     cpath=null;
     rules=await (async function(){
-        let __targ__224=(await __GG__("*compiler_syntax_rules*"));
+        let __targ__224=(await Environment.get_global("*compiler_syntax_rules*"));
         if (__targ__224){
              return(__targ__224)[validator_key]
         } 
     })();
     if (check_true (rules)){
-        validation_results=await (await __GG__("validate_form_structure"))(rules,await (async function(){
+        validation_results=await (await Environment.get_global("validate_form_structure"))(rules,await (async function(){
             let __array_op_rval__225=tokens;
              if (__array_op_rval__225 instanceof Function){
                 return await __array_op_rval__225() 
@@ -2413,16 +2413,16 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
         })());
         cpath=await async function(){
             if (check_true( (tokens instanceof Array))) {
-                 return await (await __GG__("chop"))((tokens && tokens["0"] && tokens["0"]["path"]))
+                 return await (await Environment.get_global("chop"))((tokens && tokens["0"] && tokens["0"]["path"]))
             } else if (check_true( (tokens instanceof Object))) {
                  return (tokens && tokens["path"])
             }
         } ();
-        if (check_true (await (await __GG__("not"))((validation_results && validation_results["all_passed"])))){
+        if (check_true (await (await Environment.get_global("not"))((validation_results && validation_results["all_passed"])))){
             await (async function() {
                 let __for_body__228=async function(problem) {
                      return  (errors).push({
-                        error:"SyntaxError",message:problem,source_name:await (await __GG__("getf_ctx"))(ctx,"__SOURCE_NAME__"),form:await (await __GG__("first"))(await (await __GG__("compiler_source_chain"))(cpath,tree)),parent_forms:await (await __GG__("rest"))(await (await __GG__("compiler_source_chain"))(cpath,tree)),invalid:true
+                        error:"SyntaxError",message:problem,source_name:await (await Environment.get_global("getf_ctx"))(ctx,"__SOURCE_NAME__"),form:await (await Environment.get_global("first"))(await (await Environment.get_global("compiler_source_chain"))(cpath,tree)),parent_forms:await (await Environment.get_global("rest"))(await (await Environment.get_global("compiler_source_chain"))(cpath,tree)),invalid:true
                     })
                 };
                 let __array__229=[],__elements__227=((validation_results && validation_results["invalid"])||[]);
@@ -2453,23 +2453,23 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
 },{ "name":"compiler_syntax_validation","fn_args":"(validator_key tokens errors ctx tree)"
 });
 await Environment.set_global("symbols",async function() {
-     return  await (await __GG__("keys"))(Environment.context.scope)
+     return  await (await Environment.get_global("keys"))(Environment.context.scope)
 },{ "name":"symbols","fn_args":"()","description":"Returns an array of all defined symbols in the current evironment.","usage":[],"tags":["symbol","env","environment","global","globals"]
 });
 await Environment.set_global("describe_all",async function() {
      return  await (async function(){
         let __apply_args__231=await (async function() {
             let __for_body__235=async function(s) {
-                 return  await (await __GG__("to_object"))([await (async function(){
+                 return  await (await Environment.get_global("to_object"))([await (async function(){
                     let __array_op_rval__237=s;
                      if (__array_op_rval__237 instanceof Function){
-                        return await __array_op_rval__237(await (await __GG__("describe"))(s)) 
+                        return await __array_op_rval__237(await (await Environment.get_global("describe"))(s)) 
                     } else {
-                        return[__array_op_rval__237,await (await __GG__("describe"))(s)]
+                        return[__array_op_rval__237,await (await Environment.get_global("describe"))(s)]
                     }
                 })()])
             };
-            let __array__236=[],__elements__234=await (await __GG__("symbols"))();
+            let __array__236=[],__elements__234=await (await Environment.get_global("symbols"))();
             let __BREAK__FLAG__=false;
             for(let __iter__233 in __elements__234) {
                 __array__236.push(await __for_body__235(__elements__234[__iter__233]));
@@ -2481,7 +2481,7 @@ await Environment.set_global("describe_all",async function() {
             }return __array__236;
              
         })();
-        return ( (await __GG__("add"))).apply(this,__apply_args__231)
+        return ( (await Environment.get_global("add"))).apply(this,__apply_args__231)
     })()
 },{ "name":"describe_all","fn_args":"()","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"]
 });
@@ -2555,18 +2555,18 @@ await Environment.set_global("sort",async function(elems,options) {
     } ();
     key_path_a="aval";
     key_path_b="bval";
-    await (await __GG__("assert"))((elems instanceof Array),"sort: elements must be an array");
-    await (await __GG__("assert"))((await subtype(comparitor)==="Function"),("sort: invalid comparitor provided : "+await subtype(comparitor)+" - must be a synchronous function, or evaluate to a synchronous function."));
-    await (await __GG__("assert"))((((opts && opts["comparitor"])&&await (await __GG__("not"))((opts && opts["reversed"])))||(await (await __GG__("not"))((opts && opts["comparitor"]))&&(opts && opts["reversed"]))||(await (await __GG__("not"))((opts && opts["comparitor"]))&&await (await __GG__("not"))((opts && opts["reversed"])))),"sort: comparitor option cannot be combined with reversed option");
+    await (await Environment.get_global("assert"))((elems instanceof Array),"sort: elements must be an array");
+    await (await Environment.get_global("assert"))((await subtype(comparitor)==="Function"),("sort: invalid comparitor provided : "+await subtype(comparitor)+" - must be a synchronous function, or evaluate to a synchronous function."));
+    await (await Environment.get_global("assert"))((((opts && opts["comparitor"])&&await (await Environment.get_global("not"))((opts && opts["reversed"])))||(await (await Environment.get_global("not"))((opts && opts["comparitor"]))&&(opts && opts["reversed"]))||(await (await Environment.get_global("not"))((opts && opts["comparitor"]))&&await (await Environment.get_global("not"))((opts && opts["reversed"])))),"sort: comparitor option cannot be combined with reversed option");
     await async function(){
         if (check_true( ((opts && opts["key"]) instanceof String || typeof (opts && opts["key"])==='string'))) {
             keyed=true;
-            key_path_a=await (await __GG__("path_to_js_syntax"))(await (await __GG__("get_object_path"))(("aval."+(opts && opts["key"]))));
-             return  key_path_b=await (await __GG__("path_to_js_syntax"))(await (await __GG__("get_object_path"))(("bval."+(opts && opts["key"]))))
+            key_path_a=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("get_object_path"))(("aval."+(opts && opts["key"]))));
+             return  key_path_b=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("get_object_path"))(("bval."+(opts && opts["key"]))))
         } else if (check_true( ((opts && opts["key"]) instanceof Array))) {
             keyed=true;
-            key_path_a=await (await __GG__("path_to_js_syntax"))(await (await __GG__("conj"))(["aval"],(opts && opts["key"])));
-             return  key_path_b=await (await __GG__("path_to_js_syntax"))(await (await __GG__("conj"))(["bval"],(opts && opts["key"])))
+            key_path_a=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(["aval"],(opts && opts["key"])));
+             return  key_path_b=await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(["bval"],(opts && opts["key"])))
         }
     } ();
     sort_fn_inner=new Function("aval","bval","comparitor",("return comparitor( "+key_path_a+","+key_path_b+")"));
@@ -2582,7 +2582,7 @@ await Environment.set_global("and*",async function(...vals) {
         ;
         await (async function() {
             let __for_body__240=async function(v) {
-                if (check_true (await (await __GG__("not"))(await (await __GG__("is_value?"))(v)))){
+                if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("is_value?"))(v)))){
                     rval=false;
                     __BREAK__FLAG__=true;
                     return
@@ -2610,7 +2610,7 @@ await Environment.set_global("or*",async function(...vals) {
         ;
         await (async function() {
             let __for_body__244=async function(v) {
-                if (check_true (await (await __GG__("is_value?"))(v))){
+                if (check_true (await (await Environment.get_global("is_value?"))(v))){
                     rval=true;
                     __BREAK__FLAG__=true;
                     return
@@ -2638,7 +2638,7 @@ await Environment.set_global("either",async function(...args) {
     await (async function() {
         let __for_body__248=async function(arg) {
             rval=arg;
-            if (check_true ((await (await __GG__("not"))((undefined===arg))&&await (await __GG__("not"))((null===arg))))){
+            if (check_true ((await (await Environment.get_global("not"))((undefined===arg))&&await (await Environment.get_global("not"))((null===arg))))){
                 __BREAK__FLAG__=true;
                 return
             }
@@ -2668,24 +2668,24 @@ await Environment.set_global("get_function_args",async function(f) {
     let s;
     r=new RegExp("^[a-zA-Z_]+ [a-zA-Z ]*\\\\(([a-zA-Z 0-9_,\\\\.\\\\n]*)\\\\)","gm");
     s=await f["toString"]();
-    r=await (await __GG__("scan_str"))(r,s);
+    r=await (await Environment.get_global("scan_str"))(r,s);
     if (check_true ((((r && r.length)>0)&&((r && r["0"]) instanceof Object)))){
-         return  await (await __GG__("map"))(async function(v) {
-            if (check_true (await (await __GG__("ends_with?"))("\n",v))){
-                  return await (await __GG__("chop"))(v)
+         return  await (await Environment.get_global("map"))(async function(v) {
+            if (check_true (await (await Environment.get_global("ends_with?"))("\n",v))){
+                  return await (await Environment.get_global("chop"))(v)
             } else {
                   return v
             }
-        },((await (await __GG__("second"))((r && r["0"]))||"")).split(","))
+        },((await (await Environment.get_global("second"))((r && r["0"]))||"")).split(","))
     }
 },{ "name":"get_function_args","fn_args":"(f)","description":"Given a javascript function, return a list of arg names for that function","usage":["function:function"],"tags":["function","introspect","introspection","arguments"]
 });
-await Environment.set_global("warn",await (await __GG__("defclog"))({
+await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
     prefix:"⚠️  "
 }),{
     description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"]
 });
-await Environment.set_global("success",await (await __GG__("defclog"))({
+await Environment.set_global("success",await (await Environment.get_global("defclog"))({
     color:"green",prefix:"✓  "
 }),{
     description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"]

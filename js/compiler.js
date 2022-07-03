@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-03 07:45:13
-// Version: 2022.07.03.07.45
-export const DLISP_ENV_VERSION='2022.07.03.07.45';
+// Build Time: 2022-07-03 12:12:44
+// Version: 2022.07.03.12.12
+export const DLISP_ENV_VERSION='2022.07.03.12.12';
 
 
 
@@ -115,7 +115,7 @@ export async function init_compiler(Environment) {
                         
                     }()
                 };
-                let __array__20=[],__elements__18=await (await __GG__("pairs"))(tree);
+                let __array__20=[],__elements__18=await (await Environment.get_global("pairs"))(tree);
                 let __BREAK__FLAG__=false;
                 for(let __iter__17 in __elements__18) {
                     __array__20.push(await __for_body__19(__elements__18[__iter__17]));
@@ -182,10 +182,10 @@ export async function init_compiler(Environment) {
         let nq;
         let step1;
         let snq;
-        escaped=await (await __GG__("replace"))(new RegExp("\n","g"),await (await __GG__("add"))(await String.fromCharCode(92),"n"),text);
-        escaped=await (await __GG__("replace"))(new RegExp("\r","g"),await (await __GG__("add"))(await String.fromCharCode(92),"r"),escaped);
+        escaped=await (await Environment.get_global("replace"))(new RegExp("\n","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"n"),text);
+        escaped=await (await Environment.get_global("replace"))(new RegExp("\r","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"r"),escaped);
         nq=(escaped).split(await String.fromCharCode(34));
-        step1=(nq).join(await (await __GG__("add"))(await String.fromCharCode(92),await String.fromCharCode(34)));
+        step1=(nq).join(await (await Environment.get_global("add"))(await String.fromCharCode(92),await String.fromCharCode(34)));
         snq=(step1).split(await String.fromCharCode(39));
          return  step1
     } else {
@@ -242,7 +242,7 @@ export async function init_compiler(Environment) {
                     ;
                      return  async function(...args) {
                          return  await (async function(){
-                            let __target_arg__8=[].concat(await (await __GG__("conj"))([style],args));
+                            let __target_arg__8=[].concat(await (await Environment.get_global("conj"))([style],args));
                             if(!__target_arg__8 instanceof Array){
                                 throw new TypeError("Invalid final argument to apply - an array is required")
                             }let __pre_arg__9=("%c"+await (async function () {
@@ -420,7 +420,7 @@ export async function init_compiler(Environment) {
                             })()))){
                                  true
                             } else {
-                                (comp_warn)("<-",(_cdepth||"-"),"unknown/undeclared type returned: ",await (await __GG__("as_lisp"))(rval));
+                                (comp_warn)("<-",(_cdepth||"-"),"unknown/undeclared type returned: ",await (await Environment.get_global("as_lisp"))(rval));
                                  (comp_warn)("  ",(_cdepth||"-"),"for given: ",await source_from_tokens(tokens,expanded_tree))
                             }
                         };
@@ -454,7 +454,7 @@ export async function init_compiler(Environment) {
                 first_level_setup=[];
                 needs_first_level=true;
                 signal_error=async function(message) {
-                     return  new (await __GG__("LispSyntaxError"))(message)
+                     return  new (await Environment.get_global("LispSyntaxError"))(message)
                 };
                 warnings=[];
                 blk_counter=0;
@@ -750,7 +750,7 @@ export async function init_compiler(Environment) {
                              throw new SyntaxError(("get_ctx: invalid identifier passed: "+await sub_type(name)));
                             
                         } else  {
-                            ref_name=await first(await (await __GG__("get_object_path"))(name));
+                            ref_name=await first(await (await Environment.get_global("get_object_path"))(name));
                              return  await async function(){
                                 if (check_true( await not((undefined===await (async function(){
                                     let __targ__30=(ctx && ctx["scope"]);
@@ -799,7 +799,7 @@ export async function init_compiler(Environment) {
                             if (check_true ((declared_type_value && declared_type_value["type"]))){
                                   return (declared_type_value && declared_type_value["type"])
                             } else {
-                                ref_name=await first(await (await __GG__("get_object_path"))(ref_name));
+                                ref_name=await first(await (await Environment.get_global("get_object_path"))(ref_name));
                                  return  await async function(){
                                     if (check_true( op_lookup[ref_name])) {
                                          return AsyncFunction
@@ -882,7 +882,7 @@ export async function init_compiler(Environment) {
                     let dec_struct;
                     sname=await sanitize_js_ref_name(name);
                     dec_struct=await get_declarations(ctx,sname);
-                    if (check_true (await (await __GG__("blank?"))(dec_struct))){
+                    if (check_true (await (await Environment.get_global("blank?"))(dec_struct))){
                          dec_struct={
                             type:undefined,inlined:false
                         }
@@ -924,7 +924,7 @@ export async function init_compiler(Environment) {
                             } else {
                                  ref_name=name
                             };
-                            ref_name=await first(await (await __GG__("get_object_path"))(ref_name));
+                            ref_name=await first(await (await Environment.get_global("get_object_path"))(ref_name));
                              return  await async function(){
                                 if (check_true( await (async function(){
                                     let __targ__39=(ctx && ctx["ambiguous"]);
@@ -956,7 +956,7 @@ export async function init_compiler(Environment) {
                     }()
                 };
                 unset_ambiguous=async function(ctx,name) {
-                     return  await (await __GG__("delete_prop"))((ctx && ctx["ambiguous"]),name)
+                     return  await (await Environment.get_global("delete_prop"))((ctx && ctx["ambiguous"]),name)
                 };
                 invalid_js_ref_chars="+?-%&^#!*[]~{}|";
                 invalid_js_ref_chars_regex=new RegExp("[\%\+\[\>\?\<\\}\{&\#\^\=\~\*\!\)\(\-]+","g");
@@ -965,9 +965,9 @@ export async function init_compiler(Environment) {
                         if (check_true( await not((symname instanceof String || typeof symname==='string')))) {
                              return false
                         } else if (check_true( ((symname instanceof String || typeof symname==='string')&&(await length(symname)>2)&&await starts_with_ques_("=:",symname)))) {
-                             return (await length(await (await __GG__("scan_str"))(invalid_js_ref_chars_regex,await symname["substr"].call(symname,2)))>0)
+                             return (await length(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,await symname["substr"].call(symname,2)))>0)
                         } else  {
-                             return (await length(await (await __GG__("scan_str"))(invalid_js_ref_chars_regex,symname))>0)
+                             return (await length(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,symname))>0)
                         }
                     } ()
                 };
@@ -1052,7 +1052,7 @@ export async function init_compiler(Environment) {
                         ref=(symname&&((name instanceof String || typeof name==='string')&&(await length(name)>2)&&await starts_with_ques_("=:",name)));
                         let is_literal_ques_=await __is_literal_ques___46();
                         ;
-                        special=(ref&&symname&&await contains_ques_(symname,await (await __GG__("conj"))(["unquotem","quotem"],await (await __GG__("keys"))(op_lookup))));
+                        special=(ref&&symname&&await contains_ques_(symname,await (await Environment.get_global("conj"))(["unquotem","quotem"],await (await Environment.get_global("keys"))(op_lookup))));
                         local=(await not(special)&&await not(is_literal_ques_)&&symname&&ref&&await get_ctx_val(ctx,symname));
                         global=(await not(special)&&await not(is_literal_ques_)&&ref&&symname&&await get_lisp_ctx(symname));
                         val=await async function(){
@@ -1131,12 +1131,12 @@ export async function init_compiler(Environment) {
                         let source;
                         sources=(sources||[]);
                         source=null;
-                        cpath=await (await __GG__("chop"))(cpath);
-                        source=await (await __GG__("as_lisp"))(await (await __GG__("resolve_path"))(cpath,tree));
+                        cpath=await (await Environment.get_global("chop"))(cpath);
+                        source=await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))(cpath,tree));
                         if (check_true (((source && source.length)>80))){
                              source=await add(await source["substr"].call(source,0,80),"...")
                         };
-                        if (check_true (await not(await (await __GG__("blank?"))(source)))){
+                        if (check_true (await not(await (await Environment.get_global("blank?"))(source)))){
                              (sources).push(source)
                         };
                         if (check_true ((((cpath && cpath.length)>0)&&((sources && sources.length)<4)))){
@@ -1150,13 +1150,13 @@ export async function init_compiler(Environment) {
                         if (check_true( ((tokens && tokens["path"])&&collect_parents_ques_))) {
                              return await source_chain((tokens && tokens["path"]),tree)
                         } else if (check_true((tokens && tokens["path"]))) {
-                             return await (await __GG__("as_lisp"))(await (await __GG__("resolve_path"))((tokens && tokens["path"]),tree))
+                             return await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))((tokens && tokens["path"]),tree))
                         } else if (check_true( ((tokens instanceof Array)&&(tokens && tokens["0"] && tokens["0"]["path"])&&collect_parents_ques_))) {
                              return await source_chain((tokens && tokens["0"] && tokens["0"]["path"]),tree)
                         } else if (check_true( ((tokens instanceof Array)&&(tokens && tokens["0"] && tokens["0"]["path"])))) {
-                             return await (await __GG__("as_lisp"))(await (await __GG__("resolve_path"))(await (await __GG__("chop"))((tokens && tokens["0"] && tokens["0"]["path"])),tree))
+                             return await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))(await (await Environment.get_global("chop"))((tokens && tokens["0"] && tokens["0"]["path"])),tree))
                         } else if (check_true( ((undefined===tokens)&&await not((undefined===tree))))) {
-                             return await (await __GG__("as_lisp"))(tree)
+                             return await (await Environment.get_global("as_lisp"))(tree)
                         } else  {
                             if (check_true (await verbosity(ctx))){
                                  await console.warn("source_from_tokens: unable to determine source path from: ",await clone(tokens))
@@ -1193,7 +1193,7 @@ export async function init_compiler(Environment) {
                         let cannot_be_js_global;
                         let ref_name;
                         let ref_type;
-                        comps=await (await __GG__("get_object_path"))(name);
+                        comps=await (await Environment.get_global("get_object_path"))(name);
                         cannot_be_js_global=await check_invalid_js_ref((comps && comps["0"]));
                         ref_name=(comps).shift();
                         ref_type=await (async function () {
@@ -1228,10 +1228,10 @@ export async function init_compiler(Environment) {
                                  return ref_type
                             } else if (check_true( ((comps && comps.length)===0))) {
                                  return ref_type
-                            } else if (check_true( (((comps && comps.length)===1)&&(ref_type instanceof Object)&&await contains_ques_((comps && comps["0"]),await (await __GG__("object_methods"))(ref_type))))) {
+                            } else if (check_true( (((comps && comps.length)===1)&&(ref_type instanceof Object)&&await contains_ques_((comps && comps["0"]),await (await Environment.get_global("object_methods"))(ref_type))))) {
                                  return ref_type[(comps && comps["0"])]
                             } else if (check_true( (ref_type instanceof Object))) {
-                                 return await (await __GG__("resolve_path"))(comps,ref_type)
+                                 return await (await Environment.get_global("resolve_path"))(comps,ref_type)
                             } else if (check_true( ((typeof ref_type==="object")&&await contains_ques_((comps && comps["0"]),await Object["keys"].call(Object,ref_type))))) {
                                 await (async function(){
                                      let __test_condition__49=async function() {
@@ -1271,13 +1271,13 @@ export async function init_compiler(Environment) {
                             let comps=((token && token.name)).split(".");
                             ;
                             if (check_true (await verbosity(ctx))){
-                                 console.log("get_val: reference: ",await (await __GG__("safe_access"))(token,ctx,sanitize_js_ref_name))
+                                 console.log("get_val: reference: ",await (await Environment.get_global("safe_access"))(token,ctx,sanitize_js_ref_name))
                             };
                             let ref_name=await (async function () {
                                  if (check_true (((await safety_level(ctx)>1)&&((comps && comps.length)>1)))){
-                                      return await (await __GG__("safe_access"))(token,ctx,sanitize_js_ref_name)
+                                      return await (await Environment.get_global("safe_access"))(token,ctx,sanitize_js_ref_name)
                                 } else {
-                                      return await sanitize_js_ref_name(await (await __GG__("expand_dot_accessor"))((token && token.name),ctx))
+                                      return await sanitize_js_ref_name(await (await Environment.get_global("expand_dot_accessor"))((token && token.name),ctx))
                                 } 
                             })();
                             ;
@@ -1307,10 +1307,10 @@ export async function init_compiler(Environment) {
                           return await (async function() {
                             let __for_body__54=async function(pset) {
                                  return  {
-                                    type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+await (await __GG__("as_lisp"))((pset && pset["0"]))),__token__:true
+                                    type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
                                 }
                             };
-                            let __array__55=[],__elements__53=await (await __GG__("pairs"))(obj);
+                            let __array__55=[],__elements__53=await (await Environment.get_global("pairs"))(obj);
                             let __BREAK__FLAG__=false;
                             for(let __iter__52 in __elements__53) {
                                 __array__55.push(await __for_body__54(__elements__53[__iter__52]));
@@ -1328,19 +1328,19 @@ export async function init_compiler(Environment) {
                      return  await async function(){
                         if (check_true( ((args && args["0"])==="=:quote"))) {
                              return {
-                                type:"arr",__token__:true,source:await (await __GG__("as_lisp"))(args),val:await (await __GG__("conj"))([{
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
                                     type:"special",val:"=:quote",ref:true,name:"quote",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&&(await length(args)>2)&&await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         } else if (check_true( ((args && args["0"])==="=:quotem"))) {
                              return {
-                                type:"arr",__token__:true,source:await (await __GG__("as_lisp"))(args),val:await (await __GG__("conj"))([{
-                                    type:"special",path:await (await __GG__("conj"))(_path,[0]),val:"=:quotem",ref:true,name:"quotem",__token__:true
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
+                                    type:"special",path:await (await Environment.get_global("conj"))(_path,[0]),val:"=:quotem",ref:true,name:"quotem",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&&(await length(args)>2)&&await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         } else  {
                              return {
-                                type:"arr",__token__:true,source:await (await __GG__("as_lisp"))(args),val:await (await __GG__("conj"))([{
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
                                     type:"special",val:"=:quotel",ref:true,name:"quotel",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&&(await length(args)>2)&&await starts_with_ques_("=:",args)),name:null,path:_path
                             }
@@ -1376,7 +1376,7 @@ export async function init_compiler(Environment) {
                         args=await compile_time_eval(ctx,args,_path);
                          await async function(){
                             if (check_true( ((_path && _path.length)>1))) {
-                                tobject=await (await __GG__("resolve_path"))(await (await __GG__("chop"))(_path),expanded_tree);
+                                tobject=await (await Environment.get_global("resolve_path"))(await (await Environment.get_global("chop"))(_path),expanded_tree);
                                 if (check_true (tobject)){
                                      await async function(){
                                         tobject[await last(_path)]=args;
@@ -1425,47 +1425,47 @@ export async function init_compiler(Environment) {
                                             }
                                         } else if (check_true( (argtype==="Function"))) {
                                              return {
-                                                type:"fun",__token__:true,val:arg,ref:is_ref,name:(""+await (await __GG__("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"fun",__token__:true,val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="AsyncFunction"))) {
                                              return {
-                                                type:"asf",__token__:true,val:arg,ref:is_ref,name:(""+await (await __GG__("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"asf",__token__:true,val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="array"))) {
                                              return {
-                                                type:"array",__token__:true,val:arg,ref:is_ref,name:(""+await (await __GG__("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"array",__token__:true,val:arg,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="Number"))) {
                                              return {
-                                                type:"num",__token__:true,val:argvalue,ref:is_ref,name:(""+await (await __GG__("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"num",__token__:true,val:argvalue,ref:is_ref,name:(""+await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="String")&&is_ref))) {
                                              return {
-                                                type:"arg",__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await __GG__("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
+                                                type:"arg",__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (argtype==="String"))) {
                                              return {
-                                                type:"literal",__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await __GG__("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
+                                                type:"literal",__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true( (arg instanceof Object))) {
                                              return  {
                                                 type:"objlit",__token__:true,val:await tokenize_object(arg,ctx,await add(_path,idx)),ref:is_ref,name:null,path:await add(_path,idx)
                                             }
-                                        } else if (check_true( ((argtype==="literal")&&is_ref&&((""+await (await __GG__("as_lisp"))(arg))==="nil")))) {
+                                        } else if (check_true( ((argtype==="literal")&&is_ref&&((""+await (await Environment.get_global("as_lisp"))(arg))==="nil")))) {
                                              return {
                                                 type:"null",__token__:true,val:null,ref:true,name:"null",path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="unbound")&&is_ref&&(null==argvalue)))) {
                                              return {
-                                                type:"arg",__token__:true,val:arg,ref:true,name:await clean_quoted_reference((""+await (await __GG__("as_lisp"))(arg))),path:await add(_path,idx)
+                                                type:"arg",__token__:true,val:arg,ref:true,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),path:await add(_path,idx)
                                             }
                                         } else if (check_true( ((argtype==="unbound")&&is_ref))) {
                                              return {
-                                                type:await sub_type(argvalue),__token__:true,val:argvalue,ref:true,name:await clean_quoted_reference(await sanitize_js_ref_name((""+await (await __GG__("as_lisp"))(arg)))),path:await add(_path,idx)
+                                                type:await sub_type(argvalue),__token__:true,val:argvalue,ref:true,name:await clean_quoted_reference(await sanitize_js_ref_name((""+await (await Environment.get_global("as_lisp"))(arg)))),path:await add(_path,idx)
                                             }
                                         } else  {
                                              return {
-                                                type:argtype,__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await __GG__("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
+                                                type:argtype,__token__:true,val:argvalue,ref:is_ref,name:await clean_quoted_reference((""+await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),local:(argdetails && argdetails["local"]),path:await add(_path,idx)
                                             }
                                         }
                                     } ()
@@ -1489,7 +1489,15 @@ export async function init_compiler(Environment) {
                     prefix:"compile_time_eval",background:"#C0C0C0",color:"darkblue"
                 });
                 compile_time_eval=async function(ctx,lisp_tree,path) {
-                    if (check_true (((lisp_tree instanceof Array)&&(((lisp_tree && lisp_tree["0"]) instanceof String || typeof (lisp_tree && lisp_tree["0"])==='string')&&(await length((lisp_tree && lisp_tree["0"]))>2)&&await starts_with_ques_("=:",(lisp_tree && lisp_tree["0"])))&&await (await __GG__("resolve_path"))(["definitions",await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"eval_when","compile_time"],Environment)))){
+                    if (check_true (((lisp_tree instanceof Array)&&(((lisp_tree && lisp_tree["0"]) instanceof String || typeof (lisp_tree && lisp_tree["0"])==='string')&&(await length((lisp_tree && lisp_tree["0"]))>2)&&await starts_with_ques_("=:",(lisp_tree && lisp_tree["0"])))&&await (async function ()  {
+                        let it;
+                        it=await Environment["symbol_definition"].call(Environment,await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2));
+                        if (check_true (it)){
+                              return await (await Environment.get_global("resolve_path"))(["eval_when","compile_time"],it)
+                        } else {
+                              return 
+                        }
+                    } )()))){
                         let ntree;
                         let precompile_function;
                         ntree=null;
@@ -1529,7 +1537,7 @@ export async function init_compiler(Environment) {
                                  ntree=await compile_time_eval(ctx,ntree,path)
                             };
                             if (check_true (await verbosity(ctx))){
-                                 (comp_time_log)(await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"<- lisp: ",await (await __GG__("as_lisp"))(ntree))
+                                 (comp_time_log)(await (lisp_tree && lisp_tree["0"])["substr"].call((lisp_tree && lisp_tree["0"]),2),"<- lisp: ",await (await Environment.get_global("as_lisp"))(ntree))
                             }
                         };
                          return  ntree
@@ -2089,7 +2097,7 @@ export async function init_compiler(Environment) {
                         }
                     } ();
                     ;
-                    await (await __GG__("compiler_syntax_validation"))("compile_assignment",tokens,errors,ctx,expanded_tree);
+                    await (await Environment.get_global("compiler_syntax_validation"))("compile_assignment",tokens,errors,ctx,expanded_tree);
                     await unset_ambiguous(ctx,target);
                     await async function(){
                         ctx["in_assignment"]=true;
@@ -2239,7 +2247,7 @@ export async function init_compiler(Environment) {
                                         await set_ctx(ctx,"__TOP_LEVEL__",true);
                                         if (check_true (await verbosity(ctx))){
                                             await console.log("");
-                                             (top_level_log)((""+idx+"/"+num_non_return_statements),"->",await (await __GG__("as_lisp"))(lisp_tree[idx]))
+                                             (top_level_log)((""+idx+"/"+num_non_return_statements),"->",await (await Environment.get_global("as_lisp"))(lisp_tree[idx]))
                                         };
                                         tokens=await tokenize(lisp_tree[idx],ctx);
                                         stmt=await compile(tokens,ctx);
@@ -2247,8 +2255,8 @@ export async function init_compiler(Environment) {
                                             bind_mode:true
                                         });
                                         if (check_true (await verbosity(ctx))){
-                                            (top_level_log)((""+idx+"/"+num_non_return_statements),"compiled <- ",await (await __GG__("as_lisp"))(stmt));
-                                             return  (top_level_log)((""+idx+"/"+num_non_return_statements),"<-",await (await __GG__("as_lisp"))(rval))
+                                            (top_level_log)((""+idx+"/"+num_non_return_statements),"compiled <- ",await (await Environment.get_global("as_lisp"))(stmt));
+                                             return  (top_level_log)((""+idx+"/"+num_non_return_statements),"<-",await (await Environment.get_global("as_lisp"))(rval))
                                         }
                                     };
                                     let __BREAK__FLAG__=false;
@@ -2327,7 +2335,7 @@ export async function init_compiler(Environment) {
                     }();
                     if (check_true ((await get_ctx_val(ctx,"__LAMBDA_STEP__")===-1))){
                         lambda_block=true;
-                         await (await __GG__("setf_ctx"))(ctx,"__LAMBDA_STEP__",((tokens && tokens.length)-1))
+                         await (await Environment.get_global("setf_ctx"))(ctx,"__LAMBDA_STEP__",((tokens && tokens.length)-1))
                     };
                     if (check_true (await not((block_options && block_options["no_scope_boundary"])))){
                          (acc).push("{")
@@ -2376,7 +2384,7 @@ export async function init_compiler(Environment) {
                                      return true
                                 }
                             } ();
-                            await (await __GG__("assert"))(await not((stmt===undefined)),"compile_block: returned stmt is undefined");
+                            await (await Environment.get_global("assert"))(await not((stmt===undefined)),"compile_block: returned stmt is undefined");
                             stmt_ctype=(((ctx && ctx["block_step"])>0)&&(await first(stmt) instanceof Object)&&await (async function(){
                                 let __targ__125=await first(stmt);
                                 if (__targ__125){
@@ -2559,7 +2567,7 @@ export async function init_compiler(Environment) {
                             }
                         } ();
                         if (check_true ((ctx && ctx["defvar_eval"]))){
-                            await (await __GG__("delete_prop"))(ctx,"defvar_eval");
+                            await (await Environment.get_global("delete_prop"))(ctx,"defvar_eval");
                              return  [{
                                 ctype:"assignment"
                             },allocation_type," ",target,"=",assignment_value,"()",";"]
@@ -2705,7 +2713,7 @@ export async function init_compiler(Environment) {
                 };
                 clean_quoted_reference=async function(name) {
                      return  await async function(){
-                        if (check_true( ((name instanceof String || typeof name==='string')&&await starts_with_ques_("\"",name)&&await (await __GG__("ends_with?"))("\"",name)))) {
+                        if (check_true( ((name instanceof String || typeof name==='string')&&await starts_with_ques_("\"",name)&&await (await Environment.get_global("ends_with?"))("\"",name)))) {
                              return await (async function() {
                                 {
                                      let __call_target__=await name["substr"].call(name,1), __call_method__="substr";
@@ -2773,7 +2781,7 @@ export async function init_compiler(Environment) {
                     sub_block_count=0;
                     ctx_details=null;
                     preamble=await calling_preamble(ctx);
-                    structure_validation_rules=[[[1,"val"],[(await __GG__("is_array?"))],"allocation section"],[[2],[async function(v) {
+                    structure_validation_rules=[[[1,"val"],[(await Environment.get_global("is_array?"))],"allocation section"],[[2],[async function(v) {
                          return  await not((v===undefined))
                     }],"block"]];
                     validation_results=null;
@@ -2782,7 +2790,7 @@ export async function init_compiler(Environment) {
                     syntax_error=null;
                     idx=-1;
                     ;
-                    await (await __GG__("compiler_syntax_validation"))("compile_let",tokens,errors,ctx,expanded_tree);
+                    await (await Environment.get_global("compiler_syntax_validation"))("compile_let",tokens,errors,ctx,expanded_tree);
                     await async function(){
                         ctx["return_last_value"]=true;
                         return ctx;
@@ -3024,7 +3032,7 @@ export async function init_compiler(Environment) {
                                      
                                 })()
                             };
-                            let __array__177=[],__elements__175=await (await __GG__("pairs"))(redefinitions);
+                            let __array__177=[],__elements__175=await (await Environment.get_global("pairs"))(redefinitions);
                             let __BREAK__FLAG__=false;
                             for(let __iter__174 in __elements__175) {
                                 __array__177.push(await __for_body__176(__elements__175[__iter__174]));
@@ -3088,14 +3096,14 @@ export async function init_compiler(Environment) {
                         } ;
                         
                     })();
-                    (acc).push(await compile_block(await (await __GG__("conj"))(["PLACEHOLDER"],block),ctx,{
+                    (acc).push(await compile_block(await (await Environment.get_global("conj"))(["PLACEHOLDER"],block),ctx,{
                         no_scope_boundary:true,ignore_declarations:declarations_handled
                     }));
                     await (async function() {
                         let __for_body__188=async function(i) {
                              return  (acc).push("}")
                         };
-                        let __array__189=[],__elements__187=await (await __GG__("range"))(sub_block_count);
+                        let __array__189=[],__elements__187=await (await Environment.get_global("range"))(sub_block_count);
                         let __BREAK__FLAG__=false;
                         for(let __iter__186 in __elements__187) {
                             __array__189.push(await __for_body__188(__elements__187[__iter__186]));
@@ -3504,7 +3512,7 @@ export async function init_compiler(Environment) {
                     condition_block=null;
                     condition_tokens=await tokens["slice"].call(tokens,1);
                     ;
-                    await (await __GG__("compiler_syntax_validation"))("compile_cond",tokens,errors,ctx,expanded_tree);
+                    await (await Environment.get_global("compiler_syntax_validation"))("compile_cond",tokens,errors,ctx,expanded_tree);
                     await async function(){
                         if (check_true( await not((((condition_tokens && condition_tokens.length)%2)===0)))) {
                              throw new SyntaxError("cond: Invalid syntax: missing condition block");
@@ -4092,7 +4100,7 @@ export async function init_compiler(Environment) {
                     acc=[];
                     prebuild=[];
                     target_type=await clean_quoted_reference(await sanitize_js_ref_name((tokens && tokens["1"] && tokens["1"]["name"])));
-                    comps=await (await __GG__("get_object_path"))(target_type);
+                    comps=await (await Environment.get_global("get_object_path"))(target_type);
                     type_details=await get_declaration_details(ctx,target_type);
                     root_type_details=await (async function () {
                          if (check_true (((comps && comps.length)>1))){
@@ -4108,7 +4116,7 @@ export async function init_compiler(Environment) {
                     preamble=await calling_preamble(ctx);
                     new_opts=await tokens["slice"].call(tokens,2);
                     if (check_true (((comps && comps.length)>1))){
-                         target_type=await (await __GG__("path_to_js_syntax"))(comps)
+                         target_type=await (await Environment.get_global("path_to_js_syntax"))(comps)
                     };
                     await (async function() {
                         let __for_body__278=async function(opt_token) {
@@ -4194,7 +4202,7 @@ export async function init_compiler(Environment) {
                         if (__targ__292){
                              return(__targ__292)["type"]
                         } 
-                    })()||await (await __GG__("get_outside_global"))(target_type)||UnknownType);
+                    })()||await (await Environment.get_global("get_outside_global"))(target_type)||UnknownType);
                     (acc).unshift({
                         ctype:target_return_type
                     });
@@ -5216,7 +5224,7 @@ export async function init_compiler(Environment) {
                                 }
                             } ()
                         };
-                        let __array__425=[],__elements__423=(await (await __GG__("rest"))(tokens)||[]);
+                        let __array__425=[],__elements__423=(await (await Environment.get_global("rest"))(tokens)||[]);
                         let __BREAK__FLAG__=false;
                         for(let __iter__422 in __elements__423) {
                             __array__425.push(await __for_body__424(__elements__423[__iter__422]));
@@ -5356,8 +5364,8 @@ export async function init_compiler(Environment) {
                         }
                     } ();
                     if (check_true (await verbosity(ctx))){
-                        (clog)("target: ",await (await __GG__("as_lisp"))(target));
-                         (clog)("assignment_value: ",await (await __GG__("as_lisp"))(assignment_value))
+                        (clog)("target: ",await (await Environment.get_global("as_lisp"))(target));
+                         (clog)("assignment_value: ",await (await Environment.get_global("as_lisp"))(assignment_value))
                     };
                     acc=await (async function ()  {
                         let __array_arg__437=(async function() {
@@ -5502,7 +5510,7 @@ export async function init_compiler(Environment) {
                         if (check_true ((await not((opts && opts["root_environment"]))&&has_lisp_globals))){
                              (first_level_setup).push(["const __GG__=",env_ref,"get_global",";"])
                         };
-                        assembled=await (await __GG__("splice_in_return_b"))(await (await __GG__("splice_in_return_a"))(js_code));
+                        assembled=await (await Environment.get_global("splice_in_return_b"))(await (await Environment.get_global("splice_in_return_a"))(js_code));
                         assembled=await assemble_output(assembled);
                         assembled=await add(await (async function() {
                              if (check_true (needs_braces_ques_)){
@@ -5529,7 +5537,7 @@ export async function init_compiler(Environment) {
                         };
                         assembly=new AsyncFunction("Environment",assembled);
                         if (check_true ((run_opts && run_opts["bind_mode"]))){
-                             assembly=await (await __GG__("bind_function"))(assembly,Environment)
+                             assembly=await (await Environment.get_global("bind_function"))(assembly,Environment)
                         };
                         result=await assembly(Environment);
                         if (check_true (await verbosity(ctx))){
@@ -5606,7 +5614,7 @@ export async function init_compiler(Environment) {
                                 if (check_true ((i<(t-1)))){
                                       return (acc).push(",")
                                 }
-                            },await (await __GG__("keys"))(lisp_tree));
+                            },await (await Environment.get_global("keys"))(lisp_tree));
                              return  (acc).push("}")
                         } else if (check_true( (lisp_tree instanceof String || typeof lisp_tree==='string'))) {
                              return (acc).push(await JSON.stringify(lisp_tree))
@@ -5650,7 +5658,7 @@ export async function init_compiler(Environment) {
                          quoted_js=await quote_tree((lisp_struct && lisp_struct["1"]),ctx)
                     };
                     if (check_true (await verbosity(ctx))){
-                         (quotem_log)("<-",await (await __GG__("as_lisp"))(quoted_js))
+                         (quotem_log)("<-",await (await Environment.get_global("as_lisp"))(quoted_js))
                     };
                      return  quoted_js
                 };
@@ -5770,7 +5778,7 @@ export async function init_compiler(Environment) {
                                 } 
                             })()),ArgumentType)
                         };
-                        let __array__454=[],__elements__452=await (await __GG__("range"))(iter_count);
+                        let __array__454=[],__elements__452=await (await Environment.get_global("range"))(iter_count);
                         let __BREAK__FLAG__=false;
                         for(let __iter__451 in __elements__452) {
                             __array__454.push(await __for_body__453(__elements__452[__iter__451]));
@@ -5826,7 +5834,7 @@ export async function init_compiler(Environment) {
                         }return __array__464;
                          
                     })();
-                    if (check_true (await (await __GG__("blank?"))((preamble && preamble["0"])))){
+                    if (check_true (await (await Environment.get_global("blank?"))((preamble && preamble["0"])))){
                          await set_ctx(ctx,body_function_ref,Function)
                     } else {
                          await set_ctx(ctx,body_function_ref,AsyncFunction)
@@ -6036,7 +6044,7 @@ export async function init_compiler(Environment) {
                                 } 
                             })()),ArgumentType)
                         };
-                        let __array__494=[],__elements__492=await (await __GG__("range"))(iter_count);
+                        let __array__494=[],__elements__492=await (await Environment.get_global("range"))(iter_count);
                         let __BREAK__FLAG__=false;
                         for(let __iter__491 in __elements__492) {
                             __array__494.push(await __for_body__493(__elements__492[__iter__491]));
@@ -6163,7 +6171,7 @@ export async function init_compiler(Environment) {
                     let sanitized_name;
                     let declaration;
                     let dec_struct;
-                    expressions=await (await __GG__("rest"))(tokens);
+                    expressions=await (await Environment.get_global("rest"))(tokens);
                     targeted=null;
                     acc=[];
                     source=null;
@@ -6174,7 +6182,7 @@ export async function init_compiler(Environment) {
                     await (async function() {
                         let __for_body__516=async function(exp) {
                             declaration=(exp && exp["val"] && exp["val"]["0"] && exp["val"]["0"]["name"]);
-                            targeted=await (await __GG__("rest"))((exp && exp["val"]));
+                            targeted=await (await Environment.get_global("rest"))((exp && exp["val"]));
                             if (check_true (await (async function(){
                                 let __array_op_rval__518=verbosity;
                                  if (__array_op_rval__518 instanceof Function){
@@ -6183,7 +6191,7 @@ export async function init_compiler(Environment) {
                                     return[__array_op_rval__518,ctx]
                                 }
                             })())){
-                                 (declare_log)("declaration: ",declaration,"targeted: ",await (await __GG__("each"))(targeted,"name"),targeted)
+                                 (declare_log)("declaration: ",declaration,"targeted: ",await (await Environment.get_global("each"))(targeted,"name"),targeted)
                             };
                              return  await async function(){
                                 if (check_true( (declaration==="toplevel"))) {
@@ -6238,7 +6246,7 @@ export async function init_compiler(Environment) {
                                                             } 
                                                         })();
                                                         source=("(fn "+(details && details["fn_args"])+" "+(details && details["fn_body"])+")");
-                                                        source=await compile(await tokenize(await (await __GG__("read_lisp"))(source),ctx),ctx,1000);
+                                                        source=await compile(await tokenize(await (await Environment.get_global("read_lisp"))(source),ctx),ctx,1000);
                                                         (acc).push(source);
                                                          await set_ctx(ctx,name,AsyncFunction)
                                                     } else if (check_true( (dec_struct && dec_struct["value"]) instanceof Function)) {
@@ -6266,7 +6274,7 @@ export async function init_compiler(Environment) {
                                                   return await set_declaration(ctx,name,"type",Function)
                                             }
                                         };
-                                        let __array__523=[],__elements__521=await (await __GG__("each"))(targeted,"name");
+                                        let __array__523=[],__elements__521=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__520 in __elements__521) {
                                             __array__523.push(await __for_body__522(__elements__521[__iter__520]));
@@ -6279,7 +6287,7 @@ export async function init_compiler(Environment) {
                                          
                                     })()
                                 } else if (check_true( (declaration==="verbose"))) {
-                                    let verbosity_level=await parseInt(await first(await (await __GG__("each"))(targeted,"name")));
+                                    let verbosity_level=await parseInt(await first(await (await Environment.get_global("each"))(targeted,"name")));
                                     ;
                                     if (check_true (await not(await isNaN(verbosity_level)))){
                                         if (check_true ((verbosity_level>0))){
@@ -6307,7 +6315,7 @@ export async function init_compiler(Environment) {
                                             dec_struct=await get_declaration_details(ctx,name);
                                              return  await set_ctx(ctx,name,(dec_struct && dec_struct["value"]))
                                         };
-                                        let __array__536=[],__elements__534=await (await __GG__("each"))(targeted,"name");
+                                        let __array__536=[],__elements__534=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__533 in __elements__534) {
                                             __array__536.push(await __for_body__535(__elements__534[__iter__533]));
@@ -6324,7 +6332,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__539=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Function)
                                         };
-                                        let __array__540=[],__elements__538=await (await __GG__("each"))(targeted,"name");
+                                        let __array__540=[],__elements__538=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__537 in __elements__538) {
                                             __array__540.push(await __for_body__539(__elements__538[__iter__537]));
@@ -6341,7 +6349,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__543=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Array)
                                         };
-                                        let __array__544=[],__elements__542=await (await __GG__("each"))(targeted,"name");
+                                        let __array__544=[],__elements__542=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__541 in __elements__542) {
                                             __array__544.push(await __for_body__543(__elements__542[__iter__541]));
@@ -6358,7 +6366,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__547=async function(name) {
                                              return  await set_declaration(ctx,name,"type",NumberType)
                                         };
-                                        let __array__548=[],__elements__546=await (await __GG__("each"))(targeted,"name");
+                                        let __array__548=[],__elements__546=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__545 in __elements__546) {
                                             __array__548.push(await __for_body__547(__elements__546[__iter__545]));
@@ -6375,7 +6383,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__551=async function(name) {
                                              return  await set_declaration(ctx,name,"type",StringType)
                                         };
-                                        let __array__552=[],__elements__550=await (await __GG__("each"))(targeted,"name");
+                                        let __array__552=[],__elements__550=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__549 in __elements__550) {
                                             __array__552.push(await __for_body__551(__elements__550[__iter__549]));
@@ -6392,7 +6400,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__555=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Boolean)
                                         };
-                                        let __array__556=[],__elements__554=await (await __GG__("each"))(targeted,"name");
+                                        let __array__556=[],__elements__554=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__553 in __elements__554) {
                                             __array__556.push(await __for_body__555(__elements__554[__iter__553]));
@@ -6409,7 +6417,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__559=async function(name) {
                                              return  await set_declaration(ctx,name,"type",RegExp)
                                         };
-                                        let __array__560=[],__elements__558=await (await __GG__("each"))(targeted,"name");
+                                        let __array__560=[],__elements__558=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__557 in __elements__558) {
                                             __array__560.push(await __for_body__559(__elements__558[__iter__557]));
@@ -6426,7 +6434,7 @@ export async function init_compiler(Environment) {
                                         let __for_body__563=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Object)
                                         };
-                                        let __array__564=[],__elements__562=await (await __GG__("each"))(targeted,"name");
+                                        let __array__564=[],__elements__562=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__561 in __elements__562) {
                                             __array__564.push(await __for_body__563(__elements__562[__iter__561]));
@@ -6441,14 +6449,14 @@ export async function init_compiler(Environment) {
                                 } else if (check_true( (declaration==="optimize"))) {
                                      return  await (async function() {
                                         let __for_body__567=async function(factor) {
-                                            factor=await (await __GG__("each"))(factor,"name");
+                                            factor=await (await Environment.get_global("each"))(factor,"name");
                                              return  await async function(){
                                                 if (check_true( ((factor && factor["0"])==="safety"))) {
                                                      return await set_declaration(ctx,"__SAFETY__","level",(factor && factor["1"]))
                                                 }
                                             } ()
                                         };
-                                        let __array__568=[],__elements__566=await (await __GG__("each"))(targeted,"val");
+                                        let __array__568=[],__elements__566=await (await Environment.get_global("each"))(targeted,"val");
                                         let __BREAK__FLAG__=false;
                                         for(let __iter__565 in __elements__566) {
                                             __array__568.push(await __for_body__567(__elements__566[__iter__565]));
@@ -6462,7 +6470,7 @@ export async function init_compiler(Environment) {
                                     })()
                                 } else  {
                                     (warnings).push(("unknown declaration directive: "+declaration));
-                                     return  await (await __GG__("warn"))(("compiler: unknown declaration directive: "+declaration))
+                                     return  await (await Environment.get_global("warn"))(("compiler: unknown declaration directive: "+declaration))
                                 }
                             } ()
                         };
@@ -6729,7 +6737,7 @@ export async function init_compiler(Environment) {
                     reftype=await sub_type(refval);
                     declarations=null;
                     preamble=await calling_preamble(ctx);
-                    basename=await (await __GG__("get_object_path"))(refname);
+                    basename=await (await Environment.get_global("get_object_path"))(refname);
                     ;
                     declarations=await add(new Object(),await get_declarations(ctx,refname),await get_declaration_details(ctx,refname));
                     if (check_true ((declarations && declarations["inlined"]))){
@@ -6755,7 +6763,7 @@ export async function init_compiler(Environment) {
                             })())){
                                  await console.log("compile_lisp_scoped_reference: has_first_level? ",await get_ctx(ctx,"has_first_level"),": ",refname)
                             };
-                            if (check_true ((await get_ctx(ctx,"has_first_level")&&await not((opts && opts["root_environment"]))))){
+                            if (check_true ((false&&await get_ctx(ctx,"has_first_level")&&await not((opts && opts["root_environment"]))))){
                                   return [{
                                     ctype:await (async function() {
                                         if (check_true ((await not(refval instanceof Function)&&(refval instanceof Object)))){
@@ -7226,7 +7234,7 @@ export async function init_compiler(Environment) {
                                                             };
                                                              return  (compiled_values).push(await compile(t,ctx,await add(_cdepth,1)))
                                                         };
-                                                        let __array__613=[],__elements__611=await (await __GG__("rest"))(tokens);
+                                                        let __array__613=[],__elements__611=await (await Environment.get_global("rest"))(tokens);
                                                         let __BREAK__FLAG__=false;
                                                         for(let __iter__610 in __elements__611) {
                                                             __array__613.push(await __for_body__612(__elements__611[__iter__610]));
@@ -7340,7 +7348,7 @@ export async function init_compiler(Environment) {
                                                              return  (acc).push(")")
                                                         } else if (check_true( ((null==(declared_type && declared_type["type"]))&&(((tokens && tokens["0"] && tokens["0"]["type"])==="arg")||((rcv instanceof String || typeof rcv==='string')&&await get_declaration_details(ctx,rcv))||((rcv instanceof Array)&&((rcv && rcv["0"]) instanceof Object)&&((rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof String || typeof (rcv && rcv["0"] && rcv["0"]["ctype"])==='string')&&((rcv && rcv["0"] && rcv["0"]["ctype"])&&(await not(await contains_ques_("unction",(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("string"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("StringType"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("nil"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("NumberType"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("undefined"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("objliteral"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("Boolean"===(rcv && rcv["0"] && rcv["0"]["ctype"])))&&await not(("array"===(rcv && rcv["0"] && rcv["0"]["ctype"])))))))))) {
                                                             if (check_true (show_hints)){
-                                                                 (comp_warn)("value ambiguity - use declare to clarify: ",await source_from_tokens(tokens,expanded_tree,true)," ",await (await __GG__("as_lisp"))(rcv))
+                                                                 (comp_warn)("value ambiguity - use declare to clarify: ",await source_from_tokens(tokens,expanded_tree,true)," ",await (await Environment.get_global("as_lisp"))(rcv))
                                                             };
                                                             tmp_name=await gen_temp_name("array_op_rval");
                                                             if (check_true ((((rcv && rcv["0"]) instanceof Object)&&((rcv && rcv["0"] && rcv["0"]["ctype"]) instanceof String || typeof (rcv && rcv["0"] && rcv["0"]["ctype"])==='string')&&await contains_ques_("block",((rcv && rcv["0"] && rcv["0"]["ctype"])||""))))){
@@ -7386,7 +7394,7 @@ export async function init_compiler(Environment) {
                                                                 }return __array__637;
                                                                  
                                                             })();
-                                                            if (check_true ((await length(await (await __GG__("rest"))(tokens))>0))){
+                                                            if (check_true ((await length(await (await Environment.get_global("rest"))(tokens))>0))){
                                                                 (acc).push(",");
                                                                  await push_as_arg_list(acc,compiled_values)
                                                             };
@@ -7408,7 +7416,7 @@ export async function init_compiler(Environment) {
                                                             })()
                                                         } else  {
                                                             let __array_arg__642=(async function() {
-                                                                if (check_true ((await length(await (await __GG__("rest"))(tokens))>0))){
+                                                                if (check_true ((await length(await (await Environment.get_global("rest"))(tokens))>0))){
                                                                     (acc).push(",");
                                                                      await push_as_arg_list(acc,compiled_values)
                                                                 }
@@ -7488,7 +7496,7 @@ export async function init_compiler(Environment) {
                                                         }
                                                     }
                                                 } else if (check_true( ((tokens && tokens["ref"])&&(opts && opts["root_environment"])))) {
-                                                     return  await (await __GG__("path_to_js_syntax"))((await sanitize_js_ref_name((tokens && tokens.name))).split("."))
+                                                     return  await (await Environment.get_global("path_to_js_syntax"))((await sanitize_js_ref_name((tokens && tokens.name))).split("."))
                                                 } else if (check_true( ((tokens && tokens["ref"])&&op_lookup[(tokens && tokens.name)]))) {
                                                      return (tokens && tokens.name)
                                                 } else if (check_true( ((tokens && tokens["ref"])&&await (async function ()  {
@@ -7712,7 +7720,7 @@ export async function init_compiler(Environment) {
                 await set_ctx(root_ctx,"__LAMBDA_STEP__",-1);
                 output=await async function(){
                     if (check_true((opts && opts["special_operators"]))) {
-                         return await (await __GG__("make_set"))(await (await __GG__("keys"))(op_lookup))
+                         return await (await Environment.get_global("make_set"))(await (await Environment.get_global("keys"))(op_lookup))
                     } else if (check_true((opts && opts["only_tokens"]))) {
                          return await tokenize(tree,root_ctx)
                     } else if (check_true(is_error)) {
@@ -7747,8 +7755,8 @@ export async function init_compiler(Environment) {
                                 if (check_true ((await not((opts && opts["root_environment"]))&&has_lisp_globals))){
                                      (first_level_setup).push(["const __GG__=",env_ref,"get_global",";"])
                                 };
-                                assembly=await (await __GG__("splice_in_return_a"))(assembly);
-                                 return  assembly=await (await __GG__("splice_in_return_b"))(assembly)
+                                assembly=await (await Environment.get_global("splice_in_return_a"))(assembly);
+                                 return  assembly=await (await Environment.get_global("splice_in_return_b"))(assembly)
                             }
                         } ();
                         if (check_true ((opts && opts["root_environment"]))){

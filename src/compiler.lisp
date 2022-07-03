@@ -985,8 +985,10 @@
          (fn (ctx lisp_tree path)
              (if (and (is_array? lisp_tree)
                       (is_reference? lisp_tree.0)
-                      ;; is this a compile time function?  Check the definition in our environment..
-                      (resolve_path [ `definitions (-> lisp_tree.0 `substr 2) `eval_when `compile_time] Environment ))
+                      ;; is this a compile time function?  Check the definition in our environment..                                     
+                      (aif (-> Environment `symbol_definition (-> lisp_tree.0 `substr 2))
+                           (resolve_path [ `eval_when `compile_time ] it)))
+                                              
                  (let
                      ((`ntree nil)		      
                       (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
@@ -1117,11 +1119,6 @@
                                    (`target_reference (gen_temp_name "target_obj"))
                                    (`idx 1))
                                 (declare (string preamble.0 preamble.1))
-                                ;(when (verbosity ctx)
-                                 ; (console.log "compile_set_prop: target=" (as_lisp target)))
-                                ;(set_prop ctx
-                                        ;           `in_assignment true)
-                                
                                 
                                 (for_each (`t [ preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" ])
                                           (push wrapper t))
@@ -4222,7 +4219,7 @@
                    (= has_lisp_globals true)
                    (when (verbosity ctx)
                      (console.log "compile_lisp_scoped_reference: has_first_level? " (get_ctx ctx `has_first_level) ": " refname))
-                   (if (and (get_ctx ctx `has_first_level) (not opts.root_environment))
+                   (if (and false (get_ctx ctx `has_first_level) (not opts.root_environment))
                      [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " "__GG__" "(\"" refname  "\")" ")"]
                      [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"]
                      ))
