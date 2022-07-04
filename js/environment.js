@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-03 12:12:44
-// Version: 2022.07.03.12.12
-export const DLISP_ENV_VERSION='2022.07.03.12.12';
+// Build Time: 2022-07-04 07:12:41
+// Version: 2022.07.04.07.12
+export const DLISP_ENV_VERSION='2022.07.04.07.12';
 
 
 
@@ -2339,9 +2339,7 @@ export async function init_dlisp(Environment)  {
         }
     } ()
 };
-                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){            let chars;            let acc;            chars=(text).split("");            acc=[];            await (async function() {                let __for_body__3=async function(c) {                     return  await async function(){                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {                            (acc).push(await String.fromCharCode(92));                             return  (acc).push(c)                        } else  {                             return (acc).push(c)                        }                    } ()                };                let __array__4=[],__elements__2=chars;
-                let __BREAK__FLAG__=false;
-                for(let __iter__1 in __elements__2) {
+                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){            let chars;            let acc;            chars=(text).split("");            acc=[];            await (async function() {                let __for_body__3=async function(c) {                     return  await async function(){                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {                            (acc).push(await String.fromCharCode(92));                             return  (acc).push(c)                        } else  {                             return (acc).push(c)                        }                    } ()                };                let __array__4=[],__elements__2=chars;                let __BREAK__FLAG__=false;                for(let __iter__1 in __elements__2) {
                     __array__4.push(await __for_body__3(__elements__2[__iter__1]));
                     if(__BREAK__FLAG__) {
                          __array__4.pop();

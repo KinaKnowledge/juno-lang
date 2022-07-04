@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-03 12:12:44
-// Version: 2022.07.03.12.12
-export const DLISP_ENV_VERSION='2022.07.03.12.12';
+// Build Time: 2022-07-04 07:12:41
+// Version: 2022.07.04.07.12
+export const DLISP_ENV_VERSION='2022.07.04.07.12';
 
 
 
@@ -1149,6 +1149,8 @@ export async function init_compiler(Environment) {
                      return  await async function(){
                         if (check_true( ((tokens && tokens["path"])&&collect_parents_ques_))) {
                              return await source_chain((tokens && tokens["path"]),tree)
+                        } else if (check_true( (tree instanceof String || typeof tree==='string'))) {
+                             return await (await Environment.get_global("as_lisp"))(tree)
                         } else if (check_true((tokens && tokens["path"]))) {
                              return await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("resolve_path"))((tokens && tokens["path"]),tree))
                         } else if (check_true( ((tokens instanceof Array)&&(tokens && tokens["0"] && tokens["0"]["path"])&&collect_parents_ques_))) {

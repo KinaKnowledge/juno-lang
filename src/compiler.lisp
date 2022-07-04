@@ -696,7 +696,9 @@
                                        (and tokens.path
                                             collect_parents?)
                                        (source_chain tokens.path tree)
-                                       tokens.path
+				       (is_string? tree)
+				       (as_lisp tree)
+				       tokens.path
                                        (as_lisp (resolve_path tokens.path tree))
                                        (and (is_array? tokens)
                                             tokens.0.path
