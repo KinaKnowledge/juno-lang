@@ -736,7 +736,7 @@
                                        {
                                         `constant: true
                                         })))
-                         (prop Environment.global_ctx.scope namespace_identity.1))))))
+                         (prop Environment.global_ctx.scope comps.0))))))
          
          (get_global 
           (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps)

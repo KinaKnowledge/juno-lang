@@ -48,7 +48,8 @@ usage: [ --help | --no-debugger | --compile [output-file] | --inspect-brk [ip:po
                 Example:  127.0.0.1:9933
 
 EOF
-    
+else
+    echo "juno: unknown option: $1, use -? for more information" 
 fi
      
     

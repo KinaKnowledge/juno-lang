@@ -30,7 +30,6 @@ await initializer(env);
 
 // setup a simple repl from stdin
 
-console.log("\nDLisp",env.version," (c) 2022 Kina, LLC");
 
 let opts={
   throw_on_error: true
