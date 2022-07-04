@@ -50,7 +50,7 @@
      (defvar active_namespace namespace)
      
      ;; Set up our initial skeleton..
-     (console.log "creating environment: " namespace)
+
      (defvar
        Environment
        {
@@ -698,13 +698,27 @@
                        (and parent_environment
                             (> namespace_identity.length 1)
                             (not (== namespace namespace_identity.0)))
-                       (-> parent_environment `get_global namespace_identity.1 value meta is_constant namespace_identity.0)
+                       (-> parent_environment `set_global namespace_identity.1 value meta is_constant namespace_identity.0)
 
-                       else
+                       ;; not us but we are the core, so we need to send it to the appropriate namespace
+                       
+                       (and (> namespace_identity.length 1)
+                            (not (== namespace_identity.0 namespace)))
                        (do
-                         
+                         (if (prop children namespace_identity.0)   ;; do we have the requested namespace?
+                           (-> (prop children namespace_identity.0) ;; dispatch it there..
+                               `set_global
+                               namespace_identity.1 value meta is_constant namespace_identity.0)
+                           ;; no such namespace so it is an error...
+                           (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))
+                       else
+                       ;; it's on us...                                                  
+                       (do
+                         (defvar comps (get_object_path (if (== 1 namespace_identity.length)
+                                                          namespace_identity.0
+                                                          namespace_identity.1)))
                          (set_prop Environment.global_ctx.scope 
-                                   refname
+                                   comps.0
                                    value)
                          (if (and (is_object? meta)
                                   (not (is_array? meta)))
@@ -714,15 +728,15 @@
                                          `constant
                                          true))
                              (set_prop Environment.definitions
-                                       refname
+                                       comps.0
                                        meta))
                            (when is_constant
                              (set_prop Environment.definitions
-                                       refname
+                                       comps.0
                                        {
                                         `constant: true
                                         })))
-                         (prop Environment.global_ctx.scope refname))))))
+                         (prop Environment.global_ctx.scope namespace_identity.1))))))
          
          (get_global 
           (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps)
@@ -1217,6 +1231,8 @@
                                      ["parseFloat(" args.0 ")"])
                            
                            }))
+
+     
      
      ;; Finally the interface that is exposed to compiler and the compiled code...
      

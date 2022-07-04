@@ -17,22 +17,6 @@ fi
 
 if [ -z "$1" ]; then
     rlwrap -c -r -m -q'"' -M .clj  deno run --inspect --allow-write --allow-net --allow-read ./js/startup_deno.js
-elif [ "$1" = "-?" ] || [ "$1" = "--help" ]; then 
-    cat <<EOF
-
-DLisp Command Line Utility (c) 2022 Kina LLC
-usage: [ --help | --no-debugger | --compile [output-file] ]
-
- -? --help:     Print this help guide.
-
- --no-debugger: Don't enable inspection and connection from Devtools. 
-                Inspection is enabled by default currently.
-
---compile:      Build a standalone executable.
-                Note that dynamic_imports will not work in the emitted binary.
-
-EOF
-    
 elif [ "$1" = "--no-debugger" ]; then
     rlwrap -c -r -m -q'"'  -M .clj deno run --allow-write --allow-net --allow-read ./js/startup_deno.js
 elif [ "$1" = "--inspect-brk" ]; then
@@ -43,7 +27,28 @@ elif [ $1 = "--compile" ]; then
     else
 	COMP_FLAGS=""
     fi
-    deno compile $COMP_FLAGS --allow-write --allow-read --allow-net ./js/startup_deno.js
+    deno compile $COMP_FLAGS --allow-write --allow-read --allow-net ./js/startup_deno.js    
+elif [ "$1" = "-?" ] || [ "$1" = "--help" ]; then 
+    cat <<EOF
+
+DLisp Command Line Utility (c) 2022 Kina LLC
+usage: [ --help | --no-debugger | --compile [output-file] | --inspect-brk [ip:port] ]
+
+ -? --help:     Print this help guide.
+
+ --no-debugger: Don't enable inspection and connection from Devtools. 
+                Inspection is enabled by default currently.
+
+ --compile:     Build a standalone executable.
+                Note that dynamic_imports will not work in the emitted binary.
+
+ --inspect-brk: Debugging on, and prior to evaluation, will wait for a debug
+                connection prior to start. If a host and port are provided as
+                a second argument, it is in the host:port format.
+                Example:  127.0.0.1:9933
+
+EOF
+    
 fi
      
     

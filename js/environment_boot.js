@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-04 07:12:41
-// Version: 2022.07.04.07.12
-export const DLISP_ENV_VERSION='2022.07.04.07.12';
+// Build Time: 2022-07-04 08:47:37
+// Version: 2022.07.04.08.47
+export const DLISP_ENV_VERSION='2022.07.04.08.47';
 
 
 
@@ -2711,6 +2711,11 @@ await Environment.set_global("show",async function(thing) {
         }
     } ()
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"]
+});
+await Environment.set_global("with_namespace",async function(name,...body) {
+     return  ["=:let",[["=:previous_namespace",["=:current_namespace"]],["=:rval","=:nil"]],["=:set_namespace",name],["=:try",["=:=","=:rval",["=:progn",].concat(body)],["=:catch","=:Error",["=:e"],["=:progn",["=:set_namespace","=:previous_namespace"],["=:throw","=:e"]]]],["=:set_namespace","=:previous_namespace"],"=:rval"]
+},{ "eval_when":{ "compile_time":true
+},"name":"with_namespace","macro":true,"fn_args":"(name \"&\" body)"
 });
  return  true
 }

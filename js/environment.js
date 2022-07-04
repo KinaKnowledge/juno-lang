@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-04 07:12:41
-// Version: 2022.07.04.07.12
-export const DLISP_ENV_VERSION='2022.07.04.07.12';
+// Build Time: 2022-07-04 08:47:37
+// Version: 2022.07.04.08.47
+export const DLISP_ENV_VERSION='2022.07.04.08.47';
 
 
 
@@ -91,7 +91,6 @@ export async function init_dlisp(Environment)  {
                     ;
                     let active_namespace=namespace;
                     ;
-                    await console.log("creating environment: ",namespace);
                     let Environment={
                         global_ctx:{
                             scope:new Object(),name:namespace
@@ -1158,10 +1157,28 @@ export async function init_dlisp(Environment)  {
                             ;
                              return    (function(){
                                 if (check_true( (parent_environment&&(namespace_identity.length>1)&& not((namespace===namespace_identity['0']))))) {
-                                     return  parent_environment["get_global"].call(parent_environment,namespace_identity['1'],value,meta,is_constant,namespace_identity['0'])
+                                     return  parent_environment["set_global"].call(parent_environment,namespace_identity['1'],value,meta,is_constant,namespace_identity['0'])
+                                } else if (check_true( ((namespace_identity.length>1)&& not((namespace_identity['0']===namespace))))) {
+                                    if (check_true (children[namespace_identity['0']])){
+                                          return  ( function() {
+                                            {
+                                                 let __call_target__=children[namespace_identity['0']], __call_method__="set_global";
+                                                return  __call_target__[__call_method__].call(__call_target__,namespace_identity['1'],value,meta,is_constant,namespace_identity['0'])
+                                            } 
+                                        })()
+                                    } else throw new EvalError(("namespace "+namespace_identity['0']+" doesn't exist"));
+                                    
                                 } else  {
+                                    let comps= get_object_path( ( function() {
+                                         if (check_true ((1===namespace_identity.length))){
+                                              return namespace_identity['0']
+                                        } else {
+                                              return namespace_identity['1']
+                                        } 
+                                    } )());
+                                    ;
                                       (function(){
-                                        Environment.global_ctx.scope[refname]=value;
+                                        Environment.global_ctx.scope[comps['0']]=value;
                                         return Environment.global_ctx.scope;
                                         
                                     })();
@@ -1174,14 +1191,14 @@ export async function init_dlisp(Environment)  {
                                             })()
                                         };
                                            (function(){
-                                            Environment.definitions[refname]=meta;
+                                            Environment.definitions[comps['0']]=meta;
                                             return Environment.definitions;
                                             
                                         })()
                                     } else {
                                          if (check_true (is_constant)){
                                                (function(){
-                                                Environment.definitions[refname]={
+                                                Environment.definitions[comps['0']]={
                                                     constant:true
                                                 };
                                                 return Environment.definitions;
@@ -1189,7 +1206,7 @@ export async function init_dlisp(Environment)  {
                                             })()
                                         }
                                     };
-                                     return  Environment.global_ctx.scope[refname]
+                                     return  Environment.global_ctx.scope[namespace_identity['1']]
                                 }
                             } )()
                         }
@@ -1788,8 +1805,7 @@ export async function init_dlisp(Environment)  {
                         return Environment;
                         
                     }();
-                    let reader=async function(text,opts) {    const __GG__=Environment.get_global;
-     return  await async function(){
+                    let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){
         if (check_true( (undefined==text))) {
              throw new EvalError(("reader: received undefined, text must be a string."));
             
@@ -2339,8 +2355,7 @@ export async function init_dlisp(Environment)  {
         }
     } ()
 };
-                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){            let chars;            let acc;            chars=(text).split("");            acc=[];            await (async function() {                let __for_body__3=async function(c) {                     return  await async function(){                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {                            (acc).push(await String.fromCharCode(92));                             return  (acc).push(c)                        } else  {                             return (acc).push(c)                        }                    } ()                };                let __array__4=[],__elements__2=chars;                let __BREAK__FLAG__=false;                for(let __iter__1 in __elements__2) {
-                    __array__4.push(await __for_body__3(__elements__2[__iter__1]));
+                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){            let chars;            let acc;            chars=(text).split("");            acc=[];            await (async function() {                let __for_body__3=async function(c) {                     return  await async function(){                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {                            (acc).push(await String.fromCharCode(92));                             return  (acc).push(c)                        } else  {                             return (acc).push(c)                        }                    } ()                };                let __array__4=[],__elements__2=chars;                let __BREAK__FLAG__=false;                for(let __iter__1 in __elements__2) {                    __array__4.push(await __for_body__3(__elements__2[__iter__1]));
                     if(__BREAK__FLAG__) {
                          __array__4.pop();
                         break;

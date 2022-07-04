@@ -49,6 +49,8 @@ try {
   await env.evaluate ("(load-file \"./tests/test_harness.lisp\")",null,opts)
   await env.evaluate ("(load-file \"./src/repl.lisp\")",null, opts)
   await env.evaluate ("(load \"./doc/help.lisp\")")
+  await env.evaluate ("(create_namespace `user)")
+  await env.evaluate ("(set_namespace `user)")
 } catch (error) {
   console.error("initialization error: ",error);
   Deno.exit(1);

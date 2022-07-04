@@ -1912,9 +1912,23 @@
     })
 
 
-
-
+(defmacro with_namespace (name `& body)
+  `(let
+       ((previous_namespace (current_namespace))
+	(rval nil))
+     (set_namespace ,#name)
+     (try
+      (= rval
+	 (progn
+	   ,@body))
+      (catch Error (e)
+	     (progn
+	       (set_namespace previous_namespace)
+	       (throw e))))
+     (set_namespace previous_namespace)
+     rval))
+      
+     
 
 true
-   
  
