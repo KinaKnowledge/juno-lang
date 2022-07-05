@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-04 09:34:08
-// Version: 2022.07.04.09.34
-export const DLISP_ENV_VERSION='2022.07.04.09.34';
+// Build Time: 2022-07-05 08:41:17
+// Version: 2022.07.05.08.41
+export const DLISP_ENV_VERSION='2022.07.05.08.41';
 
 
 
@@ -1266,6 +1266,8 @@ export async function init_dlisp(Environment)  {
                                     if (check_true( (parent_environment&&(namespace_identity.length>1)&& not((namespace_identity['0']===namespace))))) {
                                          return  parent_environment["get_global"].call(parent_environment,namespace_identity['1'],value_if_not_found,suppress_check_external_env,namespace_identity['0'],comps)
                                     } else if (check_true( ((namespace_identity.length>1)&& not((namespace_identity['0']===namespace))))) {
+                                        debugger;
+                                        ;
                                         if (check_true (children[namespace_identity['0']])){
                                               return  ( function() {
                                                 {
@@ -1786,9 +1788,31 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
+                        let delete_namespace=async function(name) {
+                             return  await async function(){
+                                if (check_true( await not((name instanceof String || typeof name==='string')))) {
+                                     throw new TypeError("namespace name must be a string");
+                                    
+                                } else if (check_true( ("core"===name))) {
+                                     throw new EvalError("core namespace cannot be removed");
+                                    
+                                } else if (check_true( (null==children[name]))) {
+                                     throw new EvalError(("namespace "+name+"doesn't exist"));
+                                    
+                                } else if (check_true( (name===await current_namespace()))) {
+                                     throw new EvalError("namespace is the current namespace");
+                                    
+                                } else  {
+                                    await (await get_global("remove_prop"))(children,name);
+                                     return  name
+                                }
+                            } ()
+                        };
+                        ;
                          await async function(){
                             Environment.global_ctx.scope["create_namespace"]=create_namespace;
                             Environment.global_ctx.scope["set_namespace"]=set_namespace;
+                            Environment.global_ctx.scope["delete_namespace"]=delete_namespace;
                             Environment.global_ctx.scope["namespaces"]=function() {
                                  return   add( keys(children),"core")
                             };
@@ -1805,11 +1829,7 @@ export async function init_dlisp(Environment)  {
                         return Environment;
                         
                     }();
-                    let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));
-            
-        } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {
-             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));
-            
+                    let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));            
         } else  {
             let output_structure;
             let idx;
@@ -2353,11 +2373,7 @@ export async function init_dlisp(Environment)  {
         }
     } ()
 };
-                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){            let chars;            let acc;            chars=(text).split("");            acc=[];            await (async function() {                let __for_body__3=async function(c) {                     return  await async function(){                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {                            (acc).push(await String.fromCharCode(92));                             return  (acc).push(c)                        } else  {                             return (acc).push(c)                        }                    } ()                };                let __array__4=[],__elements__2=chars;                let __BREAK__FLAG__=false;                for(let __iter__1 in __elements__2) {                    __array__4.push(await __for_body__3(__elements__2[__iter__1]));                    if(__BREAK__FLAG__) {                         __array__4.pop();
-                        break;
-                        
-                    }
-                }return __array__4;
+                    let add_escape_encoding=async function(text) {        if (check_true ((text instanceof String || typeof text==='string'))){            let chars;            let acc;            chars=(text).split("");            acc=[];            await (async function() {                let __for_body__3=async function(c) {                     return  await async function(){                        if (check_true( ((await c["charCodeAt"].call(c,0)===34)))) {                            (acc).push(await String.fromCharCode(92));                             return  (acc).push(c)                        } else  {                             return (acc).push(c)                        }                    } ()                };                let __array__4=[],__elements__2=chars;                let __BREAK__FLAG__=false;                for(let __iter__1 in __elements__2) {                    __array__4.push(await __for_body__3(__elements__2[__iter__1]));                    if(__BREAK__FLAG__) {                         __array__4.pop();                        break;                                            }                }return __array__4;
                  
             })();
              return  (acc).join("")

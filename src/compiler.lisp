@@ -3441,6 +3441,7 @@
                                (`assembled nil))
                             (declare (boolean needs_return?))
                             (if (and (not opts.root_environment)
+				     (== first_level_setup.length 0)
                                      has_lisp_globals)
                               (push first_level_setup
                                     ["const __GG__=" env_ref "get_global" ";" ]))
@@ -4991,11 +4992,14 @@
                        is_error)
                   is_error)
               is_error
-              is_error
+              (do
+                (push errors is_error)
+                is_error)
+              
               (eq nil final_token_assembly)
               (do  
                   (= is_error (new EvalError "Pre-Compilation Error"))
-                  is_error)
+                  (push errors is_error))
               else
               (do
                   ;; we have tokenized and processed the input tree, now compile...

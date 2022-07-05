@@ -779,6 +779,7 @@
                           (and (> namespace_identity.length 1)
                                (not (== namespace_identity.0 namespace)))
                           (do
+                            (debug)
                             (if (prop children namespace_identity.0)
                               (-> (prop children namespace_identity.0)
                                   `get_global
@@ -1123,12 +1124,28 @@
                                        ))  ;; point the evaluate function at the right environment
                                    name))))
 
+       (defvar delete_namespace (fn (name)
+                                  (cond
+                                    (not (is_string? name))
+                                    (throw TypeError "namespace name must be a string")
+                                    (== "core" name)
+                                    (throw EvalError "core namespace cannot be removed")
+                                    (eq nil (prop children name))
+                                    (throw EvalError (+ "namespace " name "doesn't exist"))
+                                    (== name (current_namespace))
+                                    (throw EvalError "namespace is the current namespace")
+                                    else
+                                    (do
+                                      (remove_prop children name)
+                                      name))))
+
        ;; if we are in core, set up the active namespace
        
        (set_prop Environment.global_ctx.scope
                  "create_namespace" create_namespace
                  "set_namespace" set_namespace
-                 "namespaces" (function () (+ (keys children) "core"))
+                 "delete_namespace" delete_namespace
+                 "namespaces" (function () (+ (keys children) "core"))                 
                  "current_namespace" current_namespace))
                                                                                           
      ;; Expose our global setters/getters for the dynamic and top level contexts

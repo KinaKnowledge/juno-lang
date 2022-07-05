@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-04 09:34:08
-// Version: 2022.07.04.09.34
-export const DLISP_ENV_VERSION='2022.07.04.09.34';
+// Build Time: 2022-07-05 08:41:17
+// Version: 2022.07.05.08.41
+export const DLISP_ENV_VERSION='2022.07.05.08.41';
 
 
 
@@ -5509,7 +5509,7 @@ export async function init_compiler(Environment) {
                         ;
                         assembled=null;
                         ;
-                        if (check_true ((await not((opts && opts["root_environment"]))&&has_lisp_globals))){
+                        if (check_true ((await not((opts && opts["root_environment"]))&&((first_level_setup && first_level_setup.length)===0)&&has_lisp_globals))){
                              (first_level_setup).push(["const __GG__=",env_ref,"get_global",";"])
                         };
                         assembled=await (await Environment.get_global("splice_in_return_b"))(await (await Environment.get_global("splice_in_return_a"))(js_code));
@@ -7748,10 +7748,11 @@ export async function init_compiler(Environment) {
                                 (errors).push(is_error);
                                  return  is_error
                             } else if (check_true(is_error)) {
-                                 return is_error
+                                (errors).push(is_error);
+                                 return  is_error
                             } else if (check_true( (null==final_token_assembly))) {
                                 is_error=new EvalError("Pre-Compilation Error");
-                                 return  is_error
+                                 return  (errors).push(is_error)
                             } else  {
                                 assembly=await compile(final_token_assembly,root_ctx,0);
                                 if (check_true ((await not((opts && opts["root_environment"]))&&has_lisp_globals))){
