@@ -280,11 +280,11 @@
      ]
  ["(defconst my_constant 123) (describe `my_constant)"
   []
-  `{ type: "Number", location: "global", name: "my_constant", constant: true }
+  `{"namespace":"user" "name":"my_constant" "type":"Number" "constant":true}
   "global constant definition is mark as a constant" ]
  ["(undefine `my_constant) (defconst my_constant 123) (undefine `my_constant) (describe `my_constant)"
   []
-  `{ type: "undefined", location: null, name: "my_constant" }
+  nil
   "global constant allowed to be undefined."
   ]
  ["(defconst my_constant 456)"
@@ -1110,7 +1110,7 @@
                 {`eval_when:{ `compile_time: true }})
             (describe `when2))"
     []
-    `{"type":"AsyncFunction" "location":"global" "name":"when2" "eval_when":{"compile_time":true}}
+    `{"namespace":"user" "name":"when2" "type":"AsyncFunction" "eval_when":{"compile_time":true}}
     "register compile time function"
     ]
     [ "(when2 (> 4 0) \"positive number\")"

@@ -48,6 +48,8 @@
      ;; in the core environment.
      
      (defvar active_namespace namespace)
+
+     (defvar contained (or opts.contained false))
      
      ;; Set up our initial skeleton..
 
@@ -65,7 +67,7 @@
         `declarations: { 
                         `safety: {
                                   `level: 2
-                                  }
+                                  }                        
                         }       
         })
           
@@ -441,39 +443,54 @@
                                    (new Set vals)
                                    (== vtype "object")
                                    (new Set (values vals)))))))
-         
-         (describe 
-          (fn (quoted_symbol)
-            (let
-                ((not_found { `not_found: true })
-                 (location (cond (prop Environment.global_ctx.scope quoted_symbol)
-                                 "global"
-                                 (not (== undefined (get_outside_global quoted_symbol)))
-                                 "external"
-                                 else
-                                 nil))
-                 (result nil))
-              (= result
-                 (+ {
-                     `type: (cond
-                              (== location "global")
-                              (sub_type (prop Environment.global_ctx.scope quoted_symbol))
-                              (== location "external")
-                              (sub_type (get_outside_global quoted_symbol))
-                              else
-                              "undefined")
-                     `location: location
-                     `name: quoted_symbol
-                     }                  
-                    (if (prop Environment.definitions quoted_symbol)
-                      (prop Environment.definitions quoted_symbol)
-                      {})))
-              (when result.description
-                (set_prop result
-                          `description
-                          (-> Environment `eval result.description)))
-              result)))
-         
+       
+         (meta_for_symbol (fn (quoted_symbol search_mode)
+                               (when (is_string? quoted_symbol)
+                                 ;; if we have been given a string, get any local data we have in our global context
+                                 (defvar local_data (prop Environment.global_ctx.scope quoted_symbol))
+                                 (if search_mode                                          
+                                   (cond
+                                     local_data
+                                     [ (+ { `namespace: namespace
+                                            `name: quoted_symbol
+                                           `type: (subtype local_data) }
+                                          ;; include any symbols we need
+                                          (aif (prop Environment.definitions quoted_symbol)
+                                               it
+                                               {})) ]
+                                     parent_environment
+                                     (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1)
+                                     
+                                     (> (length (keys children)) 0)  ;; we don't have a parent, but we have children
+                                     (reduce (`details (for_each (`child_data (pairs children))
+                                                                 (-> child_data.1 `meta_for_symbol quoted_symbol)))
+                                             details))
+                                   (do
+                                     (= quoted_symbol (if (starts_with? (quote "=:") quoted_symbol)
+                                                        (-> quoted_symbol `substr 2)))
+                                     (aif (prop Environment.definitions quoted_symbol)
+                                          (+ { `namespace: namespace
+                                               `type: (sub_type local_data)
+                                               `name: quoted_symbol }
+                                             it)))))))
+       
+       (describe (fn (quoted_symbol search_mode)
+                   (progn
+                    (defvar internal_results (meta_for_symbol quoted_symbol true))
+                    (if (and (is_array? internal_results)
+                             internal_results.0)                      
+                      (if search_mode
+                        internal_results          ;; if we found something internal, return all results
+                        (first internal_results)) ;; we are interested in the first result onlu
+                      (do
+                        (defvar external_results (get_outside_global quoted_symbol))
+                        (if external_results
+                          {
+                           `location: "external"
+                           `type: (subtype external_results)
+                           }
+                          nil))))))
+                          
          (undefine (function (quoted_symbol)
                              (if (prop Environment.global_ctx.scope quoted_symbol)
                                (progn
@@ -668,7 +685,7 @@
          (check_external_env_default (if (== namespace "core") true false))
          (*namespace* namespace)
          (set_global 
-          (function (refname value meta is_constant target_namespace)
+          (function (refname value meta is_constant target_namespace contained_req)
                     (progn
 		     (cond (not (== (typeof refname) "string"))
 			   (throw TypeError "reference name must be a string type")
@@ -698,15 +715,16 @@
                        (and parent_environment
                             (> namespace_identity.length 1)
                             (not (== namespace namespace_identity.0)))
-                       (-> parent_environment `set_global namespace_identity.1 value meta is_constant namespace_identity.0)
+                       (-> parent_environment `set_global namespace_identity.1 value meta is_constant namespace_identity.0 (or contained contained_req))
 
                        ;; not us but we are the core, so we need to send it to the appropriate namespace
                        
                        (and (> namespace_identity.length 1)
                             (not (== namespace_identity.0 namespace)))
                        (do
-                         (if (prop children namespace_identity.0)   ;; do we have the requested namespace?
-                           (-> (prop children namespace_identity.0) ;; dispatch it there..
+                         (if (and (prop children namespace_identity.0)   ;; do we have the requested namespace?
+                                  (not contained_req))                   ;; can we access it?
+                           (-> (prop children namespace_identity.0)       ;; dispatch it there..
                                `set_global
                                namespace_identity.1 value meta is_constant namespace_identity.0)
                            ;; no such namespace so it is an error...
@@ -739,7 +757,7 @@
                          (prop Environment.global_ctx.scope comps.0))))))
          
          (get_global 
-          (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps)
+          (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps contained_req)
                     (cond 
                       (not (== (typeof refname) "string"))
                       (throw TypeError "reference name must be a string type")
@@ -772,14 +790,16 @@
                           (and parent_environment
                                (> namespace_identity.length 1)
                                (not (== namespace_identity.0 namespace)))
-                          
-                          (-> parent_environment `get_global namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)      
+                          ;; pass it up...note that is we are a contained environment, our request will turn contained to true
+                          (-> parent_environment `get_global namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps (or contained
+                                                                                                                                                                contained_req))      
 
                           ;; we are at the root (core) but it is not us, so we need to see if we have a namespace that alignes and if so, call it's get_global specifically
                           (and (> namespace_identity.length 1)
                                (not (== namespace_identity.0 namespace)))
                           (do                            
-                            (if (prop children namespace_identity.0)
+                            (if (and (prop children namespace_identity.0)
+                                     (not contained_req))                   ;; can we access it?
                               (-> (prop children namespace_identity.0)
                                   `get_global
                                   namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)
@@ -797,7 +817,7 @@
                                      (== namespace_identity.length 1)  ;; non-qualified we need to check upward
                                      parent_environment)               ;; if possible..
                               (do
-                                (defvar rval (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps))                                
+                                (defvar rval (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps (or contained contained_req)))                                
                                 rval)
                               (do
                                 ;; this is us
@@ -826,6 +846,7 @@
                                   (do
                                     (console.warn "get_global: condition fall through: " comps)
                                     NOT_FOUND))))))))))
+       
        (symbol_definition (fn (symname target_namespace)
                             (let
                                 ((namespace_identity (if target_namespace
@@ -842,7 +863,15 @@
                                     parent_environment
                                     (-> parent_environment `symbol_definition namespace_identity.1 namespace_identity.0)
                                     else
-                                    undefined))))
+                                    undefined)))
+                          {
+                           `description: (+ "Given a symbol name and an optional namespace, either as a fully qualified path "
+                                            "or via the target_namespace argument, returns definition information about the "
+                                            "retquested symbol.  "
+                                            "Used primarily by the compiler to find metadata for a specific symbol during compilation.")
+                           `usage: ["symname:string" "namespace:string"]
+                           `tags: ["compiler" "symbols" "namespace" "search" "context" "environment"]
+                           })
                                                                                                                                                                                
          (compile (fn (json_expression opts)
                     (let
@@ -1060,11 +1089,7 @@
                                         ;(env_log "eval_struct <-" (clone rval))
                         rval))))
        
-     (defvar meta_for_symbol (fn (quoted_symbol)
-                               (do
-                                 (if (starts_with? (quote "=:") quoted_symbol)
-                                   (prop Environment.definitions (-> quoted_symbol `substr 2))
-                                   (prop Environment.definitions quoted_symbol)))))
+                                   
      
      ;; This will allow us to swap out compiler functions for when we are using potentially
      ;; multiple compilers, for example in the development of the compiler.  
@@ -1097,14 +1122,15 @@
      ;; set our current evaluation path to the correct environment as the
      ;; entry point.
      
-     (defvar children {}) ;; container for the child environments
+     (defvar children {})              ;; container for the child environments
+     (defvar children_declarations {}) ;; container for declarations pertaining to our child environments
      
      (when (== namespace "core")     
        ;; returns the current namespace 
        (defvar current_namespace (function ()
                                            active_namespace))
        
-       (defvar create_namespace (fn (name)
+       (defvar create_namespace (fn (name options)
                                   (cond
                                     (not (is_string? name))
                                     (throw TypeError "namespace name must be a string")
@@ -1112,13 +1138,20 @@
                                     (throw EvalError "namespace already exists")
                                     else                                  
                                     (let
-                                        ((child_env (dlisp_env { `parent_environment: Environment `namespace: name })))
-                                      (if child_env.evaluate
+                                        ((options (or options {}))
+                                         (child_env (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained })))
+                                      (if child_env.evaluate   ;; we got an legit env back 
                                         (do
-                                          (-> child_env `set_compiler compiler) ;; we all share a single compiler
+                                          (-> child_env `set_compiler compiler) ;; we all share a single compiler by default
                                           (set_prop children
                                                     name
                                                     child_env)
+                                          (set_prop children_declarations
+                                                    `name
+                                                    {})
+                                          (if options.contained
+                                            (set_prop children_declarations.name
+                                                      `contained true))
                                           name)
                                         (do
                                           (console.error "ENV: couldn't create the child environment. Received: " child_env)

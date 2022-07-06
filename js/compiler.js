@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-06 07:09:06
-// Version: 2022.07.06.07.09
-export const DLISP_ENV_VERSION='2022.07.06.07.09';
+// Build Time: 2022-07-06 13:16:11
+// Version: 2022.07.06.13.16
+export const DLISP_ENV_VERSION='2022.07.06.13.16';
 
 
 
@@ -80,10 +80,10 @@ export async function init_compiler(Environment) {
         if (check_true( (tree instanceof Array))) {
             rval=[];
             await (async function(){
-                 let __test_condition__15=async function() {
+                 let __test_condition__14=async function() {
                      return  (idx<(tree && tree.length))
                 };
-                let __body_ref__16=async function() {
+                let __body_ref__15=async function() {
                     tval=tree[idx];
                     if (check_true ((tval===deferred_operator))){
                         idx+=1;
@@ -95,8 +95,8 @@ export async function init_compiler(Environment) {
                      return  idx+=1
                 };
                 let __BREAK__FLAG__=false;
-                while(await __test_condition__15()) {
-                    await __body_ref__16();
+                while(await __test_condition__14()) {
+                    await __body_ref__15();
                      if(__BREAK__FLAG__) {
                          break;
                         
@@ -108,23 +108,23 @@ export async function init_compiler(Environment) {
         } else if (check_true( (tree instanceof Object))) {
             rval=new Object();
             await (async function() {
-                let __for_body__19=async function(pset) {
+                let __for_body__18=async function(pset) {
                      return  await async function(){
                         rval[(pset && pset["0"])]=await do_deferred_splice((pset && pset["1"]));
                         return rval;
                         
                     }()
                 };
-                let __array__20=[],__elements__18=await (await Environment.get_global("pairs"))(tree);
+                let __array__19=[],__elements__17=await (await Environment.get_global("pairs"))(tree);
                 let __BREAK__FLAG__=false;
-                for(let __iter__17 in __elements__18) {
-                    __array__20.push(await __for_body__19(__elements__18[__iter__17]));
+                for(let __iter__16 in __elements__17) {
+                    __array__19.push(await __for_body__18(__elements__17[__iter__16]));
                     if(__BREAK__FLAG__) {
-                         __array__20.pop();
+                         __array__19.pop();
                         break;
                         
                     }
-                }return __array__20;
+                }return __array__19;
                  
             })();
              return  rval

@@ -114,11 +114,9 @@
 
 
 (defmacro if_compile_time_defined (quoted_symbol exists_form not_exists_form)
-     (if (== (prop (describe quoted_symbol)
-                   `location)
-              nil)
-	 (or not_exists_form [])
-	 exists_form)
+  (if  (describe quoted_symbol)
+    exists_form       
+    (or not_exists_form []))       
      {
          `description: "If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled."
          `tags: ["compile" "defined" "global" "symbol" "reference"]
@@ -1653,8 +1651,9 @@
         (console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree ))
     validation_results))
 
-(defun symbols ()
-    (keys Environment.context.scope)
+;; macro so we capture the current *namespace*
+(defmacro symbols ()
+    `(keys Environment.context.scope)
     {
         `description: "Returns an array of all defined symbols in the current evironment."
         `usage: []
@@ -1912,23 +1911,28 @@
     })
 
 
-(defmacro with_namespace (name `& body)
-  `(let
-       ((previous_namespace (current_namespace))
-	(rval nil))
-     (set_namespace ,#name)
-     (try
-      (= rval
-	 (progn
-	   ,@body))
-      (catch Error (e)
-	     (progn
-	       (set_namespace previous_namespace)
-	       (throw e))))
-     (set_namespace previous_namespace)
-     rval))
-      
-     
+(defun defns (name options)
+  (if (and options
+           options.ignore_if_exists
+           (is_string? name)
+           (contains? name (namespaces)))
+     name   ;; just return
+     (create_namespace name options)) ;; try and make it 
+  {
+    usage: ["name:string" "options:object"]
+    description: (+ "Given a name and an optional options object, creates a new namespace "
+                    "identified by the name argument.  If the options object is provided, the following keys are available:"
+                    "<br>"
+                    "ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error "
+                    "and instead just return with the name of the requested namespace. Any other options are ignored and "
+                    "the existing namespace isn't altered."
+                    "contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces "
+                    "beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will "
+                    "fail.")
+    tags: ["namespace" "environment" "define" "scope" "context"]
+   })
+
+
 
 true
  
