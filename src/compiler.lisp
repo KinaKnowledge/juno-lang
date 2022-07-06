@@ -89,6 +89,7 @@
        (`break_out "__BREAK__FLAG__")
        (`tokens [])
        (`tokenized nil)
+       (`target_namespace nil)  ;; if nil the current namespace environment will be used - set with declare at the top level
        (`errors [])       
        (`first_level_setup [])
        (`needs_first_level true)
@@ -3224,8 +3225,9 @@
                                   else
                                   false))))
        
-       ;; Import code from export...
-       
+       ;; Import code from exports
+       ;; static import
+       ;; TODO: Needs input validation here 
        (`compile_import 
             (fn (tokens ctx)
                 (let
@@ -3255,7 +3257,24 @@
                      
                 (console.log "compile_import: <- " (clone acc))
                 acc)))
-
+       ;; dynamic import 
+         ;; (dynamic_import source_location)   
+       
+       (`compile_dynamic_import 
+            (fn (tokens ctx)
+                (let
+                    ((`from_tokens nil)
+                     (`preamble (calling_preamble ctx))
+                     (`from_place nil)
+                     (`acc []))
+                  (declare (string preamble.0))
+                 (= from_tokens tokens.1)                 
+                 (push acc { `ctype: "statement" })
+                 (= from_place (compile from_tokens ctx))                 
+                 (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
+                    (push acc t))                
+                acc)))
+                            
        ;; The javascript operator allows direct embedding of
        ;; javascript characters in the compilation stream
        ;; and they can access the local or closure values
@@ -3282,25 +3301,7 @@
                              else
                              (push acc t.val))))
                 acc)))
-
-
-       ;; (dynamic_import source_location)   
-       
-       (`compile_dynamic_import 
-            (fn (tokens ctx)
-                (let
-                    ((`from_tokens nil)
-                     (`preamble (calling_preamble ctx))
-                     (`from_place nil)
-                     (`acc []))
-                  (declare (string preamble.0))
-                 (= from_tokens tokens.1)                 
-                 (push acc { `ctype: "statement" })
-                 (= from_place (compile from_tokens ctx))                 
-                 (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
-                    (push acc t))                
-                acc)))
-                     
+     
        (`compile_set_global 
          (fn (tokens ctx opts)
              (let
@@ -3399,15 +3400,13 @@
                                ((`acc []))
                              (= acc (JSON.stringify lisp_struct.1))
                              [acc])))
-       
-       
-       
+      
        (`wrap_and_run (fn (js_code ctx run_opts)
                           (let
                               ((`assembly nil)
                                (`result nil)
                                (`fst nil)
-                               
+                               (`comp_meta nil)
                                (`needs_braces? false)
                                (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
                                (`run_log (if opts.quiet_mode
@@ -3445,32 +3444,42 @@
                                      has_lisp_globals)
                               (push first_level_setup
                                     ["const __GG__=" env_ref "get_global" ";" ]))
+                                                                                                                          
                             (= assembled (splice_in_return_b (splice_in_return_a js_code)))
-                            (= assembled (assemble_output assembled))
-                            
-                            (= assembled (+ (if needs_braces? "{" "")
-                                            (if needs_return? " return " "")
-                                            assembled
-                                            (if needs_braces? "}" "")))
-                            
-                            (when (verbosity ctx)
-                              (run_log "in quotem: " in_quotem "needs_braces? " needs_braces? "needs_return?" needs_return?)
-                              (run_log "assembled: " assembled))
-                            ;(if ctx_access
-                             ; (= assembly (new AsyncFunction "Environment" "ctx_access" assembled))
-                            (= assembly (new AsyncFunction "Environment"  assembled))
-                            (when run_opts.bind_mode
-                              (= assembly (bind_function assembly Environment)))
-                            
-                            ;(if ctx_access
-                             ; (= result (assembly Environment ctx_access))
-                            (= result (assembly Environment))
-                            (when (verbosity ctx)
-                              (run_log "<- " result))
-                            result)))            
+                            ;; is this our env's namespace or not?
+                            ;; if not send it to the right namespace for execution
+                            (if (and target_namespace
+                                     (is_object? assembled.0)
+                                     (not (== target_namespace Environment.namespace)))
+                              (do
+                                (= comp_meta (first assembled))
+                                (set_prop comp_meta
+                                          `namespace
+                                          target_namespace)
+                                (= result (-> Environment `evaluate_local [comp_meta (assemble_output assembled)] ctx { `compiled_source: true }))
+                                (when (verbosity ctx)
+                                  (run_log "<- " result))
+                                result)
+                              ;; this is in our own environment
+                              (do                              
+                                (= assembled (assemble_output assembled))                                
+                                (= assembled (+ (if needs_braces? "{" "")
+                                                (if needs_return? " return " "")
+                                                assembled
+                                                (if needs_braces? "}" "")))                                
+                                (when (verbosity ctx)
+                                  (run_log "assembled: " assembled))                                       
+                                (= assembly (new AsyncFunction "Environment"  assembled))
+                                (when run_opts.bind_mode
+                                  (= assembly (bind_function assembly Environment)))
+                                
+                                        ;(if ctx_access
+                                        ; (= result (assembly Environment ctx_access))
+                                (= result (assembly Environment))
+                                (when (verbosity ctx)
+                                  (run_log "<- " result))
+                                result)))))         
        
-       
-
        ;; quote_tree 
        ;; convert the hierarchical tree to a flattened, serializable
        ;; javascript representation which when evaluated
@@ -3981,7 +3990,14 @@
                                                       (cond
                                                           (== factor.0 "safety")
                                                           (set_declaration ctx "__SAFETY__" `level factor.1))                                                       
-                                                      )))					    
+                                                      )))
+					    (== declaration "namespace")
+                                            (do
+                                              (when (not (== targeted.length 1))
+                                                (throw SyntaxError "namespace declaration requires exactly 1 value"))
+                                              (when (get_ctx ctx "__IN_LAMBDA__")
+                                                (throw SyntaxError "namespace compiler declaration must be toplevel"))
+                                              (setq target_namespace targeted.0.name))
                                             else
                                             (do
                                               (push warnings
@@ -5011,6 +5027,7 @@
                   ;; add any first level scope stuff into the first_level_setup array
                   ;; so it is included in the right place in the scope
                   (if (and (not opts.root_environment)
+                           (== first_level_setup.length 0)
                            has_lisp_globals)
                     (push first_level_setup
                           ["const __GG__=" env_ref "get_global" ";"]))
@@ -5069,7 +5086,12 @@
                        (take assembly))
                    (assemble_output assembly)]
                    [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
-    
+    (when (and (is_object? (first output))
+               target_namespace)
+      (set_prop (first output)
+                `namespace
+                target_namespace))
+      
     (when opts.error_report
           (opts.error_report { `errors: errors `warnings: warnings}))                         
     output))))

@@ -15,6 +15,7 @@ The Language
 - What is Juno?
 - What does a Lisp bring to the table?
 - The Environment and the compiler
+..* declarations vs proclaimations
 - Symbols and References, literals, base types are the JSON types.
 - Numbers
 - Functions

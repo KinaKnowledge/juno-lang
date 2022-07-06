@@ -778,8 +778,7 @@
                           ;; we are at the root (core) but it is not us, so we need to see if we have a namespace that alignes and if so, call it's get_global specifically
                           (and (> namespace_identity.length 1)
                                (not (== namespace_identity.0 namespace)))
-                          (do
-                            (debug)
+                          (do                            
                             (if (prop children namespace_identity.0)
                               (-> (prop children namespace_identity.0)
                                   `get_global
@@ -787,8 +786,7 @@
                               (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))
                           else
                           (do
-                            
-                            
+                                                        
                             ;; search path is to first check the global Lisp Environment
                             ;; and if the check_external_env flag is true, then go to the
                             ;; external JS environment.
@@ -935,114 +933,133 @@
                                        (opts.error_report error_data)
                                        (console.error "Compilation Error: " error_data))
                                      (= compiled [ { `error: true } nil  ])))))
-                             
-                             
-                                        ;(env_log "<- compiled:" compiled)
-                             (if opts.on_compilation_complete
-                               (opts.on_compilation_complete compiled))
+                             (debug)
+                             (cond
+                               (and compiled.0.namespace
+                                    (not (== compiled.0.namespace namespace))
+                                    parent_environment)
+                               ;; not us and if we are a child, pass it up to our parent to deal with
+                               (-> parent_environment `evaluate_local compiled ctx (+ {}
+                                                                                      opts
+                                                                                      { `compiled_source: true }))
+                               (and compiled.0.namespace
+                                    (not (== compiled.0.namespace namespace)))
+
+                               ;; not us, but we are a root as we have no parent, so do we
+                               ;; have a child namespace that matches?
+
+                               (if (prop children compiled.0.namespace)
+                                 (-> (prop children compiled.0.namespace) `evaluate_local compiled ctx (+ {}
+                                                                                                          opts
+                                                                                                          { `compiled_source: true }))
+                                 (throw EvalError (+ "unknown namespace " compiled.0.namespace " assignment")))
+
+                               else
+                               ;; this is us or no namespace designated 
+                               (do 
+                                 (if opts.on_compilation_complete
+                                   (opts.on_compilation_complete compiled))
                                         ;(console.log "env: <- compiled: " (clone compiled))
-                             (try
-                               (do                             
-                                 (= result
-                                    (cond
-                                      compiled.error  ;; compiler error
-                                      (throw (new compiled.error compiled.message))
-                                      
-                                      (and compiled.0.ctype
-                                           (or (contains? "block" compiled.0.ctype)
-                                               (== compiled.0.ctype "assignment")
-                                               (== compiled.0.ctype "__!NOT_FOUND!__")))
-                                      (if (compiled.0.has_lisp_globals)
-                                        (do 
-                                          (set_prop compiled
-                                                    
-                                                    1
-                                                    (new AsyncFunction "Environment" (+ "{ " compiled.1 "}")))
+                                 (try
+                                   (do                             
+                                     (= result
+                                        (cond
+                                          compiled.error  ;; compiler error
+                                          (throw (new compiled.error compiled.message))
                                           
-                                          (compiled.1 Environment))
-                                        (do 
-                                          (set_prop compiled
-                                                    1
-                                                    (new AsyncFunction  (+ "{" compiled.1 "}")))
-                                          (compiled.1)))
-                                      
-                                      (and compiled.0.ctype
-                                           (or (== "AsyncFunction" compiled.0.ctype)
-                                               (== "statement" compiled.0.ctype)
-                                               (== "objliteral" compiled.0.ctype)))
-                                      (do
-                                        (if (compiled.0.has_lisp_globals)
+                                          (and compiled.0.ctype
+                                               (or (contains? "block" compiled.0.ctype)
+                                                   (== compiled.0.ctype "assignment")
+                                                   (== compiled.0.ctype "__!NOT_FOUND!__")))
+                                          (if (compiled.0.has_lisp_globals)
+                                            (do 
+                                              (set_prop compiled
+                                                        
+                                                        1
+                                                        (new AsyncFunction "Environment" (+ "{ " compiled.1 "}")))
+                                              
+                                              (compiled.1 Environment))
+                                            (do 
+                                              (set_prop compiled
+                                                        1
+                                                        (new AsyncFunction  (+ "{" compiled.1 "}")))
+                                              (compiled.1)))
+                                          
+                                          (and compiled.0.ctype
+                                               (or (== "AsyncFunction" compiled.0.ctype)
+                                                   (== "statement" compiled.0.ctype)
+                                                   (== "objliteral" compiled.0.ctype)))
                                           (do
+                                            (if (compiled.0.has_lisp_globals)
+                                              (do
                                         ;(console.log "env: compiled text: " (+ "{ return " compiled.1 "} "))     
-                                            (set_prop compiled
-                                                      1
-                                                      (new AsyncFunction "Environment" (+ "{ return " compiled.1 "} ")))
-                                            (compiled.1 Environment))
+                                                (set_prop compiled
+                                                          1
+                                                          (new AsyncFunction "Environment" (+ "{ return " compiled.1 "} ")))
+                                                (compiled.1 Environment))
+                                              (do
+                                                (set_prop compiled
+                                                          1
+                                                          (new AsyncFunction (+ "{ return " compiled.1 "}")))
+                                                (compiled.1))))
+                                          
+                                          (and compiled.0.ctype
+                                               (== "Function" compiled.0.ctype))
                                           (do
-                                            (set_prop compiled
-                                                      1
-                                                      (new AsyncFunction (+ "{ return " compiled.1 "}")))
-                                            (compiled.1))))
-                                      
-                                      (and compiled.0.ctype
-                                           (== "Function" compiled.0.ctype))
-                                      (do
-                                        (if (compiled.0.has_lisp_globals)
-                                          (do
-                                            (set_prop compiled
-                                                      1
-                                                      (new Function "Environment" (+ "{ return " compiled.1 "} ")))
-                                            (compiled.1 Environment))
-                                          (do 
-                                            (set_prop compiled
-                                                      1
-                                                      (new Function (+ "{ return " compiled.1 "}")))
-                                            (compiled.1))))
-                                      else ;; this is a simple expression
-                                      compiled.1)))
-                               (catch Error (e)
-                                 (do
-                                   (env_log "caught error: " e.name e.message)
-                                   (when opts.error_report
-                                     (opts.error_report {
-                                                         `error: e.name
-                                                         `message: e.message
-                                                         `form: nil
-                                                         `parent_forms: nil
-                                                         `invalid: true
-                                                         `text: e.stack
-                                                         }))
+                                            (if (compiled.0.has_lisp_globals)
+                                              (do
+                                                (set_prop compiled
+                                                          1
+                                                          (new Function "Environment" (+ "{ return " compiled.1 "} ")))
+                                                (compiled.1 Environment))
+                                              (do 
+                                                (set_prop compiled
+                                                          1
+                                                          (new Function (+ "{ return " compiled.1 "}")))
+                                                (compiled.1))))
+                                          else ;; this is a simple expression
+                                          compiled.1)))
+                                   (catch Error (e)
+                                     (do
+                                       (env_log "caught error: " e.name e.message)
+                                       (when opts.error_report
+                                         (opts.error_report {
+                                                             `error: e.name
+                                                             `message: e.message
+                                                             `form: nil
+                                                             `parent_forms: nil
+                                                             `invalid: true
+                                                             `text: e.stack
+                                                             }))
                                         ;(env_log "<- ERROR: " (-> e `toString))
-                                   (= result e)
-                                   (if (and ctx ctx.in_try)
-                                     (throw result)))))
+                                       (= result e)
+                                       (if (and ctx ctx.in_try)
+                                         (throw result)))))
                                         ;(env_log "<-" result)
-                             result)))
+                                 result)))))
+       
        (evaluate (fn (expression ctx opts)
                    (if (== namespace active_namespace)
                      (evaluate_local expression ctx opts)  ;; we by default use evaluate local
                      (-> (prop children active_namespace)
                          `evaluate
                          expression ctx opts)))) ;; otherwise evaluate using the active namespace
-                         
-         (eval_struct (fn (lisp_struct ctx opts)
-                        (let
-                            ((rval nil))
-                                        ;(env_log "eval_struct ->" (clone lisp_struct) ctx opts)
-                          (if (is_function? lisp_struct)
-                            (= rval (lisp_struct))
-                            (= rval (evaluate lisp_struct 
-                                              ctx 
-                                              (+ {
-                                                  `json_in: true
-                                                  }
-                                                 (or opts {})))))
-                                        ;(env_log "eval_struct <-" (clone rval))
-                          rval))))
        
-     
-     
-     
+       (eval_struct (fn (lisp_struct ctx opts)
+                      (let
+                          ((rval nil))
+                                        ;(env_log "eval_struct ->" (clone lisp_struct) ctx opts)
+                        (if (is_function? lisp_struct)
+                          (= rval (lisp_struct))
+                          (= rval (evaluate lisp_struct 
+                                            ctx 
+                                            (+ {
+                                                `json_in: true
+                                                }
+                                               (or opts {})))))
+                                        ;(env_log "eval_struct <-" (clone rval))
+                        rval))))
+       
      (defvar meta_for_symbol (fn (quoted_symbol)
                                (do
                                  (if (starts_with? (quote "=:") quoted_symbol)
@@ -1266,6 +1283,7 @@
                `declarations Environment.declarations
                `compile compile
                `evaluate evaluate
+               `evaluate_local evaluate_local
                `do_deferred_splice do_deferred_splice
                `id (fn () id)
                `set_check_external_env (fn (state)
