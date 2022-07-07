@@ -1,6 +1,9 @@
 
+
 (if (not (is_symbol? `Deno))
   (throw "IO requires Deno"))
+
+(defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
 
 (defglobal read_text_file
   (bind Deno.readTextFile Deno)
@@ -11,10 +14,16 @@
    `tags:["file" "read" "text" "input" "io"]
    })
 
-(defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
-
-
-
+(defglobal write_text_file
+  (bind Deno.writeTextFile Deno)
+  {
+   `description: (+ "Given a string path to a filename, an argument containing "
+                    "the string of text to be written, and an optional options argument "
+                    "write the file to the filesystem.<br><br>."
+                    "The WriteFileOptions corresponds to the Deno WriteFileOptions interface")
+   `usage:["filepath:string" "textdata:string" "options:WriteFileOptions"]
+   `tags:[ `file `write `io `text `string ]
+   })
 
 (defun load (filename)       
   (let
@@ -40,16 +49,7 @@
    })
 
 
-(defglobal write_text_file
-  (bind Deno.writeTextFile Deno)
-  {
-   `description: (+ "Given a string path to a filename, an argument containing "
-                    "the string of text to be written, and an optional options argument "
-                    "write the file to the filesystem.<br><br>."
-                    "The WriteFileOptions corresponds to the Deno WriteFileOptions interface")
-   `usage:["filepath:string" "textdata:string" "options:WriteFileOptions"]
-   `tags:[ `file `write `io `text `string ]
-   })
+
 
 (defmacro with_fs_events ((event_binding location) body)
   `(let

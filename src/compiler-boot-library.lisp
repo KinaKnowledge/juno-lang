@@ -336,6 +336,32 @@
                                        defset.2])))))
      acc))
 
+(defmacro define_env% (source_env `& defs)
+    (let
+        ((acc [(quote progl)])
+         (symname nil))
+
+      (cond
+        (and source_env
+             (is_object? source_env.context.scope))
+        (do
+          (for_each (`defset (pairs source_env.context.scope))
+             (do
+               ;; we only need to define our local to the environment scope vars since
+               ;; since the source_env global_ctx scope is already populated..
+               (push acc [(quote defvar) defset.0 defset.1]))))
+        else        
+        (for_each (`defset defs)
+                  (do
+                    (push acc [(quote defvar) defset.0 defset.1])
+                    (= symname defset.0)                          
+                    (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])            
+                    (when (is_object? defset.2)
+                      (push acc ([(quote set_prop) (quote Environment.definitions)
+                                  (+ "" (as_lisp symname) "")
+                                  defset.2]))))))
+     acc))
+
 (defun type (x)
     (cond
         (== nil x) "null"
@@ -1075,7 +1101,7 @@
             `tags:["ui" "color" "view"]
         })
  
-(defun `flatten_ctx (ctx _var_table)
+(defun flatten_ctx (ctx _var_table)
   (let
       ((`var_table (or _var_table (new Object)))
        (`ctx_keys (keys var_table)))
@@ -1383,7 +1409,7 @@
          step1)
       text))
 
-(defun `path_to_js_syntax (comps)
+(defun path_to_js_syntax (comps)
     (if (is_array? comps)
         (if (> comps.length 1)
             (join ""     

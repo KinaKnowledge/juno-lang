@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-06 13:16:11
-// Version: 2022.07.06.13.16
-export const DLISP_ENV_VERSION='2022.07.06.13.16';
+// Build Time: 2022-07-07 09:37:39
+// Version: 2022.07.07.09.37
+export const DLISP_ENV_VERSION='2022.07.07.09.37';
 
 
 
@@ -12,10 +12,13 @@ export async function initializer(Environment)  {
     const __GG__=Environment.get_global;
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
     ;
+    await Environment.set_global("path",await import ("https://deno.land/std@0.110.0/path/mod.ts"));
     await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.readTextFile")),(await Environment.get_global("Deno"))),{
         description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"]
     });
-    await Environment.set_global("path",await import ("https://deno.land/std@0.110.0/path/mod.ts"));
+    await Environment.set_global("write_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.writeTextFile")),(await Environment.get_global("Deno"))),{
+        description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"]
+    });
     await Environment.set_global("load",async function(filename) {
         let fname;
         let js_mod;
@@ -48,9 +51,6 @@ export async function initializer(Environment)  {
             }
         } ()
     },{ "name":"load","fn_args":"(filename)","description":["=:+","Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. ","The file contents are expected to be Lisp source code in text format."],"tags":["compile","read","io","file"],"usage":["filename:string"]
-});
-await Environment.set_global("write_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.writeTextFile")),(await Environment.get_global("Deno"))),{
-    description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"]
 });
 await Environment.set_global("with_fs_events",async function(...args) {
     let event_binding;

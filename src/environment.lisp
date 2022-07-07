@@ -11,7 +11,17 @@
 ;; Use evaluate(lisp_text) to compile and evaluate lisp text and forms from
 ;; javascript.
 
-;; 
+;; Options are as follows:
+;; parent_environment - if this instance is to be a namespace other than "core"
+;;                      this should be set with the calling environment object.
+
+;; namespace - if given a parent_environment we need to have an addressable
+;;             name.  This must be set if using the parent_environment option.
+
+;; env - if given an environment object using the env key, the returned
+;;       environment instance will have be a clone of the provided environment.
+;;       This is used when exporting an environment image.
+
 
 (defexternal dlisp_env 
   (fn (opts)
@@ -27,7 +37,7 @@
      ;; NOTICE:
      ;; We do not have access to the Environment things at this point, so we are
      ;; very limited until after (define_env)...
-     ;; --------------------------------------------------------------------
+     ;; ------ Start Limited --------------------------------------------
      
      (if (eq undefined opts)
        (= opts {}))
@@ -53,23 +63,25 @@
      
      ;; Set up our initial skeleton..
 
-     (defvar
-       Environment
-       {
-        `global_ctx:{
-                     `scope: {}
-                     `name:  namespace              
-                     }
-        `version: (javascript DLISP_ENV_VERSION)
-        `definitions: {
-                       
+     (defvar Environment
+       (if opts.env
+         ;; if we have been given an established env we would use that
+         opts.env 
+         {
+          `global_ctx:{
+                       `scope: {}
+                       `name:  namespace              
                        }
-        `declarations: { 
-                        `safety: {
-                                  `level: 2
-                                  }                        
-                        }       
-        })
+          `version: (javascript DLISP_ENV_VERSION)
+          `definitions: {
+                         
+                         }
+          `declarations: { 
+                          `safety: {
+                                    `level: 2
+                                    }                        
+                          }       
+          }))
           
      
      (defvar id  (get_next_environment_id))
@@ -81,7 +93,7 @@
                `context
                Environment.global_ctx)
      
-     (defvar compiler (fn () true))
+     (defvar compiler (fn () (throw EvalError "compiler must be set")))
      
      (defvar compiler_operators (new Set))
      (defvar special_identity (fn (v)
@@ -93,7 +105,9 @@
      ;; closure
      
      
-     (define_env       
+     (define_env% (if opts.env
+                    opts.env
+                    nil)
          (MAX_SAFE_INTEGER 9007199254740991)
          (LispSyntaxError globalThis.LispSyntaxError)
          (sub_type subtype)
@@ -692,7 +706,9 @@
 			   (or (== Environment value)
 			       (== Environment.global_ctx value)
 			       (== Environment.global_ctx.scope value))
-			   (throw EvalError "cannot set the environment scope as a global value"))
+			   (do
+                             (debug)
+                             (throw EvalError "cannot set the environment scope as a global value")))
 		     
                      (when (resolve_path [ refname `constant ] Environment.definitions)
                        (throw TypeError (+ "Assignment to constant variable " refname )))
@@ -962,8 +978,12 @@
                                        (opts.error_report error_data)
                                        (console.error "Compilation Error: " error_data))
                                      (= compiled [ { `error: true } nil  ])))))
-                             (debug)
+                             (debug)                            
                              (cond
+                               (eq nil compiled)
+                               ;; we got nothing back - for now note it and return nil
+                               ;; if we had an error it should of been reported
+                               nil
                                (and compiled.0.namespace
                                     (not (== compiled.0.namespace namespace))
                                     parent_environment)
@@ -1121,9 +1141,12 @@
      ;; because we need to be able to manage them and we need to be able to
      ;; set our current evaluation path to the correct environment as the
      ;; entry point.
+
+     ;; container for the child environments
+     (defvar children (or opts.children {}))
      
-     (defvar children {})              ;; container for the child environments
-     (defvar children_declarations {}) ;; container for declarations pertaining to our child environments
+     ;; container for declarations pertaining to our child environments
+     (defvar children_declarations (or opts.children_declarations {})) 
      
      (when (== namespace "core")     
        ;; returns the current namespace 
@@ -1188,22 +1211,38 @@
                                     (do
                                       (remove_prop children name)
                                       name))))
-
+            
        ;; if we are in core, set up the active namespace
        
        (set_prop Environment.global_ctx.scope
                  "create_namespace" create_namespace
                  "set_namespace" set_namespace
-                 "delete_namespace" delete_namespace
+                 "delete_namespace" delete_namespace                
                  "namespaces" (function () (+ (keys children) "core"))                 
                  "current_namespace" current_namespace))
-                                                                                          
+
+     (defvar clone_to_new (fn (options)
+                            (let
+                                ((new_env nil)
+                                 (my_children nil)
+                                 (my_children_declarations nil))
+                              
+                              (env_log namespace "cloning: # children: " (length children))
+                              (= new_env
+                                 (dlisp_env { `env: (clone Environment)
+                                             `children: (clone children)
+                                             `children_declarations: (clone children_declarations) }))
+                              (env_log namespace "constructed: " (->  new_env `id))
+                              new_env)))
+                           
+                           
+     
      ;; Expose our global setters/getters for the dynamic and top level contexts
      
      (set_prop Environment
                `get_global get_global
                `set_global set_global
-               `symbol_definition symbol_definition
+               `symbol_definition symbol_definition              
                `namespace namespace)
           
      ;; In the compiler context, we have access to the existing environment,
@@ -1223,81 +1262,90 @@
                `add_escape_encoding add_escape_encoding
                `get_outside_global get_outside_global
                `as_lisp lisp_writer
-               `lisp_writer lisp_writer)
+               `lisp_writer lisp_writer
+               `clone_to_new clone_to_new)
      
      
      ;; inline functions for more efficient compiled code...
      
-     (defvar inlines  (+  {} 
-                          (if opts.inlines
-                            opts.inlines
-                            {})
-                          {   `pop: (fn (args)
-                                      ["(" args.0 ")" "." "pop()"])
-                           `push: (fn (args)
-                                    ["(" args.0 ")" ".push" "(" args.1 ")"])
-                           `chomp: (fn (args)
-                                     ["(" args.0 ")" ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
-                           `join: (fn (args)
-                                    (if (== args.length 1) 
-                                      ["(" args.0 ")" ".join" "('')"]
-                                      ["(" args.1 ")" ".join" "(" args.0 ")" ]))
-                           `take: (fn (args)
-                                    ["(" args.0 ")" ".shift" "()" ])
-                           `prepend: (fn (args)
-                                       [ "(" args.0 ")" ".unshift" "(" args.1 ")"])
-                           
-                           `trim: (fn (args)
-                                    [ "(" args.0 ")" ".trim()"])
+     (defvar inlines
+       (if parent_environment
+         (+ {}
+            parent_environment.inlines
+            (if opts.inlines
+              opts.inlines
+              {}))
+         (+  {} 
+             (if opts.inlines
+               opts.inlines
+               {})
+             {
+              `pop: (fn (args)
+                         ["(" args.0 ")" "." "pop()"])
+              `push: (fn (args)
+                       ["(" args.0 ")" ".push" "(" args.1 ")"])
+              `chomp: (fn (args)
+                        ["(" args.0 ")" ".substr" "(" 0 "," "(" args.0 ".length" "-" 1 ")" ")" ])
+              `join: (fn (args)
+                       (if (== args.length 1) 
+                         ["(" args.0 ")" ".join" "('')"]
+                         ["(" args.1 ")" ".join" "(" args.0 ")" ]))
+              `take: (fn (args)
+                       ["(" args.0 ")" ".shift" "()" ])
+              `prepend: (fn (args)
+                          [ "(" args.0 ")" ".unshift" "(" args.1 ")"])
+              
+              `trim: (fn (args)
+                       [ "(" args.0 ")" ".trim()"])
 
-                           
-                           `lowercase: (fn (args)
-                                         ["(" args.0 ")" ".toLowerCase()"])
-                           `uppercase: (fn (args)
-                                         ["(" args.0 ")" ".toUpperCase()"])            
-                           `islice: (fn (args)
-                                      (cond 
-                                        (== args.length 3)
-                                        [ "(" args.0 ")" ".slice(" args.1 "," args.2 ")"]
-                                        (== args.length 2)
-                                        [ "(" args.0 ")" ".slice(" args.1 ")"]
-                                        else
-                                        (throw SyntaxError "slice requires 2 or 3 arguments")))
-                           `split_by: (fn (args)
-                                        [ "(" args.1 ")" ".split" "(" args.0 ")"])
-                           `bindf: (fn (args)
-                                     [   args.0 ".bind(" args.1 ")"])
-                           `is_array?: (fn (args)
-                                         [ "(" args.0 " instanceof Array" ")"])
-                           `is_object?: (fn (args)
-                                          [ "(" args.0 " instanceof Object" ")" ])
-                           `is_string?: (fn (args)
-                                          [ "(" args.0 " instanceof String || typeof " args.0 "===" "'string'" ")"])
-                           `is_function?: (fn (args)
-                                            [ args.0 " instanceof Function"])
-                           `is_element?: (fn (args)
-                                           [ args.0 " instanceof Element"])
-                           `log: (fn (args)
-                                   ["console.log" "(" (map (fn (val idx tl)
-                                                             (if (< idx (- tl 1))
-                                                               [val ","]
-                                                               [val]))
-                                                           args) ")"])
-                           `reverse: (fn (args)
-                                       ["("args.0 ")" ".slice(0).reverse()"])
-                           
-                           `int: (fn (args)
-                                   (cond
-                                     (== args.length 1)
-                                     ["parseInt(" args.0 ")"]
-                                     (== args.length 2)
-                                     ["parseInt(" args.0 "," args.1 ")"]
-                                     else
-                                     (throw "SyntaxError" (+ "invalid number of arguments to int: received " args.length))))
-                           `float: (fn (args)
-                                     ["parseFloat(" args.0 ")"])
-                           
-                           }))
+              
+              `lowercase: (fn (args)
+                            ["(" args.0 ")" ".toLowerCase()"])
+              `uppercase: (fn (args)
+                            ["(" args.0 ")" ".toUpperCase()"])            
+              `islice: (fn (args)
+                         (cond 
+                           (== args.length 3)
+                           [ "(" args.0 ")" ".slice(" args.1 "," args.2 ")"]
+                           (== args.length 2)
+                           [ "(" args.0 ")" ".slice(" args.1 ")"]
+                           else
+                           (throw SyntaxError "slice requires 2 or 3 arguments")))
+              `split_by: (fn (args)
+                           [ "(" args.1 ")" ".split" "(" args.0 ")"])
+              `bindf: (fn (args)
+                        [   args.0 ".bind(" args.1 ")"])
+              `is_array?: (fn (args)
+                            [ "(" args.0 " instanceof Array" ")"])
+              `is_object?: (fn (args)
+                             [ "(" args.0 " instanceof Object" ")" ])
+              `is_string?: (fn (args)
+                             [ "(" args.0 " instanceof String || typeof " args.0 "===" "'string'" ")"])
+              `is_function?: (fn (args)
+                               [ args.0 " instanceof Function"])
+              `is_element?: (fn (args)
+                              [ args.0 " instanceof Element"])
+              `log: (fn (args)
+                      ["console.log" "(" (map (fn (val idx tl)
+                                                (if (< idx (- tl 1))
+                                                  [val ","]
+                                                  [val]))
+                                              args) ")"])
+              `reverse: (fn (args)
+                          ["("args.0 ")" ".slice(0).reverse()"])
+              
+              `int: (fn (args)
+                      (cond
+                        (== args.length 1)
+                        ["parseInt(" args.0 ")"]
+                        (== args.length 2)
+                        ["parseInt(" args.0 "," args.1 ")"]
+                        else
+                        (throw "SyntaxError" (+ "invalid number of arguments to int: received " args.length))))
+              `float: (fn (args)
+                        ["parseFloat(" args.0 ")"])
+              
+              })))
 
      
      
@@ -1311,6 +1359,7 @@
                `read_lisp reader
                `as_lisp as_lisp
                `inlines inlines
+               `clone_to_new clone_to_new
                `special_operators special_operators
                `definitions Environment.definitions
                `declarations Environment.declarations

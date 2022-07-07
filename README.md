@@ -7,6 +7,12 @@ This dialect of Lisp straddles two worlds: leverage Javascript's features and li
 
 As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `defun` or `defmacro`.  There are some exceptions, such as the predicate names, which by convention end with a question mark (?).  Ultimately the code being produced is Javascript, and so certain design decisions have been made in order to better fit into the Javascript world.  For example, there are no `CONS` cells and therefore no classical list traversal.  However, the lack of these structures doesn't meaningfully impact the user or design experience.  Instead, arrays act as the primary sequence container.  The `push` function appends to an array, vs. prepending to a list.  The operators `first` and `rest` take the place of `CAR` and `CDR`.  Juno is case sensitive and uses `snake_case` vs. `hyphenated-case` as in Common Lisp because hyphens can't be part of variable names in Javascript.  You can use hyphenated names, but these will be sanitized for Javascript language rules with underscores replacing the hyphens.
 
+----
+
+If you are coming to Juno from outside the Lisp world, say from the Javascript world, the notion of how a variable is represented in the language is a bit different.  In fact, this is one of the key differences between a lisp family language and Javascript.  In Javascript, a variable is declared in the source code and it is the specific means in which to refer to a mutable or immutable value over the course of it's scope.  Once in execution, the code cannot not refer to these values explicitly - there is no semantic way to use the code in the language itself. 
+
+
+(footnote: Javascript can be constructed in the source code to occur, via `Function` and `eval`.  Some restrictions apply(tm): operations like saving context is harder.  This is handy for saving work and information in a structured way.  Introspection and composability are more natural when things like language templates can be built.  And working with the DOM, itself a tree structure is more natural.)     
 
 Topics
 
@@ -86,6 +92,8 @@ But nobody wants to sit and write JSON all day, because it is tedious and ineffi
 | ,        | Whitespace      | space 
 
 Everything else is the same, and therefore, JSON can be embdedded directly in Juno notation.  This makes it easy to wrap JSON structures with functions and use them as templates, data sources or for other purposes.  The reader can be extended to support other extensions in the Juno notation style, by adding an entry to it's readtable object.
+
+Discuss: Namespaces are really scope spaces, because they are minimum environments themselves.  They could be saved off as a saved scope, to be resurrected again by loading them in.  [ Note to self: we need to implement the saving of core and/or it's children to a serialized structure. ] For example, when serialized out, the output JSON would look just like a environment.js with an optional boot up, reinitialization function, and with all the state saved.  Things like the compiler would have to be rebound if it's eval is to be used, but that is precisely why the environment doesn't by default carry a compiler embedded in it.  The embedded rehydrate (tm) function would be called to initialize itself, and boom, back in business, plugged into it's new world.  The rehydrated JSON would have to be given a compiler perhaps if so configured (or stripped), and could be a resource for the parent environment and it's own environment running asynchronously.  The control is ultimately with the loader which by use of filtering macros can remove or implement functionality such as the compiler and the initialization function. This is not designed as a security mechanism, but as a way to craft information systems dynamically and to be synergistic in design to the DOM, which itself is a tree.  
 
 Another nice benefit of using a JSON tree as a source structure, is the ease with which Document Object Model (DOM) structures can be established and manipulated, without having to weld multiple languages together.  For example, the following shows the standard way Juno constructs DOM structures, where tags are represented as function calls with tag attributes being represented by optional objects as the first argument of the tag function.
 

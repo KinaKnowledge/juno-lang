@@ -1,9 +1,9 @@
-## Symbols and Namespaces
+## Semantics - Symbols and Namespaces
 ----
 
 ### Symbols
 
-
+  
 
 ### Namespaces
 
