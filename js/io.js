@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-07 09:37:39
-// Version: 2022.07.07.09.37
-export const DLISP_ENV_VERSION='2022.07.07.09.37';
+// Build Time: 2022-07-08 07:18:22
+// Version: 2022.07.08.07.18
+export const DLISP_ENV_VERSION='2022.07.08.07.18';
 
 
 
@@ -339,6 +339,22 @@ await Environment.set_global("rebuild_env",async function(opts) {
      return  true
 },{ "name":"rebuild_env","fn_args":"(opts)","description":["=:+","Builds the lisp environment from the Lisp sources and produces the Javascript output files ","necessary for initializing the environment. Options: <br>","source_dir:string:The directory of the Lisp sources, the default is './src'.<br>","output_dir:string:The directory to where the output Javascript files are placed.  The default is './js'.<br>","include_source:boolean:If true, the compiler will include comments of the lisp source (not fully supported yet).<br>","version_tag:string:A string based label signifying the text to use as the version.  If not specified, the version ","tag uses the format year.month.day.hour.minute.<br>"],"usage":["options:object?"],"tags":["compile","export","build","environment","javascript"]
 });
+await Environment.set_global("build_environment_macro",async function(opts) {
+    let source_dir;
+    let src;
+    source_dir=((opts && opts["source_dir"])||"./src");
+    src=await (await Environment.get_global("resolve_path"))([2],await (await Environment.get_global("last"))(await (await Environment.get_global("reader"))(await (await Environment.get_global("read_text_file"))(await (await Environment.get_global("add"))(source_dir,"/environment.lisp")))));
+    (await (await Environment.get_global("resolve_path"))([1],src)).pop();
+    if (check_true (await (await Environment.get_global("not"))(((src && src["0"])==="=:fn"))))throw new SyntaxError("Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ...");
+    ;
+     return  await Environment.set_global("construct_environment",async function(options) {
+         return  ["=:fn",[],["=:let",[["=:opts",options]],src]]
+    },{ "eval_when":{ "compile_time":true
+},"name":"construct_environment","macro":true,"fn_args":"(options)"
+})
+},{ "name":"build_environment_macro","fn_args":"(opts)"
+});
+await (await Environment.get_global("build_environment_macro"))();
  return  true
 }
 }

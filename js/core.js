@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-07-07 09:37:39
-// Version: 2022.07.07.09.37
-export const DLISP_ENV_VERSION='2022.07.07.09.37';
+// Build Time: 2022-07-08 07:18:22
+// Version: 2022.07.08.07.18
+export const DLISP_ENV_VERSION='2022.07.08.07.18';
 
 
 
@@ -749,8 +749,8 @@ await Environment.set_global("array_to_object",async function(input_array) {
     let output;
     let working_array;
     count=0;
-    output=await (await Environment.get_global("clone"))(new Object());
-    working_array=await (await Environment.get_global("clone"))(input_array);
+    output=await clone(new Object());
+    working_array=await clone(input_array);
     await (async function(){
          let __test_condition__60=async function() {
              return  (await (await Environment.get_global("length"))(working_array)>0)

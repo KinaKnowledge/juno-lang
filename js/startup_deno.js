@@ -5,10 +5,7 @@
 
 //var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone } = await import("./lisp_writer.js");
 import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } from "./lisp_writer.js";
-globalThis.subtype=subtype
-globalThis.check_true=check_true
-globalThis.clone=clone
-globalThis.get_next_environment_id=get_next_environment_id
+
 
 import { init_dlisp } from "./environment.js"
 import { init_compiler } from "./compiler.js"

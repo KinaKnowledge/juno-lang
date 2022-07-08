@@ -1934,8 +1934,44 @@
     `description: "Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument."
     `tags:["compile" "source" "javascript" "js" "display" ]
     
-    })
+     })
 
+(defmacro export_symbols (`& args)
+  (let
+      ((acc [ quote [javascript `export "{"]])
+       (numargs (length args))
+       (idx 0))
+    (for_each (symname args)
+              (do
+                (cond
+                  (and (is_array? symname)
+                       (== symname.length 2))
+                  (do
+                    (push acc (deref symname.0))
+                    (push acc " as ")
+                    (push acc (deref symname.1)))
+                  (is_string? symname)
+                  (push acc (deref symname))
+                  else
+                  (throw SyntaxError "Invalid argument for export"))
+                (inc idx)
+                (if (< idx numargs)
+                  (push acc ", "))))
+    (push acc "}"))
+    {
+     `usage: ["arg0:string|array","argN:string|array"]
+     `description: (+ "The export_symbols macro facilitates the Javascript module export functionality.  "
+                      "To make available defined lisp symbols from the current module the export_symbols "
+                      "macro is called with it's arguments being either the direct symbols or, if an "
+                      "argument is an array, the first is the defined symbol within the lisp environment "
+                      "or current module and the second element in the array is the name to be exported "
+                      "as.  For example: <br> "
+                      "(export lisp_symbol1 lisp_symbol2) ;; exports lisp_symbol1 and lisp_symbol2 directly. <br>"
+                      "(export (lisp_symbol1 external_name)) ;; exports lisp_symbol1 as 'external_name`. <br>"
+                      "(export (initialize default) symbol2) ;; exports initialize as default and symbol2 as itself.")
+     `tags: ["env" "enviroment" "module" "export" "import" "namespace" "scope"]                      
+     }
+    acc)
 
 (defun defns (name options)
   (if (and options
@@ -1957,7 +1993,6 @@
                     "fail.")
     tags: ["namespace" "environment" "define" "scope" "context"]
    })
-
 
 
 true

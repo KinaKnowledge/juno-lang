@@ -2170,7 +2170,8 @@
                              (`arg nil)                             
                              (`ctx (new_ctx ctx))
                              (`fn_args tokens.1.val)
-                             (`body tokens.2)                             
+                             (`body tokens.2)
+                             (`external_declarations tokens.3)
                              (`type_mark nil)
                              (`nbody nil))
                           
@@ -3637,7 +3638,7 @@
                   (`acc [])
                   (`preamble (calling_preamble ctx))
                   (`result nil))               
-               (= assembly (compile tokens.1.val ctx))
+               (= assembly (compile tokens.1 ctx))
                (when (verbosity ctx)
 		 (eval_log "assembly:" (clone assembly)))               
                (= has_lisp_globals true)
@@ -4277,9 +4278,10 @@
                           `performance `prompt `propertyIsEnumerable `queueMicrotask
                           `removeEventListener `self `sessionStorage `setInterval
                           `setTimeout `structuredClone `this `toLocaleString `toString 
-                          `undefined `unescape `valueOf `window 
+                         `undefined `unescape `valueOf `window
+                           `export `constructor  ;; keywords can also be included in this
                           ;; DLisp mandatory defined globals
-                          `AsyncFunction
+                          `AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone
                           `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice
                           ])
        (`is_error nil)
@@ -4512,7 +4514,7 @@
                      (throw "compile: nil ctx"))
                     (cond
                       (or (is_number? tokens)
-                          (is_string? tokens)
+                          (is_string? tokens)                          
                           (== (sub_type tokens) "Boolean"))
                       tokens          ;; just return the literal value
                       (and (is_array? tokens)

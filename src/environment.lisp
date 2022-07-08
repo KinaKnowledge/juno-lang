@@ -23,7 +23,29 @@
 ;;       This is used when exporting an environment image.
 
 
-(defexternal dlisp_env 
+;; We need some global types since Javascript eval() isn't used in Juno
+
+
+(set_prop globalThis
+          `subtype subtype
+          `check_true check_true
+          `clone clone
+          `LispSyntaxError LispSyntaxError)
+
+(if (== "undefined" (typeof dlisp_environment_count))
+  (set_prop globalThis
+            `dlisp_environment_count
+            0))
+
+
+;; We can't immediately define a macro for the below because we don't have
+;; an environment yet to place it.  So once we are initialized
+;; we will reload this into a macro for constructing custom
+;; environments.
+
+
+
+(defexternal dlisp_env
   (fn (opts)
     (progn
      
@@ -32,16 +54,19 @@
      
      (declare (toplevel true)
               (include subtype get_object_path get_outside_global)
-              (local clone get_next_environment_id))
+              (local clone get_next_environment_id check_true))
 
      ;; NOTICE:
      ;; We do not have access to the Environment things at this point, so we are
      ;; very limited until after (define_env)...
      ;; ------ Start Limited --------------------------------------------
-     
-     (if (eq undefined opts)
-       (= opts {}))
-     
+     (= opts
+       (if (== opts undefined)
+         {}
+         opts))
+         
+         
+       
      ;; Construct the environment
      ;; Are we the core, or are we a namespace off of the core?
      
@@ -111,7 +136,7 @@
          (MAX_SAFE_INTEGER 9007199254740991)
          (LispSyntaxError globalThis.LispSyntaxError)
          (sub_type subtype)
-                                        ;(*namespace* namespace)
+                                      
          (__VERBOSITY__ 0
                         { 
                          `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -1234,7 +1259,30 @@
                                              `children_declarations: (clone children_declarations) }))
                               (env_log namespace "constructed: " (->  new_env `id))
                               new_env)))
-                           
+
+     (defvar save_env (fn (options)
+                          (let
+                              ((new_env nil)
+                               (my_children nil)
+                               (env_constructor nil)
+                               (my_children_declarations nil))
+                            
+                            (declare (function env_constructor))
+                            (= env_constructor (get_global "construct_environment"))
+                            
+                            (when (eq nil env_constructor)
+                              (throw ReferenceError "The construct_environment macro wasn't found. Is IO loaded?"))
+                          ;  (when (not (is_function? env_constructor))
+                          
+                            
+                            (env_log namespace "cloning: # children: " (length children))
+                            (= new_env
+                               (env_constructor {   ;`env: (clone Environment)
+                                                    ;   `children: (clone children)
+                                        ;  `children_declarations: (clone children_declarations) }))
+                                                 }))
+;                            (env_log namespace "constructed: " 
+                            new_env)))
                            
      
      ;; Expose our global setters/getters for the dynamic and top level contexts
@@ -1263,7 +1311,8 @@
                `get_outside_global get_outside_global
                `as_lisp lisp_writer
                `lisp_writer lisp_writer
-               `clone_to_new clone_to_new)
+               `clone_to_new clone_to_new
+               `save_env save_env)
      
      
      ;; inline functions for more efficient compiled code...
@@ -1377,3 +1426,6 @@
                                      check_external_env_default))
      
      Environment)))
+
+
+

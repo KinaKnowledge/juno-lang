@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-07 09:37:39
-// Version: 2022.07.07.09.37
-export const DLISP_ENV_VERSION='2022.07.07.09.37';
+// Build Time: 2022-07-08 07:18:22
+// Version: 2022.07.08.07.18
+export const DLISP_ENV_VERSION='2022.07.08.07.18';
 
 
 
@@ -172,8 +172,8 @@ export async function init_compiler(Environment) {
             let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;  }  return typeof value;};
             let is_nil_ques_=async function(value) {     return  (null===value)
 };
-            let is_number_ques_=function(x) {                         return  ( subtype(x)==="Number")
-                    };
+            let is_number_ques_=function(x) {                             return  ( subtype(x)==="Number")
+                        };
             let starts_with_ques_=function anonymous(val,text) {
 { if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}
 };
@@ -456,7 +456,7 @@ export async function init_compiler(Environment) {
                 first_level_setup=[];
                 needs_first_level=true;
                 signal_error=async function(message) {
-                     return  new (await Environment.get_global("LispSyntaxError"))(message)
+                     return  new LispSyntaxError(message)
                 };
                 warnings=[];
                 blk_counter=0;
@@ -3172,6 +3172,7 @@ export async function init_compiler(Environment) {
                     let arg;
                     let fn_args;
                     let body;
+                    let external_declarations;
                     let type_mark;
                     let nbody;
                     acc=[];
@@ -3180,6 +3181,7 @@ export async function init_compiler(Environment) {
                     ctx=await new_ctx(ctx);
                     fn_args=(tokens && tokens["1"] && tokens["1"]["val"]);
                     body=(tokens && tokens["2"]);
+                    external_declarations=(tokens && tokens["3"]);
                     type_mark=null;
                     nbody=null;
                     await async function(){
@@ -5720,7 +5722,7 @@ export async function init_compiler(Environment) {
                         acc=[];
                         preamble=await calling_preamble(ctx);
                         result=null;
-                        assembly=await compile((tokens && tokens["1"] && tokens["1"]["val"]),ctx);
+                        assembly=await compile((tokens && tokens["1"]),ctx);
                         if (check_true (await verbosity(ctx))){
                              (eval_log)("assembly:",await clone(assembly))
                         };
@@ -6828,7 +6830,7 @@ export async function init_compiler(Environment) {
                         }
                     } ()
                 };
-                standard_types=["AbortController","AbortSignal","AggregateError","Array","ArrayBuffer","Atomics","BigInt","BigInt64Array","BigUint64Array","Blob","Boolean","ByteLengthQueuingStrategy","CloseEvent","CountQueuingStrategy","Crypto","CryptoKey","CustomEvent","DOMException","DataView","Date","Error","ErrorEvent","EvalError","Event","EventTarget","File","FileReader","FinalizationRegistry","Float32Array","Float64Array","FormData","Function","Headers",Infinity,"Int16Array","Int32Array","Int8Array","Intl","JSON","Location","Map","Math","MessageChannel","MessageEvent","MessagePort","NaN","Navigator","Number","Object","Performance","PerformanceEntry","PerformanceMark","PerformanceMeasure","ProgressEvent","Promise","Proxy","RangeError","ReadableByteStreamController","ReadableStream","ReadableStreamDefaultController","ReadableStreamDefaultReader","ReferenceError","Reflect","RegExp","Request","Response","Set","SharedArrayBuffer","Storage","String","SubtleCrypto","Symbol","SyntaxError","TextDecoder","TextDecoderStream","TextEncoder","TextEncoderStream","TransformStream","TypeError","URIError","URL","URLSearchParams","Uint16Array","Uint32Array","Uint8Array","Uint8ClampedArray","WeakMap","WeakRef","WeakSet","WebAssembly","WebSocket","Window","Worker","WritableStream","WritableStreamDefaultController","WritableStreamDefaultWriter","__defineGetter__","__defineSetter__","__lookupGetter__","__lookupSetter__","_error","addEventListener","alert","atob","btoa","clearInterval","clearTimeout","close","closed","confirm","console","constructor","crypto","decodeURI","decodeURIComponent","dispatchEvent","encodeURI","encodeURIComponent","escape","eval","fetch","getParent","globalThis","hasOwnProperty","isFinite","isNaN","isPrototypeOf","localStorage","location","navigator","null","onload","onunload","parseFloat","parseInt","performance","prompt","propertyIsEnumerable","queueMicrotask","removeEventListener","self","sessionStorage","setInterval","setTimeout","structuredClone","this","toLocaleString","toString","undefined","unescape","valueOf","window","AsyncFunction","Environment","Expression","get_next_environment_id","subtype","lisp_writer","do_deferred_splice"];
+                standard_types=["AbortController","AbortSignal","AggregateError","Array","ArrayBuffer","Atomics","BigInt","BigInt64Array","BigUint64Array","Blob","Boolean","ByteLengthQueuingStrategy","CloseEvent","CountQueuingStrategy","Crypto","CryptoKey","CustomEvent","DOMException","DataView","Date","Error","ErrorEvent","EvalError","Event","EventTarget","File","FileReader","FinalizationRegistry","Float32Array","Float64Array","FormData","Function","Headers",Infinity,"Int16Array","Int32Array","Int8Array","Intl","JSON","Location","Map","Math","MessageChannel","MessageEvent","MessagePort","NaN","Navigator","Number","Object","Performance","PerformanceEntry","PerformanceMark","PerformanceMeasure","ProgressEvent","Promise","Proxy","RangeError","ReadableByteStreamController","ReadableStream","ReadableStreamDefaultController","ReadableStreamDefaultReader","ReferenceError","Reflect","RegExp","Request","Response","Set","SharedArrayBuffer","Storage","String","SubtleCrypto","Symbol","SyntaxError","TextDecoder","TextDecoderStream","TextEncoder","TextEncoderStream","TransformStream","TypeError","URIError","URL","URLSearchParams","Uint16Array","Uint32Array","Uint8Array","Uint8ClampedArray","WeakMap","WeakRef","WeakSet","WebAssembly","WebSocket","Window","Worker","WritableStream","WritableStreamDefaultController","WritableStreamDefaultWriter","__defineGetter__","__defineSetter__","__lookupGetter__","__lookupSetter__","_error","addEventListener","alert","atob","btoa","clearInterval","clearTimeout","close","closed","confirm","console","constructor","crypto","decodeURI","decodeURIComponent","dispatchEvent","encodeURI","encodeURIComponent","escape","eval","fetch","getParent","globalThis","hasOwnProperty","isFinite","isNaN","isPrototypeOf","localStorage","location","navigator","null","onload","onunload","parseFloat","parseInt","performance","prompt","propertyIsEnumerable","queueMicrotask","removeEventListener","self","sessionStorage","setInterval","setTimeout","structuredClone","this","toLocaleString","toString","undefined","unescape","valueOf","window","export","constructor","AsyncFunction","check_true","LispSyntaxError","dlisp_environment_count","clone","Environment","Expression","get_next_environment_id","subtype","lisp_writer","do_deferred_splice"];
                 is_error=null;
                 is_block_ques_=async function(tokens) {
                      return  (await contains_ques_((tokens && tokens["0"] && tokens["0"]["name"]),["do","progn"]))
