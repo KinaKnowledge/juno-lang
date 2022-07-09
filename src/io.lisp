@@ -1,29 +1,30 @@
 
 
+
 (if (not (is_symbol? `Deno))
   (throw "IO requires Deno"))
 
 (defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
 
-(defglobal read_text_file
-  (bind Deno.readTextFile Deno)
-  {
-   `description: (+ "Given an accessible filename including " 
-                    "path with read permissions returns the file contents as a string.")
-   `usage:["filename:string" "options:object" ]
-   `tags:["file" "read" "text" "input" "io"]
-   })
+(defbinding
+  (read_text_file (Deno.readTextFile Deno)
+                  {
+                   `description: (+ "Given an accessible filename including " 
+                                    "path with read permissions returns the file contents as a string.")
+                   `usage:["filename:string" "options:object" ]
+                   `tags:["file" "read" "text" "input" "io"]   
+                   })
+  
 
-(defglobal write_text_file
-  (bind Deno.writeTextFile Deno)
-  {
-   `description: (+ "Given a string path to a filename, an argument containing "
-                    "the string of text to be written, and an optional options argument "
-                    "write the file to the filesystem.<br><br>."
-                    "The WriteFileOptions corresponds to the Deno WriteFileOptions interface")
-   `usage:["filepath:string" "textdata:string" "options:WriteFileOptions"]
-   `tags:[ `file `write `io `text `string ]
-   })
+  (write_text_file (Deno.writeTextFile Deno)
+                   {
+                    `description: (+ "Given a string path to a filename, an argument containing "
+                                     "the string of text to be written, and an optional options argument "
+                                     "write the file to the filesystem.<br><br>."
+                                     "The WriteFileOptions corresponds to the Deno WriteFileOptions interface")
+                    `usage:["filepath:string" "textdata:string" "options:WriteFileOptions"]
+                    `tags:[ `file `write `io `text `string ]
+                    }))
 
 (defun load (filename)       
   (let
@@ -68,17 +69,13 @@
 
 
 
-(defun compile_file (lisp_file export_function_name options)
+    
+
+(defun compile_buffer (input_buffer export_function_name options)
   (let
-      ((input_components (path.parse lisp_file))
-       (input_filename (path.basename lisp_file))
-       (output_filename (or options.output_file
-			    (+ (if (== input_components.dir "")
-                                 "."
-                                 input_components.dir)
-			       path.sep
-			       input_components.name
-			       ".js")))
+      ((output_filename (or options.output_file
+			    (do
+                              (throw EvalError "compile_buffer requires output_file be set in the options"))))
        (opts (or options {}))
        (export_function_name (or export_function_name "initializer"))
        (segments [])
@@ -92,7 +89,6 @@
                          true
                          false))
        (compiled nil) ; holds the compilation output
-       (input_buffer nil)
        (invalid_js_ref_chars "+?-%&^#!*[]~{}|")
        (invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+"))
        (boilerplate "var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");")
@@ -106,7 +102,7 @@
     ;; add any build headers first 
 
     (push segments
-	  (+ "// Source: " input_filename "  "))
+	  (+ "// Source: " options.nput_filename "  "))
     
     (when (is_array? opts.build_headers)
       (for_each (`header opts.build_headers)
@@ -124,29 +120,21 @@
       (push segments "\n"))
 
     
-    (when (or (== input_components.name "environment")
-	      (== export_function_name "init_dlisp")
+    (when (or (== export_function_name "init_dlisp")
 	      opts.toplevel)
       (push segments "if (typeof AsyncFunction === \"undefined\") {\n  globalThis.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;\n}"))
-
-    (= input_buffer (read_text_file lisp_file ))
     
-    
-    ;; convert to JSON for the compiler if lisp
-    
-    (if (== input_components.ext ".lisp")
-      (= input_buffer (read_lisp input_buffer { `implicit_progn: false  `source_name: input_filename }  )))
-
     
     (if (and (is_array? input_buffer)
 	     (== input_buffer.0 (quotel "=:iprogn")))
       (set_prop input_buffer
                 0
                 (quote "=:progn")))
-    
+
+    (when opts.verbose (console.log "input_buffer: " input_buffer))
     ;; now compile the json
 
-    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `include_source: include_source `source_name: input_filename } opts)))
+    (= compiled (compiler input_buffer (+ { env: Environment `formatted_output: true `include_source: include_source `source_name: (or opts.input_filename "anonymous") } opts)))
     (= compile_time (+ (-> (/ (- (time_in_millis) start_time) 1000) `toFixed 3) "s"))
     (cond
       compiled.error
@@ -209,10 +197,10 @@
     (if write_file
       (progn
        (write_text_file output_filename (join "\n" segments))
-       (success (+ "[" compile_time "] compiled: ") lisp_file "->"  output_filename)
+       (success (+ "[" compile_time "] compiled: ") (or opts.input_filename opts.namespace "anonymous") "->"  output_filename)
        output_filename)
       (progn
-       (warn "input file " lisp_file " not compiled.")
+       (warn "cannot compile: " (or opts.input_filename opts.namespace "anonymous"))
        nil)))
   {
    `description: (+ "Given an input lisp file, and an optional initalizer function name and options "
@@ -240,6 +228,21 @@
    `usage: ["input_file:string" "initializer_function:string?" "options:object?"]
    `tags: ["compile" "environment" "building" "javascript" "lisp" "file" "export" ]
    })
+
+(defun compile_file (lisp_file export_function_name options)
+  (let
+      ((input_components (path.parse lisp_file))
+       (input_filename (path.basename lisp_file))
+       (input_buffer nil))
+    (= input_buffer (read_text_file lisp_file ))
+        
+    ;; convert to JSON for the compiler if lisp    
+    (if (== input_components.ext ".lisp")
+      (= input_buffer (read_lisp input_buffer { `implicit_progn: false  `source_name: input_filename }  )))
+
+    (compile_buffer input_buffer export_function_name (+ {} { `input_filename: input_filename } (if options options {})))))
+
+
 
 ;; Rebuilds the environment as a series of JS files
 ;; from the source 
@@ -297,6 +300,7 @@
     (compile_file (source_path "environment.lisp") "init_dlisp"
 		  { `output_file: (output_path "environment.js")
                    `include_source: include_source
+                   `toplevel: true
                    `build_headers: build_headers })
     (compile_file (source_path "compiler-boot-library.lisp") "environment_boot"
 		  { `output_file: (output_path "environment_boot.js")
@@ -328,20 +332,42 @@
 (defun build_environment_macro (opts)
   (let
       ((source_dir (or opts.source_dir
-               "./src"))
+                       "./src"))
+       (idx -1)
+       (pos_of_define_env nil)
        ;; the last form in environment.js must be (defexternal dlisp_env...)
        (src (resolve_path [ 2 ] (last (reader (read_text_file (+ source_dir "/environment.lisp")))))))
     (pop (resolve_path [ 1 ] src)) ;; remove the options argument since we are creating the options in a closure around it
     (if (not (== src.0 (quote "=:fn")))
-      (throw SyntaxError "Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))
-    (defmacro construct_environment (options)
+      (throw SyntaxError "Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))    
+    
+    (defmacro construct_environment (options)                
       `(fn ()
          (let
             ((opts ,#options))  ;; capture the options
-         ,#src)))))
+           ,#src)))))
+
+(defun build_environment_macro_ng (opts)
+  (let
+      ((source_dir (or opts.source_dir
+                       "./src"))
+       (idx -1)
+       
+       ;; the last form in environment.js must be (defexternal dlisp_env...)
+       (src (resolve_path [ 2 ] (last (reader (read_text_file (+ source_dir "/environment.lisp")))))))
+    ;(pop (resolve_path [ 1 ] src)) ;; remove the options argument since we are creating the options in a closure around it
+    (if (not (== src.0 (quote "=:fn")))
+      (throw SyntaxError "Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))
     
+    (defmacro construct_environment (options)                
+      `(let
+           ((opts {})
+            (make_env ,#src)) 
+         (make_env ,#options)
+         ))))
+        
              
-(build_environment_macro)
+(build_environment_macro_ng)
 
 
 ;; return true as the last value so the console output isn't overwhelmed.

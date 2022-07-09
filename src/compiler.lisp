@@ -90,7 +90,8 @@
        (`tokens [])
        (`tokenized nil)
        (`target_namespace nil)  ;; if nil the current namespace environment will be used - set with declare at the top level
-       (`errors [])       
+       (`errors [])
+       (`external_dependencies {})
        (`first_level_setup [])
        (`needs_first_level true)
        (`signal_error (fn (message)
@@ -614,10 +615,12 @@
                                           name
                                           local
                                           local
-                                          (and global
+                                          (and (not (== global undefined))
                                                (not (== global NOT_FOUND)
                                                     ))
                                           global
+                                          ;(== global nil)
+                                          ;global
                                           (== symname name)
                                           name)))
                                ;; put together the return structure..
@@ -632,7 +635,7 @@
                                                 "literal"
                                                 local
                                                 (sub_type local)
-                                                global
+                                                (not (eq undefined global))
                                                 (sub_type global)
                                                 (and ref symname)
                                                 "unbound"
@@ -3240,12 +3243,10 @@
                  (= symbol_tokens tokens.1)
                  (= from_tokens tokens.2)
                  (console.log "compile_import: ->" (clone tokens))
-                 (push acc { `ctype: "statement" })
-                 (push acc "import")
-                 (push acc " ")
-                 
                  (= from_place (compile from_tokens ctx))
-                 
+                 (push acc { `ctype: "statement" `meta: { `imported_from: from_place }})
+                 (push acc "import")
+                 (push acc " ")                                                  
                  (console.log "compile_import: compiled symbols:    " symbols)
                  (console.log "compile_import: compiled from place: " from_place)
                  (cond
@@ -3267,11 +3268,29 @@
                     ((`from_tokens nil)
                      (`preamble (calling_preamble ctx))
                      (`from_place nil)
+                     (`can_be_static false)
+                     (`imported_from nil)
                      (`acc []))
                   (declare (string preamble.0))
-                 (= from_tokens tokens.1)                 
-                 (push acc { `ctype: "statement" })
-                 (= from_place (compile from_tokens ctx))                 
+                 (= from_tokens tokens.1)                                  
+                 (= from_place (compile from_tokens ctx))
+                 
+                 (= imported_from (if (is_array? from_place)
+                                    from_place.1
+                                    from_place))
+                 (when (and (is_string? imported_from)
+                            (starts_with? "\"" imported_from)
+                            (ends_with? "\"" imported_from))
+                   (= can_be_static true)
+                   (= imported_from (-> imported_from `substr 1 (- imported_from.length 2))))
+                                  
+                 (set_prop external_dependencies
+                           imported_from
+                           true)
+                 (push acc { `ctype: "statement" `meta: (if can_be_static
+                                                          { `initializer: [(quote dynamic_import) imported_from] }
+                                                          {}) })
+                 
                  (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
                     (push acc t))                
                 acc)))
@@ -3329,12 +3348,19 @@
                (= assignment_value
                   (do 
                    (compile tokens.2 ctx)))
+
                
                (= wrap_as_function? (check_needs_wrap assignment_value))
+;;              
                (cond 
                    (and (is_object? assignment_value.0)
                         assignment_value.0.ctype)
-                   (do 
+                   (do
+                     (when assignment_value.0.meta                        
+                       (if (not metavalue)
+                         (do                           
+                           (= metavalue (quote_tree assignment_value.0.meta ctx)))))
+                     
                     (set_prop root_ctx.defined_lisp_globals
                               target
                               (cond (== assignment_value.0.ctype "Function")
@@ -3364,7 +3390,10 @@
                (when (verbosity ctx)
 		 (clog "target: " (as_lisp target))
 		 (clog "assignment_value: " (as_lisp assignment_value)))
-                 
+
+               ;(when metavalue
+                ; (console.log "compiler: defglobal metavalue for " target metavalue))
+               
                (= acc [{ `ctype: "statement" } (if (or (== Function (prop root_ctx.defined_lisp_globals target))
                                                        (in_sync? ctx))
                                                    ""
@@ -3372,11 +3401,12 @@
                        " " "Environment" "." "set_global"
                        "(" """\"" tokens.1.name "\"" ","
                        assignment_value
-                       (if (or metavalue opts.constant) "," "") (if metavalue
-                                                                    metavalue
-                                                                    (if opts.constant
-                                                                        "null"
-                                                                        ""))
+                       (if (or metavalue opts.constant) "," "")
+                       (if metavalue
+                         metavalue
+                         (if opts.constant
+                           "null"
+                           ""))
                        (if opts.constant "," "") (if opts.constant "true" "")
                        ")" ])
                
@@ -3958,7 +3988,11 @@
                                             (== declaration "function")
                                             (do					      
                                                (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type Function)))
+                                                         (set_declaration ctx name `type Function)))
+                                            (== declaration "fn")
+                                            (do					      
+                                               (for_each (`name (each targeted `name))
+                                                  (set_declaration ctx name `type AsyncFunction)))
                                             (== declaration "array")
                                             (do
                                                (for_each (`name (each targeted `name))
@@ -3999,6 +4033,7 @@
                                               (when (get_ctx ctx "__IN_LAMBDA__")
                                                 (throw SyntaxError "namespace compiler declaration must be toplevel"))
                                               (setq target_namespace targeted.0.name))
+                                            
                                             else
                                             (do
                                               (push warnings
@@ -4248,7 +4283,7 @@
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
                   (throw ReferenceError (+ "unknown lisp reference: " refname)))))))
               
-       (`standard_types [`AbortController `AbortSignal `AggregateError `Array `ArrayBuffer
+       (`standard_types_old [`AbortController `AbortSignal `AggregateError `Array `ArrayBuffer
                           `Atomics `BigInt `BigInt64Array `BigUint64Array `Blob `Boolean 
                           `ByteLengthQueuingStrategy `CloseEvent `CountQueuingStrategy 
                           `Crypto `CryptoKey `CustomEvent `DOMException `DataView `Date 
@@ -4280,10 +4315,14 @@
                           `setTimeout `structuredClone `this `toLocaleString `toString 
                          `undefined `unescape `valueOf `window
                            `export `constructor  ;; keywords can also be included in this
-                          ;; DLisp mandatory defined globals
+                          
                           `AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone
                           `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice
-                          ])
+                         ])
+       ;; DLisp mandatory defined globals plus the current global set 
+       (`standard_types (uniq (conj [`AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone
+                                     `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice ]
+                                    (object_methods globalThis))))
        (`is_error nil)
       
        (`is_block? (fn (tokens)
@@ -4740,7 +4779,7 @@
                       ;; Simple compilations ----
                       
                       (or (and (is_object? tokens)
-                               (check_true tokens.val)
+                               (not (== undefined tokens.val)) ;(check_true tokens.val)
                                tokens.type)
                           (== tokens.type "literal")
                           (== tokens.type "arg")
@@ -4910,12 +4949,22 @@
                                                          (is_array? t)
                                                          (do 
                                                            (assemble t))
-                                                         (is_object? t)
-                                                         (do
+                                                         (== "object" (typeof t)) 
+                                                         (do                                                           
                                                            (when (and t.comment
                                                                       opts.include_source)
                                                              (push text (+ "/* " t.comment " */"))
-                                                             (insert_indent)))                                                                                                 
+                                                             (insert_indent)))
+                                                         (is_function? t)
+                                                         (do
+                                                           (cond
+                                                             (and t.name (contains? t.name standard_types))
+                                                             (push text t.name)
+                                                             (ends_with? "{ [native code] }" (-> t `toString))
+                                                             (do
+                                                               (throw ReferenceError (+ "cannot capture source of: " t.name)))
+                                                             else
+                                                             (push text t)))                                                           
                                                          else
                                                          (do 
                                                            (if opts.formatted_output
@@ -4963,7 +5012,6 @@
            (= show_hints true))
           (> verbosity_level 3)
           (= show_hints true))))
-    
     ;; setup key values in the context for flow control operations 
     ;; break - the looping constructs will return down the stack if
     ;;         the special reference __BREAK__FLAG__ is true for their

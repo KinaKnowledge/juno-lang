@@ -108,3 +108,20 @@ Because this is standard Juno notation it can be placed anywhere in your source,
 
 When [Javascript was being conceived](https://web.archive.org/web/20200227184037/https://speakingjs.com/es5/ch04.html) at Netscape, Brendan Eich was to write it in a Scheme based language, which can easily work with HTML. HTML is technically a simple Lisp with XML notation, since all tag elements evaluate as a DOM result and are a list structure inside each other.  Instead, an alternative approach was chosen.  A Java-like language was developed to align with Sun Microsystem's Java and Netscape's decision to include embedded Java "applets".  Nevertheless, if the DOM is considered the center of the browser, a Scheme-like language fits beautifully around the DOM, and could be seamlessly embedded, providing an elegant way to naturally extend the declarative nature of HTML with custom tags, macros and imperative logic.  This is one of Juno's aims: to provide a lisp centered on the Browser and browser-like run-times such as [Deno](https://deno.land).  Of course, Juno can be used outside of this context as well.
 
+
+
+Notes:
+Need to figure out the rules of saving environments and doing so with bound symbols to native code.  If exported these symbols need a way to "rebind" to the native functions on load.  If they symbol is bound to a native code function, when exported the source isn't the source of the bound function, but the quoted binding operation, so when reloaded the symbol can be rebound (if possible) to the same native function.  So how do we know when and how to capture symbol bindings?  If a global is defined to a bound symbol, the definition should store the source to the binding.  The initializer function would rebind the globals when rehydrated.
+
+On Import for binding a global function at compile time:
+1. compiler notices bind is called.  (So we need a special?)
+   a. If it a static binding at compile time, can know because the token structure.
+	   1. defglobal must capture the quoted source for rebinding later when the 
+	      environment is rehydrated.
+		  
+   b. If it is dynamic based on a variable name, this cannot be rebound because 
+      the value is dependent on a specific runtime condition or state.
+  
+
+
+		

@@ -88,25 +88,27 @@
      
      ;; Set up our initial skeleton..
 
-     (defvar Environment
-       (if opts.env
-         ;; if we have been given an established env we would use that
-         opts.env 
-         {
-          `global_ctx:{
-                       `scope: {}
-                       `name:  namespace              
-                       }
-          `version: (javascript DLISP_ENV_VERSION)
-          `definitions: {
-                         
+     (defvar Environment                 
+       { ;; once we have built the environment, if there are any inclusions we will merge them in
+        ;; to global_ctx since they will have the potential to refer to things that have yet
+        ;; to be defined to the compiler..
+        
+          `global_ctx: {
+                         `scope: {}
+                         `name:  namespace              
                          }
-          `declarations: { 
-                          `safety: {
-                                    `level: 2
-                                    }                        
-                          }       
-          }))
+          `version: (javascript DLISP_ENV_VERSION)
+          `definitions: (or opts.definitions
+                            {
+                         
+                             })          
+          `declarations: (or opts.declarations
+                             { 
+                              `safety: {
+                                        `level: 2
+                                        }                        
+                              })          
+          })
           
      
      (defvar id  (get_next_environment_id))
@@ -130,9 +132,7 @@
      ;; closure
      
      
-     (define_env% (if opts.env
-                    opts.env
-                    nil)
+     (define_env 
          (MAX_SAFE_INTEGER 9007199254740991)
          (LispSyntaxError globalThis.LispSyntaxError)
          (sub_type subtype)
@@ -266,7 +266,7 @@
          
          (bind (new Function "func,this_arg"
                     "{ return func.bind(this_arg) }"))
-         
+                  
          (to_object (new Function "array_values"
                          "{
                                       let obj={}
@@ -1003,7 +1003,7 @@
                                        (opts.error_report error_data)
                                        (console.error "Compilation Error: " error_data))
                                      (= compiled [ { `error: true } nil  ])))))
-                             (debug)                            
+                             ;(debug)                            
                              (cond
                                (eq nil compiled)
                                ;; we got nothing back - for now note it and return nil
@@ -1160,8 +1160,24 @@
 		   Environment
 		   (clone val 0 Environment))))
 
+
+     ;; now bring any includes from the options...
      
-     
+     (when (is_object? opts.include_globals)
+              
+       ;; if not already defined by the environment itself, merge the
+       ;; provided names and values into the global context.
+       (for_each (symset (pairs opt.include_globals))
+                 (when (eq nil (prop Environment.global_ctx.scope symset.0))                   
+                   (set_prop Environment.global_ctx.scope
+                             symset.0
+                             symset.1))))
+                             
+                             
+                           
+                                  
+       
+       
      ;; If we have child environments (namespaces) we need to know about them
      ;; because we need to be able to manage them and we need to be able to
      ;; set our current evaluation path to the correct environment as the
@@ -1195,11 +1211,17 @@
                                                     name
                                                     child_env)
                                           (set_prop children_declarations
-                                                    `name
+                                                    name
                                                     {})
                                           (if options.contained
-                                            (set_prop children_declarations.name
+                                            (set_prop (prop children_declarations name)
                                                       `contained true))
+                                          (set_prop (prop children_declarations name)
+                                                      `serialize_with_image
+                                                      (if (== false options.serialize_with_image)
+                                                        false
+                                                        true))
+                                            
                                           name)
                                         (do
                                           (console.error "ENV: couldn't create the child environment. Received: " child_env)
@@ -1260,36 +1282,96 @@
                               (env_log namespace "constructed: " (->  new_env `id))
                               new_env)))
 
-     (defvar save_env (fn (options)
+     (defvar save_env (fn (options)                                                  
                           (let
                               ((new_env nil)
-                               (my_children nil)
+                               (my_children nil)                               
                                (env_constructor nil)
+                               (dcomps (date_components (new Date)))
+                               (version_tag (if (not (blank? opts.version_tag))
+                                              opts.version_tag
+                                              (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
+                               (build_time (formatted_date (new Date)))
+                               (build_headers [])
+                               (include_source false)
+                               (exports [])
+                               (output_path nil)
                                (my_children_declarations nil))
                             
-                            (declare (function env_constructor))
+                            ;(declare (function env_constructor))
+                            (= options (or options {}))
+                            (when options.include_source
+                              (= include_source true))
+                            
                             (= env_constructor (get_global "construct_environment"))
                             
                             (when (eq nil env_constructor)
                               (throw ReferenceError "The construct_environment macro wasn't found. Is IO loaded?"))
-                          ;  (when (not (is_function? env_constructor))
-                          
-                            
+                           
                             (env_log namespace "cloning: # children: " (length children))
+                            (= exports (for_each (symset (pairs (clone Environment.global_ctx.scope)))
+                                                 (do                                                   
+                                                   (cond
+                                                     (resolve_path [ symset.0 `initializer ] Environment.definitions)
+                                                     [symset.0 [(quote eval) (resolve_path [ symset.0 `initializer ] Environment.definitions)]]
+                                                     (eq nil symset.1)
+                                                     [symset.0 nil]
+                                                     else
+                                                     symset))))
+                            
                             (= new_env
-                               (env_constructor {   ;`env: (clone Environment)
-                                                    ;   `children: (clone children)
-                                        ;  `children_declarations: (clone children_declarations) }))
+                               (env_constructor {`include_globals: (to_object exports)
+                                                 `definitions: Environment.definitions
+                                                 `declarations: Environment.declarations
+                                                 
+                                                ; `children: (to_object
+                                                ;             (reduce (child (pairs children))
+                                                 ;                    (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
+                                                  ;                     child)))
+                                                 ;`children_declarations: (clone children_declarations) 
                                                  }))
-;                            (env_log namespace "constructed: " 
-                            new_env)))
+                            (= output_path (or options.save_as
+                                               (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
+                            ;; if our output path is a function, call it to get an actual name...
+                            (if (is_function? output_path)
+                              (= output_path (output_path)))
+
+                            (if (and (not (is_string? output_path))
+                                     output_path)
+                              (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
+                            
+                            (cond
+                              (and output_path
+                                   (ends_with? ".js" output_path))
+                              (do
+                                (push build_headers
+                                      (+ "// Build Time: " build_time))
+                                (push build_headers
+                                      (+ "// Version: " version_tag))                                
+                                (push build_headers
+                                      (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
+                                (env_log "saving to: " output_path)
+                                
+                                (compile_buffer new_env "init_dlisp"
+                                                {
+                                                 `namespace: namespace
+                                                 `toplevel: true
+                                                 `verbose: true
+                                                 `output_file: output_path
+                                                 `include_source: (or options.include_source
+                                                                      (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
+                                                 `toplevel: true
+                                                 `build_headers: build_headers
+                                                 }))
+                              else
+                              new_env))))
                            
      
      ;; Expose our global setters/getters for the dynamic and top level contexts
      
      (set_prop Environment
                `get_global get_global
-               `set_global set_global
+               `set_global set_global               
                `symbol_definition symbol_definition              
                `namespace namespace)
           

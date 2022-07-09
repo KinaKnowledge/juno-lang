@@ -1,7 +1,7 @@
-// Source: io.lisp  
-// Build Time: 2022-07-08 07:18:22
-// Version: 2022.07.08.07.18
-export const DLISP_ENV_VERSION='2022.07.08.07.18';
+// Source: undefined  
+// Build Time: 2022-07-09 11:58:17
+// Version: 2022.07.09.11.58
+export const DLISP_ENV_VERSION='2022.07.09.11.58';
 
 
 
@@ -12,45 +12,45 @@ export async function initializer(Environment)  {
     const __GG__=Environment.get_global;
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
     ;
-    await Environment.set_global("path",await import ("https://deno.land/std@0.110.0/path/mod.ts"));
-    await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.readTextFile")),(await Environment.get_global("Deno"))),{
-        description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"]
-    });
-    await Environment.set_global("write_text_file",await (await Environment.get_global("bind"))((await Environment.get_global("Deno.writeTextFile")),(await Environment.get_global("Deno"))),{
-        description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"]
-    });
-    await Environment.set_global("load",async function(filename) {
-        let fname;
-        let js_mod;
-        let comps;
-        fname=filename;
-        js_mod=null;
-        comps=await (await Environment.get_global("path.parse"))(fname);
-         return  await async function(){
-            if (check_true( ((comps && comps["ext"])===".lisp"))) {
-                 return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname),null,{
-                    source_name:fname
-                })
-            } else if (check_true( ((comps && comps["ext"])===".js"))) {
-                js_mod=await import (fname);
-                if (check_true ((js_mod && js_mod["initializer"]))){
-                      return await (async function(){
-                        let __array_op_rval__1=(js_mod && js_mod["initializer"]);
-                         if (__array_op_rval__1 instanceof Function){
-                            return await __array_op_rval__1(Environment) 
-                        } else {
-                            return[__array_op_rval__1,Environment]
-                        }
-                    })()
-                } else throw new EvalError("load: unable to find function named initializer in export, use dynamic_import for this.");
-                
-            } else if (check_true( ((comps && comps["ext"])===".json"))) {
-                 return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),null,{
-                    json_in:true
-                })
-            }
-        } ()
-    },{ "name":"load","fn_args":"(filename)","description":["=:+","Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. ","The file contents are expected to be Lisp source code in text format."],"tags":["compile","read","io","file"],"usage":["filename:string"]
+    await Environment.set_global("path",await import ("https://deno.land/std@0.110.0/path/mod.ts"),{ "initializer":["=:dynamic_import","https://deno.land/std@0.110.0/path/mod.ts"]
+});
+[await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))(Deno.readTextFile,Deno),{
+    description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"],initializer:["=:bind","=:Deno.readTextFile","=:Deno"]
+}),await Environment.set_global("write_text_file",await (await Environment.get_global("bind"))(Deno.writeTextFile,Deno),{
+    description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"],initializer:["=:bind","=:Deno.writeTextFile","=:Deno"]
+})];
+await Environment.set_global("load",async function(filename) {
+    let fname;
+    let js_mod;
+    let comps;
+    fname=filename;
+    js_mod=null;
+    comps=await (await Environment.get_global("path.parse"))(fname);
+     return  await async function(){
+        if (check_true( ((comps && comps["ext"])===".lisp"))) {
+             return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname),null,{
+                source_name:fname
+            })
+        } else if (check_true( ((comps && comps["ext"])===".js"))) {
+            js_mod=await import (fname);
+            if (check_true ((js_mod && js_mod["initializer"]))){
+                  return await (async function(){
+                    let __array_op_rval__1=(js_mod && js_mod["initializer"]);
+                     if (__array_op_rval__1 instanceof Function){
+                        return await __array_op_rval__1(Environment) 
+                    } else {
+                        return[__array_op_rval__1,Environment]
+                    }
+                })()
+            } else throw new EvalError("load: unable to find function named initializer in export, use dynamic_import for this.");
+            
+        } else if (check_true( ((comps && comps["ext"])===".json"))) {
+             return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),null,{
+                json_in:true
+            })
+        }
+    } ()
+},{ "name":"load","fn_args":"(filename)","description":["=:+","Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. ","The file contents are expected to be Lisp source code in text format."],"tags":["compile","read","io","file"],"usage":["filename:string"]
 });
 await Environment.set_global("with_fs_events",async function(...args) {
     let event_binding;
@@ -63,9 +63,7 @@ await Environment.set_global("with_fs_events",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"with_fs_events","macro":true,"fn_args":"((event_binding location) body)","description":["=:+","This function sets up a watcher scope for events on a filesystem. ","The symbol passed to the event_binding is bound to new events that occur ","at the provided location.  Once an event occurs, the body forms are executed."],"usage":["event_binding:symbol","location:string","body:array"],"tags":["file","filesystem","events","io","watch"]
 });
-await Environment.set_global("compile_file",async function(lisp_file,export_function_name,options) {
-    let input_components;
-    let input_filename;
+await Environment.set_global("compile_buffer",async function(input_buffer,export_function_name,options) {
     let output_filename;
     let opts;
     let segments;
@@ -75,20 +73,14 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
     let write_file;
     let include_source;
     let compiled;
-    let input_buffer;
     let invalid_js_ref_chars;
     let invalid_js_ref_chars_regex;
     let boilerplate;
     let compiled_js;
-    input_components=await (await Environment.get_global("path.parse"))(lisp_file);
-    input_filename=await (await Environment.get_global("path.basename"))(lisp_file);
-    output_filename=((options && options["output_file"])||await (await Environment.get_global("add"))(await (async function() {
-         if (check_true (((input_components && input_components["dir"])===""))){
-              return "."
-        } else {
-              return (input_components && input_components["dir"])
-        } 
-    } )(),(await Environment.get_global("path.sep")),(input_components && input_components["name"]),".js"));
+    output_filename=((options && options["output_file"])||await (async function ()  {
+        throw new EvalError("compile_buffer requires output_file be set in the options");
+        
+    } )());
     opts=(options||new Object());
     export_function_name=(export_function_name||"initializer");
     segments=[];
@@ -110,7 +102,6 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
         } 
     })();
     compiled=null;
-    input_buffer=null;
     invalid_js_ref_chars="+?-%&^#!*[]~{}|";
     invalid_js_ref_chars_regex=new RegExp("[\%\+\[\>\?\<\\}\{&\#\^\=\~\*\!\)\(\-]+");
     boilerplate="var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");";
@@ -119,7 +110,7 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
         throw new SyntaxError(("export function name contains an invalid JS character: "+export_function_name+", cannot contain: "+invalid_js_ref_chars));
         
     };
-    (segments).push(("// Source: "+input_filename+"  "));
+    (segments).push(("// Source: "+(options && options["nput_filename"])+"  "));
     if (check_true (((opts && opts["build_headers"]) instanceof Array))){
         await (async function() {
             let __for_body__4=async function(header) {
@@ -162,14 +153,8 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
         })();
          (segments).push("\n")
     };
-    if (check_true ((((input_components && input_components["name"])==="environment")||(export_function_name==="init_dlisp")||(opts && opts["toplevel"])))){
+    if (check_true (((export_function_name==="init_dlisp")||(opts && opts["toplevel"])))){
          (segments).push("if (typeof AsyncFunction === \"undefined\") {\n  globalThis.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;\n}")
-    };
-    input_buffer=await (await Environment.get_global("read_text_file"))(lisp_file);
-    if (check_true (((input_components && input_components["ext"])===".lisp"))){
-         input_buffer=await (await Environment.get_global("read_lisp"))(input_buffer,{
-            implicit_progn:false,source_name:input_filename
-        })
     };
     if (check_true (((input_buffer instanceof Array)&&((input_buffer && input_buffer["0"])==="=:iprogn")))){
          await async function(){
@@ -178,8 +163,11 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
             
         }()
     };
+    if (check_true ((opts && opts["verbose"]))){
+         await console.log("input_buffer: ",input_buffer)
+    };
     compiled=await (await Environment.get_global("compiler"))(input_buffer,await (await Environment.get_global("add"))({
-        env:Environment,formatted_output:true,include_source:include_source,source_name:input_filename
+        env:Environment,formatted_output:true,include_source:include_source,source_name:((opts && opts["input_filename"])||"anonymous")
     },opts));
     compile_time=await (await Environment.get_global("add"))(await (async function() {
         {
@@ -248,13 +236,37 @@ await Environment.set_global("compile_file",async function(lisp_file,export_func
     } ();
     if (check_true (write_file)){
         await (await Environment.get_global("write_text_file"))(output_filename,(segments).join("\n"));
-        await (await Environment.get_global("success"))(("["+compile_time+"] compiled: "),lisp_file,"->",output_filename);
+        await (await Environment.get_global("success"))(("["+compile_time+"] compiled: "),((opts && opts["input_filename"])||(opts && opts["namespace"])||"anonymous"),"->",output_filename);
          return  output_filename
     } else {
-        await (await Environment.get_global("warn"))("input file ",lisp_file," not compiled.");
+        await (await Environment.get_global("warn"))("cannot compile: ",((opts && opts["input_filename"])||(opts && opts["namespace"])||"anonymous"));
          return  null
     }
-},{ "name":"compile_file","fn_args":"(lisp_file export_function_name options)","description":["=:+","Given an input lisp file, and an optional initalizer function name and options ","object, compile the lisp file into a javascript file. The options object will ","allow the specification of an output path and filename, given by the key ","output_file.  If the initializer function isn't specified it is named ","initializer, which when used with load, will be automatically called ","one the file is loaded.  Otherwise the initializer function should be ","called when after dynamically importing, using dynamic_import. If the ","options object is to be used, with a default initializer, nil should be ","used as a placeholder for the initializer_function name.<br><br>","Options are as follows:<br><br>","js_headers: array: If provided, this is an array of strings that represent","lines to be inserted at the top of the file.","include_source: boolean: If provided will append the block forms and ","expressions within the text as comments.","output_file: string: If provided the path and filename of the compiled ","javascript file to be produced.","include_boilerplate: boolean: If set to false explicity, the boilerplate","code will be not be included in the build.","<br><br>","NOTE: this function's API is unstable and subject to change due to ","the early phase of this language."],"usage":["input_file:string","initializer_function:string?","options:object?"],"tags":["compile","environment","building","javascript","lisp","file","export"]
+},{ "name":"compile_buffer","fn_args":"(input_buffer export_function_name options)","description":["=:+","Given an input lisp file, and an optional initalizer function name and options ","object, compile the lisp file into a javascript file. The options object will ","allow the specification of an output path and filename, given by the key ","output_file.  If the initializer function isn't specified it is named ","initializer, which when used with load, will be automatically called ","one the file is loaded.  Otherwise the initializer function should be ","called when after dynamically importing, using dynamic_import. If the ","options object is to be used, with a default initializer, nil should be ","used as a placeholder for the initializer_function name.<br><br>","Options are as follows:<br><br>","js_headers: array: If provided, this is an array of strings that represent","lines to be inserted at the top of the file.","include_source: boolean: If provided will append the block forms and ","expressions within the text as comments.","output_file: string: If provided the path and filename of the compiled ","javascript file to be produced.","include_boilerplate: boolean: If set to false explicity, the boilerplate","code will be not be included in the build.","<br><br>","NOTE: this function's API is unstable and subject to change due to ","the early phase of this language."],"usage":["input_file:string","initializer_function:string?","options:object?"],"tags":["compile","environment","building","javascript","lisp","file","export"]
+});
+await Environment.set_global("compile_file",async function(lisp_file,export_function_name,options) {
+    let input_components;
+    let input_filename;
+    let input_buffer;
+    input_components=await (await Environment.get_global("path.parse"))(lisp_file);
+    input_filename=await (await Environment.get_global("path.basename"))(lisp_file);
+    input_buffer=null;
+    input_buffer=await (await Environment.get_global("read_text_file"))(lisp_file);
+    if (check_true (((input_components && input_components["ext"])===".lisp"))){
+         input_buffer=await (await Environment.get_global("read_lisp"))(input_buffer,{
+            implicit_progn:false,source_name:input_filename
+        })
+    };
+     return  await (await Environment.get_global("compile_buffer"))(input_buffer,export_function_name,await (await Environment.get_global("add"))(new Object(),{
+        input_filename:input_filename
+    },await (async function() {
+         if (check_true (options)){
+              return options
+        } else {
+              return new Object()
+        } 
+    } )()))
+},{ "name":"compile_file","fn_args":"(lisp_file export_function_name options)"
 });
 await Environment.set_global("rebuild_env",async function(opts) {
     let issues;
@@ -324,7 +336,7 @@ await Environment.set_global("rebuild_env",async function(opts) {
         output_file:await output_path("reader.js"),include_source:include_source,build_headers:build_headers
     });
     await (await Environment.get_global("compile_file"))(await source_path("environment.lisp"),"init_dlisp",{
-        output_file:await output_path("environment.js"),include_source:include_source,build_headers:build_headers
+        output_file:await output_path("environment.js"),include_source:include_source,toplevel:true,build_headers:build_headers
     });
     await (await Environment.get_global("compile_file"))(await source_path("compiler-boot-library.lisp"),"environment_boot",{
         output_file:await output_path("environment_boot.js"),include_source:include_source,build_headers:build_headers
@@ -341,8 +353,12 @@ await Environment.set_global("rebuild_env",async function(opts) {
 });
 await Environment.set_global("build_environment_macro",async function(opts) {
     let source_dir;
+    let idx;
+    let pos_of_define_env;
     let src;
     source_dir=((opts && opts["source_dir"])||"./src");
+    idx=-1;
+    pos_of_define_env=null;
     src=await (await Environment.get_global("resolve_path"))([2],await (await Environment.get_global("last"))(await (await Environment.get_global("reader"))(await (await Environment.get_global("read_text_file"))(await (await Environment.get_global("add"))(source_dir,"/environment.lisp")))));
     (await (await Environment.get_global("resolve_path"))([1],src)).pop();
     if (check_true (await (await Environment.get_global("not"))(((src && src["0"])==="=:fn"))))throw new SyntaxError("Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ...");
@@ -354,7 +370,24 @@ await Environment.set_global("build_environment_macro",async function(opts) {
 })
 },{ "name":"build_environment_macro","fn_args":"(opts)"
 });
-await (await Environment.get_global("build_environment_macro"))();
+await Environment.set_global("build_environment_macro_ng",async function(opts) {
+    let source_dir;
+    let idx;
+    let src;
+    source_dir=((opts && opts["source_dir"])||"./src");
+    idx=-1;
+    src=await (await Environment.get_global("resolve_path"))([2],await (await Environment.get_global("last"))(await (await Environment.get_global("reader"))(await (await Environment.get_global("read_text_file"))(await (await Environment.get_global("add"))(source_dir,"/environment.lisp")))));
+    if (check_true (await (await Environment.get_global("not"))(((src && src["0"])==="=:fn"))))throw new SyntaxError("Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ...");
+    ;
+     return  await Environment.set_global("construct_environment",async function(options) {
+         return  ["=:let",[["=:opts",{ 
+    }],["=:make_env",src]],["=:make_env",options]]
+},{ "eval_when":{ "compile_time":true
+},"name":"construct_environment","macro":true,"fn_args":"(options)"
+})
+},{ "name":"build_environment_macro_ng","fn_args":"(opts)"
+});
+await (await Environment.get_global("build_environment_macro_ng"))();
  return  true
 }
 }

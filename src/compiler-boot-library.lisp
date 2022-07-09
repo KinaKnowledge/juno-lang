@@ -319,7 +319,54 @@
     `tags: ["symbol" "reference" "definition" "metadata" "environment"]
                      
     })
+
+
  
+
+;; Defines a global binding to a (presumably) native function
+;; This macro facilitates the housekeeping with keeping track
+;; of the source form used (and stored in the environment) so
+;; that save_env can capture the source bindings and recreate
+;; it in the initializer function on rehydration...
+
+
+(defmacro defbinding (`& args)
+  (let
+      ((binding nil)
+       (acc [(quote list)]))
+    (debug)
+    (for_each (bind_set args)
+              (do
+                (cond
+                  (and (is_array? bind_set)
+                       (or (== bind_set.length 2);; Include the metadata
+                           (== bind_set.length 3))
+                       (is_array? bind_set.1)
+                       (== bind_set.1.length 2))
+                  (do                    
+                    (= binding [(quote quote) [(quote bind) bind_set.1.0 bind_set.1.1 ]])
+                    (push acc [ (quote defglobal) (deref bind_set.0) [(quote bind) bind_set.1.0 bind_set.1.1]
+                           (if (is_object? bind_set.2)
+                             (+ {} bind_set.2
+                                { `initializer: binding })
+                             { `initializer: binding }) ]))
+                             
+                  else
+                  (throw SyntaxError "defbinding received malform arguments"))))    
+    acc)
+  {
+   description: (+ "Defines a global binding to a potentially native function.  This macro "
+                   "facilitates the housekeeping with keeping track of the source form "
+                   "used (and stored in the environment) so that the save environment "
+                   "facility can capture the source bindings and recreate it in the initializer "
+                   "function on rehydration.<br>"
+                   "The macro can take an arbitrary amount of binding arguments, with the form: "
+                   "(symbol_name (fn_to_bind_to this))")
+   usage: ["binding_set0:array" "binding_setN:array"]
+   tags: ["toplevel" "global" "bind" "environment" "initialize" ]
+   })
+  
+
 (defmacro define_env (`& defs)
     (let
         ((acc [(quote progl)])
@@ -336,22 +383,26 @@
                                        defset.2])))))
      acc))
 
-(defmacro define_env% (source_env `& defs)
+(defmacro define_env% (source_env_ctx `& defs)
     (let
         ((acc [(quote progl)])
          (symname nil))
-
+      (log "define_env%: source_env? " (and source_env_ctx true) (is_object? source_env_ctx.scope))
       (cond
-        (and source_env
-             (is_object? source_env.context.scope))
+        (and false source_env_ctx 
+             (is_object? source_env_ctx.scope))
         (do
-          (for_each (`defset (pairs source_env.context.scope))
+          (for_each (`defset (pairs source_env_ctx.scope))
              (do
                ;; we only need to define our local to the environment scope vars since
                ;; since the source_env global_ctx scope is already populated..
-               (push acc [(quote defvar) defset.0 defset.1]))))
-        else        
-        (for_each (`defset defs)
+               (push acc [(quote defvar) defset.0 defset.1])
+               (log "symbol included: " defset.0)
+               ;(remove_prop source_env.context.scope defset.0)
+               )))          
+        else
+        (do          
+          (for_each (`defset defs)
                   (do
                     (push acc [(quote defvar) defset.0 defset.1])
                     (= symname defset.0)                          
@@ -359,7 +410,7 @@
                     (when (is_object? defset.2)
                       (push acc ([(quote set_prop) (quote Environment.definitions)
                                   (+ "" (as_lisp symname) "")
-                                  defset.2]))))))
+                                  defset.2])))))))
      acc))
 
 (defun type (x)
@@ -1990,7 +2041,9 @@
                     "the existing namespace isn't altered."
                     "contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces "
                     "beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will "
-                    "fail.")
+                    "fail."
+                    "serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be "
+                    "included in the saved image file.  Default is true.")
     tags: ["namespace" "environment" "define" "scope" "context"]
    })
 
