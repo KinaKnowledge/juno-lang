@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-10 11:45:45
-// Version: 2022.07.10.11.45
-export const DLISP_ENV_VERSION='2022.07.10.11.45';
+// Build Time: 2022-07-10 12:32:52
+// Version: 2022.07.10.12.32
+export const DLISP_ENV_VERSION='2022.07.10.12.32';
 
 
 

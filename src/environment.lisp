@@ -25,7 +25,6 @@
 
 ;; We need some global types since Javascript eval() isn't used in Juno
 
-
 (set_prop globalThis
           `subtype subtype
           `check_true check_true
@@ -1160,28 +1159,38 @@
 		   Environment
 		   (clone val 0 Environment))))
 
+     ;; Expose our global setters/getters for the dynamic and top level contexts
+     
      (set_prop Environment
                `get_global get_global
-               `set_global set_global)
+               `set_global set_global               
+               `symbol_definition symbol_definition              
+               `namespace namespace)
      
      ;; now bring any includes from the options...
-     (defvar included_globals nil)
+     (defvar included_globals nil)  ;; this nil is actually replaced with the save_env function.
+
+     ;(defvar included_definitions nil) ;; as well as this one..
      
      (when (is_object? included_globals)
               
        ;; if not already defined by the environment itself, merge the
        ;; provided names and values into the global context.
-       (for_each (symset (pairs included_globals))
-                 (when (eq nil (prop Environment.global_ctx.scope symset.0))                   
-                   (set_prop Environment.global_ctx.scope
-                             symset.0
-                             symset.1))))
-                             
-                             
-                           
-                                  
-       
-       
+       (when (is_object? (prop included_globals `symbols))
+         (for_each (symset (pairs included_globals.symbols))
+                   (when (eq nil (prop Environment.global_ctx.scope symset.0))                   
+                     (set_prop Environment.global_ctx.scope
+                               symset.0
+                               symset.1))))
+
+       (when (is_object? (prop included_globals `definitions))
+         (for_each (symset (pairs included_globals.definitions))
+                   (when (eq nil (prop Environment.definitions symset.0))                   
+                     (set_prop Environment.definitions
+                               symset.0
+                               symset.1)))))
+                         
+         
      ;; If we have child environments (namespaces) we need to know about them
      ;; because we need to be able to manage them and we need to be able to
      ;; set our current evaluation path to the correct environment as the
@@ -1299,17 +1308,12 @@
                                (build_headers [])
                                (include_source false)
                                (exports [])
-                               (src_tree (reader (read_text_file "./src/environment.lisp")))
-                               (target_insertion_path nil)  ;; where we inject our context into the source tree
-                               (src src_tree) ;(resolve_path [ 2 ] (last src_tree)))
+                               (src (reader (read_text_file "./src/environment.lisp")))
+                               (target_insertion_path nil)  ;; where we inject our context into the source tree                               
                                (output_path nil)
                                (my_children_declarations nil))
                             ;; construct the macro..
-                            
-                            ;(if (not (== src.0 (quote "=:fn")))
-                             ; (throw EvalError "Invalid environment source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))
-
-                            (debug)
+                                                       
                             (= target_insertion_path (first (findpaths (quote included_globals) src)))
 
                             (console.log "target_insertion_path: " target_insertion_path)
@@ -1318,8 +1322,8 @@
                               (throw EvalError "Unable to find the first included_globals symbol"))
 
                             (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
-                            (undefine `last_source_tree)  ;; TODO REMOVE THIS AND THE DEFGLOBAL BELOW
-                            ;(declare (function env_constructor))
+                           
+                           
                             (= options (or options {}))
                             (when options.include_source
                               (= include_source true))
@@ -1336,10 +1340,14 @@
                                                      [symset.0 (quote undefined)]
                                                      else
                                                      [symset.0 symset.1]))))
-                            (defglobal `last_source_tree exports)
-                            (set_path target_insertion_path src [(quote javascript) (compile (to_object exports)) ])
+                           
+                            ;; now embed our compiled existing context into the source tree...
+                            (set_path target_insertion_path src {
+                                                                 `definitions: (clone Environment.definitions)
+                                                                 `symbols: [(quote javascript) (compile (to_object exports)) ]
+                                                                 })
                                                         
-                               
+                            
                                ;(env_constructor {
                                 ;                 `definitions: Environment.definitions
                                  ;                `declarations: Environment.declarations }
@@ -1356,7 +1364,7 @@
                             ;; if our output path is a function, call it to get an actual name...
                             (if (is_function? output_path)
                               (= output_path (output_path)))
-                            ;(defglobal `last_source_tree src)
+                           
                             (if (and (not (is_string? output_path))
                                      output_path)
                               (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
@@ -1388,13 +1396,7 @@
                               src))))
                            
      
-     ;; Expose our global setters/getters for the dynamic and top level contexts
      
-     (set_prop Environment
-              ; `get_global get_global
-               ;`set_global set_global               
-               `symbol_definition symbol_definition              
-               `namespace namespace)
           
      ;; In the compiler context, we have access to the existing environment,
      ;; bring the needed functions in and rebuild them in the current scope.
@@ -1417,6 +1419,7 @@
                `clone_to_new clone_to_new
                `save_env save_env)
      
+   
      
      ;; inline functions for more efficient compiled code...
      
@@ -1527,6 +1530,15 @@
                                            check_external_env_default))
                `check_external_env (fn ()
                                      check_external_env_default))
+
+     ;; if we have a compiler embedded, use it
+     
+     (if (prop Environment.global_ctx.scope `compiler)
+       (set_compiler (prop Environment.global_ctx.scope `compiler)))
+
+     ;; call the initializer
+     (if (prop Environment.global_ctx.scope "*initializer*")
+       (eval (prop Environment.context.scope "*initializer*")))
      
      Environment)))
 
