@@ -1146,7 +1146,7 @@
                                     (push acc "=")
                                     (= token (prop tokens idx))
                                     (if (eq nil token)
-                                      (throw Error "set_prop: odd number of arguments"))
+                                      (throw SyntaxError "set_prop: odd number of arguments"))
                                     (= stmt (wrap_assignment_value (compile token ctx) ctx))
                                     (push acc stmt)                                        
                                     (push acc ";")))
@@ -1163,55 +1163,58 @@
                                 wrapper)))
        
        
-       (`compile_prop  (fn (tokens ctx)
-                           (let
-                               ((`acc [])                                
-                                (`target (wrap_assignment_value (compile (second tokens) ctx) ctx))                                
-                                (`target_val nil)
-				(`preamble (calling_preamble ctx))
-                                (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx) ctx)))
-                            (declare (string preamble.0))                              
-                            (if (> (safety_level ctx) 1)
-                              (cond
-                                (is_string? target)                                    
-                                (do
-                                  [ target "[" idx_key "]" ])
-                                else
-                                (do
-                                    (= target_val (gen_temp_name "targ"))
-                                    [preamble.0 " " "(" preamble.1 " " "function" "()" "{" 
-                                                                                   "let" " " target_val "=" target ";" 
-                                                                                   "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ]))
-                              [ "(" target ")" "[" idx_key "]"]))))
-       
-       (`compile_elem (fn (token ctx)
-                          (let
-                              ((`rval nil)
-                               (`check_needs_wrap 
-                                       (fn (stmts)
-                                           (let
-                                               ((`fst (or (and (is_array? stmts)
-                                                               (first stmts)
-                                                               (is_object? (first stmts))
-                                                               (prop (first stmts) `ctype)
-                                                               (cond
-                                                                   (is_string? (prop (first stmts) `ctype))
-                                                                   (prop (first stmts) `ctype)
-                                                                   else
-                                                                   (sub_type (prop (first stmts) `ctype))))
-                                                          )))
-                                             
-                                             (cond
-                                               (contains? "block" fst)
-                                               true
-                                               else
-                                               false)))))                          
-                            (if (is_complex? token.val)
-                                (= rval (compile_wrapper_fn token ctx))
-                                (= rval (compile token ctx)))
-                            (when (not (is_array? rval))
-                              (= rval [ rval ]))                           
-                            rval)))
+       (`compile_prop  (fn (tokens ctx)                         
+                           (if (not (== tokens.length 3))
+                             (do                               
+                               (throw SyntaxError "prop requires exactly 2 arguments"))
+                             (let
+                                 ((`acc [])                                
+                                  (`target (wrap_assignment_value (compile (second tokens) ctx) ctx))
+                                  (`target_val nil)
+                                  (`preamble (calling_preamble ctx))
+                                  (`idx_key (wrap_assignment_value (compile (prop tokens 2) ctx) ctx)))
+                               (declare (string preamble.0))                              
+                               (if (> (safety_level ctx) 1)
+                                 (cond
+                                   (is_string? target)                                    
+                                   (do
+                                     [ target "[" idx_key "]" ])
+                                   else
+                                   (do
+                                     (= target_val (gen_temp_name "targ"))
+                                     [preamble.0 " " "(" preamble.1 " " "function" "()" "{" 
+                                      "let" " " target_val "=" target ";" 
+                                      "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ]))
+                                 [ "(" target ")" "[" idx_key "]"])))))
+        
+        (`compile_elem (fn (token ctx)
+                         (let
+                             ((`rval nil)
+                              (`check_needs_wrap 
+                               (fn (stmts)
+                                 (let
+                                     ((`fst (or (and (is_array? stmts)
+                                                     (first stmts)
+                                                     (is_object? (first stmts))
+                                                     (prop (first stmts) `ctype)
+                                                     (cond
+                                                       (is_string? (prop (first stmts) `ctype))
+                                                       (prop (first stmts) `ctype)
+                                                       else
+                                                       (sub_type (prop (first stmts) `ctype))))
+                                                )))
+                                   
+                                   (cond
+                                     (contains? "block" fst)
+                                     true
+                                     else
+                                     false)))))                          
+                           (if (is_complex? token.val)
+                             (= rval (compile_wrapper_fn token ctx))
+                             (= rval (compile token ctx)))
+                           (when (not (is_array? rval))
+                             (= rval [ rval ]))                           
+                           rval)))
        
        (`inline_log (if opts.quiet_mode
                         log

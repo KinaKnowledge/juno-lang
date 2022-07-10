@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-10 12:32:52
-// Version: 2022.07.10.12.32
-export const DLISP_ENV_VERSION='2022.07.10.12.32';
+// Build Time: 2022-07-10 13:09:57
+// Version: 2022.07.10.13.09
+export const DLISP_ENV_VERSION='2022.07.10.13.09';
 
 
 
@@ -2207,11 +2207,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){
-        if (check_true( (undefined==text))) {
-             throw new EvalError(("reader: received undefined, text must be a string."));
-            
-        } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {
+                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {
              throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));
             
         } else  {

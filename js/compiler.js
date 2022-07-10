@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-10 12:32:52
-// Version: 2022.07.10.12.32
-export const DLISP_ENV_VERSION='2022.07.10.12.32';
+// Build Time: 2022-07-10 13:09:57
+// Version: 2022.07.10.13.09
+export const DLISP_ENV_VERSION='2022.07.10.13.09';
 
 
 
@@ -1726,7 +1726,7 @@ export async function init_compiler(Environment) {
                             idx+=1;
                             (acc).push("=");
                             token=tokens[idx];
-                            if (check_true ((null==token)))throw new Error("set_prop: odd number of arguments");
+                            if (check_true ((null==token)))throw new SyntaxError("set_prop: odd number of arguments");
                             ;
                             stmt=await wrap_assignment_value(await compile(token,ctx),ctx);
                             (acc).push(stmt);
@@ -1753,35 +1753,40 @@ export async function init_compiler(Environment) {
                      return  wrapper
                 };
                 compile_prop=async function(tokens,ctx) {
-                    let acc;
-                    let target;
-                    let target_val;
-                    let preamble;
-                    let idx_key;
-                    acc=[];
-                    target=await wrap_assignment_value(await compile(await second(tokens),ctx),ctx);
-                    target_val=null;
-                    preamble=await calling_preamble(ctx);
-                    idx_key=await wrap_assignment_value(await compile(tokens[2],ctx),ctx);
-                    ;
-                    if (check_true ((await safety_level(ctx)>1))){
-                          return await async function(){
-                            if (check_true( (target instanceof String || typeof target==='string'))) {
-                                 return  await (async function(){
-                                    let __array_op_rval__81=target;
-                                     if (__array_op_rval__81 instanceof Function){
-                                        return await __array_op_rval__81("[",idx_key,"]") 
-                                    } else {
-                                        return[__array_op_rval__81,"[",idx_key,"]"]
-                                    }
-                                })()
-                            } else  {
-                                target_val=await gen_temp_name("targ");
-                                 return  [(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{","let"," ",target_val,"=",target,";","if"," ","(",target_val,")","{"," ","return","(",target_val,")","[",idx_key,"]","}"," ","}",")","()"]
-                            }
-                        } ()
+                    if (check_true (await not(((tokens && tokens.length)===3)))){
+                        throw new SyntaxError("prop requires exactly 2 arguments");
+                        
                     } else {
-                          return ["(",target,")","[",idx_key,"]"]
+                        let acc;
+                        let target;
+                        let target_val;
+                        let preamble;
+                        let idx_key;
+                        acc=[];
+                        target=await wrap_assignment_value(await compile(await second(tokens),ctx),ctx);
+                        target_val=null;
+                        preamble=await calling_preamble(ctx);
+                        idx_key=await wrap_assignment_value(await compile(tokens[2],ctx),ctx);
+                        ;
+                        if (check_true ((await safety_level(ctx)>1))){
+                              return await async function(){
+                                if (check_true( (target instanceof String || typeof target==='string'))) {
+                                     return  await (async function(){
+                                        let __array_op_rval__81=target;
+                                         if (__array_op_rval__81 instanceof Function){
+                                            return await __array_op_rval__81("[",idx_key,"]") 
+                                        } else {
+                                            return[__array_op_rval__81,"[",idx_key,"]"]
+                                        }
+                                    })()
+                                } else  {
+                                    target_val=await gen_temp_name("targ");
+                                     return  [(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{","let"," ",target_val,"=",target,";","if"," ","(",target_val,")","{"," ","return","(",target_val,")","[",idx_key,"]","}"," ","}",")","()"]
+                                }
+                            } ()
+                        } else {
+                              return ["(",target,")","[",idx_key,"]"]
+                        }
                     }
                 };
                 compile_elem=async function(token,ctx) {
