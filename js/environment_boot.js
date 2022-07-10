@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-09 11:58:17
-// Version: 2022.07.09.11.58
-export const DLISP_ENV_VERSION='2022.07.09.11.58';
+// Build Time: 2022-07-10 11:45:45
+// Version: 2022.07.10.11.45
+export const DLISP_ENV_VERSION='2022.07.10.11.45';
 
 
 
@@ -2786,6 +2786,69 @@ await Environment.set_global("get_function_args",async function(f) {
     }
 },{ "name":"get_function_args","fn_args":"(f)","description":"Given a javascript function, return a list of arg names for that function","usage":["function:function"],"tags":["function","introspect","introspection","arguments"]
 });
+await Environment.set_global("findpaths",async function(value,structure) {
+    let acc;
+    let search;
+    acc=[];
+    search=async function(struct,_cpath) {
+         return  await async function(){
+            if (check_true( (struct instanceof Array))) {
+                 return await (await Environment.get_global("map"))(async function(elem,idx) {
+                     return  await async function(){
+                        if (check_true( (elem instanceof Object))) {
+                             return await search(elem,await (await Environment.get_global("conj"))(_cpath,await (async function(){
+                                let __array_op_rval__263=idx;
+                                 if (__array_op_rval__263 instanceof Function){
+                                    return await __array_op_rval__263() 
+                                } else {
+                                    return[__array_op_rval__263]
+                                }
+                            })()))
+                        } else if (check_true( (elem===value))) {
+                             return (acc).push(await (await Environment.get_global("conj"))(_cpath,await (async function(){
+                                let __array_op_rval__264=idx;
+                                 if (__array_op_rval__264 instanceof Function){
+                                    return await __array_op_rval__264() 
+                                } else {
+                                    return[__array_op_rval__264]
+                                }
+                            })()))
+                        }
+                    } ()
+                },struct)
+            } else if (check_true( (struct instanceof Object))) {
+                 return await (await Environment.get_global("map"))(async function(pset) {
+                     return  await async function(){
+                        if (check_true( ((pset && pset["1"]) instanceof Object))) {
+                             return await search((pset && pset["1"]),await (await Environment.get_global("conj"))(_cpath,await (async function(){
+                                let __array_op_rval__265=(pset && pset["0"]);
+                                 if (__array_op_rval__265 instanceof Function){
+                                    return await __array_op_rval__265() 
+                                } else {
+                                    return[__array_op_rval__265]
+                                }
+                            })()))
+                        } else if (check_true( ((pset && pset["1"])===value))) {
+                             return (acc).push(await (await Environment.get_global("conj"))(_cpath,await (async function(){
+                                let __array_op_rval__266=(pset && pset["1"]);
+                                 if (__array_op_rval__266 instanceof Function){
+                                    return await __array_op_rval__266() 
+                                } else {
+                                    return[__array_op_rval__266]
+                                }
+                            })()))
+                        }
+                    } ()
+                },await (await Environment.get_global("pairs"))(struct))
+            } else if (check_true( (struct===value))) {
+                 return (acc).push(_cpath)
+            }
+        } ()
+    };
+    await search(structure,[]);
+     return  acc
+},{ "name":"findpaths","fn_args":"(value structure)"
+});
 await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
     prefix:"⚠️  "
 }),{
@@ -2826,7 +2889,7 @@ await Environment.set_global("export_symbols",async function(...args) {
     numargs=await (await Environment.get_global("length"))(args);
     idx=0;
     await (async function() {
-        let __for_body__265=async function(symname) {
+        let __for_body__269=async function(symname) {
             await async function(){
                 if (check_true( ((symname instanceof Array)&&((symname && symname.length)===2)))) {
                     (acc).push(await (async function ()  {
@@ -2868,16 +2931,16 @@ await Environment.set_global("export_symbols",async function(...args) {
                   return (acc).push(", ")
             }
         };
-        let __array__266=[],__elements__264=args;
+        let __array__270=[],__elements__268=args;
         let __BREAK__FLAG__=false;
-        for(let __iter__263 in __elements__264) {
-            __array__266.push(await __for_body__265(__elements__264[__iter__263]));
+        for(let __iter__267 in __elements__268) {
+            __array__270.push(await __for_body__269(__elements__268[__iter__267]));
             if(__BREAK__FLAG__) {
-                 __array__266.pop();
+                 __array__270.pop();
                 break;
                 
             }
-        }return __array__266;
+        }return __array__270;
          
     })();
      return  (acc).push("}")

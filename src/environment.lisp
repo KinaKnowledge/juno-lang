@@ -924,8 +924,8 @@
                                    `meta: false
                                    }))
                          (out nil))
-                      (if (is_function? json_expression)
-                        (throw SyntaxError "compile: non-JSON value (function) received as input"))
+                      ;(if (is_function? json_expression)
+                      ;  (throw SyntaxError "compile: non-JSON value (function) received as input"))
                       (= out
                          (compiler json_expression opts))
                       (cond
@@ -1160,14 +1160,18 @@
 		   Environment
 		   (clone val 0 Environment))))
 
-
-     ;; now bring any includes from the options...
+     (set_prop Environment
+               `get_global get_global
+               `set_global set_global)
      
-     (when (is_object? opts.include_globals)
+     ;; now bring any includes from the options...
+     (defvar included_globals nil)
+     
+     (when (is_object? included_globals)
               
        ;; if not already defined by the environment itself, merge the
        ;; provided names and values into the global context.
-       (for_each (symset (pairs opt.include_globals))
+       (for_each (symset (pairs included_globals))
                  (when (eq nil (prop Environment.global_ctx.scope symset.0))                   
                    (set_prop Environment.global_ctx.scope
                              symset.0
@@ -1295,47 +1299,64 @@
                                (build_headers [])
                                (include_source false)
                                (exports [])
+                               (src_tree (reader (read_text_file "./src/environment.lisp")))
+                               (target_insertion_path nil)  ;; where we inject our context into the source tree
+                               (src src_tree) ;(resolve_path [ 2 ] (last src_tree)))
                                (output_path nil)
                                (my_children_declarations nil))
+                            ;; construct the macro..
                             
+                            ;(if (not (== src.0 (quote "=:fn")))
+                             ; (throw EvalError "Invalid environment source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))
+
+                            (debug)
+                            (= target_insertion_path (first (findpaths (quote included_globals) src)))
+
+                            (console.log "target_insertion_path: " target_insertion_path)
+                            
+                            (if (not (is_array? target_insertion_path))
+                              (throw EvalError "Unable to find the first included_globals symbol"))
+
+                            (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
+                            (undefine `last_source_tree)  ;; TODO REMOVE THIS AND THE DEFGLOBAL BELOW
                             ;(declare (function env_constructor))
                             (= options (or options {}))
                             (when options.include_source
                               (= include_source true))
-                            
-                            (= env_constructor (get_global "construct_environment"))
-                            
-                            (when (eq nil env_constructor)
-                              (throw ReferenceError "The construct_environment macro wasn't found. Is IO loaded?"))
-                           
+                                                                                   
                             (env_log namespace "cloning: # children: " (length children))
                             (= exports (for_each (symset (pairs (clone Environment.global_ctx.scope)))
                                                  (do                                                   
                                                    (cond
                                                      (resolve_path [ symset.0 `initializer ] Environment.definitions)
-                                                     [symset.0 [(quote eval) (resolve_path [ symset.0 `initializer ] Environment.definitions)]]
-                                                     (eq nil symset.1)
-                                                     [symset.0 nil]
+                                                     [symset.0 (resolve_path [ symset.0 `initializer ] Environment.definitions)]
+                                                     (== nil symset.1)
+                                                     [symset.0 (quote nil)]
+                                                     (== undefined symset.1)
+                                                     [symset.0 (quote undefined)]
                                                      else
-                                                     symset))))
-                            
-                            (= new_env
-                               (env_constructor {`include_globals: (to_object exports)
-                                                 `definitions: Environment.definitions
-                                                 `declarations: Environment.declarations
-                                                 
+                                                     [symset.0 symset.1]))))
+                            (defglobal `last_source_tree exports)
+                            (set_path target_insertion_path src [(quote javascript) (compile (to_object exports)) ])
+                                                        
+                               
+                               ;(env_constructor {
+                                ;                 `definitions: Environment.definitions
+                                 ;                `declarations: Environment.declarations }
+                                  ;               
                                                 ; `children: (to_object
                                                 ;             (reduce (child (pairs children))
                                                  ;                    (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
                                                   ;                     child)))
                                                  ;`children_declarations: (clone children_declarations) 
-                                                 }))
+                                   ;              }
+                                    ;            (to_object exports)))  ;; the context
                             (= output_path (or options.save_as
                                                (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
                             ;; if our output path is a function, call it to get an actual name...
                             (if (is_function? output_path)
                               (= output_path (output_path)))
-
+                            ;(defglobal `last_source_tree src)
                             (if (and (not (is_string? output_path))
                                      output_path)
                               (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
@@ -1352,11 +1373,11 @@
                                       (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
                                 (env_log "saving to: " output_path)
                                 
-                                (compile_buffer new_env "init_dlisp"
+                                (compile_buffer src "init_dlisp"
                                                 {
                                                  `namespace: namespace
                                                  `toplevel: true
-                                                 `verbose: true
+                                                 `verbose: false
                                                  `output_file: output_path
                                                  `include_source: (or options.include_source
                                                                       (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
@@ -1364,14 +1385,14 @@
                                                  `build_headers: build_headers
                                                  }))
                               else
-                              new_env))))
+                              src))))
                            
      
      ;; Expose our global setters/getters for the dynamic and top level contexts
      
      (set_prop Environment
-               `get_global get_global
-               `set_global set_global               
+              ; `get_global get_global
+               ;`set_global set_global               
                `symbol_definition symbol_definition              
                `namespace namespace)
           

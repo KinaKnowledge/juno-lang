@@ -347,27 +347,10 @@
             ((opts ,#options))  ;; capture the options
            ,#src)))))
 
-(defun build_environment_macro_ng (opts)
-  (let
-      ((source_dir (or opts.source_dir
-                       "./src"))
-       (idx -1)
-       
-       ;; the last form in environment.js must be (defexternal dlisp_env...)
-       (src (resolve_path [ 2 ] (last (reader (read_text_file (+ source_dir "/environment.lisp")))))))
-    ;(pop (resolve_path [ 1 ] src)) ;; remove the options argument since we are creating the options in a closure around it
-    (if (not (== src.0 (quote "=:fn")))
-      (throw SyntaxError "Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))
-    
-    (defmacro construct_environment (options)                
-      `(let
-           ((opts {})
-            (make_env ,#src)) 
-         (make_env ,#options)
-         ))))
+
         
              
-(build_environment_macro_ng)
+
 
 
 ;; return true as the last value so the console output isn't overwhelmed.

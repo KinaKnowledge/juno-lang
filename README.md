@@ -97,6 +97,8 @@ Discuss: Namespaces are really scope spaces, because they are minimum environmen
 
 Another nice benefit of using a JSON tree as a source structure, is the ease with which Document Object Model (DOM) structures can be established and manipulated, without having to weld multiple languages together.  For example, the following shows the standard way Juno constructs DOM structures, where tags are represented as function calls with tag attributes being represented by optional objects as the first argument of the tag function.
 
+Web Assembly text format is also s-expressions.
+
 ```Clojure
 (detail { class: `standard }
   (summary "A simple way to embed HTML into documents")

@@ -1935,6 +1935,37 @@
       `tags: [ "function" "introspect" "introspection" "arguments"]
      })   
 
+(defun findpaths (value structure)
+  (let
+      ((acc [])  ;; the accumulator for our results      
+       (search (fn (struct _cpath)  ;; the recursion routine
+                 (cond
+                   (is_array? struct)
+                   (map (fn (elem idx)
+                          (cond                               
+                            (is_object? elem)
+                            (search elem (conj _cpath [ idx ]))
+                            
+                               ;; simple value do comparison
+                            (== elem value)
+                            (push acc (conj _cpath [ idx ]))))
+                        struct)
+                   (is_object? struct)
+                   (map (fn (pset)
+                          (cond
+                            (is_object? pset.1)
+                            (search pset.1 (conj _cpath [ pset.0 ])) ;; path with key
+
+                            (== pset.1 value)
+                            (push acc (conj _cpath [ pset.1 ]))))
+                        (pairs struct))
+
+                   (== struct value)
+                   (push acc _cpath)))))
+    (search structure [])
+    acc))
+       
+
 (defglobal warn
     (defclog { `prefix: "⚠️  "  })
     {
