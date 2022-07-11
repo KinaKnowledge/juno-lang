@@ -102,7 +102,7 @@
     ;; add any build headers first 
 
     (push segments
-	  (+ "// Source: " options.nput_filename "  "))
+	  (+ "// Source: " options.input_filename "  "))
     
     (when (is_array? opts.build_headers)
       (for_each (`header opts.build_headers)
@@ -194,6 +194,12 @@
        (console.log "warning: unhandled return: " compiled)
        (= write_file false)))
 
+    (when opts.bundle
+      (push segments
+	    (+ "await init_dlisp();"))
+      (push segments
+	    (+ "let env = await dlisp_env(" (if opts.bundle_options (JSON.stringify opts.bundle_options) "")  ");")))
+    
     (if write_file
       (progn
        (write_text_file output_filename (join "\n" segments))

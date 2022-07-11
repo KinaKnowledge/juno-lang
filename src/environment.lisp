@@ -116,8 +116,11 @@
      (set_prop Environment
                `context
                Environment.global_ctx)
+
+     ;; no compiler until it is provided.
+     (defvar unset_compiler  (fn () (throw EvalError "compiler must be set")))
+     (defvar compiler unset_compiler)
      
-     (defvar compiler (fn () (throw EvalError "compiler must be set")))
      
      (defvar compiler_operators (new Set))
      (defvar special_identity (fn (v)
@@ -1152,7 +1155,7 @@
      
      (defvar set_compiler (fn (compiler_function)
                             (do 
-                              (= compiler compiler_function)
+                             (= compiler compiler_function)			     
                               (= compiler_operators
                                  (compiler [] { `special_operators: true `env: Environment }))
                               (set_prop Environment.global_ctx.scope
@@ -1229,16 +1232,14 @@
 
        ;; if we have a compiler embedded, use it
      
-     (if (prop Environment.global_ctx.scope `compiler)
-	 (set_compiler (prop Environment.global_ctx.scope `compiler)))
+       (if (prop Environment.global_ctx.scope `compiler)
+	   (set_compiler (prop Environment.global_ctx.scope `compiler)))
      
        ;; setup the children
        
-       (when (is_object? (prop included_globals `children))
-	 (console.log "setting up the children: " (keys (prop included_globals `children)))	 
+       (when (is_object? (prop included_globals `children))	 	 
 	 (for_each (childset (pairs included_globals.children))
 	      (do	       
-	       (console.log "creating namespace: " childset.0)	         
 	       (create_namespace childset.0
 				 (if (prop included_globals.children_declarations childset.0)
 				     (prop included_globals.children_declarations childset.0)
@@ -1258,7 +1259,9 @@
 			`*env_config*))
 	 (set_prop Environment.global_ctx.scope
 		   `*env_config*
-		   { `export: { `save_path: nil `include_source: false } }))
+		   { `export: { `save_path: nil
+		                `default_namespace: "core"
+		                `include_source: false } }))
 
        ;; returns the current namespace 
 
@@ -1448,6 +1451,10 @@
                                                  `namespace: namespace
                                                  `toplevel: true
                                                  `verbose: false
+						 `bundle: true
+						 `bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
+						                    }
+						 
                                                  `output_file: output_path
                                                  `include_source: (or options.include_source
                                                                       (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
@@ -1595,11 +1602,16 @@
                `check_external_env (fn ()
                                      check_external_env_default))
 
-     
 
+     (defvar init (prop Environment.global_ctx.scope "*initializer*"))
+     (when (and opts.default_namespace
+	        (not (== compiler unset_compiler))	
+		(prop children opts.default_namespace))
+       (set_namespace opts.default_namespace))
      ;; call the initializer
-     (if (prop Environment.global_ctx.scope "*initializer*")
-       (eval (prop Environment.context.scope "*initializer*")))
+     
+     (when init 
+       (eval init))
      
      Environment)))
 

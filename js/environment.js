@@ -1,7 +1,7 @@
-// Source: undefined  
-// Build Time: 2022-07-11 11:48:47
-// Version: 2022.07.11.11.48
-export const DLISP_ENV_VERSION='2022.07.11.11.48';
+// Source: environment.lisp  
+// Build Time: 2022-07-11 12:56:55
+// Version: 2022.07.11.12.56
+export const DLISP_ENV_VERSION='2022.07.11.12.56';
 
 
 
@@ -137,10 +137,12 @@ export async function init_dlisp(Environment)  {
                             return Environment;
                             
                         }();
-                        let compiler=async function() {
+                        let unset_compiler=async function() {
                             throw new EvalError("compiler must be set");
                             
                         };
+                        ;
+                        let compiler=unset_compiler;
                         ;
                         let compiler_operators=new Set();
                         ;
@@ -1957,10 +1959,8 @@ export async function init_dlisp(Environment)  {
                                  await set_compiler(Environment.global_ctx.scope["compiler"])
                             };
                             if (check_true ((included_globals["children"] instanceof Object))){
-                                await console.log("setting up the children: ",await keys(included_globals["children"]));
                                  await (async function() {
                                     let __for_body__200=async function(childset) {
-                                        await console.log("creating namespace: ",childset['0']);
                                         await (await get_global("create_namespace"))(childset['0'],await (async function() {
                                              if (check_true (included_globals.children_declarations[childset['0']])){
                                                   return included_globals.children_declarations[childset['0']]
@@ -2020,7 +2020,7 @@ export async function init_dlisp(Environment)  {
                                  await async function(){
                                     Environment.global_ctx.scope["*env_config*"]={
                                         export:{
-                                            save_path:null,include_source:false
+                                            save_path:null,default_namespace:"core",include_source:false
                                         }
                                     };
                                     return Environment.global_ctx.scope;
@@ -2370,7 +2370,9 @@ export async function init_dlisp(Environment)  {
                                     (build_headers).push(("export const DLISP_ENV_VERSION='"+version_tag+"';"));
                                     await env_log("saving to: ",output_path);
                                      return  await (await get_global("compile_buffer"))(src,"init_dlisp",{
-                                        namespace:namespace,toplevel:true,verbose:false,output_file:output_path,include_source:(options.include_source||await resolve_path(["*env_config*","export","include_source"],Environment.global_ctx.scope)),build_headers:build_headers
+                                        namespace:namespace,toplevel:true,verbose:false,bundle:true,bundle_options:{
+                                            default_namespace:await resolve_path(["*env_config*","export","default_namespace"],Environment.global_ctx.scope)
+                                        },output_file:output_path,include_source:(options.include_source||await resolve_path(["*env_config*","export","include_source"],Environment.global_ctx.scope)),build_headers:build_headers
                                     })
                                 } else  {
                                      return src
@@ -2378,9 +2380,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){
-        if (check_true( (undefined==text))) {
-             throw new EvalError(("reader: received undefined, text must be a string."));
+                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));
             
         } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {
              throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));
@@ -3240,9 +3240,14 @@ export async function init_dlisp(Environment)  {
                             return Environment;
                             
                         }();
-                        if (check_true (Environment.global_ctx.scope["*initializer*"])){
+                        let init=Environment.global_ctx.scope["*initializer*"];
+                        ;
+                        if (check_true ((opts.default_namespace&&await not((compiler===unset_compiler))&&children[opts.default_namespace]))){
+                             await (await get_global("set_namespace"))(opts.default_namespace)
+                        };
+                        if (check_true (init)){
                              Environment.eval(await async function(){
-                                return Environment.context.scope["*initializer*"]
+                                return init
                             }())
                         };
                          return  Environment

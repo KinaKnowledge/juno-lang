@@ -1,7 +1,7 @@
-// Source: undefined  
-// Build Time: 2022-07-11 11:48:47
-// Version: 2022.07.11.11.48
-export const DLISP_ENV_VERSION='2022.07.11.11.48';
+// Source: io.lisp  
+// Build Time: 2022-07-11 12:56:55
+// Version: 2022.07.11.12.56
+export const DLISP_ENV_VERSION='2022.07.11.12.56';
 
 
 
@@ -110,7 +110,7 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
         throw new SyntaxError(("export function name contains an invalid JS character: "+export_function_name+", cannot contain: "+invalid_js_ref_chars));
         
     };
-    (segments).push(("// Source: "+(options && options["nput_filename"])+"  "));
+    (segments).push(("// Source: "+(options && options["input_filename"])+"  "));
     if (check_true (((opts && opts["build_headers"]) instanceof Array))){
         await (async function() {
             let __for_body__4=async function(header) {
@@ -234,6 +234,16 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
              return  write_file=false
         }
     } ();
+    if (check_true ((opts && opts["bundle"]))){
+        (segments).push(("await init_dlisp();"));
+         (segments).push(("let env = await dlisp_env("+await (async function () {
+             if (check_true ((opts && opts["bundle_options"]))){
+                  return await JSON.stringify((opts && opts["bundle_options"]))
+            } else {
+                  return ""
+            } 
+        })()+");"))
+    };
     if (check_true (write_file)){
         await (await Environment.get_global("write_text_file"))(output_filename,(segments).join("\n"));
         await (await Environment.get_global("success"))(("["+compile_time+"] compiled: "),((opts && opts["input_filename"])||(opts && opts["namespace"])||"anonymous"),"->",output_filename);
