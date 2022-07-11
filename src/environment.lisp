@@ -38,11 +38,9 @@
 
 
 ;; We can't immediately define a macro for the below because we don't have
-;; an environment yet to place it.  So once we are initialized
-;; we will reload this into a macro for constructing custom
-;; environments.
-
-
+;; an environment yet to place it.  So when we want to save the current
+;; environment, we will splice directly into the JSON representation
+;; of this file.  
 
 (defexternal dlisp_env
   (fn (opts)
@@ -1133,7 +1131,21 @@
                                         ;(env_log "eval_struct <-" (clone rval))
                         rval))))
        
-                                   
+     (defvar built_ins
+       ["MAX_SAFE_INTEGER","LispSyntaxError","sub_type","__VERBOSITY__","int","float",
+        "values","pairs","keys","take","prepend","first","last","length","conj","reverse",
+        "map","bind","to_object","to_array","slice","rest","second","third","chop","chomp",
+	"not","push","pop","list","flatten","jslambda","join","lowercase","uppercase","log",
+	"split","split_by","is_object?","is_array?","is_number?","is_function?","is_set?",
+	"is_element?","is_string?","is_nil?","is_regex?","is_date?","ends_with?","starts_with?",
+	"blank?","contains?","make_set","meta_for_symbol","describe","undefine","eval_exp",
+	"indirect_new","range","add","merge_objects","index_of","resolve_path","delete_prop",
+	"min_value","max_value","interlace","trim","assert","unquotify","or_args",
+	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"])
+
+     (set_prop Environment.global_ctx.scope
+	       `built_ins
+	       built_ins)
      
      ;; This will allow us to swap out compiler functions for when we are using potentially
      ;; multiple compilers, for example in the development of the compiler.  
@@ -1166,13 +1178,31 @@
                `set_global set_global               
                `symbol_definition symbol_definition              
                `namespace namespace)
+
+     
+     ;; If we have child environments (namespaces) we need to know about them
+     ;; because we need to be able to manage them and we need to be able to
+     ;; set our current evaluation path to the correct environment as the
+     ;; entry point.
+     ;; container for the child environments
+       
+     (defvar children (or opts.children {}))
+     
+     ;; container for declarations pertaining to our child environments
+     
+     (defvar children_declarations (or opts.children_declarations {}))
      
      ;; now bring any includes from the options...
-     (defvar included_globals nil)  ;; this nil is actually replaced with the save_env function.
-
-     ;(defvar included_definitions nil) ;; as well as this one..
+     ;; the nil value of included_globals is replaced with the save_env
+     ;; function
      
-     (when (is_object? included_globals)
+     (defvar included_globals nil)
+
+     ;; when included_globals has a populated value (which it gets from save_env)
+     ;; the definitions get reintegrated into this environment
+     
+     (when (and (is_object? included_globals)
+		(== namespace "core"))
               
        ;; if not already defined by the environment itself, merge the
        ;; provided names and values into the global context.
@@ -1188,22 +1218,50 @@
                    (when (eq nil (prop Environment.definitions symset.0))                   
                      (set_prop Environment.definitions
                                symset.0
-                               symset.1)))))
-                         
-         
-     ;; If we have child environments (namespaces) we need to know about them
-     ;; because we need to be able to manage them and we need to be able to
-     ;; set our current evaluation path to the correct environment as the
-     ;; entry point.
+                               symset.1))))
+       
+       (when (is_object? (prop included_globals `declarations))
+         (for_each (symset (pairs included_globals.declarations))
+                   (when (eq nil (prop Environment.declarations symset.0))                   
+                     (set_prop Environment.declarations
+                               symset.0
+                               symset.1))))
 
-     ;; container for the child environments
-     (defvar children (or opts.children {}))
+       ;; if we have a compiler embedded, use it
      
-     ;; container for declarations pertaining to our child environments
-     (defvar children_declarations (or opts.children_declarations {})) 
+     (if (prop Environment.global_ctx.scope `compiler)
+	 (set_compiler (prop Environment.global_ctx.scope `compiler)))
      
-     (when (== namespace "core")     
+       ;; setup the children
+       
+       (when (is_object? (prop included_globals `children))
+	 (console.log "setting up the children: " (keys (prop included_globals `children)))	 
+	 (for_each (childset (pairs included_globals.children))
+	      (do	       
+	       (console.log "creating namespace: " childset.0)	         
+	       (create_namespace childset.0
+				 (if (prop included_globals.children_declarations childset.0)
+				     (prop included_globals.children_declarations childset.0)
+				   {}))
+		    (for_each (symset childset.1)
+			      (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
+				(set_path [ childset.0 `context `scope symset.0 ] children					  
+					  symset.1)))))))
+                         
+     ;; the core namespace has special responsibilities, namely to manage
+     ;; the namespaces and the overall configuration, which is available
+     ;; via the *env_config* object
+
+     (when (== namespace "core")
+       
+       (when (not (prop Environment.global_ctx.scope
+			`*env_config*))
+	 (set_prop Environment.global_ctx.scope
+		   `*env_config*
+		   { `export: { `save_path: nil `include_source: false } }))
+
        ;; returns the current namespace 
+
        (defvar current_namespace (function ()
                                            active_namespace))
        
@@ -1226,6 +1284,7 @@
                                           (set_prop children_declarations
                                                     name
                                                     {})
+					  (-> child_env `evaluate "(for_each (sym built_ins) (delete_prop Environment.context.scope sym))")
                                           (if options.contained
                                             (set_prop (prop children_declarations name)
                                                       `contained true))
@@ -1294,7 +1353,24 @@
                                              `children_declarations: (clone children_declarations) }))
                               (env_log namespace "constructed: " (->  new_env `id))
                               new_env)))
-
+     
+     (defvar export_symbol_set
+       (fn (options)
+	   (reduce (symset (pairs (clone Environment.global_ctx.scope)))
+                   (do
+                    (cond
+		     (and options options.no_compiler
+			  (== symset.0 "compiler"))
+		     nil
+                     (resolve_path [ symset.0 `initializer ] Environment.definitions)
+                     [symset.0 (resolve_path [ symset.0 `initializer ] Environment.definitions)]
+                     (== nil symset.1)
+                     [symset.0 (quote nil)]
+                     (== undefined symset.1)
+                     [symset.0 (quote undefined)]
+                     else
+                     [symset.0 symset.1])))))
+     
      (defvar save_env (fn (options)                                                  
                           (let
                               ((new_env nil)
@@ -1310,55 +1386,41 @@
                                (exports [])
                                (src (reader (read_text_file "./src/environment.lisp")))
                                (target_insertion_path nil)  ;; where we inject our context into the source tree                               
-                               (output_path nil)
-                               (my_children_declarations nil))
+                               (output_path nil))			       
+                               
                             ;; construct the macro..
                                                        
                             (= target_insertion_path (first (findpaths (quote included_globals) src)))
-
-                            (console.log "target_insertion_path: " target_insertion_path)
-                            
+                                                     
                             (if (not (is_array? target_insertion_path))
                               (throw EvalError "Unable to find the first included_globals symbol"))
 
                             (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
-                           
-                           
+                                                      
                             (= options (or options {}))
                             (when options.include_source
                               (= include_source true))
                                                                                    
-                            (env_log namespace "cloning: # children: " (length children))
-                            (= exports (for_each (symset (pairs (clone Environment.global_ctx.scope)))
-                                                 (do                                                   
-                                                   (cond
-                                                     (resolve_path [ symset.0 `initializer ] Environment.definitions)
-                                                     [symset.0 (resolve_path [ symset.0 `initializer ] Environment.definitions)]
-                                                     (== nil symset.1)
-                                                     [symset.0 (quote nil)]
-                                                     (== undefined symset.1)
-                                                     [symset.0 (quote undefined)]
-                                                     else
-                                                     [symset.0 symset.1]))))
-                           
-                            ;; now embed our compiled existing context into the source tree...
-                            (set_path target_insertion_path src {
-                                                                 `definitions: (clone Environment.definitions)
-                                                                 `symbols: [(quote javascript) (compile (to_object exports)) ]
-                                                                 })
-                                                        
-                            
-                               ;(env_constructor {
-                                ;                 `definitions: Environment.definitions
-                                 ;                `declarations: Environment.declarations }
-                                  ;               
-                                                ; `children: (to_object
-                                                ;             (reduce (child (pairs children))
-                                                 ;                    (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
-                                                  ;                     child)))
-                                                 ;`children_declarations: (clone children_declarations) 
-                                   ;              }
-                                    ;            (to_object exports)))  ;; the context
+                            (env_log namespace "cloning: # children: " (length children))                           
+
+			    (= exports (export_symbol_set))
+			    			    
+			    (= my_children
+			       (to_object
+                                (reduce (child (pairs children))
+                                        (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
+                                            [child.0 (-> child.1 `export_symbol_set { `no_compiler: true }) ]))))
+			    
+			    ;(log "CHILDREN: " children) 
+                            ;; now embed our compiled existing context into the source tree...			    
+                            (set_path target_insertion_path src
+				      { `definitions: (clone Environment.definitions)
+				        `declarations: (clone Environment.declarations)
+                                        `symbols: [(quote javascript) (compile (to_object exports)) ]
+					`children: my_children
+					`children_declarations: (clone children_declarations)
+                                      })
+                                                         
                             (= output_path (or options.save_as
                                                (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
                             ;; if our output path is a function, call it to get an actual name...
@@ -1515,10 +1577,12 @@
                `as_lisp as_lisp
                `inlines inlines
                `clone_to_new clone_to_new
+	       `export_symbol_set export_symbol_set
+	       `save_env save_env
                `special_operators special_operators
                `definitions Environment.definitions
                `declarations Environment.declarations
-               `compile compile
+               `compile compile	       
                `evaluate evaluate
                `evaluate_local evaluate_local
                `do_deferred_splice do_deferred_splice
@@ -1531,10 +1595,7 @@
                `check_external_env (fn ()
                                      check_external_env_default))
 
-     ;; if we have a compiler embedded, use it
      
-     (if (prop Environment.global_ctx.scope `compiler)
-       (set_compiler (prop Environment.global_ctx.scope `compiler)))
 
      ;; call the initializer
      (if (prop Environment.global_ctx.scope "*initializer*")

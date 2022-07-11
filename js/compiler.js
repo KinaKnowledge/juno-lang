@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-10 13:09:57
-// Version: 2022.07.10.13.09
-export const DLISP_ENV_VERSION='2022.07.10.13.09';
+// Build Time: 2022-07-11 11:27:11
+// Version: 2022.07.11.11.27
+export const DLISP_ENV_VERSION='2022.07.11.11.27';
 
 
 
@@ -1050,7 +1050,10 @@ export async function init_compiler(Environment) {
                             } else if (check_true( (name instanceof String || typeof name==='string'))) {
                                  return name
                             } else  {
-                                 return "nil"
+                                if (check_true ((name===null))){
+                                     name="=:nil"
+                                };
+                                 return  "null"
                             }
                         } ();
                         ref=(symname&&((name instanceof String || typeof name==='string')&&(await length(name)>2)&&await starts_with_ques_("=:",name)));

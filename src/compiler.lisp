@@ -569,7 +569,10 @@
                                                   (is_string? name)
                                                   name
                                                   else
-                                                  "nil"))
+                                                  (do
+                                                    (when (== name nil)
+                                                      (= name (quote nil)))
+                                                    "null")))
                                   ;; does it start with "=:"?
                                   (`ref (and symname (is_reference? name)))
 
@@ -630,7 +633,7 @@
                                                 (is_object? name)
                                                 (sub_type name)
                                                 special
-                                                "special"
+                                                "special"                                                 
                                                 is_literal?
                                                 "literal"
                                                 local

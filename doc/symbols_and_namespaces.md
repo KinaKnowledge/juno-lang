@@ -21,3 +21,5 @@ Symbols can be written as **fully-qualified** by using a `/` to indicate that th
 At all times, there is a currently active namespace, whose identifier can be accessed by calling the function `current_namespace`.   By default the currently active namespace is `user`, which is a child of `core`.  The `user` namespace is unconstrained, and so can access symbols in other namespaces by fully qualifying the namespace of the desired symbol.  When a form is compiled, it is assigned to a namespace, which is typically the value of `current_namespace`.  If there is a toplevel declaration to the compiler that the form or expression is to be assigned a specific namespace, the compiler will target the specified namespace instead.  In each namespace, there is a value \*namespace*, which reflects where the code has been compiled in.  Often this is different from the value returned from `current_namespace`.  Functions and scopes can determine what namespace they are assigned by referencing the value global namespace value `*namespace*`.  The following example illustrates the difference between `*namespace*` and `current_namespace`.
 
 
+
+
