@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-11 11:27:11
-// Version: 2022.07.11.11.27
-export const DLISP_ENV_VERSION='2022.07.11.11.27';
+// Build Time: 2022-07-11 11:48:47
+// Version: 2022.07.11.11.48
+export const DLISP_ENV_VERSION='2022.07.11.11.48';
 
 
 
@@ -2378,8 +2378,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;
-     return  await async function(){
+                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){
         if (check_true( (undefined==text))) {
              throw new EvalError(("reader: received undefined, text must be a string."));
             

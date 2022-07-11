@@ -31,11 +31,11 @@ let opts={
   throw_on_error: true
 }
 
-import { readline } from "https://deno.land/x/readline/mod.ts";
-import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
+//import { readline } from "https://deno.land/x/readline/mod.ts";
+//import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
-await env.set_global("readline",readline);
-await env.set_global("writeAllSync",writeAllSync);
+//await env.set_global("readline",readline);
+//await env.set_global("writeAllSync",writeAllSync);
 try {
   await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))",null, opts)
   await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)

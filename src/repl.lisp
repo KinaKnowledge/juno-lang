@@ -1,8 +1,11 @@
+
 (defun repl (instream outstream opts)
   (let
       ((buffer nil)
        (lines [])
-       (generator readline)
+       (readline_mod (dynamic_import "https://deno.land/x/readline/mod.ts"))
+       (streams (dynamic_import "https://deno.land/std/streams/conversion.ts"))
+       (generator readline_mod.readline)
        (instream (or instream Deno.stdin))
        (outstream (or outstream Deno.stdout))
        (td (new TextDecoder))
@@ -29,15 +32,15 @@
                     (-> te `encode (subprompt_text))))
                         
        (sigint_message (-> te `encode (either opts.sigint_message "\nsigint: input canceled. type ctrl-d to exit.\n")))
-       (write writeAllSync)
-       
+       (write streams.writeAllSync)
        (sigint_handler (function ()
 			         (progn
 			          (write outstream sigint_message)
                                   (= lines [])
 			          (write outstream prompt))))
        (return_stack []))
-    (declare (function write))        
+    (declare (function write))
+    (debug)
     (defglobal $ nil)
     (defglobal $$ nil)
     (defglobal $$$ nil)
@@ -86,9 +89,9 @@
                          (write outstream (prompt)))
                         else
                         (progn                         
-			 (push lines l)                         
-			 (writeAllSync outstream
-                                       (subprompt))
+			  (push lines l)                         
+			  (write outstream
+                                 (subprompt))
                          ))))
 		   (catch Error (e)
 		     (console.error "ERROR: " e)))
