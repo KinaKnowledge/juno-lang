@@ -179,7 +179,8 @@
     (let
        ((macro_name (-> quoted_form.0 `substr 2))
         (macro_func (-> Environment `get_global macro_name))
-        (expansion (if (is_function? macro_func)
+        (expansion (if (and (is_function? macro_func)
+                            (resolve_path [ macro_name `eval_when `compile_time ] Environment.definitions))
                        (apply macro_func (-> quoted_form `slice 1))
                        quoted_form)))
     expansion)
@@ -1202,7 +1203,65 @@
        `description: "opposite of if, if the condition is false then the forms are evaluated"
        `usage: ["condition:array" "forms:array"]
      })
- 
+
+(defmacro use_quoted_initializer (`& forms)
+  (let
+      ((insert_initializer (fn (form)
+			       ;; the final form must be in the form of a (defglobal name value) or (defglobal name value { }) (defglobal name value (quote { } ))
+			       ;; the def- macros should all expand out into this architypal form..
+			       ;; if the meta isn't provided the metadata will be appended in.
+			       (progn
+				 (defvar meta (prop form 3))
+				 (if (eq nil (prop form 3))
+				     (= meta
+					(set_prop form
+						  3
+						  {})))
+				 				  
+				 (cond
+				  (and (is_array? meta)
+				       (is_object? (resolve_path [ 3 1 ] form)))
+				  (do
+				   (set_path [ 3 1 `initializer ] form [(quote quote) form.2 ])				   
+				   form)
+				  (is_object? meta)
+				  (do
+				   (do
+				      (set_prop form.3					   
+						`initializer [(quote quote) form.2 ])				      
+				      form))
+				  else
+				  (do
+				      (warn "use_quoted_initializer: cannot quote " (if (is_string? form.2) form.2 form " - cannot find meta form. Check calling syntax."))
+				      form)
+				     )))))
+   
+    (for_each (form forms)
+	      (do
+	       ;; make sure we are working with the form in it's expanded state.
+	       ;; this macro should be the calling form to defun, etc..
+	       (= form (macroexpand form))	       
+               (if (and (is_array? form)
+			(== form.0 (quote defglobal)))
+		   (do		    
+		    (insert_initializer form))
+		 form))))
+  {
+    `description: | 
+use_quoted_initializer is a macro that preserves the source form in the symbol definition object. 
+When the environment is saved, any source forms that wish to be preserved through the 
+serialization process should be in the body of this macro.  This is a necessity for global 
+objects that hold callable functions, or functions or structures that require initializers,
+such as things that connect or use environmental resources.
+|
+    `usage: ["forms:array"]
+    `tags: [`compilation `save_env `export `source `use `compiler `compile ]
+
+  })
+	 
+	   
+
+
 (defun random_int (`& `args)
        (let
             ((`top 0)
@@ -1664,14 +1723,16 @@
       })
 
 
-(defglobal *compiler_syntax_rules* 
-     { 
-      `compile_let:  [ [[0 1 `val] (list is_array?) "let allocation section"]
-                       [[0 2] (list (fn (v) (not (== v undefined)))) "let missing block"]]
-      `compile_cond: [ [[0] (list (fn (v) (== (% (length (rest v)) 2) 0))) "cond: odd number of arguments" ]]
-      `compile_assignment: [[[0 1] (list (fn (v) (not (== v undefined)))) "assignment is missing target and values"]
-                            [[0 2] (list (fn (v) (not (== v undefined)))) "assignment is missing value"]]
-      })
+(use_quoted_initializer
+ (defglobal *compiler_syntax_rules*
+   { 
+    `compile_let:  [ [[0 1 `val] (list is_array?) "let allocation section"]
+                    [[0 2] (list (fn (v) (not (== v undefined)))) "let missing block"]]
+    `compile_cond: [ [[0] (list (fn (v) (== (% (length (rest v)) 2) 0))) "cond: odd number of arguments" ]]
+    `compile_assignment: [[[0 1] (list (fn (v) (not (== v undefined)))) "assignment is missing target and values"]
+                          [[0 2] (list (fn (v) (not (== v undefined)))) "assignment is missing value"]]
+    }))
+
 
 (defun compiler_source_chain (cpath tree sources)
       (if (and (is_array? cpath)
@@ -1965,22 +2026,22 @@
     (search structure [])
     acc))
        
-
-(defglobal warn
-    (defclog { `prefix: "⚠️  "  })
-    {
+(use_quoted_initializer
+ (defglobal warn
+   (defclog { `prefix: "⚠️  "  })
+   {
     `description: "Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log."
     `usage:["args0:*" "argsN:*" ]
     `tags: ["log" "warning" "error" "signal" "output" "notify" "defclog"]
     })
 
-(defglobal success
-    (defclog { `color: `green `prefix: "✓  " })
-    {
+ (defglobal success
+   (defclog { `color: `green `prefix: "✓  " })
+   {
     `description: "Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log."
     `usage:["args0:*" "argsN:*" ]
     `tags: ["log" "warning" "notify" "signal" "output" "ok" "success" "defclog"]
-    })
+    }))
 
 (defmacro in_background (`& forms)
   `(new Promise

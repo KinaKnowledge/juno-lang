@@ -702,6 +702,7 @@
          
          (special_operators (fn ()
                               (make_set (compiler [] { `special_operators: true `env: Environment }))))
+
          (defclog (fn (opts)
                     (let
                         ((`style (+ "padding: 5px;"
@@ -1133,16 +1134,18 @@
                                                (or opts {})))))
                                         ;(env_log "eval_struct <-" (clone rval))
                         rval))))
-       
+
+     ;; these are selected names which we don't need to propogate to children
+     
      (defvar built_ins
        ["MAX_SAFE_INTEGER","LispSyntaxError","sub_type","__VERBOSITY__","int","float",
         "values","pairs","keys","take","prepend","first","last","length","conj","reverse",
         "map","bind","to_object","to_array","slice","rest","second","third","chop","chomp",
 	"not","push","pop","list","flatten","jslambda","join","lowercase","uppercase","log",
-	"split","split_by","is_object?","is_array?","is_number?","is_function?","is_set?",
-	"is_element?","is_string?","is_nil?","is_regex?","is_date?","ends_with?","starts_with?",
-	"blank?","contains?","make_set","meta_for_symbol","describe","undefine","eval_exp",
-	"indirect_new","range","add","merge_objects","index_of","resolve_path","delete_prop",
+	"split","split_by","is_object?","is_array?", "is_number?", "is_function?", "is_set?",
+	"is_element?", "is_string?", "is_nil?", "is_regex?", "is_date?", "ends_with?", "starts_with?",
+	"blank?","contains?","make_set" "undefine","eval_exp", "indirect_new",
+        "range", "add", "merge_objects", "index_of", "resolve_path", "delete_prop",
 	"min_value","max_value","interlace","trim","assert","unquotify","or_args",
 	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"])
 
@@ -1151,7 +1154,7 @@
 	       built_ins)
      
      ;; This will allow us to swap out compiler functions for when we are using potentially
-     ;; multiple compilers, for example in the development of the compiler.  
+     ;; multiple compilers, for example in the development of the compiler.
      
      (defvar set_compiler (fn (compiler_function)
                             (do 
@@ -1216,7 +1219,7 @@
                                symset.0
                                symset.1))))
 
-       (when (is_object? (prop included_globals `definitions))
+       (when (is_object? (prop included_globals `definitions))         
          (for_each (symset (pairs included_globals.definitions))
                    (when (eq nil (prop Environment.definitions symset.0))                   
                      (set_prop Environment.definitions
@@ -1228,7 +1231,7 @@
                    (when (eq nil (prop Environment.declarations symset.0))                   
                      (set_prop Environment.declarations
                                symset.0
-                               symset.1))))
+                               (quotel symset.1)))))
 
        ;; if we have a compiler embedded, use it
      
@@ -1259,7 +1262,7 @@
 			`*env_config*))
 	 (set_prop Environment.global_ctx.scope
 		   `*env_config*
-		   { `export: { `save_path: nil
+		   { `export: { `save_path: "working/juno.js"
 		                `default_namespace: "core"
 		                `include_source: false } }))
 
@@ -1365,6 +1368,10 @@
 		     (and options options.no_compiler
 			  (== symset.0 "compiler"))
 		     nil
+		     (or (== "$" symset.0) (== "$$" symset.0) (== "$$$" symset.0))
+		     nil
+		     (== symset.0 "*env_skeleton*")
+                     [ symset.0 [(quote quotel) (prop Environment.global_ctx.scope "*env_skeleton*") ]]
                      (resolve_path [ symset.0 `initializer ] Environment.definitions)
                      [symset.0 (resolve_path [ symset.0 `initializer ] Environment.definitions)]
                      (== nil symset.1)
@@ -1387,11 +1394,13 @@
                                (build_headers [])
                                (include_source false)
                                (exports [])
-                               (src (reader (read_text_file "./src/environment.lisp")))
+                               (src (if (prop Environment.global_ctx.scope "*env_skeleton*")
+                                      (clone (prop Environment.global_ctx.scope "*env_skeleton*"))
+				      (reader (read_text_file  "./src/environment.lisp"))))
                                (target_insertion_path nil)  ;; where we inject our context into the source tree                               
                                (output_path nil))			       
                                
-                            ;; construct the macro..
+                            ;; construct our form by doing surgery on ourselves..
                                                        
                             (= target_insertion_path (first (findpaths (quote included_globals) src)))
                                                      
@@ -1417,13 +1426,13 @@
 			    ;(log "CHILDREN: " children) 
                             ;; now embed our compiled existing context into the source tree...			    
                             (set_path target_insertion_path src
-				      { `definitions: (clone Environment.definitions)
+				      { `definitions: [(quotel quote) (clone Environment.definitions)]
 				        `declarations: (clone Environment.declarations)
                                         `symbols: [(quote javascript) (compile (to_object exports)) ]
 					`children: my_children
 					`children_declarations: (clone children_declarations)
                                       })
-                                                         
+                            
                             (= output_path (or options.save_as
                                                (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
                             ;; if our output path is a function, call it to get an actual name...
@@ -1602,14 +1611,16 @@
                `check_external_env (fn ()
                                      check_external_env_default))
 
-
+     ;; get the core/*initializer*...
      (defvar init (prop Environment.global_ctx.scope "*initializer*"))
+
+     ;; set the default namespace if we have been given one and we have children..
      (when (and opts.default_namespace
 	        (not (== compiler unset_compiler))	
 		(prop children opts.default_namespace))
        (set_namespace opts.default_namespace))
-     ;; call the initializer
-     
+
+     ;; call the initializer     
      (when init 
        (eval init))
      

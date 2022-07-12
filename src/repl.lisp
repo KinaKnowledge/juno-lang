@@ -39,8 +39,9 @@
                                   (= lines [])
 			          (write outstream prompt))))
        (return_stack []))
+    
     (declare (function write))
-    (debug)
+    
     (defglobal $ nil)
     (defglobal $$ nil)
     (defglobal $$$ nil)

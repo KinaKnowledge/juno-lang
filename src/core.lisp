@@ -788,9 +788,8 @@
         { `usage: ["values:list"]
           `description: "Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."  } )
     
-    
-    (defglobal system_date_formatter
-        (new Intl.DateTimeFormat [] {
+    (defglobal system_date_format
+       {
           `weekday: "long"
           `year: "numeric",
           `month: "2-digit",
@@ -802,7 +801,13 @@
           `hourCycle: "h24"
           `hour12: false,
           `timeZoneName: "short"
-        }))
+          })
+    
+    (defglobal system_date_formatter
+        (new Intl.DateTimeFormat [] system_date_format)
+	{
+	 `initializer: `(new Intl.DateTimeFormat [] ,#system_date_format)
+	})
 
     (defun tzoffset ()
         (* 60 (-> (new Date) `getTimezoneOffset))

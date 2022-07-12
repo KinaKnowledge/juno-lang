@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-07-11 12:56:55
-// Version: 2022.07.11.12.56
-export const DLISP_ENV_VERSION='2022.07.11.12.56';
+// Build Time: 2022-07-11 21:41:48
+// Version: 2022.07.11.21.41
+export const DLISP_ENV_VERSION='2022.07.11.21.41';
 
 
 
@@ -1003,9 +1003,12 @@ await Environment.set_global("min_value",async function(v) {
     }
 },{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."
 });
-await Environment.set_global("system_date_formatter",new Intl.DateTimeFormat([],{
+await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
-}));
+});
+await Environment.set_global("system_date_formatter",new Intl.DateTimeFormat([],(await Environment.get_global("system_date_format"))),{
+    initializer:["=:new","=:Intl.DateTimeFormat",[],(await Environment.get_global("system_date_format"))]
+});
 await Environment.set_global("tzoffset",async function() {
      return  (60*await (async function() {
         {
