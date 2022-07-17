@@ -2035,7 +2035,7 @@ such as things that connect or use environmental resources.
     `description: "Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log."
     `usage:["args0:*" "argsN:*" ]
     `tags: ["log" "warning" "error" "signal" "output" "notify" "defclog"]
-    `initializer: [ "=:defclog", { prefix: "⚠️  " } ]
+    `initializer: (quote [ "=:defclog", { prefix: "⚠️  " } ])
     })
 
  (defglobal success
@@ -2044,7 +2044,7 @@ such as things that connect or use environmental resources.
     `description: "Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log."
     `usage:["args0:*" "argsN:*" ]
     `tags: ["log" "warning" "notify" "signal" "output" "ok" "success" "defclog"]
-    `initializer: [ "=:defclog", { color: "green", prefix: "✓  " } ]
+    `initializer: (quote [ "=:defclog", { color: "green", prefix: "✓  " } ])
     })
 
 (defmacro in_background (`& forms)

@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-17 09:56:13
-// Version: 2022.07.17.09.56
-export const DLISP_ENV_VERSION='2022.07.17.09.56';
+// Build Time: 2022-07-17 10:04:08
+// Version: 2022.07.17.10.04
+export const DLISP_ENV_VERSION='2022.07.17.10.04';
 
 
 
@@ -2932,16 +2932,14 @@ await Environment.set_global("findpaths",async function(value,structure) {
 await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
     prefix:"⚠️  "
 }),{
-    description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"],initializer:await (await Environment.get_global("defclog"))({
-        prefix:"⚠️  "
-    })
+    description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"],initializer:["=:defclog",{ "prefix":"⚠️  "
+}]
 });
 await Environment.set_global("success",await (await Environment.get_global("defclog"))({
     color:"green",prefix:"✓  "
 }),{
-    description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:await (await Environment.get_global("defclog"))({
-        color:"green",prefix:"✓  "
-    })
+    description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:["=:defclog",{ "color":"green","prefix":"✓  "
+}]
 });
 await Environment.set_global("in_background",async function(...forms) {
      return  ["=:new","=:Promise",["=:fn",["=:resolve","=:reject"],["=:progn",["=:resolve",true],].concat(forms)]]

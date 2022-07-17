@@ -1476,7 +1476,7 @@
 			       (to_object
                                 (reduce (child (pairs children))
                                         (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
-                                            [child.0 [(quote javascript) (compile (-> child.1 `export_symbol_set { `no_compiler: true }) { `throw_on_error: true }) ]]))))
+                                            [child.0 (-> child.1 `export_symbol_set { `no_compiler: true })]))))
 			    
 			    ;(log "CHILDREN: " children) 
                             ;; now embed our compiled existing context into the source tree...			    

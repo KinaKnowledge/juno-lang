@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-17 09:56:13
-// Version: 2022.07.17.09.56
-export const DLISP_ENV_VERSION='2022.07.17.09.56';
+// Build Time: 2022-07-17 10:04:08
+// Version: 2022.07.17.10.04
+export const DLISP_ENV_VERSION='2022.07.17.10.04';
 
 
 
@@ -2363,17 +2363,13 @@ export async function init_dlisp(Environment)  {
                                           return await (async function(){
                                             let __array_op_rval__227=child['0'];
                                              if (__array_op_rval__227 instanceof Function){
-                                                return await __array_op_rval__227(["=:javascript",await compile(await child['1']["export_symbol_set"].call(child['1'],{
+                                                return await __array_op_rval__227(await child['1']["export_symbol_set"].call(child['1'],{
                                                     no_compiler:true
-                                                }),{
-                                                    throw_on_error:true
-                                                })]) 
+                                                })) 
                                             } else {
-                                                return[__array_op_rval__227,["=:javascript",await compile(await child['1']["export_symbol_set"].call(child['1'],{
+                                                return[__array_op_rval__227,await child['1']["export_symbol_set"].call(child['1'],{
                                                     no_compiler:true
-                                                }),{
-                                                    throw_on_error:true
-                                                })]]
+                                                })]
                                             }
                                         })()
                                     }
@@ -2437,9 +2433,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;
-            let handler_stack;
-            let handler;
+                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;
             let c;
             let next_c;
             let depth;
