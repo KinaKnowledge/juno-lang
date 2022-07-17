@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+if [ -z "$RLWRAP_EDITOR" ]; then
+  export RLWRAP_EDITOR=/opt/local/bin/emacs
+fi
+
+
+
+if [ !  -d "./js" ] && [ -d "../src" ]; then
+   cd ..
+fi
+
+if [ ! -d "./js" ]; then
+    echo "`basename $0`: not in the top level folder for Juno. Currently: `pwd`" >&2
+    exit 1
+fi
+
+STARTUP="./js/startup_deno.js"
+MAIN_SWITCH=""
+COMP_OUT=""
+ADDR=""
+MAIN_MODE="run"
+for ARG in $@; do    
+    if [[ "$ARG" == -* ]]; then
+	if [ -z "$MAIN_SWITCH" ]; then
+	    MAIN_SWITCH=$ARG
+	    if [ "$MAIN_SWITCH" == "compile" ]; then
+		MAIN_MODE="compile"
+	    fi
+	fi	
+    elif [ "$MAIN_SWITCH" == "--compile" ] && [ -z "$COMP_OUT" ]; then
+	COMP_OUT=$ARG
+    elif [[ "$ARG" == *.js ]]; then
+	STARTUP=$ARG
+    elif [ "$MAIN_SWITCH" == "--inspect-brk" ] && [ -z "$ADDR" ]; then
+	ADDR=$ARG
+    elif [ "$MAIN_SWITCH" == "--inspect" ] && [ -z "$ADDR" ]; then
+	ADDR=$ARG
+    fi
+done
+
+
+if [ -n "$ADDR" ]; then
+    MAIN_SWITCH="$MAIN_SWITCH=$ADDR"
+fi
+
+if [ -z "$MAIN_SWITCH" ]; then
+    MAIN_SWITCH=" ";
+fi
+
+
+if [ "$MAIN_MODE" == "compile" ]; then
+    if [ -n "$COMP_OUT" ]; then
+	deno compile --output="$COMP_OUT" --allow-write --allow-read --allow-net "$STARTUP"
+    else
+	echo "`basename $0`: missing compile output argument. See --help for arguments" >&2
+	exit 1
+    fi
+elif [ "$MAIN_SWITCH" = "-?" ] || [ "$MAIN_SWITCH" = "--help" ]; then 
+    cat <<EOF
+
+Juno (c) 2022 Kina LLC - Command Line Utility
+usage: [ --help | -? ]
+       [ --compile output-file [ path ] ]
+       [ --inspect | --inspect-brk [ip:port] ] [ path ]
+
+ -? --help:     Print this help guide.
+
+ --compile:     Build a standalone executable.
+                Note that dynamic_imports will not work in the emitted binary.
+
+ --inspect      Enable inspection in Chrome Devtools  If a host and port are
+                provided as a second argument, it is in the host:port format.
+                Example: 127.0.0.1:9933
+
+ --inspect-brk: Debugging on, and prior to evaluation, Juno will wait for a
+                debug connection prior to start. Like inspect, will take a
+                second argument indicating a listening address and port.
+
+ path           The Juno javascript environment file to use.  The default is
+                ./js/startup_deno.js"
+
+EOF
+
+elif [ -n "$MAIN_SWITCH" ]; then
+    rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --allow-write --allow-net --allow-read "$STARTUP"
+else
+    echo "juno: unknown option,  use -? for more information" 
+fi
+     
+    

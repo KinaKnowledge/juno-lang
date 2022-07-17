@@ -66,9 +66,9 @@
 
 (defglobal `compiler 
   (fn (quoted_lisp opts)
-    (let
-	((`get_global opts.env.get_global)
-	 (`Environment opts.env))      
+    (progn
+	(defvar Environment opts.env)
+	(defvar get_global opts.env.get_global)
      (let
       ((`tree quoted_lisp)  ;; the JSON source provided
        
@@ -2030,8 +2030,9 @@
                                       
                                       ;; local shadow of a globally declared variable
                                       (and (is_string? alloc_set.1.name)
-                                           (prop Environment.context.scope alloc_set.1.name)
                                            (not ctx_details.is_argument)
+					   alloc_set.1.ref
+                                           (-> Environment `get_global alloc_set.1.name) ;(prop Environment.context.scope alloc_set.1.name)                                           
                                            (prop shadowed_globals alloc_set.0.name))
                                                   
                                       (do
@@ -3476,7 +3477,7 @@
                                 
                                (`assembled nil))
                             (declare (boolean needs_return?))
-                            (if (and (not opts.root_environment)
+                            (if (and false (not opts.root_environment)
 				     (== first_level_setup.length 0)
                                      has_lisp_globals)
                               (push first_level_setup
@@ -5047,7 +5048,7 @@
 
                   ;; add any first level scope stuff into the first_level_setup array
                   ;; so it is included in the right place in the scope
-                  (if (and (not opts.root_environment)
+                  (if (and false (not opts.root_environment)
                            (== first_level_setup.length 0)
                            has_lisp_globals)
                     (push first_level_setup

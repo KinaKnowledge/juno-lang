@@ -1240,7 +1240,7 @@
 	      (do
 	       ;; make sure we are working with the form in it's expanded state.
 	       ;; this macro should be the calling form to defun, etc..
-	       (= form (macroexpand form))	       
+	       (= form (macroexpand form))
                (if (and (is_array? form)
 			(== form.0 (quote defglobal)))
 		   (do		    
@@ -2025,14 +2025,17 @@ such as things that connect or use environmental resources.
                    (push acc _cpath)))))
     (search structure [])
     acc))
-       
-(use_quoted_initializer
+
+
+   
+
  (defglobal warn
    (defclog { `prefix: "⚠️  "  })
    {
     `description: "Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log."
     `usage:["args0:*" "argsN:*" ]
     `tags: ["log" "warning" "error" "signal" "output" "notify" "defclog"]
+    `initializer: [ "=:defclog", { prefix: "⚠️  " } ]
     })
 
  (defglobal success
@@ -2041,7 +2044,8 @@ such as things that connect or use environmental resources.
     `description: "Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log."
     `usage:["args0:*" "argsN:*" ]
     `tags: ["log" "warning" "notify" "signal" "output" "ok" "success" "defclog"]
-    }))
+    `initializer: [ "=:defclog", { color: "green", prefix: "✓  " } ]
+    })
 
 (defmacro in_background (`& forms)
   `(new Promise

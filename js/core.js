@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-07-11 21:41:48
-// Version: 2022.07.11.21.41
-export const DLISP_ENV_VERSION='2022.07.11.21.41';
+// Build Time: 2022-07-17 09:56:13
+// Version: 2022.07.17.09.56
+export const DLISP_ENV_VERSION='2022.07.17.09.56';
 
 
 
@@ -9,7 +9,6 @@ export const DLISP_ENV_VERSION='2022.07.11.21.41';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function load_core(Environment)  {
 {
-    const __GG__=Environment.get_global;
     await Environment.set_global("if_undefined",async function(value,replacer) {
          return  ["=:if",["=:==","=:undefined",value],replacer,value]
     },{ "eval_when":{ "compile_time":true

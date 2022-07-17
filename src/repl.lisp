@@ -1,3 +1,7 @@
+;; JUNO Simple Read Eval Print Loop (REPL)
+;; Establishes a REPL mechanism that can be bound to an input and output stream
+;; (requires Deno readline and streams)
+
 
 (defun repl (instream outstream opts)
   (let
@@ -27,7 +31,7 @@
                          (function () opts.prompt)
                          else
                          (fn () 
-                                  (+ "     " (join "" (map (fn (v) " " )  (range (+ 2 (length (current_namespace)))))) (join "" (map (fn (v) " ") (range_inc (or last_exception.depth 1))))))))
+                             (+ "     " (join "" (map (fn (v) " " )  (range (+ 2 (length (current_namespace)))))) (join "" (map (fn (v) " ") (range_inc (or last_exception.depth 1))))))))
        (subprompt (fn ()
                     (-> te `encode (subprompt_text))))
                         

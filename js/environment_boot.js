@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-11 21:41:48
-// Version: 2022.07.11.21.41
-export const DLISP_ENV_VERSION='2022.07.11.21.41';
+// Build Time: 2022-07-17 09:56:13
+// Version: 2022.07.17.09.56
+export const DLISP_ENV_VERSION='2022.07.17.09.56';
 
 
 
@@ -9,7 +9,6 @@ export const DLISP_ENV_VERSION='2022.07.11.21.41';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function environment_boot(Environment)  {
 {
-    const __GG__=Environment.get_global;
     await Environment.set_global("get_outside_global",(await Environment.get_global("get_outside_global")));
     await Environment.set_global("true?",check_true);
     await Environment.set_global("subtype",(await Environment.get_global("sub_type")));
@@ -2930,29 +2929,20 @@ await Environment.set_global("findpaths",async function(value,structure) {
      return  acc
 },{ "name":"findpaths","fn_args":"(value structure)"
 });
-await (async function(){
-    let __array_op_rval__275=await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
+await Environment.set_global("warn",await (await Environment.get_global("defclog"))({
+    prefix:"⚠️  "
+}),{
+    description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"],initializer:await (await Environment.get_global("defclog"))({
         prefix:"⚠️  "
-    }),{
-        description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"],initializer:["=:defclog",{ "prefix":"⚠️  "
-    }]
+    })
 });
- if (__array_op_rval__275 instanceof Function){
-    return await __array_op_rval__275(await Environment.set_global("success",await (await Environment.get_global("defclog"))({
+await Environment.set_global("success",await (await Environment.get_global("defclog"))({
+    color:"green",prefix:"✓  "
+}),{
+    description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:await (await Environment.get_global("defclog"))({
         color:"green",prefix:"✓  "
-    }),{
-        description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:["=:defclog",{ "color":"green","prefix":"✓  "
-    }]
-})) 
-} else {
-    return[__array_op_rval__275,await Environment.set_global("success",await (await Environment.get_global("defclog"))({
-        color:"green",prefix:"✓  "
-    }),{
-        description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:["=:defclog",{ "color":"green","prefix":"✓  "
-    }]
-})]
-}
-})();
+    })
+});
 await Environment.set_global("in_background",async function(...forms) {
      return  ["=:new","=:Promise",["=:fn",["=:resolve","=:reject"],["=:progn",["=:resolve",true],].concat(forms)]]
 },{ "eval_when":{ "compile_time":true
@@ -2983,7 +2973,7 @@ await Environment.set_global("export_symbols",async function(...args) {
     numargs=await (await Environment.get_global("length"))(args);
     idx=0;
     await (async function() {
-        let __for_body__278=async function(symname) {
+        let __for_body__277=async function(symname) {
             await async function(){
                 if (check_true( ((symname instanceof Array)&&((symname && symname.length)===2)))) {
                     (acc).push(await (async function ()  {
@@ -3025,16 +3015,16 @@ await Environment.set_global("export_symbols",async function(...args) {
                   return (acc).push(", ")
             }
         };
-        let __array__279=[],__elements__277=args;
+        let __array__278=[],__elements__276=args;
         let __BREAK__FLAG__=false;
-        for(let __iter__276 in __elements__277) {
-            __array__279.push(await __for_body__278(__elements__277[__iter__276]));
+        for(let __iter__275 in __elements__276) {
+            __array__278.push(await __for_body__277(__elements__276[__iter__275]));
             if(__BREAK__FLAG__) {
-                 __array__279.pop();
+                 __array__278.pop();
                 break;
                 
             }
-        }return __array__279;
+        }return __array__278;
          
     })();
      return  (acc).push("}")

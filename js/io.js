@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-11 21:41:48
-// Version: 2022.07.11.21.41
-export const DLISP_ENV_VERSION='2022.07.11.21.41';
+// Build Time: 2022-07-17 09:56:13
+// Version: 2022.07.17.09.56
+export const DLISP_ENV_VERSION='2022.07.17.09.56';
 
 
 
@@ -9,7 +9,6 @@ export const DLISP_ENV_VERSION='2022.07.11.21.41';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function initializer(Environment)  {
 {
-    const __GG__=Environment.get_global;
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
     ;
     await Environment.set_global("path",await import ("https://deno.land/std@0.110.0/path/mod.ts"),{ "initializer":["=:dynamic_import","https://deno.land/std@0.110.0/path/mod.ts"]

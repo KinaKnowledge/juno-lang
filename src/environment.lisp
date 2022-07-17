@@ -138,7 +138,7 @@
                Environment.global_ctx)
 
      ;; no compiler until it is provided.
-     (defvar unset_compiler  (fn () (throw EvalError "compiler must be set")))
+     (defvar unset_compiler  (fn () (throw EvalError (+ "compiler must be set for "  namespace ))))
      (defvar compiler unset_compiler)
      
      
@@ -551,11 +551,33 @@
                           nil))))))
                           
          (undefine (function (quoted_symbol)
-                             (if (prop Environment.global_ctx.scope quoted_symbol)
-                               (progn
-                                (delete_prop Environment.definitions quoted_symbol)
-                                (delete_prop Environment.global_ctx.scope quoted_symbol))                              
-                               false)))
+			     (if (is_string? quoted_symbol)
+                               (let
+                                   ((`namespace_identity (split_by "/" quoted_symbol))   ;;  split..namespace_identity may only have 1 component though
+                                    (`parent_call nil)
+                                    (`target_symbol nil))
+                                 (declare (function parent_call))
+                                 (debug)
+			         (cond
+                                   (or (and (== namespace_identity.length 1)                                        
+                                            (prop Environment.global_ctx.scope namespace_identity.0))
+                                       (and (> namespace_identity.length 1)
+                                            (== namespace_identity.0 namespace)))
+                                   ;; it's not qualified and in our local environment
+				   (progn
+                                    (= target_symbol (if (> namespace_identity.length 1)
+                                                       namespace_identity.1
+                                                       namespace_identity.0))                                                       
+                                    (delete_prop Environment.definitions target_symbol)
+                                    (delete_prop Environment.global_ctx.scope target_symbol))
+                                   (and (> namespace_identity.length 1)
+                                        parent_environment)
+                                   (progn
+                                    (setq parent_call (-> parent_environment `get_global "undefine"))
+                                    (parent_call quoted_symbol))
+                                   else
+				   false))
+			       (throw SyntaxError "undefine requires a quoted symbol"))))
          
          (eval_exp (fn (expression)
                      (do 
@@ -976,6 +998,7 @@
                                 (compiled nil)
                                 (error_data nil)
                                 (result nil))
+			     (debug)
                              ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
                              (if opts.compiled_source
                                (= compiled expression)
@@ -1133,12 +1156,14 @@
                                         ;(env_log "<-" result)
                                  result)))))
        
-       (evaluate (fn (expression ctx opts)
-                   (if (== namespace active_namespace)
-                     (evaluate_local expression ctx opts)  ;; we by default use evaluate local
-                     (-> (prop children active_namespace)
-                         `evaluate
-                         expression ctx opts)))) ;; otherwise evaluate using the active namespace
+	 (evaluate (fn (expression ctx opts)
+		       (progn
+			 (debug)
+			 (if (== namespace active_namespace)
+			     (evaluate_local expression ctx opts)  ;; we by default use evaluate local
+			   (-> (prop children active_namespace)
+                               `evaluate
+                               expression ctx opts))))) ;; otherwise evaluate using the active namespace
        
        (eval_struct (fn (lisp_struct ctx opts)
                       (let
@@ -1156,6 +1181,8 @@
                         rval))))
 
      ;; these are selected names which we don't need to propogate to children
+     ;; however, anything that operates on the toplevel context needs to remain
+     ;; so get_global, undefine, set_global, etc. 
      
      (defvar built_ins
        ["MAX_SAFE_INTEGER","LispSyntaxError","sub_type","__VERBOSITY__","int","float",
@@ -1164,7 +1191,7 @@
 	"not","push","pop","list","flatten","jslambda","join","lowercase","uppercase","log",
 	"split","split_by","is_object?","is_array?", "is_number?", "is_function?", "is_set?",
 	"is_element?", "is_string?", "is_nil?", "is_regex?", "is_date?", "ends_with?", "starts_with?",
-	"blank?","contains?","make_set" "undefine","eval_exp", "indirect_new",
+	"blank?","contains?","make_set", "eval_exp", "indirect_new",
         "range", "add", "merge_objects", "index_of", "resolve_path", "delete_prop",
 	"min_value","max_value","interlace","trim","assert","unquotify","or_args",
 	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"])
@@ -1217,8 +1244,8 @@
      ;; container for declarations pertaining to our child environments
      
      (defvar children_declarations (or opts.children_declarations {}))
-     
-     ;; now bring any includes from the options...
+
+          ;; now bring any includes from the options...
      ;; the nil value of included_globals is replaced with the save_env
      ;; function
      
@@ -1232,6 +1259,7 @@
               
        ;; if not already defined by the environment itself, merge the
        ;; provided names and values into the global context.
+       ;(console.log "importing symbols: " (prop included_globals `symbols))
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
                    (when (eq nil (prop Environment.global_ctx.scope symset.0))                   
@@ -1255,23 +1283,9 @@
 
        ;; if we have a compiler embedded, use it
      
-       (if (prop Environment.global_ctx.scope `compiler)
-	   (set_compiler (prop Environment.global_ctx.scope `compiler)))
+       (when (prop Environment.global_ctx.scope `compiler)         
+	 (set_compiler (prop Environment.global_ctx.scope `compiler))))
      
-       ;; setup the children
-       
-       (when (is_object? (prop included_globals `children))	 	 
-	 (for_each (childset (pairs included_globals.children))
-	      (do	       
-	       (create_namespace childset.0
-				 (if (prop included_globals.children_declarations childset.0)
-				     (prop included_globals.children_declarations childset.0)
-				   {}))
-		    (for_each (symset childset.1)
-			      (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
-				(set_path [ childset.0 `context `scope symset.0 ] children					  
-					  symset.1)))))))
-                         
      ;; the core namespace has special responsibilities, namely to manage
      ;; the namespaces and the overall configuration, which is available
      ;; via the *env_config* object
@@ -1366,6 +1380,26 @@
                  "namespaces" (function () (+ (keys children) "core"))                 
                  "current_namespace" current_namespace))
 
+
+
+     
+       ;; setup the children
+     (when (and (is_object? included_globals)
+		(== namespace "core"))
+              
+       (when (is_object? (prop included_globals `children))	 	 
+	 (for_each (childset (pairs included_globals.children))
+	      (do	       
+	       (create_namespace childset.0
+				 (if (prop included_globals.children_declarations childset.0)
+				     (prop included_globals.children_declarations childset.0)
+				   {}))
+		    (for_each (symset childset.1)
+			      (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
+				(set_path [ childset.0 `context `scope symset.0 ] children					  
+					  symset.1)))))))
+                         
+     
      (defvar clone_to_new (fn (options)
                             (let
                                 ((new_env nil)
@@ -1384,6 +1418,7 @@
        (fn (options)
 	   (reduce (symset (pairs (clone Environment.global_ctx.scope)))
                    (do
+		    ;(console.log "export_symbol_set: [" namespace "]: " symset.0 symset.1)
                     (cond
 		     (and options options.no_compiler
 			  (== symset.0 "compiler"))
@@ -1441,14 +1476,14 @@
 			       (to_object
                                 (reduce (child (pairs children))
                                         (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
-                                            [child.0 (-> child.1 `export_symbol_set { `no_compiler: true }) ]))))
+                                            [child.0 [(quote javascript) (compile (-> child.1 `export_symbol_set { `no_compiler: true }) { `throw_on_error: true }) ]]))))
 			    
 			    ;(log "CHILDREN: " children) 
                             ;; now embed our compiled existing context into the source tree...			    
                             (set_path target_insertion_path src
 				      { `definitions: [(quotel quote) (clone Environment.definitions)]
 				        `declarations: (clone Environment.declarations)
-                                        `symbols: [(quote javascript) (compile (to_object exports)) ]
+                                        `symbols: [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]
 					`children: my_children
 					`children_declarations: (clone children_declarations)
                                       })
@@ -1490,6 +1525,9 @@
                                                  `toplevel: true
                                                  `build_headers: build_headers
                                                  }))
+			      (and output_path
+				   (ends_with? ".lisp" output_path))
+			      (write_text_file output_path (JSON.stringify src nil 4))
                               else
                               src))))
                            

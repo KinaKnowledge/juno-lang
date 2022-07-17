@@ -1521,7 +1521,7 @@
                   (callable 123))))
       (-> testcall `toString)"
      []
-     "async function(callable) {\n    const __GG__=Environment.get_global;\n    ;\n     return  (callable)(123)\n}"
+     "async function(callable) {\n    ;\n     return  (callable)(123)\n}"
      "Optimization by using declare - no ambiguity check" 
     ]
     ["(defglobal `testcall 
@@ -2155,7 +2155,7 @@
   "defconst in local scope creates a const allocation."]
  [ "(compile `(progn (defconst my_new_constant 123)))"
   []
-  "{const __GG__=Environment.get_global; return  await Environment.set_global(\"my_new_constant\",123,null,true)}"
+  "{ return  await Environment.set_global(\"my_new_constant\",123,null,true)}"
   "defconst in top-level progn compiles to set global scope"]
  
 ])
