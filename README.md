@@ -1,7 +1,15 @@
 Juno 
 ====
 
-Juno is a self-hosted Lisp dialect that compiles to Javascript.  It aims to provide fast execution and ease of use and features such as a macro facility modeled on Common Lisp and the ability to save and restore the running image.  Juno provides a native Lisp computing environment for Javascript platforms: the browser, Deno or Node (ala V8), or similar.
+### Links
+Latest Release
+Documentation
+API
+
+Juno is a self-hosted Lisp dialect that compiles to Javascript.  It combines fast execution and ease of use with features such as a macro facility modeled on Common Lisp and the ability to save and restore the running image.  Juno provides a native Lisp computing environment for Javascript platforms: the browser, Deno or Node (ala V8), or similar.
+
+
+## About Juno
 
 Juno as a Lisp straddles two worlds.  It is built to easily leverage Javascript environments and libraries with the composability and expressiveness of Lisp.  Javascript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, generators and the like.  Juno doesn't have different language constructs, and this makes it easy to access and work with Javascript libraries and functions.  In fact you can inline javascript code as part of your Lisp forms.
 
@@ -14,32 +22,7 @@ If you are coming to Juno from outside the Lisp world, say from the Javascript w
 
 (footnote: Javascript can be constructed in the source code to occur, via `Function` and `eval`.  Some restrictions apply(tm): operations like saving context is harder.  This is handy for saving work and information in a structured way.  Introspection and composability are more natural when things like language templates can be built.  And working with the DOM, itself a tree structure is more natural.)     
 
-Topics
 
-The Language
-- What is Juno?
-- What does a Lisp bring to the table?
-- Using Juno 
-..* The REPL
-- The Environment and the compiler
-..* declarations
-- Symbols and Namespaces
-..* References, literals, base types are the JSON types.
-- Numbers
-- Functions
-- Special functions
-- The Core
-- Macros 
-- Interaction with Javascript
-- Different Environments 
-..* Browser
-..* Deno
-- API Reference
-
-
-
-
-## About Juno
 
 Juno is a Lisp dialect and environment.  The lisp engine works on JSON as an input and manipulates the tree as a JSON representation, and returns a JSON structure as output.  This means the Object { } structure is a first class citizen.  Therefore this is completely legal out of the box:
 
