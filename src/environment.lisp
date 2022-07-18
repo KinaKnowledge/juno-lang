@@ -1509,7 +1509,7 @@
                                                    ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
                                                    ;  [(quote javascript) child_env.1]]])))))
 			    
-			    ;(log "CHILDREN: " children) 
+			   
                             ;; now embed our compiled existing context into the source tree...			    
                             (set_path target_insertion_path src
 				      `(fn ()
@@ -1548,8 +1548,17 @@
                                                 {
                                                  `namespace: namespace
                                                  `toplevel: true
+                                                 `include_boilerplate: false
                                                  `verbose: false
 						 `bundle: true
+                                                 `js_headers: [(show check_true)
+                                                               (show get_next_environment_id)
+                                                               (show get_outside_global)
+                                                               (show subtype)
+                                                               (show lisp_writer)
+                                                               (show clone)
+                                                               (show LispSyntaxError)]
+                                                 
 						 `bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
 						                    }
 						 

@@ -25,7 +25,8 @@ As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `
     (* n (factorial (- n 1))))
   { usage: [n:number]
     description: "Given a value n, returns the factorial of n."
-    tags: [`math `example] })
+    tags: [`math `example]
+  })
 ```
 
 ----

@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-18 12:25:49
-// Version: 2022.07.18.12.25
-export const DLISP_ENV_VERSION='2022.07.18.12.25';
+// Build Time: 2022-07-18 17:50:39
+// Version: 2022.07.18.17.50
+export const DLISP_ENV_VERSION='2022.07.18.17.50';
 
 
 
@@ -66,6 +66,7 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
     let output_filename;
     let opts;
     let segments;
+    let export_segment;
     let include_boilerplate;
     let start_time;
     let compile_time;
@@ -83,6 +84,7 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
     opts=(options||new Object());
     export_function_name=(export_function_name||"initializer");
     segments=[];
+    export_segment=[];
     include_boilerplate=await (async function () {
          if (check_true ((false===(opts && opts["include_boilerplate"])))){
               return false
@@ -242,6 +244,29 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
                   return ""
             } 
         })()+");"))
+    };
+    if (check_true (((opts && opts["exports"]) instanceof Array))){
+        (export_segment).push("export { ");
+        await (await Environment.get_global("map"))(async function(exp,i,len) {
+            {
+                await async function(){
+                    if (check_true( ((exp instanceof Array)&&((exp && exp.length)===2)))) {
+                        (export_segment).push((exp && exp["0"]));
+                        (export_segment).push(" as ");
+                         return  (export_segment).push((exp && exp["1"]))
+                    } else if (check_true( (exp instanceof String || typeof exp==='string'))) {
+                         return (export_segment).push(exp)
+                    } else  {
+                         throw new SyntaxError(("Invalid export format: "+exp));
+                        
+                    }
+                } ();
+                if (check_true ((i<(len-1)))){
+                     return  (export_segment).push(",")
+                }
+            }
+        },(opts && opts["exports"]));
+         (segments).push((export_segment).join(""))
     };
     if (check_true (write_file)){
         await (await Environment.get_global("write_text_file"))(output_filename,(segments).join("\n"));

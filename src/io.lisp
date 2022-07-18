@@ -79,6 +79,7 @@
        (opts (or options {}))
        (export_function_name (or export_function_name "initializer"))
        (segments [])
+       (export_segment [])
        (include_boilerplate (if (== false opts.include_boilerplate)
                               false
                               true))
@@ -199,7 +200,27 @@
 	    (+ "await init_dlisp();"))
       (push segments
 	    (+ "let env = await dlisp_env(" (if opts.bundle_options (JSON.stringify opts.bundle_options) "")  ");")))
-    
+    (when (is_array? opts.exports)
+      (push export_segment "export { ")
+      (map (fn (exp,i,len)
+	       (progn
+		 (cond
+		  (and (is_array? exp)
+		       (== exp.length 2))
+		  (do
+		   (push export_segment exp.0)
+		   (push export_segment " as ")
+		   (push export_segment exp.1))	  	 
+		  (is_string? exp)
+		  (push export_segment exp)
+		  else
+		  (throw SyntaxError (+ "Invalid export format: " exp)))
+		 (when (< i (- len 1))
+		   (push export_segment ","))))
+	   opts.exports)
+      (push segments (join "" export_segment)))
+	    
+	    
     (if write_file
       (progn
        (write_text_file output_filename (join "\n" segments))
