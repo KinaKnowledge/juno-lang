@@ -1366,7 +1366,8 @@
        ;(console.log "importing symbols: " (prop included_globals `symbols))
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
-                   (when (eq nil (prop Environment.global_ctx.scope symset.0))                   
+                   (when (or (eq nil (prop Environment.global_ctx.scope symset.0))
+                             (== symset.0 "*env_config*"))
                      (set_prop Environment.global_ctx.scope
                                symset.0
                                symset.1))))
@@ -1380,7 +1381,7 @@
        
        (when (is_object? (prop included_globals `declarations))
          (for_each (symset (pairs included_globals.declarations))
-                   (when (eq nil (prop Environment.declarations symset.0))                   
+                   (when (eq nil (prop Environment.declarations symset.0))
                      (set_prop Environment.declarations
                                symset.0
                                (quotel symset.1)))))

@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-18 12:10:50
-// Version: 2022.07.18.12.10
-export const DLISP_ENV_VERSION='2022.07.18.12.10';
+// Build Time: 2022-07-18 12:25:49
+// Version: 2022.07.18.12.25
+export const DLISP_ENV_VERSION='2022.07.18.12.25';
 
 
 
@@ -2056,7 +2056,7 @@ export async function init_dlisp(Environment)  {
                             if (check_true ((included_globals["symbols"] instanceof Object))){
                                  await (async function() {
                                     let __for_body__192=async function(symset) {
-                                        if (check_true ((null==Environment.global_ctx.scope[symset['0']]))){
+                                        if (check_true (((null==Environment.global_ctx.scope[symset['0']])||(symset['0']==="*env_config*")))){
                                              return  await async function(){
                                                 Environment.global_ctx.scope[symset['0']]=symset['1'];
                                                 return Environment.global_ctx.scope;
@@ -2475,9 +2475,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;
-            let in_long_text;
-            let in_comment;
+                        let reader=async function(text,opts) {    const __GG__=Environment.get_global;     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;
             let in_single_quote;
             let reading_object;
             let mode;
