@@ -68,7 +68,8 @@
   (fn (quoted_lisp opts)
     (progn
 	(defvar Environment opts.env)
-	(defvar get_global opts.env.get_global)
+	(defvar get_global opts.env.get_global)	
+	;(console.log "compiler: options: " (clone opts))
      (let
       ((`tree quoted_lisp)  ;; the JSON source provided
        
@@ -4988,6 +4989,13 @@
     ;; break - the looping constructs will return down the stack if
     ;;         the special reference __BREAK__FLAG__ is true for their
     ;;         parent context
+
+    (when (verbosity ctx)
+      (main_log "namespace set to: " Environment.namespace)
+      (when opts.fully_qualified_globals
+	(main_log "fully qualified globals")))
+
+    
     
     (set_ctx root_ctx
              break_out
