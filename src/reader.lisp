@@ -101,6 +101,7 @@
 					 (`state key_mode)
 					 (`block_length (- (length block) 1)))
                                       (= reading_object false)
+				      ;(log "obj block: " block)
 				      (while (< idx block_length)
 					(do
 					  (inc idx) ; move to next position - assumption we positioned for the key
@@ -113,7 +114,9 @@
 					  (if (and (is_string? key)
 						   (starts_with? "=:" key)
 						   (> (length key) 2))
-					    (= key (-> key `substr 2)))
+					      (= key (-> key `substr 2)))
+					  ;(log "block value: " (prop block (+ idx 1)))
+					  
 					  (cond
 					    (blank? key)
                                             (error "missing object key"
@@ -138,13 +141,13 @@
 					    else
 					    (do 
 					      (inc idx)         ;; and move to the value 
-					;(log "key: " key key.length "value:" (prop block idx))
+					     ;(log "key: " key key.length "value:" (prop block idx))
 					      
 					      (if (ends_with? ":" key)
 						(= key (chop key)) ;; remove the colon
 						(do                ;; otherwise the next value must be a colon 
 						  (if (== (prop block idx) ":")
-						    (inc idx) ;; it is, move past it       ;; <<---- BUG: will insert return
+						    (inc idx) ;; it is, move past it    
                                                     (error "missing colon"
                                                            (+ "expected colon for: " key)))))
 					      (set_prop obj

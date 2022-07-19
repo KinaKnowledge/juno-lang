@@ -2202,5 +2202,93 @@ such as things that connect or use environmental resources.
    })
 
 
+;; The import_from function handles loading and storage depending on the source
+
+(defmacro import (`& args)
+  (let
+      ((filespec (last args))
+       (is_url? (contains? "://" filespec))       
+       (js_mode nil)       
+       (url_comps nil)
+       (js_mod nil)
+       (load_fn nil)
+       (target_symbols (if (> args.length 1)
+			   args.0))
+       (target_path nil)
+       (acc []))
+    (cond
+      ;; are we using network resources?
+      (or is_url?
+	  (not (eq nil location)))
+      (progn
+	(setq load_fn `fetch)   ;; we will use fetch to GET the resource
+	(setq url_comps (cond
+			   is_url?
+			   (new URL filespec)
+			   (starts_with? "/" filespec)
+			   (new URL (+ "" (prop location `origin) filespec))
+			   else
+			   (new URL (+ "" (prop location `href) "/" filespec))))
+	(setq target_path url_comps.pathname))
+      (is_symbol? "read_text_file")
+      (progn
+	(setq load_fn `read_text_file)
+	(setq target_path filespec))
+      else
+      (throw EvalError (+ "unable to handle import of " filespec)))
+      
+      
+     (cond
+	(or (ends_with? ".lisp" target_path)
+	    (ends_with? ".juno" target_path))
+
+	`(evaluate (,#(+ "=:" load_fn) ,#filespec)
+		   nil
+		   (to_object [[ `source_name (unquotem filespec)]]))
+
+	(ends_with? ".json" target_path)
+	`(evaluate (JSON.parse (,#(+ "=:" load_fn) ,#filespec))
+		   nil
+		   (to_object [[`json_in true] [`source_name ,#filespec ]]))
+	
+	(or (ends_with? ".js" target_path)
+	    (and (is_symbol? `Deno)
+		 (ends_with? ".ts" target_path)))
+	(progn
+	  (cond
+	   (== (length target_symbols) 0)
+	   (throw SyntaxError "imports of javascript sources require binding symbols as the first argument")
+	   (is_array? target_symbols)
+	   (progn
+	     (push acc
+		   `(defglobal ,#target_symbols.0 (dynamic_import ,#filespec)))
+	     (push acc
+		   `(set_path [ `imports (+ *namespace* "/" (desym ,#target_symbols.0)) ] *env_config* (to_object [[`symbol (desym ,#target_symbols.0) ] [ `namespace *namespace* ] [ `location ,#filespec ]])))
+	     (push acc
+		   `(when (prop ,#target_symbols.0 `initializer)
+		      (-> ,#target_symbols.0 `initializer Environment)))
+	     (push acc target_symbols.0)
+	   `(iprogn
+	      ,@acc))))
+	
+	else
+	(throw EvalError "invalid extension: needs to be .lisp, .js, .json or .juno")))
+  { `description: (+ "Load the contents of the specified source file (including path) into the Lisp environment "
+		     "in the current namespace.<br>"
+		     "If the file is a Lisp source, it will be evaluated as part of the load and the final result returned."
+		     "If the file is a JS source, it will be loaded into the environment and a handle returned."
+		     "When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array "
+		     "as the first argument.<br"		     
+		     "The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, "
+		     ".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type."
+		     "Examples:<br>"
+		     "Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>"
+		     "JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\"")
+		     
+   `tags: [`compile `read `io `file `get `fetch `load ]
+   `usage: ["binding_symbols:array" "filename:string"] 
+   })
+   
+
 true
  

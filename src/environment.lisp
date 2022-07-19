@@ -1271,8 +1271,9 @@
 		   `*env_config*
 		   { `export: { `save_path: "working/juno.js"
 		                `default_namespace: "core"
-		               `include_source: false }
-                     `features: [] }))
+		                `include_source: false }
+                    `features: []
+                    `imports: {} }))
 
        ;; returns the current namespace 
 
@@ -1345,6 +1346,9 @@
                                     else
                                     (do
                                       (remove_prop children name)
+                                      (for_each (`k (or *env_config*.imports []))
+                                                (when (starts_with? k name)
+                                                  (remove_prop *env_config*.imports k)))
                                       name))))
             
        ;; if we are in core, set up the active namespace

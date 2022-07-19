@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-19 09:16:59
-// Version: 2022.07.19.09.16
-export const DLISP_ENV_VERSION='2022.07.19.09.16';
+// Build Time: 2022-07-19 12:03:34
+// Version: 2022.07.19.12.03
+export const DLISP_ENV_VERSION='2022.07.19.12.03';
 
 
 
@@ -3098,6 +3098,80 @@ await Environment.set_global("defns",async function(name,options) {
           return await (await Environment.get_global("create_namespace"))(name,options)
     }
 },{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"]
+});
+await Environment.set_global("import",async function(...args) {
+    let filespec;
+    let is_url_ques_;
+    let js_mode;
+    let url_comps;
+    let js_mod;
+    let load_fn;
+    let target_symbols;
+    let target_path;
+    let acc;
+    filespec=await (await Environment.get_global("last"))(args);
+    is_url_ques_=await (await Environment.get_global("contains?"))("://",filespec);
+    js_mode=null;
+    url_comps=null;
+    js_mod=null;
+    load_fn=null;
+    target_symbols=await (async function () {
+         if (check_true (((args && args.length)>1))){
+              return (args && args["0"])
+        } 
+    })();
+    target_path=null;
+    acc=[];
+    await async function(){
+        if (check_true( (is_url_ques_||await (await Environment.get_global("not"))((null==location))))) {
+            load_fn="fetch";
+            url_comps=await async function(){
+                if (check_true(is_url_ques_)) {
+                     return new URL(filespec)
+                } else if (check_true( await (await Environment.get_global("starts_with?"))("/",filespec))) {
+                     return new URL((""+location["origin"]+filespec))
+                } else  {
+                     return new URL((""+location["href"]+"/"+filespec))
+                }
+            } ();
+             return  target_path=(url_comps && url_comps["pathname"])
+        } else if (check_true( await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")||(await Environment["get_global"].call(Environment,"read_text_file") instanceof ReferenceError))))) {
+            load_fn="read_text_file";
+             return  target_path=filespec
+        } else  {
+             throw new EvalError(("unable to handle import of "+filespec));
+            
+        }
+    } ();
+     return  await async function(){
+        if (check_true( (await (await Environment.get_global("ends_with?"))(".lisp",target_path)||await (await Environment.get_global("ends_with?"))(".juno",target_path)))) {
+             return ["=:evaluate",[await (async function(){
+                 return ("=:"+load_fn) 
+            })(),filespec],"=:nil",["=:to_object",[["source_name",[filespec]]]]]
+        } else if (check_true( await (await Environment.get_global("ends_with?"))(".json",target_path))) {
+             return ["=:evaluate",["=:JSON.parse",[await (async function(){
+                 return ("=:"+load_fn) 
+            })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec]]]]
+        } else if (check_true( (await (await Environment.get_global("ends_with?"))(".js",target_path)||(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError)))&&await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
+             return  await async function(){
+                if (check_true( (await (await Environment.get_global("length"))(target_symbols)===0))) {
+                     throw new SyntaxError("imports of javascript sources require binding symbols as the first argument");
+                    
+                } else if (check_true( (target_symbols instanceof Array))) {
+                    (acc).push(["=:defglobal",(target_symbols && target_symbols["0"]),["=:dynamic_import",filespec]]);
+                    (acc).push(["=:set_path",["imports",["=:+","=:*namespace*","/",["=:desym",(target_symbols && target_symbols["0"])]]],"=:*env_config*",["=:to_object",[["symbol",["=:desym",(target_symbols && target_symbols["0"])]],["namespace","=:*namespace*"],["location",filespec]]]]);
+                    (acc).push(["=:when",["=:prop",(target_symbols && target_symbols["0"]),"initializer"],["=:->",(target_symbols && target_symbols["0"]),"initializer","=:Environment"]]);
+                    (acc).push((target_symbols && target_symbols["0"]));
+                     return  ["=:iprogn",].concat(acc)
+                }
+            } ()
+        } else  {
+             throw new EvalError("invalid extension: needs to be .lisp, .js, .json or .juno");
+            
+        }
+    } ()
+},{ "eval_when":{ "compile_time":true
+},"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"]
 });
  return  true
 }
