@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-19 08:47:44
-// Version: 2022.07.19.08.47
-export const DLISP_ENV_VERSION='2022.07.19.08.47';
+// Build Time: 2022-07-19 09:16:59
+// Version: 2022.07.19.09.16
+export const DLISP_ENV_VERSION='2022.07.19.09.16';
 
 
 
@@ -7006,7 +7006,7 @@ export async function init_compiler(Environment) {
                     __obj__584["unquotem"]=compile_unquotem;
                     __obj__584["debug"]=compile_debug;
                     __obj__584["declare"]=compile_declare;
-                    __obj__584["import"]=compile_import;
+                    __obj__584["static_import"]=compile_import;
                     __obj__584["dynamic_import"]=compile_dynamic_import;
                     return __obj__584;
                     

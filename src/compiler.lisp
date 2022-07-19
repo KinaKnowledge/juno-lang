@@ -4390,7 +4390,7 @@
                     "unquotem": compile_unquotem
                     "debug": compile_debug
                     "declare": compile_declare
-                    "import" : compile_import
+                    "static_import" : compile_import
                     "dynamic_import" : compile_dynamic_import
                     })
        (`comp_log (if quiet_mode
