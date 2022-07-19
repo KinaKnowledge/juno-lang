@@ -37,15 +37,17 @@ let opts={
 //await env.set_global("readline",readline);
 //await env.set_global("writeAllSync",writeAllSync);
 try {
+  
   await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))",null, opts)
   await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)
-
+  
  // await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")",null, opts)
  // await env.evaluate ("(load-file \"./tests/test_harness.lisp\")",null,opts)
   await env.evaluate ("(load-file \"./src/repl.lisp\")",null, opts)
   await env.evaluate ("(load \"./doc/help.lisp\")")
   await env.evaluate ("(create_namespace `user)")
   await env.evaluate ("(set_namespace `user)")
+  await env.evaluate ("(import \"tests/package.juno\")")
 } catch (error) {
   console.error("initialization error: ",error);
   Deno.exit(1);
