@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-18 17:50:39
-// Version: 2022.07.18.17.50
-export const DLISP_ENV_VERSION='2022.07.18.17.50';
+// Build Time: 2022-07-19 08:47:44
+// Version: 2022.07.19.08.47
+export const DLISP_ENV_VERSION='2022.07.19.08.47';
 
 
 
@@ -3028,6 +3028,68 @@ await Environment.set_global("export_symbols",async function(...args) {
      return  (acc).push("}")
 },{ "eval_when":{ "compile_time":true
 },"name":"export_symbols","macro":true,"fn_args":"(\"&\" args)"
+});
+await Environment.set_global("register_feature",async function(feature) {
+    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(feature,(await Environment.get_global("*env_config*.features")))))){
+        ((await Environment.get_global("*env_config*.features"))).push(feature);
+         return  true
+    } else {
+          return false
+    }
+},{ "name":"register_feature","fn_args":"(feature)","description":"Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment.","tags":["environment","modules","libraries","namespaces"],"usage":["feature:string"]
+});
+await Environment.set_global("object_methods",async function(obj) {
+    let properties;
+    let current_obj;
+    properties=new Set();
+    current_obj=obj;
+    await (async function(){
+         let __test_condition__279=async function() {
+             return  current_obj
+        };
+        let __body_ref__280=async function() {
+            await (await Environment.get_global("map"))(async function(item) {
+                 return  await properties["add"].call(properties,item)
+            },await Object.getOwnPropertyNames(current_obj));
+             return  current_obj=await Object.getPrototypeOf(current_obj)
+        };
+        let __BREAK__FLAG__=false;
+        while(await __test_condition__279()) {
+            await __body_ref__280();
+             if(__BREAK__FLAG__) {
+                 break;
+                
+            }
+        } ;
+        
+    })();
+     return  await (async function() {
+        {
+             let __call_target__=await Array.from(await properties["keys"]()), __call_method__="filter";
+            return await __call_target__[__call_method__].call(__call_target__,async function(item) {
+                 return  item instanceof Function
+            })
+        } 
+    })()
+},{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"]
+});
+await Environment.set_global("uniq",async function(values,handle_complex_types) {
+    let s;
+    s=new Set();
+    if (check_true (handle_complex_types)){
+        await (await Environment.get_global("map"))(async function(x) {
+             return  await s["add"].call(s,await JSON.stringify(x))
+        },(values||[]));
+         return  await (await Environment.get_global("map"))(async function(x) {
+             return  await JSON.parse(x)
+        },await (await Environment.get_global("to_array"))(s))
+    } else {
+        await (await Environment.get_global("map"))(async function(x) {
+             return  await s["add"].call(s,x)
+        },(values||[]));
+         return  await (await Environment.get_global("to_array"))(s)
+    }
+},{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"]
 });
 await Environment.set_global("defns",async function(name,options) {
     if (check_true ((options&&(options && options["ignore_if_exists"])&&(name instanceof String || typeof name==='string')&&await (await Environment.get_global("contains?"))(name,await (await Environment.get_global("namespaces"))())))){

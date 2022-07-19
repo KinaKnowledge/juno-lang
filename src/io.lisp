@@ -5,7 +5,7 @@
   (throw "IO requires Deno"))
 
 (defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
-
+(map register_feature ["io" "Deno"])
 (defbinding
   (read_text_file (Deno.readTextFile Deno)
                   {

@@ -902,7 +902,7 @@
                                      (== namespace_identity.length 1)  ;; non-qualified we need to check upward
                                      parent_environment)               ;; if possible..
                               (do
-                                (defvar rval (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps (or contained contained_req)))                                
+                                (defvar rval (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps (or contained contained_req)))
                                 rval)
                               (do
                                 ;; this is us
@@ -1049,7 +1049,7 @@
                                        (opts.error_report error_data)
                                        (console.error "Compilation Error: " error_data))
                                      (= compiled [ { `error: true } nil  ])))))
-                             ;(debug)                            
+                                                       
                              (cond
                                (eq nil compiled)
                                ;; we got nothing back - for now note it and return nil
@@ -1213,6 +1213,7 @@
                               (set_prop Environment.global_ctx.scope
                                         "compiler"
                                         compiler)
+                              (register_feature "compiler")
 	                      compiler)))	  
      
      (set_prop Environment.global_ctx.scope
@@ -1270,7 +1271,8 @@
 		   `*env_config*
 		   { `export: { `save_path: "working/juno.js"
 		                `default_namespace: "core"
-		                `include_source: false } }))
+		               `include_source: false }
+                     `features: [] }))
 
        ;; returns the current namespace 
 
@@ -1476,9 +1478,11 @@
 				      (reader (read_text_file  "./src/environment.lisp"))))
                                (target_insertion_path nil)  ;; where we inject our context into the source tree                               
                                (output_path nil))			       
-                               
+
+                            (when (prop Environment.global_ctx.scope "*env_skeleton*")
+                              (register_feature "*env_skeleton*"))
                             ;; construct our form by doing surgery on ourselves..
-                                                       
+                                                   
                             (= target_insertion_path (first (findpaths (quote included_globals) src)))
                                                      
                             (if (not (is_array? target_insertion_path))

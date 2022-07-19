@@ -2120,6 +2120,64 @@ such as things that connect or use environmental resources.
      }
     acc)
 
+(defun register_feature (feature)
+  (if (not (contains? feature *env_config*.features))
+      (do
+         (push *env_config*.features feature)
+         true)
+    false)
+  {
+  `description: "Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment."
+  `tags: ["environment" "modules" "libraries" "namespaces"]
+  `usage: ["feature:string"]
+  })
+
+(defun object_methods (obj)
+    (let
+        ((`properties (new Set))
+         (`current_obj  obj))
+     (while current_obj
+        (do
+            (map (fn (item)
+                     (-> properties `add item))
+                 (Object.getOwnPropertyNames current_obj))
+            (= current_obj (Object.getPrototypeOf current_obj))))
+    (-> (Array.from (-> properties `keys))
+        `filter (fn (item)
+                    (is_function? item))))
+    {
+     `description: "Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains."
+     `usage: ["obj:object"]
+     `tags: [`object `methods `functions `introspection `keys]
+     })
+
+(defun uniq (values handle_complex_types)
+     (let
+         ((s (new Set)))
+         (if handle_complex_types
+             (do
+                 (map (fn (x)
+                      (-> s `add (JSON.stringify x)))
+                  (or values
+                      []))
+                 
+                 (map (fn (x)
+                          (JSON.parse x))
+                          (to_array s)))
+             (do 
+                 (map (fn (x)
+                      (-> s `add x))
+                      (or values
+                          []))
+                (to_array s))))
+    { `description: (+ "Given a list of values, returns a new list with unique, deduplicated values. "
+                       "If the values list contains complex types such as objects or arrays, set the "
+                       "handle_complex_types argument to true so they are handled appropriately. ")
+      `usage: ["values:list" "handle_complex_types:boolean"]
+      `tags: ["list" "dedup" "duplicates" "unique" "values"] })
+ 
+
+
 (defun defns (name options)
   (if (and options
            options.ignore_if_exists

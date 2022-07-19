@@ -3239,7 +3239,8 @@
        
        ;; Import code from exports
        ;; static import
-       ;; TODO: Needs input validation here 
+       ;; really used when exporting files
+       
        (`compile_import 
             (fn (tokens ctx)
                 (let
@@ -3248,24 +3249,29 @@
                      (`from_tokens nil)
                      (`from_place nil)
                      (`acc []))
-                 (= symbol_tokens tokens.1)
+		  (if (< tokens.length 3)
+		      (throw SyntaxError "import requires exactly three arguments"))
+		 (= symbol_tokens tokens.1)
                  (= from_tokens tokens.2)
-                 (console.log "compile_import: ->" (clone tokens))
+		 
+                 ;(console.log "compile_import: ->" (clone symbol_tokens))
                  (= from_place (compile from_tokens ctx))
                  (push acc { `ctype: "statement" `meta: { `imported_from: from_place }})
                  (push acc "import")
                  (push acc " ")                                                  
-                 (console.log "compile_import: compiled symbols:    " symbols)
-                 (console.log "compile_import: compiled from place: " from_place)
+                 ;(console.log "compile_import: compiled symbols:    " symbols)
+                 ;(console.log "compile_import: compiled from place: " from_place)
                  (cond
                      (is_array? symbol_tokens.val )
                      (do
                          (for_each (`s symbol_tokens.val)
-                            (push symbols (compile s ctx)))      
+                            (push symbols s.name))      
                          (for_each (`t (flatten ["{" " " symbols " " "}" " " "from" " " from_place ]))
-                            (push acc t))))
+				   (push acc t)))
+		     else
+		     (throw SyntaxError "import requires an array of imported symbols as a second argument"))
                      
-                (console.log "compile_import: <- " (clone acc))
+                ;(console.log "compile_import: <- " (clone acc))
                 acc)))
        ;; dynamic import 
          ;; (dynamic_import source_location)   
@@ -3495,6 +3501,9 @@
                                 (set_prop comp_meta
                                           `namespace
                                           target_namespace)
+				(when (and (verbosity ctx)
+					   comp_meta.namespace)
+				  (run_log "specified namespace: " comp_meta.namespace))
                                 (= result (-> Environment `evaluate_local [comp_meta (assemble_output assembled)] ctx { `compiled_source: true }))
                                 (when (verbosity ctx)
                                   (run_log "<- " result))
@@ -4585,7 +4594,10 @@
                            
                            (when (and tokens.0.ref (is_string? tokens.0.val))
                                  (= declared_type (get_declarations ctx tokens.0.name)))
-                                 
+
+			   (when (verbosity ctx)
+			     (comp_log (+ "compile: " _cdepth " array: ") "potential operator: " tokens.0.name "declarations: " declared_type))
+			   
                            ;; compiled values will hold the compiled contents
                            
                            (for_each (`t (rest tokens))
@@ -4648,7 +4660,8 @@
                              (prepend acc { `ctype: "block" }))
                                                                                  
                            (cond 
-                             (or (== declared_type.type Function)
+                            (or (== declared_type.type Function)
+				(== declared_type.type AsyncFunction)
                                  (and (is_object? rcv.0)
                                       (is_function? rcv.0.ctype))
                                  (and (is_object? rcv.0)
@@ -4994,9 +5007,7 @@
       (main_log "namespace set to: " Environment.namespace)
       (when opts.fully_qualified_globals
 	(main_log "fully qualified globals")))
-
-    
-    
+        
     (set_ctx root_ctx
              break_out
              false)
@@ -5121,7 +5132,7 @@
       (set_prop (first output)
                 `namespace
                 target_namespace))
-      
+         
     (when opts.error_report
           (opts.error_report { `errors: errors `warnings: warnings}))                         
     output))))
