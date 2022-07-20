@@ -1107,6 +1107,19 @@
           `description: (+ "Given an initial number n, and two numeric ranges, maps n from the first range " 
                            "to the second range, returning the value of n as scaled into the second range. ") })
 
+(defun range_inc (start end step)
+        (if end
+            (range start (+ end 1) step)
+            (range (+ start 1)))
+        {
+         `description: (+ "Givin"
+                          "Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. " 
+                          "vs. the regular range function that returns [start end).  "
+                          "If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value.")
+         `usage: ["start:number" "end?:number" "step?:number"]
+         `tags:  ["range" "iteration" "loop"]
+         })
+
 (defglobal HSV_to_RGB (new Function "h, s, v" "{
         var r, g, b, i, f, p, q, t;
         if (arguments.length === 1) {
@@ -2176,7 +2189,11 @@ such as things that connect or use environmental resources.
       `usage: ["values:list" "handle_complex_types:boolean"]
       `tags: ["list" "dedup" "duplicates" "unique" "values"] })
  
-
+(defmacro time_in_millis ()
+        `(Date.now)
+        { "usage":[]
+          "tags":["time" "milliseconds" "number" "integer" "date"]
+          "description":"Returns the current time in milliseconds as an integer" })
 
 (defun defns (name options)
   (if (and options
@@ -2201,6 +2218,17 @@ such as things that connect or use environmental resources.
     tags: ["namespace" "environment" "define" "scope" "context"]
    })
 
+ (defun bind_and_call (target_object this_object method `& args)
+        (do
+            (defvar boundf (bind (prop target_object method) this_object))
+            (if boundf
+                (apply boundf args)
+                (throw "unable to bind target_object")))
+        {
+            `usage:["target_object:object" "this_object:object" "method:string" "args0:*" "argsn:*"]
+            `desciption: "Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments."
+            `tags:["bind" "object" "this" "context" "call"]
+        })
 
 ;; The import_from function handles loading and storage depending on the source
 
@@ -2244,7 +2272,7 @@ such as things that connect or use environmental resources.
 
 	`(evaluate (,#(+ "=:" load_fn) ,#filespec)
 		   nil
-		   (to_object [[ `source_name (unquotem filespec)]]))
+		   (to_object [[ `source_name ,#filespec]]))
 
 	(ends_with? ".json" target_path)
 	`(evaluate (JSON.parse (,#(+ "=:" load_fn) ,#filespec))
@@ -2288,7 +2316,80 @@ such as things that connect or use environmental resources.
    `tags: [`compile `read `io `file `get `fetch `load ]
    `usage: ["binding_symbols:array" "filename:string"] 
    })
-   
 
+(defglobal system_date_format
+       {
+          `weekday: "long"
+          `year: "numeric",
+          `month: "2-digit",
+          `day: "2-digit",
+          `hour: "numeric",
+          `minute: "numeric",
+          `second: "numeric",
+          `fractionalSecondDigits: 3,
+          `hourCycle: "h24"
+          `hour12: false,
+          `timeZoneName: "short"
+          })
+    
+    (defglobal system_date_formatter
+        (new Intl.DateTimeFormat [] system_date_format)
+	{
+	 `initializer: `(new Intl.DateTimeFormat [] ,#system_date_format)
+	})
+
+    (defun tzoffset ()
+        (* 60 (-> (new Date) `getTimezoneOffset))
+        {
+             `description: "Returns the number of seconds the local timezone is offset from GMT"
+             `usage: []
+             `tags: ["time" "date" "timezone"]
+        })
+
+     
+    (defun date_components (date_value date_formatter)
+            (if (is_date? date_value)
+                (to_object
+                  (map (fn (x)
+                         [x.type x.value])
+                         (if date_formatter
+                             (bind_and_call date_formatter date_formatter `formatToParts date_value)
+                             (bind_and_call system_date_formatter system_date_formatter `formatToParts date_value))))
+                nil)
+              {
+               `usage: ["date_value:Date" "date_formatter:DateTimeFormat?"] 
+               `description: "Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument."
+               `tags: ["date" "time" "object" "component"]
+               })
+        
+    (defun formatted_date (dval date_formatter)
+            (let
+                ((`comps (date_components dval date_formatter)))
+                (if comps
+                    (if date_formatter
+                        (join "" (values comps)) 
+                        (+ "" comps.year "-" comps.month "-" comps.day " " comps.hour ":" comps.minute ":" comps.second))
+                    nil))
+                ;(-> dval `toString "yyyy-MM-d HH:mm:ss")
+            {
+             `usage: ["dval:Date" "date_formatter:DateTimeFormat?"]
+             `description: "Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument."
+             `tags:["date" "format" "time" "string"]
+             })
+
+  (defglobal *LANGUAGE* {})
+
+  (defun dtext (default_text)
+        (or
+          (prop *LANGUAGE* default_text)
+          default_text)
+       { `usage: ["text:string" "key:string?"]
+         `description: (+ "Given a default text string and an optional key, if a key "  
+                          "exists in the global object *LANGUAGE*, return the text associated with the key. "
+                          "If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. "
+                          "If that is a nil entry, returns the default text.")
+         `tags: ["text" "multi-lingual" "language" "translation" "translate"]
+        })
+    
 true
  

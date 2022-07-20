@@ -53,17 +53,7 @@
          })
 
 
-    (defun bind_and_call (target_object this_object method `& args)
-        (do
-            (defvar boundf (bind (prop target_object method) this_object))
-            (if boundf
-                (apply boundf args)
-                (throw "unable to bind target_object")))
-        {
-            `usage:["target_object:object" "this_object:object" "method:string" "args0:*" "argsn:*"]
-            `desciption: "Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments."
-            `tags:["bind" "object" "this" "context" "call"]
-        })
+   
 
     (defmacro on_nil (nil_form value)
       `(let
@@ -443,20 +433,7 @@
           `description: "Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn't in range, the function will return nil."
           `tags:  ["range" "iteration" "loop"] } )
 
-
-    
-    (defun range_inc (start end step)
-        (if end
-            (range start (+ end 1) step)
-            (range (+ start 1)))
-        {
-         `description: (+ "Givin"
-                          "Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. " 
-                          "vs. the regular range function that returns [start end).  "
-                          "If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value.")
-         `usage: ["start:number" "end?:number" "step?:number"]
-         `tags:  ["range" "iteration" "loop"]
-         })
+        
     
    
     (defun form_id (name)
@@ -771,66 +748,7 @@
         { `usage: ["values:list"]
           `description: "Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."  } )
     
-    (defglobal system_date_format
-       {
-          `weekday: "long"
-          `year: "numeric",
-          `month: "2-digit",
-          `day: "2-digit",
-          `hour: "numeric",
-          `minute: "numeric",
-          `second: "numeric",
-          `fractionalSecondDigits: 3,
-          `hourCycle: "h24"
-          `hour12: false,
-          `timeZoneName: "short"
-          })
     
-    (defglobal system_date_formatter
-        (new Intl.DateTimeFormat [] system_date_format)
-	{
-	 `initializer: `(new Intl.DateTimeFormat [] ,#system_date_format)
-	})
-
-    (defun tzoffset ()
-        (* 60 (-> (new Date) `getTimezoneOffset))
-        {
-             `description: "Returns the number of seconds the local timezone is offset from GMT"
-             `usage: []
-             `tags: ["time" "date" "timezone"]
-        })
-
-     
-    (defun date_components (date_value date_formatter)
-            (if (is_date? date_value)
-                (to_object
-                  (map (fn (x)
-                         [x.type x.value])
-                         (if date_formatter
-                             (bind_and_call date_formatter date_formatter `formatToParts date_value)
-                             (bind_and_call system_date_formatter system_date_formatter `formatToParts date_value))))
-                nil)
-              {
-               `usage: ["date_value:Date" "date_formatter:DateTimeFormat?"] 
-               `description: "Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument."
-               `tags: ["date" "time" "object" "component"]
-               })
-        
-    (defun formatted_date (dval date_formatter)
-            (let
-                ((`comps (date_components dval date_formatter)))
-                (if comps
-                    (if date_formatter
-                        (join "" (values comps)) 
-                        (+ "" comps.year "-" comps.month "-" comps.day " " comps.hour ":" comps.minute ":" comps.second))
-                    nil))
-                ;(-> dval `toString "yyyy-MM-d HH:mm:ss")
-            {
-             `usage: ["dval:Date" "date_formatter:DateTimeFormat?"]
-             `description: "Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument."
-             `tags:["date" "format" "time" "string"]
-             })
-
          
     (defun add_days (date_obj num_days)
         (do

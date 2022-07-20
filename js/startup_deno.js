@@ -8,7 +8,7 @@ import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_
 
 import { init_dlisp } from "./environment.js"
 import { init_compiler } from "./compiler.js"
-import { load_core } from "./core.js"
+//import { load_core } from "./core.js"
 import { initializer } from "./io.js"
 
 await init_dlisp()
@@ -17,7 +17,7 @@ import { environment_boot } from "./environment_boot.js"
 
 await environment_boot(env);
 await init_compiler(env)
-await load_core(env)
+// await load_core(env)
 var cca = await env.get_global("compiler")
 await env.set_compiler(cca)
 
@@ -34,20 +34,16 @@ let opts={
 //import { readline } from "https://deno.land/x/readline/mod.ts";
 //import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
-//await env.set_global("readline",readline);
-//await env.set_global("writeAllSync",writeAllSync);
 try {
   
   await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))",null, opts)
-  await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)
+  //await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)
   
- // await env.evaluate ("(load-file \"./tests/compiler-tests-1.lisp\")",null, opts)
- // await env.evaluate ("(load-file \"./tests/test_harness.lisp\")",null,opts)
-  await env.evaluate ("(load-file \"./src/repl.lisp\")",null, opts)
-  await env.evaluate ("(load \"./doc/help.lisp\")")
+  await env.evaluate ("(import \"./src/repl.lisp\")",null, opts)
+  //await env.evaluate ("(import \"./doc/help.lisp\")")
   await env.evaluate ("(create_namespace `user)")
   await env.evaluate ("(set_namespace `user)")
-  await env.evaluate ("(import \"tests/package.juno\")")
+  //await env.evaluate ("(import \"tests/package.juno\")")
 } catch (error) {
   console.error("initialization error: ",error);
   Deno.exit(1);

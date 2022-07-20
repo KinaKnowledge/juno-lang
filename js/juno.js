@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-07-20 08:02:49
-// Version: 2022.07.20.08.02
-export const DLISP_ENV_VERSION='2022.07.20.08.02';
+// Build Time: 2022-07-20 08:42:57
+// Version: 2022.07.20.08.42
+export const DLISP_ENV_VERSION='2022.07.20.08.42';
 
 
 
@@ -2230,11 +2230,11 @@ export async function init_dlisp(Environment)  {
 },"is_string?":{ "description":"for the given value x, returns true if x is a String object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 },"is_nil?":{ "name":"is_nil?","fn_args":"(\"value\")","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 },"is_regex?":{ "name":"is_regex?","fn_args":"(x)","description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
-},"is_date?":{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
+},"is_date?":{ "description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 },"ends_with?":{ "description":"for a given string or array, checks to see if it ends with the given start_value.  Non string args return false.","usage":["end_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce"]
 },"starts_with?":{ "description":"for a given string or array, checks to see if it starts with the given start_value.  Non string args return false.","usage":["start_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce","begin"]
 },"interlace":{ "usage":["list0:array","list1:array","listn?:array"],"description":"Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ...","tags":["list","array","join","merge"]
-},"assert":{ "name":"assert","fn_args":"(assertion_form failure_message)","description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]
+},"assert":{ "description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]
 },"unquotify":{ "description":"Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros.","usage":["val:string"],"tags":["macro","quote","quotes","desym"]
 },"symbol_definition":{ "description":"Given a symbol name and an optional namespace, either as a fully qualified path or via the target_namespace argument, returns definition information about the retquested symbol.  Used primarily by the compiler to find metadata for a specific symbol during compilation.","usage":["symname:string","namespace:string"],"tags":["compiler","symbols","namespace","search","context","environment"]
 },"compile":{ "description":"Compiles the given JSON or quoted lisp and returns a string containing the lisp form or expression as javascript.<br>If passed the option { meta: true } , an array is returned containing compilation metadata in element 0 and the compiled code in element 1.","usage":["json_expression:*","opts:object"],"tags":["macro","quote","quotes","desym"]
@@ -2287,7 +2287,7 @@ export async function init_dlisp(Environment)  {
 },"getf_ctx":{ "name":"getf_ctx","fn_args":"(ctx name _value)"
 },"setf_ctx":{ "name":"setf_ctx","fn_args":"(ctx name value)"
 },"set_path":{ "name":"set_path","fn_args":"(path obj value)"
-},"minmax":{ "name":"minmax","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the smallest and the largest values found in the provided array. ","tags":["list","number","range","value"]
+},"minmax":{ "name":"minmax","fn_args":"(container)"
 },"gen_multiples":{ "name":"gen_multiples","fn_args":"(len multiple?)"
 },"path_multiply":{ "name":"path_multiply","fn_args":"(path multiple?)"
 },"splice_in_return_b":{ "name":"splice_in_return_b","fn_args":"(js_tree _ctx _depth)"
@@ -2296,6 +2296,7 @@ export async function init_dlisp(Environment)  {
 },"ifa":{ "eval_when":{ "compile_time":true
 },"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"]
 },"map_range":{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "]
+},"range_inc":{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Givin","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
 },"color_for_number":{ "name":"color_for_number","fn_args":"(num saturation brightness)","usage":["number:number","saturation:float","brightness:float"],"description":"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string","tags":["ui","color","view"]
 },"flatten_ctx":{ "name":"flatten_ctx","fn_args":"(ctx _var_table)"
 },"identify_symbols":{ "name":"identify_symbols","fn_args":"(quoted_form _state)"
@@ -2348,116 +2349,18 @@ export async function init_dlisp(Environment)  {
 },"name":"export_symbols","macro":true,"fn_args":"(\"&\" args)"
 },"register_feature":{ "name":"register_feature","fn_args":"(feature)","description":"Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment.","tags":["environment","modules","libraries","namespaces"],"usage":["feature:string"]
 },"uniq":{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"]
-},"defns":{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"]
-},"import":{ "eval_when":{ "compile_time":true
-},"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"]
-},"if_undefined":{ "eval_when":{ "compile_time":true
-},"name":"if_undefined","macro":true,"fn_args":"(value replacer)","description":"If the first value is undefined, return the second value","usage":["value:*","replacer:*"]
-},"str":{ "name":"str","fn_args":"(\"&\" \"args\")","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"]
-},"bind_and_call":{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)"
-},"on_nil":{ "eval_when":{ "compile_time":true
-},"name":"on_nil","macro":true,"fn_args":"(nil_form value)","usage":["nil_form:form","value:*"],"description":"If the value argument is not nil or not undefined, return the value, otherwise evaluate the provided nil_form and return the results of the evaluation of the nil_form.","tags":["condition","nil","eval","undefined"]
-},"on_empty":{ "eval_when":{ "compile_time":true
-},"name":"on_empty","macro":true,"fn_args":"(on_empty_form value)","usage":["empty_form:form","value:*"],"description":"If the value argument is not an empty array, an empty object, nil or undefined, return the value, otherwise evaluate the provided empty_form and return the results of the evaluation of the empty_form.","tags":["condition","empty","list","array","object","eval","undefined"]
-},"sum":{ "eval_when":{ "compile_time":true
-},"name":"sum","macro":true,"fn_args":"(vals)","description":["=:+","Given an array of values, add up the contents of the array in an applied add operation.  ","If these are numbers, they will be added arithmetically.  ","If given strings, they will be joined together (appended). ","If given a first value of an array, all subsequent values will be added into the array. ","If given an array of objects, all the keys/values will be merged and a single object retuned."],"usage":["vals:array"],"tags":["add","join","summation","numbers"]
-},"options_and_args":{ "name":"options_and_args","fn_args":"(arg_array)","usage":["arg_array:array"],"tags":["arguments","options"],"description":["=:+","Given an array of values, returns an array containing two values.  ","If the value at position 0 in the provided array is an non nil object, ","it will be in the position 0 of the returned value and the remaining ","values will be in position 1 of the returned array.","If the value at position 0 in the provided array is not an object type,","the value in position 0 of the returned array will be nil and ","all values will be placed in the returned array in position 1."]
-},"enum":{ "name":"enum","fn_args":"(value_list)","usage":["value_list:array"],"description":"Given a list of string values, returns an object with each value in the list corresponding to a numerical value.","tags":["enumeration","values"]
 },"time_in_millis":{ "eval_when":{ "compile_time":true
 },"name":"time_in_millis","macro":true,"fn_args":"()","usage":[],"tags":["time","milliseconds","number","integer","date"],"description":"Returns the current time in milliseconds as an integer"
-},"gen_id":{ "name":"gen_id","fn_args":"(prefix)","usage":["prefix:string"],"tags":["web","html","identification"],"description":"Given a prefix returns a element safe unique id"
-},"nth":{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"]
-},"macros":{ "name":"macros","fn_args":"()","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"]
-},"pluck":{ "eval_when":{ "compile_time":true
-},"name":"pluck","macro":true,"fn_args":"(fields data)","description":"Similar to the 'each' commmand, given the set of desired fields as a first argument, and the data as the second argument, return only the specified fields from the supplied list of data","usage":["fields:string|array","data:array"],"tags":["list","each","filter","only","object"]
-},"objects_from_list":{ "name":"objects_from_list","fn_args":"(key_path objects)","usage":["key_path:string|array","objects:array"],"description":"Given a path (string or array), and an array of object values, the function returns a new object with keys named via the value at the given path, and the object as the value.","tags":["list","object","conversion","transform"]
-},"pairs_from_list":{ "name":"pairs_from_list","fn_args":"(value_list size)","usage":["value:list","size?:number"],"description":"Given a list, segment the passed list into sub list (default in pairs) or as otherwise specified in the optional size","tags":["list","pairs","collect"]
-},"reorder_keys":{ "name":"reorder_keys","fn_args":"(key_list obj)","description":"Given a list of keys, returns a new object that has the keys in the order of the provided key list.","usage":["key_list:array","obj:object"],"tags":["list","object","key","order"]
-},"only":{ "name":"only","fn_args":"(fields data)","usage":["fields:array","data:array|object"],"description":"Given an array of objects, or a single object, return objects only containing the specified keys and the corresponging value.","tags":["pluck","filter","select","object","each","list","objects","keys"]
-},"sleep":{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function."
-},"from_universal_time":{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"]
-},"+=":{ "eval_when":{ "compile_time":true
-},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"]
-},"minmax_index":{ "name":"minmax_index","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the indexes of the smallest and the largest values found in the provided array.","tags":["list","number","range","value","index"]
-},"invert_pairs":{ "name":"invert_pairs","fn_args":"(value)","description":"Given an array value containing pairs of value, as in [[1 2] [3 4]], invert the positions to be: [[2 1] [4 3]]","usage":["value:array"],"tags":["array","list","invert","flip","reverse","swap"]
-},"noop":{ "name":"noop","fn_args":"(val)","usage":["val:*"],"description":"No operation, just returns the value.  To be used as a placeholder operation, such as in apply_operator_list.","tags":["apply","value"]
-},"apply_list_to_list":{ "name":"apply_list_to_list","fn_args":"(operator list1 list2)","usage":["operator:function","modifier_list:array","target_list:array"],"description":["=:+","Given an operator (function), a list of values to be applied (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the operator function with ","each value from the target list with the values from the modifier list. The operator function is called ","with <code>(operator source_value modifer_value)</code>."],"tags":["map","list","array","apply","range","index"]
-},"apply_operator_list":{ "name":"apply_operator_list","fn_args":"(modifier_list target_list)","usage":["operator_list:array","target_list:array"],"description":["=:+","<p>Note: Deprecated.Given a list containing quoted functions (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the relative index of the modifier functions with ","the value from the relative index from the target list. The modifiers are applied in the following form: ","<code>(modifier_function target_value)</code>.</p>","<p>If the modifer_list is shorter than the target list, the modifer_list index cycles back to 0 (modulus).</p>"],"tags":["map","list","array","apply","range","index"],"example":["=:quote",["=:apply_operator_list",["first","+"],["John","Smith"]]],"deprecated":true
-},"range_overlap?":{ "name":"range_overlap?","fn_args":"(range_a range_b)","description":"Given two ranges in the form of [low_val high_val], returns true if they overlap, otherwise false.  The results are undefined if the range values are not ordered from low to high.","usage":["range_a:array","range_b:array"],"tags":["range","iteration","loop"]
-},"remaining_in_range":{ "name":"remaining_in_range","fn_args":"(value check_range)","usage":["value:number","check_range:array"],"description":"Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn't in range, the function will return nil.","tags":["range","iteration","loop"]
-},"range_inc":{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Givin","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
-},"form_id":{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms."
-},"from_key":{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"]
-},"from_key1":{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"]
-},"to_key":{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"]
-},"extend":{ "name":"extend","fn_args":"(target_object source_object)","description":"Given a target object and a source object, add the keys and values of the source object to the target object.","usage":["target_object:object","source_object:object"],"tags":["object","extension","keys","add","values"]
-},"no_empties":{ "name":"no_empties","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"]
-},"first_with":{ "name":"first_with","fn_args":"(prop_list data_value)","usage":["property_list:array","data:object|array"],"description":"Given a list of properties or indexes and a data value, sequentially looks through the property list and returns the first non-null result.","tags":["list","array","index","properties","search","find"]
-},"fixed":{ "name":"fixed","fn_args":"(v p)","description":"Given a floating point value and an optional precision value, return a string corresponding to the desired precision.  If precision is left out, defaults to 3.","usage":["value:number","precision?:number"],"tags":["format","conversion"]
-},"hide":{ "name":"hide","fn_args":"(value)"
-},"array_to_object":{ "name":"array_to_object","fn_args":"(input_array)","usage":["list_to_process:array"],"tags":["list","array","object","convert"],"description":"Takes the provided list and returns an object with the even indexed items as keys and odd indexed items as values."
-},"split_text_in_array":{ "name":"split_text_in_array","fn_args":"(split_element input_array)","usage":["split_element:text","input_array:array"],"tags":["text","string","split","separate","parse"],"description":"Takes the provided array, and split_element, and returns an array of arrays which contain the split text strings of the input list."
-},"words_and_quotes":{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"]
-},"split_words":{ "name":"split_words","fn_args":"(text_string)","description":"Like words and quotes, splits the text string into words and quoted words, but the unquoted words are split by spaces.  Both the unquoted words and the quoted words inhabit their own array.","usage":["text:string"],"tags":["text","string","split","separate","words","parse"]
-},"from_style_text":{ "name":"from_style_text","fn_args":"(text)","usage":["text:string"],"description":"Given a string or text in the format of an Element style attribute: \"css_attrib:value; css_attrib2:value\", split into pairs containing attribute name and value.","tags":["text","css","style","pairs","string","array","list","ui","html"]
-},"remove_if":{ "name":"remove_if","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","filter","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will excluded from the returned array.  Opposite of filter."
-},"filter":{ "name":"filter","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","reject","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will included in the returned array, otherwise it will not.  Opposite of reject."
-},"max_value":{ "name":"max_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the largest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."
-},"min_value":{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."
+},"defns":{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"]
+},"bind_and_call":{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)"
+},"import":{ "eval_when":{ "compile_time":true
+},"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"]
 },"system_date_formatter":{ "initializer":["=:new","=:Intl.DateTimeFormat",[],{ "weekday":"long","year":"numeric","month":"2-digit","day":"2-digit","hour":"numeric","minute":"numeric","second":"numeric","fractionalSecondDigits":3,"hourCycle":"h24","hour12":false,"timeZoneName":"short"
 }]
 },"tzoffset":{ "name":"tzoffset","fn_args":"()","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"]
 },"date_components":{ "name":"date_components","fn_args":"(date_value date_formatter)","usage":["date_value:Date","date_formatter:DateTimeFormat?"],"description":"Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","time","object","component"]
 },"formatted_date":{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"]
-},"add_days":{ "name":"add_days","fn_args":"(date_obj num_days)","usage":["date_obj:Date","num_days:number"],"description":"Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","days","add"]
-},"day_of_week":{ "name":"day_of_week","fn_args":"(dval)","description":"Given a date object, returns the day of the week for that date object","usage":["date:Date"],"tags":["time","week","date","day"]
-},"add_hours":{ "name":"add_hours","fn_args":"(date_obj hours)","usage":["date_obj:Date","hours:number"],"description":"Given a date object and the number of hours (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","hours","add"]
-},"clear_time":{ "name":"clear_time","fn_args":"(date_obj)","usage":["date_obj:Date"],"description":"Given a date object, modifies the date object by clearing the time value and leaving the date value.  Returns the date object.","tags":["date","time","duration","midnight","add"]
-},"yesterday":{ "name":"yesterday","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"]
-},"next_sunday":{ "name":"next_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date.","tags":["time","date","range","next","week","24"]
-},"last_sunday":{ "name":"last_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date.","tags":["time","date","range","prior","week","24"]
-},"day_before_yesterday":{ "name":"day_before_yesterday","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"]
-},"last_week":{ "name":"last_week","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"]
-},"midnight-to-midnight":{ "name":"midnight-to-midnight","fn_args":"(dval)","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":["val:Date"],"tags":["time","date","range","prior","hours","24"]
-},"date_to_string":{ "name":"date_to_string","fn_args":"(date_val str_layout)","description":["=:+","Given a date value and a formatted template string, return a string representation of the date based on the formatted template string.","<br>","E.g. (date_to_string (new Date) \"yyyy-MM-dd HH:mm:ss\")<br>","<table>","<tr><td>","yyyy","</td><td>","Four position formatted year, e.g. 2021","</td></tr>","<tr><td>","yy","</td><td>","Two position formatted year, e.g. 21","</td></tr>","<tr><td>","dd","</td><td>","Two position formatted day of month, e.g. 03","</td></tr>","<tr><td>","d","</td><td>","1 position numeric day of month, e.g. 3","</td></tr>","<tr><td>","MM","</td><td>","Two position formatted month number, e.g. 06","</td></tr>","<tr><td>","M","</td><td>","One or two position formatted month number, e.g. 6 or 10","</td></tr>","<tr><td>","HH","</td><td>","Two position formatted 24 hour number, e.g. 08","</td></tr>","<tr><td>","H","</td><td>","One position formatted 24 hour, e.g 8","</td></tr>","<tr><td>","hh","</td><td>","Two position formatted 12 hour clock, e.g. 08","</td></tr>","<tr><td>","h","</td><td>","One position formatted 12 hour clock, e.g 8","</td></tr>","<tr><td>","mm","</td><td>","Minutes with 2 position width, eg. 05","</td></tr>","<tr><td>","m","</td><td>","Minutes with 1 or 2 positions, e.g 5 or 15.","</td></tr>","<tr><td>","ss","</td><td>","Seconds with 2 positions, e.g 03 or 25.","</td></tr>","<tr><td>","s","</td><td>","Seconds with 1 or 2 positions, e.g 3 or 25.","</td></tr>","<tr><td>","sss","</td><td>","Milliseconds with 3 digits, such as 092 or 562.","</td></tr>","<tr><td>","TZ","</td><td>","Include timezone abbreviated, e.g. GMT+1.","</td></tr>","<tr><td>","D","</td><td>","Weekday abbreviated to 1 position, such as T for Tuesday or Thursday, or W for Wednesday (in certain locales)","</td></tr>","<tr><td>","DD","</td><td>","Weekday shortened to 3 positions, such as Fri for Friday.","</td></tr>","<tr><td>","DDD","</td><td>","Full name of weekday, such as Saturday.","</td></tr>","</table>"],"usage":["date_val:Date","formatted_string:string"],"tags":["time","date","string","text","format","formatted"]
-},"is_even?":{ "name":"is_even?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an even number, return true, else returns false.","tags":["list","filter","modulus","odd","number"]
-},"is_odd?":{ "name":"is_odd?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an odd number, return true, else returns false.","tags":["list","filter","modulus","even","number"]
-},"set_path_value":{ "name":"set_path_value","fn_args":"(root path value)","description":"Given an object (the root), a path array, and a value to set, sets the value at the path point in the root object.","usage":["root:object","path:list","value:*"],"tags":["object","path","resolve","assign"]
-},"has_items?":{ "name":"has_items?","fn_args":"(value)","usage":["value:list"],"description":"Returns true if the list provided has a length greater than one, or false if the list is 0 or nil","tags":["list","values","contains"]
-},"match_all":{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"]
-},"chop_front":{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container."
-},"compile_lisp":{ "name":"compile_lisp","fn_args":"(text)","usage":["text:string"],"description":"Given an input string of lisp text, returns a JSON structure ready for evaluation."
-},"has_the_keys?":{ "name":"has_the_keys?","fn_args":"(key_list obj)","usage":["key_list:list","object_to_check:object"],"description":"Given a provided key_list, validate that each listed key or dotted-path-notation value exist in the object.","example":[[["=:quotem",["=:has_the_keys?",["type","values.sub_transaction_id"],{ "type":"Transaction","group":"Receivables","values":{ "sub_transaction_id":1242424
-}
-}]],true]]
-},"demarked_number":{ "name":"demarked_number","fn_args":"(value separator precision no_show_sign)","usage":["value:number","separator:string","precision:number","no_show_sign:boolean"],"description":["=:+","Given a numeric value, a separator string, such as \",\" and a precision value ","for the fractional-part or mantissa of the value, the demarked_number function will return a string with a formatted value. ","Default value for precision is 2 if not provided.","If no_show_sign is true, there will be no negative sign returned, which can be useful for alternative formatting.  See compile_format."],"tags":["format","conversion","currency"]
-},"measure_time":{ "eval_when":{ "compile_time":true
-},"name":"measure_time","macro":true,"fn_args":"(\"&\" forms)","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results."
-},"compare_list_ends":{ "name":"compare_list_ends","fn_args":"(l1 l2)","usage":["array1:array","array2:array"],"tags":["comparision","values","list","array"],"description":"Compares the ends of the provided flat arrays, where the shortest list must match completely the tail end of the longer list. Returns true if the comparison matches, false if they don't."
-},"hsv_to_rgb":{ "usage":["hsv_values:array"],"description":"Takes an array with three values corresponding to hue, saturation and brightness. Each value should be between 0 and 1.  The function returns an array with three values corresponding to red, green and blue.","tags":["colors","graphics","rgb","conversion"]
-},"rgb_to_text":{ "name":"rgb_to_text","fn_args":"(rgb)","usage":["rgb_values:array"],"description":["=:+","Given an array with 3 values ranging from 0 to 1, corresponding to the \"red\",\"green\",\"blue\" values of the described color, ","the function returns a string in the form of FFFFFF."],"tags":["colors","graphics"]
-},"text_to_rgb":{ "name":"text_to_rgb","fn_args":"(rgb_string)","usage":["rgb_string:string"],"description":"Given an RGB hex color string in the form of \"FFFFFF\", returns an array containing [ red green blue ] in the set [ 0 1 ].","tags":["colors","graphics"]
-},"rgb_to_hsv":{ "name":"rgb_to_hsv","fn_args":"(rgb)","description":["=:+","Takes an array with three values corresponding to red, green and blue: [red green blue].","Each value should be between 0 and 1 (i.e the set [0 1]) ","The function returns an array with three values corresponding to [hue saturation value] in the set [0 1]."],"usage":["rgb_values:array"],"tags":["colors","graphics","rgb","conversion","hsv"]
-},"tint_rgb":{ "name":"tint_rgb","fn_args":"(rgb tint_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"]
-},"shade_rgb":{ "name":"shade_rgb","fn_args":"(rgb shade_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"]
-},"modify_color_ts":{ "name":"modify_color_ts","fn_args":"(rgb factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided factor to the color and return the result as an rgb array.","The provided factor should be in the range -1 to 1: -1 to 0 applies shade to the color and 0 to 1 applies tinting to the color."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"]
-},"is_lower?":{ "name":"is_lower?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is a lowercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"]
-},"is_upper?":{ "name":"is_upper?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is an uppercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"]
-},"camel_case_to_lower":{ "name":"camel_case_to_lower","fn_args":"(val)","usage":[],"description":"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.","tags":["text","string","conversion","lowercase","uppercase"]
-},"scan_list":{ "name":"scan_list","fn_args":"(regex container)","description":["=:+","Scans a list for the provided regex expression and returns the indexes in the list where it is found.  ","The provided regex expression can be a plain string or a RegExp object."],"usage":["regex:string","container:list"],"tags":["search","index","list","regex","array","string"]
 },"dtext":{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"]
-},"gather_up_prop":{ "name":"gather_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return all the values associated with the provided key.","tags":["key","property","objects","iteration"]
-},"sum_up_prop":{ "name":"sum_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return the total sum amount of the given key.","tags":["sum","key","property","objects","iteration"]
-},"scan_for":{ "name":"scan_for","fn_args":"(non_nil_prop list_of_objects)","description":"Given a property name and a list of objects, find the first object with the non-nil property value specified by non_nil_prop. Returns the value of the non-nil property.","usage":["non_nil_prop:string","list_of_objects:array"],"tags":["find","scan","object","list","array","value"]
-},"make_sort_buckets":{ "name":"make_sort_buckets","fn_args":"()","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"]
-},"truncate":{ "name":"truncate","fn_args":"(len value trailer)","description":["=:+","Given a length and a string or an array, return the value ","with a length no more than then the provided value. If ","the value is a string an optional trailer string can be ","provided that will be appeneded to the truncated string."],"usage":["len:number","value:array|string","trailer:string?"],"tags":["array","string","length","max","min"]
-},"parse_csv":{ "name":"parse_csv","fn_args":"(csv_data options)","description":["=:+","Given a text file of CSV data and an optional options value, parse and return a JSON structure of the CSV data as nested arrays.","<br>","Options can contain the following values:<br>","<table><tr><td>separator</td><td>A text value for the separator to use.  ","The default is a comma.</td></tr><tr><td>interruptions</td><td>If set to true, ","will pause regularly during processing for 1/10th of a second to allow other event queue activities to occur.</td>","</tr><tr><td>notifier</td><td>If interruptions is true, notifier will be triggered with ","the progress of work as a percentage of completion (0 - 1), the current count and the total rows.</td></tr></table>"],"usage":["csv_data:string","options:object?"],"tags":["parse","list","values","table","tabular","csv"]
-},"to_csv":{ "name":"to_csv","fn_args":"(\"rows\" delimiter)","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"]
-},"squeeze":{ "name":"squeeze","fn_args":"(s)","usage":["string_value:string"],"description":"Returns a string that has all spaces removed from the supplied string value.","tags":["text","space","trim","remove"]
-},"ensure_keys":{ "name":"ensure_keys","fn_args":"(keylist obj default_value)","description":["=:+","Given a list of key values, an object (or nil) and an optional default value to be ","assigned each key, ensures that the object returned has the specified keys (if not already set) set to either ","the specified default value, or nil."],"usage":["keylist","obj:object","default_value:*?"],"tags":["object","keys","values","required","key"]
-},"show_time_in_words":{ "description":"Given an integer value representing seconds of a time duration, return a string representing the time in words, such as 2 mins.  If the key longForm is set to true in options return full words instead of contracted forms.  For example min vs. minute.","usage":["seconds:integer","options:object"],"tags":["time","date","format","string","elapsed"]
-},"ago":{ "name":"ago","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.","tags":["date","format","time","string","elapsed"]
-},"lifespan":{ "name":"lifespan","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time until the specified date.","tags":["date","format","time","string","elapsed"]
 },"path":{ "initializer":["=:dynamic_import","https://deno.land/std@0.110.0/path/mod.ts"]
 },"read_text_file":{ "description":"Given an accessible filename including path with read permissions returns the file contents as a string.","usage":["filename:string","options:object"],"tags":["file","read","text","input","io"],"initializer":["=:bind","=:Deno.readTextFile","=:Deno"]
 },"write_text_file":{ "description":"Given a string path to a filename, an argument containing the string of text to be written, and an optional options argument write the file to the filesystem.<br><br>.The WriteFileOptions corresponds to the Deno WriteFileOptions interface","usage":["filepath:string","textdata:string","options:WriteFileOptions"],"tags":["file","write","io","text","string"],"initializer":["=:bind","=:Deno.writeTextFile","=:Deno"]
@@ -2468,15 +2371,7 @@ export async function init_dlisp(Environment)  {
 },"compile_file":{ "name":"compile_file","fn_args":"(lisp_file export_function_name options)"
 },"rebuild_env":{ "name":"rebuild_env","fn_args":"(opts)","description":["=:+","Builds the lisp environment from the Lisp sources and produces the Javascript output files ","necessary for initializing the environment. Options: <br>","source_dir:string:The directory of the Lisp sources, the default is './src'.<br>","output_dir:string:The directory to where the output Javascript files are placed.  The default is './js'.<br>","include_source:boolean:If true, the compiler will include comments of the lisp source (not fully supported yet).<br>","version_tag:string:A string based label signifying the text to use as the version.  If not specified, the version ","tag uses the format year.month.day.hour.minute.<br>"],"usage":["options:object?"],"tags":["compile","export","build","environment","javascript"]
 },"build_environment_macro":{ "name":"build_environment_macro","fn_args":"(opts)"
-},"load-file":{ "name":"load-file","fn_args":"(filename)"
 },"repl":{ "name":"repl","fn_args":"(instream outstream opts)"
-},"find_tags":{ "name":"find_tags","fn_args":"(tags)"
-},"word_wrap":{ "name":"word_wrap","fn_args":"(text max_cols tab_size)"
-},"show_help":{ "name":"show_help","fn_args":"(topic)"
-},"describe_usage":{ "name":"describe_usage","fn_args":"(usage)"
-},"show_finding":{ "name":"show_finding","fn_args":"(finding)"
-},"help":{ "name":"help","fn_args":"(\"&\" args)","description":["=:+","Provides information for the REPL user or otherwise to find information on a resource ","such as a function or topic."],"usage":["topic_or_name:string|symbol?"],"tags":["help","info","information","assist","documentation","docs"]
-},"?":{ "description":"Alias for the help command.  See help.","usage":["topic_or_name:string|symbol?"],"tags":["help","info","information","assist","documentation","docs"]
 },"*initializer*":{ "name":"core/*initializer*","fn_args":"()"
 }
 },declarations:{
@@ -2725,9 +2620,9 @@ export async function init_dlisp(Environment)  {
      return  (null===value)
 };__obj__1["is_regex?"]=async function(x) {
      return  (await (await Environment.get_global("sub_type"))(x)==="RegExp")
-};__obj__1["is_date?"]=async function(x) {
-     return  (await (await Environment.get_global("sub_type"))(x)==="Date")
-};__obj__1["ends_with?"]=function anonymous(val,text
+};__obj__1["is_date?"]=function(x) {
+                             return  ( sub_type(x)==="Date")
+                        };__obj__1["ends_with?"]=function anonymous(val,text
 ) {
 { if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}
 };__obj__1["starts_with?"]=function anonymous(val,text
@@ -3041,58 +2936,12 @@ export async function init_dlisp(Environment)  {
                                         }
                                         return obj;
                                     }
-};__obj__1["min_value"]=async function(v) {
-    let m;
-    m=(await Environment.get_global("MAX_SAFE_INTEGER"));
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(v)==="array"))))throw new TypeError("argument is not an array");
-    ;
-    await (async function() {
-        let __for_body__83=async function(x) {
-            if (check_true (await (await Environment.get_global("not"))(await isNaN(x)))){
-                  return m=await Math.min(x,m)
-            }
-        };
-        let __array__84=[],__elements__82=v;
-        let __BREAK__FLAG__=false;
-        for(let __iter__81 in __elements__82) {
-            __array__84.push(await __for_body__83(__elements__82[__iter__81]));
-            if(__BREAK__FLAG__) {
-                 __array__84.pop();
-                break;
-                
-            }
-        }return __array__84;
-         
-    })();
-    if (check_true ((m===(await Environment.get_global("MAX_SAFE_INTEGER"))))){
-          return 0
-    } else {
-          return m
-    }
-};__obj__1["max_value"]=async function(v) {
-    let m;
-    m=0;
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(v)==="array"))))throw new TypeError("argument is not an array");
-    ;
-    await (async function() {
-        let __for_body__79=async function(x) {
-            if (check_true (await (await Environment.get_global("not"))(await isNaN(x)))){
-                  return m=await Math.max(x,m)
-            }
-        };
-        let __array__80=[],__elements__78=v;
-        let __BREAK__FLAG__=false;
-        for(let __iter__77 in __elements__78) {
-            __array__80.push(await __for_body__79(__elements__78[__iter__77]));
-            if(__BREAK__FLAG__) {
-                 __array__80.pop();
-                break;
-                
-            }
-        }return __array__80;
-         
-    })();
-     return  m
+};__obj__1["min_value"]=function anonymous(elements
+) {
+{ return Math.min(...elements); }
+};__obj__1["max_value"]=function anonymous(elements
+) {
+{ return Math.max(...elements); }
 };__obj__1["interlace"]=async function(...args) {
                             let min_length;
                             let rlength_args;
@@ -3139,12 +2988,12 @@ export async function init_dlisp(Environment)  {
                              return  rval
                         };__obj__1["trim"]=function(x) {
                              return   x["trim"]()
-                        };__obj__1["assert"]=async function(assertion_form,failure_message) {
-    if (check_true (assertion_form)){
-          return assertion_form
-    } else throw new EvalError((failure_message||"assertion failure"));
-    
-};__obj__1["unquotify"]=async function(val) {
+                        };__obj__1["assert"]=function(assertion_form,failure_message) {
+                            if (check_true (assertion_form)){
+                                  return assertion_form
+                            } else throw new EvalError((failure_message||"assertion failure"));
+                            
+                        };__obj__1["unquotify"]=async function(val) {
                             let dval;
                             dval=val;
                             if (check_true (await (await get_global("starts_with?"))("\"",dval))){
@@ -5993,40 +5842,40 @@ export async function init_dlisp(Environment)  {
     } else throw new RangeError(("set_path: invalid path: "+path));
     
 };__obj__1["minmax"]=async function(container) {
-    let value_found=false;
-    ;
-    let smallest=(await Environment.get_global("MAX_SAFE_INTEGER"));
-    ;
-    let biggest=(-1*(await Environment.get_global("MAX_SAFE_INTEGER")));
-    ;
+    let value_found;
+    let smallest;
+    let biggest;
+    value_found=false;
+    smallest=(await Environment.get_global("MAX_SAFE_INTEGER"));
+    biggest=(-1*(await Environment.get_global("MAX_SAFE_INTEGER")));
     if (check_true ((container&&(container instanceof Array)&&(await (await Environment.get_global("length"))(container)>0)))){
         await (async function() {
-            let __for_body__28=async function(value) {
+            let __for_body__81=async function(value) {
                  return  (await (await Environment.get_global("is_number?"))(value)&&await (async function ()  {
                     value_found=true;
                     smallest=await Math.min(value,smallest);
                      return  biggest=await Math.max(value,biggest)
                 } )())
             };
-            let __array__29=[],__elements__27=container;
+            let __array__82=[],__elements__80=container;
             let __BREAK__FLAG__=false;
-            for(let __iter__26 in __elements__27) {
-                __array__29.push(await __for_body__28(__elements__27[__iter__26]));
+            for(let __iter__79 in __elements__80) {
+                __array__82.push(await __for_body__81(__elements__80[__iter__79]));
                 if(__BREAK__FLAG__) {
-                     __array__29.pop();
+                     __array__82.pop();
                     break;
                     
                 }
-            }return __array__29;
+            }return __array__82;
              
         })();
         if (check_true (value_found)){
               return await (async function(){
-                let __array_op_rval__30=smallest;
-                 if (__array_op_rval__30 instanceof Function){
-                    return await __array_op_rval__30(biggest) 
+                let __array_op_rval__83=smallest;
+                 if (__array_op_rval__83 instanceof Function){
+                    return await __array_op_rval__83(biggest) 
                 } else {
-                    return[__array_op_rval__30,biggest]
+                    return[__array_op_rval__83,biggest]
                 }
             })()
         } else {
@@ -6483,6 +6332,12 @@ export async function init_dlisp(Environment)  {
      return  ["=:let",[["=:it",test]],["=:if","=:it",thenclause,elseclause]]
 };__obj__1["map_range"]=async function(n,from_range,to_range) {
      return  await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
+};__obj__1["range_inc"]=async function(start,end,step) {
+    if (check_true (end)){
+          return await (await Environment.get_global("range"))(start,await (await Environment.get_global("add"))(end,1),step)
+    } else {
+          return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
+    }
 };__obj__1["HSV_to_RGB"]=function anonymous(h, s, v
 ) {
 {
@@ -6946,25 +6801,25 @@ export async function init_dlisp(Environment)  {
 };__obj__1["except_nil"]=async function(items) {
     let acc=[];
     ;
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(items)==="array")))){
+    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(items)=="array")))){
          items=[items]
     };
     await (async function() {
-        let __for_body__56=async function(value) {
+        let __for_body__183=async function(value) {
             if (check_true (await (await Environment.get_global("not"))((null==value)))){
                   return (acc).push(value)
             }
         };
-        let __array__57=[],__elements__55=items;
+        let __array__184=[],__elements__182=items;
         let __BREAK__FLAG__=false;
-        for(let __iter__54 in __elements__55) {
-            __array__57.push(await __for_body__56(__elements__55[__iter__54]));
+        for(let __iter__181 in __elements__182) {
+            __array__184.push(await __for_body__183(__elements__182[__iter__181]));
             if(__BREAK__FLAG__) {
-                 __array__57.pop();
+                 __array__184.pop();
                 break;
                 
             }
-        }return __array__57;
+        }return __array__184;
          
     })();
      return  acc
@@ -7953,12 +7808,23 @@ export async function init_dlisp(Environment)  {
         },(values||[]));
          return  await (await Environment.get_global("to_array"))(s)
     }
+};__obj__1["time_in_millis"]=async function() {
+     return  ["=:Date.now"]
 };__obj__1["defns"]=async function(name,options) {
     if (check_true ((options&&(options && options["ignore_if_exists"])&&(name instanceof String || typeof name==='string')&&await (await Environment.get_global("contains?"))(name,await (await Environment.get_global("namespaces"))())))){
           return name
     } else {
           return await (await Environment.get_global("create_namespace"))(name,options)
     }
+};__obj__1["bind_and_call"]=async function(target_object,this_object,method,...args) {
+    let boundf=await (await Environment.get_global("bind"))(target_object[method],this_object);
+    ;
+    if (check_true (boundf)){
+          return await (async function(){
+            return ( boundf).apply(this,args)
+        })()
+    } else throw new Error("unable to bind target_object");
+    
 };__obj__1["import"]=async function(...args) {
     let filespec;
     let is_url_ques_;
@@ -8007,7 +7873,7 @@ export async function init_dlisp(Environment)  {
         if (check_true( (await (await Environment.get_global("ends_with?"))(".lisp",target_path)||await (await Environment.get_global("ends_with?"))(".juno",target_path)))) {
              return ["=:evaluate",[await (async function(){
                  return ("=:"+load_fn) 
-            })(),filespec],"=:nil",["=:to_object",[["source_name",[filespec]]]]]
+            })(),filespec],"=:nil",["=:to_object",[["source_name",filespec]]]]
         } else if (check_true( await (await Environment.get_global("ends_with?"))(".json",target_path))) {
              return ["=:evaluate",["=:JSON.parse",[await (async function(){
                  return ("=:"+load_fn) 
@@ -8030,6 +7896,53 @@ export async function init_dlisp(Environment)  {
             
         }
     } ()
+};__obj__1["system_date_format"]={weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"};__obj__1["system_date_formatter"]=new Intl.DateTimeFormat([],{weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"});__obj__1["tzoffset"]=async function() {
+     return  (60*await (async function() {
+        {
+             let __call_target__=new Date(), __call_method__="getTimezoneOffset";
+            return await __call_target__[__call_method__]()
+        } 
+    })())
+};__obj__1["date_components"]=async function(date_value,date_formatter) {
+    if (check_true (await (await Environment.get_global("is_date?"))(date_value))){
+          return await (await Environment.get_global("to_object"))(await (await Environment.get_global("map"))(async function(x) {
+             return  await (async function(){
+                let __array_op_rval__283=(x && x["type"]);
+                 if (__array_op_rval__283 instanceof Function){
+                    return await __array_op_rval__283((x && x["value"])) 
+                } else {
+                    return[__array_op_rval__283,(x && x["value"])]
+                }
+            })()
+        },await (async function() {
+             if (check_true (date_formatter)){
+                  return await (await Environment.get_global("bind_and_call"))(date_formatter,date_formatter,"formatToParts",date_value)
+            } else {
+                  return await (await Environment.get_global("bind_and_call"))((await Environment.get_global("system_date_formatter")),(await Environment.get_global("system_date_formatter")),"formatToParts",date_value)
+            } 
+        } )()))
+    } else {
+          return null
+    }
+};__obj__1["formatted_date"]=async function(dval,date_formatter) {
+    let comps;
+    comps=await (await Environment.get_global("date_components"))(dval,date_formatter);
+    if (check_true (comps)){
+         if (check_true (date_formatter)){
+              return (await (await Environment.get_global("values"))(comps)).join("")
+        } else {
+              return (""+(comps && comps["year"])+"-"+(comps && comps["month"])+"-"+(comps && comps["day"])+" "+(comps && comps["hour"])+":"+(comps && comps["minute"])+":"+(comps && comps["second"]))
+        }
+    } else {
+          return null
+    }
+};__obj__1["*LANGUAGE*"]=new Object();__obj__1["dtext"]=async function(default_text) {
+     return  (await (async function(){
+        let __targ__284=(await Environment.get_global("*LANGUAGE*"));
+        if (__targ__284){
+             return(__targ__284)[default_text]
+        } 
+    })()||default_text)
 };__obj__1["compiler"]=async function(quoted_lisp,opts) {
     {
         let Environment=(opts && opts["env"]);
@@ -16020,1691 +15933,6 @@ export async function init_dlisp(Environment)  {
             }
         }
     }
-};__obj__1["if_undefined"]=async function(value,replacer) {
-         return  ["=:if",["=:==","=:undefined",value],replacer,value]
-    };__obj__1["str"]=async function(...args) {
-     return  (args).join(" ")
-};__obj__1["COPY_DATA"]=null;__obj__1["bind_and_call"]=async function(target_object,this_object,method,...args) {
-    let boundf=await (await Environment.get_global("bind"))(target_object[method],this_object);
-    ;
-    if (check_true (boundf)){
-          return await (async function(){
-            return ( boundf).apply(this,args)
-        })()
-    } else throw new Error("unable to bind target_object");
-    
-};__obj__1["on_nil"]=async function(nil_form,value) {
-     return  ["=:let",[["=:v",value]],["=:if",["=:eq","=:v","=:nil"],nil_form,"=:v"]]
-};__obj__1["on_empty"]=async function(on_empty_form,value) {
-     return  ["=:let",[["=:v",value]],["=:if",["=:or",["=:eq","=:v","=:nil"],["=:and",["=:is_array?","=:v"],["=:==",0,["=:length","=:v"]]],["=:and",["=:is_object?","=:v"],["=:==",["=:length","=:v"],0]]],on_empty_form,"=:v"]]
-};__obj__1["sum"]=async function(vals) {
-     return  ["=:apply","=:add",vals]
-};__obj__1["options_and_args"]=async function(arg_array) {
-     return  await async function(){
-        if (check_true( (arg_array&&(arg_array instanceof Array)))) {
-            if (check_true ((await (await Environment.get_global("type"))((arg_array && arg_array["0"]))==="object"))){
-                  return await (async function(){
-                    let __array_op_rval__3=(arg_array && arg_array["0"]);
-                     if (__array_op_rval__3 instanceof Function){
-                        return await __array_op_rval__3(await (await Environment.get_global("slice"))(arg_array,1)) 
-                    } else {
-                        return[__array_op_rval__3,await (await Environment.get_global("slice"))(arg_array,1)]
-                    }
-                })()
-            } else {
-                  return [null,arg_array]
-            }
-        } else  {
-             return [null,arg_array]
-        }
-    } ()
-};__obj__1["enum"]=async function(value_list) {
-    let e=new Object();
-    ;
-    let i=-1;
-    ;
-    await (await Environment.get_global("assert"))((value_list instanceof Array),"Value_list must be an array");
-    await (async function() {
-        let __for_body__6=async function(v) {
-             return  await async function(){
-                e[v]=i+=1;
-                return e;
-                
-            }()
-        };
-        let __array__7=[],__elements__5=value_list;
-        let __BREAK__FLAG__=false;
-        for(let __iter__4 in __elements__5) {
-            __array__7.push(await __for_body__6(__elements__5[__iter__4]));
-            if(__BREAK__FLAG__) {
-                 __array__7.pop();
-                break;
-                
-            }
-        }return __array__7;
-         
-    })();
-     return  e
-};__obj__1["time_in_millis"]=async function() {
-     return  ["=:Date.now"]
-};__obj__1["gen_id"]=async function(prefix) {
-     return  (""+prefix+"_"+await Date.now())
-};__obj__1["nth"]=async function(idx,collection) {
-     return  await async function(){
-        if (check_true( (idx instanceof Array))) {
-             return await (await Environment.get_global("map"))(async function(v) {
-                 return  await (await Environment.get_global("nth"))(v,collection)
-            },idx)
-        } else if (check_true( (await (await Environment.get_global("is_number?"))(idx)&&(idx<0)&&(await (await Environment.get_global("length"))(collection)>=(-1*idx))))) {
-             return collection[await (await Environment.get_global("add"))(await (await Environment.get_global("length"))(collection),idx)]
-        } else if (check_true( (await (await Environment.get_global("is_number?"))(idx)&&(idx<0)&&(await (await Environment.get_global("length"))(collection)<(-1*idx))))) {
-             return undefined
-        } else  {
-             return collection[idx]
-        }
-    } ()
-};__obj__1["macros"]=async function() {
-    let __collector;
-    let __result;
-    let __action;
-    __collector=[];
-    __result=null;
-    __action=async function(v) {
-        if (check_true ((v && v["1"] && v["1"]["macro"]))){
-              return (v && v["0"])
-        }
-    };
-    ;
-    await (async function() {
-        let __for_body__11=async function(__item) {
-            __result=await __action(__item);
-            if (check_true (__result)){
-                  return (__collector).push(__result)
-            }
-        };
-        let __array__12=[],__elements__10=await (await Environment.get_global("pairs"))(Environment.definitions);
-        let __BREAK__FLAG__=false;
-        for(let __iter__9 in __elements__10) {
-            __array__12.push(await __for_body__11(__elements__10[__iter__9]));
-            if(__BREAK__FLAG__) {
-                 __array__12.pop();
-                break;
-                
-            }
-        }return __array__12;
-         
-    })();
-     return  __collector
-};__obj__1["pluck"]=async function(fields,data) {
-     return  ["=:each",data,fields]
-};__obj__1["objects_from_list"]=async function(key_path,objects) {
-    let obj;
-    let __path__13= async function(){
-        return await (async function () {
-             if (check_true ((key_path instanceof Array))){
-                  return key_path
-            } else {
-                  return await (async function(){
-                    let __array_op_rval__14=key_path;
-                     if (__array_op_rval__14 instanceof Function){
-                        return await __array_op_rval__14() 
-                    } else {
-                        return[__array_op_rval__14]
-                    }
-                })()
-            } 
-        })()
-    };
-    {
-        obj=new Object();
-        let path=await __path__13();
-        ;
-        await (async function() {
-            let __for_body__17=async function(o) {
-                 return  await async function(){
-                    obj[await (await Environment.get_global("resolve_path"))(path,o)]=o;
-                    return obj;
-                    
-                }()
-            };
-            let __array__18=[],__elements__16=objects;
-            let __BREAK__FLAG__=false;
-            for(let __iter__15 in __elements__16) {
-                __array__18.push(await __for_body__17(__elements__16[__iter__15]));
-                if(__BREAK__FLAG__) {
-                     __array__18.pop();
-                    break;
-                    
-                }
-            }return __array__18;
-             
-        })();
-         return  obj
-    }
-};__obj__1["pairs_from_list"]=async function(value_list,size) {
-    let container;
-    let mod_size;
-    let pset;
-    let count;
-    container=[];
-    size=(size||2);
-    mod_size=(size-1);
-    pset=[];
-    count=0;
-    await (async function() {
-        let __for_body__22=async function(item) {
-            (pset).push(item);
-            if (check_true ((mod_size===(count%size)))){
-                (container).push(pset);
-                 pset=[]
-            };
-             return  count+=1
-        };
-        let __array__23=[],__elements__21=value_list;
-        let __BREAK__FLAG__=false;
-        for(let __iter__20 in __elements__21) {
-            __array__23.push(await __for_body__22(__elements__21[__iter__20]));
-            if(__BREAK__FLAG__) {
-                 __array__23.pop();
-                break;
-                
-            }
-        }return __array__23;
-         
-    })();
-    if (check_true ((await (await Environment.get_global("length"))(pset)>0))){
-         (container).push(pset)
-    };
-     return  container
-};__obj__1["reorder_keys"]=async function(key_list,obj) {
-    let objkeys;
-    let rval;
-    let __values__24= async function(){
-        return await (await Environment.get_global("nth"))(key_list,obj)
-    };
-    {
-        objkeys=await (await Environment.get_global("keys"))(obj);
-        rval=new Object();
-        let values=await __values__24();
-        ;
-         return  await (await Environment.get_global("to_object"))(await (await Environment.get_global("pairs_from_list"))(await (await Environment.get_global("interlace"))(key_list,values)))
-    }
-};__obj__1["only"]=async function(fields,data) {
-     return  await async function(){
-        if (check_true( (data instanceof Array))) {
-             return await (await Environment.get_global("map"))(async function(v) {
-                 return  await (await Environment.get_global("reorder_keys"))(fields,v)
-            },data)
-        } else if (check_true( (data instanceof Object))) {
-             return await (await Environment.get_global("reorder_keys"))(fields,data)
-        } else  {
-             return data
-        }
-    } ()
-};__obj__1["sleep"]=async function(seconds) {
-     return  new Promise(async function(resolve) {
-         return  await setTimeout(async function() {
-             return  await (async function(){
-                let __array_op_rval__25=resolve;
-                 if (__array_op_rval__25 instanceof Function){
-                    return await __array_op_rval__25(true) 
-                } else {
-                    return[__array_op_rval__25,true]
-                }
-            })()
-        },(seconds*1000))
-    })
-};__obj__1["from_universal_time"]=async function(seconds) {
-    let d;
-    let ue;
-    d=new Date(0);
-    ue=(seconds-2208988800);
-    await d["setUTCSeconds"].call(d,ue);
-     return  d
-};__obj__1["+="]=async function(symbol,...args) {
-     return  ["=:=",].concat(symbol,[["=:+",symbol,].concat(args)])
-};__obj__1["minmax_index"]=async function(container) {
-    let value_found=false;
-    ;
-    let idx_small=null;
-    ;
-    let idx_largest=null;
-    ;
-    let idx=0;
-    ;
-    let smallest=(await Environment.get_global("MAX_SAFE_INTEGER"));
-    ;
-    let biggest=(-1*(await Environment.get_global("MAX_SAFE_INTEGER")));
-    ;
-    if (check_true ((container&&(container instanceof Array)&&(await (await Environment.get_global("length"))(container)>0)))){
-        await (async function() {
-            let __for_body__33=async function(value) {
-                 return  (await (await Environment.get_global("is_number?"))(value)&&await (async function ()  {
-                    value_found=true;
-                    if (check_true ((value<smallest))){
-                        smallest=value;
-                         idx_small=idx
-                    };
-                    if (check_true ((value>biggest))){
-                        biggest=value;
-                         idx_largest=idx
-                    };
-                     return  (idx=idx+1)
-                } )())
-            };
-            let __array__34=[],__elements__32=container;
-            let __BREAK__FLAG__=false;
-            for(let __iter__31 in __elements__32) {
-                __array__34.push(await __for_body__33(__elements__32[__iter__31]));
-                if(__BREAK__FLAG__) {
-                     __array__34.pop();
-                    break;
-                    
-                }
-            }return __array__34;
-             
-        })();
-        if (check_true (value_found)){
-              return await (async function(){
-                let __array_op_rval__35=idx_small;
-                 if (__array_op_rval__35 instanceof Function){
-                    return await __array_op_rval__35(idx_largest) 
-                } else {
-                    return[__array_op_rval__35,idx_largest]
-                }
-            })()
-        } else {
-              return null
-        }
-    } else {
-          return null
-    }
-};__obj__1["invert_pairs"]=async function(value) {
-    if (check_true ((value instanceof Array))){
-          return await (await Environment.get_global("map"))(async function(v) {
-             return  await (async function(){
-                let __array_op_rval__36=(v && v["1"]);
-                 if (__array_op_rval__36 instanceof Function){
-                    return await __array_op_rval__36((v && v["0"])) 
-                } else {
-                    return[__array_op_rval__36,(v && v["0"])]
-                }
-            })()
-        },value)
-    } else throw new Error("invert_pairs passed a non-array value");
-    
-};__obj__1["noop"]=async function(val) {
-     return  val
-};__obj__1["apply_list_to_list"]=async function(operator,list1,list2) {
-     return  await (await Environment.get_global("map"))(async function(val,idx) {
-         return  await (async function(){
-            let __array_op_rval__37=operator;
-             if (__array_op_rval__37 instanceof Function){
-                return await __array_op_rval__37(val,list1[(idx%await (await Environment.get_global("length"))(list1))]) 
-            } else {
-                return[__array_op_rval__37,val,list1[(idx%await (await Environment.get_global("length"))(list1))]]
-            }
-        })()
-    },list2)
-};__obj__1["apply_operator_list"]=async function(modifier_list,target_list) {
-     return  await (await Environment.get_global("map"))(async function(val,idx) {
-        let op=await Environment["eval"].call(Environment,("=:"+modifier_list[(idx%await (await Environment.get_global("length"))(modifier_list))]));
-        ;
-         return  await (async function(){
-            let __array_op_rval__38=op;
-             if (__array_op_rval__38 instanceof Function){
-                return await __array_op_rval__38(val) 
-            } else {
-                return[__array_op_rval__38,val]
-            }
-        })()
-    },target_list)
-};__obj__1["range_overlap?"]=async function(range_a,range_b) {
-     return  (((range_a && range_a["0"])<=(range_a && range_a["1"]))&&((range_b && range_b["0"])<=(range_b && range_b["1"]))&&await (async function () {
-         if (check_true (((((range_a && range_a["0"])<=(range_b && range_b["0"]))&&((range_b && range_b["0"])<=(range_a && range_a["1"])))||(((range_a && range_a["0"])>=(range_b && range_b["0"]))&&((range_a && range_a["0"])<=(range_b && range_b["1"])))))){
-              return true
-        } else {
-              return false
-        } 
-    })())
-};__obj__1["remaining_in_range"]=async function(value,check_range) {
-     return  await async function(){
-        if (check_true( ((value<=(check_range && check_range["1"]))&&(value>=(check_range && check_range["0"]))))) {
-             return ((check_range && check_range["1"])-value)
-        } else  {
-             return null
-        }
-    } ()
-};__obj__1["range_inc"]=async function(start,end,step) {
-    if (check_true (end)){
-          return await (await Environment.get_global("range"))(start,await (await Environment.get_global("add"))(end,1),step)
-    } else {
-          return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
-    }
-};__obj__1["form_id"]=async function(name) {
-     return  await (await Environment.get_global("replace"))(new RegExp("W","g"),"_",await (await Environment.get_global("replace"))(new RegExp("[+?':]","g"),"sssymss1",await (await Environment.get_global("replace"))("!","sexcs1",await (await Environment.get_global("replace"))("<","slts1",await (await Environment.get_global("replace"))(">","sgts1",(await (await Environment.get_global("split"))((name).toLowerCase()," ")).join("_"))))))
-};__obj__1["from_key"]=async function(value,sep_ques_,ignore_ques_) {
-    if (check_true ((value instanceof String || typeof value==='string'))){
-        if (check_true (ignore_ques_)){
-             return value;
-            
-        };
-        sep_ques_=(sep_ques_||"_");
-         return  await (await Environment.get_global("dtext"))((await (await Environment.get_global("map"))(async function(v) {
-             return  (""+await (async function() {
-                {
-                     let __call_target__=await v["charAt"].call(v,0), __call_method__="toUpperCase";
-                    return await __call_target__[__call_method__]()
-                } 
-            })()+await v["slice"].call(v,1))
-        },(value).split(sep_ques_))).join(" "))
-    } else {
-          return value
-    }
-};__obj__1["from_key1"]=async function(v) {
-     return  await (await Environment.get_global("from_key"))(v)
-};__obj__1["to_key"]=async function(value,sep_ques_,ignore_ques_) {
-    if (check_true ((value instanceof String || typeof value==='string'))){
-        if (check_true (ignore_ques_)){
-             return value;
-            
-        };
-        sep_ques_="_";
-        let tokens=await (await Environment.get_global("map"))(async function(v) {
-             return  (""+(v).toLowerCase())
-        },(value).split(" "));
-        ;
-        let rv=(tokens).join(sep_ques_);
-        ;
-         return  rv
-    } else {
-         return  value
-    }
-};__obj__1["is_object_or_function?"]=function anonymous(obj
-) {
-var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
-};__obj__1["extend"]=async function(target_object,source_object) {
-    if (check_true (((target_object instanceof Object)&&(source_object instanceof Object)))){
-        await (async function() {
-            let __for_body__43=async function(pset) {
-                 return  await async function(){
-                    target_object[(pset && pset["0"])]=(pset && pset["1"]);
-                    return target_object;
-                    
-                }()
-            };
-            let __array__44=[],__elements__42=await (await Environment.get_global("pairs"))(source_object);
-            let __BREAK__FLAG__=false;
-            for(let __iter__41 in __elements__42) {
-                __array__44.push(await __for_body__43(__elements__42[__iter__41]));
-                if(__BREAK__FLAG__) {
-                     __array__44.pop();
-                    break;
-                    
-                }
-            }return __array__44;
-             
-        })();
-         return  target_object
-    } else {
-          return target_object
-    }
-};__obj__1["no_empties"]=async function(items) {
-    let item_type=await (await Environment.get_global("sub_type"))(items);
-    ;
-    if (check_true (await (await Environment.get_global("not"))((item_type=="array")))){
-         items=[items]
-    };
-    {
-        let __collector;
-        let __result;
-        let __action;
-        __collector=[];
-        __result=null;
-        __action=async function(value) {
-             return  await async function(){
-                if (check_true( (null==value))) {
-                     return false
-                } else if (check_true( (""==value))) {
-                     return false
-                } else  {
-                     return value
-                }
-            } ()
-        };
-        ;
-        await (async function() {
-            let __for_body__48=async function(__item) {
-                __result=await __action(__item);
-                if (check_true (__result)){
-                      return (__collector).push(__result)
-                }
-            };
-            let __array__49=[],__elements__47=items;
-            let __BREAK__FLAG__=false;
-            for(let __iter__46 in __elements__47) {
-                __array__49.push(await __for_body__48(__elements__47[__iter__46]));
-                if(__BREAK__FLAG__) {
-                     __array__49.pop();
-                    break;
-                    
-                }
-            }return __array__49;
-             
-        })();
-         return  __collector
-    }
-};__obj__1["first_with"]=async function(prop_list,data_value) {
-    let rval;
-    let found;
-    rval=null;
-    found=false;
-    await (async function() {
-        let __for_body__52=async function(p) {
-            rval=data_value[p];
-            if (check_true (await (await Environment.get_global("not"))((null==rval)))){
-                found=true;
-                __BREAK__FLAG__=true;
-                return
-            }
-        };
-        let __array__53=[],__elements__51=prop_list;
-        let __BREAK__FLAG__=false;
-        for(let __iter__50 in __elements__51) {
-            __array__53.push(await __for_body__52(__elements__51[__iter__50]));
-            if(__BREAK__FLAG__) {
-                 __array__53.pop();
-                break;
-                
-            }
-        }return __array__53;
-         
-    })();
-    if (check_true (found)){
-          return rval
-    } else {
-          return null
-    }
-};__obj__1["fixed"]=async function(v,p) {
-    if (check_true (p)){
-          return await (async function() {
-            {
-                 let __call_target__=await parseFloat(v), __call_method__="toFixed";
-                return await __call_target__[__call_method__].call(__call_target__,p)
-            } 
-        })()
-    } else {
-          return await (async function() {
-            {
-                 let __call_target__=await parseFloat(v), __call_method__="toFixed";
-                return await __call_target__[__call_method__].call(__call_target__,3)
-            } 
-        })()
-    }
-};__obj__1["hide"]=async function(value) {
-     return  undefined
-};__obj__1["array_to_object"]=async function(input_array) {
-    let count;
-    let output;
-    let working_array;
-    count=0;
-    output=await clone(new Object());
-    working_array=await clone(input_array);
-    await (async function(){
-         let __test_condition__58=async function() {
-             return  (await (await Environment.get_global("length"))(working_array)>0)
-        };
-        let __body_ref__59=async function() {
-            let v1=(working_array).shift();
-            ;
-            let v1t=await (await Environment.get_global("type"))(v1);
-            ;
-             return  await async function(){
-                if (check_true( (v1t==="object"))) {
-                     return output=await (await Environment.get_global("add"))(await (async function(){
-                        let __array_op_rval__60=output;
-                         if (__array_op_rval__60 instanceof Function){
-                            return await __array_op_rval__60(v1) 
-                        } else {
-                            return[__array_op_rval__60,v1]
-                        }
-                    })())
-                } else  {
-                     return await async function(){
-                        output[v1]=(working_array).shift();
-                        return output;
-                        
-                    }()
-                }
-            } ()
-        };
-        let __BREAK__FLAG__=false;
-        while(await __test_condition__58()) {
-            await __body_ref__59();
-             if(__BREAK__FLAG__) {
-                 break;
-                
-            }
-        } ;
-        
-    })();
-     return  output
-};__obj__1["split_text_in_array"]=async function(split_element,input_array) {
-    let output=[];
-    ;
-    await (async function() {
-        let __for_body__64=async function(item) {
-             return  await async function(){
-                if (check_true( (item instanceof String || typeof item==='string'))) {
-                     return (output).push(await (await Environment.get_global("split"))(item,split_element))
-                } else  {
-                     return (output).push([null,item])
-                }
-            } ()
-        };
-        let __array__65=[],__elements__63=input_array;
-        let __BREAK__FLAG__=false;
-        for(let __iter__62 in __elements__63) {
-            __array__65.push(await __for_body__64(__elements__63[__iter__62]));
-            if(__BREAK__FLAG__) {
-                 __array__65.pop();
-                break;
-                
-            }
-        }return __array__65;
-         
-    })();
-     return  output
-};__obj__1["words_and_quotes"]=async function(text) {
-    if (check_true (await (await Environment.get_global("not"))((text==null)))){
-          return await (await Environment.get_global("map"))(async function(x,i) {
-            if (check_true ((0===(i%2)))){
-                  return (await (await Environment.get_global("no_empties"))(((x).trim()).split(" "))).join(" ")
-            } else {
-                  return x
-            }
-        },(text).split("\""))
-    } else {
-          return []
-    }
-};__obj__1["split_words"]=async function(text_string) {
-     return  await (await Environment.get_global("no_empties"))(await (await Environment.get_global("map"))(async function(x,i) {
-        if (check_true ((0===(i%2)))){
-              return await (await Environment.get_global("no_empties"))(((x).trim()).split(" "))
-        } else {
-              return await (async function(){
-                let __array_op_rval__66=x;
-                 if (__array_op_rval__66 instanceof Function){
-                    return await __array_op_rval__66() 
-                } else {
-                    return[__array_op_rval__66]
-                }
-            })()
-        }
-    },await (await Environment.get_global("words_and_quotes"))(text_string)))
-};__obj__1["from_style_text"]=async function(text) {
-    let semi_reg;
-    let colon_reg;
-    semi_reg=await RegExp(";\n ","g");
-    colon_reg=await RegExp(": ","g");
-     return  await (await Environment.get_global("no_empties"))(await (await Environment.get_global("map"))(async function(x) {
-         return  [((x && x["0"])).trim(),(x && x["1"])]
-    },await (await Environment.get_global("map"))(async function(v) {
-         return  (await (await Environment.get_global("replace"))(colon_reg,":",v)).split(":")
-    },await (await Environment.get_global("flatten"))(await (await Environment.get_global("map"))(async function(v) {
-         return  (await (await Environment.get_global("replace"))(semi_reg,";",v)).split(";")
-    },await (await Environment.get_global("words_and_quotes"))(text))))))
-};__obj__1["remove_if"]=async function(f,container) {
-    let __collector;
-    let __result;
-    let __action;
-    __collector=[];
-    __result=null;
-    __action=async function(v) {
-        if (check_true (await (await Environment.get_global("not"))(await (async function(){
-            let __array_op_rval__67=f;
-             if (__array_op_rval__67 instanceof Function){
-                return await __array_op_rval__67(v) 
-            } else {
-                return[__array_op_rval__67,v]
-            }
-        })()))){
-              return v
-        }
-    };
-    ;
-    await (async function() {
-        let __for_body__70=async function(__item) {
-            __result=await __action(__item);
-            if (check_true (__result)){
-                  return (__collector).push(__result)
-            }
-        };
-        let __array__71=[],__elements__69=container;
-        let __BREAK__FLAG__=false;
-        for(let __iter__68 in __elements__69) {
-            __array__71.push(await __for_body__70(__elements__69[__iter__68]));
-            if(__BREAK__FLAG__) {
-                 __array__71.pop();
-                break;
-                
-            }
-        }return __array__71;
-         
-    })();
-     return  __collector
-};__obj__1["filter"]=async function(f,container) {
-    let __collector;
-    let __result;
-    let __action;
-    __collector=[];
-    __result=null;
-    __action=async function(v) {
-        if (check_true (await (async function(){
-            let __array_op_rval__72=f;
-             if (__array_op_rval__72 instanceof Function){
-                return await __array_op_rval__72(v) 
-            } else {
-                return[__array_op_rval__72,v]
-            }
-        })())){
-              return v
-        }
-    };
-    ;
-    await (async function() {
-        let __for_body__75=async function(__item) {
-            __result=await __action(__item);
-            if (check_true (__result)){
-                  return (__collector).push(__result)
-            }
-        };
-        let __array__76=[],__elements__74=container;
-        let __BREAK__FLAG__=false;
-        for(let __iter__73 in __elements__74) {
-            __array__76.push(await __for_body__75(__elements__74[__iter__73]));
-            if(__BREAK__FLAG__) {
-                 __array__76.pop();
-                break;
-                
-            }
-        }return __array__76;
-         
-    })();
-     return  __collector
-};__obj__1["system_date_format"]={weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"};__obj__1["system_date_formatter"]=new Intl.DateTimeFormat([],{weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"});__obj__1["tzoffset"]=async function() {
-     return  (60*await (async function() {
-        {
-             let __call_target__=new Date(), __call_method__="getTimezoneOffset";
-            return await __call_target__[__call_method__]()
-        } 
-    })())
-};__obj__1["date_components"]=async function(date_value,date_formatter) {
-    if (check_true (await (await Environment.get_global("is_date?"))(date_value))){
-          return await (await Environment.get_global("to_object"))(await (await Environment.get_global("map"))(async function(x) {
-             return  await (async function(){
-                let __array_op_rval__85=(x && x["type"]);
-                 if (__array_op_rval__85 instanceof Function){
-                    return await __array_op_rval__85((x && x["value"])) 
-                } else {
-                    return[__array_op_rval__85,(x && x["value"])]
-                }
-            })()
-        },await (async function() {
-             if (check_true (date_formatter)){
-                  return await (await Environment.get_global("bind_and_call"))(date_formatter,date_formatter,"formatToParts",date_value)
-            } else {
-                  return await (await Environment.get_global("bind_and_call"))((await Environment.get_global("system_date_formatter")),(await Environment.get_global("system_date_formatter")),"formatToParts",date_value)
-            } 
-        } )()))
-    } else {
-          return null
-    }
-};__obj__1["formatted_date"]=async function(dval,date_formatter) {
-    let comps;
-    comps=await (await Environment.get_global("date_components"))(dval,date_formatter);
-    if (check_true (comps)){
-         if (check_true (date_formatter)){
-              return (await (await Environment.get_global("values"))(comps)).join("")
-        } else {
-              return (""+(comps && comps["year"])+"-"+(comps && comps["month"])+"-"+(comps && comps["day"])+" "+(comps && comps["hour"])+":"+(comps && comps["minute"])+":"+(comps && comps["second"]))
-        }
-    } else {
-          return null
-    }
-};__obj__1["add_days"]=async function(date_obj,num_days) {
-    await date_obj["setDate"].call(date_obj,await (await Environment.get_global("add"))(await date_obj["getDate"](),num_days));
-     return  date_obj
-};__obj__1["day_of_week"]=async function(dval) {
-     return  await dval["getDay"]()
-};__obj__1["add_hours"]=async function(date_obj,hours) {
-    await date_obj["setHours"].call(date_obj,hours);
-     return  date_obj
-};__obj__1["clear_time"]=async function(date_obj) {
-    await date_obj["setHours"].call(date_obj,0,0,0,0);
-     return  date_obj
-};__obj__1["yesterday"]=async function() {
-    let d1;
-    let d2;
-    d1=new Date();
-    d2=new Date();
-     return  [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d1,-1)),await (await Environment.get_global("add_hours"))(await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d2,-1)),24)]
-};__obj__1["next_sunday"]=async function(dval) {
-    let dv=(dval||new Date());
-    ;
-     return  await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(dv,(7-await (await Environment.get_global("day_of_week"))(dv))))
-};__obj__1["last_sunday"]=async function(dval) {
-    let dv=(dval||new Date());
-    ;
-     return  await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(dv,(-1*await (await Environment.get_global("day_of_week"))(dv))))
-};__obj__1["day_before_yesterday"]=async function() {
-    let d1;
-    let d2;
-    d1=await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(new Date(),-2));
-    d2=await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(new Date(),-1));
-     return  await (async function(){
-        let __array_op_rval__86=d1;
-         if (__array_op_rval__86 instanceof Function){
-            return await __array_op_rval__86(d2) 
-        } else {
-            return[__array_op_rval__86,d2]
-        }
-    })()
-};__obj__1["last_week"]=async function() {
-    let d1;
-    let d2;
-    d1=new Date();
-    d2=new Date();
-     return  [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(await (await Environment.get_global("next_sunday"))(),-14)),await (await Environment.get_global("last_sunday"))()]
-};__obj__1["midnight-to-midnight"]=async function(dval) {
-    let d1;
-    let d2;
-    d1=await (await Environment.get_global("clear_time"))(new Date(dval));
-    d2=await (await Environment.get_global("clear_time"))(new Date(dval));
-     return  await (async function(){
-        let __array_op_rval__87=d1;
-         if (__array_op_rval__87 instanceof Function){
-            return await __array_op_rval__87(await (await Environment.get_global("add_hours"))(d2,24)) 
-        } else {
-            return[__array_op_rval__87,await (await Environment.get_global("add_hours"))(d2,24)]
-        }
-    })()
-};__obj__1["date_to_string"]=async function(date_val,str_layout) {
-    let split_regex;
-    let comps;
-    let t_flag;
-    let construction;
-    let t_sep;
-    let acc;
-    let date_comps;
-    let formatter;
-    let add_formatter;
-    let format_desc;
-    split_regex=new RegExp("([\.:\ T/, \-]+)","g");
-    comps=(((str_layout instanceof String || typeof str_layout==='string')&&(str_layout).split(split_regex))||[]);
-    t_flag=null;
-    construction=[];
-    t_sep=null;
-    acc=[];
-    date_comps=null;
-    formatter=null;
-    add_formatter=async function(key,value) {
-        await async function(){
-            if (check_true( (key==="fractionalSecondDigits"))) {
-                 return (construction).push("fractionalSecond")
-            } else if (check_true( (key==="hour24"))) {
-                (construction).push("hour");
-                await async function(){
-                    format_desc["hourCycle"]="h24";
-                    return format_desc;
-                    
-                }();
-                 return  key="hour"
-            } else  {
-                 return (construction).push(key)
-            }
-        } ();
-         return  await async function(){
-            format_desc[key]=value;
-            return format_desc;
-            
-        }()
-    };
-    format_desc=new Object();
-    await (async function() {
-        let __for_body__92=async function(c) {
-             return  await async function(){
-                if (check_true( (c==="yyyy"))) {
-                     return await add_formatter("year","numeric")
-                } else if (check_true( (c==="yy"))) {
-                     return await add_formatter("year","2-digit")
-                } else if (check_true( (c==="dd"))) {
-                     return await add_formatter("day","2-digit")
-                } else if (check_true( (c==="d"))) {
-                     return await add_formatter("day","numeric")
-                } else if (check_true( (c==="MM"))) {
-                     return await add_formatter("month","2-digit")
-                } else if (check_true( (c==="M"))) {
-                     return await add_formatter("month","numeric")
-                } else if (check_true( (c==="HH"))) {
-                     return await add_formatter("hour24","2-digit")
-                } else if (check_true( (c==="H"))) {
-                     return await add_formatter("hour24","numeric")
-                } else if (check_true( (c==="h"))) {
-                     return await add_formatter("hour","2-digit")
-                } else if (check_true( (c==="h"))) {
-                     return await add_formatter("hour","numeric")
-                } else if (check_true( (c==="mm"))) {
-                     return await add_formatter("minute","2-digit")
-                } else if (check_true( (c==="m"))) {
-                     return await add_formatter("minute","numeric")
-                } else if (check_true( (c==="s"))) {
-                     return await add_formatter("second","numeric")
-                } else if (check_true( (c==="ss"))) {
-                     return await add_formatter("second","2-digit")
-                } else if (check_true( (c==="sss"))) {
-                     return await add_formatter("fractionalSecondDigits",3)
-                } else if (check_true( (c==="TZ"))) {
-                     return await add_formatter("timeZoneName","short")
-                } else if (check_true( (c==="D"))) {
-                     return await add_formatter("weekday","narrow")
-                } else if (check_true( (c==="DD"))) {
-                     return await add_formatter("weekday","short")
-                } else if (check_true( (c==="DDD"))) {
-                     return await add_formatter("weekday","long")
-                } else  {
-                     return (construction).push(c)
-                }
-            } ()
-        };
-        let __array__93=[],__elements__91=comps;
-        let __BREAK__FLAG__=false;
-        for(let __iter__90 in __elements__91) {
-            __array__93.push(await __for_body__92(__elements__91[__iter__90]));
-            if(__BREAK__FLAG__) {
-                 __array__93.pop();
-                break;
-                
-            }
-        }return __array__93;
-         
-    })();
-    formatter=new Intl.DateTimeFormat([],format_desc);
-    date_comps=await (await Environment.get_global("date_components"))(date_val,formatter);
-     return  (await (async function() {
-        let __for_body__96=async function(key) {
-             return  (date_comps[key]||key)
-        };
-        let __array__97=[],__elements__95=construction;
-        let __BREAK__FLAG__=false;
-        for(let __iter__94 in __elements__95) {
-            __array__97.push(await __for_body__96(__elements__95[__iter__94]));
-            if(__BREAK__FLAG__) {
-                 __array__97.pop();
-                break;
-                
-            }
-        }return __array__97;
-         
-    })()).join("")
-};__obj__1["is_even?"]=async function(x) {
-     return  (0===(x%2))
-};__obj__1["is_odd?"]=async function(x) {
-     return  (1===(x%2))
-};__obj__1["set_path_value"]=async function(root,path,value) {
-    if (check_true ((path instanceof Array))){
-        let idx;
-        let parent;
-        idx=await (await Environment.get_global("last"))(path);
-        parent=await (await Environment.get_global("resolve_path"))(await (await Environment.get_global("chop"))(path),root);
-        if (check_true (parent)){
-             await async function(){
-                parent[idx]=value;
-                return parent;
-                
-            }()
-        };
-         return  parent
-    } else {
-         return  root
-    }
-};__obj__1["has_items?"]=async function(value) {
-    if (check_true ((await (await Environment.get_global("not"))((null===value))&&(await (await Environment.get_global("length"))(value)>0)))){
-          return true
-    } else {
-          return false
-    }
-};__obj__1["match_all_js"]=function anonymous(regex_str,search_string
-) {
-let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_string)) !== null) {rval.push(m);  if (m.index === regex.lastIndex) {  regex.lastIndex++; }  } return rval;
-};__obj__1["match_all"]=async function(regex_str,search_string) {
-     return  await (await Environment.get_global("match_all_js"))(regex_str,search_string)
-};__obj__1["chop_front"]=async function(container,amount) {
-    amount=(amount||1);
-     return  await async function(){
-        if (check_true( (container instanceof String || typeof container==='string'))) {
-             return await container["substr"].call(container,amount)
-        } else if (check_true( (container instanceof Array))) {
-             return await container["slice"].call(container,amount)
-        } else  {
-             throw new Error("chop: container must be a string or array");
-            
-        }
-    } ()
-};__obj__1["compile_lisp"]=async function(text) {
-    if (check_true (text)){
-          return await (await Environment.get_global("reader"))(text)
-    } else {
-          return text
-    }
-};__obj__1["has_the_keys?"]=async function(key_list,obj) {
-    let is_fit;
-    is_fit=true;
-    {
-        await (async function() {
-            let __for_body__101=async function(item) {
-                 return  is_fit=((await (await Environment.get_global("resolve_path"))(item,obj)||false)&&is_fit)
-            };
-            let __array__102=[],__elements__100=key_list;
-            let __BREAK__FLAG__=false;
-            for(let __iter__99 in __elements__100) {
-                __array__102.push(await __for_body__101(__elements__100[__iter__99]));
-                if(__BREAK__FLAG__) {
-                     __array__102.pop();
-                    break;
-                    
-                }
-            }return __array__102;
-             
-        })();
-         return  is_fit
-    }
-};__obj__1["demarked_number"]=async function(value,separator,precision,no_show_sign) {
-    let abs_value;
-    let vf;
-    let comps;
-    let l;
-    let sep;
-    let prec;
-    let sign;
-    abs_value=await Math.abs(value);
-    vf=await Math.floor(abs_value);
-    comps=(await (await Environment.get_global("split"))((""+vf),"")).slice(0).reverse();
-    l=await (await Environment.get_global("length"))(comps);
-    sep=(separator||",");
-    prec=(await (async function () {
-         if (check_true ((null==precision))){
-              return 2
-        } 
-    })()||precision);
-    sign=await (async function () {
-         if (check_true (((value<0)&&await (await Environment.get_global("not"))(no_show_sign)))){
-              return "-"
-        } else {
-              return ""
-        } 
-    })();
-    if (check_true ((l>3))){
-         await (async function() {
-            let __for_body__105=async function(p) {
-                 return  await comps["splice"].call(comps,p,0,sep)
-            };
-            let __array__106=[],__elements__104=(await (await Environment.get_global("range"))(3,l,3)).slice(0).reverse();
-            let __BREAK__FLAG__=false;
-            for(let __iter__103 in __elements__104) {
-                __array__106.push(await __for_body__105(__elements__104[__iter__103]));
-                if(__BREAK__FLAG__) {
-                     __array__106.pop();
-                    break;
-                    
-                }
-            }return __array__106;
-             
-        })()
-    };
-     return  (sign+((comps).slice(0).reverse()).join("")+await (await Environment.get_global("chop_front"))(await (async function() {
-        {
-             let __call_target__=(abs_value%vf), __call_method__="toFixed";
-            return await __call_target__[__call_method__].call(__call_target__,prec)
-        } 
-    })()))
-};__obj__1["measure_time"]=async function(...forms) {
-     return  ["=:let",[["=:end","=:nil"],["=:rval","=:nil"],["=:start",["=:time_in_millis"]]],["=:=","=:rval",["=:do",].concat(forms)],{ "time":["=:-",["=:time_in_millis"],"=:start"],"result":"=:rval"
-}]
-};__obj__1["compare_list_ends"]=async function(l1,l2) {
-    let long_short;
-    let long;
-    let short;
-    let match_count;
-    let idx;
-    let matcher;
-    long_short=await (async function () {
-         if (check_true ((await (await Environment.get_global("length"))(l1)>await (await Environment.get_global("length"))(l2)))){
-              return [l1,l2]
-        } else {
-              return [l2,l1]
-        } 
-    })();
-    long=((long_short && long_short["0"])).slice(0).reverse();
-    short=((long_short && long_short["1"])).slice(0).reverse();
-    match_count=0;
-    idx=0;
-    matcher=async function(val) {
-        if (check_true ((val===long[idx]))){
-             match_count+=1
-        };
-         return  idx=(idx+1)
-    };
-    await (await Environment.get_global("map"))(matcher,short);
-    if (check_true ((match_count===await (await Environment.get_global("length"))(short)))){
-          return true
-    } else {
-          return false
-    }
-};__obj__1["hsv_to_rgb"]=function anonymous(h,s,v
-) {
-{
-        var r, g, b, i, f, p, q, t;
-        if (arguments.length === 1) {
-            s = h.s, v = h.v, h = h.h;
-        }
-        i = Math.floor(h * 6);
-        f = h * 6 - i;
-        p = v * (1 - s);
-        q = v * (1 - f * s);
-        t = v * (1 - (1 - f) * s);
-        switch (i % 6) {
-            case 0: r = v, g = t, b = p; break;
-            case 1: r = q, g = v, b = p; break;
-            case 2: r = p, g = v, b = t; break;
-            case 3: r = p, g = q, b = v; break;
-            case 4: r = t, g = p, b = v; break;
-            case 5: r = v, g = p, b = q; break;
-        }
-        return {
-            r: r,
-            g: g,
-            b: b
-        }
-    }
-};__obj__1["rgb_to_text"]=async function(rgb) {
-     return  (await (async function() {
-        let __for_body__109=async function(v) {
-            let vs=await (async function() {
-                {
-                     let __call_target__=await Math.round((v*255)), __call_method__="toString";
-                    return await __call_target__[__call_method__].call(__call_target__,16)
-                } 
-            })();
-            ;
-            if (check_true ((await (await Environment.get_global("length"))(vs)===1))){
-                  return ("0"+vs)
-            } else {
-                  return vs
-            }
-        };
-        let __array__110=[],__elements__108=rgb;
-        let __BREAK__FLAG__=false;
-        for(let __iter__107 in __elements__108) {
-            __array__110.push(await __for_body__109(__elements__108[__iter__107]));
-            if(__BREAK__FLAG__) {
-                 __array__110.pop();
-                break;
-                
-            }
-        }return __array__110;
-         
-    })()).join("")
-};__obj__1["text_to_rgb"]=async function(rgb_string) {
-    if (check_true (rgb_string)){
-          return await (async function(){
-            let __array_op_rval__111=(await parseInt((await (await Environment.get_global("nth"))([0,1],rgb_string)).join(''),16)/255);
-             if (__array_op_rval__111 instanceof Function){
-                return await __array_op_rval__111((await parseInt((await (await Environment.get_global("nth"))([2,3],rgb_string)).join(''),16)/255),(await parseInt((await (await Environment.get_global("nth"))([4,5],rgb_string)).join(''),16)/255)) 
-            } else {
-                return[__array_op_rval__111,(await parseInt((await (await Environment.get_global("nth"))([2,3],rgb_string)).join(''),16)/255),(await parseInt((await (await Environment.get_global("nth"))([4,5],rgb_string)).join(''),16)/255)]
-            }
-        })()
-    } else {
-          return null
-    }
-};__obj__1["rgb_to_hsv"]=async function(rgb) {
-    if (check_true (rgb)){
-        let computedH;
-        let computedS;
-        let computedV;
-        let r;
-        let g;
-        let b;
-        let minRGB;
-        let maxRGB;
-        let d;
-        let h;
-        computedH=0;
-        computedS=0;
-        computedV=0;
-        r=(rgb && rgb["0"]);
-        g=(rgb && rgb["1"]);
-        b=(rgb && rgb["2"]);
-        minRGB=await Math.min(r,await Math.min(g,b));
-        maxRGB=await Math.max(r,await Math.max(g,b));
-        d=null;
-        h=null;
-        if (check_true ((minRGB===maxRGB))){
-             return [0,0,minRGB];
-            
-        };
-        d=await async function(){
-            if (check_true( (r===minRGB))) {
-                 return (g-b)
-            } else if (check_true( (b===minRGB))) {
-                 return (r-g)
-            } else  {
-                 return (b-r)
-            }
-        } ();
-        h=await async function(){
-            if (check_true( (r===minRGB))) {
-                 return 3
-            } else if (check_true( (b===minRGB))) {
-                 return 1
-            } else  {
-                 return 5
-            }
-        } ();
-        await console.log("");
-        computedH=((60*(h-(d/(maxRGB-minRGB))))/360);
-        computedS=((maxRGB-minRGB)/maxRGB);
-        computedV=maxRGB;
-         return  await (async function(){
-            let __array_op_rval__113=computedH;
-             if (__array_op_rval__113 instanceof Function){
-                return await __array_op_rval__113(computedS,computedV) 
-            } else {
-                return[__array_op_rval__113,computedS,computedV]
-            }
-        })()
-    }
-};__obj__1["tint_rgb"]=async function(rgb,tint_factor) {
-    if (check_true ((rgb&&tint_factor))){
-          return await (async function() {
-            let __for_body__116=async function(c) {
-                c=(255*c);
-                 return  (await (await Environment.get_global("add"))(c,((255-c)*tint_factor))/255)
-            };
-            let __array__117=[],__elements__115=rgb;
-            let __BREAK__FLAG__=false;
-            for(let __iter__114 in __elements__115) {
-                __array__117.push(await __for_body__116(__elements__115[__iter__114]));
-                if(__BREAK__FLAG__) {
-                     __array__117.pop();
-                    break;
-                    
-                }
-            }return __array__117;
-             
-        })()
-    } else {
-          return rgb
-    }
-};__obj__1["shade_rgb"]=async function(rgb,shade_factor) {
-    if (check_true ((rgb&&shade_factor))){
-          return await (async function() {
-            let __for_body__120=async function(c) {
-                c=(255*c);
-                 return  ((c*(1-shade_factor))/255)
-            };
-            let __array__121=[],__elements__119=rgb;
-            let __BREAK__FLAG__=false;
-            for(let __iter__118 in __elements__119) {
-                __array__121.push(await __for_body__120(__elements__119[__iter__118]));
-                if(__BREAK__FLAG__) {
-                     __array__121.pop();
-                    break;
-                    
-                }
-            }return __array__121;
-             
-        })()
-    } else {
-          return rgb
-    }
-};__obj__1["modify_color_ts"]=async function(rgb,factor) {
-    if (check_true ((0<=factor))){
-          return await (await Environment.get_global("tint_rgb"))(rgb,await Math.abs(factor))
-    } else {
-          return await (await Environment.get_global("shade_rgb"))(rgb,await Math.abs(factor))
-    }
-};__obj__1["is_lower?"]=async function(v) {
-    let c=await v["charCodeAt"].call(v,0);
-    ;
-     return  ((c>96)&&(c<123))
-};__obj__1["is_upper?"]=async function(v) {
-    let c=await v["charCodeAt"].call(v,0);
-    ;
-     return  ((c>64)&&(c<91))
-};__obj__1["camel_case_to_lower"]=async function(val) {
-    let last_upper=0;
-    ;
-     return  (await (await Environment.get_global("map"))(async function(v,i) {
-         return  await async function(){
-            if (check_true( ((i>0)&&await (await Environment.get_global("is_upper?"))(v)&&(0===last_upper)))) {
-                last_upper=1;
-                 return  ("_"+(v).toLowerCase())
-            } else if (check_true( ((i>0)&&await (await Environment.get_global("is_upper?"))(v)&&(last_upper>0)))) {
-                last_upper=2;
-                 return  (v).toLowerCase()
-            } else if (check_true( ((i===0)&&await (await Environment.get_global("is_upper?"))(v)))) {
-                 return (v).toLowerCase()
-            } else if (check_true( await (await Environment.get_global("is_lower?"))(v))) {
-                 return  await async function(){
-                    if (check_true( (last_upper===2))) {
-                        last_upper=0;
-                         return  ("_"+(v).toLowerCase())
-                    } else  {
-                        last_upper=0;
-                         return  (v).toLowerCase()
-                    }
-                } ()
-            } else  {
-                last_upper=0;
-                 return  v
-            }
-        } ()
-    },await (await Environment.get_global("split"))(val,""))).join("")
-};__obj__1["scan_list"]=async function(regex,container) {
-    let expr=regex;
-    ;
-    if (check_true (await (await Environment.get_global("not"))((await (await Environment.get_global("sub_type"))(regex)==="RegExp")))){
-         expr=new RegExp(regex)
-    };
-    let cnt=0;
-    ;
-    let results=[];
-    ;
-    let r=null;
-    ;
-    await (async function() {
-        let __for_body__124=async function(item) {
-            r=await (async function () {
-                 if (check_true ((item instanceof String || typeof item==='string'))){
-                      return await item["match"].call(item,expr)
-                } else {
-                      return await (async function() {
-                        {
-                             let __call_target__=(""+item), __call_method__="match";
-                            return await __call_target__[__call_method__].call(__call_target__,expr)
-                        } 
-                    })()
-                } 
-            })();
-            if (check_true (r)){
-                 (results).push(cnt)
-            };
-             return  cnt+=1
-        };
-        let __array__125=[],__elements__123=(container||[]);
-        let __BREAK__FLAG__=false;
-        for(let __iter__122 in __elements__123) {
-            __array__125.push(await __for_body__124(__elements__123[__iter__122]));
-            if(__BREAK__FLAG__) {
-                 __array__125.pop();
-                break;
-                
-            }
-        }return __array__125;
-         
-    })();
-     return  results
-};__obj__1["*LANGUAGE*"]=new Object();__obj__1["dtext"]=async function(default_text) {
-     return  (await (async function(){
-        let __targ__126=(await Environment.get_global("*LANGUAGE*"));
-        if (__targ__126){
-             return(__targ__126)[default_text]
-        } 
-    })()||default_text)
-};__obj__1["gather_up_prop"]=async function(key,values) {
-     return  await async function(){
-        if (check_true( (values instanceof Array))) {
-             return await (await Environment.get_global("no_empties"))(await (await Environment.get_global("map"))(async function(v) {
-                 return  await async function(){
-                    if (check_true( (v instanceof Array))) {
-                         return await (await Environment.get_global("gather_up_prop"))(key,v)
-                    } else if (check_true( (v instanceof Object))) {
-                         return v[key]
-                    }
-                } ()
-            },values))
-        } else if (check_true( (values instanceof Object))) {
-             return values[key]
-        }
-    } ()
-};__obj__1["sum_up_prop"]=async function(key,values) {
-     return  await (async function(){
-        let __apply_args__127=await (await Environment.get_global("flatten"))(await (await Environment.get_global("gather_up_prop"))(key,values));
-        return ( (await Environment.get_global("add"))).apply(this,__apply_args__127)
-    })()
-};__obj__1["scan_for"]=async function(non_nil_prop,list_of_objects) {
-    let rval=null;
-    ;
-    await (async function() {
-        let __for_body__131=async function(val) {
-            if (check_true ((val&&val[non_nil_prop]))){
-                rval=val[non_nil_prop];
-                __BREAK__FLAG__=true;
-                return
-            }
-        };
-        let __array__132=[],__elements__130=(list_of_objects||[]);
-        let __BREAK__FLAG__=false;
-        for(let __iter__129 in __elements__130) {
-            __array__132.push(await __for_body__131(__elements__130[__iter__129]));
-            if(__BREAK__FLAG__) {
-                 __array__132.pop();
-                break;
-                
-            }
-        }return __array__132;
-         
-    })();
-     return  rval
-};__obj__1["make_sort_buckets"]=async function() {
-    let buckets;
-    let push_to;
-    buckets=new Object();
-    push_to=async function(category,thing) {
-        let place;
-        place=null;
-        if (check_true ((null==category))){
-              return buckets
-        } else {
-            place=buckets[category];
-            if (check_true (place)){
-                 (place).push(thing)
-            } else {
-                 await async function(){
-                    buckets[category]=await (async function(){
-                        let __array_op_rval__134=thing;
-                         if (__array_op_rval__134 instanceof Function){
-                            return await __array_op_rval__134() 
-                        } else {
-                            return[__array_op_rval__134]
-                        }
-                    })();
-                    return buckets;
-                    
-                }()
-            };
-             return  thing
-        }
-    };
-     return  push_to
-};__obj__1["bytes_from_int_16"]=function anonymous(x
-) {
-{ let bytes = []; let i = 2; do { bytes[(1 - --i)] = x & (255); x = x>>8; } while ( i ) return bytes;}
-};__obj__1["int_16_from_bytes"]=function anonymous(x,y
-) {
- { let val = 0;  val +=y; val = val << 8; val +=x; return val; }
-};__obj__1["truncate"]=async function(len,value,trailer) {
-    trailer=(trailer||"");
-     return  await async function(){
-        if (check_true( (value instanceof String || typeof value==='string'))) {
-             if (check_true (((value && value.length)>len))){
-                  return await (await Environment.get_global("add"))(await value["substr"].call(value,0,len),trailer)
-            } else {
-                  return value
-            }
-        } else if (check_true( (value instanceof Array))) {
-             return await value["slice"].call(value,0,len)
-        } else  {
-             return value
-        }
-    } ()
-};__obj__1["parse_csv"]=async function(csv_data,options) {
-    let lbuffer;
-    let sepval;
-    let sepval_r;
-    let fixer_r;
-    let interruptions;
-    let line;
-    let count;
-    let tmp;
-    let rval;
-    let match_list;
-    let lines;
-    let total_lines;
-    lbuffer=null;
-    sepval=((options && options["separator"])||",");
-    sepval_r=new RegExp(sepval,"g");
-    fixer_r=new RegExp("!SEPVAL!","g");
-    interruptions=((options && options["interruptions"])||false);
-    line=null;
-    count=0;
-    tmp=null;
-    rval=null;
-    match_list=null;
-    lines=await async function(){
-        if (check_true( (csv_data instanceof Array))) {
-             return csv_data
-        } else if (check_true( (csv_data instanceof String || typeof csv_data==='string'))) {
-             return (await (await Environment.get_global("replace"))(new RegExp("[\r]+","g"),"",csv_data)).split("\n")
-        }
-    } ();
-    total_lines=(lines && lines.length);
-    if (check_true (interruptions)){
-         await (await Environment.get_global("sleep"))(0.1)
-    };
-     return  await (async function() {
-        let __for_body__137=async function(v) {
-            if (check_true (interruptions)){
-                count+=1;
-                if (check_true (((count%1000)===0))){
-                    await (await Environment.get_global("sleep"))(0.1);
-                    if (check_true ((options && options["notifier"]))){
-                         await (async function(){
-                            let __array_op_rval__139=(options && options["notifier"]);
-                             if (__array_op_rval__139 instanceof Function){
-                                return await __array_op_rval__139((count/total_lines),count,total_lines) 
-                            } else {
-                                return[__array_op_rval__139,(count/total_lines),count,total_lines]
-                            }
-                        })()
-                    }
-                }
-            };
-            match_list=(await (await Environment.get_global("scan_str"))(new RegExp("\"([A-Za-z0-9, .  :;]+)\"","g"),v)).slice(0).reverse();
-            line=await (async function () {
-                 if (check_true (((match_list && match_list.length)>0))){
-                    rval=[];
-                    await (async function() {
-                        let __for_body__142=async function(m) {
-                             return  (rval).push(await (async function(){
-                                let __array_op_rval__144=(m && m["index"]);
-                                 if (__array_op_rval__144 instanceof Function){
-                                    return await __array_op_rval__144(await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",m["1"]),m["1"]) 
-                                } else {
-                                    return[__array_op_rval__144,await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",m["1"]),m["1"]]
-                                }
-                            })())
-                        };
-                        let __array__143=[],__elements__141=match_list;
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__140 in __elements__141) {
-                            __array__143.push(await __for_body__142(__elements__141[__iter__140]));
-                            if(__BREAK__FLAG__) {
-                                 __array__143.pop();
-                                break;
-                                
-                            }
-                        }return __array__143;
-                         
-                    })();
-                    tmp=v;
-                    await (async function() {
-                        let __for_body__147=async function(r) {
-                             return  tmp=(""+await tmp["substr"].call(tmp,0,(r && r["0"]))+(r && r["1"])+await tmp["substr"].call(tmp,(2+(r && r["0"])+await (await Environment.get_global("length"))((r && r["2"])))))
-                        };
-                        let __array__148=[],__elements__146=rval;
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__145 in __elements__146) {
-                            __array__148.push(await __for_body__147(__elements__146[__iter__145]));
-                            if(__BREAK__FLAG__) {
-                                 __array__148.pop();
-                                break;
-                                
-                            }
-                        }return __array__148;
-                         
-                    })();
-                     tmp
-                } else {
-                      return v
-                } 
-            })();
-             return  await (async function() {
-                let __for_body__151=async function(segment) {
-                     return  await (await Environment.get_global("replace"))(fixer_r,sepval,segment)
-                };
-                let __array__152=[],__elements__150=(line).split(sepval);
-                let __BREAK__FLAG__=false;
-                for(let __iter__149 in __elements__150) {
-                    __array__152.push(await __for_body__151(__elements__150[__iter__149]));
-                    if(__BREAK__FLAG__) {
-                         __array__152.pop();
-                        break;
-                        
-                    }
-                }return __array__152;
-                 
-            })()
-        };
-        let __array__138=[],__elements__136=lines;
-        let __BREAK__FLAG__=false;
-        for(let __iter__135 in __elements__136) {
-            __array__138.push(await __for_body__137(__elements__136[__iter__135]));
-            if(__BREAK__FLAG__) {
-                 __array__138.pop();
-                break;
-                
-            }
-        }return __array__138;
-         
-    })()
-};__obj__1["to_csv"]=async function(rows,delimiter) {
-    let quote_quoter=new RegExp("\"","g");
-    ;
-     return  (await (async function() {
-        let __for_body__155=async function(row) {
-             return  (await (await Environment.get_global("map"))(async function(v) {
-                if (check_true (((v instanceof String || typeof v==='string')&&(await (await Environment.get_global("contains?"))(" ",(""+v+""))||await (await Environment.get_global("contains?"))(delimiter,v)||await (await Environment.get_global("contains?"))("\"",v))))){
-                      return ("\""+await (await Environment.get_global("replace"))(quote_quoter,"\"\"",v)+"\"")
-                } else {
-                      return (""+v+"")
-                }
-            },row)).join(await (async function () {
-                 if (check_true (delimiter)){
-                      return delimiter
-                } else {
-                      return ","
-                } 
-            })())
-        };
-        let __array__156=[],__elements__154=rows;
-        let __BREAK__FLAG__=false;
-        for(let __iter__153 in __elements__154) {
-            __array__156.push(await __for_body__155(__elements__154[__iter__153]));
-            if(__BREAK__FLAG__) {
-                 __array__156.pop();
-                break;
-                
-            }
-        }return __array__156;
-         
-    })()).join("\n")
-};__obj__1["squeeze"]=async function(s) {
-     return  await (await Environment.get_global("replace"))(new RegExp(" ","g"),"",s)
-};__obj__1["ensure_keys"]=async function(keylist,obj,default_value) {
-    default_value=await (async function () {
-         if (check_true ((undefined===default_value))){
-              return null
-        } else {
-              return default_value
-        } 
-    })();
-    if (check_true ((null==obj))){
-         obj=new Object()
-    };
-    await (async function() {
-        let __for_body__159=async function(key) {
-            if (check_true ((undefined===obj[key]))){
-                 return  await async function(){
-                    obj[key]=default_value;
-                    return obj;
-                    
-                }()
-            }
-        };
-        let __array__160=[],__elements__158=keylist;
-        let __BREAK__FLAG__=false;
-        for(let __iter__157 in __elements__158) {
-            __array__160.push(await __for_body__159(__elements__158[__iter__157]));
-            if(__BREAK__FLAG__) {
-                 __array__160.pop();
-                break;
-                
-            }
-        }return __array__160;
-         
-    })();
-     return  obj
-};__obj__1["show_time_in_words"]=function anonymous(seconds,options
-) {
-options=options||{}
-        if (options['longForm']==null) {
-            if (seconds<2) return "now";
-            if (seconds<61) return parseInt(seconds)+" secs";
-            if ((seconds>61)&&(seconds<120)) return "1 min";
-            if (seconds<3601) {
-                // less than an hour
-                return parseInt(seconds/60)+" mins";
-            }
-        } else if (options['longForm']==true) {
-            if (seconds<61) return parseInt(seconds)+" seconds";
-            if ((seconds>61)&&(seconds<120)) return "1 minute";
-            if (seconds<3601) {
-                // less than an hour
-                return parseInt(seconds / 60) + " minutes";
-            }
-        }
-
-        if (seconds<86400) {
-            return parseInt(seconds/3600)+" hours";
-        }
-        if (seconds<172801) {
-            return parseInt(seconds/86400)+" day";
-        }
-        if (seconds < 31536000) {
-            return parseInt(seconds/86400)+" days";
-        }
-        if (seconds < (2 * 31536000)) {
-            return "1 year";
-        }
-        return parseInt(seconds/31536000)+" years";
- 
-};__obj__1["ago"]=async function(dval) {
-     return  await (await Environment.get_global("show_time_in_words"))(((await (async function() {
-        {
-             let __call_target__=new Date(), __call_method__="getTime";
-            return await __call_target__[__call_method__]()
-        } 
-    })()-await dval["getTime"]())/1000))
-};__obj__1["lifespan"]=async function(dval) {
-     return  await (await Environment.get_global("show_time_in_words"))(((await dval["getTime"]()-await (async function() {
-        {
-             let __call_target__=new Date(), __call_method__="getTime";
-            return await __call_target__[__call_method__]()
-        } 
-    })())/1000))
 };__obj__1["path"]=await import ("https://deno.land/std@0.110.0/path/mod.ts");__obj__1["read_text_file"]=await (await Environment.get_global("bind"))(Deno.readTextFile,Deno);__obj__1["write_text_file"]=await (await Environment.get_global("bind"))(Deno.writeTextFile,Deno);__obj__1["load"]=async function(filename) {
     let fname;
     let js_mod;
@@ -18078,10 +16306,6 @@ options=options||{}
     },{ "eval_when":{ "compile_time":true
 },"name":"construct_environment","macro":true,"fn_args":"(options)"
 })
-};__obj__1["load-file"]=async function(filename) {
-    {
-         return  await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(filename))
-    }
 };__obj__1["repl"]=async function(instream,outstream,opts) {
     let buffer;
     let lines;
@@ -18258,432 +16482,6 @@ options=options||{}
             }
         })()
     }
-};__obj__1["help_file"]={top:"\n   The help system provides information about a topic, tag, or specific symbol.\n\n   The help system is accessed by calling the help function, followed by an\n   operator, such as `tag, `symbol `source, and then arbitrary quoted words\n   representing symbols, tags or names to query for.  The syntax is:\n\n   (help `operator `symbol1 `symbol2 ...)\n   \n   To search for a specific tag, provide the keyword `tag, (shorthand: `#)\n   followed by any quoted tagged topics.  The system will look through the\n   available definitions and return definitions matching the provided tags.\n\n   For example, the following searches for all definitions that have been\n   tagged with `regex or `filter:\n\n      (help `# `regex `filter)\n\n   Any definitions found that contain the provided tags regex or filter are\n   returned and described.\n\n   To find information out about a particular symbol or definition, provide\n   the operator `symbol (shorthand: `sym).  For example to return the details\n   of the function last_sunday:\n\n       (help `symbol `last_sunday)\n\n   The help system will then display the defined details and any metadata\n   about that symbol.\n\n   If only two arguments are provided, such as (help `sort), the help system\n   will first check to see if a specific symbol matches the provided argument,\n   and if found return that.  If there is no exact match to a symbol, the\n   help system will search the tags and metadata, and if results are found,\n   will return those.\n\n   To see this help text, use (help).\n   \n   "};__obj__1["find_tags"]=async function(tags) {
-    let acc;
-    acc=new Object();
-    await (await Environment.get_global("assert"))((tags instanceof Array),"tags must be an array");
-    await (async function() {
-        let __for_body__3=async function(definition) {
-             return  await (async function() {
-                let __for_body__7=async function(tag) {
-                     return  await async function(){
-                        if (check_true( (await (await Environment.get_global("contains?"))(tag,((definition && definition["tags"])||[]))&&await (await Environment.get_global("blank?"))(acc[(definition && definition.name)])))) {
-                             return await async function(){
-                                acc[(definition && definition.name)]=await (await Environment.get_global("describe"))((definition && definition.name));
-                                return acc;
-                                
-                            }()
-                        }
-                    } ()
-                };
-                let __array__8=[],__elements__6=tags;
-                let __BREAK__FLAG__=false;
-                for(let __iter__5 in __elements__6) {
-                    __array__8.push(await __for_body__7(__elements__6[__iter__5]));
-                    if(__BREAK__FLAG__) {
-                         __array__8.pop();
-                        break;
-                        
-                    }
-                }return __array__8;
-                 
-            })()
-        };
-        let __array__4=[],__elements__2=Environment.definitions;
-        let __BREAK__FLAG__=false;
-        for(let __iter__1 in __elements__2) {
-            __array__4.push(await __for_body__3(__elements__2[__iter__1]));
-            if(__BREAK__FLAG__) {
-                 __array__4.pop();
-                break;
-                
-            }
-        }return __array__4;
-         
-    })();
-    {
-        let __collector;
-        let __result;
-        let __action;
-        __collector=[];
-        __result=null;
-        __action=async function(v) {
-            if (check_true ((v && v.name))){
-                  return v
-            }
-        };
-        ;
-        await (async function() {
-            let __for_body__12=async function(__item) {
-                __result=await __action(__item);
-                if (check_true (__result)){
-                      return (__collector).push(__result)
-                }
-            };
-            let __array__13=[],__elements__11=await (await Environment.get_global("map"))(async function(v) {
-                {
-                    if (check_true (((v && v["description"])&&((v && v["description"] && v["description"]["length"])>50)))){
-                         await async function(){
-                            v["description"]=await (await Environment.get_global("add"))(await (v && v["description"])["substr"].call((v && v["description"]),0,49),"...");
-                            return v;
-                            
-                        }()
-                    };
-                     return  await (await Environment.get_global("reorder_keys"))(["name","type","description"],v)
-                }
-            },await (await Environment.get_global("each"))(await (await Environment.get_global("sort"))(await (await Environment.get_global("pairs"))(acc),{
-                key:[0]
-            }),1));
-            let __BREAK__FLAG__=false;
-            for(let __iter__10 in __elements__11) {
-                __array__13.push(await __for_body__12(__elements__11[__iter__10]));
-                if(__BREAK__FLAG__) {
-                     __array__13.pop();
-                    break;
-                    
-                }
-            }return __array__13;
-             
-        })();
-         return  __collector
-    }
-};__obj__1["word_wrap"]=async function(text,max_cols,tab_size) {
-    let words;
-    let line;
-    let lines;
-    let subword;
-    let specials;
-    let num_cols;
-    let over_length_ques_;
-    let next_line;
-    let add_word;
-    max_cols=(max_cols||80);
-    tab_size=(tab_size||5);
-    words=await (async function ()  {
-        await (await Environment.get_global("assert"))((text instanceof String || typeof text==='string'),"text must be a string.");
-        {
-            let ptext;
-            ptext=await (await Environment.get_global("replace"))(new RegExp("\n","g")," \n ",text);
-            ptext=await (await Environment.get_global("replace"))(new RegExp("<br>","g")," \n ",ptext);
-             return  (ptext).split(" ")
-        }
-    } )();
-    line=[];
-    lines=[];
-    subword=null;
-    specials=null;
-    num_cols=0;
-    over_length_ques_=async function(word) {
-         return  await async function(){
-            if (check_true( (word==="	"))) {
-                 return ((num_cols+tab_size)>max_cols)
-            } else if (check_true( (word===""))) {
-                 return ((num_cols+1)>max_cols)
-            } else  {
-                 return ((num_cols+(1+(word && word.length)+1))>max_cols)
-            }
-        } ()
-    };
-    next_line=async function() {
-        (lines).push((line).join(" "));
-        line=[];
-         return  num_cols=0
-    };
-    add_word=async function(word) {
-        await async function(){
-            if (check_true( (word==="\n"))) {
-                 return await next_line()
-            } else if (check_true( await (async function(){
-                let __array_op_rval__15=over_length_ques_;
-                 if (__array_op_rval__15 instanceof Function){
-                    return await __array_op_rval__15(word) 
-                } else {
-                    return[__array_op_rval__15,word]
-                }
-            })())) {
-                 return await next_line()
-            }
-        } ();
-        (line).push(word);
-         return  num_cols+=await (await Environment.get_global("add"))(await (await Environment.get_global("length"))(word),1)
-    };
-    await (async function() {
-        let __for_body__18=async function(word) {
-             return  await add_word(word)
-        };
-        let __array__19=[],__elements__17=words;
-        let __BREAK__FLAG__=false;
-        for(let __iter__16 in __elements__17) {
-            __array__19.push(await __for_body__18(__elements__17[__iter__16]));
-            if(__BREAK__FLAG__) {
-                 __array__19.pop();
-                break;
-                
-            }
-        }return __array__19;
-         
-    })();
-    if (check_true (((line && line.length)>0))){
-         await next_line()
-    };
-     return  lines
-};__obj__1["help_log"]=async function(...args) {
-                                 return  await (async function(){
-                                    let __target_arg__130=[].concat(await conj(await (async function(){
-                                        let __array_op_rval__131=style;
-                                         if (__array_op_rval__131 instanceof Function){
-                                            return await __array_op_rval__131() 
-                                        } else {
-                                            return[__array_op_rval__131]
-                                        }
-                                    })(),args));
-                                    if(!__target_arg__130 instanceof Array){
-                                        throw new TypeError("Invalid final argument to apply - an array is required")
-                                    }let __pre_arg__132=("%c"+await (async function () {
-                                         if (check_true (opts.prefix)){
-                                              return opts.prefix
-                                        } else {
-                                              return (args).shift()
-                                        } 
-                                    })());
-                                    __target_arg__130.unshift(__pre_arg__132);
-                                    return (console.log).apply(this,__target_arg__130)
-                                })()
-                            };__obj__1["show_help"]=async function(topic) {
-    if (check_true (await (async function(){
-        let __targ__20=(await Environment.get_global("help_file"));
-        if (__targ__20){
-             return(__targ__20)[topic]
-        } 
-    })())){
-          return await console.log(await (async function(){
-            let __targ__21=(await Environment.get_global("help_file"));
-            if (__targ__21){
-                 return(__targ__21)[topic]
-            } 
-        })())
-    } else {
-          return await (await Environment.get_global("help_log"))("unknown help topic:",topic)
-    }
-};__obj__1["describe_usage"]=async function(usage) {
-    {
-        await (await Environment.get_global("assert"))((usage instanceof Array));
-         return  await (async function() {
-            let __for_body__24=async function(desc) {
-                {
-                    desc=await async function(){
-                        if (check_true( (desc instanceof String || typeof desc==='string'))) {
-                             return (desc).split(":")
-                        } else if (check_true( (desc instanceof Array))) {
-                             return await (async function(){
-                                let __array_op_rval__26=(desc && desc["0"]);
-                                 if (__array_op_rval__26 instanceof Function){
-                                    return await __array_op_rval__26(await (await Environment.get_global("as_lisp"))((desc && desc["1"]))) 
-                                } else {
-                                    return[__array_op_rval__26,await (await Environment.get_global("as_lisp"))((desc && desc["1"]))]
-                                }
-                            })()
-                        }
-                    } ();
-                     return  await async function(){
-                        if (check_true( ((desc instanceof Array)&&((desc && desc.length)>1)))) {
-                             return await (await Environment.get_global("add"))({
-                                argument:(desc && desc["0"])
-                            },await (async function() {
-                                 if (check_true (await (await Environment.get_global("ends_with?"))("?",(desc && desc["1"])))){
-                                      return {
-                                        type:await (await Environment.get_global("chop"))((desc && desc["1"]))
-                                    }
-                                } else {
-                                      return {
-                                        type:(desc && desc["1"])
-                                    }
-                                } 
-                            } )(),await (async function() {
-                                 if (check_true (await (await Environment.get_global("ends_with?"))("?",(desc && desc["1"])))){
-                                      return {
-                                        required:false
-                                    }
-                                } else {
-                                      return {
-                                        required:true
-                                    }
-                                } 
-                            } )())
-                        } else if (check_true( (desc instanceof Array))) {
-                             return {
-                                argument:(desc && desc["0"]),type:"? (no information)",required:null
-                            }
-                        } else  {
-                             return {
-                                argument:desc,type:"? (check definition)",required:null
-                            }
-                        }
-                    } ()
-                }
-            };
-            let __array__25=[],__elements__23=usage;
-            let __BREAK__FLAG__=false;
-            for(let __iter__22 in __elements__23) {
-                __array__25.push(await __for_body__24(__elements__23[__iter__22]));
-                if(__BREAK__FLAG__) {
-                     __array__25.pop();
-                    break;
-                    
-                }
-            }return __array__25;
-             
-        })()
-    }
-};__obj__1["show_finding"]=async function(finding) {
-    let field;
-    field=async function(name,value,size) {
-         return  (""+await name["padEnd"].call(name,(size||12))+" "+value)
-    };
-    console.log();
-    if (check_true ((finding && finding["fn_args"]))){
-         console.log(await field("USAGE",await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("conj"))([("=:"+(finding && finding.name))],await (await Environment.get_global("read_lisp"))((finding && finding["fn_args"]))))))
-    };
-    console.log(await field("TYPE",await (finding && finding["type"])["padEnd"].call((finding && finding["type"]),30)),await (async function () {
-         if (check_true ((finding && finding["macro"]))){
-              return "MACRO"
-        } else {
-              return ""
-        } 
-    })());
-    console.log(await field("NAME",(finding && finding.name)));
-    console.log(await field("LOCATION",(finding && finding["location"])));
-    if (check_true (((finding && finding["usage"])&&((finding && finding["usage"] && finding["usage"]["length"])>0)))){
-         await console.table(await (await Environment.get_global("describe_usage"))((finding && finding["usage"])))
-    };
-    if (check_true ((finding && finding["tags"]))){
-         console.log(await field("TAGS",((finding && finding["tags"])).join(", ")))
-    };
-    if (check_true ((finding && finding["description"]))){
-        console.log("");
-        console.log((await (await Environment.get_global("word_wrap"))((finding && finding["description"]))).join("\n"));
-         return  console.log("")
-    }
-};__obj__1["help"]=async function(...args) {
-    let findings;
-    findings=[];
-    ;
-     return  await async function(){
-        if (check_true( ((args && args.length)===0))) {
-             return await (await Environment.get_global("show_help"))("top")
-        } else if (check_true( (((args && args["0"])==="#")||((args && args["0"])==="tag")))) {
-             if (check_true (await (await Environment.get_global("blank?"))((args && args["1"])))){
-                  return await (await Environment.get_global("help_log"))("Please provide a tag or tags as an additional argument, such as: (help",(args && args["0"]),"string)")
-            } else {
-                findings=await (await Environment.get_global("find_tags"))(await args["slice"].call(args,1));
-                await console.table(findings);
-                 return  await (await Environment.get_global("length"))(findings)
-            }
-        } else if (check_true( (((args && args["0"])==="symbol")||await (await Environment.get_global("starts_with?"))("sym",(args && args["0"]))))) {
-             if (check_true (await (await Environment.get_global("blank?"))((args && args["1"])))){
-                 await (await Environment.get_global("help_log"))("Please provide a symbol name as an additional argument, such as (help",(args && args["0"]),"to_array)")
-            } else {
-                findings=await (await Environment.get_global("describe"))((args && args["1"]));
-                 return  await (await Environment.get_global("show_finding"))(findings)
-            }
-        } else if (check_true( (((args && args["0"]) instanceof String || typeof (args && args["0"])==='string')&&await (await Environment.get_global("not"))(((typeof (args && args["0"])==="undefined")||(await Environment["get_global"].call(Environment,(args && args["0"])) instanceof ReferenceError)))))) {
-             return await (await Environment.get_global("show_finding"))(await (await Environment.get_global("describe"))((args && args["0"])))
-        } else if (check_true( ((args && args["0"]) instanceof String || typeof (args && args["0"])==='string'))) {
-            findings=await (await Environment.get_global("find_tags"))(await (async function(){
-                let __array_op_rval__27=(args && args["0"]);
-                 if (__array_op_rval__27 instanceof Function){
-                    return await __array_op_rval__27() 
-                } else {
-                    return[__array_op_rval__27]
-                }
-            })());
-             return  await console.table(findings)
-        } else if (check_true( (args && args["0"]) instanceof Function)) {
-            await (async function() {
-                let __for_body__30=async function(symbol) {
-                    if (check_true ((Environment.context.scope[symbol]===(args && args["0"])))){
-                        await (await Environment.get_global("show_finding"))(await (await Environment.get_global("describe"))(symbol));
-                        __BREAK__FLAG__=true;
-                        return
-                    }
-                };
-                let __array__31=[],__elements__29=await (await Environment.get_global("keys"))(Environment.context.scope);
-                let __BREAK__FLAG__=false;
-                for(let __iter__28 in __elements__29) {
-                    __array__31.push(await __for_body__30(__elements__29[__iter__28]));
-                    if(__BREAK__FLAG__) {
-                         __array__31.pop();
-                        break;
-                        
-                    }
-                }return __array__31;
-                 
-            })();
-             return  null
-        } else  {
-             return  await (await Environment.get_global("help_log"))("I am not sure how to process this request.  Try (help) to get started.")
-        }
-    } ()
-};__obj__1["?"]=async function(...args) {
-    let findings;
-    findings=[];
-    ;
-     return  await async function(){
-        if (check_true( ((args && args.length)===0))) {
-             return await (await Environment.get_global("show_help"))("top")
-        } else if (check_true( (((args && args["0"])==="#")||((args && args["0"])==="tag")))) {
-             if (check_true (await (await Environment.get_global("blank?"))((args && args["1"])))){
-                  return await (await Environment.get_global("help_log"))("Please provide a tag or tags as an additional argument, such as: (help",(args && args["0"]),"string)")
-            } else {
-                findings=await (await Environment.get_global("find_tags"))(await args["slice"].call(args,1));
-                await console.table(findings);
-                 return  await (await Environment.get_global("length"))(findings)
-            }
-        } else if (check_true( (((args && args["0"])==="symbol")||await (await Environment.get_global("starts_with?"))("sym",(args && args["0"]))))) {
-             if (check_true (await (await Environment.get_global("blank?"))((args && args["1"])))){
-                 await (await Environment.get_global("help_log"))("Please provide a symbol name as an additional argument, such as (help",(args && args["0"]),"to_array)")
-            } else {
-                findings=await (await Environment.get_global("describe"))((args && args["1"]));
-                 return  await (await Environment.get_global("show_finding"))(findings)
-            }
-        } else if (check_true( (((args && args["0"]) instanceof String || typeof (args && args["0"])==='string')&&await (await Environment.get_global("not"))(((typeof (args && args["0"])==="undefined")||(await Environment["get_global"].call(Environment,(args && args["0"])) instanceof ReferenceError)))))) {
-             return await (await Environment.get_global("show_finding"))(await (await Environment.get_global("describe"))((args && args["0"])))
-        } else if (check_true( ((args && args["0"]) instanceof String || typeof (args && args["0"])==='string'))) {
-            findings=await (await Environment.get_global("find_tags"))(await (async function(){
-                let __array_op_rval__27=(args && args["0"]);
-                 if (__array_op_rval__27 instanceof Function){
-                    return await __array_op_rval__27() 
-                } else {
-                    return[__array_op_rval__27]
-                }
-            })());
-             return  await console.table(findings)
-        } else if (check_true( (args && args["0"]) instanceof Function)) {
-            await (async function() {
-                let __for_body__30=async function(symbol) {
-                    if (check_true ((Environment.context.scope[symbol]===(args && args["0"])))){
-                        await (await Environment.get_global("show_finding"))(await (await Environment.get_global("describe"))(symbol));
-                        __BREAK__FLAG__=true;
-                        return
-                    }
-                };
-                let __array__31=[],__elements__29=await (await Environment.get_global("keys"))(Environment.context.scope);
-                let __BREAK__FLAG__=false;
-                for(let __iter__28 in __elements__29) {
-                    __array__31.push(await __for_body__30(__elements__29[__iter__28]));
-                    if(__BREAK__FLAG__) {
-                         __array__31.pop();
-                        break;
-                        
-                    }
-                }return __array__31;
-                 
-            })();
-             return  null
-        } else  {
-             return  await (await Environment.get_global("help_log"))("I am not sure how to process this request.  Try (help) to get started.")
-        }
-    } ()
 };__obj__1["*env_skeleton*"]=["=:iprogn",["=:set_prop","=:globalThis","subtype","=:subtype","check_true","=:check_true","clone","=:clone","lisp_writer","=:lisp_writer","LispSyntaxError","=:LispSyntaxError"],["=:if",["=:==","undefined",["=:typeof","=:dlisp_environment_count"]],["=:set_prop","=:globalThis","dlisp_environment_count",0]],["=:defexternal","=:dlisp_env",["=:fn",["=:opts"],["=:progn",["=:declare",["=:toplevel",true],["=:include","=:subtype","=:get_object_path","=:get_outside_global"],["=:local","=:clone","=:get_next_environment_id","=:check_true"]],["=:=","=:opts",["=:if",["=:==","=:opts","=:undefined"],{},"=:opts"]],["=:defvar","=:namespace",["=:or","=:opts.namespace","core"]],["=:defvar","=:parent_environment",["=:if",["=:==","=:namespace","core"],"=:nil","=:opts.parent_environment"]],["=:defvar","=:active_namespace","=:namespace"],["=:defvar","=:contained",["=:or","=:opts.contained",false]],["=:defvar","=:Environment",{"global_ctx":{"scope":{},"name":"=:namespace"},"version":["=:javascript","=:DLISP_ENV_VERSION"],"definitions":["=:or","=:opts.definitions",{}],"declarations":["=:or","=:opts.declarations",{"safety":{"level":2}}]}],["=:defvar","=:id",["=:get_next_environment_id"]],["=:set_prop","=:Environment","context","=:Environment.global_ctx"],["=:defvar","=:unset_compiler",["=:fn",[],["=:throw","=:EvalError",["=:+","compiler must be set for ","=:namespace"]]]],["=:defvar","=:compiler","=:unset_compiler"],["=:defvar","=:compiler_operators",["=:new","=:Set"]],["=:defvar","=:special_identity",["=:fn",["=:v"],"=:v"]],["=:define_env",["=:MAX_SAFE_INTEGER",9007199254740991],["=:LispSyntaxError","=:globalThis.LispSyntaxError"],["=:sub_type","=:subtype"],["=:__VERBOSITY__",0,{"description":"Set __VERBOSITY__ to a positive integer for verbose console output of system activity.","tags":["debug","compiler","environment","global"]}],["=:int","=:parseInt",{"usage":"value:string|number","description":"Convenience method for parseInt, should be used in map vs. directly calling parseInt, which will not work directly","tags":["conversion","number"]}],["=:float","=:parseFloat",{"usage":"value:string|number","description":"Convenience method for parseFloat, should be used in map vs. directly calling parseFloat, which will not work directly","tags":["conversion","number"]}],["=:values",["=:new","=:Function","...args","{\n                                let acc = [];\n                                for (let _i in args) {\n                                    let value = args[_i];\n                                    let type = subtype(value);\n                                    if (value instanceof Set)  {\n                                        acc = acc.concat(Array.from(value));\n                                    } else if (type==='array') {\n                                        acc = acc.concat(value);\n                                    } else if (type==='object') {\n                                        acc = acc.concat(Object.values(value))\n                                    } else {\n                                        acc = acc.concat(value);\n                                    }\n                                }\n                                return acc;\n                            }"]],["=:pairs",["=:new","=:Function","obj","{\n                                    if (subtype(obj)==='array') {\n                                        let rval = [];\n                                        for (let i = 0; i < obj.length; i+=2) {\n                                            rval.push([obj[i],obj[i+1]]);\n                                        }\n                                        return rval;\n                                    } else {\n                                        let keys = Object.keys(obj);\n                                        let rval = keys.reduce(function(acc,x,i) {\n                                            acc.push([x,obj[x]])\n                                            return acc;\n                                        },[]);\n                                        return rval;\n                                    }\n                                }"]],["=:keys",["=:new","=:Function","obj","{  return Object.keys(obj);  }"]],["=:take",["=:new","=:Function","place","{ return place.shift() }"]],["=:prepend",["=:new","=:Function","place","thing","{ return place.unshift(thing) }"]],["=:first",["=:new","=:Function","x","{ return x[0] }"]],["=:last",["=:new","=:Function","x","{ return x[x.length - 1] }"]],["=:length",["=:new","=:Function","obj","{\n                                if(obj instanceof Array) {\n                                    return obj.length;\n                                } else if (obj instanceof Set) {\n                                    return obj.size;\n                                } else if ((obj === undefined)||(obj===null)) {\n                                    return 0;\n                                } else if (typeof obj==='object') {\n                                    return Object.keys(obj).length;\n                                } else if (typeof obj==='string') {\n                                    return obj.length;\n                                } \n                                return 0;\n                            }"]],["=:conj",["=:new","=:Function","...args","{   let list = [];\n                                if (args[0] instanceof Array) {\n                                    list = args[0];\n                                } else {\n                                    list = [args[0]];\n                                }\n                                args.slice(1).map(function(x) {\n                                    list = list.concat(x);\n                                });\n                                return list;\n                            }"]],["=:reverse",["=:new","=:Function","container","{ return container.slice(0).reverse }"],{"usage":["container:list"],"description":"Returns a copy of the passed list as reversed.  The original is not changed.","tags":["list","sort","order"]}],["=:map",["=:new","=:AsyncFunction","lambda","array_values","{ try {\n                                        let rval = [],\n                                                tl = array_values.length;\n                                        for (let i = 0; i < array_values.length; i++) {\n                                            rval.push(await lambda.apply(this,[array_values[i], i, tl]));\n                                         }\n                                        return rval;\n                                    } catch (ex) {           \n                                              if (lambda === undefined || lambda === null) {\n                                                    throw new ReferenceError(\"map: lambda argument (position 0) is undefined or nil\")\n                                              } else if (array_values === undefined || array_values === null) {\n                                                    throw new ReferenceError(\"map: container argument (position 1) is undefined or nil\")\n                                              } else if (!(lambda instanceof Function)) {\n                                                    throw new ReferenceError(\"map: lambda argument must be a function: received: \"+ typeof lambda)\n                                              } else if (!(array_values instanceof Array)) {\n                                                    throw new ReferenceError(\"map: invalid array argument, received: \" + typeof array_values)\n                                              } else {\n                                                    // something else just pass on the error\n                                                throw ex;\n                                              }\n                                    }\n                              }"]],["=:bind",["=:new","=:Function","func,this_arg","{ return func.bind(this_arg) }"]],["=:to_object",["=:new","=:Function","array_values","{\n                                      let obj={}\n                                      array_values.forEach((pair)=>{\n                                             obj[pair[0]]=pair[1]\n                                      });\n                                      return obj;\n                                    }"],{"description":["=:+","Given an array of pairs in the form of [[key value] [key value] ...], constructs an ","object with the first array element of the pair as the key and the second ","element as the value. A single object is returned."],"usage":["paired_array:array"],"tags":["conversion","object","array","list","pairs"]}],["=:to_array",["=:fn",["=:container"],["=:cond",["=:is_array?","=:container"],"=:container",["=:is_set?","=:container"],["=:do",["=:defvar","=:acc",[]],["=:->","=:container","forEach",["=:fn",["=:v"],["=:push","=:acc","=:v"]]],"=:acc"],["=:is_string?","=:container"],["=:split_by","","=:container"],["=:is_object?","=:container"],["=:pairs","=:container"],"=:else",["=:container"]]],{"description":["=:+","Given a container of type Array, Set, Object, or a string, ","it will convert the members of the container to an array form, ","and return a new array with the values of the provided container. ","In the case of an object, the keys and values will be contained in ","paired arrays in the returned array.  A string will be split into ","individual characters. If provided a different ","type other than the listed values above, the value will be placed ","in an array as a single element."],"usage":["container:*"],"tags":["list","array","conversion","set","object","string","pairs"]}],["=:slice",["=:function",["=:target","=:from","=:to"],["=:cond","=:to",["=:->","=:target","slice","=:from","=:to"],"=:from",["=:->","=:target","slice","=:from"],"=:else",["=:throw","=:SyntaxError","slice requires 2 or 3 arguments"]]]],["=:rest",["=:function",["=:x"],["=:cond",["=:instanceof","=:x","=:Array"],["=:->","=:x","slice",1],["=:is_string?","=:x"],["=:->","=:x","substr",1],"=:else","=:nil"]]],["=:second",["=:new","=:Function","x","{ return x[1] }"]],["=:third",["=:new","=:Function","x","{ return x[2] }"]],["=:chop",["=:new","=:Function","x","{ if (x instanceof Array) { return x.slice(0, x.length-1) } else { return x.substr(0,x.length-1) } }"]],["=:chomp",["=:new","=:Function","x","{ return x.substr(x.length-1) }"]],["=:not",["=:new","=:Function","x","{ if (check_true(x)) { return false } else { return true } }"]],["=:push",["=:new","=:Function","place","thing","{ return place.push(thing) }"]],["=:pop",["=:new","=:Function","place","{ return place.pop() }"]],["=:list",["=:fn",["&","=:args"],"=:args"]],["=:flatten",["=:new","=:Function","x","{ return x.flat(999999999999) } "]],["=:jslambda",["=:function",["&","=:args"],["=:apply","=:Function",["=:flatten","=:args"]]]],["=:join",["=:function",["&","=:args"],["=:cond",["=:==","=:args.length",1],["=:->","=:args.0","join",""],"=:else",["=:->","=:args.1","join","=:args.0"]]]],["=:lowercase",["=:function",["=:x"],["=:->","=:x","toLowerCase"]]],["=:uppercase",["=:function",["=:x"],["=:->","=:x","toUpperCase"]]],["=:log",["=:function",["&","=:args"],["=:apply","=:console.log","=:args"]]],["=:split",["=:new","=:Function","container","token","{ return container.split(token) }"]],["=:split_by",["=:new","=:Function","token","container","{ return container.split(token) }"]],["=:is_object?",["=:new","=:Function","x","{ return x instanceof Object }"],{"description":"for the given value x, returns true if x is an Javascript object type.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_array?",["=:new","=:Function","x","{ return x instanceof Array }"],{"description":"for the given value x, returns true if x is an array.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_number?",["=:function",["=:x"],["=:==",["=:subtype","=:x"],"Number"]],{"description":"for the given value x, returns true if x is a number.","usage":["arg:value"],"tags":["type","condition","subtype","value","what","function"]}],["=:is_function?",["=:function",["=:x"],["=:instanceof","=:x","=:Function"]],{"description":"for the given value x, returns true if x is a function.","usage":["arg:value"],"tags":["type","condition","subtype","value","what","function"]}],["=:is_set?",["=:new","=:Function","x","{ return x instanceof Set }"],{"description":"for the given value x, returns true if x is a set.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_element?",["=:new","=:Function","x","{ return x instanceof Element }"],{"description":"for the given value x, returns true if x is an Element object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_string?",["=:function",["=:x"],["=:or",["=:instanceof","=:x","=:String"],["=:==",["=:typeof","=:x"],"string"]]],{"description":"for the given value x, returns true if x is a String object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_nil?",["=:function",["=:x"],["=:==","=:x","=:nil"]],{"description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_regex?",["=:function",["=:x"],["=:==",["=:sub_type","=:x"],"RegExp"]],{"description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:is_date?",["=:function",["=:x"],["=:==",["=:sub_type","=:x"],"Date"]],{"description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]}],["=:ends_with?",["=:new","=:Function","val","text","{ if (text instanceof Array) { return text[text.length-1]===val } else if (subtype(text)=='String') { return text.endsWith(val) } else { return false }}"],{"description":"for a given string or array, checks to see if it ends with the given start_value.  Non string args return false.","usage":["end_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce"]}],["=:starts_with?",["=:new","=:Function","val","text","{ if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}"],{"description":"for a given string or array, checks to see if it starts with the given start_value.  Non string args return false.","usage":["start_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce","begin"]}],["=:blank?",["=:function",["=:val"],["=:or",["=:eq","=:val","=:nil"],["=:and",["=:is_string?","=:val"],["=:==","=:val",""]]]]],["=:contains?",["=:new","=:Function","value","container","{ if (!value && !container) { return false }\n                           else if (container === null) { throw new TypeError(\"contains?: passed nil/undefined container value\"); }\n                           else if ((container instanceof String) || typeof container === \"string\") {\n                                if (subtype(value) === \"Number\") return container.indexOf(\"\"+value)>-1;\n                                else return container.indexOf(value)>-1;\n                           }\n                           else if (container instanceof Array) return container.includes(value);\n                           else if (container instanceof Set) return container.has(value);\n                           else throw new TypeError(\"contains?: passed invalid container type: \"+subtype(container)) }"]],["=:make_set",["=:function",["=:vals"],["=:if",["=:instanceof","=:vals","=:Array"],["=:new","=:Set","=:vals"],["=:let",[["vtype",["=:sub_type","=:vals"]]],["=:cond",["=:==","=:vtype","Set"],["=:new","=:Set","=:vals"],["=:==","=:vtype","object"],["=:new","=:Set",["=:values","=:vals"]]]]]]],["=:meta_for_symbol",["=:fn",["=:quoted_symbol","=:search_mode"],["=:when",["=:is_string?","=:quoted_symbol"],["=:defvar","=:local_data",["=:prop","=:Environment.global_ctx.scope","=:quoted_symbol"]],["=:if","=:search_mode",["=:cond","=:local_data",[["=:+",{"namespace":"=:namespace","name":"=:quoted_symbol","type":["=:subtype","=:local_data"]},["=:aif",["=:prop","=:Environment.definitions","=:quoted_symbol"],"=:it",{}]]],"=:parent_environment",["=:->",["=:->","=:parent_environment","meta_for_symbol","=:quoted_symbol",true],"flat",1],["=:>",["=:length",["=:keys","=:children"]],0],["=:reduce",["details",["=:for_each",["child_data",["=:pairs","=:children"]],["=:->","=:child_data.1","meta_for_symbol","=:quoted_symbol"]]],"=:details"]],["=:do",["=:=","=:quoted_symbol",["=:if",["=:starts_with?",["=:quote","=:"],"=:quoted_symbol"],["=:->","=:quoted_symbol","substr",2]]],["=:aif",["=:prop","=:Environment.definitions","=:quoted_symbol"],["=:+",{"namespace":"=:namespace","type":["=:sub_type","=:local_data"],"name":"=:quoted_symbol"},"=:it"]]]]]]],["=:describe",["=:fn",["=:quoted_symbol","=:search_mode"],["=:progn",["=:defvar","=:internal_results",["=:meta_for_symbol","=:quoted_symbol",true]],["=:if",["=:and",["=:is_array?","=:internal_results"],"=:internal_results.0"],["=:if","=:search_mode","=:internal_results",["=:first","=:internal_results"]],["=:do",["=:defvar","=:external_results",["=:get_outside_global","=:quoted_symbol"]],["=:if","=:external_results",{"location":"external","type":["=:subtype","=:external_results"]},"=:nil"]]]]]],["=:undefine",["=:function",["=:quoted_symbol"],["=:if",["=:is_string?","=:quoted_symbol"],["=:let",[["namespace_identity",["=:split_by","/","=:quoted_symbol"]],["parent_call","=:nil"],["target_symbol","=:nil"]],["=:declare",["=:function","=:parent_call"]],["=:debug"],["=:cond",["=:or",["=:and",["=:==","=:namespace_identity.length",1],["=:prop","=:Environment.global_ctx.scope","=:namespace_identity.0"]],["=:and",["=:>","=:namespace_identity.length",1],["=:==","=:namespace_identity.0","=:namespace"]]],["=:progn",["=:=","=:target_symbol",["=:if",["=:>","=:namespace_identity.length",1],"=:namespace_identity.1","=:namespace_identity.0"]],["=:delete_prop","=:Environment.definitions","=:target_symbol"],["=:delete_prop","=:Environment.global_ctx.scope","=:target_symbol"]],["=:and",["=:>","=:namespace_identity.length",1],"=:parent_environment"],["=:progn",["=:setq","=:parent_call",["=:->","=:parent_environment","get_global","undefine"]],["=:parent_call","=:quoted_symbol"]],"=:else",false]],["=:throw","=:SyntaxError","undefine requires a quoted symbol"]]]],["=:eval_exp",["=:fn",["=:expression"],["=:do",["=:console.log","EVAL:","=:expression"],["=:expression"]]]],["=:indirect_new",["=:new","=:Function","...args","{\n                                    let targetClass = args[0];\n                                    if (subtype(targetClass)===\"String\") {\n                                        let tmpf=new Function(\"{ return \"+targetClass+\" }\");\n                                        targetClass = tmpf();\n                                    }\n                                    if (args.length==1) {\n                                        let f = function(Class) {\n                                            return new (Function.prototype.bind.apply(Class, args));\n                                        }\n                                        let rval = f.apply(this,[targetClass]);\n                                        return rval;\n                                    } else {\n                                        let f = function(Class) {\n                                            return new (Function.prototype.bind.apply(Class, args));\n                                        }\n                                        let rval = f.apply(this,[targetClass].concat(args.slice(1)));\n                                        return rval;\n                                    }}"]],["=:range",["=:function",["&","=:args"],["=:let",[["from_to",["=:if","=:args.1",[["=:int","=:args.0"],["=:int","=:args.1"]],[0,["=:int","=:args.0"]]]],["step",["=:if","=:args.2",["=:float","=:args.2"],1]],["idx","=:from_to.0"],["acc",[]]],["=:while",["=:<","=:idx","=:from_to.1"],["=:do",["=:push","=:acc","=:idx"],["=:inc","=:idx","=:step"]]],"=:acc"]]],["=:add",["=:new","=:Function","...args","{\n                                let acc;\n                                if (typeof args[0]===\"number\") {\n                                    acc = 0;\n                                } else if (args[0] instanceof Array) {\n                                    return args[0].concat(args.slice(1));\n                                } else if (typeof args[0]==='object') {\n                                   let rval = {};\n                                   for (let i in args) {\n                                        if (typeof args[i] === 'object') {\n                                            for (let k in args[i]) {\n                                                rval[k] = args[i][k];\n                                            }\n                                        }\n                                   }\n                                   return rval;\n                                } else {\n                                    acc = \"\";\n                                }\n                                for (let i in args) {\n                                    acc += args[i];\n                                }\n                                return acc;\n                             }"]],["=:merge_objects",["=:new","=:Function","x","{\n                                    let rval = {};\n                                    for (let i in x) {\n                                        if (typeof i === 'object') {\n                                            for (let k in x[i]) {\n                                                rval[k] = x[i][k];\n                                            }\n                                        }\n                                    }\n                                    return rval;\n                                 }"]],["=:index_of",["=:new","=:Function","value","container",["=:+","{ return container.indexOf(value) }"]]],["=:resolve_path",["=:new","=:Function","path,obj","{\n                                        if (typeof path==='string') {\n                                            path = path.split(\".\");\n                                        }\n                                        let s=obj;\n                                        return path.reduce(function(prev, curr) {\n                                            return prev ? prev[curr] : undefined\n                                        }, obj || {})\n                                    }"]],["=:delete_prop",["=:new","=:Function","obj","...args","{\n                                        if (args.length == 1) {\n                                            return delete obj[args[0]];\n                                        } else {\n                                            while (args.length > 0) {\n                                                let prop = args.shift();\n                                                delete obj[prop];\n                                            }\n                                        }\n                                        return obj;\n                                    }"]],["=:min_value",["=:new","=:Function","elements","{ return Math.min(...elements); }"]],["=:max_value",["=:new","=:Function","elements","{ return Math.max(...elements); }"]],["=:interlace",["=:fn",["&","=:args"],["=:let",[["=:min_length",["=:min_value",["=:map","=:length","=:args"]]],["=:rlength_args",["=:range",["=:length","=:args"]]],["=:rval",[]]],["=:for_each",["i",["=:range","=:min_length"]],["=:for_each",["j","=:rlength_args"],["=:push","=:rval",["=:prop",["=:prop","=:args","=:j"],"=:i"]]]],"=:rval"]],{"usage":["list0:array","list1:array","listn?:array"],"description":"Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ...","tags":["list","array","join","merge"]}],["=:trim",["=:function",["=:x"],["=:->","=:x","trim"]]],["=:assert",["=:function",["=:assertion_form","=:failure_message"],["=:if","=:assertion_form","=:assertion_form",["=:throw","=:EvalError",["=:or","=:failure_message","assertion failure"]]]],{"description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]}],["=:unquotify",["=:fn",["=:val"],["=:let",[["=:dval","=:val"]],["=:if",["=:starts_with?","\"","=:dval"],["=:=","=:dval",["=:->","=:dval","substr",1,["=:-","=:dval.length",2]]]],["=:if",["=:starts_with?","=:","=:dval"],["=:=","=:dval",["=:->","=:dval","substr",2]]],"=:dval"]],{"description":"Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros.","usage":["val:string"],"tags":["macro","quote","quotes","desym"]}],["=:or_args",["=:fn",["=:argset"],["=:let",[["=:is_true",false]],["=:for_each",["elem","=:argset"],["=:if","=:elem",["=:do",["=:=","=:is_true",true],["=:break"]]]],"=:is_true"]]],["=:special_operators",["=:fn",[],["=:make_set",["=:compiler",[],{"special_operators":true,"env":"=:Environment"}]]]],["=:defclog",["=:fn",["=:opts"],["=:let",[["style",["=:+","padding: 5px;",["=:if","=:opts.background",["=:+","background: ","=:opts.background",";"],""],["=:if","=:opts.color",["=:+","color: ","=:opts.color",";"]],""]]],["=:fn",["&","=:args"],["=:apply","=:console.log",["=:+","%c",["=:if","=:opts.prefix","=:opts.prefix",["=:take","=:args"]]],["=:conj",["=:style"],"=:args"]]]]]],["=:NOT_FOUND",["=:new","=:ReferenceError","not found"]],["=:check_external_env_default",["=:if",["=:==","=:namespace","core"],true,false]],["=:*namespace*","=:namespace"],["=:set_global",["=:function",["=:refname","=:value","=:meta","=:is_constant","=:target_namespace","=:contained_req"],["=:progn",["=:cond",["=:not",["=:==",["=:typeof","=:refname"],"string"]],["=:throw","=:TypeError","reference name must be a string type"],["=:or",["=:==","=:Environment","=:value"],["=:==","=:Environment.global_ctx","=:value"],["=:==","=:Environment.global_ctx.scope","=:value"]],["=:do",["=:debug"],["=:throw","=:EvalError","cannot set the environment scope as a global value"]]],["=:when",["=:resolve_path",["=:refname","constant"],"=:Environment.definitions"],["=:throw","=:TypeError",["=:+","Assignment to constant variable ","=:refname"]]],["=:defvar","=:namespace_identity",["=:if","=:target_namespace",["=:target_namespace","=:refname"],["=:split_by","/","=:refname"]]],["=:cond",["=:and","=:parent_environment",["=:>","=:namespace_identity.length",1],["=:not",["=:==","=:namespace","=:namespace_identity.0"]]],["=:->","=:parent_environment","set_global","=:namespace_identity.1","=:value","=:meta","=:is_constant","=:namespace_identity.0",["=:or","=:contained","=:contained_req"]],["=:and",["=:>","=:namespace_identity.length",1],["=:not",["=:==","=:namespace_identity.0","=:namespace"]]],["=:do",["=:if",["=:and",["=:prop","=:children","=:namespace_identity.0"],["=:not","=:contained_req"]],["=:->",["=:prop","=:children","=:namespace_identity.0"],"set_global","=:namespace_identity.1","=:value","=:meta","=:is_constant","=:namespace_identity.0"],["=:throw","=:EvalError",["=:+","namespace ","=:namespace_identity.0"," doesn't exist"]]]],"=:else",["=:do",["=:defvar","=:comps",["=:get_object_path",["=:if",["=:==",1,"=:namespace_identity.length"],"=:namespace_identity.0","=:namespace_identity.1"]]],["=:set_prop","=:Environment.global_ctx.scope","=:comps.0","=:value"],["=:if",["=:and",["=:is_object?","=:meta"],["=:not",["=:is_array?","=:meta"]]],["=:do",["=:when","=:is_constant",["=:set_prop","=:meta","constant",true]],["=:set_prop","=:Environment.definitions","=:comps.0","=:meta"]],["=:when","=:is_constant",["=:set_prop","=:Environment.definitions","=:comps.0",{"constant":true}]]],["=:prop","=:Environment.global_ctx.scope","=:comps.0"]]]]]],["=:get_global",["=:function",["=:refname","=:value_if_not_found","=:suppress_check_external_env","=:target_namespace","=:path_comps","=:contained_req"],["=:cond",["=:not",["=:==",["=:typeof","=:refname"],"string"]],["=:throw","=:TypeError","reference name must be a string type"],["=:==","=:refname","Environment"],"=:Environment",["=:->","=:compiler_operators","has","=:refname"],"=:special_identity","=:else",["=:let",[["namespace_identity",["=:if","=:target_namespace",["=:target_namespace","=:refname"],["=:split_by","/","=:refname"]]],["comps",["=:or","=:path_comps",["=:get_object_path",["=:if",["=:==",1,"=:namespace_identity.length"],"=:namespace_identity.0","=:namespace_identity.1"]]]],["refval","=:nil"],["symbol_name","=:nil"],["check_external_env",["=:if","=:suppress_check_external_env",false,"=:check_external_env_default"]]],["=:cond",["=:and","=:parent_environment",["=:>","=:namespace_identity.length",1],["=:not",["=:==","=:namespace_identity.0","=:namespace"]]],["=:->","=:parent_environment","get_global","=:namespace_identity.1","=:value_if_not_found","=:suppress_check_external_env","=:namespace_identity.0","=:comps",["=:or","=:contained","=:contained_req"]],["=:and",["=:>","=:namespace_identity.length",1],["=:not",["=:==","=:namespace_identity.0","=:namespace"]]],["=:do",["=:if",["=:and",["=:prop","=:children","=:namespace_identity.0"],["=:not","=:contained_req"]],["=:->",["=:prop","=:children","=:namespace_identity.0"],"get_global","=:namespace_identity.1","=:value_if_not_found","=:suppress_check_external_env","=:namespace_identity.0","=:comps"],["=:throw","=:EvalError",["=:+","namespace ","=:namespace_identity.0"," doesn't exist"]]]],"=:else",["=:do",["=:=","=:refval",["=:prop","=:Environment.global_ctx.scope","=:comps.0"]],["=:if",["=:and",["=:==","=:undefined","=:refval"],["=:==","=:namespace_identity.length",1],"=:parent_environment"],["=:do",["=:defvar","=:rval",["=:->","=:parent_environment","get_global","=:refname","=:value_if_not_found","=:suppress_check_external_env","=:nil","=:comps",["=:or","=:contained","=:contained_req"]]],"=:rval"],["=:do",["=:if",["=:and",["=:==","=:undefined","=:refval"],"=:check_external_env"],["=:=","=:refval",["=:if","=:check_external_env",["=:or",["=:get_outside_global","=:comps.0"],"=:NOT_FOUND"],"=:NOT_FOUND"]]],["=:cond",["=:==","=:NOT_FOUND","=:refval"],["=:or","=:value_if_not_found","=:NOT_FOUND"],["=:==","=:comps.length",1],"=:refval",["=:>","=:comps.length",1],["=:do",["=:resolve_path",["=:rest","=:comps"],"=:refval"]],"=:else",["=:do",["=:console.warn","get_global: condition fall through: ","=:comps"],"=:NOT_FOUND"]]]]]]]]]],["=:symbol_definition",["=:fn",["=:symname","=:target_namespace"],["=:let",[["=:namespace_identity",["=:if","=:target_namespace",["=:target_namespace","=:symname"],["=:split_by","/","=:symname"]]]],["=:cond",["=:==","=:namespace_identity.length",1],["=:aif",["=:prop","=:Environment.definitions","=:symname"],"=:it",["=:if","=:parent_environment",["=:->","=:parent_environment","symbol_definition","=:symname"]]],["=:==","=:namespace_identity.0","=:namespace"],["=:prop","=:Environment.definitions","=:symname"],"=:parent_environment",["=:->","=:parent_environment","symbol_definition","=:namespace_identity.1","=:namespace_identity.0"],"=:else","=:undefined"]]],{"description":["=:+","Given a symbol name and an optional namespace, either as a fully qualified path ","or via the target_namespace argument, returns definition information about the ","retquested symbol.  ","Used primarily by the compiler to find metadata for a specific symbol during compilation."],"usage":["symname:string","namespace:string"],"tags":["compiler","symbols","namespace","search","context","environment"]}],["=:compile",["=:fn",["=:json_expression","=:opts"],["=:let",[["=:opts",["=:+",{"env":"=:Environment"},"=:opts",{"meta":["=:if",["=:and","=:opts","=:opts.meta"],true,false]}]],["=:out","=:nil"]],["=:=","=:out",["=:compiler","=:json_expression","=:opts"]],["=:cond",["=:and",["=:is_array?","=:out"],"=:out.0.ctype",["=:==","=:out.0.ctype","FAIL"]],"=:out","=:opts.meta","=:out","=:else","=:out.1"]]],{"description":["=:+","Compiles the given JSON or quoted lisp and returns a string containing ","the lisp form or expression as javascript.<br>","If passed the option { meta: true } , an array is returned containing compilation metadata ","in element 0 and the compiled code in element 1."],"usage":["json_expression:*","opts:object"],"tags":["macro","quote","quotes","desym"]}],["=:env_log",["=:defclog",{"prefix":["=:+","env","=:id"],"background":"#B0F0C0"}]],["=:evaluate_local",["=:fn",["=:expression","=:ctx","=:opts"],["=:let",[["=:opts",["=:or","=:opts",{}]],["=:compiled","=:nil"],["=:error_data","=:nil"],["=:result","=:nil"]],["=:debug"],["=:if","=:opts.compiled_source",["=:=","=:compiled","=:expression"],["=:try",["=:=","=:compiled",["=:compiler",["=:if","=:opts.json_in","=:expression",["=:->","=:Environment","read_lisp","=:expression",{"source_name":"=:opts.source_name"}]],{"env":"=:Environment","ctx":"=:ctx","formatted_output":true,"source_name":"=:opts.source_name","throw_on_error":"=:opts.throw_on_error","error_report":["=:or","=:opts.error_report","=:nil"],"quiet_mode":["=:or","=:opts.quiet_mode",false]}]],["=:catch","=:Error",["e"],["=:do",["=:when","=:opts.throw_on_error",["=:throw","=:e"]],["=:when",["=:instanceof","=:e","=:LispSyntaxError"],["=:set_prop","=:e","message",["=:JSON.parse","=:e.message"]]],["=:cond",["=:instanceof","=:e","=:LispSyntaxError"],["=:=","=:error_data",["=:+",{"error":"LispSyntaxError"},"=:e.message"]],"=:else",["=:=","=:error_data",{"error":["=:sub_type","=:e"],"message":"=:e.message","stack":"=:e.stack","form":["=:cond",["=:and",["=:is_string?","=:expression"],["=:>","=:expression.length",100]],["=:+",["=:->","=:expression","substr",0,100],"..."],"=:else",["=:as_lisp","=:expression"]],"parent_forms":[],"source_name":"=:opts.source_name","invalid":true}]],["=:if","=:opts.error_report",["=:opts.error_report","=:error_data"],["=:console.error","Compilation Error: ","=:error_data"]],["=:=","=:compiled",[{"error":true},"=:nil"]]]]]],["=:cond",["=:eq","=:nil","=:compiled"],"=:nil",["=:and","=:compiled.0.namespace",["=:not",["=:==","=:compiled.0.namespace","=:namespace"]],"=:parent_environment"],["=:->","=:parent_environment","evaluate_local","=:compiled","=:ctx",["=:+",{},"=:opts",{"compiled_source":true}]],["=:and","=:compiled.0.namespace",["=:not",["=:==","=:compiled.0.namespace","=:namespace"]]],["=:if",["=:prop","=:children","=:compiled.0.namespace"],["=:->",["=:prop","=:children","=:compiled.0.namespace"],"evaluate_local","=:compiled","=:ctx",["=:+",{},"=:opts",{"compiled_source":true}]],["=:throw","=:EvalError",["=:+","unknown namespace ","=:compiled.0.namespace"," assignment"]]],"=:else",["=:do",["=:if","=:opts.on_compilation_complete",["=:opts.on_compilation_complete","=:compiled"]],["=:try",["=:do",["=:=","=:result",["=:cond","=:compiled.error",["=:throw",["=:new","=:compiled.error","=:compiled.message"]],["=:and","=:compiled.0.ctype",["=:or",["=:contains?","block","=:compiled.0.ctype"],["=:==","=:compiled.0.ctype","assignment"],["=:==","=:compiled.0.ctype","__!NOT_FOUND!__"]]],["=:if",["=:compiled.0.has_lisp_globals"],["=:do",["=:set_prop","=:compiled",1,["=:new","=:AsyncFunction","Environment",["=:+","{ ","=:compiled.1","}"]]],["=:compiled.1","=:Environment"]],["=:do",["=:set_prop","=:compiled",1,["=:new","=:AsyncFunction",["=:+","{","=:compiled.1","}"]]],["=:compiled.1"]]],["=:and","=:compiled.0.ctype",["=:or",["=:==","AsyncFunction","=:compiled.0.ctype"],["=:==","statement","=:compiled.0.ctype"],["=:==","objliteral","=:compiled.0.ctype"]]],["=:do",["=:if",["=:compiled.0.has_lisp_globals"],["=:do",["=:set_prop","=:compiled",1,["=:new","=:AsyncFunction","Environment",["=:+","{ return ","=:compiled.1","} "]]],["=:compiled.1","=:Environment"]],["=:do",["=:set_prop","=:compiled",1,["=:new","=:AsyncFunction",["=:+","{ return ","=:compiled.1","}"]]],["=:compiled.1"]]]],["=:and","=:compiled.0.ctype",["=:==","Function","=:compiled.0.ctype"]],["=:do",["=:if",["=:compiled.0.has_lisp_globals"],["=:do",["=:set_prop","=:compiled",1,["=:new","=:Function","Environment",["=:+","{ return ","=:compiled.1","} "]]],["=:compiled.1","=:Environment"]],["=:do",["=:set_prop","=:compiled",1,["=:new","=:Function",["=:+","{ return ","=:compiled.1","}"]]],["=:compiled.1"]]]],"=:else","=:compiled.1"]]],["=:catch","=:Error",["=:e"],["=:do",["=:env_log","caught error: ","=:e.name","=:e.message"],["=:when","=:opts.error_report",["=:opts.error_report",{"error":"=:e.name","message":"=:e.message","form":"=:nil","parent_forms":"=:nil","invalid":true,"text":"=:e.stack"}]],["=:=","=:result","=:e"],["=:if",["=:and","=:ctx","=:ctx.in_try"],["=:throw","=:result"]]]]],"=:result"]]]]],["=:evaluate",["=:fn",["=:expression","=:ctx","=:opts"],["=:progn",["=:debug"],["=:if",["=:==","=:namespace","=:active_namespace"],["=:evaluate_local","=:expression","=:ctx","=:opts"],["=:->",["=:prop","=:children","=:active_namespace"],"evaluate","=:expression","=:ctx","=:opts"]]]]],["=:eval_struct",["=:fn",["=:lisp_struct","=:ctx","=:opts"],["=:let",[["=:rval","=:nil"]],["=:if",["=:is_function?","=:lisp_struct"],["=:=","=:rval",["=:lisp_struct"]],["=:=","=:rval",["=:evaluate","=:lisp_struct","=:ctx",["=:+",{"json_in":true},["=:or","=:opts",{}]]]]],"=:rval"]]]],["=:defvar","=:built_ins",["MAX_SAFE_INTEGER","LispSyntaxError","sub_type","__VERBOSITY__","int","float","values","pairs","keys","take","prepend","first","last","length","conj","reverse","map","bind","to_object","to_array","slice","rest","second","third","chop","chomp","not","push","pop","list","flatten","jslambda","join","lowercase","uppercase","log","split","split_by","is_object?","is_array?","is_number?","is_function?","is_set?","is_element?","is_string?","is_nil?","is_regex?","is_date?","ends_with?","starts_with?","blank?","contains?","make_set","eval_exp","indirect_new","range","add","merge_objects","index_of","resolve_path","delete_prop","min_value","max_value","interlace","trim","assert","unquotify","or_args","special_operators","defclog","NOT_FOUND","check_external_env_default","built_ins"]],["=:set_prop","=:Environment.global_ctx.scope","built_ins","=:built_ins"],["=:defvar","=:set_compiler",["=:fn",["=:compiler_function"],["=:do",["=:=","=:compiler","=:compiler_function"],["=:=","=:compiler_operators",["=:compiler",[],{"special_operators":true,"env":"=:Environment"}]],["=:set_prop","=:Environment.global_ctx.scope","compiler","=:compiler"],["=:register_feature","compiler"],"=:compiler"]]],["=:set_prop","=:Environment.global_ctx.scope","set_compiler","=:set_compiler"],["=:set_prop","=:Environment.global_ctx.scope","clone",["=:fn",["=:val"],["=:if",["=:==","=:val","=:Environment"],"=:Environment",["=:clone","=:val",0,"=:Environment"]]]],["=:set_prop","=:Environment","get_global","=:get_global","set_global","=:set_global","symbol_definition","=:symbol_definition","namespace","=:namespace"],["=:defvar","=:children",["=:or","=:opts.children",{}]],["=:defvar","=:children_declarations",["=:or","=:opts.children_declarations",{}]],["=:when",["=:==","=:namespace","core"],["=:when",["=:not",["=:prop","=:Environment.global_ctx.scope","*env_config*"]],["=:set_prop","=:Environment.global_ctx.scope","*env_config*",{"export":{"save_path":"js/juno.js","default_namespace":"core","include_source":false},"features":[],"imports":{}}]],["=:defvar","=:current_namespace",["=:function",[],"=:active_namespace"]],["=:defvar","=:create_namespace",["=:fn",["=:name","=:options"],["=:cond",["=:not",["=:is_string?","=:name"]],["=:throw","=:TypeError","namespace name must be a string"],["=:prop","=:children","=:name"],["=:throw","=:EvalError","namespace already exists"],"=:else",["=:let",[["=:options",["=:or","=:options",{}]],["=:child_env",["=:dlisp_env",{"parent_environment":"=:Environment","namespace":"=:name","contained":"=:options.contained"}]]],["=:if","=:child_env.evaluate",["=:do",["=:->","=:child_env","set_compiler","=:compiler"],["=:set_prop","=:children","=:name","=:child_env"],["=:set_prop","=:children_declarations","=:name",{}],["=:->","=:child_env","evaluate","(for_each (sym built_ins) (delete_prop Environment.context.scope sym))"],["=:if","=:options.contained",["=:set_prop",["=:prop","=:children_declarations","=:name"],"contained",true]],["=:set_prop",["=:prop","=:children_declarations","=:name"],"serialize_with_image",["=:if",["=:==",false,"=:options.serialize_with_image"],false,true]],"=:name"],["=:do",["=:console.error","ENV: couldn't create the child environment. Received: ","=:child_env"],["=:throw","=:EvalError",["=:+","unable to create namespace ","=:name"]]]]]]]],["=:defvar","=:set_namespace",["=:fn",["=:name"],["=:cond",["=:not",["=:is_string?","=:name"]],["=:throw","=:TypeError","namespace name must be a string"],["=:and",["=:not",["=:==","core","=:name"]],["=:eq","=:nil",["=:prop","=:children","=:name"]]],["=:throw","=:EvalError",["=:+","namespace ","=:name"," doesn't exist"]],"=:else",["=:do",["=:if",["=:==","=:name","core"],["=:do",["=:=","=:active_namespace","core"]],["=:do",["=:=","=:active_namespace","=:name"]]],"=:name"]]]],["=:defvar","=:delete_namespace",["=:fn",["=:name"],["=:cond",["=:not",["=:is_string?","=:name"]],["=:throw","=:TypeError","namespace name must be a string"],["=:==","core","=:name"],["=:throw","=:EvalError","core namespace cannot be removed"],["=:eq","=:nil",["=:prop","=:children","=:name"]],["=:throw","=:EvalError",["=:+","namespace ","=:name","doesn't exist"]],["=:==","=:name",["=:current_namespace"]],["=:throw","=:EvalError","namespace is the current namespace"],"=:else",["=:do",["=:remove_prop","=:children","=:name"],["=:for_each",["k",["=:or",["=:resolve_path",["global_ctx","scope","*env_config*","imports"],"=:Environment"],[]]],["=:when",["=:starts_with?","=:k","=:name"],["=:remove_prop","=:Environment.global_ctx.*env_config*.imports","=:k"]]],"=:name"]]]],["=:set_prop","=:Environment.global_ctx.scope","create_namespace","=:create_namespace","set_namespace","=:set_namespace","delete_namespace","=:delete_namespace","namespaces",["=:function",[],["=:+",["=:keys","=:children"],"core"]],"current_namespace","=:current_namespace"]],["=:defvar","=:included_globals","=:nil"],["=:when",["=:and","=:included_globals",["=:==","=:namespace","core"]],["=:=","=:included_globals",["=:included_globals"]],["=:when",["=:is_object?",["=:prop","=:included_globals","symbols"]],["=:for_each",["=:symset",["=:pairs","=:included_globals.symbols"]],["=:when",["=:or",["=:eq","=:nil",["=:prop","=:Environment.global_ctx.scope","=:symset.0"]],["=:==","=:symset.0","*env_config*"]],["=:set_prop","=:Environment.global_ctx.scope","=:symset.0","=:symset.1"]]]],["=:when",["=:is_object?",["=:prop","=:included_globals","definitions"]],["=:for_each",["=:symset",["=:pairs","=:included_globals.definitions"]],["=:when",["=:eq","=:nil",["=:prop","=:Environment.definitions","=:symset.0"]],["=:set_prop","=:Environment.definitions","=:symset.0","=:symset.1"]]]],["=:when",["=:is_object?",["=:prop","=:included_globals","declarations"]],["=:for_each",["=:symset",["=:pairs","=:included_globals.declarations"]],["=:when",["=:eq","=:nil",["=:prop","=:Environment.declarations","=:symset.0"]],["=:set_prop","=:Environment.declarations","=:symset.0",["=:quotel","=:symset.1"]]]]],["=:when",["=:prop","=:Environment.global_ctx.scope","compiler"],["=:set_compiler",["=:prop","=:Environment.global_ctx.scope","compiler"]]],["=:when",["=:is_object?",["=:prop","=:included_globals","children"]],["=:for_each",["=:childset",["=:pairs","=:included_globals.children"]],["=:do",["=:create_namespace","=:childset.0",["=:if",["=:prop","=:included_globals.children_declarations","=:childset.0"],["=:prop","=:included_globals.children_declarations","=:childset.0"],{}]]]],["=:for_each",["=:childset",["=:pairs","=:included_globals.children"]],["=:do",["=:defvar","=:childenv",["=:prop","=:children","=:childset.0"]],["=:debug"],["=:set_prop","=:childset",1,["=:->","=:childenv","eval","=:childset.1"]],["=:for_each",["=:symset","=:childset.1"],["=:when",["=:eq","=:nil",["=:resolve_path",["=:childset.0","context","scope","=:symset.0"],"=:children"]],["=:set_path",["=:childset.0","context","scope","=:symset.0"],"=:children","=:symset.1"]]]]]]],["=:defvar","=:clone_to_new",["=:fn",["=:options"],["=:let",[["=:new_env","=:nil"],["=:my_children","=:nil"],["=:my_children_declarations","=:nil"]],["=:env_log","=:namespace","cloning: # children: ",["=:length","=:children"]],["=:=","=:new_env",["=:dlisp_env",{"env":["=:clone","=:Environment"],"children":["=:clone","=:children"],"children_declarations":["=:clone","=:children_declarations"]}]],["=:env_log","=:namespace","constructed: ",["=:->","=:new_env","id"]],"=:new_env"]]],["=:defvar","=:export_symbol_set",["=:fn",["=:options"],["=:reduce",["=:symset",["=:pairs",["=:clone","=:Environment.global_ctx.scope"]]],["=:do",["=:cond",["=:and","=:options","=:options.no_compiler",["=:==","=:symset.0","compiler"]],"=:nil",["=:or",["=:==","$","=:symset.0"],["=:==","$$","=:symset.0"],["=:==","$$$","=:symset.0"]],"=:nil",["=:==","=:symset.0","*env_skeleton*"],["=:symset.0",[["=:quote","=:quotel"],["=:prop","=:Environment.global_ctx.scope","*env_skeleton*"]]],["=:resolve_path",["=:symset.0","initializer"],"=:Environment.definitions"],["=:symset.0",["=:resolve_path",["=:symset.0","initializer"],"=:Environment.definitions"]],["=:==","=:nil","=:symset.1"],["=:symset.0",["=:quote","=:nil"]],["=:==","=:undefined","=:symset.1"],["=:symset.0",["=:quote","=:undefined"]],"=:else",["=:symset.0","=:symset.1"]]]]]],["=:defvar","=:save_env",["=:fn",["=:options"],["=:let",[["=:new_env","=:nil"],["=:my_children","=:nil"],["=:env_constructor","=:nil"],["=:dcomps",["=:date_components",["=:new","=:Date"]]],["=:version_tag",["=:if",["=:not",["=:blank?","=:opts.version_tag"]],"=:opts.version_tag",["=:join",".",["=:dcomps.year","=:dcomps.month","=:dcomps.day","=:dcomps.hour","=:dcomps.minute"]]]],["=:build_time",["=:formatted_date",["=:new","=:Date"]]],["=:build_headers",[]],["=:child_env","=:nil"],["=:include_source",false],["=:exports",[]],["=:src",["=:if",["=:prop","=:Environment.global_ctx.scope","*env_skeleton*"],["=:clone",["=:prop","=:Environment.global_ctx.scope","*env_skeleton*"]],["=:reader",["=:read_text_file","./src/environment.lisp"]]]],["=:target_insertion_path","=:nil"],["=:output_path","=:nil"]],["=:when",["=:prop","=:Environment.global_ctx.scope","*env_skeleton*"],["=:register_feature","*env_skeleton*"]],["=:=","=:target_insertion_path",["=:first",["=:findpaths",["=:quote","=:included_globals"],"=:src"]]],["=:if",["=:not",["=:is_array?","=:target_insertion_path"]],["=:throw","=:EvalError","Unable to find the first included_globals symbol"]],["=:=","=:target_insertion_path",["=:conj",["=:chop","=:target_insertion_path"],[2]]],["=:=","=:options",["=:or","=:options",{}]],["=:when","=:options.include_source",["=:=","=:include_source",true]],["=:env_log","=:namespace","cloning: # children: ",["=:length","=:children"]],["=:=","=:exports",["=:export_symbol_set"]],["=:=","=:my_children",["=:to_object",["=:reduce",["=:child",["=:pairs","=:children"]],["=:if",["=:resolve_path",["=:child.0","serialize_with_image"],"=:children_declarations"],["=:progn",["=:=","=:child_env",["=:->","=:child.1","compile",["=:->","=:child.1","export_symbol_set",{"no_compiler":true}],{"throw_on_error":true,"meta":true}]],["=:child.0",["=:quotem",["=:quote",["=:javascript","=:##","=:child_env.1"]]]]]]]]],["=:set_path","=:target_insertion_path","=:src",["=:quotem",["=:fn",[],"=:##",["=:to_object",[["definitions",[["=:quotel","=:quote"],["=:clone","=:Environment.definitions"]]],["declarations",["=:clone","=:Environment.declarations"]],["symbols",[["=:quote","=:javascript"],["=:compile",["=:to_object","=:exports"],{"throw_on_error":true}]]],["children_declarations",["=:quotem",["=:fn",[],"=:##",["=:clone","=:children_declarations"]]]],["children","=:my_children"]]]]]],["=:=","=:output_path",["=:or","=:options.save_as",["=:resolve_path",["*env_config*","export","save_path"],"=:Environment.global_ctx.scope"]]],["=:if",["=:is_function?","=:output_path"],["=:=","=:output_path",["=:output_path"]]],["=:if",["=:and",["=:not",["=:is_string?","=:output_path"]],"=:output_path"],["=:throw","=:EvalError","invalid name for target for saving the environment.  Must be a string or function"]],["=:cond",["=:and","=:output_path",["=:ends_with?",".js","=:output_path"]],["=:do",["=:push","=:build_headers",["=:+","// Build Time: ","=:build_time"]],["=:push","=:build_headers",["=:+","// Version: ","=:version_tag"]],["=:push","=:build_headers",["=:+","export const DLISP_ENV_VERSION='","=:version_tag","';"]],["=:env_log","saving to: ","=:output_path"],["=:compile_buffer","=:src","init_dlisp",{"namespace":"=:namespace","toplevel":true,"include_boilerplate":false,"verbose":false,"bundle":true,"js_headers":[["=:show","=:check_true"],["=:show","=:get_next_environment_id"],["=:show","=:get_outside_global"],["=:show","=:subtype"],["=:show","=:lisp_writer"],["=:show","=:clone"],["=:show","=:LispSyntaxError"]],"bundle_options":{"default_namespace":["=:resolve_path",["*env_config*","export","default_namespace"],"=:Environment.global_ctx.scope"]},"output_file":"=:output_path","include_source":["=:or","=:options.include_source",["=:resolve_path",["*env_config*","export","include_source"],"=:Environment.global_ctx.scope"]],"build_headers":"=:build_headers"}]],["=:and","=:output_path",["=:ends_with?",".lisp","=:output_path"]],["=:write_text_file","=:output_path",["=:JSON.stringify","=:src","=:nil",4]],"=:else","=:src"]]]],["=:declare",["=:local","=:lisp_writer"],["=:include","=:reader","=:add_escape_encoding","=:do_deferred_splice","=:safe_access","=:embed_compiled_quote"]],["=:defvar","=:as_lisp","=:lisp_writer"],["=:defvar","=:read_lisp","=:reader"],["=:set_prop","=:Environment.global_ctx.scope","eval","=:eval_exp","reader","=:reader","add_escape_encoding","=:add_escape_encoding","get_outside_global","=:get_outside_global","as_lisp","=:lisp_writer","lisp_writer","=:lisp_writer","clone_to_new","=:clone_to_new","save_env","=:save_env"],["=:defvar","=:inlines",["=:if","=:parent_environment",["=:+",{},"=:parent_environment.inlines",["=:if","=:opts.inlines","=:opts.inlines",{}]],["=:+",{},["=:if","=:opts.inlines","=:opts.inlines",{}],{"pop":["=:fn",["=:args"],["(","=:args.0",")",".","pop()"]],"push":["=:fn",["=:args"],["(","=:args.0",")",".push","(","=:args.1",")"]],"chomp":["=:fn",["=:args"],["(","=:args.0",")",".substr","(",0,",","(","=:args.0",".length","-",1,")",")"]],"join":["=:fn",["=:args"],["=:if",["=:==","=:args.length",1],["(","=:args.0",")",".join","('')"],["(","=:args.1",")",".join","(","=:args.0",")"]]],"take":["=:fn",["=:args"],["(","=:args.0",")",".shift","()"]],"prepend":["=:fn",["=:args"],["(","=:args.0",")",".unshift","(","=:args.1",")"]],"trim":["=:fn",["=:args"],["(","=:args.0",")",".trim()"]],"lowercase":["=:fn",["=:args"],["(","=:args.0",")",".toLowerCase()"]],"uppercase":["=:fn",["=:args"],["(","=:args.0",")",".toUpperCase()"]],"islice":["=:fn",["=:args"],["=:cond",["=:==","=:args.length",3],["(","=:args.0",")",".slice(","=:args.1",",","=:args.2",")"],["=:==","=:args.length",2],["(","=:args.0",")",".slice(","=:args.1",")"],"=:else",["=:throw","=:SyntaxError","slice requires 2 or 3 arguments"]]],"split_by":["=:fn",["=:args"],["(","=:args.1",")",".split","(","=:args.0",")"]],"bindf":["=:fn",["=:args"],["=:args.0",".bind(","=:args.1",")"]],"is_array?":["=:fn",["=:args"],["(","=:args.0"," instanceof Array",")"]],"is_object?":["=:fn",["=:args"],["(","=:args.0"," instanceof Object",")"]],"is_string?":["=:fn",["=:args"],["(","=:args.0"," instanceof String || typeof ","=:args.0","===","'string'",")"]],"is_function?":["=:fn",["=:args"],["=:args.0"," instanceof Function"]],"is_element?":["=:fn",["=:args"],["=:args.0"," instanceof Element"]],"log":["=:fn",["=:args"],["console.log","(",["=:map",["=:fn",["=:val","=:idx","=:tl"],["=:if",["=:<","=:idx",["=:-","=:tl",1]],["=:val",","],["=:val"]]],"=:args"],")"]],"reverse":["=:fn",["=:args"],["(","=:args.0",")",".slice(0).reverse()"]],"int":["=:fn",["=:args"],["=:cond",["=:==","=:args.length",1],["parseInt(","=:args.0",")"],["=:==","=:args.length",2],["parseInt(","=:args.0",",","=:args.1",")"],"=:else",["=:throw","SyntaxError",["=:+","invalid number of arguments to int: received ","=:args.length"]]]],"float":["=:fn",["=:args"],["parseFloat(","=:args.0",")"]]}]]],["=:set_prop","=:Environment","eval","=:eval_struct","identify","=:subtype","meta_for_symbol","=:meta_for_symbol","set_compiler","=:set_compiler","read_lisp","=:reader","as_lisp","=:as_lisp","inlines","=:inlines","clone_to_new","=:clone_to_new","export_symbol_set","=:export_symbol_set","save_env","=:save_env","special_operators","=:special_operators","definitions","=:Environment.definitions","declarations","=:Environment.declarations","compile","=:compile","evaluate","=:evaluate","evaluate_local","=:evaluate_local","do_deferred_splice","=:do_deferred_splice","id",["=:fn",[],"=:id"],"set_check_external_env",["=:fn",["=:state"],["=:do",["=:=","=:check_external_env_default","=:state"],"=:check_external_env_default"]],"check_external_env",["=:fn",[],"=:check_external_env_default"]],["=:defvar","=:init",["=:prop","=:Environment.global_ctx.scope","*initializer*"]],["=:when",["=:and","=:opts.default_namespace",["=:not",["=:==","=:compiler","=:unset_compiler"]],["=:prop","=:children","=:opts.default_namespace"]],["=:set_namespace","=:opts.default_namespace"]],["=:when","=:init",["=:eval","=:init"]],"=:Environment"]]]];__obj__1["*initializer*"]=async function() {
     {
          return  await (await Environment.get_global("repl"))()
@@ -18691,8 +16489,6 @@ options=options||{}
 };return __obj__1;})(),children_declarations:async function() {
      return  {
         user:{
-            serialize_with_image:true
-        },tests:{
             serialize_with_image:true
         }
     }

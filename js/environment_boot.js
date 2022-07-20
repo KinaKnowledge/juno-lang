@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-20 08:02:33
-// Version: 2022.07.20.08.02
-export const DLISP_ENV_VERSION='2022.07.20.08.02';
+// Build Time: 2022-07-20 08:42:48
+// Version: 2022.07.20.08.42
+export const DLISP_ENV_VERSION='2022.07.20.08.42';
 
 
 
@@ -1488,6 +1488,14 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
 await Environment.set_global("map_range",async function(n,from_range,to_range) {
      return  await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n-(from_range && from_range["0"]))/((from_range && from_range["1"])-(from_range && from_range["0"])))*((to_range && to_range["1"])-(to_range && to_range["0"]))))
 },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "]
+});
+await Environment.set_global("range_inc",async function(start,end,step) {
+    if (check_true (end)){
+          return await (await Environment.get_global("range"))(start,await (await Environment.get_global("add"))(end,1),step)
+    } else {
+          return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
+    }
+},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Givin","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
 });
  Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
 await Environment.set_global("color_for_number",async function(num,saturation,brightness) {
@@ -3091,6 +3099,11 @@ await Environment.set_global("uniq",async function(values,handle_complex_types) 
     }
 },{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"]
 });
+await Environment.set_global("time_in_millis",async function() {
+     return  ["=:Date.now"]
+},{ "eval_when":{ "compile_time":true
+},"name":"time_in_millis","macro":true,"fn_args":"()","usage":[],"tags":["time","milliseconds","number","integer","date"],"description":"Returns the current time in milliseconds as an integer"
+});
 await Environment.set_global("defns",async function(name,options) {
     if (check_true ((options&&(options && options["ignore_if_exists"])&&(name instanceof String || typeof name==='string')&&await (await Environment.get_global("contains?"))(name,await (await Environment.get_global("namespaces"))())))){
           return name
@@ -3098,6 +3111,17 @@ await Environment.set_global("defns",async function(name,options) {
           return await (await Environment.get_global("create_namespace"))(name,options)
     }
 },{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"]
+});
+await Environment.set_global("bind_and_call",async function(target_object,this_object,method,...args) {
+    let boundf=await (await Environment.get_global("bind"))(target_object[method],this_object);
+    ;
+    if (check_true (boundf)){
+          return await (async function(){
+            return ( boundf).apply(this,args)
+        })()
+    } else throw new Error("unable to bind target_object");
+    
+},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)"
 });
 await Environment.set_global("import",async function(...args) {
     let filespec;
@@ -3147,7 +3171,7 @@ await Environment.set_global("import",async function(...args) {
         if (check_true( (await (await Environment.get_global("ends_with?"))(".lisp",target_path)||await (await Environment.get_global("ends_with?"))(".juno",target_path)))) {
              return ["=:evaluate",[await (async function(){
                  return ("=:"+load_fn) 
-            })(),filespec],"=:nil",["=:to_object",[["source_name",[filespec]]]]]
+            })(),filespec],"=:nil",["=:to_object",[["source_name",filespec]]]]
         } else if (check_true( await (await Environment.get_global("ends_with?"))(".json",target_path))) {
              return ["=:evaluate",["=:JSON.parse",[await (async function(){
                  return ("=:"+load_fn) 
@@ -3172,6 +3196,68 @@ await Environment.set_global("import",async function(...args) {
     } ()
 },{ "eval_when":{ "compile_time":true
 },"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"]
+});
+await Environment.set_global("system_date_format",{
+    weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
+});
+await Environment.set_global("system_date_formatter",new Intl.DateTimeFormat([],(await Environment.get_global("system_date_format"))),{
+    initializer:["=:new","=:Intl.DateTimeFormat",[],(await Environment.get_global("system_date_format"))]
+});
+await Environment.set_global("tzoffset",async function() {
+     return  (60*await (async function() {
+        {
+             let __call_target__=new Date(), __call_method__="getTimezoneOffset";
+            return await __call_target__[__call_method__]()
+        } 
+    })())
+},{ "name":"tzoffset","fn_args":"()","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"]
+});
+await Environment.set_global("date_components",async function(date_value,date_formatter) {
+    if (check_true (await (await Environment.get_global("is_date?"))(date_value))){
+          return await (await Environment.get_global("to_object"))(await (await Environment.get_global("map"))(async function(x) {
+             return  await (async function(){
+                let __array_op_rval__283=(x && x["type"]);
+                 if (__array_op_rval__283 instanceof Function){
+                    return await __array_op_rval__283((x && x["value"])) 
+                } else {
+                    return[__array_op_rval__283,(x && x["value"])]
+                }
+            })()
+        },await (async function() {
+             if (check_true (date_formatter)){
+                  return await (await Environment.get_global("bind_and_call"))(date_formatter,date_formatter,"formatToParts",date_value)
+            } else {
+                  return await (await Environment.get_global("bind_and_call"))((await Environment.get_global("system_date_formatter")),(await Environment.get_global("system_date_formatter")),"formatToParts",date_value)
+            } 
+        } )()))
+    } else {
+          return null
+    }
+},{ "name":"date_components","fn_args":"(date_value date_formatter)","usage":["date_value:Date","date_formatter:DateTimeFormat?"],"description":"Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","time","object","component"]
+});
+await Environment.set_global("formatted_date",async function(dval,date_formatter) {
+    let comps;
+    comps=await (await Environment.get_global("date_components"))(dval,date_formatter);
+    if (check_true (comps)){
+         if (check_true (date_formatter)){
+              return (await (await Environment.get_global("values"))(comps)).join("")
+        } else {
+              return (""+(comps && comps["year"])+"-"+(comps && comps["month"])+"-"+(comps && comps["day"])+" "+(comps && comps["hour"])+":"+(comps && comps["minute"])+":"+(comps && comps["second"]))
+        }
+    } else {
+          return null
+    }
+},{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"]
+});
+await Environment.set_global("*LANGUAGE*",new Object());
+await Environment.set_global("dtext",async function(default_text) {
+     return  (await (async function(){
+        let __targ__284=(await Environment.get_global("*LANGUAGE*"));
+        if (__targ__284){
+             return(__targ__284)[default_text]
+        } 
+    })()||default_text)
+},{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"]
 });
  return  true
 }
