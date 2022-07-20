@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-19 12:03:34
-// Version: 2022.07.19.12.03
-export const DLISP_ENV_VERSION='2022.07.19.12.03';
+// Build Time: 2022-07-20 07:56:52
+// Version: 2022.07.20.07.56
+export const DLISP_ENV_VERSION='2022.07.20.07.56';
 
 
 
@@ -2029,10 +2029,10 @@ export async function init_dlisp(Environment)  {
                                         await (async function() {
                                             let __for_body__190=async function(k) {
                                                 if (check_true (await (await get_global("starts_with?"))(k,name))){
-                                                     return  await (await get_global("remove_prop"))(_star_env_config_star_.imports,k)
+                                                     return  await (await get_global("remove_prop"))(Environment.global_ctx._star_env_config_star_.imports,k)
                                                 }
                                             };
-                                            let __array__191=[],__elements__189=(_star_env_config_star_.imports||[]);
+                                            let __array__191=[],__elements__189=(await resolve_path(["global_ctx","scope","*env_config*","imports"],Environment)||[]);
                                             let __BREAK__FLAG__=false;
                                             for(let __iter__188 in __elements__189) {
                                                 __array__191.push(await __for_body__190(__elements__189[__iter__188]));
@@ -2497,7 +2497,8 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {
+             throw new EvalError(("reader: received undefined, text must be a string."));
             
         } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {
              throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));

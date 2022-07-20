@@ -1346,9 +1346,9 @@
                                     else
                                     (do
                                       (remove_prop children name)
-                                      (for_each (`k (or *env_config*.imports []))
+                                      (for_each (`k (or (resolve_path [ `global_ctx `scope `*env_config* `imports] Environment) []))
                                                 (when (starts_with? k name)
-                                                  (remove_prop *env_config*.imports k)))
+                                                  (remove_prop Environment.global_ctx.*env_config*.imports k)))
                                       name))))
             
        ;; if we are in core, set up the active namespace
