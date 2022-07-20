@@ -6,4 +6,5 @@
 (progn
  (declare (namespace `tests))
  (import "tests/compiler-tests-1.lisp")
- (import "tests/test_harness.lisp"))
+ (import "tests/test_harness.lisp")
+ (register_feature "tests"))

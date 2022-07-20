@@ -2272,12 +2272,15 @@ such as things that connect or use environmental resources.
 
 	`(evaluate (,#(+ "=:" load_fn) ,#filespec)
 		   nil
-		   (to_object [[ `source_name ,#filespec]]))
+		   (to_object [[ `source_name ,#filespec]
+                               [ `throw_on_error true ]]))
 
 	(ends_with? ".json" target_path)
 	`(evaluate (JSON.parse (,#(+ "=:" load_fn) ,#filespec))
 		   nil
-		   (to_object [[`json_in true] [`source_name ,#filespec ]]))
+		   (to_object [[`json_in true]
+                               [`source_name ,#filespec ]
+                               [`throw_on_error true]]))
 	
 	(or (ends_with? ".js" target_path)
 	    (and (is_symbol? `Deno)
@@ -2390,6 +2393,26 @@ such as things that connect or use environmental resources.
                           "If that is a nil entry, returns the default text.")
          `tags: ["text" "multi-lingual" "language" "translation" "translate"]
         })
-    
+
+  (defun nth (idx collection)
+        (cond 
+              (is_array? idx)
+              (map (lambda (v) (nth v collection)) idx)
+              (and (is_number? idx) (< idx 0) (>= (length collection) (* -1 idx)))
+              (prop collection (+ (length collection) idx))
+              (and (is_number? idx) (< idx 0) (< (length collection) (* -1 idx)))
+              undefined
+              else
+              (prop collection idx))
+        {
+           "description":(+ "Based on the index or index list passed as the first argument, " 
+                            "and a collection as a second argument, return the specified values " 
+                            "from the collection. If an index value is negative, the value "
+                            "retrieved will be at the offset starting from the end of the array, "
+                            "i.e. -1 will return the last value in the array.")
+           "tags":["filter" "select" "pluck" "object" "list" "key" "array"]
+           "usage":["idx:string|number|array","collection:list|object"]
+         })
+
 true
  

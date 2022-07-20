@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-20 08:42:48
-// Version: 2022.07.20.08.42
-export const DLISP_ENV_VERSION='2022.07.20.08.42';
+// Build Time: 2022-07-20 09:17:23
+// Version: 2022.07.20.09.17
+export const DLISP_ENV_VERSION='2022.07.20.09.17';
 
 
 
@@ -3171,11 +3171,11 @@ await Environment.set_global("import",async function(...args) {
         if (check_true( (await (await Environment.get_global("ends_with?"))(".lisp",target_path)||await (await Environment.get_global("ends_with?"))(".juno",target_path)))) {
              return ["=:evaluate",[await (async function(){
                  return ("=:"+load_fn) 
-            })(),filespec],"=:nil",["=:to_object",[["source_name",filespec]]]]
+            })(),filespec],"=:nil",["=:to_object",[["source_name",filespec],["throw_on_error",true]]]]
         } else if (check_true( await (await Environment.get_global("ends_with?"))(".json",target_path))) {
              return ["=:evaluate",["=:JSON.parse",[await (async function(){
                  return ("=:"+load_fn) 
-            })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec]]]]
+            })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec],["throw_on_error",true]]]]
         } else if (check_true( (await (await Environment.get_global("ends_with?"))(".js",target_path)||(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError)))&&await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
              return  await async function(){
                 if (check_true( (await (await Environment.get_global("length"))(target_symbols)===0))) {
@@ -3258,6 +3258,22 @@ await Environment.set_global("dtext",async function(default_text) {
         } 
     })()||default_text)
 },{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"]
+});
+await Environment.set_global("nth",async function(idx,collection) {
+     return  await async function(){
+        if (check_true( (idx instanceof Array))) {
+             return await (await Environment.get_global("map"))(async function(v) {
+                 return  await (await Environment.get_global("nth"))(v,collection)
+            },idx)
+        } else if (check_true( (await (await Environment.get_global("is_number?"))(idx)&&(idx<0)&&(await (await Environment.get_global("length"))(collection)>=(-1*idx))))) {
+             return collection[await (await Environment.get_global("add"))(await (await Environment.get_global("length"))(collection),idx)]
+        } else if (check_true( (await (await Environment.get_global("is_number?"))(idx)&&(idx<0)&&(await (await Environment.get_global("length"))(collection)<(-1*idx))))) {
+             return undefined
+        } else  {
+             return collection[idx]
+        }
+    } ()
+},{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"]
 });
  return  true
 }
