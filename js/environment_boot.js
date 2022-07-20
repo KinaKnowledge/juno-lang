@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-20 09:44:22
-// Version: 2022.07.20.09.44
-export const DLISP_ENV_VERSION='2022.07.20.09.44';
+// Build Time: 2022-07-20 13:41:34
+// Version: 2022.07.20.13.41
+export const DLISP_ENV_VERSION='2022.07.20.13.41';
 
 
 
@@ -1569,7 +1569,7 @@ await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
         };
          return  var_table
     }
-},{ "name":"flatten_ctx","fn_args":"(ctx _var_table)"
+},{ "name":"flatten_ctx","fn_args":"(ctx _var_table)","description":"Internal usage by the compiler, flattens the hierarchical context structure to a single level. Shadowing rules apply.","usage":["ctx_object:object"],"tags":["system","compiler"]
 });
 await Environment.set_global("identify_symbols",async function(quoted_form,_state) {
     let acc;
@@ -1630,7 +1630,7 @@ await Environment.set_global("identify_symbols",async function(quoted_form,_stat
 await Environment.set_global("unless",async function(condition,...forms) {
      return  ["=:if",["=:not",condition],["=:do",].concat(forms)]
 },{ "eval_when":{ "compile_time":true
-},"name":"unless","macro":true,"fn_args":"(condition \"&\" forms)","description":"opposite of if, if the condition is false then the forms are evaluated","usage":["condition:array","forms:array"]
+},"name":"unless","macro":true,"fn_args":"(condition \"&\" forms)","description":"opposite of if, if the condition is false then the forms are evaluated","usage":["condition:array","forms:array"],"tags":["if","not","ifnot","logic","conditional"]
 });
 await Environment.set_global("use_quoted_initializer",async function(...forms) {
     let insert_initializer;
@@ -2243,7 +2243,7 @@ await Environment.set_global("replace",async function(...args) {
             }
         })()
     }
-},{ "name":"replace","fn_args":"(\"&\" args)"
+},{ "name":"replace","fn_args":"(\"&\" args)","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"]
 });
 await Environment.set_global("cl_encode_string",async function(text) {
     if (check_true ((text instanceof String || typeof text==='string'))){
@@ -2285,7 +2285,7 @@ await Environment.set_global("path_to_js_syntax",async function(comps) {
         }
     } else throw new TypeError(("path_to_js_syntax: need array - given "+await (await Environment.get_global("sub_type"))(comps)));
     
-},{ "name":"path_to_js_syntax","fn_args":"(comps)"
+},{ "name":"path_to_js_syntax","fn_args":"(comps)","description":"Used by the compiler, converts an array containing the components of a path to Javascript syntax, which is then returned as a string.","usage":["comps:array"],"tags":["compiler","path","js","javascript"]
 });
 await Environment.set_global("first_is_upper_case?",async function(str_val) {
     {
@@ -2297,7 +2297,7 @@ await Environment.set_global("first_is_upper_case?",async function(str_val) {
               return false
         }
     }
-},{ "name":"first_is_upper_case?","fn_args":"(str_val)"
+},{ "name":"first_is_upper_case?","fn_args":"(str_val)","description":"Returns true if the first character of the provided string is an uppercase value in the range [A-Z]. ","tags":["string","case","uppercase","capitalized"]
 });
 await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_fn) {
     let comps;
@@ -2412,7 +2412,7 @@ await Environment.set_global("evaluate_compiled_source",async function(compiled_
      return  ["=:->","=:Environment","evaluate",compiled_source,"=:nil",{ "compiled_source":true
 }]
 },{ "eval_when":{ "compile_time":true
-},"name":"evaluate_compiled_source","macro":true,"fn_args":"(compiled_source)","description":["=:+","The macro evaluate_compiled_source takes the direct output of the compiler, ","which can be captured using the macro compile_to_js, and performs the ","evaluation of the compiled source, thereby handling the second half of the ","compile then evaluate cycle.  This call will return the results of ","the evaluation of the compiled code assembly."],"usage":["compiled_souce:array"],"tags":["compilation","compile","eval","pre-compilation"]
+},"name":"evaluate_compiled_source","macro":true,"fn_args":"(compiled_source)","description":["=:+","The macro evaluate_compiled_source takes the direct output of the compiler, ","which can be captured using the macro compile_to_js, and performs the ","evaluation of the compiled source, thereby handling the second half of the ","compile then evaluate cycle.  This call will return the results of ","the evaluation of the compiled code assembly."],"usage":["compiled_source:array"],"tags":["compilation","compile","eval","pre-compilation"]
 });
 await Environment.set_global("form_structure",async function(quoted_form,max_depth) {
     let idx;

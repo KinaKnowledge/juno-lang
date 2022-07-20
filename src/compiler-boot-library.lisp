@@ -1178,7 +1178,12 @@
                             (prop ctx.scope k))))
       (when ctx.parent
         (flatten_ctx ctx.parent var_table))
-      var_table))) 
+      var_table))
+  {
+   `description: "Internal usage by the compiler, flattens the hierarchical context structure to a single level. Shadowing rules apply."
+   `usage: ["ctx_object:object"]
+   `tags: ["system" "compiler"]
+   })
              
             
   
@@ -1214,7 +1219,8 @@
              ,@forms))
      {
        `description: "opposite of if, if the condition is false then the forms are evaluated"
-       `usage: ["condition:array" "forms:array"]
+      `usage: ["condition:array" "forms:array"]
+      `tags: ["if" "not" "ifnot" "logic" "conditional"]
      })
 
 (defmacro use_quoted_initializer (`& forms)
@@ -1516,7 +1522,16 @@ such as things that connect or use environmental resources.
                  (first rval)
                  rval))
              (catch Error (`e)
-                    (console.error (+ "replace: " e))))))
+               (console.error (+ "replace: " e)))))
+  {
+   `description: (+ "Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  "
+                    "This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that "
+                    "only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as "
+                    "(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>"
+                    "(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")")
+   `usage: ["target:string|regexp" "replacement:string|number" "container:string|array|object"]
+   `tags: ["replace" "find" "change" "edit" "string" "array" "object"]
+   })
 
 (defun cl_encode_string (text)
   (if (is_string? text)
@@ -1553,14 +1568,23 @@ such as things that connect or use environmental resources.
                                 ;          comp) "]")))
                        comps))
             comps.0)
-        (throw TypeError (+ "path_to_js_syntax: need array - given " (sub_type comps)))))
+        (throw TypeError (+ "path_to_js_syntax: need array - given " (sub_type comps))))
+  {
+   `description: "Used by the compiler, converts an array containing the components of a path to Javascript syntax, which is then returned as a string."
+   `usage: ["comps:array"]
+   `tags: ["compiler" "path" "js" "javascript"]
+   })
 
 (defun first_is_upper_case? (str_val)
     (progn
        (defvar rval (-> str_val `match (new RegExp "^[A-Z]")))
        (if (and rval rval.0)
            true
-           false)))
+           false))
+  {
+   `description: "Returns true if the first character of the provided string is an uppercase value in the range [A-Z]. "
+   `tags: ["string" "case" "uppercase" "capitalized"]
+   })
        
 (defun safe_access_2 (token ctx sanitizer_fn)
     (let
@@ -1631,7 +1655,7 @@ such as things that connect or use environmental resources.
                          "evaluation of the compiled source, thereby handling the second half of the "
                          "compile then evaluate cycle.  This call will return the results of "
                          "the evaluation of the compiled code assembly.")
-         `usage: ["compiled_souce:array"]
+         `usage: ["compiled_source:array"]
          `tags: ["compilation" "compile" "eval" "pre-compilation"] })
      
 (defun form_structure (quoted_form max_depth)
@@ -2238,7 +2262,7 @@ such as things that connect or use environmental resources.
             `tags:["bind" "object" "this" "context" "call"]
         })
 
-;; The import_from function handles loading and storage depending on the source
+;; The import function handles loading and storage depending on the source
 
 (defmacro import (`& args)
   (let

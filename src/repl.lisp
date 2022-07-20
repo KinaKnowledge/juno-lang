@@ -3,10 +3,14 @@
 ;; (requires Deno readline and streams)
 
 
+
 (defun repl (instream outstream opts)
   (let
       ((buffer nil)
        (lines [])
+       (raw_mode (either opts.raw
+			 (resolve_path [ `repl `raw_mode ] *env_config*)
+			 false))
        (readline_mod (dynamic_import "https://deno.land/x/readline/mod.ts"))
        (streams (dynamic_import "https://deno.land/std/streams/conversion.ts"))
        (generator readline_mod.readline)
@@ -42,9 +46,20 @@
 			          (write outstream sigint_message)
                                   (= lines [])
 			          (write outstream prompt))))
+       (output_processor (cond
+			  (and opts
+			       opts.output_processor
+			       (is_function? opts.output_processor))
+			  opts.output_processor
+			  (resolve_path [ `repl `output_processor ] *env_config*)
+			  (resolve_path [ `repl `output_processor ] *env_config*)
+			  else
+			  (fn (value)
+			      (JSON.stringify value nil 2))))
        (return_stack []))
     
-    (declare (function write))
+    (declare (function write)
+	     (include not))
     
     (defglobal $ nil)
     (defglobal $$ nil)
@@ -55,7 +70,8 @@
       (Deno.addSignalListener `SIGINT sigint_handler)
       (catch Error (e)
 	(warn "Unable to install sigint handler.")))
-    (write outstream (prompt))
+    (if (not raw_mode)
+	(write outstream (prompt)))
     (try      
       (for_with (`l (generator instream))
 	        (progn		
@@ -67,8 +83,13 @@
 		    
 		    (prepend return_stack
 			     (-> Environment `evaluate buffer))
-		    (console.log (first return_stack))
-		    (write outstream  (prompt))
+		    ;(console.log (JSON.stringify (first return_stack) nil 4))
+		    (write outstream (-> te `encode (output_processor (first return_stack))))
+		    
+		    (write outstream (-> te `encode "\n"))
+		    
+		    (when (not raw_mode)
+		      (write outstream (prompt)))
 		    (= lines [])
 		    (when (> return_stack.length 3)
 		      (pop return_stack))
@@ -91,12 +112,14 @@
                         (progn
                          (warn (+ last_exception.message ", position: " last_exception.position "\n    -->" last_exception.local_text "<--"))
                          (= lines [])
-                         (write outstream (prompt)))
+                         (when (not raw_mode)
+			   (write outstream (prompt))))
                         else
                         (progn                         
 			  (push lines l)                         
-			  (write outstream
-                                 (subprompt))
+			  (when (not raw_mode)
+			    (write outstream
+                                   (subprompt)))
                          ))))
 		   (catch Error (e)
 		     (console.error "ERROR: " e)))
@@ -104,6 +127,11 @@
 		 ))
       (catch Error (e)
 	(console.error "REPL: " e)))))
+
+(when (not (prop *env_config* `repl))
+  (set_prop *env_config* `repl {}))
+
+(register_feature `repl)
 
 
 

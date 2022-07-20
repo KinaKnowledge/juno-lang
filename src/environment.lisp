@@ -527,7 +527,8 @@
                                              details))
                                    (do
                                      (= quoted_symbol (if (starts_with? (quote "=:") quoted_symbol)
-                                                        (-> quoted_symbol `substr 2)))
+                                                        (-> quoted_symbol `substr 2)
+                                                        quoted_symbol))
                                      (aif (prop Environment.definitions quoted_symbol)
                                           (+ { `namespace: namespace
                                                `type: (sub_type local_data)
@@ -936,7 +937,10 @@
                             (let
                                 ((namespace_identity (if target_namespace
                                                        [ target_namespace symname ]
-                                                       (split_by "/" symname))))
+                                                       (if (> (length symname) 2)
+                                                         (split_by "/" symname)
+                                                         [symname] ))))
+                              ;(console.log "symbol_definition: " symname namespace_identity)
                               (cond
                                 (== namespace_identity.length 1)
                                     ;; not fully qualified

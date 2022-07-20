@@ -17,7 +17,7 @@ import { environment_boot } from "./environment_boot.js"
 
 await environment_boot(env);
 await init_compiler(env)
-// await load_core(env)
+//await load_core(env)
 var cca = await env.get_global("compiler")
 await env.set_compiler(cca)
 
@@ -50,7 +50,7 @@ try {
 }
 
 try {  
-  await env.evaluate("(repl Deno.stdin Deno.stdout)",null, opts); // and call it..
+  await env.evaluate("(repl Deno.stdin Deno.stdout { `raw: false } )",null, opts); // and call it..
 } catch (error) {
   console.error("repl error",error);
 }
