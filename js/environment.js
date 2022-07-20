@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-20 07:56:52
-// Version: 2022.07.20.07.56
-export const DLISP_ENV_VERSION='2022.07.20.07.56';
+// Build Time: 2022-07-20 08:02:33
+// Version: 2022.07.20.08.02
+export const DLISP_ENV_VERSION='2022.07.20.08.02';
 
 
 
@@ -1923,7 +1923,7 @@ export async function init_dlisp(Environment)  {
                                  await async function(){
                                     Environment.global_ctx.scope["*env_config*"]={
                                         export:{
-                                            save_path:"working/juno.js",default_namespace:"core",include_source:false
+                                            save_path:"js/juno.js",default_namespace:"core",include_source:false
                                         },features:[],imports:new Object()
                                     };
                                     return Environment.global_ctx.scope;
@@ -2497,8 +2497,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {
-             throw new EvalError(("reader: received undefined, text must be a string."));
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));
             
         } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {
              throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));

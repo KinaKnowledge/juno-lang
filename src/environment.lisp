@@ -1269,7 +1269,7 @@
 			`*env_config*))
 	 (set_prop Environment.global_ctx.scope
 		   `*env_config*
-		   { `export: { `save_path: "working/juno.js"
+		   { `export: { `save_path: "js/juno.js"
 		                `default_namespace: "core"
 		                `include_source: false }
                     `features: []
