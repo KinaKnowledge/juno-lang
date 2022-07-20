@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-20 09:17:23
-// Version: 2022.07.20.09.17
-export const DLISP_ENV_VERSION='2022.07.20.09.17';
+// Build Time: 2022-07-20 09:44:22
+// Version: 2022.07.20.09.44
+export const DLISP_ENV_VERSION='2022.07.20.09.44';
 
 
 
@@ -3112,6 +3112,11 @@ await Environment.set_global("defns",async function(name,options) {
     }
 },{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"]
 });
+await Environment.set_global("use_ns",async function(name) {
+     return  ["=:set_namespace",["=:desym",name]]
+},{ "eval_when":{ "compile_time":true
+},"name":"use_ns","macro":true,"fn_args":"(name)","usage":["name:symbol"],"description":"Sets the current namespace to the provided name.  Returns the name of the new namespace if succesful, otherwise an Eval error is thrown","tags":["namespace","environment","scope","change","set"]
+});
 await Environment.set_global("bind_and_call",async function(target_object,this_object,method,...args) {
     let boundf=await (await Environment.get_global("bind"))(target_object[method],this_object);
     ;
@@ -3121,7 +3126,7 @@ await Environment.set_global("bind_and_call",async function(target_object,this_o
         })()
     } else throw new Error("unable to bind target_object");
     
-},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)"
+},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"]
 });
 await Environment.set_global("import",async function(...args) {
     let filespec;
@@ -3199,9 +3204,11 @@ await Environment.set_global("import",async function(...args) {
 });
 await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
+},{
+    description:("The system date format structure that is used by the system_date_formatter."+"If modified, the system_date_formatter, which is a Intl.DateTimeFormat object "+"should be reinitialized by calling (new Intl.DateTimeFormat [] system_date_format)."),tags:["time","date","system"]
 });
 await Environment.set_global("system_date_formatter",new Intl.DateTimeFormat([],(await Environment.get_global("system_date_format"))),{
-    initializer:["=:new","=:Intl.DateTimeFormat",[],(await Environment.get_global("system_date_format"))]
+    initializer:["=:new","=:Intl.DateTimeFormat",[],(await Environment.get_global("system_date_format"))],tags:["time","date","system"],description:"The instantiation of the system_date_format.  See system_date_format for additional information."
 });
 await Environment.set_global("tzoffset",async function() {
      return  (60*await (async function() {

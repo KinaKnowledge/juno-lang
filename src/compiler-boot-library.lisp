@@ -2218,6 +2218,14 @@ such as things that connect or use environmental resources.
     tags: ["namespace" "environment" "define" "scope" "context"]
    })
 
+(defmacro use_ns (name)
+  `(set_namespace (desym ,#name))
+  {
+   `usage: [ "name:symbol" ]
+   `description: "Sets the current namespace to the provided name.  Returns the name of the new namespace if succesful, otherwise an Eval error is thrown"
+   `tags: ["namespace" "environment" "scope" "change" "set"]
+   })
+
  (defun bind_and_call (target_object this_object method `& args)
         (do
             (defvar boundf (bind (prop target_object method) this_object))
@@ -2226,7 +2234,7 @@ such as things that connect or use environmental resources.
                 (throw "unable to bind target_object")))
         {
             `usage:["target_object:object" "this_object:object" "method:string" "args0:*" "argsn:*"]
-            `desciption: "Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments."
+            `description: "Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments."
             `tags:["bind" "object" "this" "context" "call"]
         })
 
@@ -2333,12 +2341,20 @@ such as things that connect or use environmental resources.
           `hourCycle: "h24"
           `hour12: false,
           `timeZoneName: "short"
-          })
+        }
+  {
+   `description: (+ "The system date format structure that is used by the system_date_formatter."
+                    "If modified, the system_date_formatter, which is a Intl.DateTimeFormat object "
+                    "should be reinitialized by calling (new Intl.DateTimeFormat [] system_date_format).")
+   `tags: ["time" "date" "system"]
+   })
     
     (defglobal system_date_formatter
         (new Intl.DateTimeFormat [] system_date_format)
 	{
 	 `initializer: `(new Intl.DateTimeFormat [] ,#system_date_format)
+         `tags: ["time" "date" "system"]
+         `description: "The instantiation of the system_date_format.  See system_date_format for additional information."
 	})
 
     (defun tzoffset ()

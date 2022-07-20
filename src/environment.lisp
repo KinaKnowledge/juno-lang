@@ -937,18 +937,24 @@
                                 ((namespace_identity (if target_namespace
                                                        [ target_namespace symname ]
                                                        (split_by "/" symname))))
-                              (cond (== namespace_identity.length 1)
+                              (cond
+                                (== namespace_identity.length 1)
                                     ;; not fully qualified
-                                    (aif (prop Environment.definitions symname)
-                                         it
-                                         (if parent_environment
-                                           (-> parent_environment `symbol_definition symname)))
-                                    (== namespace_identity.0  namespace)
-                                    (prop Environment.definitions symname)
-                                    parent_environment
-                                    (-> parent_environment `symbol_definition namespace_identity.1 namespace_identity.0)
-                                    else
-                                    undefined)))
+                                (aif (prop Environment.definitions symname)
+                                     it ;; we have it here so return it 
+                                     (if parent_environment
+                                       (-> parent_environment `symbol_definition symname)))
+
+                                (== namespace_identity.0  namespace)
+                                (prop Environment.definitions symname)
+
+                                parent_environment
+                                (-> parent_environment `symbol_definition namespace_identity.1 namespace_identity.0)
+
+                                (== namespace_identity.length 2)
+                                (-> (prop children namespace_identity.0) `symbol_definition namespace_identity.1)
+                                else
+                                undefined)))
                           {
                            `description: (+ "Given a symbol name and an optional namespace, either as a fully qualified path "
                                             "or via the target_namespace argument, returns definition information about the "
