@@ -12,8 +12,8 @@
        (raw_mode (either opts.raw
 			 (resolve_path [ `repl `raw_mode ] *env_config*)
 			 false))
-       ;(readline_mod (dynamic_import "https://deno.land/x/readline/mod.ts"))
-       ;(streams (dynamic_import "https://deno.land/std/streams/conversion.ts"))
+       
+       (use_console (or opts.use_console false))
        (generator readline_mod.readline)
        (instream (or instream Deno.stdin))
        (outstream (or outstream Deno.stdout))
@@ -36,7 +36,9 @@
                          (function () opts.prompt)
                          else
                          (fn () 
-                             (+ "     " (join "" (map (fn (v) " " )  (range (+ 2 (length (current_namespace)))))) (join "" (map (fn (v) " ") (range_inc (or last_exception.depth 1))))))))
+                             (+ "     "
+				(join "" (map (fn (v) " " )  (range (+ 2 (length (current_namespace))))))
+				(join "" (map (fn (v) " ") (range_inc (or last_exception.depth 1))))))))
        (subprompt (fn ()
                     (-> te `encode (subprompt_text))))
                         
@@ -84,10 +86,12 @@
 		    
 		    (prepend return_stack
 			     (-> Environment `evaluate buffer))
-		    ;(console.log (JSON.stringify (first return_stack) nil 4))
-		    (write outstream (-> te `encode (output_processor (first return_stack))))
-		    
-		    (write outstream (-> te `encode "\n"))
+					;(console.log (JSON.stringify (first return_stack) nil 4))
+		    (if use_console
+			(console.log (first return_stack))
+		      (progn
+			(write outstream (-> te `encode (output_processor (first return_stack))))
+			(write outstream (-> te `encode "\n"))))
 		    
 		    (when (not raw_mode)
 		      (write outstream (prompt)))

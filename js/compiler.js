@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-21 08:46:32
-// Version: 2022.07.21.08.46
-export const DLISP_ENV_VERSION='2022.07.21.08.46';
+// Build Time: 2022-07-21 16:31:14
+// Version: 2022.07.21.16.31
+export const DLISP_ENV_VERSION='2022.07.21.16.31';
 
 
 
@@ -163,8 +163,8 @@ export async function init_compiler(Environment) {
                              }
 };
             let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;  }  return typeof value;};
-            let is_nil_ques_=function(x) {                             return  (x===null)
-                        };
+            let is_nil_ques_=async function(value) {     return  (null===value)
+};
             let is_number_ques_=function(x) {                             return  ( subtype(x)==="Number")
                         };
             let starts_with_ques_=function anonymous(val,text) {

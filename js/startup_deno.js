@@ -50,7 +50,7 @@ try {
 }
 
 try {  
-  await env.evaluate("(repl Deno.stdin Deno.stdout { `raw: false } )",null, opts); // and call it..
+  await env.evaluate("(repl Deno.stdin Deno.stdout { `raw: false `use_console: true } )",null, opts); // and call it..
 } catch (error) {
   console.error("repl error",error);
 }
