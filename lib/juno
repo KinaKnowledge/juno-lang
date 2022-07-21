@@ -24,7 +24,7 @@ for ARG in $@; do
     if [[ "$ARG" == -* ]]; then
 	if [ -z "$MAIN_SWITCH" ]; then
 	    MAIN_SWITCH=$ARG
-	    if [ "$MAIN_SWITCH" == "compile" ]; then
+	    if [ "$MAIN_SWITCH" == "--compile" ]; then
 		MAIN_MODE="compile"
 	    fi
 	fi	
@@ -39,7 +39,6 @@ for ARG in $@; do
     fi
 done
 
-
 if [ -n "$ADDR" ]; then
     MAIN_SWITCH="$MAIN_SWITCH=$ADDR"
 fi
@@ -47,7 +46,6 @@ fi
 if [ -z "$MAIN_SWITCH" ]; then
     MAIN_SWITCH=" ";
 fi
-
 
 if [ "$MAIN_MODE" == "compile" ]; then
     if [ -n "$COMP_OUT" ]; then

@@ -506,8 +506,8 @@
        ;; Lisp symbol names can be broader in allowable symbols then JS, so we need to be able
        ;; to deal with managing this mismatch...
        
-       (`invalid_js_ref_chars "+?-%&^#!*[]~{}|")
-       (`invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+" `g))
+       (`invalid_js_ref_chars "+?-%&^#!*[]~{}/|")
+       (`invalid_js_ref_chars_regex (new RegExp "[/\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+" `g))
        
        (`check_invalid_js_ref (fn (symname)
                                   (cond
@@ -3445,12 +3445,13 @@
                                ((`acc []))
                              (= acc (JSON.stringify lisp_struct.1))
                              [acc])))
-      
+       
        (`wrap_and_run (fn (js_code ctx run_opts)
                           (let
                               ((`assembly nil)
                                (`result nil)
                                (`fst nil)
+			       (`ctype nil)
                                (`comp_meta nil)
                                (`needs_braces? false)
                                (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
@@ -3458,15 +3459,20 @@
                                              log
                                              (defclog { `prefix: "wrap_and_run" `background: "#703030" `color: "white" } )))
                                (`needs_return?
-                                 (do
-                                  (= fst (+ "" (or (and (is_array? js_code)
-                                                        (first js_code)
-                                                        (is_object? (first js_code))
-                                                        (prop (first js_code) `ctype))
-                                                   "")))
+                                (do
+				  (= ctype (if (and (is_array? js_code)
+						    (first js_code)
+                                                    (is_object? (first js_code))
+                                                    (prop (first js_code) `ctype))
+                                                (prop (first js_code) `ctype)))
+				  (if (and (== (typeof ctype) "object")
+                                           (not (is_object? ctype)))
+                                    (= fst "")
+                                    (= fst (+ "" (or ctype
+                                                     ""))))
                                   (when (is_function? fst)
                                         (= fst (sub_type fst)))
-                                   (cond
+                                  (cond
                                      (contains? "block" fst)
                                      (do 
                                       (if (== fst "ifblock")
@@ -4049,7 +4055,8 @@
                                                 (throw SyntaxError "namespace declaration requires exactly 1 value"))
                                               (when (get_ctx ctx "__IN_LAMBDA__")
                                                 (throw SyntaxError "namespace compiler declaration must be toplevel"))
-                                              (setq target_namespace targeted.0.name))
+                                              (setq target_namespace targeted.0.name))                                       
+                                              
                                             
                                             else
                                             (do
@@ -4446,11 +4453,10 @@
                            (= kvpair (prop tokens.val idx))
                            
                            (= key (get_val kvpair.val.0 ctx))
-                           (when
-                              (and (== key.length 1)
+                           (when (and (== key.length 1)
                                       (== (-> key `charCodeAt) 34))
-                              (= key "'\"'"))
-                                                       
+                             (= key "'\"'"))
+                           
                            (push acc key)
                            
                            (push acc ":")

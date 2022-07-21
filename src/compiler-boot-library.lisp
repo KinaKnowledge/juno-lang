@@ -335,7 +335,7 @@
   (let
       ((binding nil)
        (acc [(quote list)]))
-    (debug)
+    
     (for_each (bind_set args)
               (do
                 (cond
@@ -346,7 +346,7 @@
                        (== bind_set.1.length 2))
                   (do                    
                     (= binding [(quote quote) [(quote bind) bind_set.1.0 bind_set.1.1 ]])
-                    (push acc [ (quote defglobal) (deref bind_set.0) [(quote bind) bind_set.1.0 bind_set.1.1]
+                    (push acc [ (quote defglobal) (+ *namespace* "/" (deref bind_set.0)) [(quote bind) bind_set.1.0 bind_set.1.1]
                            (if (is_object? bind_set.2)
                              (+ {} bind_set.2
                                 { `initializer: binding })
@@ -357,7 +357,7 @@
     acc)
   {
    description: (+ "Defines a global binding to a potentially native function.  This macro "
-                   "facilitates the housekeeping with keeping track of the source form "
+                   "facilitates the housekeeping by keeping track of the source form "
                    "used (and stored in the environment) so that the save environment "
                    "facility can capture the source bindings and recreate it in the initializer "
                    "function on rehydration.<br>"
@@ -2212,7 +2212,17 @@ such as things that connect or use environmental resources.
                        "handle_complex_types argument to true so they are handled appropriately. ")
       `usage: ["values:list" "handle_complex_types:boolean"]
       `tags: ["list" "dedup" "duplicates" "unique" "values"] })
- 
+
+(defun assert (assertion_form failure_message)
+      (if assertion_form
+          assertion_form
+         (throw EvalError (or failure_message "assertion failure")))
+         {
+             `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
+             `usage:["form:*" "failure_message:string?"]
+             `tags:["true" "error" "check" "debug" "valid" "assertion"]
+         })
+
 (defmacro time_in_millis ()
         `(Date.now)
         { "usage":[]
@@ -2262,7 +2272,7 @@ such as things that connect or use environmental resources.
             `tags:["bind" "object" "this" "context" "call"]
         })
 
-;; The import function handles loading and storage depending on the source
+;; The import macro handles loading and storage depending on the source
 
 (defmacro import (`& args)
   (let
@@ -2326,7 +2336,7 @@ such as things that connect or use environmental resources.
 	     (push acc
 		   `(defglobal ,#target_symbols.0 (dynamic_import ,#filespec)))
 	     (push acc
-		   `(set_path [ `imports (+ *namespace* "/" (desym ,#target_symbols.0)) ] *env_config* (to_object [[`symbol (desym ,#target_symbols.0) ] [ `namespace *namespace* ] [ `location ,#filespec ]])))
+		   `(set_path [ `imports (+ ,#*namespace* "/" (desym ,#target_symbols.0)) ] *env_config* (to_object [[`symbol (desym ,#target_symbols.0) ] [ `namespace ,#*namespace* ] [ `location ,#filespec ]])))
 	     (push acc
 		   `(when (prop ,#target_symbols.0 `initializer)
 		      (-> ,#target_symbols.0 `initializer Environment)))

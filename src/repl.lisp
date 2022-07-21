@@ -2,7 +2,8 @@
 ;; Establishes a REPL mechanism that can be bound to an input and output stream
 ;; (requires Deno readline and streams)
 
-
+(import (readline_mod) "https://deno.land/x/readline/mod.ts")
+(import (streams) "https://deno.land/std/streams/conversion.ts")
 
 (defun repl (instream outstream opts)
   (let
@@ -11,8 +12,8 @@
        (raw_mode (either opts.raw
 			 (resolve_path [ `repl `raw_mode ] *env_config*)
 			 false))
-       (readline_mod (dynamic_import "https://deno.land/x/readline/mod.ts"))
-       (streams (dynamic_import "https://deno.land/std/streams/conversion.ts"))
+       ;(readline_mod (dynamic_import "https://deno.land/x/readline/mod.ts"))
+       ;(streams (dynamic_import "https://deno.land/std/streams/conversion.ts"))
        (generator readline_mod.readline)
        (instream (or instream Deno.stdin))
        (outstream (or outstream Deno.stdout))

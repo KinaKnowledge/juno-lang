@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-20 13:41:34
-// Version: 2022.07.20.13.41
-export const DLISP_ENV_VERSION='2022.07.20.13.41';
+// Build Time: 2022-07-21 08:46:32
+// Version: 2022.07.21.08.46
+export const DLISP_ENV_VERSION='2022.07.21.08.46';
 
 
 
@@ -9,48 +9,48 @@ export const DLISP_ENV_VERSION='2022.07.20.13.41';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function initializer(Environment)  {
 {
+    ;
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
     ;
-    await Environment.set_global("path",await import ("https://deno.land/std@0.110.0/path/mod.ts"),{ "initializer":["=:dynamic_import","https://deno.land/std@0.110.0/path/mod.ts"]
-});
-await (await Environment.get_global("map"))((await Environment.get_global("register_feature")),["io","Deno"]);
-[await Environment.set_global("read_text_file",await (await Environment.get_global("bind"))(Deno.readTextFile,Deno),{
-    description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"],initializer:["=:bind","=:Deno.readTextFile","=:Deno"]
-}),await Environment.set_global("write_text_file",await (await Environment.get_global("bind"))(Deno.writeTextFile,Deno),{
-    description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"],initializer:["=:bind","=:Deno.writeTextFile","=:Deno"]
-})];
-await Environment.set_global("load",async function(filename) {
-    let fname;
-    let js_mod;
-    let comps;
-    fname=filename;
-    js_mod=null;
-    comps=await (await Environment.get_global("path.parse"))(fname);
-     return  await async function(){
-        if (check_true( ((comps && comps["ext"])===".lisp"))) {
-             return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname),null,{
-                source_name:fname
-            })
-        } else if (check_true( ((comps && comps["ext"])===".js"))) {
-            js_mod=await import (fname);
-            if (check_true ((js_mod && js_mod["initializer"]))){
-                  return await (async function(){
-                    let __array_op_rval__1=(js_mod && js_mod["initializer"]);
-                     if (__array_op_rval__1 instanceof Function){
-                        return await __array_op_rval__1(Environment) 
-                    } else {
-                        return[__array_op_rval__1,Environment]
-                    }
-                })()
-            } else throw new EvalError("load: unable to find function named initializer in export, use dynamic_import for this.");
-            
-        } else if (check_true( ((comps && comps["ext"])===".json"))) {
-             return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),null,{
-                json_in:true
-            })
-        }
-    } ()
-},{ "name":"load","fn_args":"(filename)","description":["=:+","Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. ","The file contents are expected to be Lisp source code in text format."],"tags":["compile","read","io","file"],"usage":["filename:string"]
+    (await Environment.get_global("path"));
+    await (await Environment.get_global("map"))((await Environment.get_global("register_feature")),["io","Deno"]);
+    [await Environment.set_global("core/read_text_file",await (await Environment.get_global("bind"))(Deno.readTextFile,Deno),{
+        description:("Given an accessible filename including "+"path with read permissions returns the file contents as a string."),usage:["filename:string","options:object"],tags:["file","read","text","input","io"],initializer:["=:bind","=:Deno.readTextFile","=:Deno"]
+    }),await Environment.set_global("core/write_text_file",await (await Environment.get_global("bind"))(Deno.writeTextFile,Deno),{
+        description:("Given a string path to a filename, an argument containing "+"the string of text to be written, and an optional options argument "+"write the file to the filesystem.<br><br>."+"The WriteFileOptions corresponds to the Deno WriteFileOptions interface"),usage:["filepath:string","textdata:string","options:WriteFileOptions"],tags:["file","write","io","text","string"],initializer:["=:bind","=:Deno.writeTextFile","=:Deno"]
+    })];
+    await Environment.set_global("load",async function(filename) {
+        let fname;
+        let js_mod;
+        let comps;
+        fname=filename;
+        js_mod=null;
+        comps=await (await Environment.get_global("path.parse"))(fname);
+         return  await async function(){
+            if (check_true( ((comps && comps["ext"])===".lisp"))) {
+                 return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname),null,{
+                    source_name:fname
+                })
+            } else if (check_true( ((comps && comps["ext"])===".js"))) {
+                js_mod=await import (fname);
+                if (check_true ((js_mod && js_mod["initializer"]))){
+                      return await (async function(){
+                        let __array_op_rval__2=(js_mod && js_mod["initializer"]);
+                         if (__array_op_rval__2 instanceof Function){
+                            return await __array_op_rval__2(Environment) 
+                        } else {
+                            return[__array_op_rval__2,Environment]
+                        }
+                    })()
+                } else throw new EvalError("load: unable to find function named initializer in export, use dynamic_import for this.");
+                
+            } else if (check_true( ((comps && comps["ext"])===".json"))) {
+                 return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),null,{
+                    json_in:true
+                })
+            }
+        } ()
+    },{ "name":"load","fn_args":"(filename)","description":["=:+","Compile and load the contents of the specified lisp filename (including path) into the Lisp environment. ","The file contents are expected to be Lisp source code in text format."],"tags":["compile","read","io","file"],"usage":["filename:string"]
 });
 await Environment.set_global("with_fs_events",async function(...args) {
     let event_binding;
@@ -115,19 +115,19 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
     (segments).push(("// Source: "+(options && options["input_filename"])+"  "));
     if (check_true (((opts && opts["build_headers"]) instanceof Array))){
         await (async function() {
-            let __for_body__4=async function(header) {
+            let __for_body__5=async function(header) {
                  return  (segments).push(header)
             };
-            let __array__5=[],__elements__3=(opts && opts["build_headers"]);
+            let __array__6=[],__elements__4=(opts && opts["build_headers"]);
             let __BREAK__FLAG__=false;
-            for(let __iter__2 in __elements__3) {
-                __array__5.push(await __for_body__4(__elements__3[__iter__2]));
+            for(let __iter__3 in __elements__4) {
+                __array__6.push(await __for_body__5(__elements__4[__iter__3]));
                 if(__BREAK__FLAG__) {
-                     __array__5.pop();
+                     __array__6.pop();
                     break;
                     
                 }
-            }return __array__5;
+            }return __array__6;
              
         })();
          (segments).push("\n")
@@ -138,19 +138,19 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
     };
     if (check_true (((opts && opts["js_headers"]) instanceof Array))){
         await (async function() {
-            let __for_body__8=async function(header) {
+            let __for_body__9=async function(header) {
                  return  (segments).push(header)
             };
-            let __array__9=[],__elements__7=(opts && opts["js_headers"]);
+            let __array__10=[],__elements__8=(opts && opts["js_headers"]);
             let __BREAK__FLAG__=false;
-            for(let __iter__6 in __elements__7) {
-                __array__9.push(await __for_body__8(__elements__7[__iter__6]));
+            for(let __iter__7 in __elements__8) {
+                __array__10.push(await __for_body__9(__elements__8[__iter__7]));
                 if(__BREAK__FLAG__) {
-                     __array__9.pop();
+                     __array__10.pop();
                     break;
                     
                 }
-            }return __array__9;
+            }return __array__10;
              
         })();
          (segments).push("\n")
@@ -186,11 +186,11 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
              return  await (await Environment.get_global("warn"))((compiled && compiled["1"]))
         } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&&(await (await Environment.get_global("contains?"))("block",(compiled && compiled["0"] && compiled["0"]["ctype"]))||((compiled && compiled["0"] && compiled["0"]["ctype"])==="assignment")||((compiled && compiled["0"] && compiled["0"]["ctype"])==="__!NOT_FOUND!__"))))) {
              if (check_true (await (async function(){
-                let __array_op_rval__11=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
-                 if (__array_op_rval__11 instanceof Function){
-                    return await __array_op_rval__11() 
+                let __array_op_rval__12=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
+                 if (__array_op_rval__12 instanceof Function){
+                    return await __array_op_rval__12() 
                 } else {
-                    return[__array_op_rval__11]
+                    return[__array_op_rval__12]
                 }
             })())){
                 (segments).push(("export async function "+export_function_name+"(Environment)  {"));
@@ -203,11 +203,11 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
             }
         } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&&(("AsyncFunction"===(compiled && compiled["0"] && compiled["0"]["ctype"]))||("statement"===(compiled && compiled["0"] && compiled["0"]["ctype"]))||("objliteral"===(compiled && compiled["0"] && compiled["0"]["ctype"])))))) {
             if (check_true (await (async function(){
-                let __array_op_rval__12=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
-                 if (__array_op_rval__12 instanceof Function){
-                    return await __array_op_rval__12() 
+                let __array_op_rval__13=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
+                 if (__array_op_rval__13 instanceof Function){
+                    return await __array_op_rval__13() 
                 } else {
-                    return[__array_op_rval__12]
+                    return[__array_op_rval__13]
                 }
             })())){
                 (segments).push(("export async function "+export_function_name+"(Environment) {"));
@@ -218,11 +218,11 @@ await Environment.set_global("compile_buffer",async function(input_buffer,export
             }
         } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&&("Function"===(compiled && compiled["0"] && compiled["0"]["ctype"]))))) {
             if (check_true (await (async function(){
-                let __array_op_rval__13=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
-                 if (__array_op_rval__13 instanceof Function){
-                    return await __array_op_rval__13() 
+                let __array_op_rval__14=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
+                 if (__array_op_rval__14 instanceof Function){
+                    return await __array_op_rval__14() 
                 } else {
-                    return[__array_op_rval__13]
+                    return[__array_op_rval__14]
                 }
             })())){
                 (segments).push(("export function "+export_function_name+"(Environment) {"));
@@ -323,11 +323,11 @@ await Environment.set_global("rebuild_env",async function(opts) {
               return (opts && opts["version_tag"])
         } else {
               return (await (async function(){
-                let __array_op_rval__14=(dcomps && dcomps["year"]);
-                 if (__array_op_rval__14 instanceof Function){
-                    return await __array_op_rval__14((dcomps && dcomps["month"]),(dcomps && dcomps["day"]),(dcomps && dcomps["hour"]),(dcomps && dcomps["minute"])) 
+                let __array_op_rval__15=(dcomps && dcomps["year"]);
+                 if (__array_op_rval__15 instanceof Function){
+                    return await __array_op_rval__15((dcomps && dcomps["month"]),(dcomps && dcomps["day"]),(dcomps && dcomps["hour"]),(dcomps && dcomps["minute"])) 
                 } else {
-                    return[__array_op_rval__14,(dcomps && dcomps["month"]),(dcomps && dcomps["day"]),(dcomps && dcomps["hour"]),(dcomps && dcomps["minute"])]
+                    return[__array_op_rval__15,(dcomps && dcomps["month"]),(dcomps && dcomps["day"]),(dcomps && dcomps["hour"]),(dcomps && dcomps["minute"])]
                 }
             })()).join(".")
         } 
@@ -337,21 +337,21 @@ await Environment.set_global("rebuild_env",async function(opts) {
     include_source=((opts && opts["include_source"])||false);
     source_path=async function(filename) {
          return  (await (async function(){
-            let __array_op_rval__15=source_dir;
-             if (__array_op_rval__15 instanceof Function){
-                return await __array_op_rval__15(filename) 
+            let __array_op_rval__16=source_dir;
+             if (__array_op_rval__16 instanceof Function){
+                return await __array_op_rval__16(filename) 
             } else {
-                return[__array_op_rval__15,filename]
+                return[__array_op_rval__16,filename]
             }
         })()).join((await Environment.get_global("path.sep")))
     };
     output_path=async function(filename) {
          return  (await (async function(){
-            let __array_op_rval__16=output_dir;
-             if (__array_op_rval__16 instanceof Function){
-                return await __array_op_rval__16(filename) 
+            let __array_op_rval__17=output_dir;
+             if (__array_op_rval__17 instanceof Function){
+                return await __array_op_rval__17(filename) 
             } else {
-                return[__array_op_rval__16,filename]
+                return[__array_op_rval__17,filename]
             }
         })()).join((await Environment.get_global("path.sep")))
     };

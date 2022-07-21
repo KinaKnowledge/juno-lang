@@ -1,14 +1,12 @@
-; Kina Server - main boot library
-; (c) 2019 Kina, LLC
-; All Rights Reserved
+;; Kina Server - Core - Expanded
+;; (c) 2019 Kina, LLC
+;; All Rights Reserved
  
+(progn
 
- 
-; this must be included in the dlisp environment boot up/initialization 
- 
-     
-(do  
-
+  ;; place the these in core expanded
+  (declare (namespace `core))
+  
     ; set up the core environment...
     
     (defmacro if_undefined (value replacer)
@@ -135,11 +133,7 @@
           `tags:["enumeration" "values"]
         })
 
-    (defmacro time_in_millis ()
-        `(Date.now)
-        { "usage":[]
-          "tags":["time" "milliseconds" "number" "integer" "date"]
-          "description":"Returns the current time in milliseconds as an integer" })
+   
     
     (defun gen_id (prefix)
            (+ "" prefix "_" (time_in_millis ))
@@ -148,25 +142,7 @@
              `description: "Given a prefix returns a element safe unique id" } )
     
     
-    (defun nth (idx collection)
-        (cond 
-              (is_array? idx)
-              (map (lambda (v) (nth v collection)) idx)
-              (and (is_number? idx) (< idx 0) (>= (length collection) (* -1 idx)))
-              (prop collection (+ (length collection) idx))
-              (and (is_number? idx) (< idx 0) (< (length collection) (* -1 idx)))
-              undefined
-              else
-              (prop collection idx))
-        {
-           "description":(+ "Based on the index or index list passed as the first argument, " 
-                            "and a collection as a second argument, return the specified values " 
-                            "from the collection. If an index value is negative, the value "
-                            "retrieved will be at the offset starting from the end of the array, "
-                            "i.e. -1 will return the last value in the array.")
-           "tags":["filter" "select" "pluck" "object" "list" "key" "array"]
-           "usage":["idx:string|number|array","collection:list|object"]
-         })
+    
     
     (defun macros ()
         (reduce (`v (pairs Environment.definitions))
@@ -1386,20 +1362,7 @@
          `tags: ["search" "index" "list" "regex" "array" "string"]
        })
   
-    (defglobal *LANGUAGE* {})
-
-    (defun dtext (default_text)
-        (or
-          (prop *LANGUAGE* default_text)
-          default_text)
-       { `usage: ["text:string" "key:string?"]
-         `description: (+ "Given a default text string and an optional key, if a key "  
-                          "exists in the global object *LANGUAGE*, return the text associated with the key. "
-                          "If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. "
-                          "If that is a nil entry, returns the default text.")
-         `tags: ["text" "multi-lingual" "language" "translation" "translate"]
-        })
-    
+  
     (defun gather_up_prop (key values)
        (cond 
          (is_array? values)
@@ -1676,7 +1639,7 @@
     })
 
  
-
+  (register_feature "core-ext")
   
     true
 )

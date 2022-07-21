@@ -1091,7 +1091,14 @@
                                    (opts.on_compilation_complete compiled))
                                         ;(console.log "env: <- compiled: " (clone compiled))
                                  (try
-                                   (do                             
+                                   (do
+                                     (when (and (is_array? compiled)
+                                                (is_object? compiled.0)
+                                                compiled.0.ctype
+                                                (not (is_string? compiled.0.ctype)))
+                                       (set_prop compiled.0
+                                                 `ctype
+                                                 (subtype compiled.0.ctype)))
                                      (= result
                                         (cond
                                           compiled.error  ;; compiler error
@@ -1169,8 +1176,7 @@
                                  result)))))
        
 	 (evaluate (fn (expression ctx opts)
-		       (progn
-			 (debug)
+		       (progn			 
 			 (if (== namespace active_namespace)
 			     (evaluate_local expression ctx opts)  ;; we by default use evaluate local
 			   (-> (prop children active_namespace)
@@ -1460,7 +1466,7 @@
 		     (and options options.no_compiler
 			  (== symset.0 "compiler"))
 		     nil
-		     (or (== "$" symset.0) (== "$$" symset.0) (== "$$$" symset.0))
+		     (starts_with? "$" symset.0)  ;; any values starting with $ do not get exported
 		     nil
 		     (== symset.0 "*env_skeleton*")
                      [ symset.0 [(quote quotel) (prop Environment.global_ctx.scope "*env_skeleton*") ]]
@@ -1472,125 +1478,129 @@
                      [symset.0 (quote undefined)]
                      else
                      [symset.0 symset.1])))))
+
+     ;; This routine saves the environment image into effectively a Javascript
+     ;; file or Lisp file...
      
-     (defvar save_env (fn (options)                                                  
-                          (let
-                              ((new_env nil)
-                               (my_children nil)                               
-                               (env_constructor nil)
-                               (dcomps (date_components (new Date)))
-                               (version_tag (if (not (blank? opts.version_tag))
-                                              opts.version_tag
-                                              (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
-                               (build_time (formatted_date (new Date)))
-                               (build_headers [])
-                               (child_env nil)
-                               (include_source false)
-                               (exports [])
-                               (src (if (prop Environment.global_ctx.scope "*env_skeleton*")
-                                      (clone (prop Environment.global_ctx.scope "*env_skeleton*"))
-				      (reader (read_text_file  "./src/environment.lisp"))))
-                               (target_insertion_path nil)  ;; where we inject our context into the source tree                               
-                               (output_path nil))			       
+     (defvar save_env
+       (fn (options)                                                  
+         (let
+             ((new_env nil)
+              (my_children nil)                               
+              (env_constructor nil)
+              (dcomps (date_components (new Date)))
+              (version_tag (if (not (blank? opts.version_tag))
+                             opts.version_tag
+                             (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
+              (build_time (formatted_date (new Date)))
+              (build_headers [])
+              (child_env nil)
+              (include_source false)
+              (exports [])
+              (src (if (prop Environment.global_ctx.scope "*env_skeleton*")
+                     (clone (prop Environment.global_ctx.scope "*env_skeleton*"))
+		     (reader (read_text_file  "./src/environment.lisp"))))
+              (target_insertion_path nil)  ;; where we inject our context into the source tree                               
+              (output_path nil))			       
 
-                            (when (prop Environment.global_ctx.scope "*env_skeleton*")
-                              (register_feature "*env_skeleton*"))
-                            ;; construct our form by doing surgery on ourselves..
-                                                   
-                            (= target_insertion_path (first (findpaths (quote included_globals) src)))
-                                                     
-                            (if (not (is_array? target_insertion_path))
-                              (throw EvalError "Unable to find the first included_globals symbol"))
+           (when (prop Environment.global_ctx.scope "*env_skeleton*")
+             (register_feature "*env_skeleton*"))
+           ;; construct our form by doing surgery on ourselves..
+           
+           (= target_insertion_path (first (findpaths (quote included_globals) src)))
+           
+           (if (not (is_array? target_insertion_path))
+             (throw EvalError "Unable to find the first included_globals symbol"))
 
-                            (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
-                                                      
-                            (= options (or options {}))
-                            (when options.include_source
-                              (= include_source true))
-                                                                                   
-                            (env_log namespace "cloning: # children: " (length children))                           
+           (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
+           
+           (= options (or options {}))
+           (when options.include_source
+             (= include_source true))
+           
+           (env_log namespace "cloning: # children: " (length children))                           
 
-			    (= exports (export_symbol_set))
-			    			    
-			    (= my_children
-			       (to_object
-                                (reduce (child (pairs children))
-                                        (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
-                                          (progn
-                                           (= child_env (-> child.1
-                                                            `compile
-                                                            (-> child.1 `export_symbol_set { `no_compiler: true })
-                                                            { `throw_on_error: true `meta: true }))                                            
-                                           [child.0  `(quote (javascript ,#child_env.1))])))))
-                                                         
-                                                   ;[(quote let)
-                                                   ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
-                                                   ;  [(quote javascript) child_env.1]]])))))
-			    
-			   
-                            ;; now embed our compiled existing context into the source tree...			    
-                            (set_path target_insertion_path src
-				      `(fn ()
-                                         ,#(to_object
-                                           [[`definitions  [(quotel quote) (clone Environment.definitions)]]
-				            [`declarations (clone Environment.declarations)]
-                                            [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
-				            [ `children_declarations `(fn () ,#(clone children_declarations)) ]
-                                            [ `children    my_children ]])))
+	   (= exports (export_symbol_set))
+	   
+	   (= my_children
+	      (to_object
+               (reduce (child (pairs children))
+                       (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
+                         (progn
+                          (= child_env (-> child.1
+                                           `compile
+                                           (-> child.1 `export_symbol_set { `no_compiler: true })
+                                           { `throw_on_error: true `meta: true }))                                            
+                          [child.0  `(quote (javascript ,#child_env.1))])))))
+           
+                                        ;[(quote let)
+                                        ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
+                                        ;  [(quote javascript) child_env.1]]])))))
+	   
+	   
+           ;; now embed our compiled existing context into the source tree...			    
+           (set_path target_insertion_path src
+		     `(fn ()
+                        ,#(to_object
+                           [[`definitions  [(quotel quote) (clone Environment.definitions)]]
+			    [`declarations (clone Environment.declarations)]
+                            [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
+			    [ `children_declarations `(fn () ,#(clone children_declarations)) ]
+                            [ `children    my_children ]])))
 
-                            
-                            
-                            (= output_path (or options.save_as
-                                               (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
-                            ;; if our output path is a function, call it to get an actual name...
-                            (if (is_function? output_path)
-                              (= output_path (output_path)))
-                           
-                            (if (and (not (is_string? output_path))
-                                     output_path)
-                              (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
-                            
-                            (cond
-                              (and output_path
-                                   (ends_with? ".js" output_path))
-                              (do
-                                (push build_headers
-                                      (+ "// Build Time: " build_time))
-                                (push build_headers
-                                      (+ "// Version: " version_tag))                                
-                                (push build_headers
-                                      (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
-                                (env_log "saving to: " output_path)
+           
+           
+           (= output_path (or options.save_as
+                              (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
+           ;; if our output path is a function, call it to get an actual name...
+           (if (is_function? output_path)
+             (= output_path (output_path)))
+           
+           (if (and (not (is_string? output_path))
+                    output_path)
+             (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
+           
+           (cond
+             (and output_path
+                  (ends_with? ".js" output_path))
+             (do
+               (push build_headers
+                     (+ "// Build Time: " build_time))
+               (push build_headers
+                     (+ "// Version: " version_tag))                                
+               (push build_headers
+                     (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
+               (env_log "saving to: " output_path)
+               
+               (compile_buffer src "init_dlisp"
+                               {
+                                `namespace: namespace
+                                `toplevel: true
+                                `include_boilerplate: false
+                                `verbose: false
+				`bundle: true
+                                `js_headers: [(show check_true)
+                                              (show get_next_environment_id)
+                                              (show get_outside_global)
+                                              (show subtype)
+                                              (show lisp_writer)
+                                              (show clone)
+                                              (show LispSyntaxError)]
                                 
-                                (compile_buffer src "init_dlisp"
-                                                {
-                                                 `namespace: namespace
-                                                 `toplevel: true
-                                                 `include_boilerplate: false
-                                                 `verbose: false
-						 `bundle: true
-                                                 `js_headers: [(show check_true)
-                                                               (show get_next_environment_id)
-                                                               (show get_outside_global)
-                                                               (show subtype)
-                                                               (show lisp_writer)
-                                                               (show clone)
-                                                               (show LispSyntaxError)]
-                                                 
-						 `bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
-						                    }
-						 
-                                                 `output_file: output_path
-                                                 `include_source: (or options.include_source
-                                                                      (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
-                                                 `toplevel: true
-                                                 `build_headers: build_headers
-                                                 }))
-			      (and output_path
-				   (ends_with? ".lisp" output_path))
-			      (write_text_file output_path (JSON.stringify src nil 4))
-                              else
-                              src))))
+				`bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
+						  }
+				
+                                `output_file: output_path
+                                `include_source: (or options.include_source
+                                                     (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
+                                `toplevel: true
+                                `build_headers: build_headers
+                                }))
+	     (and output_path
+		  (ends_with? ".lisp" output_path))
+	     (write_text_file output_path (JSON.stringify src nil 4))
+             else
+             src))))
                            
      
      

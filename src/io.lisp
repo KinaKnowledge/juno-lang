@@ -1,11 +1,15 @@
 
 
 
+(declare (namespace `core))
+
 (if (not (is_symbol? `Deno))
   (throw "IO requires Deno"))
 
-(defglobal path (dynamic_import "https://deno.land/std@0.110.0/path/mod.ts"))
+(import (path) "https://deno.land/std@0.110.0/path/mod.ts")
+
 (map register_feature ["io" "Deno"])
+
 (defbinding
   (read_text_file (Deno.readTextFile Deno)
                   {
@@ -382,4 +386,5 @@
 
 ;; return true as the last value so the console output isn't overwhelmed.
 true
+
 

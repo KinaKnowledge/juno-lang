@@ -9,7 +9,7 @@ import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_
 import { init_dlisp } from "./environment.js"
 import { init_compiler } from "./compiler.js"
 //import { load_core } from "./core.js"
-import { initializer } from "./io.js"
+// import { initializer } from "./io.js"
 
 await init_dlisp()
 var env=await dlisp_env()
@@ -21,7 +21,7 @@ await init_compiler(env)
 var cca = await env.get_global("compiler")
 await env.set_compiler(cca)
 
-await initializer(env);
+// await initializer(env);
 // Ready - call env.evaluate("(my_lisp form)") beyond this point for compilation and evaluation of lisp forms
 
 // setup a simple repl from stdin
