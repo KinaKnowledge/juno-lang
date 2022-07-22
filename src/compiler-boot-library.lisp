@@ -224,38 +224,44 @@
          (`comps [])
          (`mode 0)
          (`name_acc []))
-        ;(declare (include length))
                  
         (for_each (`c chars)
           (do
             (cond
                 (and (== c ".")
                      (== mode 0))
-                (do 
+                (do
+                  (when (> name_acc.length 0)
                     (push comps
-                          (join "" name_acc))
+                          (join "" name_acc)))
                     (= name_acc []))
                 (and (== mode 0)
                      (== c "["))
                 (do
-                   (= mode 1)
-                   (push comps
-                         (join "" name_acc))
+                  (= mode 1)
+                  (when (> name_acc.length 0)
+                    (push comps
+                         (join "" name_acc)))
                    (= name_acc []))
                 (and (== mode 1)
                      (== c "]"))
                          
                 (do
-                   (= mode 0)
-                   (push comps
-                         (join "" name_acc))
+                  (= mode 0)                  
+                  (push comps
+                        (join "" name_acc))
                    (= name_acc []))
                 else
                 (push name_acc c))))
         (if (> name_acc.length 0)
             (push comps (join "" name_acc)))
         comps)
-    [ refname ]))
+    [ refname ])
+  {
+   `description: "get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components"
+   `tags: [ `compiler ]
+   `usage: ["refname:string"]
+   })
              
 
 
@@ -292,7 +298,12 @@
                                  (do_deferred_splice pset.1))))
                rval)
             else
-            tree)))
+            tree))
+  {
+   `description: "Internally used by the compiler to facilitate splice operations on arrays."
+   `usage: ["tree:*"]
+   `tags: [`compiler `build ]
+   })
 
 
 
@@ -382,37 +393,14 @@
                   (push acc ([(quote set_prop) (quote Environment.definitions)
                                        (+ "" (as_lisp symname) "")
                                        defset.2])))))
-     acc))
+     acc)
+  {
+   `description: (+ "define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the "
+                    "constructed scope as well as placing a reference to the defined symbol in the scope object.")
+   `usage: ["definitions:array"]
+   `tags: ["environment" "core" "build"]
+   })
 
-(defmacro define_env% (source_env_ctx `& defs)
-    (let
-        ((acc [(quote progl)])
-         (symname nil))
-      (log "define_env%: source_env? " (and source_env_ctx true) (is_object? source_env_ctx.scope))
-      (cond
-        (and false source_env_ctx 
-             (is_object? source_env_ctx.scope))
-        (do
-          (for_each (`defset (pairs source_env_ctx.scope))
-             (do
-               ;; we only need to define our local to the environment scope vars since
-               ;; since the source_env global_ctx scope is already populated..
-               (push acc [(quote defvar) defset.0 defset.1])
-               (log "symbol included: " defset.0)
-               ;(remove_prop source_env.context.scope defset.0)
-               )))          
-        else
-        (do          
-          (for_each (`defset defs)
-                  (do
-                    (push acc [(quote defvar) defset.0 defset.1])
-                    (= symname defset.0)                          
-                    (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])            
-                    (when (is_object? defset.2)
-                      (push acc ([(quote set_prop) (quote Environment.definitions)
-                                  (+ "" (as_lisp symname) "")
-                                  defset.2])))))))
-     acc))
 
 (defun type (x)
     (cond
@@ -446,7 +434,12 @@
                                 (push acc _path_prefix)))))
         (follow_tree structure [])
         
-        acc))
+        acc)
+  {
+   `description: "Destructure list takes a nested array and returns the paths of each element in the provided array."
+   `usage: ["elems:array"]
+   `tags: ["destructuring" "path" "array" "nested" "tree"]
+   })
 
 
 (defmacro destructuring_bind (bind_vars expression `& forms)  
@@ -472,7 +465,15 @@
                 allocations)
           (= acc (conj acc
                        forms))
-          acc))
+          acc)
+  {
+   `description: (+ "The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding "
+                    "values in the tree structure resulting from the evaluation of the provided expression.  The bound "
+                    "variables are then available within the provided forms, which are then evaluated.  Note that "
+                    "destructuring_bind only supports destructuring arrays. Destructuring objects is not supported.")
+   `usage: ["bind_vars:array" "expression:array" "forms:*"]
+   `tags: [`destructure `array `list `bind `variables `allocation `symbols ]
+   })
 
 (defun_sync split_by_recurse (token container)  
     (cond
