@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-22 06:38:09
-// Version: 2022.07.22.06.38
-export const DLISP_ENV_VERSION='2022.07.22.06.38';
+// Build Time: 2022-07-22 07:58:59
+// Version: 2022.07.22.07.58
+export const DLISP_ENV_VERSION='2022.07.22.07.58';
 
 
 
@@ -9,9 +9,6 @@ export const DLISP_ENV_VERSION='2022.07.22.06.38';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function environment_boot(Environment)  {
 {
-    await Environment.set_global("get_outside_global",(await Environment.get_global("get_outside_global")));
-    await Environment.set_global("true?",check_true);
-    await Environment.set_global("subtype",(await Environment.get_global("sub_type")));
     await Environment.set_global("defmacro",async function(name,arg_list,...body) {
         let macro_name;
         let macro_args;

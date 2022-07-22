@@ -156,8 +156,7 @@
      (define_env 
          (MAX_SAFE_INTEGER 9007199254740991)
          (LispSyntaxError globalThis.LispSyntaxError)
-         (sub_type subtype)
-                                      
+         (sub_type subtype)                                      
          (__VERBOSITY__ 0
                         { 
                          `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -560,7 +559,6 @@
                                     (`child_call nil)
                                     (`target_symbol nil))
                                  (declare (function parent_call))
-                                 (debug)
 			         (cond
                                    (or (and (== namespace_identity.length 1)                                        
                                             (prop Environment.global_ctx.scope namespace_identity.0))
@@ -789,7 +787,7 @@
 			       (== Environment.global_ctx value)
 			       (== Environment.global_ctx.scope value))
 			   (do
-                             (debug)
+                             ;(debug)
                              (throw EvalError "cannot set the environment scope as a global value")))
 		     
                      (when (resolve_path [ refname `constant ] Environment.definitions)
@@ -929,9 +927,16 @@
                                 ;; based on the value of refval, return the value                                        
                                 
                                 (cond
+                                  (and (== NOT_FOUND refval)
+                                       value_if_not_found)
+                                  value_if_not_found
+                                  
                                   (== NOT_FOUND refval)
-                                  (or value_if_not_found
-                                      NOT_FOUND)
+                                  (do
+                                    (throw ReferenceError (+ "symbol not found: " (if (> namespace_identity.length 1)
+                                                                                  (+ namespace "/" namespace_identity.1)
+                                                                                  (+ namespace "/" namespace_identity.0)))))
+                                    
                                   
                                   (== comps.length 1)
                                   refval
@@ -1022,7 +1027,7 @@
                                 (compiled nil)
                                 (error_data nil)
                                 (result nil))
-			     (debug)
+			     ;(debug)
                              ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
                              (if opts.compiled_source
                                (= compiled expression)
@@ -1438,13 +1443,11 @@
                      ;(console.log "installing child symbols: " childset.0)
                      
                      (defvar childenv (prop children childset.0))
-                     (debug)
                      
                      (set_prop childset
                                1
                                (-> childenv `eval childset.1))
-                     
-                     
+                                          
 	             (for_each (symset childset.1)
 			       (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point
@@ -1636,7 +1639,8 @@
                `as_lisp lisp_writer
                `lisp_writer lisp_writer
                `clone_to_new clone_to_new
-               `save_env save_env)
+               `save_env save_env
+               `null null)
 
     
        

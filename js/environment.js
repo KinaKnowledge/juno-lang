@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-22 06:38:09
-// Version: 2022.07.22.06.38
-export const DLISP_ENV_VERSION='2022.07.22.06.38';
+// Build Time: 2022-07-22 07:58:59
+// Version: 2022.07.22.07.58
+export const DLISP_ENV_VERSION='2022.07.22.07.58';
 
 
 
@@ -886,8 +886,6 @@ export async function init_dlisp(Environment)  {
                                 child_call=null;
                                 target_symbol=null;
                                 ;
-                                debugger;
-                                ;
                                  return    (function(){
                                     if (check_true( (((namespace_identity.length===1)&&Environment.global_ctx.scope[namespace_identity['0']])||((namespace_identity.length>1)&&(namespace_identity['0']===namespace))))) {
                                         target_symbol= ( function () {
@@ -1276,8 +1274,6 @@ export async function init_dlisp(Environment)  {
                                          throw new TypeError("reference name must be a string type");
                                         
                                     } else if (check_true( ((Environment===value)||(Environment.global_ctx===value)||(Environment.global_ctx.scope===value)))) {
-                                        debugger;
-                                        ;
                                         throw new EvalError("cannot set the environment scope as a global value");
                                         
                                     }
@@ -1445,8 +1441,17 @@ export async function init_dlisp(Environment)  {
                                                     })()
                                                 };
                                                  return    (function(){
-                                                    if (check_true( (NOT_FOUND===refval))) {
-                                                         return (value_if_not_found||NOT_FOUND)
+                                                    if (check_true( ((NOT_FOUND===refval)&&value_if_not_found))) {
+                                                         return value_if_not_found
+                                                    } else if (check_true( (NOT_FOUND===refval))) {
+                                                        throw new ReferenceError(("symbol not found: "+ ( function () {
+                                                             if (check_true ((namespace_identity.length>1))){
+                                                                  return  add(namespace,"/",namespace_identity['1'])
+                                                            } else {
+                                                                  return  add(namespace,"/",namespace_identity['0'])
+                                                            } 
+                                                        })()));
+                                                        
                                                     } else if (check_true( (comps.length===1))) {
                                                          return refval
                                                     } else if (check_true( (comps.length>1))) {
@@ -1590,8 +1595,6 @@ export async function init_dlisp(Environment)  {
                             compiled=null;
                             error_data=null;
                             result=null;
-                            debugger;
-                            ;
                             if (check_true (opts.compiled_source)){
                                  compiled=expression
                             } else {
@@ -2213,8 +2216,6 @@ export async function init_dlisp(Environment)  {
                                     let __for_body__217=async function(childset) {
                                         let childenv=children[childset['0']];
                                         ;
-                                        debugger;
-                                        ;
                                         await async function(){
                                             childset[1]=await childenv["eval"].call(childenv,childset['1']);
                                             return childset;
@@ -2536,8 +2537,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {
-            let output_structure;
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;
             let idx;
             let line_number;
             let column_number;
@@ -3207,6 +3207,7 @@ export async function init_dlisp(Environment)  {
                             Environment.global_ctx.scope["lisp_writer"]=lisp_writer;
                             Environment.global_ctx.scope["clone_to_new"]=clone_to_new;
                             Environment.global_ctx.scope["save_env"]=save_env;
+                            Environment.global_ctx.scope["null"]=null;
                             return Environment.global_ctx.scope;
                             
                         }();

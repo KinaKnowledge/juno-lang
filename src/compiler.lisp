@@ -759,7 +759,7 @@
 								(== global_ref "statement"))
 							    (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
 							    global_ref)))))
-                                                                                                
+                                
                                 (when (and (not (== NOT_FOUND_THING ref_type))
                                            (not (contains? ref_name standard_types))
                                     (set_prop referenced_global_symbols
@@ -2033,7 +2033,7 @@
                                       (and (is_string? alloc_set.1.name)
                                            (not ctx_details.is_argument)
 					   alloc_set.1.ref
-                                           (-> Environment `get_global alloc_set.1.name) ;(prop Environment.context.scope alloc_set.1.name)                                           
+                                           (not (== (-> Environment `get_global alloc_set.1.name NOT_FOUND_THING) NOT_FOUND_THING))
                                            (prop shadowed_globals alloc_set.0.name))
                                                   
                                       (do

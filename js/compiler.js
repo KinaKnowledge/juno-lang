@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-22 06:38:09
-// Version: 2022.07.22.06.38
-export const DLISP_ENV_VERSION='2022.07.22.06.38';
+// Build Time: 2022-07-22 07:58:59
+// Version: 2022.07.22.07.58
+export const DLISP_ENV_VERSION='2022.07.22.07.58';
 
 
 
@@ -2900,7 +2900,7 @@ export async function init_compiler(Environment) {
                                         return ctx;
                                         
                                     }()
-                                } else if (check_true( (((alloc_set && alloc_set["1"] && alloc_set["1"]["name"]) instanceof String || typeof (alloc_set && alloc_set["1"] && alloc_set["1"]["name"])==='string')&&await not((ctx_details && ctx_details["is_argument"]))&&(alloc_set && alloc_set["1"] && alloc_set["1"]["ref"])&&await Environment["get_global"].call(Environment,(alloc_set && alloc_set["1"] && alloc_set["1"]["name"]))&&shadowed_globals[(alloc_set && alloc_set["0"] && alloc_set["0"]["name"])]))) {
+                                } else if (check_true( (((alloc_set && alloc_set["1"] && alloc_set["1"]["name"]) instanceof String || typeof (alloc_set && alloc_set["1"] && alloc_set["1"]["name"])==='string')&&await not((ctx_details && ctx_details["is_argument"]))&&(alloc_set && alloc_set["1"] && alloc_set["1"]["ref"])&&await not((await Environment["get_global"].call(Environment,(alloc_set && alloc_set["1"] && alloc_set["1"]["name"]),NOT_FOUND_THING)===NOT_FOUND_THING))&&shadowed_globals[(alloc_set && alloc_set["0"] && alloc_set["0"]["name"])]))) {
                                      return  assignment_value=[{
                                         ctype:(ctx_details && ctx_details["value"])
                                     },"await"," ",env_ref,"get_global","(","\"",(alloc_set && alloc_set["0"] && alloc_set["0"]["name"]),"\"",")"]

@@ -12,10 +12,10 @@
 
 
     
-(defglobal get_outside_global get_outside_global)      
+;(defglobal get_outside_global get_outside_global)      
 
-(defglobal true? check_true)
-(defglobal subtype sub_type)
+;(defglobal true? check_true)
+;(defglobal subtype sub_type)
    
 
 ;; This function will be executed at the time of the compile of code.

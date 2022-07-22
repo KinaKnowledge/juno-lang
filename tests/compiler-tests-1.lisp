@@ -2161,5 +2161,16 @@
   []
   true
   "declared namespace changes context correctly"
-  ]
+   ]
+ [ "(undefine `tests/tester) \ (undefine `tests/tester_b) \ (defglobal tests/cns (current_namespace)) \ (set_namespace `tests) \ (defun tester_b () \   [ `tester_b *namespace* ]) \ (defun tester () \   [ *namespace* (current_namespace) (tester_b) ]) \ (let \       ((a (tester)) \        (b nil)) \     (set_namespace `core) \     (setq b (tests/tester)) \     (set_namespace tests/cns) \   [a b])"
+  []
+  `[
+    [ "tests", "tests", [ "tester_b", "tests" ] ],
+    [ "tests", "core", [ "tester_b", "tests" ] ]
+    ]
+  "Appropriate context preserved on fully qualified namespace call"]
+ ["(undefine `tests/tester) \ (undefine `tests/tester_b) \ (defglobal tests/cns (current_namespace)) \ (set_namespace `tests) \ (defun tester_b () \   [ `tester_b *namespace* ]) \ (defun tester () \   [ *namespace* (current_namespace) (tester_b) ]) \ (try \   (let \       ((a (tester)) \        (b nil)) \     (declare (namespace core)) \     (setq b (tests/tester)) \     [a b]) \   (catch ReferenceError (`e) \   `good))"
+  []
+  `good
+  "declared namespace in let cannot access non-qualified symbol" ]
 ])
