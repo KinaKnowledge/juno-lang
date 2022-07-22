@@ -3695,7 +3695,7 @@
                (when (verbosity ctx)
 		 (eval_log "assembly:" (clone assembly)))               
                (= has_lisp_globals true)
-               (= result [ "Environment" "." "eval" "(" preamble.0 " " preamble.1 " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ]])
+               (= result [ "(" "await" " " "Environment" "." "eval" "(" preamble.0 " " preamble.1 " " "function" "()" ["{" "return" " " assembly "}" "()"    ")" ")" ]])
 	       
                result)))
        

@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-22 07:58:59
-// Version: 2022.07.22.07.58
-export const DLISP_ENV_VERSION='2022.07.22.07.58';
+// Build Time: 2022-07-22 09:24:36
+// Version: 2022.07.22.09.24
+export const DLISP_ENV_VERSION='2022.07.22.09.24';
 
 
 
@@ -35,7 +35,14 @@ export async function init_dlisp(Environment)  {
             await async function(){
                 globalThis[symname]=async function(opts) {
                     {
-                        let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;  }  return typeof value;};
+                        let subtype=function subtype(value) {  if (value === null) return "null";
+  else if (value === undefined) return "undefined";
+  else if (value instanceof Array) return "array";
+  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
+    return value.constructor.name;
+  }
+  return typeof value;
+};
                         let get_object_path=function(refname) {        if (check_true ((( refname["indexOf"].call(refname,".")>-1)||( refname["indexOf"].call(refname,"[")>-1)))){
             let chars;
             let comps;
@@ -2537,10 +2544,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;
-            let idx;
-            let line_number;
-            let column_number;
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;
             let source_name;
             let len;
             let debugmode;
@@ -3398,7 +3402,7 @@ export async function init_dlisp(Environment)  {
                              await (await get_global("set_namespace"))(opts.default_namespace)
                         };
                         if (check_true (init)){
-                             Environment.eval(await async function(){
+                             await Environment.eval(await async function(){
                                 return init
                             }())
                         };

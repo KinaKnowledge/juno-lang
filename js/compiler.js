@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-22 07:58:59
-// Version: 2022.07.22.07.58
-export const DLISP_ENV_VERSION='2022.07.22.07.58';
+// Build Time: 2022-07-22 09:24:36
+// Version: 2022.07.22.09.24
+export const DLISP_ENV_VERSION='2022.07.22.09.24';
 
 
 
@@ -162,7 +162,14 @@ export async function init_compiler(Environment) {
                                 return acc;
                              }
 };
-            let subtype=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {    return value.constructor.name;  }  return typeof value;};
+            let subtype=function subtype(value) {  if (value === null) return "null";
+  else if (value === undefined) return "undefined";
+  else if (value instanceof Array) return "array";
+  else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
+    return value.constructor.name;
+  }
+  return typeof value;
+};
             let is_nil_ques_=async function(value) {     return  (null===value)
 };
             let is_number_ques_=function(x) {                             return  ( subtype(x)==="Number")
@@ -5780,7 +5787,7 @@ export async function init_compiler(Environment) {
                              (eval_log)("assembly:",await clone(assembly))
                         };
                         has_lisp_globals=true;
-                        result=["Environment",".","eval","(",(preamble && preamble["0"])," ",(preamble && preamble["1"])," ","function","()",["{","return"," ",assembly,"}","()",")"]];
+                        result=["(","await"," ","Environment",".","eval","(",(preamble && preamble["0"])," ",(preamble && preamble["1"])," ","function","()",["{","return"," ",assembly,"}","()",")",")"]];
                          return  result
                     }
                 };
