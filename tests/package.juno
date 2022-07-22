@@ -1,8 +1,8 @@
 ;; Initialize and load the test namespace
 
-
-(when (not (contains? "tests" (namespaces)))
-  (create_namespace `tests))
+(when (contains? "tests" (namespaces))
+  (delete_namespace `tests))
+(create_namespace `tests)
 (progn
  (declare (namespace `tests))
  (import "tests/compiler-tests-1.lisp")

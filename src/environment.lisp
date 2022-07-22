@@ -557,6 +557,7 @@
                                (let
                                    ((`namespace_identity (split_by "/" quoted_symbol))   ;;  split..namespace_identity may only have 1 component though
                                     (`parent_call nil)
+                                    (`child_call nil)
                                     (`target_symbol nil))
                                  (declare (function parent_call))
                                  (debug)
@@ -571,12 +572,23 @@
                                                        namespace_identity.1
                                                        namespace_identity.0))                                                       
                                     (delete_prop Environment.definitions target_symbol)
-                                    (delete_prop Environment.global_ctx.scope target_symbol))
+                                    (if (prop Environment.global_ctx.scope target_symbol)
+                                      (delete_prop Environment.global_ctx.scope target_symbol)
+                                      false))
+
                                    (and (> namespace_identity.length 1)
                                         parent_environment)
                                    (progn
                                     (setq parent_call (-> parent_environment `get_global "undefine"))
                                     (parent_call quoted_symbol))
+
+                                   (and (> namespace_identity.length 1)
+                                        (prop children namespace_identity.0))
+                                   ;; child namespace, send it there
+                                   (progn
+                                    (setq child_call (-> (prop children namespace_identity.0) `get_global "undefine"))
+                                    (child_call quoted_symbol))
+                                    
                                    else
 				   false))
 			       (throw SyntaxError "undefine requires a quoted symbol"))))

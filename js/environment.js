@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-21 16:31:14
-// Version: 2022.07.21.16.31
-export const DLISP_ENV_VERSION='2022.07.21.16.31';
+// Build Time: 2022-07-22 06:38:09
+// Version: 2022.07.22.06.38
+export const DLISP_ENV_VERSION='2022.07.22.06.38';
 
 
 
@@ -879,9 +879,11 @@ export async function init_dlisp(Environment)  {
                             if (check_true ((quoted_symbol instanceof String || typeof quoted_symbol==='string'))){
                                 let namespace_identity;
                                 let parent_call;
+                                let child_call;
                                 let target_symbol;
                                 namespace_identity=(quoted_symbol).split("/");
                                 parent_call=null;
+                                child_call=null;
                                 target_symbol=null;
                                 ;
                                 debugger;
@@ -896,10 +898,22 @@ export async function init_dlisp(Environment)  {
                                             } 
                                         })();
                                          ( get_global("delete_prop"))(Environment.definitions,target_symbol);
-                                         return   ( get_global("delete_prop"))(Environment.global_ctx.scope,target_symbol)
+                                        if (check_true (Environment.global_ctx.scope[target_symbol])){
+                                              return  ( get_global("delete_prop"))(Environment.global_ctx.scope,target_symbol)
+                                        } else {
+                                              return false
+                                        }
                                     } else if (check_true( ((namespace_identity.length>1)&&parent_environment))) {
                                         parent_call= parent_environment["get_global"].call(parent_environment,"undefine");
                                          return  (parent_call)(quoted_symbol)
+                                    } else if (check_true( ((namespace_identity.length>1)&&children[namespace_identity['0']]))) {
+                                        child_call= ( function() {
+                                            {
+                                                 let __call_target__=children[namespace_identity['0']], __call_method__="get_global";
+                                                return  __call_target__[__call_method__].call(__call_target__,"undefine")
+                                            } 
+                                        })();
+                                         return   child_call(quoted_symbol)
                                     } else  {
                                          return false
                                     }
@@ -2522,9 +2536,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));
-            
-        } else  {
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {
             let output_structure;
             let idx;
             let line_number;

@@ -2157,5 +2157,9 @@
   []
   "{ return  await Environment.set_global(\"my_new_constant\",123,null,true)}"
   "defconst in top-level progn compiles to set global scope"]
- 
+  [ "(contains? \"defun\" (progn (declare (namespace core)) (keys Environment.context.scope)))"
+  []
+  true
+  "declared namespace changes context correctly"
+  ]
 ])

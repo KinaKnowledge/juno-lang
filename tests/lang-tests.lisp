@@ -9,4 +9,8 @@
 		      { `ev: ev `place: place `restis: rest })
 { ev: "abc", place: "the_place", restis: [ [ "rest1" ], [ "rest2" ] ] } ]
 
+[ (contains? "defun" (sort (progn (declare (namespace core)) (symbols))))
+true ]
+
+
 
