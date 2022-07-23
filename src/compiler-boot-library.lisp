@@ -9,13 +9,6 @@
 ;; double quotes to quoted lisp in compiled Javascript
 
 ;; **
-
-
-    
-;(defglobal get_outside_global get_outside_global)      
-
-;(defglobal true? check_true)
-;(defglobal subtype sub_type)
    
 
 ;; This function will be executed at the time of the compile of code.
@@ -58,7 +51,8 @@
                       ,@macro_body)
                   (quote ,#source_details)))))
          {
-             `eval_when: { `compile_time: true }
+          `eval_when: { `compile_time: true }
+          `description: "simple defmacro for bootstrapping and is replaced by the more sophisticated form."
          })
      
 
@@ -78,10 +72,26 @@
             (for_each (`v val)
                (strip v))
             else
-            val)))
+            val))
+  {
+   `description: "Given a value or arrays of values, return the provided symbol in it's literal, quoted form, e.g. (desym myval) => \"myval\""
+   `usage: ["val:string|array"]
+   `tags: [`symbol `reference `literal `desymbolize `dereference `deref `desym_ref]
+   })
         
 (defmacro desym_ref (val)
-   `(+ "" (as_lisp ,#val)))
+  `(+ "" (as_lisp ,#val))
+  {
+   `description: (+ "Given a value will return the a string containing the desymbolized value or values. "
+                    "Example: <br>"
+                    "(defglobal myvar \"foo\")<br>"
+                    "(defglobal myarr [ (quote myvar) ])<br>"
+                    "(desym_ref myarr) => (myvar)<br>"
+                    "(desym_ref myarr.0) => myvar<br>"
+                    "(subtype (desym_ref myarr.0)) => \"String\"")
+   `usage: ["val:*"]
+   `tags: ["symbol" "reference" "syntax" "dereference" "desym" "desym_ref" ]
+   })
  
 (defmacro deref (val)
   `(let
@@ -94,8 +104,15 @@
    `description: (+ "If the value that the symbol references is a binding value, aka starting with '=:', then return the symbol value "
                     "instead of the value that is referenced by the symbol. This is useful in macros where a value in a form is "
                     "to be used for it's symbolic name vs. it's referenced value, which may be undefined if the symbol being "
-                    "de-referenced is not bound to any value.")
-   `tags: ["symbol" "reference" "syntax" "dereference" "desym" ]
+                    "de-referenced is not bound to any value. <br>"
+                    "Example:<br>"
+                    "Dereference the symbolic value being held in array element 0:<br>"
+                    "(defglobal myvar \"foo\")<br>"
+                    "(defglobal myarr [ (quote myvar) ])<br>"
+                    "(deref my_array.0) => \"my_var\"<br>"
+                    "(deref my_array) => [ \"=:my_var\" ]<br>"
+                    "<br>In the last example, the input to deref isn't a string and so it returns the value as is.  See also desym_ref.")
+   `tags: ["symbol" "reference" "syntax" "dereference" "desym" "desym_ref" ]
    `usage: ["symbol:string"]
                     
    })
@@ -123,7 +140,7 @@
          `usage:["quoted_symbol:string" "exists_form:*" "not_exists_form:*"]         
      })
 
-(defmacro defexternal (name value meta)
+(defmacro defexternal (name value)
    `(let
        ((symname (desym ,@name)))
     (do 
@@ -131,7 +148,12 @@
              symname
              ,#value)
        (prop globalThis
-             symname))))  
+             symname)))
+  {
+   `description: "Given a name and a value, defexternal will add a globalThis property with the symbol name thereby creating a global variable in the javascript environment."
+   `tags: [ `global `javascript `globalThis `value ]
+   `usage: ["name:string" "value:*"]
+   })
          
 (defmacro defun (name args body meta)
     (let
@@ -152,7 +174,10 @@
          (defglobal ,#fn_name
              (fn ,#fn_args
                  ,#fn_body)
-             (quote ,#source_details)))))
+           (quote ,#source_details))))
+  {
+   `description: "simple defun for bootstrapping and is replaced by the more sophisticated during bootstrapping"
+   })
 
 (defmacro defun_sync (name args body meta)
     (let
@@ -173,7 +198,17 @@
          (defglobal ,#fn_name
              (function ,#fn_args
                  ,#fn_body)
-              (quote ,#source_details)))))
+           (quote ,#source_details))))
+  {
+   `description: (+ "Creates a top level synchronous function as opposed to the default via defun, which creates an asynchronous top level function."                    
+                    "Doesn't support destructuring bind in the lambda list (args). "
+                    "Given a name, an argument list, a body and symbol metadata, will establish a top level synchronous function.  If the name is "
+                    "fully qualified, the function will be compiled in the current namespace (and it's lexical environment) and placed in the "
+                    "specified namespace."
+                    )
+   `usage: ["name:string" "args:array" "body:*" "meta:object" ]
+   `tags: ["define" "function" "synchronous" "toplevel" ]
+   })
   
 (defun macroexpand (quoted_form)
     (let
@@ -198,7 +233,13 @@
                        (apply macro_func (-> form `slice 1))
                        form)))
       ((quote quote)
-           expansion)))
+       expansion))
+  {
+   `description: "[Deprecated] - use macroexpand.  The nq form takes a non quoted form and returns the expansion. Used primarily during early development."
+   `usage: ["form:*"]
+   `tags: ["macro" "deprecated" "expansion" "debug" "compile" "compilation"]
+   `deprecated: true
+   })
        
 
 (defmacro check_type (thing type_name error_string)
@@ -258,7 +299,7 @@
         comps)
     [ refname ])
   {
-   `description: "get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components"
+   `description: "get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components."
    `tags: [ `compiler ]
    `usage: ["refname:string"]
    })
@@ -637,7 +678,10 @@
         `tags: ["type" "condition" "subtype" "value" "what" ]
         })
  
-(defglobal bind_function bind) 
+(defglobal bind_function bind
+  {
+   `description: "Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description."
+   })
  
 (defmacro is_reference? (val)
   `(and (is_string? ,#val)

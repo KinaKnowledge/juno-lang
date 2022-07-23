@@ -156,7 +156,12 @@
      (define_env 
          (MAX_SAFE_INTEGER 9007199254740991)
          (LispSyntaxError globalThis.LispSyntaxError)
-         (sub_type subtype)                                      
+         (sub_type subtype
+                 {
+                  `description: "Returns a string the determined actual type of the provided value."
+                  `usage: ["value:*"]
+                  `tags: ["type" "class" "prototype" "typeof" "instanceof"]
+                  })
          (__VERBOSITY__ 0
                         { 
                          `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -192,7 +197,13 @@
                                     }
                                 }
                                 return acc;
-                            }"))
+                            }")
+                 {
+                  `description: (+ "Given a container, returns a list containing the values of each supplied argument. Note that for objects, only the values are returned, not the keys. "
+                                   "If given multiple values, the returned value is a concatentation of all containers provided in the arguments.")
+                  `usage:[ "arg0:*" "argn:*"]
+                  `tags: [ `array `container `object `keys `elements ]
+                  })
          
          (pairs (new Function "obj"
                      "{
@@ -210,18 +221,48 @@
                                         },[]);
                                         return rval;
                                     }
-                                }"))
+                                }")
+                {
+                 `description: "Given a passed object or array, returns a list containing a 2 element list for each key/value pair of the supplied object."
+                 `tags: ["array" "container" "object" ]
+                 `usage: ["obj:object"]
+                 })
          
          (keys (new Function "obj"
-                    "{  return Object.keys(obj);  }"))
+                    "{  return Object.keys(obj);  }")
+               {
+                `description: "Given an object, returns the keys of the object."
+                `tags: ["object" "values" "keys" "indexes" "container" ]
+                `usage: ["obj:object"]
+                })
          
-         (take (new Function "place" "{ return place.shift() }"))
+         (take (new Function "place" "{ return place.shift() }")
+             {
+              `description: "Takes the first value off the list, and returns the value."
+              `tags: ["array" "container" "mutate" "first"]
+              `usage: ["place:container"]
+              })
          
-         (prepend (new Function "place" "thing" "{ return place.unshift(thing) }"))
+         (prepend (new Function "place" "thing" "{ return place.unshift(thing) }")
+                {
+                 `description: "Places the value argument onto the first of the list (unshift) and returns the list."
+                 `tags: ["array" "mutate" "container" ]
+                 `usage: ["place:array" "thing:*"]
+                 })
          
-         (first (new Function "x" "{ return x[0] }"))
+         (first (new Function "x" "{ return x[0] }")
+              {
+               `description: "Given an array, returns the first element in the array."
+               `usage: ["x:array"]
+               `tags: ["array" "container" "elements" ]
+               })
          
-         (last (new Function "x" "{ return x[x.length - 1] }"))
+         (last (new Function "x" "{ return x[x.length - 1] }")
+             {
+               `description: "Given an array, returns the last element in the array."
+               `usage: ["x:array"]
+               `tags: ["array" "container" "elements" "end"]
+               })
          
          (length (new Function "obj"
                       "{
@@ -237,7 +278,13 @@
                                     return obj.length;
                                 } 
                                 return 0;
-                            }"))
+                            }")
+                 {
+                  `description: (+ "Returns the length of the supplied type (array, object, set, string, number). "
+                                   "If the supplied value is nil or a non-container type, returns 0.")
+                  `tags: ["size" "elements" "container" "dimension" "array" "set" "string" "number" ]
+                  `usage: ["thing:container"]
+                  })
          
          (conj (new Function "...args"
                     "{   let list = [];
@@ -250,7 +297,18 @@
                                     list = list.concat(x);
                                 });
                                 return list;
-                            }"))
+                            }")
+               {
+                `description: (+ "Conjoins or concatenates things (typically arrays) together and returns an array. "
+                                 "Examples:<br>"
+                                 "(conj [ 1 2 ] [ 3 4 ]) => [ 1 2 3 4 ]<br>"
+                                 "(conj [ 1 2 ] 3 4 ) => [ 1 2 3 4 ]<br>"
+                                 "(conj 1 2 [ 3 4 ]) => [ 1 2 3 4 ]<br>"
+                                 "(conj { `abc: 123 } [ 2 3]) => [ { abc: 123 }, 2, 3 ]<br>"
+                                 "(conj [ 1 2 3 [ 4 ]] [ 5 6 [ 7 ]]) => [ 1 2 3 [ 4 ] 5 6 [ 7 ] ]")
+                `tags: [`elements `concat `array `conjoin `append]
+                `usage: ["arg0:*" "argN:*"]
+                })
          
          
          
@@ -282,10 +340,22 @@
                                                 throw ex;
                                               }
                                     }
-                              }"))
+                              }")
+              {
+               `description: (+ "Provided a function as a first argument, map calls the function "
+                                "(item, current_index, total_length) with each element from the second argument, which should be a list. Returns a new list containing the return values resulting from evaluating.")
+               `tags: [`array `container `elements `iteration ]
+               `usage: [ "lambda:function" "elements:array"] 
+               })
          
          (bind (new Function "func,this_arg"
-                    "{ return func.bind(this_arg) }"))
+                    "{ return func.bind(this_arg) }")
+               {
+                `description: "Given a function and a this value, the bind function returns a new function that has its this keyword set to the provided value in this_arg."
+                `usage: [ "func:function" "this_arg:*" ]
+                `tags: [ `bind `this `function ]
+                })
+         
                   
          (to_object (new Function "array_values"
                          "{
@@ -329,7 +399,7 @@
                                      "type other than the listed values above, the value will be placed "
                                      "in an array as a single element.")
                     `usage:["container:*"]
-                    `tags: ["list" "array" "conversion" "set" "object" "string" "pairs"]
+                    `tags: [ "array" "conversion" "set" "object" "string" "pairs"]
                     })
          
          (slice (function (target from to)
@@ -339,7 +409,13 @@
                             from
                             (-> target `slice from)
                             else
-                            (throw SyntaxError "slice requires 2 or 3 arguments"))))
+                            (throw SyntaxError "slice requires 2 or 3 arguments")))
+                {
+                 `description: "Given an array, with a starting index and an optional ending index, slice returns a new array containing the elements in the range of provided indices."
+                 `usage: ["target:array" "from:number" "to:number"]
+                 `tags: ["array" "slicing" "dimensions" "subset"]
+                 })
+       
          (rest (function (x)
                          (cond 
                            (instanceof x Array)
@@ -347,45 +423,144 @@
                            (is_string? x)
                            (-> x `substr 1)
                            else
-                           nil)))
+                           nil))
+               {
+                `description: "Returns a new array containing the elements in the 2nd through last position (the tail) of the provided array."
+                `usage: ["x:array"]
+                `tags: ["array" "subset" "slice" "tail" "end"]
+                })
          
-         (second  (new Function "x" "{ return x[1] }"))
-         (third (new Function "x" "{ return x[2] }"))
+         (second  (new Function "x" "{ return x[1] }")
+                {
+                 `description: "Returns the second element in the provided array (the element at index 1)"
+                 `tags: ["array" "subset" "element" "first" ]
+                 `usage: ["x:array"]
+                 })
+         (third (new Function "x" "{ return x[2] }")
+              {
+                 `description: "Returns the third element in the provided array (the element at index 2)"
+                 `tags: ["array" "subset" "element" "first" ]
+                 `usage: ["x:array"]
+                 })
          
-         (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(0, x.length-1) } else { return x.substr(0,x.length-1) } }"))
+         (chop  (new Function "x" "{ if (x instanceof Array) { return x.slice(0, x.length-1) } else { return x.substr(0,x.length-1) } }")
+              {
+               `description: "Returns a new container containing all items except the last item.  This function takes either an array or a string."
+               `usage: ["container:array|string"]
+               `tags: ["array" "slice" "subset" "first" "string"]
+               })
          
-         (chomp (new Function "x" "{ return x.substr(x.length-1) }"))
+         (chomp (new Function "x" "{ return x.substr(x.length-1) }")
+              {
+               `description: "Given a string returns a new string containing all characters except the last character."
+               `usage: ["x:string"]
+               `tags: [`slice `subset `string ]
+               })
          
-         (not   (new Function "x" "{ if (check_true(x)) { return false } else { return true } }"))
+         (not (new Function "x" "{ if (check_true(x)) { return false } else { return true } }")
+            {
+             `description: "Returns the logical opposite of the given value.  If given a truthy value, a false is returned.  If given a falsey value, true is returned."
+             `usage: ["x:*"]
+             `tags: ["logic" "not" "inverse"]
+             })
          
-         (push  (new Function "place" "thing" "{ return place.push(thing) }"))
+         (push  (new Function "place" "thing" "{ return place.push(thing) }")
+              {
+               `description: "Given an array as a place, and an arbitrary value, appends (pushes) the value to the end of the array."
+               `usage: ["place:array" "thing:*"]
+               `tags: ["array" "mutate" "append" "concat" "pop"]
+               })
          
-         (pop   (new Function "place" "{ return place.pop() }"))
+         (pop  (new Function "place" "{ return place.pop() }")
+             {
+              `description: "Given an array as an arguments, removes the last value from the given array and returns it."
+              `usage: ["place:array"]
+              `tags: ["array" "mutate" "take" "remove" "push"]
+              })
          
-         (list  (fn (`& args) args))
+         (list  (fn (`& args) args)
+                { `description: "Given a set of arbitrary arguments, returns an array containing the provided arguments. If no arguments are provided, returns an empty array."
+                  `usage: ["arg0:*" "argN:*"]
+                 `tags: [ "array" "container" "elements" ]
+                 })
          
-         (flatten (new Function "x" "{ return x.flat(999999999999) } "))
+          (flatten (new Function "x" "{ return x.flat(999999999999) } ")
+                {
+                 `description: "Given a nested array structure, returns a flattened version of the array"
+                 `usage: ["x:array"]
+                 `tags: [ `array `container `flat `tree ]
+                 })
          
          (jslambda (function (`& args)
-                             (apply Function (flatten args))))
+                             (apply Function (flatten args)))
+                   {
+                    `description: (+ "Proxy for Javascript Function.  Given a set of string based arguments, all but the last are considered arguments to the "
+                                     "function to be defined.  The last argument is considered the body of the function and should be provided as a string of "
+                                     "javascript. Returns a javascript function. <br>"
+                                     "(jslambda (`a `b) \"{ return a+b }\")<br>"
+                                     "(jslambda () \"{ return new Date() }\")" )
+                    `usage: ["argument_list:array" "argn:string"]
+                    `tags: [ `javascript `embed `function ]
+                    })
          
          (join (function (`& args)
                          (cond
                            (== args.length 1)
                            (-> args.0 `join "")
                            else
-                           (-> args.1 `join args.0))))
+                           (-> args.1 `join args.0)))
+               {
+                `description: (+ "Given an optional joining string and an array of strings, returns a string containing the "
+                                 "elements of the array interlaced with the optional joining string.<br>"
+                                 "(join \",\" [ \"red\" \"fox\" ]) -> \"red,fox\"<br>"
+                                 "(join [\"red\" \"fox\"]) -> redfox")
+                `tags: ["array" "combine" "split" "string" "text" ]
+                `usage: ["joining_string?:string" "container:array"]
+                })
          (lowercase (function (x)
-                              (-> x `toLowerCase)))
+                              (-> x `toLowerCase))
+                    {
+                     `description: "Given a string, converts all capital characters to lowercase characters."
+                     `tags: ["string" "text" "uppercase" "case" "convert" ]
+                     `usage: ["text:string"]
+                     })
          
          (uppercase (function (x)
-                              (-> x `toUpperCase)))
+                              (-> x `toUpperCase))
+                    {
+                      `description: "Given a string, converts all capital characters to uppercase characters."
+                      `tags: ["string" "text" "lowercase" "case" "convert" ]
+                      `usage: ["text:string"]
+                     })
          
          (log (function (`& args)
-                        (apply console.log args)))
-         (split (new Function "container" "token" "{ return container.split(token) }"))
+                        (apply console.log args))
+              {
+               `description: (+ "log is a shorthand call for console.log by default, and serves to provide a base "
+                                "abstraction for logging.  Log behavior can be changed by redefining log to "
+                                "better suit the environmental context.  For example, writing log output to a file "
+                                "or HTML container.")
+               `usage: ["args0:*" "argsN:*"]
+               `tags: ["logging" "console" "output" ]
+               })
+       
+         (split (new Function "container" "token" "{ return container.split(token) }")
+              {
+               `description: (+ "Given a string to partition and a string for a splitting token, return an array whose elements "
+                                "are the text found between each splitting token. <br>"
+                                "(split \"red,fox\" \",\") => [ \"red\" \"fox\" ]")
+               `tags: ["partition" "join" "separate" "string" "array" ]
+               `usage: ["string_to_split:string" "split_token:string" ]
+               })
          
-         (split_by (new Function "token" "container" "{ return container.split(token) }"))
+         (split_by (new Function "token" "container" "{ return container.split(token) }")
+               {
+                `description: (+ "Given a string for a splitting token and a string to partition, return an array whose elements "
+                                 "are the text found between each splitting token. <br>"
+                                 "(split_by \",\" \"red,fox\") => [ \"red\" \"fox\" ]")
+                `tags: ["partition" "join" "separate" "string" "array" ]
+                `usage: ["split_token:string" "string_to_split:string" ]
+               })
          
          (is_object? (new Function "x" "{ return x instanceof Object }")
                      {
@@ -480,17 +655,29 @@
          (blank? (function (val)
                            (or (eq val nil)
                                (and (is_string? val)
-                                    (== val "")))))
+                                    (== val ""))))
+                 {
+                  `description: "Given a value, if it is equal (via eq) to nil or to \"\" (an empty string), returns true, otherwise false."
+                  `usage: ["val:*"]
+                  `tags: ["string" "empty" "text" ]
+                  })
+       
          (contains? (new Function "value" "container"
                          "{ if (!value && !container) { return false }
                            else if (container === null) { throw new TypeError(\"contains?: passed nil/undefined container value\"); }
+                           else if (container instanceof Array) return container.includes(value);
+                           else if (container instanceof Set) return container.has(value);
                            else if ((container instanceof String) || typeof container === \"string\") {
                                 if (subtype(value) === \"Number\") return container.indexOf(\"\"+value)>-1;
                                 else return container.indexOf(value)>-1;
-                           }
-                           else if (container instanceof Array) return container.includes(value);
-                           else if (container instanceof Set) return container.has(value);
-                           else throw new TypeError(\"contains?: passed invalid container type: \"+subtype(container)) }"))
+                           }                                                      
+                           else throw new TypeError(\"contains?: passed invalid container type: \"+subtype(container)) }")
+                    {
+                     `description: (+ "Given a target value and container value (array, set, or string), checks if the container has the value. "
+                                      "If it is found, true is returned, otherwise false if returned.  ")
+                     `tags: ["string" "array" "set" "has" "includes" "indexOf" ]
+                     `usage: ["value:*" "container:array|set|string"]
+                     })
          
          (make_set (function (vals)
                              (if (instanceof vals Array)

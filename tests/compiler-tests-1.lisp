@@ -2162,6 +2162,14 @@
   true
   "declared namespace changes context correctly"
    ]
+ [ "(create_namespace `tests2) \  \ (contains? `tests2 (namespaces))"
+  []
+  true
+  "Creating a namespace"]
+ [ "(delete_namespace `tests2) \  \ (contains? `tests2 (namespaces))"
+  []
+  false
+  "Deleting a namespace"]
  [ "(undefine `tests/tester) \ (undefine `tests/tester_b) \ (defglobal tests/cns (current_namespace)) \ (set_namespace `tests) \ (defun tester_b () \   [ `tester_b *namespace* ]) \ (defun tester () \   [ *namespace* (current_namespace) (tester_b) ]) \ (let \       ((a (tester)) \        (b nil)) \     (set_namespace `core) \     (setq b (tests/tester)) \     (set_namespace tests/cns) \   [a b])"
   []
   `[
@@ -2169,8 +2177,12 @@
     [ "tests", "core", [ "tester_b", "tests" ] ]
     ]
   "Appropriate context preserved on fully qualified namespace call"]
- ["(undefine `tests/tester) \ (undefine `tests/tester_b) \ (defglobal tests/cns (current_namespace)) \ (set_namespace `tests) \ (defun tester_b () \   [ `tester_b *namespace* ]) \ (defun tester () \   [ *namespace* (current_namespace) (tester_b) ]) \ (try \   (let \       ((a (tester)) \        (b nil)) \     (declare (namespace core)) \     (setq b (tests/tester)) \     [a b]) \   (catch ReferenceError (`e) \   `good))"
+ ["(undefine `tests/tester) \ (undefine `tests/tester_b) \ (defglobal tests/cns (current_namespace)) \ (set_namespace `tests) \ (defun tester_b () \   [ `tester_b *namespace* ]) \ (defun tester () \   [ *namespace* (current_namespace) (tester_b) ]) \ (try \   (let \       ((a (tester)) \        (b nil)) \     (declare (namespace core)) \     (setq b (tests/tester)) \     [a b]) \   (catch ReferenceError (`e) \ (progn (set_namespace tests/cns)  `good)))"
   []
   `good
   "declared namespace in let cannot access non-qualified symbol" ]
+ ["(if (contains? \"tests2\" (namespaces)) \   (delete_namespace `tests2)) \ (create_namespace `tests2) \ (progn \  (declare (namespace tests2)) \  (defun tester (a b) \    *namespace*)) \ (defglobal tests/tester_rval (tests2/tester)) \ tests/tester_rval"
+  []
+  "tests2"
+  "Set namespace via declare with appropriate context preserved in defun"]
 ])
