@@ -688,13 +688,20 @@
                                    (== vtype "Set")
                                    (new Set vals)
                                    (== vtype "object")
-                                   (new Set (values vals)))))))
+                                   (new Set (values vals))))))
+                   {
+                    `description: (+ "If given an array, a new Set is returned containing the elements of the array. "
+                                     "If given an object, a new Set is returned containing the values of the object, and the keys are discarded. "
+                                     "If given a set, new Set is created and returend  from the values of the old set.")                    
+                    `usage: ["vals:array|object|set"]
+                    `tags: [`array `set `object `values `convert ]
+                    })
        
          (meta_for_symbol (fn (quoted_symbol search_mode)
                                (when (is_string? quoted_symbol)
                                  ;; if we have been given a string, get any local data we have in our global context
                                  (defvar local_data (prop Environment.global_ctx.scope quoted_symbol))
-                                 (if search_mode                                          
+                                 (if search_mode                                                                          
                                    (cond
                                      local_data
                                      [ (+ { `namespace: namespace
@@ -719,7 +726,18 @@
                                           (+ { `namespace: namespace
                                                `type: (sub_type local_data)
                                                `name: quoted_symbol }
-                                             it)))))))
+                                             it)
+                                          nil)))))
+                          {
+                           `description: (+ "Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "
+                                            "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "
+                                            "is an array, since there can be symbols with the same name in different environments. If no values are found "
+                                            "an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "
+                                            "only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned.")
+                                            
+                           `usage: ["quoted_symbol:string" "search_mode:boolean"]
+                           `tags: [`describe `meta `help `definition `symbol `metadata ]
+                           })
        
        (describe (fn (quoted_symbol search_mode)
                    (progn
@@ -1521,6 +1539,7 @@
                                                     name
                                                     {})
 					  (-> child_env `evaluate "(for_each (sym built_ins) (delete_prop Environment.context.scope sym))")
+                                          (-> child_env `evaluate "(for_each (sym built_ins) (delete_prop Environment.definitions sym))")
                                           (if options.contained
                                             (set_prop (prop children_declarations name)
                                                       `contained true))
