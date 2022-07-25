@@ -914,7 +914,25 @@
                                     acc += args[i];
                                 }
                                 return acc;
-                             }"))
+                             }")
+              {
+               `description: (+ "Add is an overloaded function that, based on the first argument provided, determines how to \'add\' the arguments. "
+                                "If provided a number as a first argument, then it will assume the rest of the arguments are numbers and add them "
+                                "to the first, returning the numerical sum of the arguments. If an object, it will merge the keys of the provided "
+                                "arguments, returning a combined object.  Be aware that if merging objects, if arguments that have the same keys "
+                                "the argument who appears last with the key will prevail.  If called with an array as a first argument, the "
+                                "subsequent arguments will be added to the first via 'concat'.  If strings, the strings will be joined into a "
+                                "single string and returned.<br>"
+                                "(add 1 2 3) => 6<br>"
+                                "(add { `abc: 123 `def: 345 } { `def: 456 }) => { abc: 123, def: 456 }"
+                                "(add [ 1 2 3 ] [ 4 5 6] 7) => [ 1, 2, 3, [ 4, 5, 6 ], 7 ]<br>"
+                                "(add \"abc\" \"def\") => \"abcdef\"<br><br>"
+                                "Note that add doesn't typically need to explicily called.  The compiler will try and determine the best "
+                                "way to handle adding based on the arguments to be added, so the + operator should be used instead, since "
+                                "it gives the compiler an opportunity to inline if possible.")
+               `usage: [ "arg0:*" "argN:*" ]
+               `tags: [ `add `+ `sum `number `addition `merge `join `concat ]
+               })
          
          (merge_objects (new Function "x"
                              "{
@@ -927,10 +945,24 @@
                                         }
                                     }
                                     return rval;
-                                 }"))
+                                 }")
+                        {
+                         `description: (+ "Merge objects takes an array of objects and returns an object whose keys and values are "
+                                          "the sum of the provided objects (same behavior as add with objects).  If objects have the "
+                                          "same keys, the last element in the array with the duplicate key will be used to provide the "
+                                          "value for that key.")
+                         `usage: ["objects:array"]
+                         `tags: [ `add `merge `keys `values `objects `value ]
+                         })
          
          (index_of (new Function "value" "container"
-                        (+ "{ return container.indexOf(value) }")))
+                        (+ "{ return container.indexOf(value) }"))
+                   {
+                    `description: "Given a value and an array container, returns the index of the value in the array, or -1 if not found."
+                    `usage: ["value:number|string|boolean" "container:array" ]
+                    `tags: [ `find `position `index `array `contains ]
+                    })
+       
          (resolve_path (new Function "path,obj" 
                             "{
                                         if (typeof path==='string') {
@@ -940,9 +972,16 @@
                                         return path.reduce(function(prev, curr) {
                                             return prev ? prev[curr] : undefined
                                         }, obj || {})
-                                    }"))
-         
-         
+                                    }")
+                       {
+                        `description: (+ "Given a path and a tree structure, which can be either an array or an object, "
+                                         "traverse the tree structure and return the value at the path if it exists, otherwise "
+                                         "undefined is returned.<br>"
+                                         "(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)")
+                        `usage: [ "path:array" "tree_structure:array|object" ]
+                        `tags: [ `find `position `index `path `array `tree `contains `set_path ]
+                        })
+                  
          (delete_prop (new Function "obj" "...args"
                            "{
                                         if (args.length == 1) {
@@ -954,10 +993,28 @@
                                             }
                                         }
                                         return obj;
-                                    }"))
+                                    }")
+                      {
+                       `description: (+ "Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"
+                                        "(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"
+                                        "(delete_prop foo `abc `def) => { ghi: 789 }<br>")
+                       `usage: ["obj:objects" "key0:string" "keyN?:string"]
+                       `tags: [ `delete `keys `object `remove `remove_prop `mutate ]
+                       })
          
-         (min_value (new Function "elements" "{ return Math.min(...elements); }"))
-         (max_value (new Function "elements" "{ return Math.max(...elements); }"))
+         (min_value (new Function "elements" "{ return Math.min(...elements); }")
+                    {
+                     `description: "Returns the minimum value in the provided array of numbers."
+                     `usage: ["elements:array"]
+                     `tags: [ `min `max_value `array `elements `minimum `number ]
+                       })
+         (max_value (new Function "elements" "{ return Math.max(...elements); }")
+                    {
+                     `description: "Returns the maximum value in the provided array of numbers."
+                     `usage: ["elements:array"]
+                     `tags: [ `min `max_value `array `elements `minimum `number ]
+                     })
+       
          (interlace (fn (`& args)
                       (let 
                           ((min_length  (min_value (map length args)))
@@ -973,7 +1030,12 @@
                      })
          
          (trim (function (x)
-                         (-> x `trim)))
+                         (-> x `trim))
+               {
+                `description: "Removes leading and trailing spaces from the provided string value."
+                `usage: ["value:string"]
+                `tags: ["string" "spaces" "clean" "squeeze" "leading" "trailing" "space"]
+                })
          
          (assert (function (assertion_form failure_message)
                            (if assertion_form
@@ -1008,7 +1070,12 @@
                                   (do
                                     (= is_true true)
                                     (break))))
-                      is_true)))
+                      is_true))
+                  {
+                   `description: "Provided an array of values, returns true if any of the values are true, otherwise will return false."
+                   `usage: ["argset:array"]
+                   `tags: [ "or" "true" "false" "array" "logic" ]
+                   })
          
          (special_operators (fn ()
                               (make_set (compiler [] { `special_operators: true `env: Environment }))))
@@ -1027,7 +1094,16 @@
                                                      opts.prefix
                                                      (take args)))
                                (conj [ style ]
-                                     args))))))
+                                     args)))))
+           {
+            `description: (+ "Given a description object, containing specific keys, returns a customized console logging "
+                             "function implements the given requested properties.<br>Options<br>"
+                             "prefix:string:The prefix to log prior to any supplied user arguments.<br>"
+                             "color:string:The text color to use on the prefix (or initial argument if no prefix)<br>"
+                             "background:string:The background coloe to use on the prefix (or initial argument if no prefix)<br>")
+            `usage: ["options:object"]
+            `tags: ["log" "logging" "console" "utility"]
+            })
 
      
          (NOT_FOUND (new ReferenceError "not found"))
@@ -1184,7 +1260,7 @@
                                 
                                 (cond
                                   (and (== NOT_FOUND refval)
-                                       value_if_not_found)
+                                       (not (== undefined value_if_not_found)))
                                   value_if_not_found
                                   
                                   (== NOT_FOUND refval)
@@ -1271,10 +1347,14 @@
                                     "If passed the option { meta: true } , an array is returned containing compilation metadata "
                                     "in element 0 and the compiled code in element 1.")
                    `usage: ["json_expression:*" "opts:object"]
-                   `tags:["macro" "quote" "quotes" "desym"]
+                   `tags:["macro" "quote" "quotes" "desym" "compiler"]
                    })
          
-         (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" }))
+         (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" })
+                {
+                 `description: "The environment logging function used by the environment."
+                 `usage: ["arg0:*" "argN:*"]
+                 })
          
          (evaluate_local (fn (expression ctx opts)
                            (let
@@ -1443,8 +1523,7 @@
                                                                `parent_forms: nil
                                                                `invalid: true
                                                                `text: e.stack
-                                                               })))
-                                       (debug)
+                                                               })))                                     
                                        (= result e)
                                        (if (and ctx ctx.in_try)
                                          (throw result)))))

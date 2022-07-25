@@ -588,7 +588,37 @@
           
           
     {
-        `eval_when: { `compile_time: true }
+     `eval_when: { `compile_time: true }
+     `description: (+ "Defines the provided name as a compile time macro function in the current namespace environment. "
+                      "The parameters in the lambda list are destructured and bound to the provided names which are then "
+                      "available in the macro function.  The forms are used as the basis for the function with the final "
+                      "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "
+                      "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "
+                      "if the final argument to defmacro is an object, this will be used for the metadata associated with "
+                      "with the bound symbol provided as name.<br>Example:<br>"
+| (defmacro unless (condition `& forms)
+    `(if (not ,#condition)
+       (do 
+         ,@forms))
+    {
+     `description: "opposite of if, if the condition is false then the forms are evaluated"
+     `usage: ["condition:array" "forms:array"]
+     `tags: ["if" "not" "ifnot" "logic" "conditional"]
+     }) |
+                      "<br>"
+                      "In the above example the macro unless is defined.  Passed arguments must be explicitly "
+                      "unquoted or an error may be thrown because the arguments condition and forms *may* not be "
+                      "defined in the final compilation environment.  Note that if the symbols used by the macro "
+                      "are defined in the final compilation scope, that this may cause unexpected behavior due to "
+                      "the form being placed into the compilation tree and then acting on those symbols. <br>"
+                      "Be aware that if a macro being defined returns an object (not an array) you should explicitly "
+                      "add the final metadata form to explictly ensure appropriate interpretation of the argument "
+                      "positions.<br><br>"
+                      "Since a macro is a function that is defined to operate at compile time vs. run time, the "
+                      "rules of declare apply.  Declaration operate normally and should be the first form in "
+                      "the block, or if using let, the first form after the allocation block of the let.")
+     `usage: ["name:symbol" "lambda_list:array" "forms:array" "meta?:object"]
+     `tags: [ `macro `define `compile `function ]
     })  
 
 
@@ -686,7 +716,14 @@
 (defmacro is_reference? (val)
   `(and (is_string? ,#val)
        (> (length ,#val) 2)
-       (starts_with? (quote "=:") ,#val))) 
+       (starts_with? (quote "=:") ,#val))
+  {
+   `description: (+ "Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". "
+                    "Note that this function doesn't check if the provided value is a defined symbol, but only if it has been "
+                    "described in the JSON structure as a bounding string.")
+   `usage: ["val:string"]
+   `tags: ["reference" "JSON" "binding" "symbol" ] 
+   }) 
     
 (defun scan_str (regex search_string)
      (let
@@ -728,8 +765,9 @@
                   val))
        {
          `usage: ["obj:object" "key:*"]
-         `description: "Similar to delete, but returns the removed value if the key exists, otherwise returned undefined."
-         `tags: ["object" "key" "value" "mutate"]
+         `description: (+ "If the provided key exists, removes the key from the provided object, "
+                          "and returns the removed value if the key exists, otherwise returned undefined.")
+         `tags: ["object" "key" "value" "mutate" "delete_prop" "remove" ]
        })     
 
 (defun object_methods (obj)
@@ -776,7 +814,12 @@
                   (flatten (for_each (`comp comps)
                                      (if (is_number? comp)
                                          [ "[" comp "]" ]
-                                         [ "[\"" comp "\"]" ]))))))))
+                                         [ "[\"" comp "\"]" ])))))))
+  {
+   `description: "Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]"
+   `usage: ["val:string" "ctx:object"]
+   `tags: [`compiler `system ]
+   })
  
 (defun getf_ctx (ctx name _value)
     (if (and ctx (is_string? name))
@@ -793,7 +836,12 @@
            (getf_ctx ctx.parent name _value)
            else
            undefined)
-       (throw "invalid call to getf_ctx: missing argument/s")))
+        (throw "invalid call to getf_ctx: missing argument/s"))
+  {
+   `description: "Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier."
+   `usage: ["tree:array" "name:string"]
+   `tags: [`compiler `system ]
+   })
 
 (defun setf_ctx (ctx name value)
     (let
@@ -802,7 +850,12 @@
             (set_prop ctx.scope
                       name
                       value))
-        value))
+        value)
+  {
+   `description: "Used for compilation. Given a context structure, provides a utility function for setting a context place with value."
+   `usage: ["tree:array" "name:string" "value:*" ]
+   `tags: [`compiler `system ]
+   })
                   
         
 (defun set_path (path obj value)
@@ -812,13 +865,21 @@
          (`rpath fpath)
          (`target_obj nil))
      (= target_obj (resolve_path rpath obj))
-     ;(console.log "set_path: " rpath "target: " target_obj " idx: " idx (prop target_obj idx))
      (if target_obj
          (do (set_prop target_obj
                    idx
                    value))
-             ;(console.log "set_path: value set: " (resolve_path path obj)))
-         (throw RangeError (+ "set_path: invalid path: " path)))))
+           
+         (throw RangeError (+ "set_path: invalid path: " path))))
+  {
+   `description: (+ "Given a path value as an array, a tree structure, and a value, "
+                    "sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>"
+                    "(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>"
+                    "(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>"
+                    "foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]")
+   `tags: [ "resolve_path" "path" "set" "tree" "mutate" ]
+   `usage: [ "path:array" "tree:array|object" "value:*" ]
+   })
 
 (defun minmax (container)
     (let
@@ -836,7 +897,14 @@
               (if value_found [ smallest biggest] 
                   nil))
           nil)
-        ))
+       )
+  {
+   `description: (+ "Given an array container with numeric values, returns an array with smallest "
+                    "and largest values in the given array [ min, max ]<br>"
+                    "(minmax [ 2 0 1 3]) -> [ 0 3 ]")
+   `usage: [ "container:array" ]
+   `tags: ["min" "max" "array" "number" "range" ]
+   })
 
 
 (defun gen_multiples (len multiple?)
@@ -846,7 +914,12 @@
        (`mult (or multiple? 10)))
      (for_each (`r (range len))
         (push acc (= val (* val mult))))
-    (reverse acc)))
+     (reverse acc))
+  {
+   `description: "Internal compiler use. utility function for return splices."
+   `usage: ["tree:array"]
+   `tags: [`compiler `system ]
+   })
 
 (defun path_multiply (path multiple?)
   (let
@@ -854,7 +927,12 @@
        (`multiples (gen_multiples (length path) multiple?)))
       (for_each (`pset (pairs (interlace path multiples)))
           (= acc (+ acc (* pset.0 pset.1))))
-      acc))
+      acc)
+  {
+   `description: "Internal compiler use. utility function for return splices."
+   `usage: ["tree:array"]
+   `tags: [`compiler `system ]
+   })
 
 (defglobal splice_in_return_a 
   (fn (js_tree _ctx _depth _path)
@@ -1085,7 +1163,7 @@
      else
      js_tree))
   {
-   `description: "For use in the compiler.  Handles placement of the return keyword in the assembled JS tree."
+   `description: "For use in the compiler.  identifies proper placement of the return keyword in the assembled JS tree."
    `usage: ["tree:array"]
    `tags: [`compiler `system ]
    })
@@ -1131,7 +1209,12 @@
               
           ntree)
       else
-      js_tree))                       
+      js_tree)
+  {
+   `description: "For use in the compiler.  Based on output of splice_in_return_a, handles placement of the return keyword in the assembled JS tree."
+   `usage: ["tree:array"]
+   `tags: [`compiler `system ]
+   })                       
 
 (defmacro aif (test_expr eval_when_true eval_when_false)
   `(let
@@ -2065,7 +2148,7 @@ such as things that connect or use environmental resources.
        
 (defmacro is_symbol? (symbol_to_find)
   `(not (or (== (typeof ,#symbol_to_find) "undefined")
-            (instanceof (-> Environment `get_global ,#symbol_to_find) ReferenceError)))
+            (== (-> Environment `get_global ,#symbol_to_find ReferenceError) ReferenceError)))
 
   {
    `usage: ["symbol:string|*"]

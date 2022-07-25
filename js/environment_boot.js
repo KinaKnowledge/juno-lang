@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-25 08:42:13
-// Version: 2022.07.25.08.42
-export const DLISP_ENV_VERSION='2022.07.25.08.42';
+// Build Time: 2022-07-25 12:25:15
+// Version: 2022.07.25.12.25
+export const DLISP_ENV_VERSION='2022.07.25.12.25';
 
 
 
@@ -617,7 +617,7 @@ await Environment.set_global("defmacro",async function(name,lambda_list,...forms
 },{
     eval_when:{
         compile_time:true
-    }
+    },description:("Defines the provided name as a compile time macro function in the current namespace environment. "+"The parameters in the lambda list are destructured and bound to the provided names which are then "+"available in the macro function.  The forms are used as the basis for the function with the final "+"form expected to return a quoted form which is then as the expansion of the macro by the compiler. "+"The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "+"if the final argument to defmacro is an object, this will be used for the metadata associated with "+"with the bound symbol provided as name.<br>Example:<br>"+" (defmacro unless (condition `& forms)\n    `(if (not ,#condition)\n       (do \n         ,@forms))\n    {\n     `description: \"opposite of if, if the condition is false then the forms are evaluated\"\n     `usage: [\"condition:array\" \"forms:array\"]\n     `tags: [\"if\" \"not\" \"ifnot\" \"logic\" \"conditional\"]\n     }) "+"<br>"+"In the above example the macro unless is defined.  Passed arguments must be explicitly "+"unquoted or an error may be thrown because the arguments condition and forms *may* not be "+"defined in the final compilation environment.  Note that if the symbols used by the macro "+"are defined in the final compilation scope, that this may cause unexpected behavior due to "+"the form being placed into the compilation tree and then acting on those symbols. <br>"+"Be aware that if a macro being defined returns an object (not an array) you should explicitly "+"add the final metadata form to explictly ensure appropriate interpretation of the argument "+"positions.<br><br>"+"Since a macro is a function that is defined to operate at compile time vs. run time, the "+"rules of declare apply.  Declaration operate normally and should be the first form in "+"the block, or if using let, the first form after the allocation block of the let."),usage:["name:symbol","lambda_list:array","forms:array","meta?:object"],tags:["macro","define","compile","function"]
 });
 await Environment.set_global("defun",async function(name,lambda_list,body,meta) {
     let fn_name;
@@ -695,7 +695,7 @@ await Environment.set_global("bind_function",(await Environment.get_global("bind
 await Environment.set_global("is_reference?",async function(val) {
      return  ["=:and",["=:is_string?",val],["=:>",["=:length",val],2],["=:starts_with?",["=:quote","=:"],val]]
 },{ "eval_when":{ "compile_time":true
-},"name":"is_reference?","macro":true,"fn_args":"(val)"
+},"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol"]
 });
 await Environment.set_global("scan_str",async function(regex,search_string) {
     let result;
@@ -758,7 +758,7 @@ await Environment.set_global("remove_prop",async function(obj,key) {
              return  val
         }
     }
-},{ "name":"remove_prop","fn_args":"(obj key)","usage":["obj:object","key:*"],"description":"Similar to delete, but returns the removed value if the key exists, otherwise returned undefined.","tags":["object","key","value","mutate"]
+},{ "name":"remove_prop","fn_args":"(obj key)","usage":["obj:object","key:*"],"description":["=:+","If the provided key exists, removes the key from the provided object, ","and returns the removed value if the key exists, otherwise returned undefined."],"tags":["object","key","value","mutate","delete_prop","remove"]
 });
 await Environment.set_global("object_methods",async function(obj) {
     let properties;
@@ -857,7 +857,7 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
             })()))).join("")
         }
     } ()
-},{ "name":"expand_dot_accessor","fn_args":"(val ctx)"
+},{ "name":"expand_dot_accessor","fn_args":"(val ctx)","description":"Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]","usage":["val:string","ctx:object"],"tags":["compiler","system"]
 });
 await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
     if (check_true ((ctx&&(name instanceof String || typeof name==='string')))){
@@ -892,7 +892,7 @@ await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
         } ()
     } else throw new Error("invalid call to getf_ctx: missing argument/s");
     
-},{ "name":"getf_ctx","fn_args":"(ctx name _value)"
+},{ "name":"getf_ctx","fn_args":"(ctx name _value)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["tree:array","name:string"],"tags":["compiler","system"]
 });
 await Environment.set_global("setf_ctx",async function(ctx,name,value) {
     let found_val;
@@ -906,7 +906,7 @@ await Environment.set_global("setf_ctx",async function(ctx,name,value) {
         }()
     };
      return  value
-},{ "name":"setf_ctx","fn_args":"(ctx name value)"
+},{ "name":"setf_ctx","fn_args":"(ctx name value)","description":"Used for compilation. Given a context structure, provides a utility function for setting a context place with value.","usage":["tree:array","name:string","value:*"],"tags":["compiler","system"]
 });
 await Environment.set_global("set_path",async function(path,obj,value) {
     let fpath;
@@ -926,7 +926,7 @@ await Environment.set_global("set_path",async function(path,obj,value) {
         }()
     } else throw new RangeError(("set_path: invalid path: "+path));
     
-},{ "name":"set_path","fn_args":"(path obj value)"
+},{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"]
 });
 await Environment.set_global("minmax",async function(container) {
     let value_found;
@@ -971,7 +971,7 @@ await Environment.set_global("minmax",async function(container) {
     } else {
           return null
     }
-},{ "name":"minmax","fn_args":"(container)"
+},{ "name":"minmax","fn_args":"(container)","description":["=:+","Given an array container with numeric values, returns an array with smallest ","and largest values in the given array [ min, max ]<br>","(minmax [ 2 0 1 3]) -> [ 0 3 ]"],"usage":["container:array"],"tags":["min","max","array","number","range"]
 });
 await Environment.set_global("gen_multiples",async function(len,multiple_ques_) {
     let val;
@@ -1004,7 +1004,7 @@ await Environment.set_global("gen_multiples",async function(len,multiple_ques_) 
          
     })();
      return  (acc).slice(0).reverse()
-},{ "name":"gen_multiples","fn_args":"(len multiple?)"
+},{ "name":"gen_multiples","fn_args":"(len multiple?)","description":"Internal compiler use. utility function for return splices.","usage":["tree:array"],"tags":["compiler","system"]
 });
 await Environment.set_global("path_multiply",async function(path,multiple_ques_) {
     let acc;
@@ -1028,7 +1028,7 @@ await Environment.set_global("path_multiply",async function(path,multiple_ques_)
          
     })();
      return  acc
-},{ "name":"path_multiply","fn_args":"(path multiple?)"
+},{ "name":"path_multiply","fn_args":"(path multiple?)","description":"Internal compiler use. utility function for return splices.","usage":["tree:array"],"tags":["compiler","system"]
 });
 await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_depth,_path) {
      return  await async function(){
@@ -1384,7 +1384,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
         }
     } ()
 },{
-    description:"For use in the compiler.  Handles placement of the return keyword in the assembled JS tree.",usage:["tree:array"],tags:["compiler","system"]
+    description:"For use in the compiler.  identifies proper placement of the return keyword in the assembled JS tree.",usage:["tree:array"],tags:["compiler","system"]
 });
 await Environment.set_global("splice_in_return_b",async function(js_tree,_ctx,_depth) {
      return  await async function(){
@@ -1431,7 +1431,7 @@ await Environment.set_global("splice_in_return_b",async function(js_tree,_ctx,_d
              return js_tree
         }
     } ()
-},{ "name":"splice_in_return_b","fn_args":"(js_tree _ctx _depth)"
+},{ "name":"splice_in_return_b","fn_args":"(js_tree _ctx _depth)","description":"For use in the compiler.  Based on output of splice_in_return_a, handles placement of the return keyword in the assembled JS tree.","usage":["tree:array"],"tags":["compiler","system"]
 });
 await Environment.set_global("aif",async function(test_expr,eval_when_true,eval_when_false) {
      return  ["=:let",[["=:it",test_expr]],["=:if","=:it",eval_when_true,eval_when_false]]
@@ -2811,7 +2811,7 @@ await Environment.set_global("either",async function(...args) {
 },{ "name":"either","fn_args":"(\"&\" args)","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"]
 });
 await Environment.set_global("is_symbol?",async function(symbol_to_find) {
-     return  ["=:not",["=:or",["=:==",["=:typeof",symbol_to_find],"undefined"],["=:instanceof",["=:->","=:Environment","get_global",symbol_to_find],"=:ReferenceError"]]]
+     return  ["=:not",["=:or",["=:==",["=:typeof",symbol_to_find],"undefined"],["=:==",["=:->","=:Environment","get_global",symbol_to_find,"=:ReferenceError"],"=:ReferenceError"]]]
 },{ "eval_when":{ "compile_time":true
 },"name":"is_symbol?","macro":true,"fn_args":"(symbol_to_find)","usage":["symbol:string|*"],"description":["=:+","If provided a quoted symbol, will return true if the symbol can be found ","in the local or global contexts."],"tags":["context","env","def"]
 });
@@ -3122,7 +3122,7 @@ await Environment.set_global("import",async function(...args) {
                 }
             } ();
              return  target_path=(url_comps && url_comps["pathname"])
-        } else if (check_true( await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")||(await Environment["get_global"].call(Environment,"read_text_file") instanceof ReferenceError))))) {
+        } else if (check_true( await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")||(await Environment["get_global"].call(Environment,"read_text_file",ReferenceError) instanceof ReferenceError))))) {
             load_fn="read_text_file";
              return  target_path=filespec
         } else  {
@@ -3139,7 +3139,7 @@ await Environment.set_global("import",async function(...args) {
              return ["=:evaluate",["=:JSON.parse",[await (async function(){
                  return ("=:"+load_fn) 
             })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec],["throw_on_error",true]]]]
-        } else if (check_true( (await (await Environment.get_global("ends_with?"))(".js",target_path)||(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError)))&&await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
+        } else if (check_true( (await (await Environment.get_global("ends_with?"))(".js",target_path)||(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno",ReferenceError) instanceof ReferenceError)))&&await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
              return  await async function(){
                 if (check_true( (await (await Environment.get_global("length"))(target_symbols)===0))) {
                      throw new SyntaxError("imports of javascript sources require binding symbols as the first argument");

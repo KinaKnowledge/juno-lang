@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-07-25 08:42:13
-// Version: 2022.07.25.08.42
-export const DLISP_ENV_VERSION='2022.07.25.08.42';
+// Build Time: 2022-07-25 12:25:15
+// Version: 2022.07.25.12.25
+export const DLISP_ENV_VERSION='2022.07.25.12.25';
 
 
 
@@ -19,22 +19,12 @@ await Environment.set_global("str",async function(...args) {
      return  (args).join(" ")
 },{ "name":"str","fn_args":"(\"&\" \"args\")","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"]
 });
-if (check_true (await (await Environment.get_global("not"))(((typeof "d3"==="undefined")||(await Environment["get_global"].call(Environment,"d3") instanceof ReferenceError))))){
-     await Environment.set_global("d3",(await Environment.get_global("d3")))
-};
 await Environment.set_global("COPY_DATA",null);
-if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")||(await Environment["get_global"].call(Environment,"uuid") instanceof ReferenceError))))){
+if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")||(await Environment["get_global"].call(Environment,"uuid",ReferenceError) instanceof ReferenceError))))){
      await Environment.set_global("uuid",(await Environment.get_global("uuid")),{
         description:"Generates and returns a string that is a newly generated uuid.",usage:[],tags:["id","unique","crypto"]
     })
 };
-await Environment.set_global("assert",async function(assertion_form,failure_message) {
-    if (check_true (assertion_form)){
-          return assertion_form
-    } else throw new EvalError((failure_message||"assertion failure"));
-    
-},{ "name":"assert","fn_args":"(assertion_form failure_message)","description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]
-});
 await Environment.set_global("on_nil",async function(nil_form,value) {
      return  ["=:let",[["=:v",value]],["=:if",["=:eq","=:v","=:nil"],nil_form,"=:v"]]
 },{ "eval_when":{ "compile_time":true

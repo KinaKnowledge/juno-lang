@@ -26,10 +26,6 @@
         })
        
     
-    (if (is_symbol? `d3)
-         (defglobal `d3 d3))
-        
-    
     (defglobal `COPY_DATA nil)
     
     (if (is_symbol? `uuid)
@@ -40,19 +36,6 @@
             `tags:["id" "unique" "crypto"]
         }))
     
-  (defun assert (assertion_form failure_message)
-      (if assertion_form
-          assertion_form
-         (throw EvalError (or failure_message "assertion failure")))
-         {
-             `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
-             `usage:["form:*" "failure_message:string?"]
-             `tags:["true" "error" "check" "debug" "valid" "assertion"]
-         })
-
-
-   
-
     (defmacro on_nil (nil_form value)
       `(let
            ((v ,#value))

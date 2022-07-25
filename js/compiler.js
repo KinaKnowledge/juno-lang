@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-07-25 08:42:13
-// Version: 2022.07.25.08.42
-export const DLISP_ENV_VERSION='2022.07.25.08.42';
+// Build Time: 2022-07-25 12:25:15
+// Version: 2022.07.25.12.25
+export const DLISP_ENV_VERSION='2022.07.25.12.25';
 
 
 
@@ -2004,11 +2004,28 @@ export async function init_compiler(Environment) {
                         } 
                     })();
                     ;
-                    if (check_true (((tokens && tokens["1"] && tokens["1"]["ref"])&&local_details))){
-                          return ["typeof"," ",await compile((tokens && tokens["1"]),ctx)]
-                    } else {
-                          return ["typeof"," ",await compile_elem((tokens && tokens["1"]),ctx)]
-                    }
+                    let fully_qualified=await (async function () {
+                         if (check_true (((tokens && tokens["1"] && tokens["1"]["name"])&&await contains_ques_("/",(tokens && tokens["1"] && tokens["1"]["name"]))))){
+                              return true
+                        } else {
+                              return false
+                        } 
+                    })();
+                    ;
+                    if (check_true (await verbosity(ctx))){
+                         await console.log("compile_typeof -> ",tokens)
+                    };
+                     return  await async function(){
+                        if (check_true( ((tokens && tokens["1"] && tokens["1"]["ref"])&&local_details))) {
+                             return ["typeof"," ",await compile((tokens && tokens["1"]),ctx)]
+                        } else if (check_true( ((tokens && tokens["1"] && tokens["1"]["ref"])&&await get_lisp_ctx((tokens && tokens["1"] && tokens["1"]["name"]))))) {
+                             return ["typeof"," ",await compile((tokens && tokens["1"]),ctx)]
+                        } else if (check_true((tokens && tokens["1"] && tokens["1"]["ref"]))) {
+                             return ["(","typeof"," ","(","function","() { let __tval=",await compile_lisp_scoped_reference((tokens && tokens["1"] && tokens["1"]["name"]),ctx,true),"; if (__tval === ReferenceError) return undefined; else return __tval; }",")()",")"]
+                        } else  {
+                             return ["typeof"," ",await compile_elem((tokens && tokens["1"]),ctx)]
+                        }
+                    } ()
                 };
                 compile_instanceof=async function(tokens,ctx) {
                     let acc;
@@ -6865,7 +6882,7 @@ export async function init_compiler(Environment) {
                     };
                      return  acc
                 };
-                compile_lisp_scoped_reference=async function(refname,ctx) {
+                compile_lisp_scoped_reference=async function(refname,ctx,defer_not_found) {
                     let refval;
                     let reftype;
                     let declarations;
@@ -6922,6 +6939,8 @@ export async function init_compiler(Environment) {
                                     } )()
                                 },"(",(preamble && preamble["0"])," ",env_ref,"get_global","(\"",refname,"\")",")"]
                             }
+                        } else if (check_true(defer_not_found)) {
+                             return ["(",env_ref,"get_global","(\"",refname,"\", ReferenceError)",")"]
                         } else  {
                             throw new ReferenceError(("unknown lisp reference: "+refname));
                             

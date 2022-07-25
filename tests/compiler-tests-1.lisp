@@ -2207,4 +2207,26 @@
   []
   "tests2"
   "Set namespace via declare with appropriate context preserved in defun"]
+ ["(typeof not_existent)"
+  []
+  "undefined"
+  "Correctly return undefined when typeof thing isn't defined."]
+ ["(typeof *env_config*)"
+  []
+  "object"
+  "Correctly return global with invalid js characters"]
+ ["(typeof *namespace*)"
+  []
+  "string"
+  "Correctly return shadow global value."]
+ ["(typeof defclog)"
+  []
+  "function"
+  "Correctly return a defined global value"]
+ ["(typeof core/add)"
+  []
+  "function"
+  "Correctly return fully qualified global value type"
+  ]
+ 
 ])

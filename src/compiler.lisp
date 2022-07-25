@@ -1306,10 +1306,23 @@
                            (do                        
                              (defvar local_details (if tokens.1.ref
                                                      (get_ctx_val ctx tokens.1.name)
-                                                     nil))            
-                             (if (and tokens.1.ref
-                                      local_details)
+                                                     nil))
+                             (defvar fully_qualified (if (and tokens.1.name
+                                                              (contains? "/" tokens.1.name))
+                                                         true
+                                                         false))                             
+                             (when (verbosity ctx)
+                               (console.log "compile_typeof -> " tokens))
+                             (cond
+                               (and tokens.1.ref
+                                    local_details)
                                ["typeof" " " (compile tokens.1 ctx)]
+                               (and tokens.1.ref
+                                    (get_lisp_ctx tokens.1.name))
+                               ["typeof" " " (compile tokens.1 ctx)]
+                               tokens.1.ref                                    ;; defer any not found errors
+                               ["(" "typeof" " " "(" "function" "() { let __tval=" (compile_lisp_scoped_reference tokens.1.name ctx true) "; if (__tval === ReferenceError) return undefined; else return __tval; }" ")()" ")" ]
+                               else
                                ["typeof" " " (compile_elem tokens.1 ctx) ]))))
        
        (`compile_instanceof  (fn (tokens ctx)
@@ -4247,7 +4260,7 @@
                acc)));(flatten acc))))
        
        (`compile_lisp_scoped_reference
-         (fn (refname ctx)
+         (fn (refname ctx defer_not_found)
              (let
                  ((`refval (get_lisp_ctx refname))
                   (`reftype (sub_type refval))
@@ -4302,6 +4315,10 @@
                      [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " "__GG__" "(\"" refname  "\")" ")"]
                      [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"]
                      ))
+                 ;; this will allow for a non-exception event, for example in a typeof situation where you want to check the type of something at runtime
+                 ;; that may not exist at compile time
+                 defer_not_found
+                 [ "(" env_ref "get_global" "(\"" refname  "\", ReferenceError)" ")"]
                  else
                  (do
                   ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)

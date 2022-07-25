@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-25 08:42:13
-// Version: 2022.07.25.08.42
-export const DLISP_ENV_VERSION='2022.07.25.08.42';
+// Build Time: 2022-07-25 12:25:15
+// Version: 2022.07.25.12.25
+export const DLISP_ENV_VERSION='2022.07.25.12.25';
 
 
 
@@ -10,7 +10,7 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function initializer(Environment)  {
 {
     ;
-    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno") instanceof ReferenceError))))))throw new Error("IO requires Deno");
+    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno",ReferenceError) instanceof ReferenceError))))))throw new Error("IO requires Deno");
     ;
     (await Environment.get_global("path"));
     await (await Environment.get_global("map"))((await Environment.get_global("register_feature")),["io","Deno"]);
