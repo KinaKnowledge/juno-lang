@@ -701,23 +701,27 @@
                                (when (is_string? quoted_symbol)
                                  ;; if we have been given a string, get any local data we have in our global context
                                  (defvar local_data (prop Environment.global_ctx.scope quoted_symbol))
-                                 (if search_mode                                                                          
-                                   (cond
-                                     local_data
-                                     [ (+ { `namespace: namespace
-                                            `name: quoted_symbol
-                                           `type: (subtype local_data) }
-                                          ;; include any symbols we need
-                                          (aif (prop Environment.definitions quoted_symbol)
-                                               it
-                                               {})) ]
-                                     parent_environment
-                                     (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1)
-                                     
-                                     (> (length (keys children)) 0)  ;; we don't have a parent, but we have children
-                                     (reduce (`details (for_each (`child_data (pairs children))
-                                                                 (-> child_data.1 `meta_for_symbol quoted_symbol)))
-                                             details))
+                                 (defvar acc [])
+                                 (if search_mode
+                                   (do                                    
+                                     (when local_data
+                                       (push acc
+                                             (+ { `namespace: namespace
+                                                 `name: quoted_symbol
+                                                 `type: (subtype local_data) }
+                                                ;; include any symbols we need
+                                                (aif (prop Environment.definitions quoted_symbol)
+                                                     it
+                                                     {}))))
+                                     (when parent_environment
+                                       (reduce (info (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1))
+                                           (push acc info)))
+                                     (when (> (length (keys children)) 0)  ;; we don't have a parent, but we have children                                      
+                                       (reduce (`details (reduce (`child_data (pairs children))
+                                                                 (when (not (== child_data.0 (current_namespace)))
+                                                                   (-> child_data.1 `meta_for_symbol quoted_symbol))))
+                                               (push acc details)))
+                                     acc)
                                    (do
                                      (= quoted_symbol (if (starts_with? (quote "=:") quoted_symbol)
                                                         (-> quoted_symbol `substr 2)
@@ -754,7 +758,12 @@
                            `location: "external"
                            `type: (subtype external_results)
                            }
-                          nil))))))
+                          nil)))))
+                 {
+                  `description: "Given a quoted symbol returns the relevant metadata pertinent to the current namespace context."
+                  `usage: ["quoted_symbol:string" "search_mode:boolean"]
+                  `tags: [ `meta `help `definition `symbol `metadata `info `meta_for_symbol ]
+                  })
                           
          (undefine (function (quoted_symbol)
 			     (if (is_string? quoted_symbol)
@@ -794,12 +803,28 @@
                                     
                                    else
 				   false))
-			       (throw SyntaxError "undefine requires a quoted symbol"))))
+			       (throw SyntaxError "undefine requires a quoted symbol")))
+                   {
+                    `description: (+ "Given a quoted symbol removes the symbol and any definition information from the namespace. "
+                                     "If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "
+                                     "instead of the currently active namespace. If the symbol is successfully removed, the function "
+                                     "will return true, otherwise if it is not found, false will be returned.  Note that if the "
+                                     "specified symbol is non-qualified, but exists in a different, accessible namespace, but the "
+                                     "symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "
+                                     "is not searched and therefore symbols have to be explicitly fully-qualified for any effect "
+                                     "of this function outside the current namespace.")
+                    `usage: ["quoted_symbol:string"]
+                    `tags: [ `symbol `delete `remove `unintern `reference `value ]
+                    })
          
          (eval_exp (fn (expression)
                      (do 
-                       (console.log "EVAL:",expression)
-                       (expression))))
+                       (expression)))
+                   {
+                    `description: (+ "Evaluates the given expression and returns the value.")
+                    `usage: ["expression:*"]
+                    `tags: [ `eval `evaluation `expression ]                                     
+                    })
          
          (indirect_new (new Function "...args"
                             "{
@@ -820,7 +845,13 @@
                                         }
                                         let rval = f.apply(this,[targetClass].concat(args.slice(1)));
                                         return rval;
-                                    }}"))
+                                    }}")
+                       {
+                        `description: (+ "Used by the compiler for implementation of the new operator and shouldn't be directly called by "
+                                         "user programs.  The new operator should be called instead.")
+                        `usage: ["arg0:*" "argsN:*"]
+                        `tags: [ `system `compiler `internal ]
+                        })
          
          (range (function (`& args)
                           (let
@@ -832,11 +863,31 @@
                                         1))
                                (`idx from_to.0)
                                (`acc []))
+                            (assert (> step 0) "range: step must be > 0")
+                            (assert (>= from_to.1 from_to.0) "range: lower bound must be greater or equal than upper bound")                            
                             (while (< idx from_to.1)
                               (do
                                 (push acc idx)
                                 (inc idx step)))
-                            acc)))
+                            acc))
+                {
+                 `usage: ["start_or_end:number" "end:number" "step:number"]
+                 `description: (+ "Range has a variable form depending on the amount of arguments provided to the function when "
+                                  "calling it. If provided one argument, range will produce an array from 0 up to, but not including "
+                                  "the provided value. If given two arguments, the first argument will be the starging value and "
+                                  "the last value will be used as the upper bounding value, returning an array with elements starting "
+                                  "at the start value and up to, but not including the bounding value. If given a third value, the "
+                                  "value will be interpreted as the step value, and the returned array will contain values that "
+                                  "increment by the step amount.  Range will throw an error if a negative range is specified. "
+                                  "For negative ranges see neg_range."
+                                  "<br><br>Examples:<br>"
+                                  "(range 5) -> [ 0 1 2 3 4 ]<br>"
+                                  "(range 10 15) -> [ 10 11 12 13 14 ]<br>"
+                                  "(range 10 20) -> [ 10 12 14 16 18 ]<br>"
+                                  "(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"
+                                  "(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
+                                  
+                 })
          
          
          (add (new Function "...args"
@@ -926,8 +977,8 @@
          
          (assert (function (assertion_form failure_message)
                            (if assertion_form
-                             assertion_form
-                             (throw EvalError (or failure_message "assertion failure"))))
+                               assertion_form
+                               (throw EvalError (or failure_message "assertion failure"))))
                  {
                   `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
                   `usage:["form:*" "failure_message:string?"]
@@ -1311,7 +1362,6 @@
                                (do 
                                  (if opts.on_compilation_complete
                                    (opts.on_compilation_complete compiled))
-                                        ;(console.log "env: <- compiled: " (clone compiled))
                                  (try
                                    (do
                                      (when (and (is_array? compiled)
@@ -1380,21 +1430,24 @@
                                           compiled.1)))
                                    (catch Error (e)
                                      (do
-                                       (env_log "caught error: " e.name e.message)
+                                       (if e.details
+                                         (env_log "caught error: " e.details)
+                                         (env_log "caught error: " e.name e.message))                                       
                                        (when opts.error_report
-                                         (opts.error_report {
-                                                             `error: e.name
-                                                             `message: e.message
-                                                             `form: nil
-                                                             `parent_forms: nil
-                                                             `invalid: true
-                                                             `text: e.stack
-                                                             }))
-                                        ;(env_log "<- ERROR: " (-> e `toString))
+                                         (opts.error_report (if e.details
+                                                              e.details
+                                                              {
+                                                               `error: e.name
+                                                               `message: e.message
+                                                               `form: nil
+                                                               `parent_forms: nil
+                                                               `invalid: true
+                                                               `text: e.stack
+                                                               })))
+                                       (debug)
                                        (= result e)
                                        (if (and ctx ctx.in_try)
                                          (throw result)))))
-                                        ;(env_log "<-" result)
                                  result)))))
        
 	 (evaluate (fn (expression ctx opts)

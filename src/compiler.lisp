@@ -4497,18 +4497,20 @@
        (`comp_warn (defclog { `prefix: "compile: [warn]:" `background: "#fcffc8" `color: "brown" } ))
        ;; main entry wrapper for the compilation function - all call this, not compile_inner
        (`compile (fn (tokens ctx _cdepth)
-                     (if is_error
-                         is_error   ;; unwind 
+                   (if is_error                       
+                       is_error  ;; unwind 
                        (do
-			(defvar `rval (compile_inner tokens ctx _cdepth))			
-                         (if false
-                             (if  (and  (is_array? rval)
-                                        (is_object? rval.0)
-                                        (prop rval.0 `ctype))
-                                   true 
-                                   (do 				        
-				     (comp_warn "<-"  (or _cdepth "-")   "unknown/undeclared type returned: " (as_lisp rval))
-				     (comp_warn "  "  (or _cdepth "-")   "for given: "  (source_from_tokens tokens expanded_tree)))))
+		         (defvar `rval (compile_inner tokens ctx _cdepth))			
+                         (if is_error
+                           (do
+                             (if opts.throw_on_error
+                               (do                                 
+                                 (defvar error (new Error is_error.error))
+                                 (for_each (`pset (pairs is_error))
+                                           (set_prop error
+                                                     pset.0
+                                                     pset.1))
+                                 (throw error)))))
                          rval))))
        ;; main recursive structure                   
        (`compile_inner
@@ -4851,20 +4853,28 @@
                        
                         (throw SyntaxError "compile passed invalid compilation structure"))))
                 (catch Error (`e)
-                       (do
-                        (setq is_error {
-                                        `error: e.name
-                                        `source_name: source_name                                        
-                                        `message: e.message
-                                        `form: (source_from_tokens tokens expanded_tree)
-                                        `parent_forms: (source_from_tokens tokens expanded_tree true)
-                                        `invalid: true
-                                        })
-                        (if opts.throw_on_error
-                          (throw is_error))
-                        (if (not e.handled)
-                            (push errors
-                                  is_error))))))))       
+                  (do
+                    (when (and is_error
+                               e.handled)                               
+                      (throw e))
+                    (setq is_error {
+                                    `error: e.name
+                                    `source_name: source_name                                        
+                                    `message: e.message
+                                    `form: (source_from_tokens tokens expanded_tree)
+                                    `parent_forms: (source_from_tokens tokens expanded_tree true)
+                                    `invalid: true
+                                    })
+                    (if (not e.handled)
+                      (do (push errors
+                                is_error)
+                          (set_prop e `handled true)))
+                    (set_prop e
+                              `details
+                              is_error)
+                    (if opts.throw_on_error
+                      (throw e))))))))
+                
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
@@ -5070,7 +5080,10 @@
                   (= assembly (compile final_token_assembly
                                        root_ctx
                                        0))
-
+                  (when (and is_error
+                             opts.throw_on_error)
+                    (throw is_error))
+                    
                   ;; add any first level scope stuff into the first_level_setup array
                   ;; so it is included in the right place in the scope
                   (if (and false (not opts.root_environment)

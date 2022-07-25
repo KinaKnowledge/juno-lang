@@ -855,7 +855,7 @@
       (for_each (`pset (pairs (interlace path multiples)))
           (= acc (+ acc (* pset.0 pset.1))))
       acc))
-  
+
 (defglobal splice_in_return_a 
   (fn (js_tree _ctx _depth _path)
   (cond
@@ -888,7 +888,8 @@
           (`_ctx (or _ctx (new_ctx nil)))
           (`splice_log (defclog { `prefix:(+ "splice_return [" _ctx.scope.level "]") `color: "black" `background: "#20F0F0"  }))
           (`next_val nil))
-         
+ ;      (if (== _depth 0)
+;	   (splice_log "->" js_tree))
       (for_each (`comp js_tree)
           (do
               (inc idx)
@@ -904,7 +905,7 @@
                   (cond
                     (is_function? comp.ctype)
                     (do 
-                        ;(splice_log "FUNCTION TYPE: " comp.ctype)
+                        ;;(splice_log "FUNCTION TYPE: " comp.ctype)
                         (push ntree comp))
                     (or (== comp.ctype "AsyncFunction")
                         (== comp.ctype "Function"))
@@ -930,10 +931,13 @@
                                          } )
                         (when (and comp.if_id 
                                    (eq nil (prop (getf_ctx _ctx `if_links) comp.if_id)))
+			  ;; if we don't have the if statement registered, add an array to contain the statements associated
+			  ;; with this if statement..
                             (set_prop (getf_ctx _ctx `if_links)
                                       comp.if_id
                                       []))
                         (when comp.if_id
+			  ;; register the potential return point..
                               (push (prop (getf_ctx _ctx `if_links) comp.if_id)
                                     (last (getf_ctx _ctx `potential_return_points))))
                         (push ntree comp))
@@ -1003,16 +1007,18 @@
                                          (first viables)
                                          (prop (first viables) `path)))
                 (`max_viable 0)
+		(`last_return_score nil)
                 (`plength 0)
+		(`rscore 0)
                 (`if_paths [])
                 (`max_path_segment_length nil)
                 (`final_return_found (getf_ctx _ctx `return_found)))
                 
-              ;(splice_log "<return must be by here> found?" final_return_found "level: "  _ctx.scope.level "root: " root  "base_path: " base_path "last_path: " last_path)
-              ;(splice_log "viable_return_points: " (clone viables))
-              ;(splice_log "potential_return_points: " (clone potentials))
-              ;(splice_log "tree to operate on: " (clone js_tree))
-              ;(splice_log "if_links: " (clone (getf_ctx _ctx `if_links)))
+             ; (splice_log "<return must be by here> found?" final_return_found "level: "  _ctx.scope.level "root: " root  "base_path: " base_path "last_path: " last_path)
+             ; (splice_log "viable_return_points: " (as_tree viables))
+             ; (splice_log "potential_return_points: " (as_tree potentials))
+             ; (splice_log "tree to operate on: " (clone js_tree))
+             ; (splice_log "if_links: " (as_tree (getf_ctx _ctx `if_links)))
               ;; we do change the indices because we will replace the marker objects
               ;; rule: for all viables, insert return statement at point of path
               ;; rule: for all potentials, ONLY if NO viables, insert return point
@@ -1031,23 +1037,34 @@
                  (do 
                      (= plength (Math.min (length p.path) (length final_viable_path)))
                      (defvar `ppath (slice p.path 0 plength))
+		     
                      (defvar `vpath (if final_viable_path 
                                         (slice final_viable_path 0 plength)
-                                        []))
+                                      []))
+		     
                      (= max_path_segment_length (Math.max 8
                                                           (+ 1 (prop (minmax ppath) 1))
                                                           (+ 1 (prop (minmax vpath) 1))))
-                     ;(splice_log p "max_path_segment_length: " max_path_segment_length "ppath: " ppath " vpath: " vpath 
-                      ;           (path_multiply ppath max_path_segment_length) ">" (path_multiply vpath max_path_segment_length)
-                       ;          (> (path_multiply ppath max_path_segment_length) (path_multiply vpath max_path_segment_length)))
+		   
+		     (if (eq nil last_return_score)			
+			 (= last_return_score (path_multiply vpath max_path_segment_length)))
+
+		     (= rscore (path_multiply vpath max_path_segment_length))
+                    ; (splice_log p "max_path_segment_length: " max_path_segment_length "ppath: " ppath " vpath: " vpath 
+                     ;            (path_multiply ppath max_path_segment_length) ">" rscore
+                      ;           (> (path_multiply ppath max_path_segment_length) rscore)
+		;		 "last_return_score:  " last_return_score (> (path_multiply ppath max_path_segment_length) last_return_score))
+		     
                      (if (or (> (path_multiply ppath max_path_segment_length)
-                                (path_multiply vpath max_path_segment_length))
+                                last_return_score) ;;(path_multiply vpath max_path_segment_length))
                              (and (== p.block_step 0)
                                   (== p.lambda_step 0))
                              (== 0 (length viables)))
                         (do 
-                            ;(splice_log "set potential to return at" ppath "versus final viable: " vpath p.if_id)
+                        ;    (splice_log "set potential to return at" ppath "versus final viable: " vpath p.if_id)
                             (set_path p.path ntree { `mark: "return_point" })
+			    (= last_return_score (Math.max (path_multiply ppath max_path_segment_length)
+							   last_return_score))
                             (when (and p.if_id
                                        (prop (getf_ctx _ctx `if_links) p.if_id))
                                   (for_each (`pinfo (prop (getf_ctx _ctx `if_links) p.if_id))
@@ -1062,19 +1079,18 @@
                            (when (and (== undefined (prop if_paths (as_lisp p.path)))
                                       (not (== p.type "final-return")))
                                 (set_path p.path ntree { `mark: "ignore" } )
-                                ;(splice_log "if adjust off: " p.if_id p.path p)
-                                )))
-                     ))
-           ))
-              
-          
-      ;(if (== _depth 0)
-      ;    (splice_log "<-" (clone ntree)))
-      
-      
+                               ; (splice_log "if adjust off: " p.if_id p.path p)
+                                )))))))
       ntree)
      else
-     js_tree)))
+     js_tree))
+  {
+   `description: "For use in the compiler.  Handles placement of the return keyword in the assembled JS tree."
+   `usage: ["tree:array"]
+   `tags: [`compiler `system ]
+   })
+
+
                   
 (defun splice_in_return_b (js_tree _ctx _depth)
     (cond
@@ -1152,13 +1168,14 @@
           `description: (+ "Given an initial number n, and two numeric ranges, maps n from the first range " 
                            "to the second range, returning the value of n as scaled into the second range. ") })
 
+
+
 (defun range_inc (start end step)
         (if end
             (range start (+ end 1) step)
             (range (+ start 1)))
         {
-         `description: (+ "Givin"
-                          "Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. " 
+         `description: (+ "Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. " 
                           "vs. the regular range function that returns [start end).  "
                           "If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value.")
          `usage: ["start:number" "end?:number" "step?:number"]
@@ -2257,16 +2274,6 @@ such as things that connect or use environmental resources.
                        "handle_complex_types argument to true so they are handled appropriately. ")
       `usage: ["values:list" "handle_complex_types:boolean"]
       `tags: ["list" "dedup" "duplicates" "unique" "values"] })
-
-(defun assert (assertion_form failure_message)
-      (if assertion_form
-          assertion_form
-         (throw EvalError (or failure_message "assertion failure")))
-         {
-             `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
-             `usage:["form:*" "failure_message:string?"]
-             `tags:["true" "error" "check" "debug" "valid" "assertion"]
-         })
 
 (defmacro time_in_millis ()
         `(Date.now)

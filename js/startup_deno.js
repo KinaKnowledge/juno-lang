@@ -35,8 +35,9 @@ let opts={
 //import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
 try {
-  
+  debugger;
   await env.evaluate("(defglobal read_text_file (bind Deno.readTextFile Deno))",null, opts)
+  debugger
   //await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)
   
   await env.evaluate ("(import \"./src/repl.lisp\")",null, opts)

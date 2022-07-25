@@ -1751,6 +1751,28 @@
   []
   {"abc": "123" }
   "More complicated return structure"]
+  ["(try
+       (progn
+          (defvar rtest (fn (ctx)
+                   (let
+                       ((result nil))
+                     (try
+                       (progn
+                        (last nil))
+                       (catch Error (e)
+                         (progn
+                          (if e.details
+                            (log \"caught error: \" e.details)
+                            (log \"caught error: \" e.name e.message))
+                          (= result e)
+                          (if (and ctx ctx.in_try)
+                            (throw result))
+                          ))))))
+          (rtest { `in_try: true }))
+       (catch Error (`e) true ))"
+   []
+   true
+   "Appropriate handling of final throw condition in if"]
   ["((fn (`& multi?)
       (if (== (length multi?) 0)
           \"zero\"

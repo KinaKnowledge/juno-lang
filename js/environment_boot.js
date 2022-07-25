@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-23 08:35:26
-// Version: 2022.07.23.08.35
-export const DLISP_ENV_VERSION='2022.07.23.08.35';
+// Build Time: 2022-07-25 08:42:13
+// Version: 2022.07.25.08.42
+export const DLISP_ENV_VERSION='2022.07.25.08.42';
 
 
 
@@ -1245,7 +1245,9 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                     let base_addr;
                     let final_viable_path;
                     let max_viable;
+                    let last_return_score;
                     let plength;
+                    let rscore;
                     let if_paths;
                     let max_path_segment_length;
                     let final_return_found;
@@ -1260,7 +1262,9 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                         } 
                     })());
                     max_viable=0;
+                    last_return_score=null;
                     plength=0;
+                    rscore=0;
                     if_paths=[];
                     max_path_segment_length=null;
                     final_return_found=await (await Environment.get_global("getf_ctx"))(_ctx,"return_found");
@@ -1306,10 +1310,15 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                      return(__targ__113)[1]
                                 } 
                             })()));
-                            if (check_true (((await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length)>await (await Environment.get_global("path_multiply"))(vpath,max_path_segment_length))||(((p && p["block_step"])===0)&&((p && p["lambda_step"])===0))||(0===await (await Environment.get_global("length"))(viables))))){
+                            if (check_true ((null==last_return_score))){
+                                 last_return_score=await (await Environment.get_global("path_multiply"))(vpath,max_path_segment_length)
+                            };
+                            rscore=await (await Environment.get_global("path_multiply"))(vpath,max_path_segment_length);
+                            if (check_true (((await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length)>last_return_score)||(((p && p["block_step"])===0)&&((p && p["lambda_step"])===0))||(0===await (await Environment.get_global("length"))(viables))))){
                                 await (await Environment.get_global("set_path"))((p && p["path"]),ntree,{
                                     mark:"return_point"
                                 });
+                                last_return_score=await Math.max(await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length),last_return_score);
                                 if (check_true (((p && p["if_id"])&&await (async function(){
                                     let __targ__114=await (await Environment.get_global("getf_ctx"))(_ctx,"if_links");
                                     if (__targ__114){
@@ -1374,6 +1383,8 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
              return js_tree
         }
     } ()
+},{
+    description:"For use in the compiler.  Handles placement of the return keyword in the assembled JS tree.",usage:["tree:array"],tags:["compiler","system"]
 });
 await Environment.set_global("splice_in_return_b",async function(js_tree,_ctx,_depth) {
      return  await async function(){
@@ -1442,7 +1453,7 @@ await Environment.set_global("range_inc",async function(start,end,step) {
     } else {
           return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
     }
-},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Givin","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
+},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
 });
  Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
 await Environment.set_global("color_for_number",async function(num,saturation,brightness) {
@@ -3045,13 +3056,6 @@ await Environment.set_global("uniq",async function(values,handle_complex_types) 
          return  await (await Environment.get_global("to_array"))(s)
     }
 },{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"]
-});
-await Environment.set_global("assert",async function(assertion_form,failure_message) {
-    if (check_true (assertion_form)){
-          return assertion_form
-    } else throw new EvalError((failure_message||"assertion failure"));
-    
-},{ "name":"assert","fn_args":"(assertion_form failure_message)","description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]
 });
 await Environment.set_global("time_in_millis",async function() {
      return  ["=:Date.now"]
