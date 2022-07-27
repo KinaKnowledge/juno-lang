@@ -10,6 +10,8 @@
 
 (map register_feature ["io" "Deno"])
 
+
+
 (defbinding
   (read_text_file (Deno.readTextFile Deno)
                   {
@@ -360,27 +362,6 @@
    })
 
 
-(defun build_environment_macro (opts)
-  (let
-      ((source_dir (or opts.source_dir
-                       "./src"))
-       (idx -1)
-       (pos_of_define_env nil)
-       ;; the last form in environment.js must be (defexternal dlisp_env...)
-       (src (resolve_path [ 2 ] (last (reader (read_text_file (+ source_dir "/environment.lisp")))))))
-    (pop (resolve_path [ 1 ] src)) ;; remove the options argument since we are creating the options in a closure around it
-    (if (not (== src.0 (quote "=:fn")))
-      (throw SyntaxError "Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ..."))    
-    
-    (defmacro construct_environment (options)                
-      `(fn ()
-         (let
-            ((opts ,#options))  ;; capture the options
-           ,#src)))))
-
-
-        
-             
 
 
 

@@ -430,10 +430,13 @@
             (push acc [(quote defvar) defset.0 defset.1])
             (= symname defset.0)
             (push acc [(quote set_prop) (quote Environment.global_ctx.scope) (+ "" (as_lisp symname)) symname])
-            (when (is_object? defset.2)
-                  (push acc ([(quote set_prop) (quote Environment.definitions)
-                                       (+ "" (as_lisp symname) "")
-                                       defset.2])))))
+            (if (is_object? defset.2)
+              (push acc ([(quote set_prop) (quote Environment.definitions)
+                          (+ "" (as_lisp symname) "")
+                          (+ { `core_lang: true } defset.2) ]))
+              (push acc ([(quote set_prop) (quote Environment.definitions)
+                          (+ "" (as_lisp symname) "")
+                          { `core_lang: true } ] )))))
      acc)
   {
    `description: (+ "define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the "
@@ -631,7 +634,7 @@
         ((fn_name name)
          (fn_args lambda_list)
          (fn_body body)
-         (fn_meta meta)
+         (fn_meta meta)        
          (complex_lambda_list (or_args 
                                    (for_each (`elem lambda_list)
                                         (> (length (flatten (destructure_list elem))) 0))))
@@ -640,9 +643,9 @@
                      (+
                          {
                             `name: (unquotify name)
-                            `fn_args: (as_lisp fn_args)
+                            `fn_args: (as_lisp fn_args)                          
                             ;`fn_body: (as_lisp fn_body)
-                          }
+                          }                         
                          (if fn_meta 
                              (do 
                                  (if fn_meta.description
@@ -1971,14 +1974,7 @@ such as things that connect or use environmental resources.
         (console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree ))
     validation_results))
 
-;; macro so we capture the current *namespace*
-(defmacro symbols ()
-    `(keys Environment.context.scope)
-    {
-        `description: "Returns an array of all defined symbols in the current evironment."
-        `usage: []
-        `tags: [`symbol `env `environment `global `globals ]
-    })
+
 
 (defun describe_all ()    
     (apply add   
@@ -2406,6 +2402,8 @@ such as things that connect or use environmental resources.
             `description: "Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments."
             `tags:["bind" "object" "this" "context" "call"]
         })
+
+
 
 ;; The import macro handles loading and storage depending on the source
 

@@ -3367,7 +3367,7 @@
                (set_prop root_ctx.defined_lisp_globals
                               target
                               AsyncFunction)
-               (when tokens.3
+               (when tokens.3                 
                  (= metavalue
                     (if (is_complex? tokens.3)
                         (compile_wrapper_fn tokens.3 ctx)
@@ -3378,7 +3378,7 @@
 
                
                (= wrap_as_function? (check_needs_wrap assignment_value))
-;;              
+
                (cond 
                    (and (is_object? assignment_value.0)
                         assignment_value.0.ctype)
@@ -3682,11 +3682,9 @@
                                                                                                               
        (`compile_unquotem (fn (lisp_struct ctx)
                               (let
-                                  ((`acc []))
-                                
+                                  ((`acc []))                                
                                 (push acc 
-                                      (compile lisp_struct.1 ctx))
-                               
+                                      (compile lisp_struct.1 ctx))                               
                                 acc)))
        
        (`eval_log (if opts.quiet_mode

@@ -161,7 +161,7 @@
                   `description: "Returns a string the determined actual type of the provided value."
                   `usage: ["value:*"]
                   `tags: ["type" "class" "prototype" "typeof" "instanceof"]
-                  })
+                  })        
          (__VERBOSITY__ 0
                         { 
                          `description: "Set __VERBOSITY__ to a positive integer for verbose console output of system activity."
@@ -1110,6 +1110,12 @@
        
          (check_external_env_default (if (== namespace "core") true false))
          (*namespace* namespace)
+         (symbols (function () (keys Environment.global_ctx.scope))
+                   {
+                         `description: "Returns an array of the defined global symbols for the local environment."
+                         `usage: []
+                         `tags: [`symbol `names `definitions `values `scope]
+                     })
          (set_global 
           (function (refname value meta is_constant target_namespace contained_req)
                     (progn
@@ -1821,6 +1827,9 @@
 		     nil
 		     (starts_with? "$" symset.0)  ;; any values starting with $ do not get exported
 		     nil
+                     (and options options.do_not_include
+                          (contains? symset.0 options.do_not_include))
+                     nil
 		     (== symset.0 "*env_skeleton*")
                      [ symset.0 [(quote quotel) (prop Environment.global_ctx.scope "*env_skeleton*") ]]
                      (resolve_path [ symset.0 `initializer ] Environment.definitions)
@@ -1873,7 +1882,8 @@
            
            (env_log namespace "cloning: # children: " (length children))                           
 
-	   (= exports (export_symbol_set))
+	   (= exports (export_symbol_set (if options.do_not_include
+                                           { do_not_include: options.do_not_include })))
 	   
 	   (= my_children
 	      (to_object
@@ -2074,6 +2084,7 @@
                `set_compiler set_compiler
                `read_lisp reader
                `as_lisp as_lisp
+               `symbols symbols
                `inlines inlines
                `clone_to_new clone_to_new
 	       `export_symbol_set export_symbol_set

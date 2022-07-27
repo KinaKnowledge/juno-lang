@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-25 12:25:15
-// Version: 2022.07.25.12.25
-export const DLISP_ENV_VERSION='2022.07.25.12.25';
+// Build Time: 2022-07-27 10:37:03
+// Version: 2022.07.27.10.37
+export const DLISP_ENV_VERSION='2022.07.27.10.37';
 
 
 
@@ -425,7 +425,13 @@ await Environment.set_global("define_env",async function(...defs) {
             symname=(defset && defset["0"]);
             (acc).push(["=:set_prop","=:Environment.global_ctx.scope",(""+await (await Environment.get_global("as_lisp"))(symname)),symname]);
             if (check_true (((defset && defset["2"]) instanceof Object))){
-                 return  (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await Environment.get_global("as_lisp"))(symname)+""),(defset && defset["2"])]])
+                  return (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await Environment.get_global("as_lisp"))(symname)+""),await (await Environment.get_global("add"))({
+                    core_lang:true
+                },(defset && defset["2"]))]])
+            } else {
+                  return (acc).push([["=:set_prop","=:Environment.definitions",(""+await (await Environment.get_global("as_lisp"))(symname)+""),{
+                    core_lang:true
+                }]])
             }
         };
         let __array__34=[],__elements__32=defs;
@@ -2603,11 +2609,6 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
      return  validation_results
 },{ "name":"compiler_syntax_validation","fn_args":"(validator_key tokens errors ctx tree)"
 });
-await Environment.set_global("symbols",async function() {
-     return  ["=:keys","=:Environment.context.scope"]
-},{ "eval_when":{ "compile_time":true
-},"name":"symbols","macro":true,"fn_args":"()","description":"Returns an array of all defined symbols in the current evironment.","usage":[],"tags":["symbol","env","environment","global","globals"]
-});
 await Environment.set_global("describe_all",async function() {
      return  await (async function(){
         let __apply_args__243=await (async function() {
@@ -2621,7 +2622,7 @@ await Environment.set_global("describe_all",async function() {
                     }
                 })()])
             };
-            let __array__248=[],__elements__246=await (await Environment.get_global("keys"))(Environment.context.scope);
+            let __array__248=[],__elements__246=await (await Environment.get_global("symbols"))();
             let __BREAK__FLAG__=false;
             for(let __iter__245 in __elements__246) {
                 __array__248.push(await __for_body__247(__elements__246[__iter__245]));
@@ -3122,7 +3123,7 @@ await Environment.set_global("import",async function(...args) {
                 }
             } ();
              return  target_path=(url_comps && url_comps["pathname"])
-        } else if (check_true( await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")||(await Environment["get_global"].call(Environment,"read_text_file",ReferenceError) instanceof ReferenceError))))) {
+        } else if (check_true( await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")||(await Environment["get_global"].call(Environment,"read_text_file",ReferenceError)===ReferenceError))))) {
             load_fn="read_text_file";
              return  target_path=filespec
         } else  {
@@ -3139,7 +3140,7 @@ await Environment.set_global("import",async function(...args) {
              return ["=:evaluate",["=:JSON.parse",[await (async function(){
                  return ("=:"+load_fn) 
             })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec],["throw_on_error",true]]]]
-        } else if (check_true( (await (await Environment.get_global("ends_with?"))(".js",target_path)||(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno",ReferenceError) instanceof ReferenceError)))&&await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
+        } else if (check_true( (await (await Environment.get_global("ends_with?"))(".js",target_path)||(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno",ReferenceError)===ReferenceError)))&&await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
              return  await async function(){
                 if (check_true( (await (await Environment.get_global("length"))(target_symbols)===0))) {
                      throw new SyntaxError("imports of javascript sources require binding symbols as the first argument");

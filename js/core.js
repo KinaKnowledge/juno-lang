@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-07-25 12:25:15
-// Version: 2022.07.25.12.25
-export const DLISP_ENV_VERSION='2022.07.25.12.25';
+// Build Time: 2022-07-27 10:37:03
+// Version: 2022.07.27.10.37
+export const DLISP_ENV_VERSION='2022.07.27.10.37';
 
 
 
@@ -20,7 +20,7 @@ await Environment.set_global("str",async function(...args) {
 },{ "name":"str","fn_args":"(\"&\" \"args\")","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"]
 });
 await Environment.set_global("COPY_DATA",null);
-if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")||(await Environment["get_global"].call(Environment,"uuid",ReferenceError) instanceof ReferenceError))))){
+if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")||(await Environment["get_global"].call(Environment,"uuid",ReferenceError)===ReferenceError))))){
      await Environment.set_global("uuid",(await Environment.get_global("uuid")),{
         description:"Generates and returns a string that is a newly generated uuid.",usage:[],tags:["id","unique","crypto"]
     })

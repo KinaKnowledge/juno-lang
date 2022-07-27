@@ -1,7 +1,7 @@
 // Source: io.lisp  
-// Build Time: 2022-07-25 12:25:15
-// Version: 2022.07.25.12.25
-export const DLISP_ENV_VERSION='2022.07.25.12.25';
+// Build Time: 2022-07-27 10:37:03
+// Version: 2022.07.27.10.37
+export const DLISP_ENV_VERSION='2022.07.27.10.37';
 
 
 
@@ -10,7 +10,7 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function initializer(Environment)  {
 {
     ;
-    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno",ReferenceError) instanceof ReferenceError))))))throw new Error("IO requires Deno");
+    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")||(await Environment["get_global"].call(Environment,"Deno",ReferenceError)===ReferenceError))))))throw new Error("IO requires Deno");
     ;
     (await Environment.get_global("path"));
     await (await Environment.get_global("map"))((await Environment.get_global("register_feature")),["io","Deno"]);
@@ -385,25 +385,6 @@ await Environment.set_global("rebuild_env",async function(opts) {
     await (await Environment.get_global("success"))("complete");
      return  true
 },{ "name":"rebuild_env","fn_args":"(opts)","description":["=:+","Builds the lisp environment from the Lisp sources and produces the Javascript output files ","necessary for initializing the environment. Options: <br>","source_dir:string:The directory of the Lisp sources, the default is './src'.<br>","output_dir:string:The directory to where the output Javascript files are placed.  The default is './js'.<br>","include_source:boolean:If true, the compiler will include comments of the lisp source (not fully supported yet).<br>","version_tag:string:A string based label signifying the text to use as the version.  If not specified, the version ","tag uses the format year.month.day.hour.minute.<br>"],"usage":["options:object?"],"tags":["compile","export","build","environment","javascript"]
-});
-await Environment.set_global("build_environment_macro",async function(opts) {
-    let source_dir;
-    let idx;
-    let pos_of_define_env;
-    let src;
-    source_dir=((opts && opts["source_dir"])||"./src");
-    idx=-1;
-    pos_of_define_env=null;
-    src=await (await Environment.get_global("resolve_path"))([2],await (await Environment.get_global("last"))(await (await Environment.get_global("reader"))(await (await Environment.get_global("read_text_file"))(await (await Environment.get_global("add"))(source_dir,"/environment.lisp")))));
-    (await (await Environment.get_global("resolve_path"))([1],src)).pop();
-    if (check_true (await (await Environment.get_global("not"))(((src && src["0"])==="=:fn"))))throw new SyntaxError("Invalid environment.js source file.  The last form in the file must be a (defexternal dlisp_env (fn (opts) ...");
-    ;
-     return  await Environment.set_global("construct_environment",async function(options) {
-         return  ["=:fn",[],["=:let",[["=:opts",options]],src]]
-    },{ "eval_when":{ "compile_time":true
-},"name":"construct_environment","macro":true,"fn_args":"(options)"
-})
-},{ "name":"build_environment_macro","fn_args":"(opts)"
 });
  return  true
 }

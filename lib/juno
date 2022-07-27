@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+# For the command line REPL we use rlwrap..not required, but
+# it certainly adds a lot of convenience
+
 if [ -z "$RLWRAP_EDITOR" ]; then
   export RLWRAP_EDITOR=/opt/local/bin/emacs
 fi
-
 
 
 if [ !  -d "./js" ] && [ -d "../src" ]; then
@@ -15,13 +17,24 @@ if [ ! -d "./js" ]; then
     exit 1
 fi
 
-STARTUP="./js/startup_deno.js"
+# Default JS engine is Deno 
+PLATFORM=deno
+MYNAME=`basename $0`
+STARTUP="./js/startup_$PLATFORM.js"
 MAIN_SWITCH=""
 COMP_OUT=""
 ADDR=""
 MAIN_MODE="run"
-for ARG in $@; do    
-    if [[ "$ARG" == -* ]]; then
+GET_PLATFORM=""
+for ARG in $@; do
+    if [ "$ARG" == "--platform" ]; then
+	GET_PLATFORM="true"
+	PLATFORM=""
+    elif [ -z "$PLATFORM" ] && [ "$GET_PLATFORM" == "true" ]; then
+	GET_PLATFORM=""
+	PLATFORM=$ARG
+	STARTUP="./js/startup_$PLATFORM.js"
+    elif [[ "$ARG" == -* ]]; then
 	if [ -z "$MAIN_SWITCH" ]; then
 	    MAIN_SWITCH=$ARG
 	    if [ "$MAIN_SWITCH" == "--compile" ]; then
@@ -35,7 +48,7 @@ for ARG in $@; do
     elif [ "$MAIN_SWITCH" == "--inspect-brk" ] && [ -z "$ADDR" ]; then
 	ADDR=$ARG
     elif [ "$MAIN_SWITCH" == "--inspect" ] && [ -z "$ADDR" ]; then
-	ADDR=$ARG
+	ADDR=$ARG    
     fi
 done
 
@@ -47,13 +60,16 @@ if [ -z "$MAIN_SWITCH" ]; then
     MAIN_SWITCH=" ";
 fi
 
-if [ "$MAIN_MODE" == "compile" ]; then
+if [ "$MAIN_MODE" == "compile" ] && [ "$PLATFORM" == "deno" ]; then
     if [ -n "$COMP_OUT" ]; then
-	deno compile --output="$COMP_OUT" --allow-write --allow-read --allow-net "$STARTUP"
+	$PLATFORM compile --output="$COMP_OUT" --allow-write --allow-read --allow-net "$STARTUP"
     else
-	echo "`basename $0`: missing compile output argument. See --help for arguments" >&2
+	echo "$MYNAME: missing compile output argument. See --help for arguments" >&2
 	exit 1
     fi
+elif [ "$MAIN_MODE" == "compile" ]; then
+    echo "$MYNAME: compile only suported with a platform type of deno." >&2
+    exit 1
 elif [ "$MAIN_SWITCH" = "-?" ] || [ "$MAIN_SWITCH" = "--help" ]; then 
     cat <<EOF
 
@@ -81,7 +97,18 @@ usage: [ --help | -? ]
 EOF
 
 elif [ -n "$MAIN_SWITCH" ]; then
-    rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --allow-write --allow-net --allow-read "$STARTUP"
+    if [ "$PLATFORM" == "deno" ]; then
+	 rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --allow-write --allow-net --allow-read "$STARTUP"
+    elif [ "$PLATFORM" == "node" ]; then
+	rlwrap -c -r -m -q'"' -M .clj node $MAIN_SWITCH "$STARTUP"
+    else
+	if [ -z "$STARTUP" ]; then
+	    echo "$MYNAME: missing $STARTUP script for platform $PLATFORM" >&2
+	    exit 2
+	else
+	    rlwrap -c -r -m -q'"' -M .clj $PLATFORM $MAIN_SWITCH "$STARTUP"
+	fi	
+    fi    	    
 else
     echo "juno: unknown option,  use -? for more information" 
 fi

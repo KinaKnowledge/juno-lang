@@ -4,9 +4,11 @@ Juno
 Juno is a self-hosted Lisp dialect that compiles to Javascript.  It combines fast execution and ease of use with features such as a macro facility modeled on Common Lisp and the ability to save and restore the running image.  Juno provides a Lisp computing environment for Javascript platforms: the browser, Deno or Node (ala V8), or similar, without requiring any dependencies except the Javascript container itself.
 
 ### Links
-Latest Release
-Documentation
-API
+[Latest Release](releases)
+
+Getting Started
+
+[Documentation/API](docs)
 
 
 ## About Juno
@@ -32,7 +34,7 @@ As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `
 ----
 
 
-Juno is a Lisp dialect and environment.  The lisp engine works on JSON as an input and manipulates the tree as a JSON representation, and returns a JSON structure as output.  This means the Object { } structure is a first class citizen.  Therefore this is completely legal out of the box:
+Juno is both a Lisp dialect and environment.  The lisp engine works on JSON as an input and manipulates the tree as a JSON representation, and returns a JSON structure as output.  This means the Object { } structure is a first class citizen.  Therefore this is completely legal out of the box:
 
 ```clojure
 (setq record
