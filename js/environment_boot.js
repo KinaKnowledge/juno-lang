@@ -1,7 +1,7 @@
 // Source: compiler-boot-library.lisp  
-// Build Time: 2022-07-27 10:37:03
-// Version: 2022.07.27.10.37
-export const DLISP_ENV_VERSION='2022.07.27.10.37';
+// Build Time: 2022-07-30 10:29:56
+// Version: 2022.07.30.10.29
+export const DLISP_ENV_VERSION='2022.07.30.10.29';
 
 
 
@@ -3087,6 +3087,60 @@ await Environment.set_global("bind_and_call",async function(target_object,this_o
     
 },{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"]
 });
+await Environment.set_global("fetch_text",async function(url) {
+    let resp;
+    resp=await fetch(url);
+    if (check_true ((resp && resp["ok"]))){
+          return await resp["text"]()
+    } else throw new EvalError(("unable to fetch "+url+": "+(resp && resp["status"])+": "+(resp && resp["statusText"])));
+    
+},{ "name":"fetch_text","fn_args":"(url)"
+});
+await Environment.set_global("document",new Object());
+await Environment.set_global("save_locally",async function(fname,data,content_type) {
+    if (check_true (window["document"])){
+        let blob;
+        let elem;
+        let dbody;
+        blob=new Blob(await (async function(){
+            let __array_op_rval__274=data;
+             if (__array_op_rval__274 instanceof Function){
+                return await __array_op_rval__274() 
+            } else {
+                return[__array_op_rval__274]
+            }
+        })(),{
+            type:content_type
+        });
+        elem=await (async function() {
+            {
+                 let __call_target__=window["document"], __call_method__="createElement";
+                return await __call_target__[__call_method__].call(__call_target__,"a")
+            } 
+        })();
+        dbody=await (async function(){
+            let __targ__275=(await Environment.get_global("document"));
+            if (__targ__275){
+                 return(__targ__275)["body"]
+            } 
+        })();
+        ;
+        await async function(){
+            elem["href"]=await window.URL["createObjectURL"].call(window.URL,blob);
+            elem["download"]=fname;
+            return elem;
+            
+        }();
+        await dbody["appendChild"].call(dbody,elem);
+        await elem["click"]();
+        await dbody["removeChild"].call(dbody,elem);
+         return  true
+    } else {
+          return false
+    }
+},{ "name":"save_locally","fn_args":"(fname data content_type)","description":["=:+","Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", ","triggers a browser download of the provided data with the filename.  Depending ","on the browser configuration, the data will be saved to the configured ","user download directory, or prompt the user for a save location. "],"usage":["filename:string","data:*","content_type:string"],"tags":["save","download","browser"]
+});
+await (await Environment.get_global("undefine"))("document");
 await Environment.set_global("import",async function(...args) {
     let filespec;
     let is_url_ques_;
@@ -3112,7 +3166,7 @@ await Environment.set_global("import",async function(...args) {
     acc=[];
     await async function(){
         if (check_true( (is_url_ques_||await (await Environment.get_global("not"))((null==location))))) {
-            load_fn="fetch";
+            load_fn="fetch_text";
             url_comps=await async function(){
                 if (check_true(is_url_ques_)) {
                      return new URL(filespec)
@@ -3182,11 +3236,11 @@ await Environment.set_global("date_components",async function(date_value,date_fo
     if (check_true (await (await Environment.get_global("is_date?"))(date_value))){
           return await (await Environment.get_global("to_object"))(await (await Environment.get_global("map"))(async function(x) {
              return  await (async function(){
-                let __array_op_rval__274=(x && x["type"]);
-                 if (__array_op_rval__274 instanceof Function){
-                    return await __array_op_rval__274((x && x["value"])) 
+                let __array_op_rval__277=(x && x["type"]);
+                 if (__array_op_rval__277 instanceof Function){
+                    return await __array_op_rval__277((x && x["value"])) 
                 } else {
-                    return[__array_op_rval__274,(x && x["value"])]
+                    return[__array_op_rval__277,(x && x["value"])]
                 }
             })()
         },await (async function() {
@@ -3218,9 +3272,9 @@ await Environment.set_global("formatted_date",async function(dval,date_formatter
 await Environment.set_global("*LANGUAGE*",new Object());
 await Environment.set_global("dtext",async function(default_text) {
      return  (await (async function(){
-        let __targ__275=(await Environment.get_global("*LANGUAGE*"));
-        if (__targ__275){
-             return(__targ__275)[default_text]
+        let __targ__278=(await Environment.get_global("*LANGUAGE*"));
+        if (__targ__278){
+             return(__targ__278)[default_text]
         } 
     })()||default_text)
 },{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"]

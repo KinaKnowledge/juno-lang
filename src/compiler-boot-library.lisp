@@ -2403,8 +2403,40 @@ such as things that connect or use environmental resources.
             `tags:["bind" "object" "this" "context" "call"]
         })
 
-
-
+(defun fetch_text (url)
+  (let
+      ((resp (fetch url)))
+    (if resp.ok
+      (-> resp `text)
+      (throw EvalError (+ "unable to fetch " url ": " resp.status ": " resp.statusText)))))
+                       
+(defglobal document (new Object))
+(defun save_locally (fname data content_type)
+     (if (prop window `document)
+       (let
+           ((blob (new Blob [ data ] { type: content_type }))
+            (elem (-> (prop window `document) `createElement `a))
+            (dbody (prop document `body)))
+         (declare (object dbody))
+         (set_prop elem
+                   `href
+                   (-> window.URL `createObjectURL blob)
+                   `download
+                   fname)
+         (-> dbody `appendChild elem)
+         (-> elem `click)
+         (-> dbody `removeChild elem)
+         true)
+       false)
+     {
+      `description: (+ "Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", "
+                       "triggers a browser download of the provided data with the filename.  Depending "
+                       "on the browser configuration, the data will be saved to the configured "
+                       "user download directory, or prompt the user for a save location. ")
+      `usage: [ "filename:string" "data:*" "content_type:string" ]
+      `tags: [ "save" "download" "browser" ]
+      })
+(undefine `document)
 ;; The import macro handles loading and storage depending on the source
 
 (defmacro import (`& args)
@@ -2417,14 +2449,14 @@ such as things that connect or use environmental resources.
        (load_fn nil)
        (target_symbols (if (> args.length 1)
 			   args.0))
-       (target_path nil)
+       (target_path nil)                              
        (acc []))
     (cond
       ;; are we using network resources?
       (or is_url?
 	  (not (eq nil location)))
       (progn
-	(setq load_fn `fetch)   ;; we will use fetch to GET the resource
+	(setq load_fn `fetch_text)   ;; we will use fetch to GET the resource
 	(setq url_comps (cond
 			   is_url?
 			   (new URL filespec)
@@ -2438,9 +2470,7 @@ such as things that connect or use environmental resources.
 	(setq load_fn `read_text_file)
 	(setq target_path filespec))
       else
-      (throw EvalError (+ "unable to handle import of " filespec)))
-      
-      
+      (throw EvalError (+ "unable to handle import of " filespec)))      
      (cond
 	(or (ends_with? ".lisp" target_path)
 	    (ends_with? ".juno" target_path))
