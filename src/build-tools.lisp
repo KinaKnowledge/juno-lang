@@ -166,7 +166,8 @@
       ;; if write_file is true - this is a proxy for a successful compilation but we just want the buffer
       (and write_file
 	   opts.want_buffer)
-      (join "\n" segments)      
+      (join "\n" segments)
+      else
       (progn
        (warn "cannot compile: " (or opts.input_filename opts.namespace "anonymous"))
        nil)))
@@ -270,12 +271,12 @@
                    `include_source: include_source
                    `toplevel: true
                    `build_headers: build_headers })
-    (compile_file (source_path "compiler-boot-library.lisp") "environment_boot"
-		  { `output_file: (output_path "environment_boot.js")
+    (compile_file (source_path "core.lisp") "environment_boot"
+		  { `output_file: (output_path "core.js")
                    `include_source: include_source
                    `build_headers: build_headers })
-    (compile_file (source_path "core.lisp") "load_core"
-		  { `output_file: (output_path "core.js")
+    (compile_file (source_path "core-ext.lisp") "load_core"
+		  { `output_file: (output_path "core-ext.js")
                    `include_source: include_source
                    `build_headers: build_headers })
     (compile_file (source_path "io.lisp") nil

@@ -7,32 +7,36 @@
 import { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } from "./lisp_writer.js";
 
 import { init_dlisp } from "./environment.js"
-import { init_compiler } from "./compiler.js"
-//import { load_core } from "./core.js"
-// import { initializer } from "./io.js"
 
+// initialize and establish dlisp_env in global
 await init_dlisp()
-var env=await dlisp_env()
-import { environment_boot } from "./environment_boot.js"
 
+// ..construct the environment
+var env=await dlisp_env()
+
+// get the core language installed..
+// import the precompiled js...
+import { environment_boot } from "./core.js"
+// and install it in our environment...
 await environment_boot(env);
+
+// import and install the compiler 
+import { init_compiler } from "./compiler.js"
 await init_compiler(env)
-//await load_core(env)
+
+// setting the compiler allows us to change out to different
+// compiler versions.
+
 var cca = await env.get_global("compiler")
 await env.set_compiler(cca)
 
-// await initializer(env);
 // Ready - call env.evaluate("(my_lisp form)") beyond this point for compilation and evaluation of lisp forms
 
 // setup a simple repl from stdin
 
-
 let opts={
   throw_on_error: true
 }
-
-//import { readline } from "https://deno.land/x/readline/mod.ts";
-//import { writeAllSync } from "https://deno.land/std/streams/conversion.ts";
 
 try {
   debugger;
