@@ -2403,12 +2403,7 @@ such as things that connect or use environmental resources.
             `tags:["bind" "object" "this" "context" "call"]
         })
 
-(defun fetch_text (url)
-  (let
-      ((resp (fetch url)))
-    (if resp.ok
-      (-> resp `text)
-      (throw EvalError (+ "unable to fetch " url ": " resp.status ": " resp.statusText)))))
+
                        
 (defglobal document (new Object))
 (defun save_locally (fname data content_type)
@@ -2437,6 +2432,21 @@ such as things that connect or use environmental resources.
       `tags: [ "save" "download" "browser" ]
       })
 (undefine `document)
+
+
+(defun fetch_text (url)
+  (let
+      ((resp (fetch url)))
+    (if resp.ok
+      (-> resp `text)
+      (throw EvalError (+ "unable to fetch " url ": " resp.status ": " resp.statusText))))
+  {
+   `description: (+ "Given a url, returns the text content of that url. "
+                    "This function is a helper function for the import macro.")
+   `usage: [ "url:string" ]
+   `tags: [`fetch `text `string ]
+   })
+
 ;; The import macro handles loading and storage depending on the source
 
 (defmacro import (`& args)
