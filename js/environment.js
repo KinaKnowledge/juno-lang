@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-07-31 09:38:45
-// Version: 2022.07.31.09.38
-export const DLISP_ENV_VERSION='2022.07.31.09.38';
+// Build Time: 2022-08-01 16:31:25
+// Version: 2022.08.01.16.31
+export const DLISP_ENV_VERSION='2022.08.01.16.31';
 
 
 
@@ -111,7 +111,7 @@ export async function init_dlisp(Environment)  {
                                   return opts
                             } 
                         })();
-                        let namespace=(opts.namespace||"core");
+                        let namespace=(opts.namespace|| "core");
                         ;
                         let parent_environment=await (async function () {
                              if (check_true ((namespace==="core"))){
@@ -123,12 +123,12 @@ export async function init_dlisp(Environment)  {
                         ;
                         let active_namespace=namespace;
                         ;
-                        let contained=(opts.contained||false);
+                        let contained=(opts.contained|| false);
                         ;
                         let Environment={
                             global_ctx:{
                                 scope:new Object(),name:namespace
-                            },version:DLISP_ENV_VERSION,definitions:(opts.definitions||new Object()),declarations:(opts.declarations||{
+                            },version:DLISP_ENV_VERSION,definitions:(opts.definitions|| new Object()),declarations:(opts.declarations|| {
                                 safety:{
                                     level:2
                                 }
@@ -150,7 +150,7 @@ export async function init_dlisp(Environment)  {
                             
                         }();
                         let unset_compiler=async function() {
-                            throw new EvalError(("compiler must be set for "+namespace));
+                            throw new EvalError(("compiler must be set for "+ namespace));
                             
                         };
                         ;
@@ -255,7 +255,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["values"]={
-                                core_lang:true,description:("Given a container, returns a list containing the values of each supplied argument. Note that for objects, only the values are returned, not the keys. "+"If given multiple values, the returned value is a concatentation of all containers provided in the arguments."),usage:["arg0:*","argn:*"],tags:["array","container","object","keys","elements"]
+                                core_lang:true,description:("Given a container, returns a list containing the values of each supplied argument. Note that for objects, only the values are returned, not the keys. "+ "If given multiple values, the returned value is a concatentation of all containers provided in the arguments."),usage:["arg0:*","argn:*"],tags:["array","container","object","keys","elements"]
                             };
                             return Environment.definitions;
                             
@@ -353,7 +353,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["length"]={
-                                core_lang:true,description:("Returns the length of the supplied type (array, object, set, string, number). "+"If the supplied value is nil or a non-container type, returns 0."),tags:["size","elements","container","dimension","array","set","string","number"],usage:["thing:container"]
+                                core_lang:true,description:("Returns the length of the supplied type (array, object, set, string, number). "+ "If the supplied value is nil or a non-container type, returns 0."),tags:["size","elements","container","dimension","array","set","string","number"],usage:["thing:container"]
                             };
                             return Environment.definitions;
                             
@@ -367,7 +367,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["conj"]={
-                                core_lang:true,description:("Conjoins or concatenates things (typically arrays) together and returns an array. "+"Examples:<br>"+"(conj [ 1 2 ] [ 3 4 ]) => [ 1 2 3 4 ]<br>"+"(conj [ 1 2 ] 3 4 ) => [ 1 2 3 4 ]<br>"+"(conj 1 2 [ 3 4 ]) => [ 1 2 3 4 ]<br>"+"(conj { `abc: 123 } [ 2 3]) => [ { abc: 123 }, 2, 3 ]<br>"+"(conj [ 1 2 3 [ 4 ]] [ 5 6 [ 7 ]]) => [ 1 2 3 [ 4 ] 5 6 [ 7 ] ]"),tags:["elements","concat","array","conjoin","append"],usage:["arg0:*","argN:*"]
+                                core_lang:true,description:("Conjoins or concatenates things (typically arrays) together and returns an array. "+ "Examples:<br>"+ "(conj [ 1 2 ] [ 3 4 ]) => [ 1 2 3 4 ]<br>"+ "(conj [ 1 2 ] 3 4 ) => [ 1 2 3 4 ]<br>"+ "(conj 1 2 [ 3 4 ]) => [ 1 2 3 4 ]<br>"+ "(conj { `abc: 123 } [ 2 3]) => [ { abc: 123 }, 2, 3 ]<br>"+ "(conj [ 1 2 3 [ 4 ]] [ 5 6 [ 7 ]]) => [ 1 2 3 [ 4 ] 5 6 [ 7 ] ]"),tags:["elements","concat","array","conjoin","append"],usage:["arg0:*","argN:*"]
                             };
                             return Environment.definitions;
                             
@@ -395,7 +395,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["map"]={
-                                core_lang:true,description:("Provided a function as a first argument, map calls the function "+"(item, current_index, total_length) with each element from the second argument, which should be a list. Returns a new list containing the return values resulting from evaluating."),tags:["array","container","elements","iteration"],usage:["lambda:function","elements:array"]
+                                core_lang:true,description:("Provided a function as a first argument, map calls the function "+ "(item, current_index, total_length) with each element from the second argument, which should be a list. Returns a new list containing the return values resulting from evaluating."),tags:["array","container","elements","iteration"],usage:["lambda:function","elements:array"]
                             };
                             return Environment.definitions;
                             
@@ -423,7 +423,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["to_object"]={
-                                core_lang:true,description:("Given an array of pairs in the form of [[key value] [key value] ...], constructs an "+"object with the first array element of the pair as the key and the second "+"element as the value. A single object is returned."),usage:["paired_array:array"],tags:["conversion","object","array","list","pairs"]
+                                core_lang:true,description:("Given an array of pairs in the form of [[key value] [key value] ...], constructs an "+ "object with the first array element of the pair as the key and the second "+ "element as the value. A single object is returned."),usage:["paired_array:array"],tags:["conversion","object","array","list","pairs"]
                             };
                             return Environment.definitions;
                             
@@ -463,7 +463,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["to_array"]={
-                                core_lang:true,description:("Given a container of type Array, Set, Object, or a string, "+"it will convert the members of the container to an array form, "+"and return a new array with the values of the provided container. "+"In the case of an object, the keys and values will be contained in "+"paired arrays in the returned array.  A string will be split into "+"individual characters. If provided a different "+"type other than the listed values above, the value will be placed "+"in an array as a single element."),usage:["container:*"],tags:["array","conversion","set","object","string","pairs"]
+                                core_lang:true,description:("Given a container of type Array, Set, Object, or a string, "+ "it will convert the members of the container to an array form, "+ "and return a new array with the values of the provided container. "+ "In the case of an object, the keys and values will be contained in "+ "paired arrays in the returned array.  A string will be split into "+ "individual characters. If provided a different "+ "type other than the listed values above, the value will be placed "+ "in an array as a single element."),usage:["container:*"],tags:["array","conversion","set","object","string","pairs"]
                             };
                             return Environment.definitions;
                             
@@ -659,7 +659,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["jslambda"]={
-                                core_lang:true,description:("Proxy for Javascript Function.  Given a set of string based arguments, all but the last are considered arguments to the "+"function to be defined.  The last argument is considered the body of the function and should be provided as a string of "+"javascript. Returns a javascript function. <br>"+"(jslambda (`a `b) \"{ return a+b }\")<br>"+"(jslambda () \"{ return new Date() }\")"),usage:["argument_list:array","argn:string"],tags:["javascript","embed","function"]
+                                core_lang:true,description:("Proxy for Javascript Function.  Given a set of string based arguments, all but the last are considered arguments to the "+ "function to be defined.  The last argument is considered the body of the function and should be provided as a string of "+ "javascript. Returns a javascript function. <br>"+ "(jslambda (`a `b) \"{ return a+b }\")<br>"+ "(jslambda () \"{ return new Date() }\")"),usage:["argument_list:array","argn:string"],tags:["javascript","embed","function"]
                             };
                             return Environment.definitions;
                             
@@ -681,7 +681,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["join"]={
-                                core_lang:true,description:("Given an optional joining string and an array of strings, returns a string containing the "+"elements of the array interlaced with the optional joining string.<br>"+"(join \",\" [ \"red\" \"fox\" ]) -> \"red,fox\"<br>"+"(join [\"red\" \"fox\"]) -> redfox"),tags:["array","combine","split","string","text"],usage:["joining_string?:string","container:array"]
+                                core_lang:true,description:("Given an optional joining string and an array of strings, returns a string containing the "+ "elements of the array interlaced with the optional joining string.<br>"+ "(join \",\" [ \"red\" \"fox\" ]) -> \"red,fox\"<br>"+ "(join [\"red\" \"fox\"]) -> redfox"),tags:["array","combine","split","string","text"],usage:["joining_string?:string","container:array"]
                             };
                             return Environment.definitions;
                             
@@ -731,7 +731,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["log"]={
-                                core_lang:true,description:("log is a shorthand call for console.log by default, and serves to provide a base "+"abstraction for logging.  Log behavior can be changed by redefining log to "+"better suit the environmental context.  For example, writing log output to a file "+"or HTML container."),usage:["args0:*","argsN:*"],tags:["logging","console","output"]
+                                core_lang:true,description:("log is a shorthand call for console.log by default, and serves to provide a base "+ "abstraction for logging.  Log behavior can be changed by redefining log to "+ "better suit the environmental context.  For example, writing log output to a file "+ "or HTML container."),usage:["args0:*","argsN:*"],tags:["logging","console","output"]
                             };
                             return Environment.definitions;
                             
@@ -745,7 +745,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["split"]={
-                                core_lang:true,description:("Given a string to partition and a string for a splitting token, return an array whose elements "+"are the text found between each splitting token. <br>"+"(split \"red,fox\" \",\") => [ \"red\" \"fox\" ]"),tags:["partition","join","separate","string","array"],usage:["string_to_split:string","split_token:string"]
+                                core_lang:true,description:("Given a string to partition and a string for a splitting token, return an array whose elements "+ "are the text found between each splitting token. <br>"+ "(split \"red,fox\" \",\") => [ \"red\" \"fox\" ]"),tags:["partition","join","separate","string","array"],usage:["string_to_split:string","split_token:string"]
                             };
                             return Environment.definitions;
                             
@@ -759,7 +759,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["split_by"]={
-                                core_lang:true,description:("Given a string for a splitting token and a string to partition, return an array whose elements "+"are the text found between each splitting token. <br>"+"(split_by \",\" \"red,fox\") => [ \"red\" \"fox\" ]"),tags:["partition","join","separate","string","array"],usage:["split_token:string","string_to_split:string"]
+                                core_lang:true,description:("Given a string for a splitting token and a string to partition, return an array whose elements "+ "are the text found between each splitting token. <br>"+ "(split_by \",\" \"red,fox\") => [ \"red\" \"fox\" ]"),tags:["partition","join","separate","string","array"],usage:["split_token:string","string_to_split:string"]
                             };
                             return Environment.definitions;
                             
@@ -853,7 +853,7 @@ export async function init_dlisp(Environment)  {
                             
                         }()];
                         let is_string_ques_=function(x) {
-                             return  ((x instanceof String)||(typeof x==="string"))
+                             return  ((x instanceof String)|| (typeof x==="string"))
                         };
                         ;
                         await async function(){
@@ -945,7 +945,7 @@ export async function init_dlisp(Environment)  {
                             
                         }()];
                         let blank_ques_=function(val) {
-                             return  ((val==null)||((val instanceof String || typeof val==='string')&&(val==="")))
+                             return  ((val==null)|| ((val instanceof String || typeof val==='string')&& (val==="")))
                         };
                         ;
                         await async function(){
@@ -969,7 +969,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["contains?"]={
-                                core_lang:true,description:("Given a target value and container value (array, set, or string), checks if the container has the value. "+"If it is found, true is returned, otherwise false if returned.  "),tags:["string","array","set","has","includes","indexOf"],usage:["value:*","container:array|set|string"]
+                                core_lang:true,description:("Given a target value and container value (array, set, or string), checks if the container has the value. "+ "If it is found, true is returned, otherwise false if returned.  "),tags:["string","array","set","has","includes","indexOf"],usage:["value:*","container:array|set|string"]
                             };
                             return Environment.definitions;
                             
@@ -997,7 +997,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["make_set"]={
-                                core_lang:true,description:("If given an array, a new Set is returned containing the elements of the array. "+"If given an object, a new Set is returned containing the values of the object, and the keys are discarded. "+"If given a set, new Set is created and returend  from the values of the old set."),usage:["vals:array|object|set"],tags:["array","set","object","values","convert"]
+                                core_lang:true,description:("If given an array, a new Set is returned containing the elements of the array. "+ "If given an object, a new Set is returned containing the values of the object, and the keys are discarded. "+ "If given a set, new Set is created and returend  from the values of the old set."),usage:["vals:array|object|set"],tags:["array","set","object","values","convert"]
                             };
                             return Environment.definitions;
                             
@@ -1167,7 +1167,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["meta_for_symbol"]={
-                                core_lang:true,description:("Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "+"the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "+"is an array, since there can be symbols with the same name in different environments. If no values are found "+"an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "+"only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned."),usage:["quoted_symbol:string","search_mode:boolean"],tags:["describe","meta","help","definition","symbol","metadata"]
+                                core_lang:true,description:("Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "+ "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "+ "is an array, since there can be symbols with the same name in different environments. If no values are found "+ "an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "+ "only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned."),usage:["quoted_symbol:string","search_mode:boolean"],tags:["describe","meta","help","definition","symbol","metadata"]
                             };
                             return Environment.definitions;
                             
@@ -1176,7 +1176,7 @@ export async function init_dlisp(Environment)  {
                             {
                                 let internal_results=await meta_for_symbol(quoted_symbol,true);
                                 ;
-                                if (check_true (((internal_results instanceof Array)&&internal_results['0']))){
+                                if (check_true (((internal_results instanceof Array)&& internal_results['0']))){
                                      if (check_true (search_mode)){
                                           return internal_results
                                     } else {
@@ -1220,7 +1220,7 @@ export async function init_dlisp(Environment)  {
                                 target_symbol=null;
                                 ;
                                  return    (function(){
-                                    if (check_true( (((namespace_identity.length===1)&&Environment.global_ctx.scope[namespace_identity['0']])||((namespace_identity.length>1)&&(namespace_identity['0']===namespace))))) {
+                                    if (check_true( (((namespace_identity.length===1)&& Environment.global_ctx.scope[namespace_identity['0']])|| ((namespace_identity.length>1)&& (namespace_identity['0']===namespace))))) {
                                         target_symbol= ( function () {
                                              if (check_true ((namespace_identity.length>1))){
                                                   return namespace_identity['1']
@@ -1234,10 +1234,10 @@ export async function init_dlisp(Environment)  {
                                         } else {
                                               return false
                                         }
-                                    } else if (check_true( ((namespace_identity.length>1)&&parent_environment))) {
+                                    } else if (check_true( ((namespace_identity.length>1)&& parent_environment))) {
                                         parent_call= parent_environment["get_global"].call(parent_environment,"undefine");
                                          return  (parent_call)(quoted_symbol)
-                                    } else if (check_true( ((namespace_identity.length>1)&&children[namespace_identity['0']]))) {
+                                    } else if (check_true( ((namespace_identity.length>1)&& children[namespace_identity['0']]))) {
                                         child_call= ( function() {
                                             {
                                                  let __call_target__=children[namespace_identity['0']], __call_method__="get_global";
@@ -1260,7 +1260,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["undefine"]={
-                                core_lang:true,description:("Given a quoted symbol removes the symbol and any definition information from the namespace. "+"If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "+"instead of the currently active namespace. If the symbol is successfully removed, the function "+"will return true, otherwise if it is not found, false will be returned.  Note that if the "+"specified symbol is non-qualified, but exists in a different, accessible namespace, but the "+"symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "+"is not searched and therefore symbols have to be explicitly fully-qualified for any effect "+"of this function outside the current namespace."),usage:["quoted_symbol:string"],tags:["symbol","delete","remove","unintern","reference","value"]
+                                core_lang:true,description:("Given a quoted symbol removes the symbol and any definition information from the namespace. "+ "If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "+ "instead of the currently active namespace. If the symbol is successfully removed, the function "+ "will return true, otherwise if it is not found, false will be returned.  Note that if the "+ "specified symbol is non-qualified, but exists in a different, accessible namespace, but the "+ "symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "+ "is not searched and therefore symbols have to be explicitly fully-qualified for any effect "+ "of this function outside the current namespace."),usage:["quoted_symbol:string"],tags:["symbol","delete","remove","unintern","reference","value"]
                             };
                             return Environment.definitions;
                             
@@ -1297,7 +1297,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["indirect_new"]={
-                                core_lang:true,description:("Used by the compiler for implementation of the new operator and shouldn't be directly called by "+"user programs.  The new operator should be called instead."),usage:["arg0:*","argsN:*"],tags:["system","compiler","internal"]
+                                core_lang:true,description:("Used by the compiler for implementation of the new operator and shouldn't be directly called by "+ "user programs.  The new operator should be called instead."),usage:["arg0:*","argsN:*"],tags:["system","compiler","internal"]
                             };
                             return Environment.definitions;
                             
@@ -1353,7 +1353,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["range"]={
-                                core_lang:true,usage:["start_or_end:number","end:number","step:number"],description:("Range has a variable form depending on the amount of arguments provided to the function when "+"calling it. If provided one argument, range will produce an array from 0 up to, but not including "+"the provided value. If given two arguments, the first argument will be the starging value and "+"the last value will be used as the upper bounding value, returning an array with elements starting "+"at the start value and up to, but not including the bounding value. If given a third value, the "+"value will be interpreted as the step value, and the returned array will contain values that "+"increment by the step amount.  Range will throw an error if a negative range is specified. "+"For negative ranges see neg_range."+"<br><br>Examples:<br>"+"(range 5) -> [ 0 1 2 3 4 ]<br>"+"(range 10 15) -> [ 10 11 12 13 14 ]<br>"+"(range 10 20) -> [ 10 12 14 16 18 ]<br>"+"(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"+"(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
+                                core_lang:true,usage:["start_or_end:number","end:number","step:number"],description:("Range has a variable form depending on the amount of arguments provided to the function when "+ "calling it. If provided one argument, range will produce an array from 0 up to, but not including "+ "the provided value. If given two arguments, the first argument will be the starging value and "+ "the last value will be used as the upper bounding value, returning an array with elements starting "+ "at the start value and up to, but not including the bounding value. If given a third value, the "+ "value will be interpreted as the step value, and the returned array will contain values that "+ "increment by the step amount.  Range will throw an error if a negative range is specified. "+ "For negative ranges see neg_range."+ "<br><br>Examples:<br>"+ "(range 5) -> [ 0 1 2 3 4 ]<br>"+ "(range 10 15) -> [ 10 11 12 13 14 ]<br>"+ "(range 10 20) -> [ 10 12 14 16 18 ]<br>"+ "(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"+ "(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
                             };
                             return Environment.definitions;
                             
@@ -1367,7 +1367,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["add"]={
-                                core_lang:true,description:("Add is an overloaded function that, based on the first argument provided, determines how to 'add' the arguments. "+"If provided a number as a first argument, then it will assume the rest of the arguments are numbers and add them "+"to the first, returning the numerical sum of the arguments. If an object, it will merge the keys of the provided "+"arguments, returning a combined object.  Be aware that if merging objects, if arguments that have the same keys "+"the argument who appears last with the key will prevail.  If called with an array as a first argument, the "+"subsequent arguments will be added to the first via 'concat'.  If strings, the strings will be joined into a "+"single string and returned.<br>"+"(add 1 2 3) => 6<br>"+"(add { `abc: 123 `def: 345 } { `def: 456 }) => { abc: 123, def: 456 }"+"(add [ 1 2 3 ] [ 4 5 6] 7) => [ 1, 2, 3, [ 4, 5, 6 ], 7 ]<br>"+"(add \"abc\" \"def\") => \"abcdef\"<br><br>"+"Note that add doesn't typically need to explicily called.  The compiler will try and determine the best "+"way to handle adding based on the arguments to be added, so the + operator should be used instead, since "+"it gives the compiler an opportunity to inline if possible."),usage:["arg0:*","argN:*"],tags:["add","+","sum","number","addition","merge","join","concat"]
+                                core_lang:true,description:("Add is an overloaded function that, based on the first argument provided, determines how to 'add' the arguments. "+ "If provided a number as a first argument, then it will assume the rest of the arguments are numbers and add them "+ "to the first, returning the numerical sum of the arguments. If an object, it will merge the keys of the provided "+ "arguments, returning a combined object.  Be aware that if merging objects, if arguments that have the same keys "+ "the argument who appears last with the key will prevail.  If called with an array as a first argument, the "+ "subsequent arguments will be added to the first via 'concat'.  If strings, the strings will be joined into a "+ "single string and returned.<br>"+ "(add 1 2 3) => 6<br>"+ "(add { `abc: 123 `def: 345 } { `def: 456 }) => { abc: 123, def: 456 }"+ "(add [ 1 2 3 ] [ 4 5 6] 7) => [ 1, 2, 3, [ 4, 5, 6 ], 7 ]<br>"+ "(add \"abc\" \"def\") => \"abcdef\"<br><br>"+ "Note that add doesn't typically need to explicily called.  The compiler will try and determine the best "+ "way to handle adding based on the arguments to be added, so the + operator should be used instead, since "+ "it gives the compiler an opportunity to inline if possible."),usage:["arg0:*","argN:*"],tags:["add","+","sum","number","addition","merge","join","concat"]
                             };
                             return Environment.definitions;
                             
@@ -1381,7 +1381,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["merge_objects"]={
-                                core_lang:true,description:("Merge objects takes an array of objects and returns an object whose keys and values are "+"the sum of the provided objects (same behavior as add with objects).  If objects have the "+"same keys, the last element in the array with the duplicate key will be used to provide the "+"value for that key."),usage:["objects:array"],tags:["add","merge","keys","values","objects","value"]
+                                core_lang:true,description:("Merge objects takes an array of objects and returns an object whose keys and values are "+ "the sum of the provided objects (same behavior as add with objects).  If objects have the "+ "same keys, the last element in the array with the duplicate key will be used to provide the "+ "value for that key."),usage:["objects:array"],tags:["add","merge","keys","values","objects","value"]
                             };
                             return Environment.definitions;
                             
@@ -1409,7 +1409,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["resolve_path"]={
-                                core_lang:true,description:("Given a path and a tree structure, which can be either an array or an object, "+"traverse the tree structure and return the value at the path if it exists, otherwise "+"undefined is returned.<br>"+"(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)"),usage:["path:array","tree_structure:array|object"],tags:["find","position","index","path","array","tree","contains","set_path"]
+                                core_lang:true,description:("Given a path and a tree structure, which can be either an array or an object, "+ "traverse the tree structure and return the value at the path if it exists, otherwise "+ "undefined is returned.<br>"+ "(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)"),usage:["path:array","tree_structure:array|object"],tags:["find","position","index","path","array","tree","contains","set_path"]
                             };
                             return Environment.definitions;
                             
@@ -1423,7 +1423,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["delete_prop"]={
-                                core_lang:true,description:("Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"+"(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"+"(delete_prop foo `abc `def) => { ghi: 789 }<br>"),usage:["obj:objects","key0:string","keyN?:string"],tags:["delete","keys","object","remove","remove_prop","mutate"]
+                                core_lang:true,description:("Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"+ "(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"+ "(delete_prop foo `abc `def) => { ghi: 789 }<br>"),usage:["obj:objects","key0:string","keyN?:string"],tags:["delete","keys","object","remove","remove_prop","mutate"]
                             };
                             return Environment.definitions;
                             
@@ -1533,7 +1533,7 @@ export async function init_dlisp(Environment)  {
                         let assert=function(assertion_form,failure_message) {
                             if (check_true (assertion_form)){
                                   return assertion_form
-                            } else throw new EvalError((failure_message||"assertion failure"));
+                            } else throw new EvalError((failure_message|| "assertion failure"));
                             
                         };
                         ;
@@ -1553,7 +1553,7 @@ export async function init_dlisp(Environment)  {
                             let dval;
                             dval=val;
                             if (check_true (await (await get_global("starts_with?"))("\"",dval))){
-                                 dval=await dval["substr"].call(dval,1,(dval.length-2))
+                                 dval=await dval["substr"].call(dval,1,(dval.length- 2))
                             };
                             if (check_true (await (await get_global("starts_with?"))("=:",dval))){
                                  dval=await dval["substr"].call(dval,2)
@@ -1631,17 +1631,17 @@ export async function init_dlisp(Environment)  {
                         }()];
                         let defclog=async function(opts) {
                             let style;
-                            style=("padding: 5px;"+await (async function () {
+                            style=("padding: 5px;"+ await (async function () {
                                  if (check_true (opts.background)){
-                                      return ("background: "+opts.background+";")
+                                      return ("background: "+ opts.background+ ";")
                                 } else {
                                       return ""
                                 } 
-                            })()+await (async function () {
+                            })()+ await (async function () {
                                  if (check_true (opts.color)){
-                                      return ("color: "+opts.color+";")
+                                      return ("color: "+ opts.color+ ";")
                                 } 
-                            })()+"");
+                            })()+ "");
                              return  async function(...args) {
                                  return  await (async function(){
                                     let __target_arg__188=[].concat(await conj(await (async function(){
@@ -1654,7 +1654,7 @@ export async function init_dlisp(Environment)  {
                                     })(),args));
                                     if(!__target_arg__188 instanceof Array){
                                         throw new TypeError("Invalid final argument to apply - an array is required")
-                                    }let __pre_arg__190=("%c"+await (async function () {
+                                    }let __pre_arg__190=("%c"+ await (async function () {
                                          if (check_true (opts.prefix)){
                                               return opts.prefix
                                         } else {
@@ -1674,7 +1674,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["defclog"]={
-                                core_lang:true,description:("Given a description object, containing specific keys, returns a customized console logging "+"function implements the given requested properties.<br>Options<br>"+"prefix:string:The prefix to log prior to any supplied user arguments.<br>"+"color:string:The text color to use on the prefix (or initial argument if no prefix)<br>"+"background:string:The background coloe to use on the prefix (or initial argument if no prefix)<br>"),usage:["options:object"],tags:["log","logging","console","utility"]
+                                core_lang:true,description:("Given a description object, containing specific keys, returns a customized console logging "+ "function implements the given requested properties.<br>Options<br>"+ "prefix:string:The prefix to log prior to any supplied user arguments.<br>"+ "color:string:The text color to use on the prefix (or initial argument if no prefix)<br>"+ "background:string:The background coloe to use on the prefix (or initial argument if no prefix)<br>"),usage:["options:object"],tags:["log","logging","console","utility"]
                             };
                             return Environment.definitions;
                             
@@ -1749,7 +1749,7 @@ export async function init_dlisp(Environment)  {
                                     if (check_true(  not((typeof refname==="string")))) {
                                          throw new TypeError("reference name must be a string type");
                                         
-                                    } else if (check_true( ((Environment===value)||(Environment.global_ctx===value)||(Environment.global_ctx.scope===value)))) {
+                                    } else if (check_true( ((Environment===value)|| (Environment.global_ctx===value)|| (Environment.global_ctx.scope===value)))) {
                                         throw new EvalError("cannot set the environment scope as a global value");
                                         
                                     }
@@ -1762,7 +1762,7 @@ export async function init_dlisp(Environment)  {
                                         return[__array_op_rval__201,"constant"]
                                     }
                                 })(),Environment.definitions))){
-                                    throw new TypeError(("Assignment to constant variable "+refname));
+                                    throw new TypeError(("Assignment to constant variable "+ refname));
                                     
                                 };
                                 let namespace_identity= ( function () {
@@ -1781,17 +1781,17 @@ export async function init_dlisp(Environment)  {
                                 })();
                                 ;
                                  return    (function(){
-                                    if (check_true( (parent_environment&&(namespace_identity.length>1)&& not((namespace===namespace_identity['0']))))) {
-                                         return  parent_environment["set_global"].call(parent_environment,namespace_identity['1'],value,meta,is_constant,namespace_identity['0'],(contained||contained_req))
-                                    } else if (check_true( ((namespace_identity.length>1)&& not((namespace_identity['0']===namespace))))) {
-                                        if (check_true ((children[namespace_identity['0']]&& not(contained_req)))){
+                                    if (check_true( (parent_environment&& (namespace_identity.length>1)&&  not((namespace===namespace_identity['0']))))) {
+                                         return  parent_environment["set_global"].call(parent_environment,namespace_identity['1'],value,meta,is_constant,namespace_identity['0'],(contained|| contained_req))
+                                    } else if (check_true( ((namespace_identity.length>1)&&  not((namespace_identity['0']===namespace))))) {
+                                        if (check_true ((children[namespace_identity['0']]&&  not(contained_req)))){
                                               return  ( function() {
                                                 {
                                                      let __call_target__=children[namespace_identity['0']], __call_method__="set_global";
                                                     return  __call_target__[__call_method__].call(__call_target__,namespace_identity['1'],value,meta,is_constant,namespace_identity['0'])
                                                 } 
                                             })()
-                                        } else throw new EvalError(("namespace "+namespace_identity['0']+" doesn't exist"));
+                                        } else throw new EvalError(("namespace "+ namespace_identity['0']+ " doesn't exist"));
                                         
                                     } else  {
                                         let comps= get_object_path( ( function() {
@@ -1807,7 +1807,7 @@ export async function init_dlisp(Environment)  {
                                             return Environment.global_ctx.scope;
                                             
                                         })();
-                                        if (check_true (((meta instanceof Object)&& not((meta instanceof Array))))){
+                                        if (check_true (((meta instanceof Object)&&  not((meta instanceof Array))))){
                                             if (check_true (is_constant)){
                                                    (function(){
                                                     meta["constant"]=true;
@@ -1878,7 +1878,7 @@ export async function init_dlisp(Environment)  {
                                               return (refname).split("/")
                                         } 
                                     })();
-                                    comps=(path_comps|| get_object_path( ( function() {
+                                    comps=(path_comps||  get_object_path( ( function() {
                                          if (check_true ((1===namespace_identity.length))){
                                               return namespace_identity['0']
                                         } else {
@@ -1895,39 +1895,39 @@ export async function init_dlisp(Environment)  {
                                         } 
                                     })();
                                      return    (function(){
-                                        if (check_true( (parent_environment&&(namespace_identity.length>1)&& not((namespace_identity['0']===namespace))))) {
-                                             return  parent_environment["get_global"].call(parent_environment,namespace_identity['1'],value_if_not_found,suppress_check_external_env,namespace_identity['0'],comps,(contained||contained_req))
-                                        } else if (check_true( ((namespace_identity.length>1)&& not((namespace_identity['0']===namespace))))) {
-                                            if (check_true ((children[namespace_identity['0']]&& not(contained_req)))){
+                                        if (check_true( (parent_environment&& (namespace_identity.length>1)&&  not((namespace_identity['0']===namespace))))) {
+                                             return  parent_environment["get_global"].call(parent_environment,namespace_identity['1'],value_if_not_found,suppress_check_external_env,namespace_identity['0'],comps,(contained|| contained_req))
+                                        } else if (check_true( ((namespace_identity.length>1)&&  not((namespace_identity['0']===namespace))))) {
+                                            if (check_true ((children[namespace_identity['0']]&&  not(contained_req)))){
                                                   return  ( function() {
                                                     {
                                                          let __call_target__=children[namespace_identity['0']], __call_method__="get_global";
                                                         return  __call_target__[__call_method__].call(__call_target__,namespace_identity['1'],value_if_not_found,suppress_check_external_env,namespace_identity['0'],comps)
                                                     } 
                                                 })()
-                                            } else throw new EvalError(("namespace "+namespace_identity['0']+" doesn't exist"));
+                                            } else throw new EvalError(("namespace "+ namespace_identity['0']+ " doesn't exist"));
                                             
                                         } else  {
                                             refval=Environment.global_ctx.scope[comps['0']];
-                                            if (check_true (((undefined===refval)&&(namespace_identity.length===1)&&parent_environment))){
-                                                let rval= parent_environment["get_global"].call(parent_environment,refname,value_if_not_found,suppress_check_external_env,null,comps,(contained||contained_req));
+                                            if (check_true (((undefined===refval)&& (namespace_identity.length===1)&& parent_environment))){
+                                                let rval= parent_environment["get_global"].call(parent_environment,refname,value_if_not_found,suppress_check_external_env,null,comps,(contained|| contained_req));
                                                 ;
                                                  return  rval
                                             } else {
-                                                if (check_true (((undefined===refval)&&check_external_env))){
+                                                if (check_true (((undefined===refval)&& check_external_env))){
                                                      refval= ( function () {
                                                          if (check_true (check_external_env)){
-                                                              return ( get_outside_global(comps['0'])||NOT_FOUND)
+                                                              return ( get_outside_global(comps['0'])|| NOT_FOUND)
                                                         } else {
                                                               return NOT_FOUND
                                                         } 
                                                     })()
                                                 };
                                                  return    (function(){
-                                                    if (check_true( ((NOT_FOUND===refval)&& not((undefined===value_if_not_found))))) {
+                                                    if (check_true( ((NOT_FOUND===refval)&&  not((undefined===value_if_not_found))))) {
                                                          return value_if_not_found
                                                     } else if (check_true( (NOT_FOUND===refval))) {
-                                                        throw new ReferenceError(("symbol not found: "+ ( function () {
+                                                        throw new ReferenceError(("symbol not found: "+  ( function () {
                                                              if (check_true ((namespace_identity.length>1))){
                                                                   return  add(namespace,"/",namespace_identity['1'])
                                                             } else {
@@ -2025,7 +2025,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["symbol_definition"]={
-                                core_lang:true,description:("Given a symbol name and an optional namespace, either as a fully qualified path "+"or via the target_namespace argument, returns definition information about the "+"retquested symbol.  "+"Used primarily by the compiler to find metadata for a specific symbol during compilation."),usage:["symname:string","namespace:string"],tags:["compiler","symbols","namespace","search","context","environment"]
+                                core_lang:true,description:("Given a symbol name and an optional namespace, either as a fully qualified path "+ "or via the target_namespace argument, returns definition information about the "+ "retquested symbol.  "+ "Used primarily by the compiler to find metadata for a specific symbol during compilation."),usage:["symname:string","namespace:string"],tags:["compiler","symbols","namespace","search","context","environment"]
                             };
                             return Environment.definitions;
                             
@@ -2035,18 +2035,18 @@ export async function init_dlisp(Environment)  {
                             opts=await add({
                                 env:Environment
                             },opts,{
-                                meta:await (async function() {
-                                    if (check_true ((opts&&opts.meta))){
-                                          return true
+                                meta:await (async function(){
+                                    if (check_true ((opts&& opts.meta))){
+                                         true
                                     } else {
-                                          return false
+                                         false
                                     }
-                                } )()
+                                })()
                             });
                             out=null;
                             out=await compiler(json_expression,opts);
                              return  await async function(){
-                                if (check_true( ((out instanceof Array)&&out['0'].ctype&&(out['0'].ctype==="FAIL")))) {
+                                if (check_true( ((out instanceof Array)&& out['0'].ctype&& (out['0'].ctype==="FAIL")))) {
                                      return out
                                 } else if (check_true(opts.meta)) {
                                      return out
@@ -2063,13 +2063,13 @@ export async function init_dlisp(Environment)  {
                         }();
                         [await async function(){
                             Environment.definitions["compile"]={
-                                core_lang:true,description:("Compiles the given JSON or quoted lisp and returns a string containing "+"the lisp form or expression as javascript.<br>"+"If passed the option { meta: true } , an array is returned containing compilation metadata "+"in element 0 and the compiled code in element 1."),usage:["json_expression:*","opts:object"],tags:["macro","quote","quotes","desym","compiler"]
+                                core_lang:true,description:("Compiles the given JSON or quoted lisp and returns a string containing "+ "the lisp form or expression as javascript.<br>"+ "If passed the option { meta: true } , an array is returned containing compilation metadata "+ "in element 0 and the compiled code in element 1."),usage:["json_expression:*","opts:object"],tags:["macro","quote","quotes","desym","compiler"]
                             };
                             return Environment.definitions;
                             
                         }()];
                         let env_log=await defclog({
-                            prefix:("env"+id),background:"#B0F0C0"
+                            prefix:("env"+ id),background:"#B0F0C0"
                         });
                         ;
                         await async function(){
@@ -2088,7 +2088,7 @@ export async function init_dlisp(Environment)  {
                             let compiled;
                             let error_data;
                             let result;
-                            opts=(opts||new Object());
+                            opts=(opts|| new Object());
                             compiled=null;
                             error_data=null;
                             result=null;
@@ -2106,7 +2106,7 @@ export async function init_dlisp(Environment)  {
                                                 })
                                             } 
                                         } )(),{
-                                            env:Environment,ctx:ctx,formatted_output:true,source_name:opts.source_name,throw_on_error:opts.throw_on_error,error_report:(opts.error_report||null),quiet_mode:(opts.quiet_mode||false)
+                                            env:Environment,ctx:ctx,formatted_output:true,source_name:opts.source_name,throw_on_error:opts.throw_on_error,error_report:(opts.error_report|| null),quiet_mode:(opts.quiet_mode|| false)
                                         }) 
                                     } catch(__exception__220) {
                                           if (__exception__220 instanceof Error) {
@@ -2131,7 +2131,7 @@ export async function init_dlisp(Environment)  {
                                                     } else  {
                                                          return error_data={
                                                             error:await sub_type(e),message:e.message,stack:e.stack,form:await async function(){
-                                                                if (check_true( ((expression instanceof String || typeof expression==='string')&&(expression.length>100)))) {
+                                                                if (check_true( ((expression instanceof String || typeof expression==='string')&& (expression.length>100)))) {
                                                                      return await add(await expression["substr"].call(expression,0,100),"...")
                                                                 } else  {
                                                                      return await (await get_global("as_lisp"))(expression)
@@ -2163,11 +2163,11 @@ export async function init_dlisp(Environment)  {
                              return  await async function(){
                                 if (check_true( (null==compiled))) {
                                      return null
-                                } else if (check_true( (compiled['0'].namespace&&await not((compiled['0'].namespace===namespace))&&parent_environment))) {
+                                } else if (check_true( (compiled['0'].namespace&& await not((compiled['0'].namespace===namespace))&& parent_environment))) {
                                      return await parent_environment["evaluate_local"].call(parent_environment,compiled,ctx,await add(new Object(),opts,{
                                         compiled_source:true
                                     }))
-                                } else if (check_true( (compiled['0'].namespace&&await not((compiled['0'].namespace===namespace))))) {
+                                } else if (check_true( (compiled['0'].namespace&& await not((compiled['0'].namespace===namespace))))) {
                                      if (check_true (children[compiled['0'].namespace])){
                                           return await (async function() {
                                             {
@@ -2177,7 +2177,7 @@ export async function init_dlisp(Environment)  {
                                                 }))
                                             } 
                                         })()
-                                    } else throw new EvalError(("unknown namespace "+compiled['0'].namespace+" assignment"));
+                                    } else throw new EvalError(("unknown namespace "+ compiled['0'].namespace+ " assignment"));
                                     
                                 } else  {
                                     if (check_true (opts.on_compilation_complete)){
@@ -2192,7 +2192,7 @@ export async function init_dlisp(Environment)  {
                                     };
                                     await (async function(){
                                         try /* TRY COMPLEX */ {
-                                            if (check_true (((compiled instanceof Array)&&(compiled['0'] instanceof Object)&&compiled['0'].ctype&&await not((compiled['0'].ctype instanceof String || typeof compiled['0'].ctype==='string'))))){
+                                            if (check_true (((compiled instanceof Array)&& (compiled['0'] instanceof Object)&& compiled['0'].ctype&& await not((compiled['0'].ctype instanceof String || typeof compiled['0'].ctype==='string'))))){
                                                  await async function(){
                                                     compiled['0']["ctype"]=await subtype(compiled['0'].ctype);
                                                     return compiled['0'];
@@ -2203,7 +2203,7 @@ export async function init_dlisp(Environment)  {
                                                 if (check_true(compiled.error)) {
                                                      throw new Error((await get_global("indirect_new"))(compiled.error,compiled.message));
                                                     
-                                                } else if (check_true( (compiled['0'].ctype&&(await (await get_global("contains?"))("block",compiled['0'].ctype)||(compiled['0'].ctype==="assignment")||(compiled['0'].ctype==="__!NOT_FOUND!__"))))) {
+                                                } else if (check_true( (compiled['0'].ctype&& (await (await get_global("contains?"))("block",compiled['0'].ctype)|| (compiled['0'].ctype==="assignment")|| (compiled['0'].ctype==="__!NOT_FOUND!__"))))) {
                                                      if (check_true (await (async function(){
                                                         let __array_op_rval__226=compiled['0'].has_lisp_globals;
                                                          if (__array_op_rval__226 instanceof Function){
@@ -2213,7 +2213,7 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     })())){
                                                         await async function(){
-                                                            compiled[1]=new AsyncFunction("Environment",("{ "+compiled['1']+"}"));
+                                                            compiled[1]=new AsyncFunction("Environment",("{ "+ compiled['1']+ "}"));
                                                             return compiled;
                                                             
                                                         }();
@@ -2227,7 +2227,7 @@ export async function init_dlisp(Environment)  {
                                                         })()
                                                     } else {
                                                         await async function(){
-                                                            compiled[1]=new AsyncFunction(("{"+compiled['1']+"}"));
+                                                            compiled[1]=new AsyncFunction(("{"+ compiled['1']+ "}"));
                                                             return compiled;
                                                             
                                                         }();
@@ -2240,7 +2240,7 @@ export async function init_dlisp(Environment)  {
                                                             }
                                                         })()
                                                     }
-                                                } else if (check_true( (compiled['0'].ctype&&(("AsyncFunction"===compiled['0'].ctype)||("statement"===compiled['0'].ctype)||("objliteral"===compiled['0'].ctype))))) {
+                                                } else if (check_true( (compiled['0'].ctype&& (("AsyncFunction"===compiled['0'].ctype)|| ("statement"===compiled['0'].ctype)|| ("objliteral"===compiled['0'].ctype))))) {
                                                     if (check_true (await (async function(){
                                                         let __array_op_rval__231=compiled['0'].has_lisp_globals;
                                                          if (__array_op_rval__231 instanceof Function){
@@ -2250,7 +2250,7 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     })())){
                                                         await async function(){
-                                                            compiled[1]=new AsyncFunction("Environment",("{ return "+compiled['1']+"} "));
+                                                            compiled[1]=new AsyncFunction("Environment",("{ return "+ compiled['1']+ "} "));
                                                             return compiled;
                                                             
                                                         }();
@@ -2264,7 +2264,7 @@ export async function init_dlisp(Environment)  {
                                                         })()
                                                     } else {
                                                         await async function(){
-                                                            compiled[1]=new AsyncFunction(("{ return "+compiled['1']+"}"));
+                                                            compiled[1]=new AsyncFunction(("{ return "+ compiled['1']+ "}"));
                                                             return compiled;
                                                             
                                                         }();
@@ -2277,7 +2277,7 @@ export async function init_dlisp(Environment)  {
                                                             }
                                                         })()
                                                     }
-                                                } else if (check_true( (compiled['0'].ctype&&("Function"===compiled['0'].ctype)))) {
+                                                } else if (check_true( (compiled['0'].ctype&& ("Function"===compiled['0'].ctype)))) {
                                                     if (check_true (await (async function(){
                                                         let __array_op_rval__236=compiled['0'].has_lisp_globals;
                                                          if (__array_op_rval__236 instanceof Function){
@@ -2287,7 +2287,7 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     })())){
                                                         await async function(){
-                                                            compiled[1]=new Function("Environment",("{ return "+compiled['1']+"} "));
+                                                            compiled[1]=new Function("Environment",("{ return "+ compiled['1']+ "} "));
                                                             return compiled;
                                                             
                                                         }();
@@ -2301,7 +2301,7 @@ export async function init_dlisp(Environment)  {
                                                         })()
                                                     } else {
                                                         await async function(){
-                                                            compiled[1]=new Function(("{ return "+compiled['1']+"}"));
+                                                            compiled[1]=new Function(("{ return "+ compiled['1']+ "}"));
                                                             return compiled;
                                                             
                                                         }();
@@ -2349,7 +2349,7 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     };
                                                     result=e;
-                                                    if (check_true ((ctx&&ctx.in_try)))throw result;
+                                                    if (check_true ((ctx&& ctx.in_try)))throw result;
                                                     
                                                 }
                                             } 
@@ -2414,7 +2414,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                  rval=await evaluate(lisp_struct,ctx,await add({
                                     json_in:true
-                                },(opts||new Object())))
+                                },(opts|| new Object())))
                             };
                              return  rval
                         };
@@ -2485,9 +2485,9 @@ export async function init_dlisp(Environment)  {
                             return Environment;
                             
                         }();
-                        let children=(opts.children||new Object());
+                        let children=(opts.children|| new Object());
                         ;
-                        let children_declarations=(opts.children_declarations||new Object());
+                        let children_declarations=(opts.children_declarations|| new Object());
                         ;
                         if (check_true ((namespace==="core"))){
                             if (check_true (await not(Environment.global_ctx.scope["*env_config*"]))){
@@ -2515,7 +2515,7 @@ export async function init_dlisp(Environment)  {
                                         
                                     } else  {
                                         let child_env;
-                                        options=(options||new Object());
+                                        options=(options|| new Object());
                                         child_env=await dlisp_env({
                                             parent_environment:Environment,namespace:name,contained:options.contained
                                         });
@@ -2556,7 +2556,7 @@ export async function init_dlisp(Environment)  {
                                              return  name
                                         } else {
                                             await console.error("ENV: couldn't create the child environment. Received: ",child_env);
-                                            throw new EvalError(("unable to create namespace "+name));
+                                            throw new EvalError(("unable to create namespace "+ name));
                                             
                                         }
                                     }
@@ -2568,8 +2568,8 @@ export async function init_dlisp(Environment)  {
                                     if (check_true( await not((name instanceof String || typeof name==='string')))) {
                                          throw new TypeError("namespace name must be a string");
                                         
-                                    } else if (check_true( (await not(("core"===name))&&(null==children[name])))) {
-                                         throw new EvalError(("namespace "+name+" doesn't exist"));
+                                    } else if (check_true( (await not(("core"===name))&& (null==children[name])))) {
+                                         throw new EvalError(("namespace "+ name+ " doesn't exist"));
                                         
                                     } else  {
                                         if (check_true ((name==="core"))){
@@ -2591,7 +2591,7 @@ export async function init_dlisp(Environment)  {
                                          throw new EvalError("core namespace cannot be removed");
                                         
                                     } else if (check_true( (null==children[name]))) {
-                                         throw new EvalError(("namespace "+name+"doesn't exist"));
+                                         throw new EvalError(("namespace "+ name+ "doesn't exist"));
                                         
                                     } else if (check_true( (name===await current_namespace()))) {
                                          throw new EvalError("namespace is the current namespace");
@@ -2604,7 +2604,7 @@ export async function init_dlisp(Environment)  {
                                                      return  await (await get_global("remove_prop"))(Environment.global_ctx._star_env_config_star_.imports,k)
                                                 }
                                             };
-                                            let __array__264=[],__elements__262=(await resolve_path(["global_ctx","scope","*env_config*","imports"],Environment)||[]);
+                                            let __array__264=[],__elements__262=(await resolve_path(["global_ctx","scope","*env_config*","imports"],Environment)|| []);
                                             let __BREAK__FLAG__=false;
                                             for(let __iter__261 in __elements__262) {
                                                 __array__264.push(await __for_body__263(__elements__262[__iter__261]));
@@ -2635,7 +2635,7 @@ export async function init_dlisp(Environment)  {
                         };
                         let included_globals=null;
                         ;
-                        if (check_true ((included_globals&&(namespace==="core")))){
+                        if (check_true ((included_globals&& (namespace==="core")))){
                             included_globals=await (async function(){
                                 let __array_op_rval__266=included_globals;
                                  if (__array_op_rval__266 instanceof Function){
@@ -2647,7 +2647,7 @@ export async function init_dlisp(Environment)  {
                             if (check_true ((included_globals["symbols"] instanceof Object))){
                                  await (async function() {
                                     let __for_body__269=async function(symset) {
-                                        if (check_true (((null==Environment.global_ctx.scope[symset['0']])||(symset['0']==="*env_config*")))){
+                                        if (check_true (((null==Environment.global_ctx.scope[symset['0']])|| (symset['0']==="*env_config*")))){
                                              return  await async function(){
                                                 Environment.global_ctx.scope[symset['0']]=symset['1'];
                                                 return Environment.global_ctx.scope;
@@ -2821,11 +2821,11 @@ export async function init_dlisp(Environment)  {
                             __result=null;
                             __action=async function(symset) {
                                  return  await async function(){
-                                    if (check_true( (options&&options.no_compiler&&(symset['0']==="compiler")))) {
+                                    if (check_true( (options&& options.no_compiler&& (symset['0']==="compiler")))) {
                                          return null
                                     } else if (check_true( await (await get_global("starts_with?"))("$",symset['0']))) {
                                          return null
-                                    } else if (check_true( (options&&options.do_not_include&&await (await get_global("contains?"))(symset['0'],options.do_not_include)))) {
+                                    } else if (check_true( (options&& options.do_not_include&& await (await get_global("contains?"))(symset['0'],options.do_not_include)))) {
                                          return null
                                     } else if (check_true( (symset['0']==="*env_skeleton*"))) {
                                          return await (async function(){
@@ -2972,7 +2972,7 @@ export async function init_dlisp(Environment)  {
                             if (check_true (await not((target_insertion_path instanceof Array))))throw new EvalError("Unable to find the first included_globals symbol");
                             ;
                             target_insertion_path=await conj(await chop(target_insertion_path),[2]);
-                            options=(options||new Object());
+                            options=(options|| new Object());
                             if (check_true (options.include_source)){
                                  include_source=true
                             };
@@ -3043,7 +3043,7 @@ export async function init_dlisp(Environment)  {
                                      return await clone(children_declarations) 
                                 })()]],["children",my_children]]) 
                             })()]);
-                            output_path=(options.save_as||await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope));
+                            output_path=(options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope));
                             if (check_true (output_path instanceof Function)){
                                  output_path=await (async function(){
                                     let __array_op_rval__315=output_path;
@@ -3054,20 +3054,20 @@ export async function init_dlisp(Environment)  {
                                     }
                                 })()
                             };
-                            if (check_true ((await not((output_path instanceof String || typeof output_path==='string'))&&output_path)))throw new EvalError("invalid name for target for saving the environment.  Must be a string or function");
+                            if (check_true ((await not((output_path instanceof String || typeof output_path==='string'))&& output_path)))throw new EvalError("invalid name for target for saving the environment.  Must be a string or function");
                             ;
                              return  await async function(){
-                                if (check_true( (output_path&&await (await get_global("ends_with?"))(".js",output_path)))) {
-                                    (build_headers).push(("// Build Time: "+build_time));
-                                    (build_headers).push(("// Version: "+version_tag));
-                                    (build_headers).push(("export const DLISP_ENV_VERSION='"+version_tag+"';"));
+                                if (check_true( (output_path&& await (await get_global("ends_with?"))(".js",output_path)))) {
+                                    (build_headers).push(("// Build Time: "+ build_time));
+                                    (build_headers).push(("// Version: "+ version_tag));
+                                    (build_headers).push(("export const DLISP_ENV_VERSION='"+ version_tag+ "';"));
                                     await env_log("saving to: ",output_path);
                                      return  await (await get_global("compile_buffer"))(src,"init_dlisp",{
                                         namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,js_headers:[await (await get_global("show"))(check_true),await (await get_global("show"))(get_next_environment_id),await (await get_global("show"))(get_outside_global),await (await get_global("show"))(subtype),await (await get_global("show"))(lisp_writer),await (await get_global("show"))(clone),await (await get_global("show"))(LispSyntaxError)],bundle_options:{
                                             default_namespace:await resolve_path(["*env_config*","export","default_namespace"],Environment.global_ctx.scope)
-                                        },output_file:output_path,include_source:(options.include_source||await resolve_path(["*env_config*","export","include_source"],Environment.global_ctx.scope)),build_headers:build_headers
+                                        },output_file:output_path,include_source:(options.include_source|| await resolve_path(["*env_config*","export","include_source"],Environment.global_ctx.scope)),build_headers:build_headers
                                     })
-                                } else if (check_true( (output_path&&await (await get_global("ends_with?"))(".lisp",output_path)))) {
+                                } else if (check_true( (output_path&& await (await get_global("ends_with?"))(".lisp",output_path)))) {
                                      return await (await get_global("write_text_file"))(output_path,await JSON.stringify(src,null,4))
                                 } else  {
                                      return src
@@ -3075,14 +3075,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;
-            let registered_stop_char;
-            let handler_stack;
-            let handler;
-            let c;
-            let next_c;
-            let depth;
-            let stop;
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;
             let read_block;
             output_structure=[];
             idx=-1;
@@ -3833,7 +3826,7 @@ export async function init_dlisp(Environment)  {
                                     };
                                     __obj__317["log"]=async function(args) {
                                          return  ["console.log","(",await map(async function(val,idx,tl) {
-                                            if (check_true ((idx<(tl-1)))){
+                                            if (check_true ((idx<(tl- 1)))){
                                                   return await (async function(){
                                                     let __array_op_rval__321=val;
                                                      if (__array_op_rval__321 instanceof Function){
@@ -3864,7 +3857,7 @@ export async function init_dlisp(Environment)  {
                                             } else if (check_true( (args.length===2))) {
                                                  return ["parseInt(",args['0'],",",args['1'],")"]
                                             } else  {
-                                                 throw new "SyntaxError"(("invalid number of arguments to int: received "+args.length));
+                                                 throw new "SyntaxError"(("invalid number of arguments to int: received "+ args.length));
                                                 
                                             }
                                         } ()
@@ -3912,7 +3905,7 @@ export async function init_dlisp(Environment)  {
                         }();
                         let init=Environment.global_ctx.scope["*initializer*"];
                         ;
-                        if (check_true ((opts.default_namespace&&await not((compiler===unset_compiler))&&children[opts.default_namespace]))){
+                        if (check_true ((opts.default_namespace&& await not((compiler===unset_compiler))&& children[opts.default_namespace]))){
                              await (await get_global("set_namespace"))(opts.default_namespace)
                         };
                         if (check_true (init)){

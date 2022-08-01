@@ -279,8 +279,8 @@
 		  { `output_file: (output_path "core-ext.js")
                    `include_source: include_source
                    `build_headers: build_headers })
-    (compile_file (source_path "io.lisp") nil
-		  { `output_file: (output_path "io.js")
+    (compile_file (source_path "base-io.lisp") nil
+		  { `output_file: (output_path "base-io.js")
                    `include_source: include_source
                    `build_headers: build_headers })
     (success "complete")
@@ -298,7 +298,7 @@
    })
 
 
-
+(register_feature "build-tools")
 
 
 ;; return true as the last value so the console output isn't overwhelmed.

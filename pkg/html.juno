@@ -195,6 +195,18 @@
       `tags: ["ui" "html" "css"]
       `usage: ["element:Element" "element?:Element"]
       } )
-   
+
+   (defun remove_attribute (elem `& attribs)
+     (when (and elem
+                (is_element? elem)
+                attribs
+                (> attribs.length 0))
+       (for_each (attrib (flatten attribs))
+                 (-> elem `removeAttribute attrib)))
+     {
+      `description: "Provided a target DOM element and 1 or more attributes, removes each attribute from the targeted DOM element."
+      `usage: ["element:Element" "attrib0:string" "attribN:string"]
+      `tags: [ `ui `html `attribute `delete ]
+      })
   (register_feature "html")
   true)

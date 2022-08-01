@@ -105,5 +105,18 @@ Because this is standard Juno notation it can be placed anywhere in your source,
 When [Javascript was being conceived](https://web.archive.org/web/20200227184037/https://speakingjs.com/es5/ch04.html) at Netscape, Brendan Eich was to write it in a Scheme based language, which can easily work with HTML. HTML is technically a simple Lisp with XML notation, since all tag elements evaluate as a DOM result and are a list structure inside each other.  Instead, an alternative approach was chosen.  A Java-like language was developed to align with Sun Microsystem's Java and Netscape's decision to include embedded Java "applets".  Nevertheless, if the DOM is considered the center of the browser, a Scheme-like language fits beautifully around the DOM, and could be seamlessly embedded, providing an elegant way to naturally extend the declarative nature of HTML with custom tags, macros and imperative logic.  This is one of Juno's aims: to provide a lisp centered on the Browser and browser-like run-times such as [Deno](https://deno.land).  Of course, Juno can be used outside of this context as well.
 
 
+Saving "images" of the Lisp environment has been around for a while. Juno shares this ability. This enables a way of working that is different than a typical development approach: 
+  - Build up your environment, work with it, and save it as an image from time to time
+  - Per project basis - holds data structures, code, like a big ram disk attached to lisp processing
+  - Embed a web server, repl or both
+  - Compile in with V8 to executable 
+  - RAM is cheap - load it up, virtual memory is under-utilized
+  - Add features to use the embedded or accessed information
+  - Add a Domain Specific Language that makes working with the model or information easier
+  - Deliver the model and information via HTML and/or JSON services.
+  - Perhaps you just have a browser.  Build your data structure, save it off from time to time as an HTML file.  When you are ready to work on it again, open the HTML file again.
+  - Save your browser based environment image to javascript. Import it into a server model seamlessly??
+  
+Next: need to run it?  Move it to the server and start it.
 
 

@@ -96,6 +96,10 @@
     3
     "function definition with single expression"
     ]
+    [ "(+ 3 (- -5 -2))"
+     []
+     0
+     "operations with negative numbers and subtraction operator" ]
     [ "(+ { `abc: 123 } { `def: 456 })"
     []
     `{"abc":123 "def":456}
@@ -2228,5 +2232,15 @@
   "function"
   "Correctly return fully qualified global value type"
   ]
- 
+  ["(let
+       ((columns [ 1 2 3 ])
+	(column_number 2))
+     {
+        `last_column?: (if (== column_number (- (length columns) 1))
+		           true
+                           false)
+     })"
+  []
+  `{ "last_column?": true }
+  "Correctly handle if attached to key value"]
 ])

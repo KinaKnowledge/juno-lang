@@ -1063,7 +1063,8 @@
                               (`add_operand (fn ()
                                                 (when (and (> idx 1)
                                                            (< idx (- tokens.length 0)))
-                                                  (push acc math_op))))
+                                                  (push acc math_op)
+						  (push acc " ")))) 
                               (`acc [{"ctype":"expression"}]))
                            
                            (set_ctx ctx
@@ -1193,27 +1194,10 @@
         
         (`compile_elem (fn (token ctx)
                          (let
-                             ((`rval nil)
-                              (`check_needs_wrap 
-                               (fn (stmts)
-                                 (let
-                                     ((`fst (or (and (is_array? stmts)
-                                                     (first stmts)
-                                                     (is_object? (first stmts))
-                                                     (prop (first stmts) `ctype)
-                                                     (cond
-                                                       (is_string? (prop (first stmts) `ctype))
-                                                       (prop (first stmts) `ctype)
-                                                       else
-                                                       (sub_type (prop (first stmts) `ctype))))
-                                                )))
-                                   
-                                   (cond
-                                     (contains? "block" fst)
-                                     true
-                                     else
-                                     false)))))                          
-                           (if (is_complex? token.val)
+                             ((`rval nil))                          
+                           (if (or (is_complex? token.val)
+				   (and (is_array? token.val)
+					(== token.val.0.name "if")))
                              (= rval (compile_wrapper_fn token ctx))
                              (= rval (compile token ctx)))
                            (when (not (is_array? rval))
@@ -1983,7 +1967,9 @@
                                   (inc idx)
                                   (= alloc_set (prop (prop allocations idx) `val))
                                   (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
-                                  
+                                  (assert (and (is_string? reference_name)
+					       (> (length reference_name) 0))
+					  (+ "Invalid reference name: " alloc_set.0.name))
                                   (= ctx_details (get_declaration_details ctx reference_name))
                                   (when ctx_details                                        
                                         ;; already declared..
@@ -2328,7 +2314,7 @@
                                (let
                                    ((`acc [])
                                     (`fn_args tokens.1.val)
-                                    (`body tokens.2.val)
+                                    (`body (compile tokens.2.val ctx))  
                                     (`idx -1)
                                     (`quoted_body [])
                                     (`arg nil)
@@ -2337,7 +2323,10 @@
                                   (push acc type_mark)
                                   (for_each (`t ["new" " " "Function" "("])
                                     (push acc t))
-                                  
+
+				  (when (not (is_string? body))
+				    (throw SyntaxError (+ "Invalid jslambda body, need string, got: " (subtype body))))
+				  
                                   (while (< idx (- fn_args.length 1))
                                       (do
                                         (inc idx)
@@ -3536,7 +3525,12 @@
                                                 (if needs_braces? "}" "")))                                
                                 (when (verbosity ctx)
                                   (run_log "assembled: " assembled))                                       
-                                (= assembly (new AsyncFunction "Environment"  assembled))
+                                (try
+				   (= assembly (new AsyncFunction "Environment"  assembled))
+				 (catch Error (`e)
+					(progn
+					  (debug)
+					  (throw e))))
                                 (when run_opts.bind_mode
                                   (= assembly (bind_function assembly Environment)))
                                 
@@ -4334,7 +4328,7 @@
                                        
        (`is_complex? (fn (tokens)
                          (let
-                             ((`rval (or (is_block? tokens)
+                             ((rval (or (is_block? tokens)					
                                          (and (== tokens.type "arr") 
                                               (is_block? tokens.val))
                                          (== tokens.val.0.name "if")
@@ -4490,6 +4484,7 @@
                         [{ `ctype: "objliteral" } acc]))
                    (do                   
                     (= tmp_name (gen_temp_name "obj"))
+		    (debug)
                      (for_each (`t [{ `ctype:`statement }  preamble.0 " " "(" " " preamble.1 " " "function" "()" "{" "let" " " tmp_name "=" "new" " " "Object" "()" ";"])
                                (push acc t))
                      (while (< idx total_length)
