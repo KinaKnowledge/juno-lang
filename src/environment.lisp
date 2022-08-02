@@ -115,7 +115,7 @@
                          `scope: {}
                          `name:  namespace              
                          }
-          `version: (javascript DLISP_ENV_VERSION)
+          `build_version: (javascript DLISP_ENV_VERSION)
           `definitions: (or opts.definitions
                             {
                          
@@ -1648,8 +1648,9 @@
 		   { `export: { `save_path: "js/juno.js"
 		                `default_namespace: "core"
 		                `include_source: false }
-                    `features: []
-                    `imports: {} }))
+		     `features: []
+		     `build: (javascript DLISP_ENV_VERSION)
+                     `imports: {} }))
 
        ;; returns the current namespace 
 

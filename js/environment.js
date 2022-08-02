@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-08-01 16:31:25
-// Version: 2022.08.01.16.31
-export const DLISP_ENV_VERSION='2022.08.01.16.31';
+// Build Time: 2022-08-02 08:26:40
+// Version: 2022.08.02.08.26
+export const DLISP_ENV_VERSION='2022.08.02.08.26';
 
 
 
@@ -43,7 +43,7 @@ export async function init_dlisp(Environment)  {
   }
   return typeof value;
 };
-                        let get_object_path=function(refname) {        if (check_true ((( refname["indexOf"].call(refname,".")>-1)||( refname["indexOf"].call(refname,"[")>-1)))){
+                        let get_object_path=function(refname) {        if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
             let chars;
             let comps;
             let mode;
@@ -55,18 +55,18 @@ export async function init_dlisp(Environment)  {
              ( function() {
                 let __for_body__12=function(c) {
                      return    (function(){
-                        if (check_true( ((c===".")&&(mode===0)))) {
+                        if (check_true( ((c===".")&& (mode===0)))) {
                             if (check_true (((name_acc && name_acc.length)>0))){
                                  (comps).push((name_acc).join(""))
                             };
                              return  name_acc=[]
-                        } else if (check_true( ((mode===0)&&(c==="[")))) {
+                        } else if (check_true( ((mode===0)&& (c==="[")))) {
                             mode=1;
                             if (check_true (((name_acc && name_acc.length)>0))){
                                  (comps).push((name_acc).join(""))
                             };
                              return  name_acc=[]
-                        } else if (check_true( ((mode===1)&&(c==="]")))) {
+                        } else if (check_true( ((mode===1)&& (c==="]")))) {
                             mode=0;
                             (comps).push((name_acc).join(""));
                              return  name_acc=[]
@@ -128,7 +128,7 @@ export async function init_dlisp(Environment)  {
                         let Environment={
                             global_ctx:{
                                 scope:new Object(),name:namespace
-                            },version:DLISP_ENV_VERSION,definitions:(opts.definitions|| new Object()),declarations:(opts.declarations|| {
+                            },build_version:DLISP_ENV_VERSION,definitions:(opts.definitions|| new Object()),declarations:(opts.declarations|| {
                                 safety:{
                                     level:2
                                 }
@@ -2495,7 +2495,7 @@ export async function init_dlisp(Environment)  {
                                     Environment.global_ctx.scope["*env_config*"]={
                                         export:{
                                             save_path:"js/juno.js",default_namespace:"core",include_source:false
-                                        },features:[],imports:new Object()
+                                        },features:[],build:DLISP_ENV_VERSION,imports:new Object()
                                     };
                                     return Environment.global_ctx.scope;
                                     
@@ -3075,17 +3075,7 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;
-            let read_block;
-            output_structure=[];
-            idx=-1;
-            line_number=1;
-            column_number=0;
-            source_name=await (async function () {
-                 if (check_true ((opts && opts["source_name"]))){
-                      return (opts && opts["source_name"])
-                } else {
-                      return "anonymous"
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"
                 } 
             })();
             opts=(opts||new Object());

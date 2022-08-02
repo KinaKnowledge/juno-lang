@@ -367,7 +367,7 @@
                           
                           (cond
                             (not (== undefined (prop ctx.scope ref_name)))
-                            (prop ctx.scope ref_name)
+                            (prop ctx.scope ref_name)			    
                             ctx.parent
                             (get_ctx ctx.parent ref_name)))))))
        
@@ -4596,6 +4596,7 @@
                          (let
                              ((`is_operation false)
                               (`declared_type nil)
+			      (`prefix "")
                               (`nctx nil)
                               (`symbolic_replacements [])
                               (`compiled_values []))
@@ -4687,9 +4688,11 @@
                                       (is_string? rcv.0.ctype)
                                       (contains? "unction" rcv.0.ctype)))
                              (do
-                               
+                              (if (== declared_type.type AsyncFunction)
+				  (= prefix "await ")
+				  (= prefix ""))
                                (= is_operation true)
-                               (for_each (`t ["(" rcv ")" "(" ])
+                               (for_each (`t [ prefix "(" rcv ")" "(" ])
                                          (push acc t))
                                (push_as_arg_list acc compiled_values)
                                (push acc ")"))
@@ -4780,7 +4783,7 @@
                         (= rcv (compile tokens.val ctx (+ _cdepth 1)))                        
                         rcv)
                                             
-                      ;; Simple compilations ----
+                      ;; Simple compilations --------
                       
                       (or (and (is_object? tokens)
                                (not (== undefined tokens.val)) ;(check_true tokens.val)
@@ -4833,7 +4836,7 @@
                           (and tokens.ref
                                (do
                                    (= snt_name (sanitize_js_ref_name tokens.name))
-                                   (= snt_value (get_ctx ctx snt_name))                                  
+                                   (= snt_value (get_ctx_val ctx snt_name))                                  
                                    (or snt_value
                                        (== 0 snt_value)
                                        (== false snt_value))))                                   
@@ -4842,7 +4845,7 @@
                             (when (== refval ArgumentType)
                               (= refval snt_name))
                             (when (verbosity ctx)
-                              (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval)))                                        
+                              (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval)))
                             (cond 
                                   (== tokens.type "literal")
                                   refval
