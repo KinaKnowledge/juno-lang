@@ -1518,7 +1518,7 @@
                                      (do
                                        (if e.details
                                          (env_log "caught error: " e.details)
-                                         (env_log "caught error: " e.name e.message))
+                                         (env_log "caught error: " e.name e.message e))
                                        (if (and (== (sub_type e) "SyntaxError")
                                                 (> Environment.context.scope.__VERBOSITY__  4))
                                          (console.log compiled.1))
@@ -1754,21 +1754,21 @@
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
                    (when (or (eq nil (prop Environment.global_ctx.scope symset.0))
-                             (== symset.0 "*env_config*"))
+                             (== symset.0 "*env_config*"))                     
                      (set_prop Environment.global_ctx.scope
                                symset.0
                                symset.1))))
 
        (when (is_object? (prop included_globals `definitions))         
          (for_each (symset (pairs included_globals.definitions))
-                   (when (eq nil (prop Environment.definitions symset.0))                   
+                   (when (eq nil (prop Environment.definitions symset.0))                     
                      (set_prop Environment.definitions
                                symset.0
                                symset.1))))
        
        (when (is_object? (prop included_globals `declarations))
          (for_each (symset (pairs included_globals.declarations))
-                   (when (eq nil (prop Environment.declarations symset.0))
+                   (when (eq nil (prop Environment.declarations symset.0))                     
                      (set_prop Environment.declarations
                                symset.0
                                (quotel symset.1)))))
@@ -1834,10 +1834,13 @@
                      (and options options.do_not_include
                           (contains? symset.0 options.do_not_include))
                      nil
-		     (== symset.0 "*env_skeleton*")
+
+                     (== symset.0 "*env_skeleton*")
                      [ symset.0 [(quote quotel) (prop Environment.global_ctx.scope "*env_skeleton*") ]]
-                     (resolve_path [ symset.0 `initializer ] Environment.definitions)
+
+                     (resolve_path [ symset.0 `initializer ] Environment.definitions)                     
                      [symset.0 (resolve_path [ symset.0 `initializer ] Environment.definitions)]
+                    
                      (== nil symset.1)
                      [symset.0 (quote nil)]
                      (== undefined symset.1)
@@ -1897,14 +1900,15 @@
                           (= child_env (-> child.1
                                            `compile
                                            (-> child.1 `export_symbol_set { `no_compiler: true })
-                                           { `throw_on_error: true `meta: true }))                                            
-                          [child.0  `(quote (javascript ,#child_env.1))])))))
+                                           { `throw_on_error: true `meta: true }))
+                          ;(console.log "child_env: " child_env)
+                          [child.0  `(javascript ,#child_env) ])))))
            
                                         ;[(quote let)
                                         ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
                                         ;  [(quote javascript) child_env.1]]])))))
 	   
-	   
+	   ;(console.log "my_children: " my_children)
            ;; now embed our compiled existing context into the source tree...			    
            (set_path target_insertion_path src
 		     `(fn ()
@@ -2111,7 +2115,7 @@
 
      ;; get the core/*initializer*...
      (defvar init (prop Environment.global_ctx.scope "*initializer*"))
-
+     
      ;; set the default namespace if we have been given one and we have children..
      (when (and opts.default_namespace
 	        (not (== compiler unset_compiler))	

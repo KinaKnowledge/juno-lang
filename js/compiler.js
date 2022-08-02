@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-08-02 11:25:48
-// Version: 2022.08.02.11.25
-export const DLISP_ENV_VERSION='2022.08.02.11.25';
+// Build Time: 2022-08-02 13:18:26
+// Version: 2022.08.02.13.18
+export const DLISP_ENV_VERSION='2022.08.02.13.18';
 
 
 
@@ -129,7 +129,8 @@ export async function init_compiler(Environment) {
             let not=function anonymous(x) {
 { if (check_true(x)) { return false } else { return true } }
 };
-            let sub_type=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";  else if (value instanceof Array) return "array";
+            let sub_type=function subtype(value) {  if (value === null) return "null";  else if (value === undefined) return "undefined";
+  else if (value instanceof Array) return "array";
   else if (value.constructor && value.constructor!=null && value.constructor.name!=='Object') {
     return value.constructor.name;
   }
@@ -5221,12 +5222,14 @@ export async function init_compiler(Environment) {
                     let preamble;
                     let from_place;
                     let can_be_static;
+                    let metaval;
                     let imported_from;
                     let acc;
                     from_tokens=null;
                     preamble=await calling_preamble(ctx);
                     from_place=null;
                     can_be_static=false;
+                    metaval=null;
                     imported_from=null;
                     acc=[];
                     ;
@@ -5248,16 +5251,17 @@ export async function init_compiler(Environment) {
                         return external_dependencies;
                         
                     }();
-                    (acc).push({
-                        ctype:"statement",meta:await (async function(){
-                            if (check_true (can_be_static)){
-                                 {
-                                    initializer:["=:dynamic_import",imported_from]
-                                }
-                            } else {
-                                 new Object()
+                    metaval=await (async function () {
+                         if (check_true (can_be_static)){
+                              return {
+                                initializer:["=:dynamic_import",imported_from]
                             }
-                        })()
+                        } else {
+                              return new Object()
+                        } 
+                    })();
+                    (acc).push({
+                        ctype:"statement",meta:metaval
                     });
                     await (async function() {
                         let __for_body__417=async function(t) {

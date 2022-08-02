@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-08-02 11:25:48
-// Version: 2022.08.02.11.25
-export const DLISP_ENV_VERSION='2022.08.02.11.25';
+// Build Time: 2022-08-02 13:18:26
+// Version: 2022.08.02.13.18
+export const DLISP_ENV_VERSION='2022.08.02.13.18';
 
 
 
@@ -3201,7 +3201,11 @@ await Environment.set_global("import",async function(...args) {
                     
                 } else if (check_true( (target_symbols instanceof Array))) {
                     (acc).push(["=:defglobal",(target_symbols && target_symbols["0"]),["=:dynamic_import",filespec]]);
-                    (acc).push(["=:set_path",["imports",["=:+",(await Environment.get_global("*namespace*")),"/",["=:desym",(target_symbols && target_symbols["0"])]]],"=:*env_config*",["=:to_object",[["symbol",["=:desym",(target_symbols && target_symbols["0"])]],["namespace",(await Environment.get_global("*namespace*"))],["location",filespec]]]]);
+                    (acc).push(["=:set_path",["imports",["=:+",await (async function(){
+                         return await (await Environment.get_global("current_namespace"))() 
+                    })(),"/",["=:desym",(target_symbols && target_symbols["0"])]]],"=:*env_config*",["=:to_object",[["symbol",["=:desym",(target_symbols && target_symbols["0"])]],["namespace",await (async function(){
+                         return await (await Environment.get_global("current_namespace"))() 
+                    })()],["location",filespec]]]]);
                     (acc).push(["=:when",["=:prop",(target_symbols && target_symbols["0"]),"initializer"],["=:->",(target_symbols && target_symbols["0"]),"initializer","=:Environment"]]);
                     (acc).push((target_symbols && target_symbols["0"]));
                      return  ["=:iprogn",].concat(acc)

@@ -964,6 +964,7 @@
   `[list 123 456]
   "backquote with unquoted spliced reference and operator"
   ]
+  
     ["(let
      ((`ntree nil)
       (`precompile_function (fn (v)
@@ -1800,7 +1801,19 @@
    []
    true
    "Define and access global with invalid JS character"]
-  ["(apply is_string? [\"Hello\"])"
+ ["(apply add (range 30))"
+  []
+  435
+   "Apply using evaluated function in args"]
+ ["(apply add (if true (range 30) (range 10)))"
+  []
+  435
+   "Apply using compiled block structure 1"]
+ ["(apply add (if false (range 30) (range 10)))"
+  []
+  45
+  "Apply using compiled block structure 2"]
+ ["(apply is_string? [\"Hello\"])"
    []
    true
    "Application of global function with invalid JS character"
@@ -2248,4 +2261,6 @@
   []
   "{let is_block_ques_;is_block_ques_=async function() { return  true}; return  await is_block_ques_()}"
   "Reference locally shadowed global function with invalid JS characters."]
+ 
+ 
 ])

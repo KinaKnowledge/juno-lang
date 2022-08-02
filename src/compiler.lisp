@@ -3285,6 +3285,7 @@
                      (`preamble (calling_preamble ctx))
                      (`from_place nil)
                      (`can_be_static false)
+		     (`metaval nil)
                      (`imported_from nil)
                      (`acc []))
                   (declare (string preamble.0))
@@ -3303,9 +3304,10 @@
                  (set_prop external_dependencies
                            imported_from
                            true)
-                 (push acc { `ctype: "statement" `meta: (if can_be_static
-                                                          { `initializer: [(quote dynamic_import) imported_from] }
-                                                          {}) })
+		 (= metaval (if can_be_static
+                                { `initializer: [(quote dynamic_import) imported_from] }
+                                {}))
+                 (push acc { `ctype: "statement" `meta: metaval })
                  
                  (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
                     (push acc t))                

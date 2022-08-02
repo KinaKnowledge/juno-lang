@@ -2509,7 +2509,7 @@ such as things that connect or use environmental resources.
 	     (push acc
 		   `(defglobal ,#target_symbols.0 (dynamic_import ,#filespec)))
 	     (push acc
-		   `(set_path [ `imports (+ ,#*namespace* "/" (desym ,#target_symbols.0)) ] *env_config* (to_object [[`symbol (desym ,#target_symbols.0) ] [ `namespace ,#*namespace* ] [ `location ,#filespec ]])))
+		   `(set_path [ `imports (+ ,#(current_namespace) "/" (desym ,#target_symbols.0)) ] *env_config* (to_object [[`symbol (desym ,#target_symbols.0) ] [ `namespace ,#(current_namespace) ] [ `location ,#filespec ]])))
 	     (push acc
 		   `(when (prop ,#target_symbols.0 `initializer)
 		      (-> ,#target_symbols.0 `initializer Environment)))
