@@ -1518,7 +1518,10 @@
                                      (do
                                        (if e.details
                                          (env_log "caught error: " e.details)
-                                         (env_log "caught error: " e.name e.message))                                       
+                                         (env_log "caught error: " e.name e.message))
+                                       (if (and (== (sub_type e) "SyntaxError")
+                                                (> Environment.context.scope.__VERBOSITY__  4))
+                                         (console.log compiled.1))
                                        (when opts.error_report
                                          (opts.error_report (if e.details
                                                               e.details

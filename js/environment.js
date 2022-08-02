@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-08-02 08:26:40
-// Version: 2022.08.02.08.26
-export const DLISP_ENV_VERSION='2022.08.02.08.26';
+// Build Time: 2022-08-02 11:25:48
+// Version: 2022.08.02.11.25
+export const DLISP_ENV_VERSION='2022.08.02.11.25';
 
 
 
@@ -43,7 +43,7 @@ export async function init_dlisp(Environment)  {
   }
   return typeof value;
 };
-                        let get_object_path=function(refname) {        if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
+                        let get_object_path=function(refname) {        if (check_true ((( refname["indexOf"].call(refname,".")>-1)||( refname["indexOf"].call(refname,"[")>-1)))){
             let chars;
             let comps;
             let mode;
@@ -55,18 +55,18 @@ export async function init_dlisp(Environment)  {
              ( function() {
                 let __for_body__12=function(c) {
                      return    (function(){
-                        if (check_true( ((c===".")&& (mode===0)))) {
+                        if (check_true( ((c===".")&&(mode===0)))) {
                             if (check_true (((name_acc && name_acc.length)>0))){
                                  (comps).push((name_acc).join(""))
                             };
                              return  name_acc=[]
-                        } else if (check_true( ((mode===0)&& (c==="[")))) {
+                        } else if (check_true( ((mode===0)&&(c==="[")))) {
                             mode=1;
                             if (check_true (((name_acc && name_acc.length)>0))){
                                  (comps).push((name_acc).join(""))
                             };
                              return  name_acc=[]
-                        } else if (check_true( ((mode===1)&& (c==="]")))) {
+                        } else if (check_true( ((mode===1)&&(c==="]")))) {
                             mode=0;
                             (comps).push((name_acc).join(""));
                              return  name_acc=[]
@@ -1139,7 +1139,7 @@ export async function init_dlisp(Environment)  {
                                      return  acc
                                 } else {
                                     quoted_symbol=await (async function () {
-                                         if (check_true (await (await get_global("starts_with?"))("=:",quoted_symbol))){
+                                         if (check_true (await starts_with_ques_("=:",quoted_symbol))){
                                               return await quoted_symbol["substr"].call(quoted_symbol,2)
                                         } else {
                                               return quoted_symbol
@@ -1552,10 +1552,10 @@ export async function init_dlisp(Environment)  {
                         let unquotify=async function(val) {
                             let dval;
                             dval=val;
-                            if (check_true (await (await get_global("starts_with?"))("\"",dval))){
+                            if (check_true (await starts_with_ques_("\"",dval))){
                                  dval=await dval["substr"].call(dval,1,(dval.length- 2))
                             };
-                            if (check_true (await (await get_global("starts_with?"))("=:",dval))){
+                            if (check_true (await starts_with_ques_("=:",dval))){
                                  dval=await dval["substr"].call(dval,2)
                             };
                              return  dval
@@ -2203,7 +2203,7 @@ export async function init_dlisp(Environment)  {
                                                 if (check_true(compiled.error)) {
                                                      throw new Error((await get_global("indirect_new"))(compiled.error,compiled.message));
                                                     
-                                                } else if (check_true( (compiled['0'].ctype&& (await (await get_global("contains?"))("block",compiled['0'].ctype)|| (compiled['0'].ctype==="assignment")|| (compiled['0'].ctype==="__!NOT_FOUND!__"))))) {
+                                                } else if (check_true( (compiled['0'].ctype&& (await contains_ques_("block",compiled['0'].ctype)|| (compiled['0'].ctype==="assignment")|| (compiled['0'].ctype==="__!NOT_FOUND!__"))))) {
                                                      if (check_true (await (async function(){
                                                         let __array_op_rval__226=compiled['0'].has_lisp_globals;
                                                          if (__array_op_rval__226 instanceof Function){
@@ -2326,6 +2326,9 @@ export async function init_dlisp(Environment)  {
                                                          await env_log("caught error: ",e.details)
                                                     } else {
                                                          await env_log("caught error: ",e.name,e.message)
+                                                    };
+                                                    if (check_true (((await sub_type(e)==="SyntaxError")&& (Environment.context.scope.__VERBOSITY__>4)))){
+                                                         await console.log(compiled['1'])
                                                     };
                                                     if (check_true (opts.error_report)){
                                                         {
@@ -2600,7 +2603,7 @@ export async function init_dlisp(Environment)  {
                                         await (await get_global("remove_prop"))(children,name);
                                         await (async function() {
                                             let __for_body__263=async function(k) {
-                                                if (check_true (await (await get_global("starts_with?"))(k,name))){
+                                                if (check_true (await starts_with_ques_(k,name))){
                                                      return  await (await get_global("remove_prop"))(Environment.global_ctx._star_env_config_star_.imports,k)
                                                 }
                                             };
@@ -2823,9 +2826,9 @@ export async function init_dlisp(Environment)  {
                                  return  await async function(){
                                     if (check_true( (options&& options.no_compiler&& (symset['0']==="compiler")))) {
                                          return null
-                                    } else if (check_true( await (await get_global("starts_with?"))("$",symset['0']))) {
+                                    } else if (check_true( await starts_with_ques_("$",symset['0']))) {
                                          return null
-                                    } else if (check_true( (options&& options.do_not_include&& await (await get_global("contains?"))(symset['0'],options.do_not_include)))) {
+                                    } else if (check_true( (options&& options.do_not_include&& await contains_ques_(symset['0'],options.do_not_include)))) {
                                          return null
                                     } else if (check_true( (symset['0']==="*env_skeleton*"))) {
                                          return await (async function(){
@@ -2938,7 +2941,7 @@ export async function init_dlisp(Environment)  {
                             env_constructor=null;
                             dcomps=await (await get_global("date_components"))(new Date());
                             version_tag=await (async function () {
-                                 if (check_true (await not(await (await get_global("blank?"))(opts.version_tag)))){
+                                 if (check_true (await not(await blank_ques_(opts.version_tag)))){
                                       return opts.version_tag
                                 } else {
                                       return (await (async function(){
@@ -3057,7 +3060,7 @@ export async function init_dlisp(Environment)  {
                             if (check_true ((await not((output_path instanceof String || typeof output_path==='string'))&& output_path)))throw new EvalError("invalid name for target for saving the environment.  Must be a string or function");
                             ;
                              return  await async function(){
-                                if (check_true( (output_path&& await (await get_global("ends_with?"))(".js",output_path)))) {
+                                if (check_true( (output_path&& await ends_with_ques_(".js",output_path)))) {
                                     (build_headers).push(("// Build Time: "+ build_time));
                                     (build_headers).push(("// Version: "+ version_tag));
                                     (build_headers).push(("export const DLISP_ENV_VERSION='"+ version_tag+ "';"));
@@ -3067,7 +3070,7 @@ export async function init_dlisp(Environment)  {
                                             default_namespace:await resolve_path(["*env_config*","export","default_namespace"],Environment.global_ctx.scope)
                                         },output_file:output_path,include_source:(options.include_source|| await resolve_path(["*env_config*","export","include_source"],Environment.global_ctx.scope)),build_headers:build_headers
                                     })
-                                } else if (check_true( (output_path&& await (await get_global("ends_with?"))(".lisp",output_path)))) {
+                                } else if (check_true( (output_path&& await ends_with_ques_(".lisp",output_path)))) {
                                      return await (await get_global("write_text_file"))(output_path,await JSON.stringify(src,null,4))
                                 } else  {
                                      return src
@@ -3075,7 +3078,17 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };
                         ;
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;
+            let read_block;
+            output_structure=[];
+            idx=-1;
+            line_number=1;
+            column_number=0;
+            source_name=await (async function () {
+                 if (check_true ((opts && opts["source_name"]))){
+                      return (opts && opts["source_name"])
+                } else {
+                      return "anonymous"
                 } 
             })();
             opts=(opts||new Object());

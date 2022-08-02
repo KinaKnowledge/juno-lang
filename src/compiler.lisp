@@ -349,7 +349,7 @@
                                     sanitized_name
                                     value)))))
 
-       ;; Retrieves a value from the current compilation context
+       ;; Retrieves a value from the current compilation context - no santization
        
        (`get_ctx (fn (ctx name)
                      (let
@@ -371,7 +371,7 @@
                             ctx.parent
                             (get_ctx ctx.parent ref_name)))))))
        
-       ;; preferred entry point                  
+       ;; preferred entry point - sanitizes                  
        (`get_ctx_val (fn (ctx name)
                          (let
                              ((`ref_name nil)
@@ -4098,7 +4098,7 @@
                   (`call_type (cond 
                                 (not tokens.0.ref)
                                 "literal"
-                                (get_ctx ctx tokens.0.name)
+                                (get_ctx_val ctx tokens.0.name)
                                 "local"
                                 (get_lisp_ctx tokens.0.name)
                                 "lisp"))
@@ -4120,13 +4120,10 @@
                  (== call_type "lisp")
                  (= ref_type (get_lisp_ctx tokens.0.name))
                  (== call_type "local")
-                 (= ref_type (get_ctx ctx tokens.0.name))
+                 (= ref_type (get_ctx_val ctx tokens.0.name))
                  else
                  (= ref_type ArgumentType))
-               (when (verbosity ctx)                 
-                 (sr_log "where/what->" call_type "/" ref_type "for symbol: " tokens.0.name)
-                 (when (get_ctx ctx "__IN_QUOTEM__")
-                   (sr_log "in quotem")))
+               
                (cond (== ref_type AsyncFunction)
                      (= ref_type "AsyncFunction")
                      (== ref_type Expression)
@@ -4145,7 +4142,8 @@
                      true
                      else
                      (= ref_type (sub_type ref_type)))
-            
+               (when (verbosity ctx)                 
+                 (sr_log "SYMBOL: " tokens.0.name "  found as:" call_type " of type:" ref_type "sanitized as: "  (if (== "local" call_type) (+ " local sanitized to: " (sanitize_js_ref_name tokens.0.name)))))
                (= rval
                   (cond
                     (== ref_type "AsyncFunction")
@@ -4154,7 +4152,7 @@
                      (push acc " ")
                       (push acc (if (== call_type `lisp)
                                     (compile_lisp_scoped_reference tokens.0.name ctx)
-                                    tokens.0.name))
+                                    (sanitize_js_ref_name tokens.0.name)))
                       (push acc "(")
                       (while (< idx (- tokens.length 1))
                              (do
@@ -4173,7 +4171,7 @@
                      (push acc " ")
                      (push acc (if (== call_type `lisp)
                                    (compile_lisp_scoped_reference tokens.0.name ctx)
-                                   tokens.0.name))
+                                   (sanitize_js_ref_name tokens.0.name)))
                      (push acc "(")
                       (while (< idx (- tokens.length 1))
                              (do
@@ -4791,12 +4789,7 @@
                           (== tokens.type "literal")
                           (== tokens.type "arg")
                           (== tokens.type "null"))
-                      (do 
-                        (when (verbosity ctx)
-                          (comp_log (+ "compile: " _cdepth " singleton: ") tokens)
-                          (when (get_ctx ctx "__IN_QUOTEM__")
-                            (comp_log (+ "compile: " _cdepth " singleton: ") "in quotem")))
-                       
+                      (do                         
                        (defvar `snt_name nil)
                        (defvar `snt_value nil)
                        
@@ -4835,28 +4828,34 @@
 					
                           (and tokens.ref
                                (do
-                                   (= snt_name (sanitize_js_ref_name tokens.name))
-                                   (= snt_value (get_ctx_val ctx snt_name))                                  
-                                   (or snt_value
-                                       (== 0 snt_value)
-                                       (== false snt_value))))                                   
+                                (= snt_name (sanitize_js_ref_name tokens.name))
+				(= snt_value (get_ctx_val ctx snt_name))
+				(when (verbosity ctx)
+				  (comp_log "compile: singleton: " "name: " tokens.name " sanitized: " snt_name "found locally as:" snt_value))
+                                   
+			       (not (== snt_value undefined))))
+                                ;(or snt_value
+                                 ;   (== 0 snt_value)
+                                  ;  (== false snt_value))))
                           (do 
                             (= refval snt_value) 
                             (when (== refval ArgumentType)
-                              (= refval snt_name))
-                            (when (verbosity ctx)
-                              (comp_log "compile: singleton: found local context: " refval "literal?" (is_literal? refval)))
+                              (= refval snt_name))                            
                             (cond 
-                                  (== tokens.type "literal")
-                                  refval
-                                  else
-                                  (get_val tokens ctx)))
+                              (== tokens.type "literal")
+                              refval
+                              else
+                              (get_val tokens ctx)))
                           
                           (contains? tokens.name standard_types)
                           tokens.name
                           ;; check global scope
                           (not (== undefined (get_lisp_ctx tokens.name)))
-                          (compile_lisp_scoped_reference tokens.name ctx)
+                          (do
+			   (when (verbosity ctx)
+			     (comp_log "compile: singleton: found global: " tokens.name))
+			   (compile_lisp_scoped_reference tokens.name ctx))
+			  
                                                                              
                           else
                           (do 

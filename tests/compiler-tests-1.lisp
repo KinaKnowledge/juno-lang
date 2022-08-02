@@ -2243,4 +2243,9 @@
   []
   `{ "last_column?": true }
   "Correctly handle if attached to key value"]
+  ["(defun is_block? (val) \   (if (== val.type `block) \     true \     false))
+   (compile `(let ((is_block? (fn () true))) (is_block?)))"
+  []
+  "{let is_block_ques_;is_block_ques_=async function() { return  true}; return  await is_block_ques_()}"
+  "Reference locally shadowed global function with invalid JS characters."]
 ])
