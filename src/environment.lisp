@@ -1771,35 +1771,21 @@
          
                    
        
-       (when (is_object? (prop included_globals `children))
-         (for_each (childset (pairs included_globals.children))
-	           (do	       
-	             (create_namespace childset.0
-				       (if (prop included_globals.children_declarations childset.0)
-				         (prop included_globals.children_declarations childset.0)
-				         {})))))
+       (defvar imps nil)
        
        (when (is_object? (prop included_globals `imports))
          
-         (defvar imps (prop included_globals `imports))         
+         (= imps (prop included_globals `imports))         
          (when imps
            (for_each (imp_source (values imps))
-              (progn
-               ;(console.log "imp_source: " imp_source)
-               
+              (progn               
                (cond
                  (== imp_source.namespace namespace)
                  (progn                     
                     (set_prop Environment.global_ctx.scope
                               imp_source.symbol
-                              imp_source.initializer))
-                 (prop children imp_source.namespace)
-                 (progn
-                  (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
-                              imp_source.initializer)))
-                            
-                 ))))
-         
+                              imp_source.initializer)))))))
+                         
        
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
@@ -1829,18 +1815,30 @@
 	 (set_compiler (prop Environment.global_ctx.scope `compiler)))
 
        (when (is_object? (prop included_globals `children))
-         ;(for_each (childset (pairs included_globals.children))
-	  ;         (do	       
-	   ;          (create_namespace childset.0
-	;			       (if (prop included_globals.children_declarations childset.0)
-	;			         (prop included_globals.children_declarations childset.0)
-	;			         {}))))
+         (for_each (childset (pairs included_globals.children))
+	           (do	       
+	             (create_namespace childset.0
+				       (if (prop included_globals.children_declarations childset.0)
+				         (prop included_globals.children_declarations childset.0)
+				         {}))))
+
+         
+         
          
          (for_each (childset (pairs included_globals.children))
 	           (do                     
                      ;(console.log "installing child symbols: " childset.0)
                      
                      (defvar childenv (prop children childset.0))
+                     (when (is_object? (prop included_globals `imports))
+                       (=  imps (prop included_globals `imports))     
+                       (when imps
+                         (for_each (imp_source (values imps))
+                                   (progn               
+                                    (if (prop children imp_source.namespace)
+                                      (progn
+                                       (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
+                                                   imp_source.initializer))) ))))
                      
                      (set_prop childset
                                1
@@ -2038,7 +2036,7 @@
      ;; bring the needed functions in and rebuild them in the current scope.
      
      (declare (local lisp_writer)
-              (include reader add_escape_encoding
+              (include reader add_escape_encoding 
                        do_deferred_splice safe_access embed_compiled_quote))        
      
      
