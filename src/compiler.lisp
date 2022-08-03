@@ -3252,7 +3252,7 @@
                      (`from_place nil)
                      (`acc []))
 		  (if (< tokens.length 3)
-		      (throw SyntaxError "import requires exactly three arguments"))
+		      (throw SyntaxError "import requires exactly two arguments"))
 		 (= symbol_tokens tokens.1)
                  (= from_tokens tokens.2)
 		 
@@ -3304,10 +3304,10 @@
                  (set_prop external_dependencies
                            imported_from
                            true)
-		 (= metaval (if can_be_static
-                                { `initializer: [(quote dynamic_import) imported_from] }
+		 (= metaval (if can_be_static ;; place holder 
+                                { `initializer: (quote (javascript "undefined" )) }
                                 {}))
-                 (push acc { `ctype: "statement" `meta: metaval })
+                 (push acc { `ctype: "statement"  `meta: metaval })
                  
                  (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
                     (push acc t))                
@@ -4995,7 +4995,7 @@
     (declare (optimize (safety 2))
              (include length first second map do_deferred_splice
                       not sub_type last flatten add subtype
-                      is_nil? is_number? starts_with? 
+                      is_nil? is_number? starts_with? uniq object_methods conj
                       cl_encode_string contains?)
              (function error_log comp_time_log inline_log clog                       
                        run_log quotem_log top_level_log eval_log

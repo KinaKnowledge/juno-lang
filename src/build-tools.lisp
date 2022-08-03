@@ -21,6 +21,16 @@
        (start_time (time_in_millis))
        (compile_time nil)
        (write_file true)
+       (import_headers (if (is_object? options.imports)
+			   (map (fn (import_set idx)
+				    (let
+					((target import_set.1.symbol)
+					 (imp_details import_set.1.location))				      
+				      [ (+ "import * as " (+ target "_module") " from '" imp_details "'\n" 
+				           "export const " target "=" (+ target "_module") ";") ]
+					  ))
+				(pairs options.imports))
+			   []))
        (include_source (if opts.include_source
                          true
                          false))
@@ -39,6 +49,11 @@
 
     (push segments
 	  (+ "// Source: " options.input_filename "  "))
+
+    (when (> import_headers.length 0)
+      (for_each (`static_import import_headers)
+		(push segments static_import))
+      (push segments "\n"))
     
     (when (is_array? opts.build_headers)
       (for_each (`header opts.build_headers)
@@ -54,12 +69,11 @@
       (for_each (`header opts.js_headers)
 		(push segments header))
       (push segments "\n"))
-
+    
     
     (when (or (== export_function_name "init_dlisp")
 	      opts.toplevel)
       (push segments "if (typeof AsyncFunction === \"undefined\") {\n  globalThis.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;\n}"))
-    
     
     (if (and (is_array? input_buffer)
 	     (== input_buffer.0 (quotel "=:iprogn")))

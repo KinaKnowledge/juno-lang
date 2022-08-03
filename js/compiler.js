@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-08-02 13:18:26
-// Version: 2022.08.02.13.18
-export const DLISP_ENV_VERSION='2022.08.02.13.18';
+// Build Time: 2022-08-03 11:27:37
+// Version: 2022.08.03.11.27
+export const DLISP_ENV_VERSION='2022.08.03.11.27';
 
 
 
@@ -183,6 +183,68 @@ export async function init_compiler(Environment) {
             let starts_with_ques_=function anonymous(val,text) {
 { if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}
 };
+            let uniq=async function(values,handle_complex_types) {    let s;
+    s=new Set();
+    if (check_true (handle_complex_types)){
+        await (await Environment.get_global("map"))(async function(x) {
+             return  await s["add"].call(s,await JSON.stringify(x))
+        },(values|| []));
+         return  await (await Environment.get_global("map"))(async function(x) {
+             return  await JSON.parse(x)
+        },await (await Environment.get_global("to_array"))(s))
+    } else {
+        await (await Environment.get_global("map"))(async function(x) {
+             return  await s["add"].call(s,x)
+        },(values|| []));
+         return  await (await Environment.get_global("to_array"))(s)
+    }
+};
+            let object_methods=async function(obj) {    let properties;
+    let current_obj;
+    properties=new Set();
+    current_obj=obj;
+    await (async function(){
+         let __test_condition__270=async function() {
+             return  current_obj
+        };
+        let __body_ref__271=async function() {
+            await (await Environment.get_global("map"))(async function(item) {
+                 return  await properties["add"].call(properties,item)
+            },await Object.getOwnPropertyNames(current_obj));
+             return  current_obj=await Object.getPrototypeOf(current_obj)
+        };
+        let __BREAK__FLAG__=false;
+        while(await __test_condition__270()) {
+            await __body_ref__271();
+             if(__BREAK__FLAG__) {
+                 break;
+                
+            }
+        } ;
+        
+    })();
+     return  await (async function() {
+        {
+             let __call_target__=await Array.from(await properties["keys"]()), __call_method__="filter";
+            return await __call_target__[__call_method__].call(__call_target__,async function(item) {
+                 return  item instanceof Function
+            })
+        } 
+    })()
+};
+            let conj=function anonymous(...args) {
+{   let list = [];
+                                if (args[0] instanceof Array) {
+                                    list = args[0];
+                                } else {
+                                    list = [args[0]];
+                                }
+                                args.slice(1).map(function(x) {
+                                    list = list.concat(x);
+                                });
+                                return list;
+                            }
+};
             let cl_encode_string=async function(text) {    if (check_true ((text instanceof String || typeof text==='string'))){
         let escaped;
         let nq;
@@ -250,7 +312,7 @@ export async function init_compiler(Environment) {
                     ;
                      return  async function(...args) {
                          return  await (async function(){
-                            let __target_arg__6=[].concat(await (await Environment.get_global("conj"))([style],args));
+                            let __target_arg__6=[].concat(await conj([style],args));
                             if(!__target_arg__6 instanceof Array){
                                 throw new TypeError("Invalid final argument to apply - an array is required")
                             }let __pre_arg__7=("%c"+ await (async function () {
@@ -1080,7 +1142,7 @@ export async function init_compiler(Environment) {
                         ref=(symname&& ((name instanceof String || typeof name==='string')&& (await length(name)>2)&& await starts_with_ques_("=:",name)));
                         let is_literal_ques_=await __is_literal_ques___44();
                         ;
-                        special=(ref&& symname&& await contains_ques_(symname,await (await Environment.get_global("conj"))(["unquotem","quotem"],await (await Environment.get_global("keys"))(op_lookup))));
+                        special=(ref&& symname&& await contains_ques_(symname,await conj(["unquotem","quotem"],await (await Environment.get_global("keys"))(op_lookup))));
                         local=(await not(special)&& await not(is_literal_ques_)&& symname&& ref&& await get_ctx_val(ctx,symname));
                         global=(await not(special)&& await not(is_literal_ques_)&& ref&& symname&& await get_lisp_ctx(symname));
                         val=await async function(){
@@ -1258,7 +1320,7 @@ export async function init_compiler(Environment) {
                                  return ref_type
                             } else if (check_true( ((comps && comps.length)===0))) {
                                  return ref_type
-                            } else if (check_true( (((comps && comps.length)===1)&& (ref_type instanceof Object)&& await contains_ques_((comps && comps["0"]),await (await Environment.get_global("object_methods"))(ref_type))))) {
+                            } else if (check_true( (((comps && comps.length)===1)&& (ref_type instanceof Object)&& await contains_ques_((comps && comps["0"]),await object_methods(ref_type))))) {
                                  return ref_type[(comps && comps["0"])]
                             } else if (check_true( (ref_type instanceof Object))) {
                                  return await (await Environment.get_global("resolve_path"))(comps,ref_type)
@@ -1358,19 +1420,19 @@ export async function init_compiler(Environment) {
                      return  await async function(){
                         if (check_true( ((args && args["0"])==="=:quote"))) {
                              return {
-                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await conj([{
                                     type:"special",val:"=:quote",ref:true,name:"quote",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&& (await length(args)>2)&& await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         } else if (check_true( ((args && args["0"])==="=:quotem"))) {
                              return {
-                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
-                                    type:"special",path:await (await Environment.get_global("conj"))(_path,[0]),val:"=:quotem",ref:true,name:"quotem",__token__:true
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await conj([{
+                                    type:"special",path:await conj(_path,[0]),val:"=:quotem",ref:true,name:"quotem",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&& (await length(args)>2)&& await starts_with_ques_("=:",args)),name:null,path:_path
                             }
                         } else  {
                              return {
-                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await (await Environment.get_global("conj"))([{
+                                type:"arr",__token__:true,source:await (await Environment.get_global("as_lisp"))(args),val:await conj([{
                                     type:"special",val:"=:quotel",ref:true,name:"quotel",__token__:true
                                 }],await args["slice"].call(args,1)),ref:((args instanceof String || typeof args==='string')&& (await length(args)>2)&& await starts_with_ques_("=:",args)),name:null,path:_path
                             }
@@ -3097,7 +3159,7 @@ export async function init_compiler(Environment) {
                         } ;
                         
                     })();
-                    (acc).push(await compile_block(await (await Environment.get_global("conj"))(["PLACEHOLDER"],block),ctx,{
+                    (acc).push(await compile_block(await conj(["PLACEHOLDER"],block),ctx,{
                         no_scope_boundary:true,ignore_declarations:declarations_handled
                     }));
                     await (async function() {
@@ -5163,7 +5225,7 @@ export async function init_compiler(Environment) {
                         from_tokens=null;
                         from_place=null;
                         acc=[];
-                        if (check_true (((tokens && tokens.length)<3)))throw new SyntaxError("import requires exactly three arguments");
+                        if (check_true (((tokens && tokens.length)<3)))throw new SyntaxError("import requires exactly two arguments");
                         ;
                         symbol_tokens=(tokens && tokens["1"]);
                         from_tokens=(tokens && tokens["2"]);
@@ -5254,7 +5316,7 @@ export async function init_compiler(Environment) {
                     metaval=await (async function () {
                          if (check_true (can_be_static)){
                               return {
-                                initializer:["=:dynamic_import",imported_from]
+                                initializer:["=:javascript","undefined"]
                             }
                         } else {
                               return new Object()
@@ -6933,7 +6995,7 @@ export async function init_compiler(Environment) {
                         }
                     } ()
                 };
-                standard_types=await (await Environment.get_global("uniq"))(await (await Environment.get_global("conj"))(["AsyncFunction","check_true","LispSyntaxError","dlisp_environment_count","clone","Environment","Expression","get_next_environment_id","subtype","lisp_writer","do_deferred_splice"],await (await Environment.get_global("object_methods"))(globalThis)));
+                standard_types=await uniq(await conj(["AsyncFunction","check_true","LispSyntaxError","dlisp_environment_count","clone","Environment","Expression","get_next_environment_id","subtype","lisp_writer","do_deferred_splice"],await object_methods(globalThis)));
                 is_error=null;
                 is_block_ques_=async function(tokens) {
                      return  (await contains_ques_((tokens && tokens["0"] && tokens["0"]["name"]),["do","progn"]))

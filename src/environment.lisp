@@ -1076,6 +1076,7 @@
                    `usage: ["argset:array"]
                    `tags: [ "or" "true" "false" "array" "logic" ]
                    })
+
          
          (special_operators (fn ()
                               (make_set (compiler [] { `special_operators: true `env: Environment }))))
@@ -1107,6 +1108,9 @@
 
      
          (NOT_FOUND (new ReferenceError "not found"))
+
+         (register_feature (fn (feature)
+                             "stub"))
        
          (check_external_env_default (if (== namespace "core") true false))
          (*namespace* namespace)
@@ -1572,7 +1576,7 @@
 	"not","push","pop","list","flatten","jslambda","join","lowercase","uppercase","log",
 	"split","split_by","is_object?","is_array?", "is_number?", "is_function?", "is_set?",
 	"is_element?", "is_string?", "is_nil?", "is_regex?", "is_date?", "ends_with?", "starts_with?",
-	"blank?","contains?","make_set", "eval_exp", "indirect_new",
+	"blank?","contains?","make_set", "eval_exp", "indirect_new", "get_import_entry"
         "range", "add", "merge_objects", "index_of", "resolve_path", "delete_prop",
 	"min_value","max_value","interlace","trim","assert","unquotify","or_args",
 	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"])
@@ -1740,7 +1744,11 @@
                  "delete_namespace" delete_namespace                
                  "namespaces" (function () (+ (keys children) "core"))                 
                  "current_namespace" current_namespace))
-         
+
+     ;; inclided_globals nil value will be replaced in the tree with
+     ;; values from this environment upon saving the image.
+     ;; it is then used to rehydrate the values on restart
+     
      (defvar included_globals nil)
      (when (and included_globals
 		(== namespace "core"))
@@ -1750,7 +1758,49 @@
        
        ;; if not already defined by the environment itself, merge the
        ;; provided names and values into the global context.
-       ;(console.log "importing symbols: " (prop included_globals `symbols))
+                                        ;(console.log "importing symbols: " (prop included_globals `symbols))
+
+       (when (resolve_path [ `symbols `compiler ] included_globals)
+         (set_prop Environment.global_ctx.scope
+                   `compiler
+                   (resolve_path [ `symbols `compiler ] included_globals))
+         ;; unofficially set the compiler, but we will complete the setting of it once
+         ;; the remainder of the functions have been embedded
+         (debug)
+         (= compiler Environment.global_ctx.scope.compiler))
+         
+                   
+       
+       (when (is_object? (prop included_globals `children))
+         (for_each (childset (pairs included_globals.children))
+	           (do	       
+	             (create_namespace childset.0
+				       (if (prop included_globals.children_declarations childset.0)
+				         (prop included_globals.children_declarations childset.0)
+				         {})))))
+       
+       (when (is_object? (prop included_globals `imports))
+         
+         (defvar imps (prop included_globals `imports))         
+         (when imps
+           (for_each (imp_source (values imps))
+              (progn
+               ;(console.log "imp_source: " imp_source)
+               
+               (cond
+                 (== imp_source.namespace namespace)
+                 (progn                     
+                    (set_prop Environment.global_ctx.scope
+                              imp_source.symbol
+                              imp_source.initializer))
+                 (prop children imp_source.namespace)
+                 (progn
+                  (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
+                              imp_source.initializer)))
+                            
+                 ))))
+         
+       
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
                    (when (or (eq nil (prop Environment.global_ctx.scope symset.0))
@@ -1779,12 +1829,12 @@
 	 (set_compiler (prop Environment.global_ctx.scope `compiler)))
 
        (when (is_object? (prop included_globals `children))
-         (for_each (childset (pairs included_globals.children))
-	           (do	       
-	             (create_namespace childset.0
-				       (if (prop included_globals.children_declarations childset.0)
-				         (prop included_globals.children_declarations childset.0)
-				         {}))))
+         ;(for_each (childset (pairs included_globals.children))
+	  ;         (do	       
+	   ;          (create_namespace childset.0
+	;			       (if (prop included_globals.children_declarations childset.0)
+	;			         (prop included_globals.children_declarations childset.0)
+	;			         {}))))
          
          (for_each (childset (pairs included_globals.children))
 	           (do                     
@@ -1901,7 +1951,7 @@
                                            `compile
                                            (-> child.1 `export_symbol_set { `no_compiler: true })
                                            { `throw_on_error: true `meta: true }))
-                          ;(console.log "child_env: " child_env)
+                          
                           [child.0  `(javascript ,#child_env) ])))))
            
                                         ;[(quote let)
@@ -1915,6 +1965,13 @@
                         ,#(to_object
                            [[`definitions  [(quotel quote) (clone Environment.definitions)]]
 			    [`declarations (clone Environment.declarations)]
+                            [`config       (clone (prop Environment.global_ctx.scope "*env_config*")) ]
+                            [`imports      (to_object
+                                            (for_each (imp_source (values (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope)))
+                                                      [ imp_source.symbol { `initializer: `(javascript "new function () { return " ,#imp_source.symbol " }")
+                                                                            `symbol: imp_source.symbol
+                                                                            `namespace: imp_source.namespace
+                                                                          } ]))]
                             [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
 			    [ `children_declarations `(fn () ,#(clone children_declarations)) ]
                             [ `children    my_children ]])))
@@ -1950,12 +2007,13 @@
                                 `include_boilerplate: false
                                 `verbose: false
 				`bundle: true
+                                `imports: (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope)
                                 `js_headers: [(show check_true)
                                               (show get_next_environment_id)
                                               (show get_outside_global)
                                               (show subtype)
                                               (show lisp_writer)
-                                              (show clone)
+                                              (show clone)                                              
                                               (show LispSyntaxError)]
                                 
 				`bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
