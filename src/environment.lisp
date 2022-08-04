@@ -42,6 +42,9 @@
 ;;       environment instance will have be a clone of the provided environment.
 ;;       This is used when exporting an environment image.
 
+;; inlines - object that contains operator keys and function values that
+;;           return arrays: (fn (args) [`javascript `tokens ].. see inlines
+;;           below for the specifics.
 
 ;; We need some global types since Javascript eval() isn't used in Juno
 
@@ -61,7 +64,9 @@
 ;; We can't immediately define a macro for the below because we don't have
 ;; an environment yet to place it.  So when we want to save the current
 ;; environment, we will splice directly into the JSON representation
-;; of this file.  
+;; of this file.
+;; defexternal places the symbol and the associated value on on globalThis,
+;; instead of inside the environment (which doesn't exist at this point).
 
 (defexternal dlisp_env
   (fn (opts)
@@ -82,9 +87,7 @@
        (if (== opts undefined)
          {}
          opts))
-         
-         
-       
+          
      ;; Construct the environment
      ;; Are we the core, or are we a namespace off of the core?
      
@@ -1108,10 +1111,7 @@
 
      
          (NOT_FOUND (new ReferenceError "not found"))
-
-         (register_feature (fn (feature)
-                             "stub"))
-       
+              
          (check_external_env_default (if (== namespace "core") true false))
          (*namespace* namespace)
          (symbols (function () (keys Environment.global_ctx.scope))
@@ -1745,14 +1745,16 @@
                  "namespaces" (function () (+ (keys children) "core"))                 
                  "current_namespace" current_namespace))
 
-     ;; inclided_globals nil value will be replaced in the tree with
-     ;; values from this environment upon saving the image.
-     ;; it is then used to rehydrate the values on restart
+     ;; included_globals nil value will be replaced in the JSON tree
+     ;; with values from this environment upon saving the image. It
+     ;; is then used to rehydrate the values on restart
      
      (defvar included_globals nil)
+     
      (when (and included_globals
 		(== namespace "core"))
-       ;; evaluate it
+
+       ;; evaluate the inserted code... 
        
        (= included_globals (included_globals))
        
@@ -1769,23 +1771,25 @@
          (debug)
          (= compiler Environment.global_ctx.scope.compiler))
          
-                   
+
+       ;; first, bind any static imports for the core namespace
+       ;; that may be needed as dependencies
        
        (defvar imps nil)
        
-       (when (is_object? (prop included_globals `imports))
-         
+       (when (is_object? (prop included_globals `imports))         
          (= imps (prop included_globals `imports))         
          (when imps
            (for_each (imp_source (values imps))
               (progn               
                (cond
-                 (== imp_source.namespace namespace)
+                 (== imp_source.namespace namespace)  ;; only for core at this point..
                  (progn                     
                     (set_prop Environment.global_ctx.scope
                               imp_source.symbol
                               imp_source.initializer)))))))
-                         
+
+       ;; Next setup the symbols and their values in core global scope...
        
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
@@ -1794,13 +1798,17 @@
                      (set_prop Environment.global_ctx.scope
                                symset.0
                                symset.1))))
-
+       
+       ;; Then, setup their definitions..
+       
        (when (is_object? (prop included_globals `definitions))         
          (for_each (symset (pairs included_globals.definitions))
                    (when (eq nil (prop Environment.definitions symset.0))                     
                      (set_prop Environment.definitions
                                symset.0
                                symset.1))))
+
+       ;; Any declarations for core..
        
        (when (is_object? (prop included_globals `declarations))
          (for_each (symset (pairs included_globals.declarations))
@@ -1809,21 +1817,23 @@
                                symset.0
                                (quotel symset.1)))))
 
-       ;; if we have a compiler embedded, use it
+       ;; if we have a compiler, set the environment to use it.
      
        (when (prop Environment.global_ctx.scope `compiler)         
 	 (set_compiler (prop Environment.global_ctx.scope `compiler)))
 
+       ;; next for any child namespaces (environments), create them..
+      
        (when (is_object? (prop included_globals `children))
          (for_each (childset (pairs included_globals.children))
 	           (do	       
 	             (create_namespace childset.0
 				       (if (prop included_globals.children_declarations childset.0)
 				         (prop included_globals.children_declarations childset.0)
-				         {}))))
+				         {}))))                  
 
-         
-         
+         ;; once the namespaces are created, set any static imports they have
+         ;; and evaluate the child 
          
          (for_each (childset (pairs included_globals.children))
 	           (do                     
@@ -1850,9 +1860,10 @@
                                  
                                  ;(console.log childset.0 ": " symset.0 symset.1)                          
 			         (set_path [ childset.0 `context `scope symset.0 ] children					  
-				           symset.1)))
-                     ))))
+				           symset.1)))))))
 
+     ;; clone_to_new: an earlier experiment in working with environments...
+     ;; may not be required but keeping it for now until analysis can be done.
      
      (defvar clone_to_new (fn (options)
                             (let
@@ -1867,12 +1878,16 @@
                                              `children_declarations: (clone children_declarations) }))
                               (env_log namespace "constructed: " (->  new_env `id))
                               new_env)))
+
+    
+     ;; facilate the exportation (serialization to JSON) of symbols from the environment..
+     ;; note that there will be a lot of Javascript embedded in the produced output
+     ;; since any callable code must be in JS form.
      
      (defvar export_symbol_set
        (fn (options)
 	   (reduce (symset (pairs (clone Environment.global_ctx.scope)))
                    (do
-		    ;(console.log "export_symbol_set: [" namespace "]: " symset.0 symset.1)
                     (cond
 		     (and options options.no_compiler
 			  (== symset.0 "compiler"))
@@ -2057,6 +2072,12 @@
     
        
      ;; inline functions for more efficient compiled code...
+     ;; instead of calling functions these serve to inline inside
+     ;; of the produced javascript tree
+     ;; add your own with the inline option:
+     ;; format is: { operator: (fn (args) [ `js `to `be `inserted ]) }
+     ;; Return an array of tokens to be directly inserted into the tree
+     ;; the inline function must add spaces.
      
      (defvar inlines
        (if parent_environment
@@ -2136,9 +2157,7 @@
                         ["parseFloat(" args.0 ")"])
               
               })))
-
-     
-     
+          
      ;; Finally the interface that is exposed to compiler and the compiled code...
      
      (set_prop Environment

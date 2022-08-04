@@ -5,10 +5,11 @@ Juno is a self-hosted Lisp dialect that compiles to Javascript.  It combines fas
 
 ### Links
 [Latest Release](releases)
+[Documentation/API](docs)
 
 Getting Started
+### 
 
-[Documentation/API](docs)
 
 
 ## About Juno
