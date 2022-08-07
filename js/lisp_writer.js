@@ -33,6 +33,8 @@ export class LispSyntaxError extends SyntaxError {
   }
 }
 
+
+
 // make it available to the global JS environment
 // globalThis.LispSyntaxError=LispSyntaxError
 

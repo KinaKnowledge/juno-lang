@@ -1,5 +1,10 @@
-;; HTML Components - part of the Juno Library 
-;; Initializes and load the html namespace
+;; Juno HTML Pakage
+
+;; For browser based DOM utilization and manipulation
+
+;; Initializes and loads the html namespace 
+;; (c) 2022 Kina
+;; Author: Alex Nygren
 
 (when (contains? "html" (namespaces))
   (delete_namespace `html))
@@ -30,24 +35,32 @@
                         `meter `optgroup `option `output `progress `select `textarea
                         `details `dialog `summary
                         `slot `template ])
+
  
-  (defmacro get_by_id (id)
-    `(-> document `getElementById ,#id)
-    {
-     `description: "Given an id, this macro is shorthand for calling document.getElementById with the passed id"
-     `usage: ["id:string"]
-     `tags: ["html" "DOM" "id" "find" ]
-     })
+    (defmacro get_by_id (id)
+      `(-> document `getElementById ,#id)
+      {
+       `description: "Given an id, this macro is shorthand for calling document.getElementById with the passed id"
+       `usage: ["id:string"]
+       `tags: ["html" "DOM" "id" "find" ]
+       })
+    
+    
+    (defun append_children (parent children)
+      (when (and (is_element? parent)
+                 (is_array? children))
+        (for_each (child children)
+                  (-> parent `appendChild child)))
+      parent)
+
+    (defglobal create_element (-> document.createElement `bind document)
+      {
+       `description: "Binding for document.createElement"
+       })
   
-  
-  (defun append_children (parent children)
-    (when (and (is_element? parent)
-               (is_array? children))
-      (for_each (child children)
-                (-> parent `appendChild child)))
-    parent)
-  
-  ;; first create the base constructor which will be called with the tag to create
+  ;; first create the base constructor function which will be called
+  ;; with the tag to create
+
 
   (defun create_dom_element (element_name `& args)
     (let
@@ -68,6 +81,7 @@
                                         (-> parent `appendChild child)))
                                 parent)))
          (elem (-> document `createElement element_name)))
+      
       (when opts
         (for_each (pset (pairs opts))
           (do
@@ -90,6 +104,8 @@
              else
              (-> elem `appendChild (-> document `createTextNode (+ "" child))))))
       elem))
+    
+      
 
   ;; next create the individual pointers to the create_dom_element function
   ;; for every tag name in the *DOM_TAG* list create the construction function
@@ -208,5 +224,67 @@
       `usage: ["element:Element" "attrib0:string" "attribN:string"]
       `tags: [ `ui `html `attribute `delete ]
       })
+
+   (defun attach_event_listener (elem event_type handler_function)
+    (when elem
+        ((jslambda (`elem `event `f) "return elem.addEventListener(event,f);")  elem event_type handler_function))
+    {
+     `usage:["element:Element" "event_type:string" "handler:function"]
+     `description:"Given an element, an event type such as `click, and a function, attaches the provided function as an event handler to the HTML Element."
+     `tags:["ui" "events" "HTML" "events" ""]
+     })
+
+   (defun remove_css_entry (entry_name)
+        (do
+             (if (get_by_id (+ "class_" entry_name))
+                 (-> (get_by_id (+ "class_" entry_name)) `remove)))
+       {
+           `usage:["entry_name:string"]
+           `description:"If a class has been created by create_css_entry, use this function to remove the class from the document."
+           `tags: ["html" "css" "ui"]
+       })
+
+    (defun create_css_entry (entry_name css_attribute_list)
+        (let
+             ((style (create_element "style"))
+              (css_attributes (map (fn (v)
+                                        (+ v.0 ": " v.1))
+                                   css_attribute_list))
+              (head_elem (-> document `querySelector "head"))
+              (new_style nil))
+          
+         (when head_elem
+           (remove_css_entry entry_name)
+           (-> head_elem `appendChild
+               (= new_style
+                  (style { `id: (+ "class_" entry_name ) `type: "text/css" }
+                         (+ "" entry_name "{\n  " (join ";\n" css_attributes) " }")))))
+         new_style)
+        { `usage: ["entry_name:string" "css_attribute_list:array"]
+         `description: " Given a name for the class and a list of formatted css attributes
+                         create and load the CSS object into the DOM.<br> Example: <br><code>
+                          (create_css_entry 'FilteredSelect:focus-within'
+                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>
+                           </code> "
+          `tags: ["html" "css" "ui"]
+        } )
+
+    (defun css_entry_to_css_format (entry_name css_attribute_list)
+        (let
+             ((`style (create_element "style"))
+              (`css_attributes (map (fn (v)
+                                        (+ v.0 ": " v.1))
+                                    css_attribute_list)))
+             (+ "" entry_name " {\n   " (join ";\n   " css_attributes) ";\n}")
+                )
+
+        { `usage: ["entry_name:string" "css_attribute_list:array"]
+          `description: (+ "Given a name for the class and a list of formatted css attributes returns a formatted string in CSS syntax.<br> Example: <br><code>"
+                           "(create_css_entry 'FilteredSelect:focus-within'
+                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>"
+                           "</code>")
+          `tags: ["html" "css" "ui" "convert"]
+        } )
+  (console.log "html is loaded");
   (register_feature "html")
   true)

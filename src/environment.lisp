@@ -46,6 +46,14 @@
 ;;           return arrays: (fn (args) [`javascript `tokens ].. see inlines
 ;;           below for the specifics.
 
+;; log_errors - boolean (default false) if true, the environment itself
+;;           will log any errors to the console, otherwise it will either
+;;           re-throw the error or return it depending on catch_errors.
+
+;; catch_errors - boolean (default is false) - if true, errors will be
+;;           caught and returned, and not thrown, otherwise the error
+;;           will be re-thrown.
+
 ;; We need some global types since Javascript eval() isn't used in Juno
 
 (set_prop globalThis
@@ -1519,12 +1527,15 @@
                                           else ;; this is a simple expression
                                           compiled.1)))
                                    (catch Error (e)
-                                     (do
-                                       (if e.details
-                                         (env_log "caught error: " e.details)
-                                         (env_log "caught error: " e.name e.message e))
-                                       (if (and (== (sub_type e) "SyntaxError")
-                                                (> Environment.context.scope.__VERBOSITY__  4))
+				     (do
+				      (when (or opts.log_errors
+						   (> Environment.context.scope.__VERBOSITY__  4))	   
+					(if e.details					   
+                                            (env_log "caught error: " e.details)
+                                          (env_log "caught error: " e.name e.message e)))
+                                      (if (and (== (sub_type e) "SyntaxError")
+					       (or opts.log_errors
+                                                   (> Environment.context.scope.__VERBOSITY__  4)))
                                          (console.log compiled.1))
                                        (when opts.error_report
                                          (opts.error_report (if e.details
@@ -1538,8 +1549,10 @@
                                                                `text: e.stack
                                                                })))                                     
                                        (= result e)
-                                       (if (and ctx ctx.in_try)
-                                         (throw result)))))
+                                       (if (or (not opts.catch_errors)
+					       (and ctx ctx.in_try))
+                                         (progn
+                                           (throw result))))))
                                  result)))))
        
 	 (evaluate (fn (expression ctx opts)
@@ -1927,6 +1940,10 @@
               (build_time (formatted_date (new Date)))
               (build_headers [])
               (child_env nil)
+	      (preserve_imports (if (and options
+					     (== options.preserve_imports false))
+					false
+				        true))
               (include_source false)
               (exports [])
               (src (if (prop Environment.global_ctx.scope "*env_skeleton*")
@@ -1951,7 +1968,7 @@
              (= include_source true))
            
            (env_log namespace "cloning: # children: " (length children))                           
-
+	   (env_log namespace "preserve_imports: " preserve_imports)
 	   (= exports (export_symbol_set (if options.do_not_include
                                            { do_not_include: options.do_not_include })))
 	   
@@ -1971,7 +1988,7 @@
                                         ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
                                         ;  [(quote javascript) child_env.1]]])))))
 	   
-	   ;(console.log "my_children: " my_children)
+	   ;; (console.log "my_children: " my_children)
            ;; now embed our compiled existing context into the source tree...			    
            (set_path target_insertion_path src
 		     `(fn ()
@@ -1979,12 +1996,14 @@
                            [[`definitions  [(quotel quote) (clone Environment.definitions)]]
 			    [`declarations (clone Environment.declarations)]
                             [`config       (clone (prop Environment.global_ctx.scope "*env_config*")) ]
-                            [`imports      (to_object
-                                            (for_each (imp_source (values (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope)))
-                                                      [ imp_source.symbol { `initializer: `(javascript "new function () { return " ,#imp_source.symbol " }")
-                                                                            `symbol: imp_source.symbol
-                                                                            `namespace: imp_source.namespace
-                                                                          } ]))]
+                            [`imports      (if preserve_imports
+					       (to_object
+						(for_each (imp_source (values (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope)))
+							  [ imp_source.symbol { `initializer: `(javascript "new function () { return " ,#imp_source.symbol " }")
+                                                          `symbol: imp_source.symbol
+                                                          `namespace: imp_source.namespace
+                                                          } ]))
+					     {}) ]
                             [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
 			    [ `children_declarations `(fn () ,#(clone children_declarations)) ]
                             [ `children    my_children ]])))
@@ -2020,7 +2039,8 @@
                                 `include_boilerplate: false
                                 `verbose: false
 				`bundle: true
-                                `imports: (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope)
+                                `imports: (if preserve_imports
+					      (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope))
                                 `js_headers: [(show check_true)
                                               (show get_next_environment_id)
                                               (show get_outside_global)
