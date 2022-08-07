@@ -15,7 +15,7 @@
 (import "html/logo.juno")
 
 (defglobal html_package (btoa (JSON.stringify (reader (read_text_file "pkg/html.juno")))))
-(defglobal browser_repl_package (btoa (JSON.stringify (reader (read_text_file "working/browser_workspace.juno")))))
+(defglobal browser_repl_package (btoa (JSON.stringify (reader (read_text_file "pgk/browser_workspace.juno")))))
 
 
 ;; TODO: do we need this here?  We need to refactor below
@@ -63,7 +63,7 @@
        
                
        (boot_up (compile
-                  `(javascript ,#(read_text_file "working/browser_boot.js"))
+                  `(javascript ,#(read_text_file "js/browser_boot.js"))
                   { `formatted_output: true })))
 
     (= doctext
@@ -80,7 +80,7 @@
                                 ))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
-                   (html/header { style: "max-height: 20px; height: 20px;" }
+                   (html/header { style: "max-height: 20px; height: 20px; display: flex;" }
                                 )))))
     ;(console.log "DOCTEXT: " doctext)
     (write_text_file "html/starter.html"
@@ -90,4 +90,5 @@
 
 ;; Notes and examples: to load p5:
 ;; (defglobal p5 (html/script { `src: "./p5.min.js" }))
-  
+
+
