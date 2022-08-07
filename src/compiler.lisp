@@ -4638,9 +4638,13 @@
                            
                            (map (fn (`compiled_element idx)
                                     (let
-                                        ((`inst (if (and (is_object? compiled_element.0)     ;; get the instructive metadata from the compiled structure
+                                        ((`inst (cond
+						    (and (is_object? compiled_element.0)     ;; get the instructive metadata from the compiled structure
                                                          (prop compiled_element.0 `ctype))
                                                     (prop compiled_element.0 `ctype)
+						    (== compiled_element.0 "{")
+						    "block"
+						    else
                                                     nil)))                                      
                                       (cond 
                                         (or (== inst "block")
