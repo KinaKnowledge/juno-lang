@@ -15,7 +15,7 @@
 (import "html/logo.juno")
 
 (defglobal html_package (btoa (JSON.stringify (reader (read_text_file "pkg/html.juno")))))
-(defglobal browser_repl (btoa (JSON.stringify (reader (read_text_file "working/browser_workspace.juno")))))
+(defglobal browser_repl_package (btoa (JSON.stringify (reader (read_text_file "working/browser_workspace.juno")))))
 
 
 ;; TODO: do we need this here?  We need to refactor below
@@ -49,15 +49,14 @@
   
   (core/save_env { save_as: "js/juno_browser.js"		   
 		   preserve_imports: false
+                   features: [ "compiler" "repl" "core-ext" "html" ]
 		   do_not_include: no_includes })
   
-  ;; below needs to be refactored to build-tools once refined and understood enough
   (console.log "building standalone starter.html file..")
+
+  
   (defglobal env {})
   
-  
-  
- 
   (let
       ((js_resource (read_text_file "js/juno_browser.js"))              
        (doctext nil)
@@ -66,7 +65,7 @@
        (boot_up (compile
                   `(javascript ,#(read_text_file "working/browser_boot.js"))
                   { `formatted_output: true })))
-    (console.log "COMPILED BOOT: " boot_up)
+
     (= doctext
        (html/render
          (html/html 
@@ -75,7 +74,7 @@
                                 js_resource
                                 "\n\n"
                                 (+ "let html_lib=JSON.parse(atob('" html_package  "'))\n")
-                                (+ "let browser_workspace=JSON.parse(atob('" browser_repl "'))\n")
+                                (+ "let browser_workspace=JSON.parse(atob('" browser_repl_package "'))\n")
                                 boot_up
                                 "\n\n"
                                 ))
@@ -87,5 +86,8 @@
     (write_text_file "html/starter.html"
                      doctext)
     true))
-		   
+
+
+;; Notes and examples: to load p5:
+;; (defglobal p5 (html/script { `src: "./p5.min.js" }))
   

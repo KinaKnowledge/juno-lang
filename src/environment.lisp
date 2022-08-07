@@ -1783,11 +1783,17 @@
          ;; the remainder of the functions have been embedded
          (debug)
          (= compiler Environment.global_ctx.scope.compiler))
-         
 
-       ;; first, bind any static imports for the core namespace
+       ;; load the exported config 
+       (when (is_object? (prop included_globals `config))
+         (set_prop Environment.global_ctx.scope
+                   "*env_config*"
+                   included_globals.config))
+                   
+
+       ;; bind any static imports for the core namespace
        ;; that may be needed as dependencies
-       
+
        (defvar imps nil)
        
        (when (is_object? (prop included_globals `imports))         
@@ -1806,8 +1812,8 @@
        
        (when (is_object? (prop included_globals `symbols))
          (for_each (symset (pairs included_globals.symbols))
-                   (when (or (eq nil (prop Environment.global_ctx.scope symset.0))
-                             (== symset.0 "*env_config*"))                     
+                   (when (eq nil (prop Environment.global_ctx.scope symset.0))
+                         ;    (== symset.0 "*env_config*"))                     
                      (set_prop Environment.global_ctx.scope
                                symset.0
                                symset.1))))
@@ -1934,14 +1940,15 @@
               (my_children nil)                               
               (env_constructor nil)
               (dcomps (date_components (new Date)))
+              (options (or options {}))
               (version_tag (if (not (blank? opts.version_tag))
                              opts.version_tag
                              (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
               (build_time (formatted_date (new Date)))
-              (build_headers [])
+              (build_headers [])              
               (child_env nil)
 	      (preserve_imports (if (and options
-					     (== options.preserve_imports false))
+					 (== options.preserve_imports false))
 					false
 				        true))
               (include_source false)
@@ -1963,7 +1970,7 @@
 
            (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
            
-           (= options (or options {}))
+           
            (when options.include_source
              (= include_source true))
            
@@ -1971,6 +1978,7 @@
 	   (env_log namespace "preserve_imports: " preserve_imports)
 	   (= exports (export_symbol_set (if options.do_not_include
                                            { do_not_include: options.do_not_include })))
+           
 	   
 	   (= my_children
 	      (to_object
@@ -1995,7 +2003,18 @@
                         ,#(to_object
                            [[`definitions  [(quotel quote) (clone Environment.definitions)]]
 			    [`declarations (clone Environment.declarations)]
-                            [`config       (clone (prop Environment.global_ctx.scope "*env_config*")) ]
+                            [`config ;(clone (prop Environment.global_ctx.scope "*env_config*")) ]
+                                           (let
+                                               ((exp_conf (clone (prop Environment.global_ctx.scope "*env_config*"))))
+                                             (when (not preserve_imports)
+                                               (set_prop exp_conf
+                                                         `imports
+                                                         {}))
+                                             (when options.features
+                                               (set_prop exp_conf
+                                                         `features
+                                                         options.features))
+                                             exp_conf) ]
                             [`imports      (if preserve_imports
 					       (to_object
 						(for_each (imp_source (values (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope)))

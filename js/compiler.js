@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-08-06 19:43:39
-// Version: 2022.08.06.19.43
-export const DLISP_ENV_VERSION='2022.08.06.19.43';
+// Build Time: 2022-08-07 11:06:23
+// Version: 2022.08.07.11.06
+export const DLISP_ENV_VERSION='2022.08.07.11.06';
 
 
 
@@ -6995,7 +6995,12 @@ export async function init_compiler(Environment) {
                         }
                     } ()
                 };
-                standard_types=await uniq(await conj(["AsyncFunction","check_true","LispSyntaxError","dlisp_environment_count","clone","Environment","Expression","get_next_environment_id","subtype","lisp_writer","do_deferred_splice"],await object_methods(globalThis)));
+                standard_types=await (async function ()  {
+                    let all_vals;
+                    all_vals=await (await Environment.get_global("make_set"))(await uniq(await conj(["AsyncFunction","check_true","LispSyntaxError","dlisp_environment_count","clone","Environment","Expression","get_next_environment_id","subtype","lisp_writer","do_deferred_splice"],await object_methods(globalThis))));
+                    await all_vals["delete"].call(all_vals,"length");
+                     return  all_vals
+                } )();
                 is_error=null;
                 is_block_ques_=async function(tokens) {
                      return  (await contains_ques_((tokens && tokens["0"] && tokens["0"]["name"]),["do","progn"]))
@@ -7467,23 +7472,25 @@ export async function init_compiler(Environment) {
                                                     })();
                                                     await map(async function(compiled_element,idx) {
                                                         let inst;
-                                                        inst=await (async function () {
-                                                             if (check_true ((((compiled_element && compiled_element["0"]) instanceof Object)&& await (async function(){
+                                                        inst=await async function(){
+                                                            if (check_true( (((compiled_element && compiled_element["0"]) instanceof Object)&& await (async function(){
                                                                 let __targ__622=(compiled_element && compiled_element["0"]);
                                                                 if (__targ__622){
                                                                      return(__targ__622)["ctype"]
                                                                 } 
-                                                            })()))){
-                                                                  return await (async function(){
+                                                            })()))) {
+                                                                 return await (async function(){
                                                                     let __targ__623=(compiled_element && compiled_element["0"]);
                                                                     if (__targ__623){
                                                                          return(__targ__623)["ctype"]
                                                                     } 
                                                                 })()
-                                                            } else {
-                                                                  return null
-                                                            } 
-                                                        })();
+                                                            } else if (check_true( ((compiled_element && compiled_element["0"])==="{"))) {
+                                                                 return "block"
+                                                            } else  {
+                                                                 return null
+                                                            }
+                                                        } ();
                                                          return  await async function(){
                                                             if (check_true( ((inst==="block")|| (inst==="letblock")))) {
                                                                  return  (symbolic_replacements).push(await (async function(){

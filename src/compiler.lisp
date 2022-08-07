@@ -4318,9 +4318,14 @@
               
        
        ;; DLisp mandatory defined globals plus the current global set 
-       (`standard_types (uniq (conj [`AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone
-                                     `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice ]
-                                    (object_methods globalThis))))
+       (`standard_types (let
+			    ((all_vals (make_set
+					(uniq (conj [`AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone
+						    `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice ]
+						    (object_methods globalThis))))))
+			  (-> all_vals `delete "length") ;; length sometimes seems to be a globalThis value, so we need to remove it, otherwise it will screw us up..
+			  all_vals))
+       
        (`is_error nil)
       
        (`is_block? (fn (tokens)
