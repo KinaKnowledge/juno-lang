@@ -1,0 +1,138 @@
+
+(when (contains? "html" (namespaces))
+  (delete_namespace `html))
+(create_namespace `html { serialize_with_image: false })
+
+(progn
+ (declare (namespace `html))
+
+
+(defglobal *DOM_TAGS* [ `html `base `head `link `meta `style `title
+                        `body `address `article `aside `footer `header
+                        `h1 `h2 `h3 `h4 `h5 `h6
+                        `main `nav `section
+                        `blockquote `dd `div `dl `dt `figcaption `figure
+                        `hr `li `menu `ol `p `pre `ul
+                        `a `abbr `b `bdi `bdo `br `cite `code `data `dfn `em
+                        `i `kbd `mark `q `rp `rt `ruby `s `samp `small `span
+                        `strong `sub `time `u `var `wbr
+                        `area `audio `img `map `track `video
+                        `embed `iframe `object `picture `portal `source
+                        `svg `math `canvas `noscript `script
+                        `del `ins
+                        `caption `col `colgroup `table `tbody `td `tfoot
+                        `th `thead `tr
+                        `button `datalist `fieldset `form `input `label `legend
+                        `meter `optgroup `option `output `progress `select `textarea
+                        `details `dialog `summary
+                        `slot `template ])
+
+(defun_sync serialize (elem_obj)
+  (+ "<"
+     elem_obj.tag                                 
+     (join " "
+           (for_each (attrib (pairs elem_obj.attributes))
+                     (join ""
+                           [" " attrib.0 "=" "'" attrib.1 "'"])))
+     (if (> (length elem_obj.children) 0)
+       (join "" [">"
+                 (join " "
+                       (for_each (child elem_obj.children)
+                                 (cond
+                                   (and (is_object? child)
+                                        (== child.type "element"))
+                                   (serialize child)
+                                   (is_array? child)
+                                   (join " "
+                                         (for_each (`c child)
+                                                   (serialize c)))
+                                   else
+                                   child)))
+                 "</" elem_obj.tag ">" ])
+       "/>") ;; just 0 - return
+     ))
+
+
+(defun create_dom_element (element_name `& args)
+    (let
+        ((opts (if (and (is_object? args.0)
+                        (not (== (args.0.type) "element"))
+                        (not args.0.children))
+                 args.0
+                 nil))
+         (content (if opts
+                    (if (> args.length 0)
+                      (rest args)
+                      [])
+                    (or args
+                        [])))
+         
+         (elem   {
+                             tag: element_name
+                             children: []
+                             attributes: {}
+                             type: "element" })
+                                               
+         (append_children (fn (parent children)
+                            (do
+                              (for_each (child children)
+                                        (if (is_array? child)
+                                          (append_children parent child)
+                                          (push parent.children
+                                                child)))
+                              parent))))
+      (set_prop elem
+                `toString
+                (-> serialize `bind elem elem))
+                ;(function ()
+                 ;         (do
+                  ;          (console.log "serializing: " elem)
+                   ;       (serialize elem))))
+      
+      (when opts
+        (for_each (pset (pairs opts))
+           (do
+             (cond
+               (is_function? pset.1)
+               (set_prop elem
+                         pset.0
+                         pset.1)
+               else
+               (set_prop elem.attributes
+                         pset.0
+                         pset.1)))))
+			 
+      (when (> content.length 0)
+        (for_each (child content)
+           (cond
+             (and (is_object? child)
+                  (== child.type "element"))
+             (push elem.children
+                   child)
+             (is_array? child)
+             (append_children elem child)
+             else
+             (push elem.children
+                   child))))
+      elem))	
+ 
+
+  ;; next create the individual pointers to the create_dom_element function
+  ;; for every tag name in the *DOM_TAG* list create the construction function
+
+  (for_each (tagname *DOM_TAGS*)
+   (let
+       ((bound_fn (-> create_dom_element `bind create_dom_element tagname)))
+     ;; use the set_global function directly since we are dynamically creating the symbol names
+     (-> Environment `set_global tagname bound_fn)))
+
+
+  (defun render (root_element)
+    (progn
+     (debug)
+     (+ "<!doctype html>"       
+        root_element)))
+    
+
+  true)	 
+ 
