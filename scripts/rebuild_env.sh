@@ -17,4 +17,3 @@ cat <<EOI | lib/juno js/juno
   *env_config*
 EOI
 
-# cat a.j | lib/juno ;cat b.j | lib/juno ;lib/juno js/juno.js
