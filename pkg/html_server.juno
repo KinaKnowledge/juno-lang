@@ -127,7 +127,7 @@
      (-> Environment `set_global tagname bound_fn)))
 
 
-  (defun render (root_element)
+  (defun serialize_document (root_element)
     (progn
      (debug)
      (+ "<!doctype html>"       

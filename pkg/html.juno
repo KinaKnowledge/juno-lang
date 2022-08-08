@@ -44,7 +44,16 @@
        `usage: ["id:string"]
        `tags: ["html" "DOM" "id" "find" ]
        })
-    
+
+    (defun get_by_tag (tagname)
+      (if tagname
+        (-> document `querySelectorAll tagname)
+        (throw "get_by_tag: invalid tagname provided"))
+      {
+       `description: "Returns all tags in the document matching the provided tagname"
+       `usage: ["tagname:string"]
+       `tags: ["html" "DOM" "id" "find" ]
+       })
     
     (defun append_children (parent children)
       (when (and (is_element? parent)
@@ -284,7 +293,14 @@
                                     [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>"
                            "</code>")
           `tags: ["html" "css" "ui" "convert"]
-        } )
+         } )
+
+    (defun_sync handle_event (e)
+      (progn
+       (-> e `preventDefault)
+       (-> e `stopPropagation)))
+     
+    
   (console.log "html is loaded");
   (register_feature "html")
   true)
