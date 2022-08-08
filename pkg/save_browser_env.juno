@@ -14,11 +14,11 @@
 ;(import "doc/help.lisp")
 (import "html/logo.juno")
 
-(defglobal html_package (btoa (JSON.stringify (reader (read_text_file "pkg/html.juno")))))
-(defglobal browser_repl_package (btoa (JSON.stringify (reader (read_text_file "working/browser_workspace.juno")))))
+(defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
+(defglobal core/browser_repl_package ((quote quote) (reader (read_text_file "working/browser_workspace.juno"))))
 
 
-;; TODO: do we need this here?  We need to refactor below
+;; everything loaded above this line is what will be preserved..
 (defglobal *core_symbols* (core/symbols))
 
 ;; Make sure we have the ability to produce a file..
@@ -63,26 +63,24 @@
        
                
        (boot_up (compile
-                  `(javascript ,#(read_text_file "working/browser_boot.js"))
-                  { `formatted_output: true })))
-
+                  `(javascript ,#(read_text_file "js/browser_boot.js"))
+                  { `formatted_output: true })))    
+    
     (= doctext
        (html/render
          (html/html 
            (html/head { `title: "Juno Browser" }
                    (html/script { `type: "module" }
                                 js_resource
-                                "\n\n"
-                                (+ "let html_lib=JSON.parse(atob('" html_package  "'))\n")
-                                (+ "let browser_workspace=JSON.parse(atob('" browser_repl_package "'))\n")
+                                "\n\n"                               
                                 boot_up
                                 "\n\n"
                                 ))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
-                   (html/header { style: "max-height: 20px; height: 20px;" }
+                   (html/header { style: "max-height: 20px; height: 20px; display: flex;" }
                                 )))))
-    ;(console.log "DOCTEXT: " doctext)
+   
     (write_text_file "html/starter.html"
                      doctext)
     true))
@@ -90,4 +88,5 @@
 
 ;; Notes and examples: to load p5:
 ;; (defglobal p5 (html/script { `src: "./p5.min.js" }))
-  
+
+
