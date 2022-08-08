@@ -1,0 +1,111 @@
+;; Browser Based Workspace
+;; Initialize a simple REPL from which to start working
+
+
+
+
+(defun line_reader (options)
+  (let
+      ((entry_area (html/textarea { `style: "font-size: 1.1em; height: calc(100% - 20px); width: calc(100% - 10px);" } ))
+       (result nil)
+       (output_container options.output_container)
+       (handle_text_input_events (fn (e)
+                                   (do
+                                     (when (and (== e.key "Enter")
+                                                e.shiftKey)
+                                       (html/handle_event e)
+                                       (console.log "->" (prop entry_area `value))
+                                       (try
+                                         (= result (evaluate (prop entry_area `value)))
+                                         (catch Error (ex)
+                                           (= result ex)))
+                                       (console.log "<-" result)                                       
+                                       (-> output_container
+                                           `prepend
+                                           (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
+                                                      (html/code { `style: "font-style: italic; color: darkblue;" } "=> "
+                                                                 (prop entry_area `value))))
+                                       (-> output_container
+                                           `prepend
+                                           (html/div { `style: "padding: 5px; margin-top: 0px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
+                                                     (cond
+                                                       (is_element? result)
+                                                       result
+                                                       (is_number? result)
+                                                       (html/code { `style: "font-size: 1.1em; color: green;" }
+                                                                  result)
+                                                       (or (== true result)
+                                                           (== false result))
+                                                       (html/code { `style: "font-size: 1.1em; color: orange;" }
+                                                                  result)
+                                                       (is_function? result)
+                                                       (html/code { `style: "font-size: 1.1em; color: darkblue;" } "Function: "
+                                                                  (if result.name result.name "anonymous"))
+                                                       (and (is_array? result)
+                                                            (instanceof result.0 Error))
+                                                       (html/pre { `style: "font-size: 1.1em; color: darkred;" } "ERROR: "
+                                                                 (subtype result.0)
+                                                                 "\n"
+                                                                 result.0.message)
+                                                       (instanceof result Error)
+                                                       (html/pre { `style: "font-size: 1.1em; color: darkred;" } "ERROR: "
+                                                                 (subtype result)
+                                                                 "\n"
+                                                                 result.message)                                                                 
+                                                       else
+                                                       (html/pre { `style: "font-size: 1.1em;" } (JSON.stringify result nil 3 )))))
+                                       (set_prop output_container
+                                                 `scrollTop
+                                                 output_container.offsetHeight)
+                                       (set_prop entry_area `value "")
+                                       )))))
+    (html/attach_event_listener entry_area
+                           `keydown
+                           handle_text_input_events)
+    entry_area))
+
+
+
+(defun browser_repl ()
+  (let
+      ((body_element (-> document `querySelector "body"))
+       (output_container (html/div { `id: "output-container"  `style: "height: 70%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (resize_observer nil)
+       (reader (line_reader { `output_container: output_container }))
+       (input_container (html/div { `id: "input-container" `style: "height: calc(30% - 15px); overflow: hidden; " }
+                                  reader))                                     
+       (juno-container (html/div { `id: "juno-container" `style: "height: inherit; max-height: 100%; overflow: hidden;" }
+                                 output_container
+                                 input_container))
+       (perform_resize (fn ()
+                         (progn
+                          (console.log "resize: " (prop juno-container.parentElement `offsetWidth))
+                          (html/set_style [["width" (+ "" (- (prop juno-container.parentElement `offsetWidth) 2) "px")]] juno-container)))))
+    
+    (= resize_observer (new ResizeObserver perform_resize))
+    (-> resize_observer `observe body_element)
+    (when body_element      
+      (-> body_element `appendChild juno-container))))
+     
+(html/set_style [[ "font-family" "-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;"]]
+                (-> document `querySelector "body"))
+(let
+    ((header (-> document `querySelector "header") html/img { src: core/juno_logo height: "15" }))
+  (-> header `appendChild
+      (html/img { src: core/juno_logo height: "15" }))
+  (-> header `appendChild
+      (html/span { `style: "display: inline-block; margin-left: 10px; font-size: 0.9em; line-height: 15px;" } Environment.build_version))
+  (set_prop *env_config*.export
+            `save_path
+            nil)
+  
+  (defun core/page_header ()
+    (prop (first (html/get_by_tag "head")) `outerHTML))
+  (browser_repl))
+      
+ 
+
+
+
+                                    
+                                    
