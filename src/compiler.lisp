@@ -4281,7 +4281,8 @@
                ;; object key to determine how to handle, so things like "block" or "Function"
                ;; will cause problems
                
-               (when (and (== reftype "StringType")
+               (when (and (or (== reftype "StringType")
+			      (== reftype "String"))
                           (not (== refval undefined)))
                           ;(not (== refval "__!NOT_FOUND!__")))
                  (= refval "text"))  
