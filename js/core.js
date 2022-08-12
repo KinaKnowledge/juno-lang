@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-08-07 11:06:23
-// Version: 2022.08.07.11.06
-export const DLISP_ENV_VERSION='2022.08.07.11.06';
+// Build Time: 2022-08-12 09:31:41
+// Version: 2022.08.12.09.31
+export const DLISP_ENV_VERSION='2022.08.12.09.31';
 
 
 
@@ -369,7 +369,7 @@ await Environment.set_global("defbinding",async function(...args) {
         let __for_body__28=async function(bind_set) {
              return  await async function(){
                 if (check_true( ((bind_set instanceof Array)&& (((bind_set && bind_set.length)===2)|| ((bind_set && bind_set.length)===3))&& ((bind_set && bind_set["1"]) instanceof Array)&& ((bind_set && bind_set["1"] && bind_set["1"]["length"])===2)))) {
-                    binding=["=:quote",["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])]];
+                    binding=["=:quotel",["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])]];
                      return  (acc).push(await (async function ()  {
                         let __array_arg__30=(async function() {
                             if (check_true (((bind_set && bind_set["2"]) instanceof Object))){

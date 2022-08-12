@@ -8,299 +8,399 @@
 
 (when (contains? "html" (namespaces))
   (delete_namespace `html))
-(create_namespace `html)
-(progn
- (declare (namespace `html))
-
- ;; Tag component names sourced from
- ;; https://developer.mozilla.org/en-US/docs/Web/HTML/Element
- 
- 
- (defglobal *DOM_TAGS* [`base `head `link `meta `style `title
-                        `body `address `article `aside `footer `header
-                        `h1 `h2 `h3 `h4 `h5 `h6
-                        `main `nav `section
-                        `blockquote `dd `div `dl `dt `figcaption `figure
-                        `hr `li `menu `ol `p `pre `ul
-                        `a `abbr `b `bdi `bdo `br `cite `code `data `dfn `em
-                        `i `kbd `mark `q `rp `rt `ruby `s `samp `small `span
-                        `strong `sub `time `u `var `wbr
-                        `area `audio `img `map `track `video
-                        `embed `iframe `object `picture `portal `source
-                        `svg `math `canvas `noscript `script
-                        `del `ins
-                        `caption `col `colgroup `table `tbody `td `tfoot
-                        `th `thead `tr
-                        `button `datalist `fieldset `form `input `label `legend
-                        `meter `optgroup `option `output `progress `select `textarea
-                        `details `dialog `summary
-                        `slot `template ])
-
- 
-    (defmacro get_by_id (id)
-      `(-> document `getElementById ,#id)
-      {
-       `description: "Given an id, this macro is shorthand for calling document.getElementById with the passed id"
-       `usage: ["id:string"]
-       `tags: ["html" "DOM" "id" "find" ]
-       })
-
-    (defun get_by_tag (tagname)
-      (if tagname
-        (-> document `querySelectorAll tagname)
-        (throw "get_by_tag: invalid tagname provided"))
-      {
-       `description: "Returns all tags in the document matching the provided tagname"
-       `usage: ["tagname:string"]
-       `tags: ["html" "DOM" "id" "find" ]
-       })
-    
-    (defun append_children (parent children)
-      (when (and (is_element? parent)
-                 (is_array? children))
-        (for_each (child children)
-                  (-> parent `appendChild child)))
-      parent)
-
-    (defglobal create_element (-> document.createElement `bind document)
-      {
-       `description: "Binding for document.createElement"
-       })
-  
-  ;; first create the base constructor function which will be called
-  ;; with the tag to create
+(create_namespace `html { `serialize_with_image: false })
 
 
-  (defun create_dom_element (element_name `& args)
-    (let
-        ((opts (if (is_object? args.0)
-                 args.0
-                 nil))
-         (content (if opts
-                    (if (> args.length 0)
-                      (rest args)
-                      [])
-                    (or args
-                        [])))
-         (append_children (fn (parent children)
-                            (do
-                                (for_each (child children)
+(declare (namespace `html))
+
+
+;; Tag component names sourced from
+;; https://developer.mozilla.org/en-US/docs/Web/HTML/Element
+
+
+(defglobal *DOM_TAGS* [`html `base `head `link `meta `style `title
+                       `body `address `article `aside `footer `header
+                       `h1 `h2 `h3 `h4 `h5 `h6
+                       `main `nav `section
+                       `blockquote `dd `div `dl `dt `figcaption `figure
+                       `hr `li `menu `ol `p `pre `ul
+                       `a `abbr `b `bdi `bdo `br `cite `code `data `dfn `em
+                       `i `kbd `mark `q `rp `rt `ruby `s `samp `small `span
+                       `strong `sub `time `u `var `wbr
+                       `area `audio `img  `track `video
+                       `embed `iframe `object `picture `portal `source
+                       `svg `math `canvas `noscript `script
+                       `del `ins
+                       `caption `col `colgroup `table `tbody `td `tfoot
+                       `th `thead `tr
+                       `button `datalist `fieldset `form `input `label `legend
+                       `meter `optgroup `option `output `progress `select `textarea
+                       `details `dialog `summary
+                       `slot `template ])
+
+
+(defmacro get_by_id (id)
+  `(-> document `getElementById ,#id)
+  {
+   `description: "Given an id, this macro is shorthand for calling document.getElementById with the passed id"
+   `usage: ["id:string"]
+   `tags: ["html" "DOM" "id" "find" ]
+   })
+
+(defun get_by_tag (tagname)
+  (if tagname
+    (-> document `querySelectorAll tagname)
+    (throw "get_by_tag: invalid tagname provided"))
+  {
+   `description: "Deprecated: use query_all: Returns all tags in the document matching the provided tagname"
+   `usage: ["tagname:string"]
+   `tags: ["html" "DOM" "id" "find" ]
+   })
+
+(defun query_all (query)
+  (if (is_string? query)
+    (-> document `querySelectorAll query)
+    (throw ReferenceError "query_all: argument must be a string"))
+  {
+   `description: "Returns all tags in the document matching the provided tagname"
+   `usage: ["tagname:string"]
+   `tags: ["html" "DOM" "id" "find" ]
+   })
+
+(defun append_children (parent children)
+  (when (and (is_element? parent)
+             (is_array? children))
+    (for_each (child children)
+              (-> parent `appendChild child)))
+  parent)
+
+
+;(defbinding (html/create_element (document.createElement document.createElement)))
+
+;(defglobal html/create_element (-> document.createElement `bind document)
+ ;  {
+  ;  `description: "Binding for document.createElement"
+   ; `initializer: (quote  (-> document.createElement `bind document))
+    ;})
+
+(defun create_element (element_name)
+  (-> document.createElement element_name))
+
+;; first create the base constructor function which will be called
+;; with the tag to create
+
+
+(defun create_dom_element (element_name `& args)
+  (let
+      ((opts (if (is_object? args.0)
+               args.0
+               nil))
+       (content (if opts
+                  (if (> args.length 0)
+                    (rest args)
+                    [])
+                  (or args
+                      [])))
+       (append_children (fn (parent children)
+                          (do
+                            (for_each (child children)
                                       (if (is_array? child)
                                         (append_children parent child)
                                         (-> parent `appendChild child)))
-                                parent)))
-         (elem (-> document `createElement element_name)))
-      
-      (when opts
-        (for_each (pset (pairs opts))
-          (do
-            (cond
-              (is_function? pset.1)
-              (set_prop elem
-                        pset.0
-                        pset.1)
-              else
-              (-> elem `setAttribute pset.0 pset.1)))))
-      (when (> content.length 0)
-        (for_each (child content)
-           (cond
-             (is_element? child)
-             (-> elem `appendChild child)
-             (is_array? child)
-             (append_children elem child)
-             (is_string? child)
-             (-> elem `appendChild (-> document `createTextNode child))
-             else
-             (-> elem `appendChild (-> document `createTextNode (+ "" child))))))
-      elem))
+                            parent)))
+       (elem (-> document `createElement element_name)))
     
-      
-
-  ;; next create the individual pointers to the create_dom_element function
-  ;; for every tag name in the *DOM_TAG* list create the construction function
-
-  (for_each (tagname *DOM_TAGS*)
-   (let
-       ((bound_fn (-> create_dom_element `bind create_dom_element tagname)))
-     ;; use the set_global function directly since we are dynamically creating the symbol names
-     (-> Environment `set_global tagname bound_fn)))
-
-
-  ;; various helper functions 
-  
-  (defun set_style (style_attributes elem)
-    (when (is_element? elem)
-      (let ((`current_style (-> elem `getAttribute "style"))
-            (`attribs       (or (no_empties (from_style_text current_style)) []))
-            (`combined      (pairs
-                             (to_object
-                              (conj attribs style_attributes))))
-            (`newtext
-             (join ";"
-                   (for_each (`atr combined)
-                             (join ": " atr)))))
-
-        (-> elem `setAttribute "style" newtext)
-        elem))
-    {
-     `tags:["ui" "html" "css" "element" "style"]
-     `description:"Given a set of style attributes in the [[attribute value]] form, and an element, sets the element style attribute to contain the specified values. Returns the element."
-     `usage:["style_attributes:list" "element:Element"]
-     })
-
-  (defun has_class? (classname elem)
-    (if (and elem
-             (is_element? elem))
-      (-> elem.classList `contains classname)
-      false)
-    {
-     `usage: ["classname:string" "element:Element"]
-     `description: "If the provided element has the specified CSS class, returns true, otherwise the function returns false"
-     `tags: ["css" "DOM" "class" "ui" "element" "html"]
-     })
-
-  (defun add_class (class_name `& elems)
-    (do
-      (defvar `effected [])
-      (= elems (flatten elems))
-      (when (not (eq nil elems))
-        (= elems (if (or (instanceof elems.0 NodeList)
-                         (instanceof elems.0 HTMLCollection)
-                         (is_array? elems.0))
-                   elems.0
-                   elems))
-        (for_each (`e elems)
-                  (do
-                    (when e.classList
-                      (push effected e)
-                      (-> e.classList `add class_name)))))
-      effected)
-    {
-     `usage: ["class_name:string" "element:Element" "element?:Element"]
-     `description: "Removes the designated CSS class from the provided element or elements. Returns the list of nodes."
-     `tags: ["ui" "html" "css" "class"]
-     })
-
-   (defun remove_class (class_name `& elems)
-         (do
-          (defvar `effected [])
-          (= elems (flatten elems))
-          (when (not (eq nil elems))
-              (= elems (if (or (instanceof elems.0 NodeList)
-                               (instanceof elems.0 HTMLCollection)
-                               (is_array? elems.0))
-                           elems.0
-                           elems))
-              (for_each (`e elems)
+    (when opts
+      (for_each (pset (pairs opts))
                 (do
-                    (when e.classList
-                          (push effected e)
-                          (-> e.classList `remove class_name)))))
-          effected)
-        {
-         `usage: ["class_name:string" "element:Element" "element?:Element"]
-         `description: "Removes the designated CSS class from the provided element or elements. Returns the list of nodes."
-         `tags: ["ui" "html" "css" "class"]
-         })
+                  (cond
+                    (is_function? pset.1)
+                    (set_prop elem
+                              pset.0
+                              pset.1)
+                    else
+                    (-> elem `setAttribute pset.0 pset.1)))))
+    (when (> content.length 0)
+      (for_each (child content)
+                (cond
+                  (is_element? child)
+                  (-> elem `appendChild child)
+                  (is_array? child)
+                  (append_children elem child)
+                  (is_string? child)
+                  (-> elem `appendChild (-> document `createTextNode child))
+                  else
+                  (-> elem `appendChild (-> document `createTextNode (+ "" child))))))
+    elem))
 
-   (defun set_disabled (`& args)
-     (when (and args (> (length args) 0))
-       (for_each (`elem (flatten args))
-                 (if elem (-> elem `setAttribute `disabled "true"))))
-     { `description: "Given an arbitrary list of Elements, set them to disabled."
-      `tags: ["ui" "html" "css"]
-      `usage: ["element:Element" "element?:Element"]
-      } )
 
-   (defun set_enabled (`& args)
-     (when (and args (> (length args) 0))
-       (for_each (`elem (flatten args))
-                 (if elem (-> elem `removeAttribute `disabled))))
-     { `description: "Given an arbitrary list of Elements, set them to enabled (removes the disabled property from the Element)."
-      `tags: ["ui" "html" "css"]
-      `usage: ["element:Element" "element?:Element"]
-      } )
 
-   (defun remove_attribute (elem `& attribs)
-     (when (and elem
-                (is_element? elem)
-                attribs
-                (> attribs.length 0))
-       (for_each (attrib (flatten attribs))
-                 (-> elem `removeAttribute attrib)))
-     {
-      `description: "Provided a target DOM element and 1 or more attributes, removes each attribute from the targeted DOM element."
-      `usage: ["element:Element" "attrib0:string" "attribN:string"]
-      `tags: [ `ui `html `attribute `delete ]
-      })
+;; next create the individual pointers to the create_dom_element function
+;; for every tag name in the *DOM_TAG* list create the construction function
 
-   (defun attach_event_listener (elem event_type handler_function)
-    (when elem
-        ((jslambda (`elem `event `f) "return elem.addEventListener(event,f);")  elem event_type handler_function))
-    {
-     `usage:["element:Element" "event_type:string" "handler:function"]
-     `description:"Given an element, an event type such as `click, and a function, attaches the provided function as an event handler to the HTML Element."
-     `tags:["ui" "events" "HTML" "events" ""]
-     })
+(for_each (tagname *DOM_TAGS*)
+          (let
+              ((bound_fn (-> create_dom_element `bind create_dom_element tagname)))
+            ;; use the set_global function directly since we are dynamically creating the symbol names
+            (-> Environment `set_global
+                tagname
+                bound_fn
+                {
+                 `initializer: `((quote quote) (-> create_element `bind create_dom_element ,#tagname))
+                 })))
 
-   (defun remove_css_entry (entry_name)
-        (do
-             (if (get_by_id (+ "class_" entry_name))
-                 (-> (get_by_id (+ "class_" entry_name)) `remove)))
-       {
-           `usage:["entry_name:string"]
-           `description:"If a class has been created by create_css_entry, use this function to remove the class from the document."
-           `tags: ["html" "css" "ui"]
-       })
 
-    (defun create_css_entry (entry_name css_attribute_list)
-        (let
-             ((style (create_element "style"))
-              (css_attributes (map (fn (v)
-                                        (+ v.0 ": " v.1))
-                                   css_attribute_list))
-              (head_elem (-> document `querySelector "head"))
-              (new_style nil))
-          
-         (when head_elem
-           (remove_css_entry entry_name)
-           (-> head_elem `appendChild
-               (= new_style
-                  (style { `id: (+ "class_" entry_name ) `type: "text/css" }
-                         (+ "" entry_name "{\n  " (join ";\n" css_attributes) " }")))))
-         new_style)
-        { `usage: ["entry_name:string" "css_attribute_list:array"]
-         `description: " Given a name for the class and a list of formatted css attributes
+;; various helper functions 
+
+(defun set_style (style_attributes elem)
+  (when (is_element? elem)
+    (let ((`current_style (-> elem `getAttribute "style"))
+          (`attribs       (or (no_empties (from_style_text current_style)) []))
+          (`combined      (pairs
+                           (to_object
+                            (conj attribs style_attributes))))
+          (`newtext
+           (join ";"
+                 (for_each (`atr combined)
+                           (join ": " atr)))))
+
+      (-> elem `setAttribute "style" newtext)
+      elem))
+  {
+   `tags:["ui" "html" "css" "element" "style"]
+   `description:"Given a set of style attributes in the [[attribute value]] form, and an element, sets the element style attribute to contain the specified values. Returns the element."
+   `usage:["style_attributes:list" "element:Element"]
+   })
+
+(defun has_class? (classname elem)
+  (if (and elem
+           (is_element? elem))
+    (-> elem.classList `contains classname)
+    false)
+  {
+   `usage: ["classname:string" "element:Element"]
+   `description: "If the provided element has the specified CSS class, returns true, otherwise the function returns false"
+   `tags: ["css" "DOM" "class" "ui" "element" "html"]
+   })
+
+(defun add_class (class_name `& elems)
+  (do
+    (defvar `effected [])
+    (= elems (flatten elems))
+    (when (not (eq nil elems))
+      (= elems (if (or (instanceof elems.0 NodeList)
+                       (instanceof elems.0 HTMLCollection)
+                       (is_array? elems.0))
+                 elems.0
+                 elems))
+      (for_each (`e elems)
+                (do
+                  (when e.classList
+                    (push effected e)
+                    (-> e.classList `add class_name)))))
+    effected)
+  {
+   `usage: ["class_name:string" "element:Element" "element?:Element"]
+   `description: "Removes the designated CSS class from the provided element or elements. Returns the list of nodes."
+   `tags: ["ui" "html" "css" "class"]
+   })
+
+(defun remove_class (class_name `& elems)
+  (do
+    (defvar `effected [])
+    (= elems (flatten elems))
+    (when (not (eq nil elems))
+      (= elems (if (or (instanceof elems.0 NodeList)
+                       (instanceof elems.0 HTMLCollection)
+                       (is_array? elems.0))
+                 elems.0
+                 elems))
+      (for_each (`e elems)
+                (do
+                  (when e.classList
+                    (push effected e)
+                    (-> e.classList `remove class_name)))))
+    effected)
+  {
+   `usage: ["class_name:string" "element:Element" "element?:Element"]
+   `description: "Removes the designated CSS class from the provided element or elements. Returns the list of nodes."
+   `tags: ["ui" "html" "css" "class"]
+   })
+
+(defun set_disabled (`& args)
+  (when (and args (> (length args) 0))
+    (for_each (`elem (flatten args))
+              (if elem (-> elem `setAttribute `disabled "true"))))
+  { `description: "Given an arbitrary list of Elements, set them to disabled."
+   `tags: ["ui" "html" "css"]
+   `usage: ["element:Element" "element?:Element"]
+   } )
+
+(defun set_enabled (`& args)
+  (when (and args (> (length args) 0))
+    (for_each (`elem (flatten args))
+              (if elem (-> elem `removeAttribute `disabled))))
+  { `description: "Given an arbitrary list of Elements, set them to enabled (removes the disabled property from the Element)."
+   `tags: ["ui" "html" "css"]
+   `usage: ["element:Element" "element?:Element"]
+   } )
+
+(defun remove_attribute (elem `& attribs)
+  (when (and elem
+             (is_element? elem)
+             attribs
+             (> attribs.length 0))
+    (for_each (attrib (flatten attribs))
+              (-> elem `removeAttribute attrib)))
+  {
+   `description: "Provided a target DOM element and 1 or more attributes, removes each attribute from the targeted DOM element."
+   `usage: ["element:Element" "attrib0:string" "attribN:string"]
+   `tags: [ `ui `html `attribute `delete ]
+   })
+
+(defun attach_event_listener (elem event_type handler_function)
+  (when elem
+    ((jslambda (`elem `event `f) "return elem.addEventListener(event,f);")  elem event_type handler_function))
+  {
+   `usage:["element:Element" "event_type:string" "handler:function"]
+   `description:"Given an element, an event type such as `click, and a function, attaches the provided function as an event handler to the HTML Element."
+   `tags:["ui" "events" "HTML" "events" ""]
+   })
+
+(defun remove_css_entry (entry_name)
+  (do
+    (if (get_by_id (+ "class_" entry_name))
+      (-> (get_by_id (+ "class_" entry_name)) `remove)))
+  {
+   `usage:["entry_name:string"]
+   `description:"If a class has been created by create_css_entry, use this function to remove the class from the document."
+   `tags: ["html" "css" "ui"]
+   })
+
+(defun create_css_entry (entry_name css_attribute_list)
+  (let
+      ((style (create_element "style"))
+       (css_attributes (map (fn (v)
+                              (+ v.0 ": " v.1))
+                            css_attribute_list))
+       (head_elem (-> document `querySelector "head"))
+       (new_style nil))
+    
+    (when head_elem
+      (remove_css_entry entry_name)
+      (-> head_elem `appendChild
+          (= new_style
+             (style { `id: (+ "class_" entry_name ) `type: "text/css" }
+                    (+ "" entry_name "{\n  " (join ";\n" css_attributes) " }")))))
+    new_style)
+  { `usage: ["entry_name:string" "css_attribute_list:array"]
+   `description: " Given a name for the class and a list of formatted css attributes
                          create and load the CSS object into the DOM.<br> Example: <br><code>
                           (create_css_entry 'FilteredSelect:focus-within'
                                     [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>
                            </code> "
-          `tags: ["html" "css" "ui"]
-        } )
+   `tags: ["html" "css" "ui"]
+   } )
 
-    (defun css_entry_to_css_format (entry_name css_attribute_list)
-        (let
-             ((`style (create_element "style"))
-              (`css_attributes (map (fn (v)
-                                        (+ v.0 ": " v.1))
-                                    css_attribute_list)))
-             (+ "" entry_name " {\n   " (join ";\n   " css_attributes) ";\n}")
-                )
+(defun css_entry_to_css_format (entry_name css_attribute_list)
+  (let
+      ((`style (create_element "style"))
+       (`css_attributes (map (fn (v)
+                               (+ v.0 ": " v.1))
+                             css_attribute_list)))
+    (+ "" entry_name " {\n   " (join ";\n   " css_attributes) ";\n}")
+    )
 
-        { `usage: ["entry_name:string" "css_attribute_list:array"]
-          `description: (+ "Given a name for the class and a list of formatted css attributes returns a formatted string in CSS syntax.<br> Example: <br><code>"
-                           "(create_css_entry 'FilteredSelect:focus-within'
+  { `usage: ["entry_name:string" "css_attribute_list:array"]
+   `description: (+ "Given a name for the class and a list of formatted css attributes returns a formatted string in CSS syntax.<br> Example: <br><code>"
+                    "(create_css_entry 'FilteredSelect:focus-within'
                                     [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>"
-                           "</code>")
-          `tags: ["html" "css" "ui" "convert"]
-         } )
+                    "</code>")
+   `tags: ["html" "css" "ui" "convert"]
+   } )
 
-    (defun_sync handle_event (e)
-      (progn
-       (-> e `preventDefault)
-       (-> e `stopPropagation)))
-     
-    
-  (console.log "html is loaded");
-  (register_feature "html")
-  true)
+(defun_sync handle_event (e)
+  (progn
+   (-> e `preventDefault)
+   (-> e `stopPropagation)))
+
+
+
+(defun file_picker_button (button_text on_selection)
+  (let
+      ((elem (html/input { type: "file" 
+                          value: (or button_text "Open")
+                          onchange: (fn (e)
+                                      (let
+                                          ((items e.srcElement.files)
+                                           (status nil))
+                                        (when on_selection
+                                          (on_selection items)))) })))
+    (declare (fn on_selection html/input)
+             (global html/input))
+    (when (eq nil on_selection)
+      (throw "on_selection is required for file_picker_button"))
+    elem))
+
+(defun notify (text type on_click)
+        (let
+            ((type (or type "info"))
+             (timer nil)
+             (view (div { `style: (+ "z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; background: #FFFFFF; border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses; font-size: 0.9em;" 
+                                     (cond
+                                         (== type "error")
+                                         "border-left: 5px solid #bf0a0a;"
+                                         (== type "success")
+                                         "border-left: 5px solid #95dc95;"
+                                         else
+                                         "border-left: 5px solid #5489da;")) }
+                         (or text "-"))))
+            (when (eq nil (get_by_id "lower_right_corner"))
+                  (-> (get_by_id "body")
+                      `appendChild (div { `id: "lower_right_corner" `style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )))
+            
+            (-> (get_by_id "lower_right_corner") `appendChild view)
+            (-> view `animate [{ `background: "#FFFFFF"  `easing: `ease-in }
+                               { `background: "#FFF18830"  `opacity: 1    `easing: `ease-out  `offset: 0.1 }
+                               { `background: "#FFFFFF" `opacity: 1 `easing: `ease-out } ] 
+                           { `duration: 3000 })
+            
+            (= timer (setTimeout (fn ()
+                                   (do 
+                                     (-> view `animate [{ `opacity: 0  `easing: `ease-in } ] { `duration: 250 })
+                                     (setTimeout (fn () (do
+                                                          (-> view `remove)
+                                                          (= timer nil)
+                                                          (= view nil)))
+                                                 250)))                                                   
+                            10000))
+            (setTimeout (fn ()
+                            (set_style [["opacity" 1]] view))
+                        200)
+            (attach_event_listener view
+                 `click
+                 (fn (e)
+                     (do
+                         (when timer (clearTimeout timer))
+                         (when view (-> view `remove))
+                         (= view nil)
+                         (= timer nil)
+                         (when on_click
+                               (on_click type text)))))
+            true)
+        {
+         `usage: ["text:string" "type?:string" "on_click?:function"]
+         `description: (+ "Given a obligatory text string, and an optional type, and on_click function, " 
+                          "show an alert for 10 seconds in the lower right hand corner."
+                          "<br><br>"
+                          "Types are as follows: <br>"
+                          "error<br>"
+                          "success<br>"
+                          "info (default)<br>"
+                          "<br>Returns true, but is of no significance.")
+         `tags: ["ui" "alerts" "alerting" "message" "notify"]
+         })
+
+(console.log "html is loaded");
+(register_feature "html")
+true

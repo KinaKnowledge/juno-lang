@@ -14,19 +14,20 @@
 ;(import "doc/help.lisp")
 (import "html/logo.juno")
 
-(defglobal html_package (btoa (JSON.stringify (reader (read_text_file "pkg/html.juno")))))
-(defglobal browser_repl_package (btoa (JSON.stringify (reader (read_text_file "pgk/browser_workspace.juno")))))
-
-
-;; TODO: do we need this here?  We need to refactor below
-(defglobal *core_symbols* (core/symbols))
+(defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
+(defglobal core/browser_repl_package ((quote quote) (reader (read_text_file "working/browser_workspace.juno"))))
 
 ;; Make sure we have the ability to produce a file..
 (when (not (contains? "io" *env_config*.features))
   (import "src/base-io.lisp"))
 
-;; Bring in the build tools for compiling buffers
 (import "src/build-tools.lisp")
+;; everything loaded above this line is what will be preserved..
+(defglobal *core_symbols* (core/symbols))
+
+
+;; Bring in the build tools for compiling buffers
+
 (import "pkg/html_server.juno")
 
 ;; Set the new environments default namespace 
@@ -49,7 +50,7 @@
   
   (core/save_env { save_as: "js/juno_browser.js"		   
 		   preserve_imports: false
-                   features: [ "compiler" "repl" "core-ext" "html" ]
+                   features: [ "compiler" "repl" "core-ext" "html" "build-tools" "browser" ]
 		   do_not_include: no_includes })
   
   (console.log "building standalone starter.html file..")
@@ -59,22 +60,18 @@
   
   (let
       ((js_resource (read_text_file "js/juno_browser.js"))              
-       (doctext nil)
-       
-               
+       (doctext nil)                      
        (boot_up (compile
                   `(javascript ,#(read_text_file "js/browser_boot.js"))
-                  { `formatted_output: true })))
-
+                  { `formatted_output: true })))    
+    
     (= doctext
        (html/render
          (html/html 
            (html/head { `title: "Juno Browser" }
                    (html/script { `type: "module" }
                                 js_resource
-                                "\n\n"
-                                (+ "let html_lib=JSON.parse(atob('" html_package  "'))\n")
-                                (+ "let browser_workspace=JSON.parse(atob('" browser_repl_package "'))\n")
+                                "\n\n"                               
                                 boot_up
                                 "\n\n"
                                 ))
@@ -82,7 +79,7 @@
         (html/body { style: "height: 100vh; overflow: hidden;" }
                    (html/header { style: "max-height: 20px; height: 20px; display: flex;" }
                                 )))))
-    ;(console.log "DOCTEXT: " doctext)
+   
     (write_text_file "html/starter.html"
                      doctext)
     true))

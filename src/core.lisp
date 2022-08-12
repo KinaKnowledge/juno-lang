@@ -397,7 +397,7 @@
                        (is_array? bind_set.1)
                        (== bind_set.1.length 2))
                   (do                    
-                    (= binding [(quote quote) [(quote bind) bind_set.1.0 bind_set.1.1 ]])
+                    (= binding [(quote quotel) [(quote bind) bind_set.1.0 bind_set.1.1 ]])
                     (push acc [ (quote defglobal) (+ *namespace* "/" (deref bind_set.0)) [(quote bind) bind_set.1.0 bind_set.1.1]
                            (if (is_object? bind_set.2)
                              (+ {} bind_set.2

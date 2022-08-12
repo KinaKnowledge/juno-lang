@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-08-07 12:19:49
-// Version: 2022.08.07.12.19
-export const DLISP_ENV_VERSION='2022.08.07.12.19';
+// Build Time: 2022-08-12 13:20:50
+// Version: 2022.08.12.13.20
+export const DLISP_ENV_VERSION='2022.08.12.13.20';
 
 
 
@@ -1103,6 +1103,20 @@ export async function init_dlisp(Environment)  {
                             return Environment.definitions;
                             
                         }()];
+                        let delete_prop=new Function("obj","...args","{\n                                        if (args.length == 1) {\n                                            return delete obj[args[0]];\n                                        } else {\n                                            while (args.length > 0) {\n                                                let prop = args.shift();\n                                                delete obj[prop];\n                                            }\n                                        }\n                                        return obj;\n                                    }");
+                        ;
+                        await async function(){
+                            Environment.global_ctx.scope["delete_prop"]=delete_prop;
+                            return Environment.global_ctx.scope;
+                            
+                        }();
+                        [await async function(){
+                            Environment.definitions["delete_prop"]={
+                                core_lang:true,description:("Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"+ "(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"+ "(delete_prop foo `abc `def) => { ghi: 789 }<br>"),usage:["obj:objects","key0:string","keyN?:string"],tags:["delete","keys","object","remove","remove_prop","mutate"]
+                            };
+                            return Environment.definitions;
+                            
+                        }()];
                         let blank_ques_=function(val) {
                              return  ((val==null)|| ((val instanceof String || typeof val==='string')&& (val==="")))
                         };
@@ -1193,27 +1207,27 @@ export async function init_dlisp(Environment)  {
                                             };
                                             ;
                                             await (async function() {
-                                                let __for_body__119=async function(__item) {
+                                                let __for_body__121=async function(__item) {
                                                     __result=await __action(__item);
                                                     if (check_true (__result)){
                                                           return (__collector).push(__result)
                                                     }
                                                 };
-                                                let __array__120=[],__elements__118=await (async function() {
+                                                let __array__122=[],__elements__120=await (async function() {
                                                     {
                                                          let __call_target__=await parent_environment["meta_for_symbol"].call(parent_environment,quoted_symbol,true), __call_method__="flat";
                                                         return await __call_target__[__call_method__].call(__call_target__,1)
                                                     } 
                                                 })();
                                                 let __BREAK__FLAG__=false;
-                                                for(let __iter__117 in __elements__118) {
-                                                    __array__120.push(await __for_body__119(__elements__118[__iter__117]));
+                                                for(let __iter__119 in __elements__120) {
+                                                    __array__122.push(await __for_body__121(__elements__120[__iter__119]));
                                                     if(__BREAK__FLAG__) {
-                                                         __array__120.pop();
+                                                         __array__122.pop();
                                                         break;
                                                         
                                                     }
-                                                }return __array__120;
+                                                }return __array__122;
                                                  
                                             })();
                                              __collector
@@ -1231,20 +1245,20 @@ export async function init_dlisp(Environment)  {
                                             };
                                             ;
                                             await (async function() {
-                                                let __for_body__123=async function(__item) {
+                                                let __for_body__125=async function(__item) {
                                                     __result=await __action(__item);
                                                     if (check_true (__result)){
                                                           return (__collector).push(__result)
                                                     }
                                                 };
-                                                let __array__124=[],__elements__122=await (async function ()  {
-                                                    let ____collector__125= async function(){
+                                                let __array__126=[],__elements__124=await (async function ()  {
+                                                    let ____collector__127= async function(){
                                                         return []
                                                     };
-                                                    let ____result__126= async function(){
+                                                    let ____result__128= async function(){
                                                         return null
                                                     };
-                                                    let ____action__127= async function(){
+                                                    let ____action__129= async function(){
                                                         return async function(child_data) {
                                                             if (check_true (await not((child_data['0']===await (await get_global("current_namespace"))())))){
                                                                  return  await child_data['1']["meta_for_symbol"].call(child_data['1'],quoted_symbol)
@@ -1252,44 +1266,44 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     };
                                                     {
-                                                        let __collector=await ____collector__125();
+                                                        let __collector=await ____collector__127();
                                                         ;
-                                                        let __result=await ____result__126();
+                                                        let __result=await ____result__128();
                                                         ;
-                                                        let __action=await ____action__127();
+                                                        let __action=await ____action__129();
                                                         ;
                                                         ;
                                                         await (async function() {
-                                                            let __for_body__130=async function(__item) {
+                                                            let __for_body__132=async function(__item) {
                                                                 __result=await __action(__item);
                                                                 if (check_true (__result)){
                                                                       return (__collector).push(__result)
                                                                 }
                                                             };
-                                                            let __array__131=[],__elements__129=await pairs(children);
+                                                            let __array__133=[],__elements__131=await pairs(children);
                                                             let __BREAK__FLAG__=false;
-                                                            for(let __iter__128 in __elements__129) {
-                                                                __array__131.push(await __for_body__130(__elements__129[__iter__128]));
+                                                            for(let __iter__130 in __elements__131) {
+                                                                __array__133.push(await __for_body__132(__elements__131[__iter__130]));
                                                                 if(__BREAK__FLAG__) {
-                                                                     __array__131.pop();
+                                                                     __array__133.pop();
                                                                     break;
                                                                     
                                                                 }
-                                                            }return __array__131;
+                                                            }return __array__133;
                                                              
                                                         })();
                                                          __collector
                                                     }
                                                 } )();
                                                 let __BREAK__FLAG__=false;
-                                                for(let __iter__121 in __elements__122) {
-                                                    __array__124.push(await __for_body__123(__elements__122[__iter__121]));
+                                                for(let __iter__123 in __elements__124) {
+                                                    __array__126.push(await __for_body__125(__elements__124[__iter__123]));
                                                     if(__BREAK__FLAG__) {
-                                                         __array__124.pop();
+                                                         __array__126.pop();
                                                         break;
                                                         
                                                     }
-                                                }return __array__124;
+                                                }return __array__126;
                                                  
                                             })();
                                              __collector
@@ -1387,9 +1401,9 @@ export async function init_dlisp(Environment)  {
                                                   return namespace_identity['0']
                                             } 
                                         })();
-                                         ( get_global("delete_prop"))(Environment.definitions,target_symbol);
+                                         delete_prop(Environment.definitions,target_symbol);
                                         if (check_true (Environment.global_ctx.scope[target_symbol])){
-                                              return  ( get_global("delete_prop"))(Environment.global_ctx.scope,target_symbol)
+                                              return  delete_prop(Environment.global_ctx.scope,target_symbol)
                                         } else {
                                               return false
                                         }
@@ -1426,11 +1440,11 @@ export async function init_dlisp(Environment)  {
                         }()];
                         let eval_exp=async function(expression) {
                              return  await (async function(){
-                                let __array_op_rval__138=expression;
-                                 if (__array_op_rval__138 instanceof Function){
-                                    return await __array_op_rval__138() 
+                                let __array_op_rval__140=expression;
+                                 if (__array_op_rval__140 instanceof Function){
+                                    return await __array_op_rval__140() 
                                 } else {
-                                    return[__array_op_rval__138]
+                                    return[__array_op_rval__140]
                                 }
                             })()
                         };
@@ -1485,16 +1499,16 @@ export async function init_dlisp(Environment)  {
                              ( get_global("assert"))((step>0),"range: step must be > 0");
                              ( get_global("assert"))((from_to['1']>=from_to['0']),"range: lower bound must be greater or equal than upper bound");
                              ( function(){
-                                 let __test_condition__143=function() {
+                                 let __test_condition__145=function() {
                                      return  (idx<from_to['1'])
                                 };
-                                let __body_ref__144=function() {
+                                let __body_ref__146=function() {
                                     (acc).push(idx);
                                      return  idx+=step
                                 };
                                 let __BREAK__FLAG__=false;
-                                while( __test_condition__143()) {
-                                     __body_ref__144();
+                                while( __test_condition__145()) {
+                                     __body_ref__146();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -1569,20 +1583,6 @@ export async function init_dlisp(Environment)  {
                         [await async function(){
                             Environment.definitions["resolve_path"]={
                                 core_lang:true,description:("Given a path and a tree structure, which can be either an array or an object, "+ "traverse the tree structure and return the value at the path if it exists, otherwise "+ "undefined is returned.<br>"+ "(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)"),usage:["path:array","tree_structure:array|object"],tags:["find","position","index","path","array","tree","contains","set_path"]
-                            };
-                            return Environment.definitions;
-                            
-                        }()];
-                        let delete_prop=new Function("obj","...args","{\n                                        if (args.length == 1) {\n                                            return delete obj[args[0]];\n                                        } else {\n                                            while (args.length > 0) {\n                                                let prop = args.shift();\n                                                delete obj[prop];\n                                            }\n                                        }\n                                        return obj;\n                                    }");
-                        ;
-                        await async function(){
-                            Environment.global_ctx.scope["delete_prop"]=delete_prop;
-                            return Environment.global_ctx.scope;
-                            
-                        }();
-                        [await async function(){
-                            Environment.definitions["delete_prop"]={
-                                core_lang:true,description:("Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"+ "(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"+ "(delete_prop foo `abc `def) => { ghi: 789 }<br>"),usage:["obj:objects","key0:string","keyN?:string"],tags:["delete","keys","object","remove","remove_prop","mutate"]
                             };
                             return Environment.definitions;
                             
@@ -2540,16 +2540,18 @@ export async function init_dlisp(Environment)  {
                         }()];
                         let evaluate=async function(expression,ctx,opts) {
                             {
-                                if (check_true ((namespace===active_namespace))){
-                                      return await evaluate_local(expression,ctx,opts)
-                                } else {
-                                      return await (async function() {
-                                        {
-                                             let __call_target__=children[active_namespace], __call_method__="evaluate";
-                                            return await __call_target__[__call_method__].call(__call_target__,expression,ctx,opts)
-                                        } 
-                                    })()
-                                }
+                                 return  await async function(){
+                                    if (check_true( (namespace===active_namespace))) {
+                                         return await evaluate_local(expression,ctx,opts)
+                                    } else if (check_true( (namespace==="core"))) {
+                                         return await (async function() {
+                                            {
+                                                 let __call_target__=children[active_namespace], __call_method__="evaluate";
+                                                return await __call_target__[__call_method__].call(__call_target__,expression,ctx,opts)
+                                            } 
+                                        })()
+                                    }
+                                } ()
                             }
                         };
                         ;
@@ -2697,8 +2699,8 @@ export async function init_dlisp(Environment)  {
                                                 return children_declarations;
                                                 
                                             }();
-                                            await child_env["evaluate"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.context.scope sym))");
-                                            await child_env["evaluate"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.definitions sym))");
+                                            await child_env["evaluate_local"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.context.scope sym))");
+                                            await child_env["evaluate_local"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.definitions sym))");
                                             if (check_true (options.contained)){
                                                  await async function(){
                                                     let __target_obj__259=children_declarations[name];
@@ -2799,6 +2801,25 @@ export async function init_dlisp(Environment)  {
                                 
                             }()
                         };
+                        let get_namespace_handle=async function(name) {
+                            {
+                                 return  await async function(){
+                                    if (check_true( (namespace===name))) {
+                                         return Environment
+                                    } else if (check_true( (namespace==="core"))) {
+                                         if (check_true (((name instanceof String || typeof name==='string')&& children[name]))){
+                                              return children[name]
+                                        }
+                                    } else if (check_true(parent_environment)) {
+                                         return await parent_environment["get_namespace_handle"].call(parent_environment,name)
+                                    } else  {
+                                         throw new Error("invalid namespace handle requested");
+                                        
+                                    }
+                                } ()
+                            }
+                        };
+                        ;
                         let included_globals=async function() {
                              return  {
                                 definitions:{ "MAX_SAFE_INTEGER":{ "core_lang":true
@@ -2851,6 +2872,7 @@ export async function init_dlisp(Environment)  {
 },"is_date?":{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 },"ends_with?":{ "core_lang":true,"description":"for a given string or array, checks to see if it ends with the given start_value.  Non string args return false.","usage":["end_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce"]
 },"starts_with?":{ "core_lang":true,"description":"for a given string or array, checks to see if it starts with the given start_value.  Non string args return false.","usage":["start_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce","begin"]
+},"delete_prop":{ "core_lang":true,"description":"Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>(delete_prop foo `abc `def) => { ghi: 789 }<br>","usage":["obj:objects","key0:string","keyN?:string"],"tags":["delete","keys","object","remove","remove_prop","mutate"]
 },"blank?":{ "core_lang":true,"description":"Given a value, if it is equal (via eq) to nil or to \"\" (an empty string), returns true, otherwise false.","usage":["val:*"],"tags":["string","empty","text"]
 },"contains?":{ "core_lang":true,"description":"Given a target value and container value (array, set, or string), checks if the container has the value. If it is found, true is returned, otherwise false if returned.  ","tags":["string","array","set","has","includes","indexOf"],"usage":["value:*","container:array|set|string"]
 },"make_set":{ "core_lang":true,"description":"If given an array, a new Set is returned containing the elements of the array. If given an object, a new Set is returned containing the values of the object, and the keys are discarded. If given a set, new Set is created and returend  from the values of the old set.","usage":["vals:array|object|set"],"tags":["array","set","object","values","convert"]
@@ -2864,7 +2886,6 @@ export async function init_dlisp(Environment)  {
 },"merge_objects":{ "core_lang":true,"description":"Merge objects takes an array of objects and returns an object whose keys and values are the sum of the provided objects (same behavior as add with objects).  If objects have the same keys, the last element in the array with the duplicate key will be used to provide the value for that key.","usage":["objects:array"],"tags":["add","merge","keys","values","objects","value"]
 },"index_of":{ "core_lang":true,"description":"Given a value and an array container, returns the index of the value in the array, or -1 if not found.","usage":["value:number|string|boolean","container:array"],"tags":["find","position","index","array","contains"]
 },"resolve_path":{ "core_lang":true,"description":"Given a path and a tree structure, which can be either an array or an object, traverse the tree structure and return the value at the path if it exists, otherwise undefined is returned.<br>(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)","usage":["path:array","tree_structure:array|object"],"tags":["find","position","index","path","array","tree","contains","set_path"]
-},"delete_prop":{ "core_lang":true,"description":"Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>(delete_prop foo `abc `def) => { ghi: 789 }<br>","usage":["obj:objects","key0:string","keyN?:string"],"tags":["delete","keys","object","remove","remove_prop","mutate"]
 },"min_value":{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."
 },"max_value":{ "name":"max_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the largest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."
 },"interlace":{ "core_lang":true,"usage":["list0:array","list1:array","listn?:array"],"description":"Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ...","tags":["list","array","join","merge"]
@@ -3129,7 +3150,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","core-ext","html"],build:"2022.08.07.11.06",imports:new Object(),repl:new Object()
+    },features:["compiler","repl","core-ext","html","build-tools","browser"],build:"2022.08.12.09.31",imports:new Object(),repl:new Object()
 },imports:new Object(),symbols:await ( async function(){let __obj__1=new Object();__obj__1["MAX_SAFE_INTEGER"]=9007199254740991;__obj__1["LispSyntaxError"]=LispSyntaxError;__obj__1["sub_type"]=subtype;__obj__1["__VERBOSITY__"]=0;__obj__1["int"]=parseInt;__obj__1["float"]=parseFloat;__obj__1["values"]=function anonymous(...args
 ) {
 {
@@ -3380,6 +3401,19 @@ export async function init_dlisp(Environment)  {
 };__obj__1["starts_with?"]=function anonymous(val,text
 ) {
 { if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}
+};__obj__1["delete_prop"]=function anonymous(obj,...args
+) {
+{
+                                        if (args.length == 1) {
+                                            return delete obj[args[0]];
+                                        } else {
+                                            while (args.length > 0) {
+                                                let prop = args.shift();
+                                                delete obj[prop];
+                                            }
+                                        }
+                                        return obj;
+                                    }
 };__obj__1["blank?"]=function(val) {
                              return  ((val==null)|| ((val instanceof String || typeof val==='string')&& (val==="")))
                         };__obj__1["contains?"]=function anonymous(value,container
@@ -3439,27 +3473,27 @@ export async function init_dlisp(Environment)  {
                                             };
                                             ;
                                             await (async function() {
-                                                let __for_body__119=async function(__item) {
+                                                let __for_body__121=async function(__item) {
                                                     __result=await __action(__item);
                                                     if (check_true (__result)){
                                                           return (__collector).push(__result)
                                                     }
                                                 };
-                                                let __array__120=[],__elements__118=await (async function() {
+                                                let __array__122=[],__elements__120=await (async function() {
                                                     {
                                                          let __call_target__=await parent_environment["meta_for_symbol"].call(parent_environment,quoted_symbol,true), __call_method__="flat";
                                                         return await __call_target__[__call_method__].call(__call_target__,1)
                                                     } 
                                                 })();
                                                 let __BREAK__FLAG__=false;
-                                                for(let __iter__117 in __elements__118) {
-                                                    __array__120.push(await __for_body__119(__elements__118[__iter__117]));
+                                                for(let __iter__119 in __elements__120) {
+                                                    __array__122.push(await __for_body__121(__elements__120[__iter__119]));
                                                     if(__BREAK__FLAG__) {
-                                                         __array__120.pop();
+                                                         __array__122.pop();
                                                         break;
                                                         
                                                     }
-                                                }return __array__120;
+                                                }return __array__122;
                                                  
                                             })();
                                              __collector
@@ -3477,20 +3511,20 @@ export async function init_dlisp(Environment)  {
                                             };
                                             ;
                                             await (async function() {
-                                                let __for_body__123=async function(__item) {
+                                                let __for_body__125=async function(__item) {
                                                     __result=await __action(__item);
                                                     if (check_true (__result)){
                                                           return (__collector).push(__result)
                                                     }
                                                 };
-                                                let __array__124=[],__elements__122=await (async function ()  {
-                                                    let ____collector__125= async function(){
+                                                let __array__126=[],__elements__124=await (async function ()  {
+                                                    let ____collector__127= async function(){
                                                         return []
                                                     };
-                                                    let ____result__126= async function(){
+                                                    let ____result__128= async function(){
                                                         return null
                                                     };
-                                                    let ____action__127= async function(){
+                                                    let ____action__129= async function(){
                                                         return async function(child_data) {
                                                             if (check_true (await not((child_data['0']===await (await get_global("current_namespace"))())))){
                                                                  return  await child_data['1']["meta_for_symbol"].call(child_data['1'],quoted_symbol)
@@ -3498,44 +3532,44 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     };
                                                     {
-                                                        let __collector=await ____collector__125();
+                                                        let __collector=await ____collector__127();
                                                         ;
-                                                        let __result=await ____result__126();
+                                                        let __result=await ____result__128();
                                                         ;
-                                                        let __action=await ____action__127();
+                                                        let __action=await ____action__129();
                                                         ;
                                                         ;
                                                         await (async function() {
-                                                            let __for_body__130=async function(__item) {
+                                                            let __for_body__132=async function(__item) {
                                                                 __result=await __action(__item);
                                                                 if (check_true (__result)){
                                                                       return (__collector).push(__result)
                                                                 }
                                                             };
-                                                            let __array__131=[],__elements__129=await pairs(children);
+                                                            let __array__133=[],__elements__131=await pairs(children);
                                                             let __BREAK__FLAG__=false;
-                                                            for(let __iter__128 in __elements__129) {
-                                                                __array__131.push(await __for_body__130(__elements__129[__iter__128]));
+                                                            for(let __iter__130 in __elements__131) {
+                                                                __array__133.push(await __for_body__132(__elements__131[__iter__130]));
                                                                 if(__BREAK__FLAG__) {
-                                                                     __array__131.pop();
+                                                                     __array__133.pop();
                                                                     break;
                                                                     
                                                                 }
-                                                            }return __array__131;
+                                                            }return __array__133;
                                                              
                                                         })();
                                                          __collector
                                                     }
                                                 } )();
                                                 let __BREAK__FLAG__=false;
-                                                for(let __iter__121 in __elements__122) {
-                                                    __array__124.push(await __for_body__123(__elements__122[__iter__121]));
+                                                for(let __iter__123 in __elements__124) {
+                                                    __array__126.push(await __for_body__125(__elements__124[__iter__123]));
                                                     if(__BREAK__FLAG__) {
-                                                         __array__124.pop();
+                                                         __array__126.pop();
                                                         break;
                                                         
                                                     }
-                                                }return __array__124;
+                                                }return __array__126;
                                                  
                                             })();
                                              __collector
@@ -3605,9 +3639,9 @@ export async function init_dlisp(Environment)  {
                                                   return namespace_identity['0']
                                             } 
                                         })();
-                                         ( get_global("delete_prop"))(Environment.definitions,target_symbol);
+                                         delete_prop(Environment.definitions,target_symbol);
                                         if (check_true (Environment.global_ctx.scope[target_symbol])){
-                                              return  ( get_global("delete_prop"))(Environment.global_ctx.scope,target_symbol)
+                                              return  delete_prop(Environment.global_ctx.scope,target_symbol)
                                         } else {
                                               return false
                                         }
@@ -3630,11 +3664,11 @@ export async function init_dlisp(Environment)  {
                             
                         };__obj__1["eval_exp"]=async function(expression) {
                              return  await (async function(){
-                                let __array_op_rval__138=expression;
-                                 if (__array_op_rval__138 instanceof Function){
-                                    return await __array_op_rval__138() 
+                                let __array_op_rval__140=expression;
+                                 if (__array_op_rval__140 instanceof Function){
+                                    return await __array_op_rval__140() 
                                 } else {
-                                    return[__array_op_rval__138]
+                                    return[__array_op_rval__140]
                                 }
                             })()
                         };__obj__1["indirect_new"]=function anonymous(...args
@@ -3682,16 +3716,16 @@ export async function init_dlisp(Environment)  {
                              ( get_global("assert"))((step>0),"range: step must be > 0");
                              ( get_global("assert"))((from_to['1']>=from_to['0']),"range: lower bound must be greater or equal than upper bound");
                              ( function(){
-                                 let __test_condition__143=function() {
+                                 let __test_condition__145=function() {
                                      return  (idx<from_to['1'])
                                 };
-                                let __body_ref__144=function() {
+                                let __body_ref__146=function() {
                                     (acc).push(idx);
                                      return  idx+=step
                                 };
                                 let __BREAK__FLAG__=false;
-                                while( __test_condition__143()) {
-                                     __body_ref__144();
+                                while( __test_condition__145()) {
+                                     __body_ref__146();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -3752,19 +3786,6 @@ export async function init_dlisp(Environment)  {
                                         return path.reduce(function(prev, curr) {
                                             return prev ? prev[curr] : undefined
                                         }, obj || {})
-                                    }
-};__obj__1["delete_prop"]=function anonymous(obj,...args
-) {
-{
-                                        if (args.length == 1) {
-                                            return delete obj[args[0]];
-                                        } else {
-                                            while (args.length > 0) {
-                                                let prop = args.shift();
-                                                delete obj[prop];
-                                            }
-                                        }
-                                        return obj;
                                     }
 };__obj__1["min_value"]=async function(v) {
     let m;
@@ -4519,16 +4540,18 @@ export async function init_dlisp(Environment)  {
                             } ()
                         };__obj__1["evaluate"]=async function(expression,ctx,opts) {
                             {
-                                if (check_true ((namespace===active_namespace))){
-                                      return await evaluate_local(expression,ctx,opts)
-                                } else {
-                                      return await (async function() {
-                                        {
-                                             let __call_target__=children[active_namespace], __call_method__="evaluate";
-                                            return await __call_target__[__call_method__].call(__call_target__,expression,ctx,opts)
-                                        } 
-                                    })()
-                                }
+                                 return  await async function(){
+                                    if (check_true( (namespace===active_namespace))) {
+                                         return await evaluate_local(expression,ctx,opts)
+                                    } else if (check_true( (namespace==="core"))) {
+                                         return await (async function() {
+                                            {
+                                                 let __call_target__=children[active_namespace], __call_method__="evaluate";
+                                                return await __call_target__[__call_method__].call(__call_target__,expression,ctx,opts)
+                                            } 
+                                        })()
+                                    }
+                                } ()
                             }
                         };__obj__1["eval_struct"]=async function(lisp_struct,ctx,opts) {
                             let rval;
@@ -4559,7 +4582,7 @@ export async function init_dlisp(Environment)  {
                                 } else {
                                       return await clone(val,0,Environment)
                                 }
-                            };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","core-ext","io","Deno","build-tools","*env_skeleton*"],build:"2022.08.07.11.06",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["core/path"]={symbol:"path",namespace:"core",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options) {
+                            };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","core-ext","io","Deno","build-tools"],build:"2022.08.12.09.31",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["core/path"]={symbol:"path",namespace:"core",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options) {
                                  return  await async function(){
                                     if (check_true( await not((name instanceof String || typeof name==='string')))) {
                                          throw new TypeError("namespace name must be a string");
@@ -4585,8 +4608,8 @@ export async function init_dlisp(Environment)  {
                                                 return children_declarations;
                                                 
                                             }();
-                                            await child_env["evaluate"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.context.scope sym))");
-                                            await child_env["evaluate"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.definitions sym))");
+                                            await child_env["evaluate_local"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.context.scope sym))");
+                                            await child_env["evaluate_local"].call(child_env,"(for_each (sym built_ins) (delete_prop Environment.definitions sym))");
                                             if (check_true (options.contained)){
                                                  await async function(){
                                                     let __target_obj__259=children_declarations[name];
@@ -4675,34 +4698,14 @@ export async function init_dlisp(Environment)  {
                                  return  active_namespace
                             };__obj__1["eval"]=async function(expression) {
                              return  await (async function(){
-                                let __array_op_rval__138=expression;
-                                 if (__array_op_rval__138 instanceof Function){
-                                    return await __array_op_rval__138() 
+                                let __array_op_rval__140=expression;
+                                 if (__array_op_rval__140 instanceof Function){
+                                    return await __array_op_rval__140() 
                                 } else {
-                                    return[__array_op_rval__138]
+                                    return[__array_op_rval__140]
                                 }
                             })()
-                        };__obj__1["reader"]=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;
-                start=await Math.max(0,(idx-10));
-                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));
-                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")
-            };
-            position=async function(offset) {
-                 return  ("line: "+line_number+" column: "+await (async function () {
-                     if (check_true (offset)){
-                          return (column_number+offset)
-                    } else {
-                          return column_number
-                    } 
-                })())
-            };
-            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {
-                 if (check_true ((opts && opts["read_table_entries"]))){
-                      return (opts && opts["read_table_entries"])
-                } else {
-                      return new Object()
-                } 
-            } )(),await ( async function(){
+                        };__obj__1["reader"]=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")            };            position=async function(offset) {                 return  ("line: "+line_number+" column: "+await (async function () {                     if (check_true (offset)){                          return (column_number+offset)                    } else {                          return column_number                    }                 })())            };            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {                 if (check_true ((opts && opts["read_table_entries"]))){                      return (opts && opts["read_table_entries"])                } else {                      return new Object()                }             } )(),await ( async function(){
                 let __obj__1=new Object();
                 __obj__1["("]=[")",async function(block) {
                      return  block
@@ -5181,6 +5184,8 @@ export async function init_dlisp(Environment)  {
                             let build_time;
                             let build_headers;
                             let child_env;
+                            let want_buffer;
+                            let comp_buffer;
                             let preserve_imports;
                             let include_source;
                             let exports;
@@ -5209,6 +5214,8 @@ export async function init_dlisp(Environment)  {
                             build_time=await (await get_global("formatted_date"))(new Date());
                             build_headers=[];
                             child_env=null;
+                            want_buffer=(options.want_buffer|| false);
+                            comp_buffer=null;
                             preserve_imports=await (async function () {
                                  if (check_true ((options&& (options.preserve_imports===false)))){
                                       return false
@@ -5219,8 +5226,8 @@ export async function init_dlisp(Environment)  {
                             include_source=false;
                             exports=[];
                             src=await (async function () {
-                                 if (check_true (Environment.global_ctx.scope["*env_skeleton*"])){
-                                      return await clone(Environment.global_ctx.scope["*env_skeleton*"])
+                                 if (check_true (await Environment["get_global"].call(Environment,"*env_skeleton*",null))){
+                                      return await clone(await Environment["get_global"].call(Environment,"*env_skeleton*"))
                                 } else {
                                       return await (await get_global("reader"))(await (await get_global("read_text_file"))("./src/environment.lisp"))
                                 } 
@@ -5340,7 +5347,7 @@ export async function init_dlisp(Environment)  {
                                                             }
                                                         })()
                                                     };
-                                                    let __array__332=[],__elements__330=await values(await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope));
+                                                    let __array__332=[],__elements__330=await values((await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope)|| new Object()));
                                                     let __BREAK__FLAG__=false;
                                                     for(let __iter__329 in __elements__330) {
                                                         __array__332.push(await __for_body__331(__elements__330[__iter__329]));
@@ -5365,7 +5372,13 @@ export async function init_dlisp(Environment)  {
                                     })()]],["children",my_children]]
                                 } )()) 
                             })()]);
-                            output_path=(options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope));
+                            output_path=await (async function () {
+                                 if (check_true (options.want_buffer)){
+                                      return null
+                                } else {
+                                      return (options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope))
+                                } 
+                            })();
                             if (check_true (output_path instanceof Function)){
                                  output_path=await (async function(){
                                     let __array_op_rval__337=output_path;
@@ -5379,13 +5392,13 @@ export async function init_dlisp(Environment)  {
                             if (check_true ((await not((output_path instanceof String || typeof output_path==='string'))&& output_path)))throw new EvalError("invalid name for target for saving the environment.  Must be a string or function");
                             ;
                              return  await async function(){
-                                if (check_true( (output_path&& await ends_with_ques_(".js",output_path)))) {
+                                if (check_true( (want_buffer|| (output_path&& await ends_with_ques_(".js",output_path))))) {
                                     (build_headers).push(("// Build Time: "+ build_time));
                                     (build_headers).push(("// Version: "+ version_tag));
                                     (build_headers).push(("export const DLISP_ENV_VERSION='"+ version_tag+ "';"));
                                     await env_log("saving to: ",output_path);
                                      return  await (await get_global("compile_buffer"))(src,"init_dlisp",{
-                                        namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,imports:await (async function(){
+                                        namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,want_buffer:want_buffer,imports:await (async function(){
                                             if (check_true (preserve_imports)){
                                                   return await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope)
                                             }
@@ -5454,27 +5467,7 @@ export async function init_dlisp(Environment)  {
     } else {
           return ["=:defglobal",macro_name,["=:fn",macro_args,].concat(macro_body),["=:quote",source_details]]
     }
-};__obj__1["read_lisp"]=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;
-                start=await Math.max(0,(idx-10));
-                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));
-                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")
-            };
-            position=async function(offset) {
-                 return  ("line: "+line_number+" column: "+await (async function () {
-                     if (check_true (offset)){
-                          return (column_number+offset)
-                    } else {
-                          return column_number
-                    } 
-                })())
-            };
-            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {
-                 if (check_true ((opts && opts["read_table_entries"]))){
-                      return (opts && opts["read_table_entries"])
-                } else {
-                      return new Object()
-                } 
-            } )(),await ( async function(){
+};__obj__1["read_lisp"]=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")            };            position=async function(offset) {                 return  ("line: "+line_number+" column: "+await (async function () {                     if (check_true (offset)){                          return (column_number+offset)                    } else {                          return column_number                    }                 })())            };            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {                 if (check_true ((opts && opts["read_table_entries"]))){                      return (opts && opts["read_table_entries"])                } else {                      return new Object()                }             } )(),await ( async function(){
                 let __obj__1=new Object();
                 __obj__1["("]=[")",async function(block) {
                      return  block
@@ -6252,7 +6245,7 @@ export async function init_dlisp(Environment)  {
         let __for_body__28=async function(bind_set) {
              return  await async function(){
                 if (check_true( ((bind_set instanceof Array)&& (((bind_set && bind_set.length)===2)|| ((bind_set && bind_set.length)===3))&& ((bind_set && bind_set["1"]) instanceof Array)&& ((bind_set && bind_set["1"] && bind_set["1"]["length"])===2)))) {
-                    binding=["=:quote",["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])]];
+                    binding=["=:quotel",["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])]];
                      return  (acc).push(await (async function ()  {
                         let __array_arg__30=(async function() {
                             if (check_true (((bind_set && bind_set["2"]) instanceof Object))){
@@ -9316,23 +9309,23 @@ export async function init_dlisp(Environment)  {
                                 let error=new Error((is_error && is_error["error"]));
                                 ;
                                 await (async function() {
-                                    let __for_body__610=async function(pset) {
+                                    let __for_body__616=async function(pset) {
                                          return  await async function(){
                                             error[(pset && pset["0"])]=(pset && pset["1"]);
                                             return error;
                                             
                                         }()
                                     };
-                                    let __array__611=[],__elements__609=await (await Environment.get_global("pairs"))(is_error);
+                                    let __array__617=[],__elements__615=await (await Environment.get_global("pairs"))(is_error);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__608 in __elements__609) {
-                                        __array__611.push(await __for_body__610(__elements__609[__iter__608]));
+                                    for(let __iter__614 in __elements__615) {
+                                        __array__617.push(await __for_body__616(__elements__615[__iter__614]));
                                         if(__BREAK__FLAG__) {
-                                             __array__611.pop();
+                                             __array__617.pop();
                                             break;
                                             
                                         }
-                                    }return __array__611;
+                                    }return __array__617;
                                      
                                 })();
                                 throw error;
@@ -9713,30 +9706,34 @@ export async function init_dlisp(Environment)  {
                             };
                             ref_name=await sanitize_js_ref_name(name);
                             declared_type_value=await get_declarations(ctx,ref_name);
-                            if (check_true ((declared_type_value && declared_type_value["type"]))){
-                                  return (declared_type_value && declared_type_value["type"])
-                            } else {
-                                ref_name=await first(await (await Environment.get_global("get_object_path"))(ref_name));
-                                 return  await async function(){
-                                    if (check_true( op_lookup[ref_name])) {
-                                         return AsyncFunction
-                                    } else if (check_true( await not((undefined===await (async function(){
-                                        let __targ__30=(ctx && ctx["scope"]);
-                                        if (__targ__30){
-                                             return(__targ__30)[ref_name]
-                                        } 
-                                    })())))) {
-                                         return await (async function(){
-                                            let __targ__31=(ctx && ctx["scope"]);
-                                            if (__targ__31){
-                                                 return(__targ__31)[ref_name]
+                             return  await async function(){
+                                if (check_true((declared_type_value && declared_type_value["declared_global"]))) {
+                                     return undefined
+                                } else if (check_true((declared_type_value && declared_type_value["type"]))) {
+                                     return (declared_type_value && declared_type_value["type"])
+                                } else  {
+                                    ref_name=await first(await (await Environment.get_global("get_object_path"))(ref_name));
+                                     return  await async function(){
+                                        if (check_true( op_lookup[ref_name])) {
+                                             return AsyncFunction
+                                        } else if (check_true( await not((undefined===await (async function(){
+                                            let __targ__30=(ctx && ctx["scope"]);
+                                            if (__targ__30){
+                                                 return(__targ__30)[ref_name]
                                             } 
-                                        })()
-                                    } else if (check_true((ctx && ctx["parent"]))) {
-                                         return await get_ctx((ctx && ctx["parent"]),ref_name)
-                                    }
-                                } ()
-                            }
+                                        })())))) {
+                                             return await (async function(){
+                                                let __targ__31=(ctx && ctx["scope"]);
+                                                if (__targ__31){
+                                                     return(__targ__31)[ref_name]
+                                                } 
+                                            })()
+                                        } else if (check_true((ctx && ctx["parent"]))) {
+                                             return await get_ctx((ctx && ctx["parent"]),ref_name)
+                                        }
+                                    } ()
+                                }
+                            } ()
                         }
                     } ()
                 };
@@ -9804,23 +9801,42 @@ export async function init_dlisp(Environment)  {
                             type:undefined,inlined:false
                         }
                     };
-                    await async function(){
-                        dec_struct[declaration_type]=value;
-                        return dec_struct;
-                        
-                    }();
-                    await async function(){
-                        let __target_obj__35=(ctx && ctx["declared_types"]);
-                        __target_obj__35[sname]=dec_struct;
-                        return __target_obj__35;
-                        
-                    }();
-                     return  await (async function(){
-                        let __targ__36=(ctx && ctx["declared_types"]);
-                        if (__targ__36){
-                             return(__targ__36)[sname]
-                        } 
-                    })()
+                     return  await async function(){
+                        if (check_true( ((declaration_type==="location")&& (value==="global")))) {
+                            has_lisp_globals=true;
+                            if (check_true ((undefined===dec_struct["type"])))throw new SyntaxError("global declaration must be after declaration of type for symbol");
+                            ;
+                            await async function(){
+                                dec_struct["declared_global"]=true;
+                                return dec_struct;
+                                
+                            }();
+                             return  await async function(){
+                                let __target_obj__35=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                __target_obj__35[name]=dec_struct["type"];
+                                return __target_obj__35;
+                                
+                            }()
+                        } else  {
+                            await async function(){
+                                dec_struct[declaration_type]=value;
+                                return dec_struct;
+                                
+                            }();
+                            await async function(){
+                                let __target_obj__37=(ctx && ctx["declared_types"]);
+                                __target_obj__37[sname]=dec_struct;
+                                return __target_obj__37;
+                                
+                            }();
+                             return  await (async function(){
+                                let __targ__38=(ctx && ctx["declared_types"]);
+                                if (__targ__38){
+                                     return(__targ__38)[sname]
+                                } 
+                            })()
+                        }
+                    } ()
                 };
                 is_ambiguous_ques_=async function(ctx,name) {
                     let ref_name;
@@ -9844,19 +9860,19 @@ export async function init_dlisp(Environment)  {
                             ref_name=await first(await (await Environment.get_global("get_object_path"))(ref_name));
                              return  await async function(){
                                 if (check_true( await (async function(){
-                                    let __targ__37=(ctx && ctx["ambiguous"]);
-                                    if (__targ__37){
-                                         return(__targ__37)[ref_name]
+                                    let __targ__39=(ctx && ctx["ambiguous"]);
+                                    if (__targ__39){
+                                         return(__targ__39)[ref_name]
                                     } 
                                 })())) {
                                      return true
                                 } else if (check_true((ctx && ctx["parent"]))) {
                                      return await (async function(){
-                                        let __array_op_rval__38=is_ambiguous_ques_;
-                                         if (__array_op_rval__38 instanceof Function){
-                                            return await __array_op_rval__38((ctx && ctx["parent"]),ref_name) 
+                                        let __array_op_rval__40=is_ambiguous_ques_;
+                                         if (__array_op_rval__40 instanceof Function){
+                                            return await __array_op_rval__40((ctx && ctx["parent"]),ref_name) 
                                         } else {
-                                            return[__array_op_rval__38,(ctx && ctx["parent"]),ref_name]
+                                            return[__array_op_rval__40,(ctx && ctx["parent"]),ref_name]
                                         }
                                     })()
                                 }
@@ -9866,9 +9882,9 @@ export async function init_dlisp(Environment)  {
                 };
                 set_ambiguous=async function(ctx,name) {
                      return  await async function(){
-                        let __target_obj__39=(ctx && ctx["ambiguous"]);
-                        __target_obj__39[name]=true;
-                        return __target_obj__39;
+                        let __target_obj__41=(ctx && ctx["ambiguous"]);
+                        __target_obj__41[name]=true;
+                        return __target_obj__41;
                         
                     }()
                 };
@@ -9898,7 +9914,7 @@ export async function init_dlisp(Environment)  {
                             text_chars=(symname).split("");
                             acc=[];
                             await (async function() {
-                                let __for_body__42=async function(t) {
+                                let __for_body__44=async function(t) {
                                      return  await async function(){
                                         if (check_true( (t==="+"))) {
                                              return (acc).push("_plus_")
@@ -9930,16 +9946,16 @@ export async function init_dlisp(Environment)  {
                                         }
                                     } ()
                                 };
-                                let __array__43=[],__elements__41=text_chars;
+                                let __array__45=[],__elements__43=text_chars;
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__40 in __elements__41) {
-                                    __array__43.push(await __for_body__42(__elements__41[__iter__40]));
+                                for(let __iter__42 in __elements__43) {
+                                    __array__45.push(await __for_body__44(__elements__43[__iter__42]));
                                     if(__BREAK__FLAG__) {
-                                         __array__43.pop();
+                                         __array__45.pop();
                                         break;
                                         
                                     }
-                                }return __array__43;
+                                }return __array__45;
                                  
                             })();
                              return  (acc).join("")
@@ -9949,7 +9965,7 @@ export async function init_dlisp(Environment)  {
                 find_in_context=async function(ctx,name) {
                     let symname;
                     let ref;
-                    let __is_literal_ques___44= async function(){
+                    let __is_literal_ques___46= async function(){
                         return (await is_number_ques_(name)|| (await not(ref)&& (name instanceof String || typeof name==='string'))|| ("nil"===symname)|| ("null"===symname)|| (ref&& ("undefined"===symname))|| (ref&& ("else"===symname))|| (ref&& ("catch"===symname))|| (true===name)|| (false===name))
                     };
                     let special;
@@ -9970,7 +9986,7 @@ export async function init_dlisp(Environment)  {
                             }
                         } ();
                         ref=(symname&& ((name instanceof String || typeof name==='string')&& (await length(name)>2)&& await starts_with_ques_("=:",name)));
-                        let is_literal_ques_=await __is_literal_ques___44();
+                        let is_literal_ques_=await __is_literal_ques___46();
                         ;
                         special=(ref&& symname&& await contains_ques_(symname,await conj(["unquotem","quotem"],await (await Environment.get_global("keys"))(op_lookup))));
                         local=(await not(special)&& await not(is_literal_ques_)&& symname&& ref&& await get_ctx_val(ctx,symname));
@@ -10123,9 +10139,9 @@ export async function init_dlisp(Environment)  {
                                   return THIS_REFERENCE
                             } else {
                                 let global_ref=await (async function(){
-                                    let __targ__45=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                    if (__targ__45){
-                                         return(__targ__45)[ref_name]
+                                    let __targ__47=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                    if (__targ__47){
+                                         return(__targ__47)[ref_name]
                                     } 
                                 })();
                                 ;
@@ -10156,15 +10172,15 @@ export async function init_dlisp(Environment)  {
                                  return await (await Environment.get_global("resolve_path"))(comps,ref_type)
                             } else if (check_true( ((typeof ref_type==="object")&& await contains_ques_((comps && comps["0"]),await Object["keys"].call(Object,ref_type))))) {
                                 await (async function(){
-                                     let __test_condition__47=async function() {
+                                     let __test_condition__49=async function() {
                                          return  ((ref_type==undefined)|| ((comps && comps.length)>0))
                                     };
-                                    let __body_ref__48=async function() {
+                                    let __body_ref__50=async function() {
                                          return  ref_type=ref_type[(comps).shift()]
                                     };
                                     let __BREAK__FLAG__=false;
-                                    while(await __test_condition__47()) {
-                                        await __body_ref__48();
+                                    while(await __test_condition__49()) {
+                                        await __body_ref__50();
                                          if(__BREAK__FLAG__) {
                                              break;
                                             
@@ -10175,11 +10191,11 @@ export async function init_dlisp(Environment)  {
                                  return  ref_type
                             } else  {
                                 await (async function(){
-                                    let __array_op_rval__49=get_lisp_ctx_log;
-                                     if (__array_op_rval__49 instanceof Function){
-                                        return await __array_op_rval__49("symbol not found: ",name,ref_name,ref_type,cannot_be_js_global) 
+                                    let __array_op_rval__51=get_lisp_ctx_log;
+                                     if (__array_op_rval__51 instanceof Function){
+                                        return await __array_op_rval__51("symbol not found: ",name,ref_name,ref_type,cannot_be_js_global) 
                                     } else {
-                                        return[__array_op_rval__49,"symbol not found: ",name,ref_name,ref_type,cannot_be_js_global]
+                                        return[__array_op_rval__51,"symbol not found: ",name,ref_name,ref_type,cannot_be_js_global]
                                     }
                                 })();
                                  return  undefined
@@ -10227,21 +10243,21 @@ export async function init_dlisp(Environment)  {
                         }
                     } else {
                           return await (async function() {
-                            let __for_body__52=async function(pset) {
+                            let __for_body__54=async function(pset) {
                                  return  {
                                     type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+ await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
                                 }
                             };
-                            let __array__53=[],__elements__51=await (await Environment.get_global("pairs"))(obj);
+                            let __array__55=[],__elements__53=await (await Environment.get_global("pairs"))(obj);
                             let __BREAK__FLAG__=false;
-                            for(let __iter__50 in __elements__51) {
-                                __array__53.push(await __for_body__52(__elements__51[__iter__50]));
+                            for(let __iter__52 in __elements__53) {
+                                __array__55.push(await __for_body__54(__elements__53[__iter__52]));
                                 if(__BREAK__FLAG__) {
-                                     __array__53.pop();
+                                     __array__55.pop();
                                     break;
                                     
                                 }
-                            }return __array__53;
+                            }return __array__55;
                              
                         })()
                     }
@@ -10334,7 +10350,7 @@ export async function init_dlisp(Environment)  {
                                  await set_ctx(ctx,"__IN_LAMBDA__",true)
                             };
                              return  await (async function() {
-                                let __for_body__58=async function(arg) {
+                                let __for_body__60=async function(arg) {
                                     idx+=1;
                                     argdetails=await find_in_context(ctx,arg);
                                     argvalue=(argdetails && argdetails["val"]);
@@ -10392,16 +10408,16 @@ export async function init_dlisp(Environment)  {
                                         }
                                     } ()
                                 };
-                                let __array__59=[],__elements__57=args;
+                                let __array__61=[],__elements__59=args;
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__56 in __elements__57) {
-                                    __array__59.push(await __for_body__58(__elements__57[__iter__56]));
+                                for(let __iter__58 in __elements__59) {
+                                    __array__61.push(await __for_body__60(__elements__59[__iter__58]));
                                     if(__BREAK__FLAG__) {
-                                         __array__59.pop();
+                                         __array__61.pop();
                                         break;
                                         
                                     }
-                                }return __array__59;
+                                }return __array__61;
                                  
                             })()
                         }
@@ -10430,12 +10446,12 @@ export async function init_dlisp(Environment)  {
                         await (async function(){
                             try /* TRY SIMPLE */ {
                                   return ntree=await (async function(){
-                                    let __apply_args__61=await lisp_tree["slice"].call(lisp_tree,1);
-                                    return ( precompile_function).apply(this,__apply_args__61)
+                                    let __apply_args__63=await lisp_tree["slice"].call(lisp_tree,1);
+                                    return ( precompile_function).apply(this,__apply_args__63)
                                 })() 
-                            } catch(__exception__60) {
-                                  if (__exception__60 instanceof Error) {
-                                     let e=__exception__60;
+                            } catch(__exception__62) {
+                                  if (__exception__62 instanceof Error) {
+                                     let e=__exception__62;
                                      {
                                         await async function(){
                                             e["handled"]=true;
@@ -10484,9 +10500,9 @@ export async function init_dlisp(Environment)  {
                     };
                     ctx=await new_ctx(ctx);
                     math_op_a=await (async function(){
-                        let __targ__64=await first(tokens);
-                        if (__targ__64){
-                             return(__targ__64)["name"]
+                        let __targ__66=await first(tokens);
+                        if (__targ__66){
+                             return(__targ__66)["name"]
                         } 
                     })();
                     math_op=(op_translation[math_op_a]|| math_op_a);
@@ -10536,18 +10552,18 @@ export async function init_dlisp(Environment)  {
                     } else {
                         (acc).push("(");
                         await (async function(){
-                             let __test_condition__66=async function() {
+                             let __test_condition__68=async function() {
                                  return  (idx<((tokens && tokens.length)- 1))
                             };
-                            let __body_ref__67=async function() {
+                            let __body_ref__69=async function() {
                                 idx+=1;
                                 token=tokens[idx];
                                 await add_operand();
                                  return  (acc).push(await wrap_assignment_value(await compile(token,ctx),ctx))
                             };
                             let __BREAK__FLAG__=false;
-                            while(await __test_condition__66()) {
-                                await __body_ref__67();
+                            while(await __test_condition__68()) {
+                                await __body_ref__69();
                                  if(__BREAK__FLAG__) {
                                      break;
                                     
@@ -10575,11 +10591,11 @@ export async function init_dlisp(Environment)  {
                     preamble=await calling_preamble(ctx);
                     token=await second(tokens);
                     complicated=await (async function(){
-                        let __array_op_rval__68=is_complex_ques_;
-                         if (__array_op_rval__68 instanceof Function){
-                            return await __array_op_rval__68((token && token["val"])) 
+                        let __array_op_rval__70=is_complex_ques_;
+                         if (__array_op_rval__70 instanceof Function){
+                            return await __array_op_rval__70((token && token["val"])) 
                         } else {
-                            return[__array_op_rval__68,(token && token["val"])]
+                            return[__array_op_rval__70,(token && token["val"])]
                         }
                     })();
                     target=await (async function () {
@@ -10593,46 +10609,46 @@ export async function init_dlisp(Environment)  {
                     idx=1;
                     ;
                     await (async function() {
-                        let __for_body__71=async function(t) {
+                        let __for_body__73=async function(t) {
                              return  (wrapper).push(t)
                         };
-                        let __array__72=[],__elements__70=[(preamble && preamble["0"])," ",(preamble && preamble["1"])," ",(preamble && preamble["3"]),"function","()","{"];
+                        let __array__74=[],__elements__72=[(preamble && preamble["0"])," ",(preamble && preamble["1"])," ",(preamble && preamble["3"]),"function","()","{"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__69 in __elements__70) {
-                            __array__72.push(await __for_body__71(__elements__70[__iter__69]));
+                        for(let __iter__71 in __elements__72) {
+                            __array__74.push(await __for_body__73(__elements__72[__iter__71]));
                             if(__BREAK__FLAG__) {
-                                 __array__72.pop();
+                                 __array__74.pop();
                                 break;
                                 
                             }
-                        }return __array__72;
+                        }return __array__74;
                          
                     })();
                     if (check_true (await not((target instanceof String || typeof target==='string')))){
                          await (async function() {
-                            let __for_body__75=async function(t) {
+                            let __for_body__77=async function(t) {
                                  return  (wrapper).push(t)
                             };
-                            let __array__76=[],__elements__74=["let"," ",target_reference,"=",target,";"];
+                            let __array__78=[],__elements__76=["let"," ",target_reference,"=",target,";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__73 in __elements__74) {
-                                __array__76.push(await __for_body__75(__elements__74[__iter__73]));
+                            for(let __iter__75 in __elements__76) {
+                                __array__78.push(await __for_body__77(__elements__76[__iter__75]));
                                 if(__BREAK__FLAG__) {
-                                     __array__76.pop();
+                                     __array__78.pop();
                                     break;
                                     
                                 }
-                            }return __array__76;
+                            }return __array__78;
                              
                         })()
                     } else {
                          target_reference=target
                     };
                     await (async function(){
-                         let __test_condition__77=async function() {
+                         let __test_condition__79=async function() {
                              return  (idx<((tokens && tokens.length)- 1))
                         };
-                        let __body_ref__78=async function() {
+                        let __body_ref__80=async function() {
                             idx+=1;
                             (acc).push(target_reference);
                             token=tokens[idx];
@@ -10650,8 +10666,8 @@ export async function init_dlisp(Environment)  {
                              return  (acc).push(";")
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__77()) {
-                            await __body_ref__78();
+                        while(await __test_condition__79()) {
+                            await __body_ref__80();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -10689,11 +10705,11 @@ export async function init_dlisp(Environment)  {
                               return await async function(){
                                 if (check_true( (target instanceof String || typeof target==='string'))) {
                                      return  await (async function(){
-                                        let __array_op_rval__79=target;
-                                         if (__array_op_rval__79 instanceof Function){
-                                            return await __array_op_rval__79("[",idx_key,"]") 
+                                        let __array_op_rval__81=target;
+                                         if (__array_op_rval__81 instanceof Function){
+                                            return await __array_op_rval__81("[",idx_key,"]") 
                                         } else {
-                                            return[__array_op_rval__79,"[",idx_key,"]"]
+                                            return[__array_op_rval__81,"[",idx_key,"]"]
                                         }
                                     })()
                                 } else  {
@@ -10710,11 +10726,11 @@ export async function init_dlisp(Environment)  {
                     let rval;
                     rval=null;
                     if (check_true ((await (async function(){
-                        let __array_op_rval__80=is_complex_ques_;
-                         if (__array_op_rval__80 instanceof Function){
-                            return await __array_op_rval__80((token && token["val"])) 
+                        let __array_op_rval__82=is_complex_ques_;
+                         if (__array_op_rval__82 instanceof Function){
+                            return await __array_op_rval__82((token && token["val"])) 
                         } else {
-                            return[__array_op_rval__80,(token && token["val"])]
+                            return[__array_op_rval__82,(token && token["val"])]
                         }
                     })()|| (((token && token["val"]) instanceof Array)&& ((token && token["val"] && token["val"]["0"] && token["val"]["0"]["name"])==="if"))))){
                          rval=await compile_wrapper_fn(token,ctx)
@@ -10723,11 +10739,11 @@ export async function init_dlisp(Environment)  {
                     };
                     if (check_true (await not((rval instanceof Array)))){
                          rval=await (async function(){
-                            let __array_op_rval__81=rval;
-                             if (__array_op_rval__81 instanceof Function){
-                                return await __array_op_rval__81() 
+                            let __array_op_rval__83=rval;
+                             if (__array_op_rval__83 instanceof Function){
+                                return await __array_op_rval__83() 
                             } else {
-                                return[__array_op_rval__81]
+                                return[__array_op_rval__83]
                             }
                         })()
                     };
@@ -10756,43 +10772,43 @@ export async function init_dlisp(Environment)  {
                     wrap_style=0;
                     args=[];
                     await (async function() {
-                        let __for_body__84=async function(token) {
+                        let __for_body__86=async function(token) {
                             stmt=await wrap_assignment_value(await compile(token,ctx),ctx);
                              return  (args).push(stmt)
                         };
-                        let __array__85=[],__elements__83=await tokens["slice"].call(tokens,1);
+                        let __array__87=[],__elements__85=await tokens["slice"].call(tokens,1);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__82 in __elements__83) {
-                            __array__85.push(await __for_body__84(__elements__83[__iter__82]));
+                        for(let __iter__84 in __elements__85) {
+                            __array__87.push(await __for_body__86(__elements__85[__iter__84]));
                             if(__BREAK__FLAG__) {
-                                 __array__85.pop();
+                                 __array__87.pop();
                                 break;
                                 
                             }
-                        }return __array__85;
+                        }return __array__87;
                          
                     })();
                     if (check_true (await verbosity())){
                          (inline_log)("args: ",args)
                     };
                     if (check_true (await (async function(){
-                        let __targ__86=(Environment && Environment["inlines"]);
-                        if (__targ__86){
-                             return(__targ__86)[(tokens && tokens["0"] && tokens["0"]["name"])]
+                        let __targ__88=(Environment && Environment["inlines"]);
+                        if (__targ__88){
+                             return(__targ__88)[(tokens && tokens["0"] && tokens["0"]["name"])]
                         } 
                     })())){
                         inline_fn=await (async function(){
-                            let __targ__87=(Environment && Environment["inlines"]);
-                            if (__targ__87){
-                                 return(__targ__87)[(tokens && tokens["0"] && tokens["0"]["name"])]
+                            let __targ__89=(Environment && Environment["inlines"]);
+                            if (__targ__89){
+                                 return(__targ__89)[(tokens && tokens["0"] && tokens["0"]["name"])]
                             } 
                         })();
                          rval=await (async function(){
-                            let __array_op_rval__88=inline_fn;
-                             if (__array_op_rval__88 instanceof Function){
-                                return await __array_op_rval__88(args,ctx) 
+                            let __array_op_rval__90=inline_fn;
+                             if (__array_op_rval__90 instanceof Function){
+                                return await __array_op_rval__90(args,ctx) 
                             } else {
-                                return[__array_op_rval__88,args,ctx]
+                                return[__array_op_rval__90,args,ctx]
                             }
                         })()
                     } else throw new ReferenceError(("no source for named lib function "+ (tokens && tokens["0"] && tokens["0"]["name"])));
@@ -10807,11 +10823,11 @@ export async function init_dlisp(Environment)  {
                     place=await compile_elem((tokens && tokens["1"]),ctx);
                     thing=await compile_elem((tokens && tokens["2"]),ctx);
                      return  await (async function(){
-                        let __array_op_rval__89=place;
-                         if (__array_op_rval__89 instanceof Function){
-                            return await __array_op_rval__89(".push","(",thing,")") 
+                        let __array_op_rval__91=place;
+                         if (__array_op_rval__91 instanceof Function){
+                            return await __array_op_rval__91(".push","(",thing,")") 
                         } else {
-                            return[__array_op_rval__89,".push","(",thing,")"]
+                            return[__array_op_rval__91,".push","(",thing,")"]
                         }
                     })()
                 };
@@ -10821,19 +10837,19 @@ export async function init_dlisp(Environment)  {
                     acc=["["];
                     compiled_values=[];
                     await (async function() {
-                        let __for_body__92=async function(t) {
+                        let __for_body__94=async function(t) {
                              return  (compiled_values).push(await wrap_assignment_value(await compile(t,ctx),ctx))
                         };
-                        let __array__93=[],__elements__91=await tokens["slice"].call(tokens,1);
+                        let __array__95=[],__elements__93=await tokens["slice"].call(tokens,1);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__90 in __elements__91) {
-                            __array__93.push(await __for_body__92(__elements__91[__iter__90]));
+                        for(let __iter__92 in __elements__93) {
+                            __array__95.push(await __for_body__94(__elements__93[__iter__92]));
                             if(__BREAK__FLAG__) {
-                                 __array__93.pop();
+                                 __array__95.pop();
                                 break;
                                 
                             }
-                        }return __array__93;
+                        }return __array__95;
                          
                     })();
                     await push_as_arg_list(acc,compiled_values);
@@ -10876,13 +10892,13 @@ export async function init_dlisp(Environment)  {
                     let acc;
                     acc=[];
                     if (check_true (((tokens instanceof Array)&& ((tokens && tokens.length)===3)))){
-                        let __array_arg__96=(async function() {
+                        let __array_arg__98=(async function() {
                             if (check_true (await (async function(){
-                                let __array_op_rval__94=is_complex_ques_;
-                                 if (__array_op_rval__94 instanceof Function){
-                                    return await __array_op_rval__94((tokens && tokens["1"])) 
+                                let __array_op_rval__96=is_complex_ques_;
+                                 if (__array_op_rval__96 instanceof Function){
+                                    return await __array_op_rval__96((tokens && tokens["1"])) 
                                 } else {
-                                    return[__array_op_rval__94,(tokens && tokens["1"])]
+                                    return[__array_op_rval__96,(tokens && tokens["1"])]
                                 }
                             })())){
                                   return await compile_wrapper_fn((tokens && tokens["1"]),ctx)
@@ -10890,13 +10906,13 @@ export async function init_dlisp(Environment)  {
                                   return await compile((tokens && tokens["1"]),ctx)
                             }
                         } );
-                        let __array_arg__97=(async function() {
+                        let __array_arg__99=(async function() {
                             if (check_true (await (async function(){
-                                let __array_op_rval__95=is_complex_ques_;
-                                 if (__array_op_rval__95 instanceof Function){
-                                    return await __array_op_rval__95((tokens && tokens["1"])) 
+                                let __array_op_rval__97=is_complex_ques_;
+                                 if (__array_op_rval__97 instanceof Function){
+                                    return await __array_op_rval__97((tokens && tokens["1"])) 
                                 } else {
-                                    return[__array_op_rval__95,(tokens && tokens["1"])]
+                                    return[__array_op_rval__97,(tokens && tokens["1"])]
                                 }
                             })())){
                                   return await compile_wrapper_fn((tokens && tokens["2"]),ctx)
@@ -10904,18 +10920,18 @@ export async function init_dlisp(Environment)  {
                                   return await compile((tokens && tokens["2"]),ctx)
                             }
                         } );
-                        return ["(",await __array_arg__96()," ","instanceof"," ",await __array_arg__97(),")"]
+                        return ["(",await __array_arg__98()," ","instanceof"," ",await __array_arg__99(),")"]
                     } else throw new SyntaxError("instanceof requires 2 arguments");
                     
                 };
                 compile_compare=async function(tokens,ctx) {
                     let acc;
                     let ops;
-                    let __operator__98= async function(){
+                    let __operator__100= async function(){
                         return ops[await (async function(){
-                            let __targ__100=await first(tokens);
-                            if (__targ__100){
-                                 return(__targ__100)["name"]
+                            let __targ__102=await first(tokens);
+                            if (__targ__102){
+                                 return(__targ__102)["name"]
                             } 
                         })()]
                     };
@@ -10927,19 +10943,19 @@ export async function init_dlisp(Environment)  {
                         }];
                         ctx=await new_ctx(ctx);
                         ops=await ( async function(){
-                            let __obj__99=new Object();
-                            __obj__99["eq"]="==";
-                            __obj__99["=="]="===";
-                            __obj__99["<"]="<";
-                            __obj__99[">"]=">";
-                            __obj__99["gt"]=">";
-                            __obj__99["lt"]="<";
-                            __obj__99["<="]="<=";
-                            __obj__99[">="]=">=";
-                            return __obj__99;
+                            let __obj__101=new Object();
+                            __obj__101["eq"]="==";
+                            __obj__101["=="]="===";
+                            __obj__101["<"]="<";
+                            __obj__101[">"]=">";
+                            __obj__101["gt"]=">";
+                            __obj__101["lt"]="<";
+                            __obj__101["<="]="<=";
+                            __obj__101[">="]=">=";
+                            return __obj__101;
                             
                         })();
-                        let operator=await __operator__98();
+                        let operator=await __operator__100();
                         ;
                         left=tokens[1];
                         right=tokens[2];
@@ -10965,9 +10981,9 @@ export async function init_dlisp(Environment)  {
                     let target_location_compile_time;
                     acc=[];
                     assignment_operator=await (async function(){
-                        let __targ__101=await first(tokens);
-                        if (__targ__101){
-                             return(__targ__101)["name"]
+                        let __targ__103=await first(tokens);
+                        if (__targ__103){
+                             return(__targ__103)["name"]
                         } 
                     })();
                     token=await second(tokens);
@@ -11016,21 +11032,21 @@ export async function init_dlisp(Environment)  {
                          (acc).push(assignment_value)
                     } else {
                          await (async function() {
-                            let __for_body__105=async function(t) {
+                            let __for_body__107=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__106=[],__elements__104=[{
+                            let __array__108=[],__elements__106=[{
                                 ctype:"statement"
                             },(preamble && preamble["0"])," ","Environment",".","set_global","(","\"",target,"\"",",",assignment_value,")"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__103 in __elements__104) {
-                                __array__106.push(await __for_body__105(__elements__104[__iter__103]));
+                            for(let __iter__105 in __elements__106) {
+                                __array__108.push(await __for_body__107(__elements__106[__iter__105]));
                                 if(__BREAK__FLAG__) {
-                                     __array__106.pop();
+                                     __array__108.pop();
                                     break;
                                     
                                 }
-                            }return __array__106;
+                            }return __array__108;
                              
                         })()
                     };
@@ -11071,16 +11087,16 @@ export async function init_dlisp(Environment)  {
                                 flattened=await flatten(final_stmt);
                                 await async function(){
                                     if (check_true( ((await first(flattened) instanceof Object)&& await (async function(){
-                                        let __targ__108=await first(flattened);
-                                        if (__targ__108){
-                                             return(__targ__108)["ctype"]
+                                        let __targ__110=await first(flattened);
+                                        if (__targ__110){
+                                             return(__targ__110)["ctype"]
                                         } 
                                     })()))) {
                                          return inst=await first(flattened)
                                     } else if (check_true( ((await first(flattened) instanceof String || typeof await first(flattened)==='string')&& await starts_with_ques_("/*",await first(flattened))&& (await second(flattened) instanceof Object)&& await (async function(){
-                                        let __targ__109=await second(flattened);
-                                        if (__targ__109){
-                                             return(__targ__109)["ctype"]
+                                        let __targ__111=await second(flattened);
+                                        if (__targ__111){
+                                             return(__targ__111)["ctype"]
                                         } 
                                     })()))) {
                                          return inst=await second(flattened)
@@ -11116,7 +11132,7 @@ export async function init_dlisp(Environment)  {
                         {
                             let idx;
                             let rval;
-                            let __tokens__110= async function(){
+                            let __tokens__112= async function(){
                                 return null
                             };
                             let stmt;
@@ -11124,7 +11140,7 @@ export async function init_dlisp(Environment)  {
                             {
                                 idx=0;
                                 rval=null;
-                                let tokens=await __tokens__110();
+                                let tokens=await __tokens__112();
                                 ;
                                 stmt=null;
                                 num_non_return_statements=(await length(lisp_tree)- 2);
@@ -11136,10 +11152,10 @@ export async function init_dlisp(Environment)  {
                                     } 
                                 })();
                                 await (async function(){
-                                     let __test_condition__111=async function() {
+                                     let __test_condition__113=async function() {
                                          return  (idx<num_non_return_statements)
                                     };
-                                    let __body_ref__112=async function() {
+                                    let __body_ref__114=async function() {
                                         idx+=1;
                                         await set_ctx(ctx,"__TOP_LEVEL__",true);
                                         if (check_true (await verbosity(ctx))){
@@ -11157,8 +11173,8 @@ export async function init_dlisp(Environment)  {
                                         }
                                     };
                                     let __BREAK__FLAG__=false;
-                                    while(await __test_condition__111()) {
-                                        await __body_ref__112();
+                                    while(await __test_condition__113()) {
+                                        await __body_ref__114();
                                          if(__BREAK__FLAG__) {
                                              break;
                                             
@@ -11241,10 +11257,10 @@ export async function init_dlisp(Environment)  {
                          (acc).push(first_level_setup)
                     };
                     await (async function(){
-                         let __test_condition__114=async function() {
+                         let __test_condition__116=async function() {
                              return  (idx<((tokens && tokens.length)- 1))
                         };
-                        let __body_ref__115=async function() {
+                        let __body_ref__117=async function() {
                             idx+=1;
                             token=tokens[idx];
                             if (check_true ((idx===((tokens && tokens.length)- 1)))){
@@ -11283,9 +11299,9 @@ export async function init_dlisp(Environment)  {
                             } ();
                             await (await Environment.get_global("assert"))(await not((stmt===undefined)),"compile_block: returned stmt is undefined");
                             stmt_ctype=(((ctx && ctx["block_step"])>0)&& (await first(stmt) instanceof Object)&& await (async function(){
-                                let __targ__118=await first(stmt);
-                                if (__targ__118){
-                                     return(__targ__118)["ctype"]
+                                let __targ__120=await first(stmt);
+                                if (__targ__120){
+                                     return(__targ__120)["ctype"]
                                 } 
                             })());
                             await async function(){
@@ -11310,8 +11326,8 @@ export async function init_dlisp(Environment)  {
                             }
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__114()) {
-                            await __body_ref__115();
+                        while(await __test_condition__116()) {
+                            await __body_ref__117();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -11321,29 +11337,6 @@ export async function init_dlisp(Environment)  {
                     })();
                     await async function(){
                         if (check_true( (await not((block_options && block_options["suppress_return"]))&& await not((ctx && ctx["suppress_return"]))&& (await (async function(){
-                            let __array_op_rval__119=needs_return_ques_;
-                             if (__array_op_rval__119 instanceof Function){
-                                return await __array_op_rval__119(stmts,ctx) 
-                            } else {
-                                return[__array_op_rval__119,stmts,ctx]
-                            }
-                        })()|| ((idx>1)&& await (async function(){
-                            let __array_op_rval__120=needs_return_ques_;
-                             if (__array_op_rval__120 instanceof Function){
-                                return await __array_op_rval__120(stmts,ctx) 
-                            } else {
-                                return[__array_op_rval__120,stmts,ctx]
-                            }
-                        })()))))) {
-                            last_stmt=(stmts).pop();
-                            if (check_true (await not(((last_stmt && last_stmt["0"] && last_stmt["0"]["mark"])==="no_return")))){
-                                (stmts).push({
-                                    mark:"final-return",if_id:await get_ctx_val(ctx,"__IF_BLOCK__"),block_step:(ctx && ctx["block_step"]),lambda_step:await get_ctx_val(ctx,"__LAMBDA_STEP__")
-                                });
-                                 (stmts).push(" ")
-                            };
-                             return  (stmts).push(last_stmt)
-                        } else if (check_true( (await (async function(){
                             let __array_op_rval__121=needs_return_ques_;
                              if (__array_op_rval__121 instanceof Function){
                                 return await __array_op_rval__121(stmts,ctx) 
@@ -11356,6 +11349,29 @@ export async function init_dlisp(Environment)  {
                                 return await __array_op_rval__122(stmts,ctx) 
                             } else {
                                 return[__array_op_rval__122,stmts,ctx]
+                            }
+                        })()))))) {
+                            last_stmt=(stmts).pop();
+                            if (check_true (await not(((last_stmt && last_stmt["0"] && last_stmt["0"]["mark"])==="no_return")))){
+                                (stmts).push({
+                                    mark:"final-return",if_id:await get_ctx_val(ctx,"__IF_BLOCK__"),block_step:(ctx && ctx["block_step"]),lambda_step:await get_ctx_val(ctx,"__LAMBDA_STEP__")
+                                });
+                                 (stmts).push(" ")
+                            };
+                             return  (stmts).push(last_stmt)
+                        } else if (check_true( (await (async function(){
+                            let __array_op_rval__123=needs_return_ques_;
+                             if (__array_op_rval__123 instanceof Function){
+                                return await __array_op_rval__123(stmts,ctx) 
+                            } else {
+                                return[__array_op_rval__123,stmts,ctx]
+                            }
+                        })()|| ((idx>1)&& await (async function(){
+                            let __array_op_rval__124=needs_return_ques_;
+                             if (__array_op_rval__124 instanceof Function){
+                                return await __array_op_rval__124(stmts,ctx) 
+                            } else {
+                                return[__array_op_rval__124,stmts,ctx]
                             }
                         })())))) {
                             last_stmt=(stmts).pop();
@@ -11388,37 +11404,37 @@ export async function init_dlisp(Environment)  {
                     let ctx_details;
                     let allocation_type;
                     let assignment_type;
-                    let __check_needs_wrap__123= async function(){
+                    let __check_needs_wrap__125= async function(){
                         return async function(stmts) {
                             let fst;
                             fst=(((stmts instanceof Array)&& await first(stmts)&& (await first(stmts) instanceof Object)&& await (async function(){
-                                let __targ__124=await first(stmts);
-                                if (__targ__124){
-                                     return(__targ__124)["ctype"]
+                                let __targ__126=await first(stmts);
+                                if (__targ__126){
+                                     return(__targ__126)["ctype"]
                                 } 
                             })()&& await async function(){
                                 if (check_true( (await (async function(){
-                                    let __targ__125=await first(stmts);
-                                    if (__targ__125){
-                                         return(__targ__125)["ctype"]
+                                    let __targ__127=await first(stmts);
+                                    if (__targ__127){
+                                         return(__targ__127)["ctype"]
                                     } 
                                 })() instanceof String || typeof await (async function(){
-                                    let __targ__125=await first(stmts);
-                                    if (__targ__125){
-                                         return(__targ__125)["ctype"]
+                                    let __targ__127=await first(stmts);
+                                    if (__targ__127){
+                                         return(__targ__127)["ctype"]
                                     } 
                                 })()==='string'))) {
                                      return await (async function(){
-                                        let __targ__126=await first(stmts);
-                                        if (__targ__126){
-                                             return(__targ__126)["ctype"]
+                                        let __targ__128=await first(stmts);
+                                        if (__targ__128){
+                                             return(__targ__128)["ctype"]
                                         } 
                                     })()
                                 } else  {
                                      return await sub_type(await (async function(){
-                                        let __targ__127=await first(stmts);
-                                        if (__targ__127){
-                                             return(__targ__127)["ctype"]
+                                        let __targ__129=await first(stmts);
+                                        if (__targ__129){
+                                             return(__targ__129)["ctype"]
                                         } 
                                     })())
                                 }
@@ -11445,7 +11461,7 @@ export async function init_dlisp(Environment)  {
                             } 
                         })();
                         assignment_type=null;
-                        let check_needs_wrap=await __check_needs_wrap__123();
+                        let check_needs_wrap=await __check_needs_wrap__125();
                         ;
                         assignment_value=null;
                         assignment_value=await (async function ()  {
@@ -11469,7 +11485,7 @@ export async function init_dlisp(Environment)  {
                                 ctype:"assignment"
                             },allocation_type," ",target,"=",assignment_value,"()",";"]
                         } else {
-                            let __array_arg__128=(async function() {
+                            let __array_arg__130=(async function() {
                                 if (check_true (((ctx_details && ctx_details["is_argument"])&& ((ctx_details && ctx_details["levels_up"])===1)))){
                                       return ""
                                 } else {
@@ -11478,29 +11494,29 @@ export async function init_dlisp(Environment)  {
                             } );
                             return [{
                                 ctype:"assignment"
-                            },await __array_arg__128(),"",target,"=",[assignment_value],";"]
+                            },await __array_arg__130(),"",target,"=",[assignment_value],";"]
                         }
                     }
                 };
                 get_declaration_details=async function(ctx,symname,_levels_up) {
                      return  await async function(){
                         if (check_true( (await (async function(){
-                            let __targ__129=(ctx && ctx["scope"]);
-                            if (__targ__129){
-                                 return(__targ__129)[symname]
+                            let __targ__131=(ctx && ctx["scope"]);
+                            if (__targ__131){
+                                 return(__targ__131)[symname]
                             } 
                         })()&& ctx["lambda_scope"]))) {
                              return {
                                 name:symname,is_argument:true,levels_up:(_levels_up|| 0),value:await (async function(){
-                                    let __targ__130=(ctx && ctx["scope"]);
-                                    if (__targ__130){
-                                         return(__targ__130)[symname]
+                                    let __targ__132=(ctx && ctx["scope"]);
+                                    if (__targ__132){
+                                         return(__targ__132)[symname]
                                     } 
                                 })(),declared_global:await (async function(){
                                     if (check_true (await (async function(){
-                                        let __targ__131=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                        if (__targ__131){
-                                             return(__targ__131)[symname]
+                                        let __targ__133=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                        if (__targ__133){
+                                             return(__targ__133)[symname]
                                         } 
                                     })())){
                                           return true
@@ -11510,22 +11526,22 @@ export async function init_dlisp(Environment)  {
                                 })()
                             }
                         } else if (check_true( await (async function(){
-                            let __targ__132=(ctx && ctx["scope"]);
-                            if (__targ__132){
-                                 return(__targ__132)[symname]
+                            let __targ__134=(ctx && ctx["scope"]);
+                            if (__targ__134){
+                                 return(__targ__134)[symname]
                             } 
                         })())) {
                              return {
                                 name:symname,is_argument:false,levels_up:(_levels_up|| 0),value:await (async function(){
-                                    let __targ__133=(ctx && ctx["scope"]);
-                                    if (__targ__133){
-                                         return(__targ__133)[symname]
+                                    let __targ__135=(ctx && ctx["scope"]);
+                                    if (__targ__135){
+                                         return(__targ__135)[symname]
                                     } 
                                 })(),declarations:await get_declarations(ctx,symname),declared_global:await (async function(){
                                     if (check_true (await (async function(){
-                                        let __targ__134=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                        if (__targ__134){
-                                             return(__targ__134)[symname]
+                                        let __targ__136=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                        if (__targ__136){
+                                             return(__targ__136)[symname]
                                         } 
                                     })())){
                                           return true
@@ -11535,16 +11551,16 @@ export async function init_dlisp(Environment)  {
                                 })()
                             }
                         } else if (check_true( ((ctx["parent"]==null)&& await (async function(){
-                            let __targ__135=(root_ctx && root_ctx["defined_lisp_globals"]);
-                            if (__targ__135){
-                                 return(__targ__135)[symname]
+                            let __targ__137=(root_ctx && root_ctx["defined_lisp_globals"]);
+                            if (__targ__137){
+                                 return(__targ__137)[symname]
                             } 
                         })()))) {
                              return {
                                 name:symname,is_argument:false,levels_up:(_levels_up|| 0),value:await (async function(){
-                                    let __targ__136=(ctx && ctx["scope"]);
-                                    if (__targ__136){
-                                         return(__targ__136)[symname]
+                                    let __targ__138=(ctx && ctx["scope"]);
+                                    if (__targ__138){
+                                         return(__targ__138)[symname]
                                     } 
                                 })(),declarations:await get_declarations(ctx,symname),declared_global:true
                             }
@@ -11561,33 +11577,33 @@ export async function init_dlisp(Environment)  {
                     let fst;
                     let preamble;
                     fst=(""+ (((stmts instanceof Array)&& await first(stmts)&& (await first(stmts) instanceof Object)&& await (async function(){
-                        let __targ__137=await first(stmts);
-                        if (__targ__137){
-                             return(__targ__137)["ctype"]
+                        let __targ__139=await first(stmts);
+                        if (__targ__139){
+                             return(__targ__139)["ctype"]
                         } 
                     })()&& await async function(){
                         if (check_true( (await (async function(){
-                            let __targ__138=await first(stmts);
-                            if (__targ__138){
-                                 return(__targ__138)["ctype"]
+                            let __targ__140=await first(stmts);
+                            if (__targ__140){
+                                 return(__targ__140)["ctype"]
                             } 
                         })() instanceof String || typeof await (async function(){
-                            let __targ__138=await first(stmts);
-                            if (__targ__138){
-                                 return(__targ__138)["ctype"]
+                            let __targ__140=await first(stmts);
+                            if (__targ__140){
+                                 return(__targ__140)["ctype"]
                             } 
                         })()==='string'))) {
                              return await (async function(){
-                                let __targ__139=await first(stmts);
-                                if (__targ__139){
-                                     return(__targ__139)["ctype"]
+                                let __targ__141=await first(stmts);
+                                if (__targ__141){
+                                     return(__targ__141)["ctype"]
                                 } 
                             })()
                         } else  {
                              return await sub_type(await (async function(){
-                                let __targ__140=await first(stmts);
-                                if (__targ__140){
-                                     return(__targ__140)["ctype"]
+                                let __targ__142=await first(stmts);
+                                if (__targ__142){
+                                     return(__targ__142)["ctype"]
                                 } 
                             })())
                         }
@@ -11709,15 +11725,15 @@ export async function init_dlisp(Environment)  {
                         }
                     };
                     await (async function(){
-                         let __test_condition__142=async function() {
+                         let __test_condition__144=async function() {
                              return  (idx<((allocations && allocations.length)- 1))
                         };
-                        let __body_ref__143=async function() {
+                        let __body_ref__145=async function() {
                             idx+=1;
                             alloc_set=await (async function(){
-                                let __targ__144=allocations[idx];
-                                if (__targ__144){
-                                     return(__targ__144)["val"]
+                                let __targ__146=allocations[idx];
+                                if (__targ__146){
+                                     return(__targ__146)["val"]
                                 } 
                             })();
                             reference_name=await clean_quoted_reference(await sanitize_js_ref_name((alloc_set && alloc_set["0"] && alloc_set["0"]["name"])));
@@ -11749,8 +11765,8 @@ export async function init_dlisp(Environment)  {
                             }
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__142()) {
-                            await __body_ref__143();
+                        while(await __test_condition__144()) {
+                            await __body_ref__145();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -11760,16 +11776,16 @@ export async function init_dlisp(Environment)  {
                     })();
                     idx=-1;
                     await (async function(){
-                         let __test_condition__147=async function() {
+                         let __test_condition__149=async function() {
                              return  (idx<((allocations && allocations.length)- 1))
                         };
-                        let __body_ref__148=async function() {
+                        let __body_ref__150=async function() {
                             idx+=1;
                             stmt=[];
                             alloc_set=await (async function(){
-                                let __targ__149=allocations[idx];
-                                if (__targ__149){
-                                     return(__targ__149)["val"]
+                                let __targ__151=allocations[idx];
+                                if (__targ__151){
+                                     return(__targ__151)["val"]
                                 } 
                             })();
                             reference_name=await clean_quoted_reference(await sanitize_js_ref_name((alloc_set && alloc_set["0"] && alloc_set["0"]["name"])));
@@ -11825,47 +11841,47 @@ export async function init_dlisp(Environment)  {
                                     def_idx=await first(redefinitions[reference_name]);
                                     def_idx+=1;
                                     await async function(){
-                                        let __target_obj__153=redefinitions[reference_name];
-                                        __target_obj__153[0]=def_idx;
-                                        return __target_obj__153;
+                                        let __target_obj__155=redefinitions[reference_name];
+                                        __target_obj__155[0]=def_idx;
+                                        return __target_obj__155;
                                         
                                     }();
                                      return  await (async function() {
-                                        let __for_body__156=async function(t) {
+                                        let __for_body__158=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__157=[],__elements__155=["let"," ",await (async function(){
-                                            let __targ__158=redefinitions[reference_name];
-                                            if (__targ__158){
-                                                 return(__targ__158)[def_idx]
+                                        let __array__159=[],__elements__157=["let"," ",await (async function(){
+                                            let __targ__160=redefinitions[reference_name];
+                                            if (__targ__160){
+                                                 return(__targ__160)[def_idx]
                                             } 
                                         })(),"="," ",(preamble && preamble["1"])," ","function","()","{","return"," ",assignment_value,"}",";"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__154 in __elements__155) {
-                                            __array__157.push(await __for_body__156(__elements__155[__iter__154]));
+                                        for(let __iter__156 in __elements__157) {
+                                            __array__159.push(await __for_body__158(__elements__157[__iter__156]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__157.pop();
+                                                 __array__159.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__157;
+                                        }return __array__159;
                                          
                                     })()
                                 } else if (check_true( await not(block_declarations[reference_name]))) {
                                     await (async function() {
-                                        let __for_body__161=async function(t) {
+                                        let __for_body__163=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__162=[],__elements__160=["let"," ",reference_name,";"];
+                                        let __array__164=[],__elements__162=["let"," ",reference_name,";"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__159 in __elements__160) {
-                                            __array__162.push(await __for_body__161(__elements__160[__iter__159]));
+                                        for(let __iter__161 in __elements__162) {
+                                            __array__164.push(await __for_body__163(__elements__162[__iter__161]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__162.pop();
+                                                 __array__164.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__162;
+                                        }return __array__164;
                                          
                                     })();
                                      return  await async function(){
@@ -11885,9 +11901,9 @@ export async function init_dlisp(Environment)  {
                              return  (assignments[reference_name]).push(await (async function () {
                                  if (check_true (def_idx)){
                                       return [(preamble && preamble["0"])," ",await (async function(){
-                                        let __targ__165=redefinitions[reference_name];
-                                        if (__targ__165){
-                                             return(__targ__165)[def_idx]
+                                        let __targ__167=redefinitions[reference_name];
+                                        if (__targ__167){
+                                             return(__targ__167)[def_idx]
                                         } 
                                     })(),"()",";"]
                                 } else {
@@ -11896,8 +11912,8 @@ export async function init_dlisp(Environment)  {
                             })())
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__147()) {
-                            await __body_ref__148();
+                        while(await __test_condition__149()) {
+                            await __body_ref__150();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -11907,34 +11923,34 @@ export async function init_dlisp(Environment)  {
                     })();
                     if (check_true (need_sub_block)){
                          await (async function() {
-                            let __for_body__168=async function(pset) {
+                            let __for_body__170=async function(pset) {
                                  return  await (async function() {
-                                    let __for_body__172=async function(redef) {
+                                    let __for_body__174=async function(redef) {
                                          return  (redefinitions[(pset && pset["0"])]).shift()
                                     };
-                                    let __array__173=[],__elements__171=(pset && pset["1"]);
+                                    let __array__175=[],__elements__173=(pset && pset["1"]);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__170 in __elements__171) {
-                                        __array__173.push(await __for_body__172(__elements__171[__iter__170]));
+                                    for(let __iter__172 in __elements__173) {
+                                        __array__175.push(await __for_body__174(__elements__173[__iter__172]));
                                         if(__BREAK__FLAG__) {
-                                             __array__173.pop();
+                                             __array__175.pop();
                                             break;
                                             
                                         }
-                                    }return __array__173;
+                                    }return __array__175;
                                      
                                 })()
                             };
-                            let __array__169=[],__elements__167=await (await Environment.get_global("pairs"))(redefinitions);
+                            let __array__171=[],__elements__169=await (await Environment.get_global("pairs"))(redefinitions);
                             let __BREAK__FLAG__=false;
-                            for(let __iter__166 in __elements__167) {
-                                __array__169.push(await __for_body__168(__elements__167[__iter__166]));
+                            for(let __iter__168 in __elements__169) {
+                                __array__171.push(await __for_body__170(__elements__169[__iter__168]));
                                 if(__BREAK__FLAG__) {
-                                     __array__169.pop();
+                                     __array__171.pop();
                                     break;
                                     
                                 }
-                            }return __array__169;
+                            }return __array__171;
                              
                         })()
                     };
@@ -11944,17 +11960,17 @@ export async function init_dlisp(Environment)  {
                     };
                     idx=-1;
                     await (async function(){
-                         let __test_condition__174=async function() {
+                         let __test_condition__176=async function() {
                              return  (idx<((allocations && allocations.length)- 1))
                         };
-                        let __body_ref__175=async function() {
+                        let __body_ref__177=async function() {
                             idx+=1;
                             def_idx=null;
                             stmt=[];
                             alloc_set=await (async function(){
-                                let __targ__176=allocations[idx];
-                                if (__targ__176){
-                                     return(__targ__176)["val"]
+                                let __targ__178=allocations[idx];
+                                if (__targ__178){
+                                     return(__targ__178)["val"]
                                 } 
                             })();
                             reference_name=await clean_quoted_reference(await sanitize_js_ref_name((alloc_set && alloc_set["0"] && alloc_set["0"]["name"])));
@@ -11980,8 +11996,8 @@ export async function init_dlisp(Environment)  {
                              return  (acc).push(stmt)
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__174()) {
-                            await __body_ref__175();
+                        while(await __test_condition__176()) {
+                            await __body_ref__177();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -11993,19 +12009,19 @@ export async function init_dlisp(Environment)  {
                         no_scope_boundary:true,ignore_declarations:declarations_handled
                     }));
                     await (async function() {
-                        let __for_body__180=async function(i) {
+                        let __for_body__182=async function(i) {
                              return  (acc).push("}")
                         };
-                        let __array__181=[],__elements__179=await (await Environment.get_global("range"))(sub_block_count);
+                        let __array__183=[],__elements__181=await (await Environment.get_global("range"))(sub_block_count);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__178 in __elements__179) {
-                            __array__181.push(await __for_body__180(__elements__179[__iter__178]));
+                        for(let __iter__180 in __elements__181) {
+                            __array__183.push(await __for_body__182(__elements__181[__iter__180]));
                             if(__BREAK__FLAG__) {
-                                 __array__181.pop();
+                                 __array__183.pop();
                                 break;
                                 
                             }
-                        }return __array__181;
+                        }return __array__183;
                          
                     })();
                     if (check_true (((ctx && ctx["return_point"])===1))){
@@ -12022,11 +12038,11 @@ export async function init_dlisp(Environment)  {
                 };
                 await_ques_=async function(ctx) {
                     if (check_true (await (async function(){
-                        let __array_op_rval__182=in_sync_ques_;
-                         if (__array_op_rval__182 instanceof Function){
-                            return await __array_op_rval__182(ctx) 
+                        let __array_op_rval__184=in_sync_ques_;
+                         if (__array_op_rval__184 instanceof Function){
+                            return await __array_op_rval__184(ctx) 
                         } else {
-                            return[__array_op_rval__182,ctx]
+                            return[__array_op_rval__184,ctx]
                         }
                     })())){
                           return ""
@@ -12036,11 +12052,11 @@ export async function init_dlisp(Environment)  {
                 };
                 calling_preamble=async function(ctx) {
                     if (check_true (await (async function(){
-                        let __array_op_rval__183=in_sync_ques_;
-                         if (__array_op_rval__183 instanceof Function){
-                            return await __array_op_rval__183(ctx) 
+                        let __array_op_rval__185=in_sync_ques_;
+                         if (__array_op_rval__185 instanceof Function){
+                            return await __array_op_rval__185(ctx) 
                         } else {
-                            return[__array_op_rval__183,ctx]
+                            return[__array_op_rval__185,ctx]
                         }
                     })())){
                           return ["","",{
@@ -12131,10 +12147,10 @@ export async function init_dlisp(Environment)  {
                     } ();
                     (acc).push("(");
                     await (async function(){
-                         let __test_condition__189=async function() {
+                         let __test_condition__191=async function() {
                              return  (idx<((fn_args && fn_args.length)- 1))
                         };
-                        let __body_ref__190=async function() {
+                        let __body_ref__192=async function() {
                             idx+=1;
                             arg=fn_args[idx];
                             if (check_true (((arg && arg.name)==="&"))){
@@ -12160,8 +12176,8 @@ export async function init_dlisp(Environment)  {
                             }
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__189()) {
-                            await __body_ref__190();
+                        while(await __test_condition__191()) {
+                            await __body_ref__192();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -12226,19 +12242,19 @@ export async function init_dlisp(Environment)  {
                     type_mark=await type_marker("Function");
                     (acc).push(type_mark);
                     await (async function() {
-                        let __for_body__197=async function(t) {
+                        let __for_body__199=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__198=[],__elements__196=["new"," ","Function","("];
+                        let __array__200=[],__elements__198=["new"," ","Function","("];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__195 in __elements__196) {
-                            __array__198.push(await __for_body__197(__elements__196[__iter__195]));
+                        for(let __iter__197 in __elements__198) {
+                            __array__200.push(await __for_body__199(__elements__198[__iter__197]));
                             if(__BREAK__FLAG__) {
-                                 __array__198.pop();
+                                 __array__200.pop();
                                 break;
                                 
                             }
-                        }return __array__198;
+                        }return __array__200;
                          
                     })();
                     if (check_true (await not((body instanceof String || typeof body==='string')))){
@@ -12246,10 +12262,10 @@ export async function init_dlisp(Environment)  {
                         
                     };
                     await (async function(){
-                         let __test_condition__199=async function() {
+                         let __test_condition__201=async function() {
                              return  (idx<((fn_args && fn_args.length)- 1))
                         };
-                        let __body_ref__200=async function() {
+                        let __body_ref__202=async function() {
                             idx+=1;
                             arg=fn_args[idx];
                             await set_ctx(ctx,(arg && arg.name),ArgumentType);
@@ -12258,8 +12274,8 @@ export async function init_dlisp(Environment)  {
                              return  (acc).push(",")
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__199()) {
-                            await __body_ref__200();
+                        while(await __test_condition__201()) {
+                            await __body_ref__202();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -12269,7 +12285,7 @@ export async function init_dlisp(Environment)  {
                     })();
                     (acc).push("\"");
                     await (async function() {
-                        let __for_body__203=async function(c) {
+                        let __for_body__205=async function(c) {
                             if (check_true (await not((c==="\n"),(c==="\r")))){
                                 if (check_true ((c==="\""))){
                                      (quoted_body).push(await String.fromCharCode(92))
@@ -12277,16 +12293,16 @@ export async function init_dlisp(Environment)  {
                                  return  (quoted_body).push(c)
                             }
                         };
-                        let __array__204=[],__elements__202=(body).split("");
+                        let __array__206=[],__elements__204=(body).split("");
                         let __BREAK__FLAG__=false;
-                        for(let __iter__201 in __elements__202) {
-                            __array__204.push(await __for_body__203(__elements__202[__iter__201]));
+                        for(let __iter__203 in __elements__204) {
+                            __array__206.push(await __for_body__205(__elements__204[__iter__203]));
                             if(__BREAK__FLAG__) {
-                                 __array__204.pop();
+                                 __array__206.pop();
                                 break;
                                 
                             }
-                        }return __array__204;
+                        }return __array__206;
                          
                     })();
                     (acc).push((await flatten(quoted_body)).join(""));
@@ -12355,33 +12371,33 @@ export async function init_dlisp(Environment)  {
                     needs_braces_ques_=false;
                     check_needs_return=async function(stmts) {
                         fst=(""+ (((stmts instanceof Array)&& await first(stmts)&& (await first(stmts) instanceof Object)&& await (async function(){
-                            let __targ__205=await first(stmts);
-                            if (__targ__205){
-                                 return(__targ__205)["ctype"]
+                            let __targ__207=await first(stmts);
+                            if (__targ__207){
+                                 return(__targ__207)["ctype"]
                             } 
                         })()&& await async function(){
                             if (check_true( (await (async function(){
-                                let __targ__206=await first(stmts);
-                                if (__targ__206){
-                                     return(__targ__206)["ctype"]
+                                let __targ__208=await first(stmts);
+                                if (__targ__208){
+                                     return(__targ__208)["ctype"]
                                 } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__206=await first(stmts);
-                                if (__targ__206){
-                                     return(__targ__206)["ctype"]
+                                let __targ__208=await first(stmts);
+                                if (__targ__208){
+                                     return(__targ__208)["ctype"]
                                 } 
                             })()==='string'))) {
                                  return await (async function(){
-                                    let __targ__207=await first(stmts);
-                                    if (__targ__207){
-                                         return(__targ__207)["ctype"]
+                                    let __targ__209=await first(stmts);
+                                    if (__targ__209){
+                                         return(__targ__209)["ctype"]
                                     } 
                                 })()
                             } else  {
                                  return await sub_type(await (async function(){
-                                    let __targ__208=await first(stmts);
-                                    if (__targ__208){
-                                         return(__targ__208)["ctype"]
+                                    let __targ__210=await first(stmts);
+                                    if (__targ__210){
+                                         return(__targ__210)["ctype"]
                                     } 
                                 })())
                             }
@@ -12423,10 +12439,10 @@ export async function init_dlisp(Environment)  {
                     } ();
                     await set_ctx(ctx,"__LAMBDA_STEP__",-1);
                     await (async function(){
-                         let __test_condition__209=async function() {
+                         let __test_condition__211=async function() {
                              return  (idx<(condition_tokens && condition_tokens.length))
                         };
-                        let __body_ref__210=async function() {
+                        let __body_ref__212=async function() {
                             inject_return=false;
                             condition=condition_tokens[idx];
                             idx+=1;
@@ -12446,11 +12462,11 @@ export async function init_dlisp(Environment)  {
                             };
                             await async function(){
                                 if (check_true( await (async function(){
-                                    let __array_op_rval__211=is_form_ques_;
-                                     if (__array_op_rval__211 instanceof Function){
-                                        return await __array_op_rval__211(condition) 
+                                    let __array_op_rval__213=is_form_ques_;
+                                     if (__array_op_rval__213 instanceof Function){
+                                        return await __array_op_rval__213(condition) 
                                     } else {
-                                        return[__array_op_rval__211,condition]
+                                        return[__array_op_rval__213,condition]
                                     }
                                 })())) {
                                     stmts=await compile(condition,ctx);
@@ -12496,8 +12512,8 @@ export async function init_dlisp(Environment)  {
                              return  idx+=1
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__209()) {
-                            await __body_ref__210();
+                        while(await __test_condition__211()) {
+                            await __body_ref__212();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -12511,7 +12527,7 @@ export async function init_dlisp(Environment)  {
                     let acc;
                     let stmts;
                     let fst;
-                    let __if_id__212= async function(){
+                    let __if_id__214= async function(){
                         return if_id+=1
                     };
                     let inject_return;
@@ -12530,7 +12546,7 @@ export async function init_dlisp(Environment)  {
                         acc=[];
                         stmts=null;
                         fst=null;
-                        let if_id=await __if_id__212();
+                        let if_id=await __if_id__214();
                         ;
                         inject_return=false;
                         block_stmts=null;
@@ -12545,33 +12561,33 @@ export async function init_dlisp(Environment)  {
                         needs_braces_ques_=false;
                         check_needs_return=async function(stmts) {
                             fst=(""+ (((stmts instanceof Array)&& await first(stmts)&& (await first(stmts) instanceof Object)&& await (async function(){
-                                let __targ__213=await first(stmts);
-                                if (__targ__213){
-                                     return(__targ__213)["ctype"]
+                                let __targ__215=await first(stmts);
+                                if (__targ__215){
+                                     return(__targ__215)["ctype"]
                                 } 
                             })()&& await async function(){
                                 if (check_true( (await (async function(){
-                                    let __targ__214=await first(stmts);
-                                    if (__targ__214){
-                                         return(__targ__214)["ctype"]
+                                    let __targ__216=await first(stmts);
+                                    if (__targ__216){
+                                         return(__targ__216)["ctype"]
                                     } 
                                 })() instanceof String || typeof await (async function(){
-                                    let __targ__214=await first(stmts);
-                                    if (__targ__214){
-                                         return(__targ__214)["ctype"]
+                                    let __targ__216=await first(stmts);
+                                    if (__targ__216){
+                                         return(__targ__216)["ctype"]
                                     } 
                                 })()==='string'))) {
                                      return await (async function(){
-                                        let __targ__215=await first(stmts);
-                                        if (__targ__215){
-                                             return(__targ__215)["ctype"]
+                                        let __targ__217=await first(stmts);
+                                        if (__targ__217){
+                                             return(__targ__217)["ctype"]
                                         } 
                                     })()
                                 } else  {
                                      return await sub_type(await (async function(){
-                                        let __targ__216=await first(stmts);
-                                        if (__targ__216){
-                                             return(__targ__216)["ctype"]
+                                        let __targ__218=await first(stmts);
+                                        if (__targ__218){
+                                             return(__targ__218)["ctype"]
                                         } 
                                     })())
                                 }
@@ -12627,57 +12643,57 @@ export async function init_dlisp(Environment)  {
                             }()
                         };
                         if (check_true (((await first(compiled_test) instanceof Object)&& await (async function(){
-                            let __targ__219=await first(compiled_test);
-                            if (__targ__219){
-                                 return(__targ__219)["ctype"]
-                            } 
-                        })()&& (await (async function(){
-                            let __targ__220=await first(compiled_test);
-                            if (__targ__220){
-                                 return(__targ__220)["ctype"]
-                            } 
-                        })() instanceof String || typeof await (async function(){
-                            let __targ__220=await first(compiled_test);
-                            if (__targ__220){
-                                 return(__targ__220)["ctype"]
-                            } 
-                        })()==='string')&& await contains_ques_("unction",await (async function(){
                             let __targ__221=await first(compiled_test);
                             if (__targ__221){
                                  return(__targ__221)["ctype"]
                             } 
+                        })()&& (await (async function(){
+                            let __targ__222=await first(compiled_test);
+                            if (__targ__222){
+                                 return(__targ__222)["ctype"]
+                            } 
+                        })() instanceof String || typeof await (async function(){
+                            let __targ__222=await first(compiled_test);
+                            if (__targ__222){
+                                 return(__targ__222)["ctype"]
+                            } 
+                        })()==='string')&& await contains_ques_("unction",await (async function(){
+                            let __targ__223=await first(compiled_test);
+                            if (__targ__223){
+                                 return(__targ__223)["ctype"]
+                            } 
                         })())))){
                              await (async function() {
-                                let __for_body__224=async function(t) {
+                                let __for_body__226=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__225=[],__elements__223=["if"," ","(check_true (",(preamble && preamble["0"])," ",compiled_test,"()","))"];
+                                let __array__227=[],__elements__225=["if"," ","(check_true (",(preamble && preamble["0"])," ",compiled_test,"()","))"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__222 in __elements__223) {
-                                    __array__225.push(await __for_body__224(__elements__223[__iter__222]));
+                                for(let __iter__224 in __elements__225) {
+                                    __array__227.push(await __for_body__226(__elements__225[__iter__224]));
                                     if(__BREAK__FLAG__) {
-                                         __array__225.pop();
+                                         __array__227.pop();
                                         break;
                                         
                                     }
-                                }return __array__225;
+                                }return __array__227;
                                  
                             })()
                         } else {
                              await (async function() {
-                                let __for_body__228=async function(t) {
+                                let __for_body__230=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__229=[],__elements__227=["if"," ","(check_true (",compiled_test,"))"];
+                                let __array__231=[],__elements__229=["if"," ","(check_true (",compiled_test,"))"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__226 in __elements__227) {
-                                    __array__229.push(await __for_body__228(__elements__227[__iter__226]));
+                                for(let __iter__228 in __elements__229) {
+                                    __array__231.push(await __for_body__230(__elements__229[__iter__228]));
                                     if(__BREAK__FLAG__) {
-                                         __array__229.pop();
+                                         __array__231.pop();
                                         break;
                                         
                                     }
-                                }return __array__229;
+                                }return __array__231;
                                  
                             })()
                         };
@@ -12759,11 +12775,11 @@ export async function init_dlisp(Environment)  {
                             needs_await=false;
                              return  acc=[await compile(tokens,ctx)]
                         } else if (check_true( await (async function(){
-                            let __array_op_rval__231=is_block_ques_;
-                             if (__array_op_rval__231 instanceof Function){
-                                return await __array_op_rval__231(tokens) 
+                            let __array_op_rval__233=is_block_ques_;
+                             if (__array_op_rval__233 instanceof Function){
+                                return await __array_op_rval__233(tokens) 
                             } else {
-                                return[__array_op_rval__231,tokens]
+                                return[__array_op_rval__233,tokens]
                             }
                         })())) {
                             ctx=await new_ctx(ctx);
@@ -12781,19 +12797,19 @@ export async function init_dlisp(Environment)  {
                                 
                             }();
                              return  await (async function() {
-                                let __for_body__236=async function(t) {
+                                let __for_body__238=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__237=[],__elements__235=["(",(preamble && preamble["1"])," ","function","()","{",await compile_if((tokens && tokens["val"]),ctx),"}",")","()"];
+                                let __array__239=[],__elements__237=["(",(preamble && preamble["1"])," ","function","()","{",await compile_if((tokens && tokens["val"]),ctx),"}",")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__234 in __elements__235) {
-                                    __array__237.push(await __for_body__236(__elements__235[__iter__234]));
+                                for(let __iter__236 in __elements__237) {
+                                    __array__239.push(await __for_body__238(__elements__237[__iter__236]));
                                     if(__BREAK__FLAG__) {
-                                         __array__237.pop();
+                                         __array__239.pop();
                                         break;
                                         
                                     }
-                                }return __array__237;
+                                }return __array__239;
                                  
                             })()
                         } else if (check_true( (tokens instanceof Array))) {
@@ -12806,11 +12822,11 @@ export async function init_dlisp(Environment)  {
                           return [(preamble && preamble["0"])," ",acc]
                     } else {
                           return await (async function(){
-                            let __array_op_rval__238=acc;
-                             if (__array_op_rval__238 instanceof Function){
-                                return await __array_op_rval__238() 
+                            let __array_op_rval__240=acc;
+                             if (__array_op_rval__240 instanceof Function){
+                                return await __array_op_rval__240() 
                             } else {
-                                return[__array_op_rval__238]
+                                return[__array_op_rval__240]
                             }
                         })()
                     }
@@ -12828,11 +12844,11 @@ export async function init_dlisp(Environment)  {
                     }();
                     await async function(){
                         if (check_true( await (async function(){
-                            let __array_op_rval__240=is_block_ques_;
-                             if (__array_op_rval__240 instanceof Function){
-                                return await __array_op_rval__240(tokens) 
+                            let __array_op_rval__242=is_block_ques_;
+                             if (__array_op_rval__242 instanceof Function){
+                                return await __array_op_rval__242(tokens) 
                             } else {
-                                return[__array_op_rval__240,tokens]
+                                return[__array_op_rval__242,tokens]
                             }
                         })())) {
                             await async function(){
@@ -12846,19 +12862,19 @@ export async function init_dlisp(Environment)  {
                                 
                             }();
                              return  await (async function() {
-                                let __for_body__245=async function(t) {
+                                let __for_body__247=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__246=[],__elements__244=["(",(preamble && preamble["1"])," ","function","()",await compile_block(tokens,ctx),")","()"];
+                                let __array__248=[],__elements__246=["(",(preamble && preamble["1"])," ","function","()",await compile_block(tokens,ctx),")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__243 in __elements__244) {
-                                    __array__246.push(await __for_body__245(__elements__244[__iter__243]));
+                                for(let __iter__245 in __elements__246) {
+                                    __array__248.push(await __for_body__247(__elements__246[__iter__245]));
                                     if(__BREAK__FLAG__) {
-                                         __array__246.pop();
+                                         __array__248.pop();
                                         break;
                                         
                                     }
-                                }return __array__246;
+                                }return __array__248;
                                  
                             })()
                         } else if (check_true( ((tokens && tokens["0"] && tokens["0"]["name"])==="let"))) {
@@ -12873,19 +12889,19 @@ export async function init_dlisp(Environment)  {
                                 
                             }();
                              return  await (async function() {
-                                let __for_body__251=async function(t) {
+                                let __for_body__253=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__252=[],__elements__250=["(",(preamble && preamble["1"])," ","function","()",await compile(tokens,ctx),")","()"];
+                                let __array__254=[],__elements__252=["(",(preamble && preamble["1"])," ","function","()",await compile(tokens,ctx),")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__249 in __elements__250) {
-                                    __array__252.push(await __for_body__251(__elements__250[__iter__249]));
+                                for(let __iter__251 in __elements__252) {
+                                    __array__254.push(await __for_body__253(__elements__252[__iter__251]));
                                     if(__BREAK__FLAG__) {
-                                         __array__252.pop();
+                                         __array__254.pop();
                                         break;
                                         
                                     }
-                                }return __array__252;
+                                }return __array__254;
                                  
                             })()
                         } else  {
@@ -12900,19 +12916,19 @@ export async function init_dlisp(Environment)  {
                                 
                             }();
                              return  await (async function() {
-                                let __for_body__257=async function(t) {
+                                let __for_body__259=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__258=[],__elements__256=["(",(preamble && preamble["1"])," ","function","()","{"," ","return"," ",await compile(tokens,ctx)," ","}",")","()"];
+                                let __array__260=[],__elements__258=["(",(preamble && preamble["1"])," ","function","()","{"," ","return"," ",await compile(tokens,ctx)," ","}",")","()"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__255 in __elements__256) {
-                                    __array__258.push(await __for_body__257(__elements__256[__iter__255]));
+                                for(let __iter__257 in __elements__258) {
+                                    __array__260.push(await __for_body__259(__elements__258[__iter__257]));
                                     if(__BREAK__FLAG__) {
-                                         __array__258.pop();
+                                         __array__260.pop();
                                         break;
                                         
                                     }
-                                }return __array__258;
+                                }return __array__260;
                                  
                             })()
                         }
@@ -12932,43 +12948,43 @@ export async function init_dlisp(Environment)  {
                     await async function(){
                         if (check_true( (tokens instanceof Array))) {
                              return await (async function() {
-                                let __for_body__261=async function(token) {
+                                let __for_body__263=async function(token) {
                                      return  (place).push(token)
                                 };
-                                let __array__262=[],__elements__260=tokens;
+                                let __array__264=[],__elements__262=tokens;
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__259 in __elements__260) {
-                                    __array__262.push(await __for_body__261(__elements__260[__iter__259]));
+                                for(let __iter__261 in __elements__262) {
+                                    __array__264.push(await __for_body__263(__elements__262[__iter__261]));
                                     if(__BREAK__FLAG__) {
-                                         __array__262.pop();
+                                         __array__264.pop();
                                         break;
                                         
                                     }
-                                }return __array__262;
+                                }return __array__264;
                                  
                             })()
                         } else  {
                              return await (async function() {
-                                let __for_body__265=async function(token) {
+                                let __for_body__267=async function(token) {
                                      return  (place).push(token)
                                 };
-                                let __array__266=[],__elements__264=await (async function(){
-                                    let __array_op_rval__267=tokens;
-                                     if (__array_op_rval__267 instanceof Function){
-                                        return await __array_op_rval__267() 
+                                let __array__268=[],__elements__266=await (async function(){
+                                    let __array_op_rval__269=tokens;
+                                     if (__array_op_rval__269 instanceof Function){
+                                        return await __array_op_rval__269() 
                                     } else {
-                                        return[__array_op_rval__267]
+                                        return[__array_op_rval__269]
                                     }
                                 })();
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__263 in __elements__264) {
-                                    __array__266.push(await __for_body__265(__elements__264[__iter__263]));
+                                for(let __iter__265 in __elements__266) {
+                                    __array__268.push(await __for_body__267(__elements__266[__iter__265]));
                                     if(__BREAK__FLAG__) {
-                                         __array__266.pop();
+                                         __array__268.pop();
                                         break;
                                         
                                     }
-                                }return __array__266;
+                                }return __array__268;
                                  
                             })()
                         }
@@ -13018,75 +13034,75 @@ export async function init_dlisp(Environment)  {
                          target_type=await (await Environment.get_global("path_to_js_syntax"))(comps)
                     };
                     await (async function() {
-                        let __for_body__270=async function(opt_token) {
+                        let __for_body__272=async function(opt_token) {
                              return  (args).push(await wrap_assignment_value(await compile(opt_token,ctx),ctx))
                         };
-                        let __array__271=[],__elements__269=(new_opts|| []);
+                        let __array__273=[],__elements__271=(new_opts|| []);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__268 in __elements__269) {
-                            __array__271.push(await __for_body__270(__elements__269[__iter__268]));
+                        for(let __iter__270 in __elements__271) {
+                            __array__273.push(await __for_body__272(__elements__271[__iter__270]));
                             if(__BREAK__FLAG__) {
-                                 __array__271.pop();
+                                 __array__273.pop();
                                 break;
                                 
                             }
-                        }return __array__271;
+                        }return __array__273;
                          
                     })();
                     await async function(){
                         if (check_true( (await not((null==(type_details && type_details["value"])))&& (type_details && type_details["declared_global"])))) {
                             await (async function() {
-                                let __for_body__274=async function(arg) {
+                                let __for_body__276=async function(arg) {
                                      return  (acc).push(arg)
                                 };
-                                let __array__275=[],__elements__273=["new"," ",await compile((tokens && tokens["1"]),ctx),"("];
+                                let __array__277=[],__elements__275=["new"," ",await compile((tokens && tokens["1"]),ctx),"("];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__272 in __elements__273) {
-                                    __array__275.push(await __for_body__274(__elements__273[__iter__272]));
+                                for(let __iter__274 in __elements__275) {
+                                    __array__277.push(await __for_body__276(__elements__275[__iter__274]));
                                     if(__BREAK__FLAG__) {
-                                         __array__275.pop();
+                                         __array__277.pop();
                                         break;
                                         
                                     }
-                                }return __array__275;
+                                }return __array__277;
                                  
                             })();
                             await push_as_arg_list(acc,args);
                              return  (acc).push(")")
                         } else if (check_true( (await not((null==(type_details && type_details["value"])))&& (type_details && type_details["value"]) instanceof Function))) {
                             await (async function() {
-                                let __for_body__278=async function(arg) {
+                                let __for_body__280=async function(arg) {
                                      return  (acc).push(arg)
                                 };
-                                let __array__279=[],__elements__277=["new"," ",target_type,"("];
+                                let __array__281=[],__elements__279=["new"," ",target_type,"("];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__276 in __elements__277) {
-                                    __array__279.push(await __for_body__278(__elements__277[__iter__276]));
+                                for(let __iter__278 in __elements__279) {
+                                    __array__281.push(await __for_body__280(__elements__279[__iter__278]));
                                     if(__BREAK__FLAG__) {
-                                         __array__279.pop();
+                                         __array__281.pop();
                                         break;
                                         
                                     }
-                                }return __array__279;
+                                }return __array__281;
                                  
                             })();
                             await push_as_arg_list(acc,args);
                              return  (acc).push(")")
                         } else if (check_true( ((null==(type_details && type_details["value"]))&& await not((null==(root_type_details && root_type_details["value"])))))) {
                             await (async function() {
-                                let __for_body__282=async function(arg) {
+                                let __for_body__284=async function(arg) {
                                      return  (acc).push(arg)
                                 };
-                                let __array__283=[],__elements__281=["(",(preamble && preamble["0"])," ",env_ref,"get_global","(","\"","indirect_new","\"",")",")","(",target_type];
+                                let __array__285=[],__elements__283=["(",(preamble && preamble["0"])," ",env_ref,"get_global","(","\"","indirect_new","\"",")",")","(",target_type];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__280 in __elements__281) {
-                                    __array__283.push(await __for_body__282(__elements__281[__iter__280]));
+                                for(let __iter__282 in __elements__283) {
+                                    __array__285.push(await __for_body__284(__elements__283[__iter__282]));
                                     if(__BREAK__FLAG__) {
-                                         __array__283.pop();
+                                         __array__285.pop();
                                         break;
                                         
                                     }
-                                }return __array__283;
+                                }return __array__285;
                                  
                             })();
                             if (check_true (((args && args.length)>0))){
@@ -13097,9 +13113,9 @@ export async function init_dlisp(Environment)  {
                         }
                     } ();
                     target_return_type=(await get_ctx_val(ctx,target_type)|| await (async function(){
-                        let __targ__284=(await get_declarations(ctx,target_type)|| new Object());
-                        if (__targ__284){
-                             return(__targ__284)["type"]
+                        let __targ__286=(await get_declarations(ctx,target_type)|| new Object());
+                        if (__targ__286){
+                             return(__targ__286)["type"]
                         } 
                     })()|| await (await Environment.get_global("get_outside_global"))(target_type)|| UnknownType);
                     (acc).unshift({
@@ -13159,11 +13175,11 @@ export async function init_dlisp(Environment)  {
                              return  ["(",target,"=",target,operation,how_much,")"]
                         } else  {
                              return await (async function(){
-                                let __array_op_rval__285=target;
-                                 if (__array_op_rval__285 instanceof Function){
-                                    return await __array_op_rval__285(operation,how_much) 
+                                let __array_op_rval__287=target;
+                                 if (__array_op_rval__287 instanceof Function){
+                                    return await __array_op_rval__287(operation,how_much) 
                                 } else {
-                                    return[__array_op_rval__285,operation,how_much]
+                                    return[__array_op_rval__287,operation,how_much]
                                 }
                             })()
                         }
@@ -13211,33 +13227,33 @@ export async function init_dlisp(Environment)  {
                     needs_braces_ques_=false;
                     check_needs_return=async function(stmts) {
                         fst=(""+ (((stmts instanceof Array)&& await first(stmts)&& (await first(stmts) instanceof Object)&& await (async function(){
-                            let __targ__286=await first(stmts);
-                            if (__targ__286){
-                                 return(__targ__286)["ctype"]
+                            let __targ__288=await first(stmts);
+                            if (__targ__288){
+                                 return(__targ__288)["ctype"]
                             } 
                         })()&& await async function(){
                             if (check_true( (await (async function(){
-                                let __targ__287=await first(stmts);
-                                if (__targ__287){
-                                     return(__targ__287)["ctype"]
+                                let __targ__289=await first(stmts);
+                                if (__targ__289){
+                                     return(__targ__289)["ctype"]
                                 } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__287=await first(stmts);
-                                if (__targ__287){
-                                     return(__targ__287)["ctype"]
+                                let __targ__289=await first(stmts);
+                                if (__targ__289){
+                                     return(__targ__289)["ctype"]
                                 } 
                             })()==='string'))) {
                                  return await (async function(){
-                                    let __targ__288=await first(stmts);
-                                    if (__targ__288){
-                                         return(__targ__288)["ctype"]
+                                    let __targ__290=await first(stmts);
+                                    if (__targ__290){
+                                         return(__targ__290)["ctype"]
                                     } 
                                 })()
                             } else  {
                                  return await sub_type(await (async function(){
-                                    let __targ__289=await first(stmts);
-                                    if (__targ__289){
-                                         return(__targ__289)["ctype"]
+                                    let __targ__291=await first(stmts);
+                                    if (__targ__291){
+                                         return(__targ__291)["ctype"]
                                     } 
                                 })())
                             }
@@ -13259,19 +13275,19 @@ export async function init_dlisp(Environment)  {
                         complete=false;
                         if (check_true (((err_data && err_data["idx"])===0))){
                              await (async function() {
-                                let __for_body__292=async function(t) {
+                                let __for_body__294=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__293=[],__elements__291=[" ","catch","(",the_exception_ref,")"," ","{"," "];
+                                let __array__295=[],__elements__293=[" ","catch","(",the_exception_ref,")"," ","{"," "];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__290 in __elements__291) {
-                                    __array__293.push(await __for_body__292(__elements__291[__iter__290]));
+                                for(let __iter__292 in __elements__293) {
+                                    __array__295.push(await __for_body__294(__elements__293[__iter__292]));
                                     if(__BREAK__FLAG__) {
-                                         __array__293.pop();
+                                         __array__295.pop();
                                         break;
                                         
                                     }
-                                }return __array__293;
+                                }return __array__295;
                                  
                             })()
                         };
@@ -13283,36 +13299,36 @@ export async function init_dlisp(Environment)  {
                         };
                         if (check_true (((err_data && err_data["idx"])>0))){
                              await (async function() {
-                                let __for_body__296=async function(t) {
+                                let __for_body__298=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__297=[],__elements__295=[" ","else"," "];
+                                let __array__299=[],__elements__297=[" ","else"," "];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__294 in __elements__295) {
-                                    __array__297.push(await __for_body__296(__elements__295[__iter__294]));
+                                for(let __iter__296 in __elements__297) {
+                                    __array__299.push(await __for_body__298(__elements__297[__iter__296]));
                                     if(__BREAK__FLAG__) {
-                                         __array__297.pop();
+                                         __array__299.pop();
                                         break;
                                         
                                     }
-                                }return __array__297;
+                                }return __array__299;
                                  
                             })()
                         };
                         await (async function() {
-                            let __for_body__300=async function(t) {
+                            let __for_body__302=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__301=[],__elements__299=[" ","if"," ","(",the_exception_ref," ","instanceof"," ",(err_data && err_data["error_type"]),")"," ","{"," ","let"," ",(err_data && err_data["error_ref"]),"=",the_exception_ref,";"," "];
+                            let __array__303=[],__elements__301=[" ","if"," ","(",the_exception_ref," ","instanceof"," ",(err_data && err_data["error_type"]),")"," ","{"," ","let"," ",(err_data && err_data["error_ref"]),"=",the_exception_ref,";"," "];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__298 in __elements__299) {
-                                __array__301.push(await __for_body__300(__elements__299[__iter__298]));
+                            for(let __iter__300 in __elements__301) {
+                                __array__303.push(await __for_body__302(__elements__301[__iter__300]));
                                 if(__BREAK__FLAG__) {
-                                     __array__301.pop();
+                                     __array__303.pop();
                                     break;
                                     
                                 }
-                            }return __array__301;
+                            }return __array__303;
                              
                         })();
                         if (check_true ((err_data && err_data["insert_return"]))){
@@ -13324,37 +13340,37 @@ export async function init_dlisp(Environment)  {
                         (acc).push("}");
                         if (check_true ((((err_data && err_data["idx"])===((err_data && err_data["total_catches"])- 1))&& await not(base_error_caught)))){
                              await (async function() {
-                                let __for_body__304=async function(t) {
+                                let __for_body__306=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__305=[],__elements__303=[" ","else"," ","throw"," ",the_exception_ref,";"];
+                                let __array__307=[],__elements__305=[" ","else"," ","throw"," ",the_exception_ref,";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__302 in __elements__303) {
-                                    __array__305.push(await __for_body__304(__elements__303[__iter__302]));
+                                for(let __iter__304 in __elements__305) {
+                                    __array__307.push(await __for_body__306(__elements__305[__iter__304]));
                                     if(__BREAK__FLAG__) {
-                                         __array__305.pop();
+                                         __array__307.pop();
                                         break;
                                         
                                     }
-                                }return __array__305;
+                                }return __array__307;
                                  
                             })()
                         };
                         if (check_true (complete)){
                              await (async function() {
-                                let __for_body__308=async function(t) {
+                                let __for_body__310=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__309=[],__elements__307=[" ","}"];
+                                let __array__311=[],__elements__309=[" ","}"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__306 in __elements__307) {
-                                    __array__309.push(await __for_body__308(__elements__307[__iter__306]));
+                                for(let __iter__308 in __elements__309) {
+                                    __array__311.push(await __for_body__310(__elements__309[__iter__308]));
                                     if(__BREAK__FLAG__) {
-                                         __array__309.pop();
+                                         __array__311.pop();
                                         break;
                                         
                                     }
-                                }return __array__309;
+                                }return __array__311;
                                  
                             })()
                         };
@@ -13386,36 +13402,36 @@ export async function init_dlisp(Environment)  {
                          (stmts).unshift("await")
                     };
                     if (check_true (await (async function(){
-                        let __array_op_rval__312=is_complex_ques_;
-                         if (__array_op_rval__312 instanceof Function){
-                            return await __array_op_rval__312(try_block) 
+                        let __array_op_rval__314=is_complex_ques_;
+                         if (__array_op_rval__314 instanceof Function){
+                            return await __array_op_rval__314(try_block) 
                         } else {
-                            return[__array_op_rval__312,try_block]
+                            return[__array_op_rval__314,try_block]
                         }
                     })())){
                          await (async function() {
-                            let __for_body__315=async function(t) {
+                            let __for_body__317=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__316=[],__elements__314=["try"," ","/* TRY COMPLEX */ ",stmts," "];
+                            let __array__318=[],__elements__316=["try"," ","/* TRY COMPLEX */ ",stmts," "];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__313 in __elements__314) {
-                                __array__316.push(await __for_body__315(__elements__314[__iter__313]));
+                            for(let __iter__315 in __elements__316) {
+                                __array__318.push(await __for_body__317(__elements__316[__iter__315]));
                                 if(__BREAK__FLAG__) {
-                                     __array__316.pop();
+                                     __array__318.pop();
                                     break;
                                     
                                 }
-                            }return __array__316;
+                            }return __array__318;
                              
                         })()
                     } else {
                          await (async function() {
-                            let __for_body__319=async function(t) {
+                            let __for_body__321=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__320=[],__elements__318=await (async function ()  {
-                                let __array_arg__321=(async function() {
+                            let __array__322=[],__elements__320=await (async function ()  {
+                                let __array_arg__323=(async function() {
                                     if (check_true ((await get_ctx_val(ctx,"__LAMBDA_STEP__")===0))){
                                           return {
                                             mark:"final-return"
@@ -13426,29 +13442,29 @@ export async function init_dlisp(Environment)  {
                                         }
                                     }
                                 } );
-                                return ["try"," ","/* TRY SIMPLE */ ","{"," ",await __array_arg__321(),stmts," ","}"]
+                                return ["try"," ","/* TRY SIMPLE */ ","{"," ",await __array_arg__323(),stmts," ","}"]
                             } )();
                             let __BREAK__FLAG__=false;
-                            for(let __iter__317 in __elements__318) {
-                                __array__320.push(await __for_body__319(__elements__318[__iter__317]));
+                            for(let __iter__319 in __elements__320) {
+                                __array__322.push(await __for_body__321(__elements__320[__iter__319]));
                                 if(__BREAK__FLAG__) {
-                                     __array__320.pop();
+                                     __array__322.pop();
                                     break;
                                     
                                 }
-                            }return __array__320;
+                            }return __array__322;
                              
                         })()
                     };
                     await (async function(){
-                         let __test_condition__322=async function() {
+                         let __test_condition__324=async function() {
                              return  (idx<(catches && catches.length))
                         };
-                        let __body_ref__323=async function() {
+                        let __body_ref__325=async function() {
                             catch_block=await (async function(){
-                                let __targ__324=catches[idx];
-                                if (__targ__324){
-                                     return(__targ__324)["val"]
+                                let __targ__326=catches[idx];
+                                if (__targ__326){
+                                     return(__targ__326)["val"]
                                 } 
                             })();
                             await set_ctx(ctx,(catch_block && catch_block["2"] && catch_block["2"]["val"] && catch_block["2"]["val"]["0"] && catch_block["2"]["val"]["0"]["name"]),(await Environment.get_global("indirect_new"))(catch_block['1'].name));
@@ -13463,8 +13479,8 @@ export async function init_dlisp(Environment)  {
                              return  idx+=1
                         };
                         let __BREAK__FLAG__=false;
-                        while(await __test_condition__322()) {
-                            await __body_ref__323();
+                        while(await __test_condition__324()) {
+                            await __body_ref__325();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -13500,36 +13516,36 @@ export async function init_dlisp(Environment)  {
                     } ();
                     if (check_true ((mode===0))){
                          await (async function() {
-                            let __for_body__327=async function(t) {
+                            let __for_body__329=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__328=[],__elements__326=["throw"," ",error_instance,";"];
+                            let __array__330=[],__elements__328=["throw"," ",error_instance,";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__325 in __elements__326) {
-                                __array__328.push(await __for_body__327(__elements__326[__iter__325]));
+                            for(let __iter__327 in __elements__328) {
+                                __array__330.push(await __for_body__329(__elements__328[__iter__327]));
                                 if(__BREAK__FLAG__) {
-                                     __array__328.pop();
+                                     __array__330.pop();
                                     break;
                                     
                                 }
-                            }return __array__328;
+                            }return __array__330;
                              
                         })()
                     } else {
                          await (async function() {
-                            let __for_body__331=async function(t) {
+                            let __for_body__333=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__332=[],__elements__330=["throw"," ","new"," ",error_instance,"(",error_message,")",";"];
+                            let __array__334=[],__elements__332=["throw"," ","new"," ",error_instance,"(",error_message,")",";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__329 in __elements__330) {
-                                __array__332.push(await __for_body__331(__elements__330[__iter__329]));
+                            for(let __iter__331 in __elements__332) {
+                                __array__334.push(await __for_body__333(__elements__332[__iter__331]));
                                 if(__BREAK__FLAG__) {
-                                     __array__332.pop();
+                                     __array__334.pop();
                                     break;
                                     
                                 }
-                            }return __array__332;
+                            }return __array__334;
                              
                         })()
                     };
@@ -13537,11 +13553,11 @@ export async function init_dlisp(Environment)  {
                 };
                 compile_break=async function(tokens,ctx) {
                      return  await (async function(){
-                        let __array_op_rval__333=break_out;
-                         if (__array_op_rval__333 instanceof Function){
-                            return await __array_op_rval__333("=","true",";","return") 
+                        let __array_op_rval__335=break_out;
+                         if (__array_op_rval__335 instanceof Function){
+                            return await __array_op_rval__335("=","true",";","return") 
                         } else {
-                            return[__array_op_rval__333,"=","true",";","return"]
+                            return[__array_op_rval__335,"=","true",";","return"]
                         }
                     })()
                 };
@@ -13556,44 +13572,44 @@ export async function init_dlisp(Environment)  {
                         mark:"forced_return"
                     });
                     if (check_true (await (async function(){
-                        let __array_op_rval__334=is_block_ques_;
-                         if (__array_op_rval__334 instanceof Function){
-                            return await __array_op_rval__334((tokens && tokens["1"] && tokens["1"]["val"])) 
+                        let __array_op_rval__336=is_block_ques_;
+                         if (__array_op_rval__336 instanceof Function){
+                            return await __array_op_rval__336((tokens && tokens["1"] && tokens["1"]["val"])) 
                         } else {
-                            return[__array_op_rval__334,(tokens && tokens["1"] && tokens["1"]["val"])]
+                            return[__array_op_rval__336,(tokens && tokens["1"] && tokens["1"]["val"])]
                         }
                     })())){
                          await (async function() {
-                            let __for_body__337=async function(t) {
+                            let __for_body__339=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__338=[],__elements__336=["let"," ",return_val_reference,"=",await compile((tokens && tokens["1"] && tokens["1"]["val"]),ctx),";","return"," ",return_val_reference,";"];
+                            let __array__340=[],__elements__338=["let"," ",return_val_reference,"=",await compile((tokens && tokens["1"] && tokens["1"]["val"]),ctx),";","return"," ",return_val_reference,";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__335 in __elements__336) {
-                                __array__338.push(await __for_body__337(__elements__336[__iter__335]));
+                            for(let __iter__337 in __elements__338) {
+                                __array__340.push(await __for_body__339(__elements__338[__iter__337]));
                                 if(__BREAK__FLAG__) {
-                                     __array__338.pop();
+                                     __array__340.pop();
                                     break;
                                     
                                 }
-                            }return __array__338;
+                            }return __array__340;
                              
                         })()
                     } else {
                          await (async function() {
-                            let __for_body__341=async function(t) {
+                            let __for_body__343=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__342=[],__elements__340=["return"," ",await compile((tokens && tokens["1"]),ctx),";"];
+                            let __array__344=[],__elements__342=["return"," ",await compile((tokens && tokens["1"]),ctx),";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__339 in __elements__340) {
-                                __array__342.push(await __for_body__341(__elements__340[__iter__339]));
+                            for(let __iter__341 in __elements__342) {
+                                __array__344.push(await __for_body__343(__elements__342[__iter__341]));
                                 if(__BREAK__FLAG__) {
-                                     __array__342.pop();
+                                     __array__344.pop();
                                     break;
                                     
                                 }
-                            }return __array__342;
+                            }return __array__344;
                              
                         })()
                     };
@@ -13651,145 +13667,145 @@ export async function init_dlisp(Environment)  {
                         target_argument_ref=await gen_temp_name("target_arg");
                         target_arg=(args).pop();
                         await (async function() {
-                            let __for_body__345=async function(t) {
+                            let __for_body__347=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__346=[],__elements__344=["let"," ",target_argument_ref,"=","[]",".concat","(",await compile(target_arg,ctx),")",";"];
+                            let __array__348=[],__elements__346=["let"," ",target_argument_ref,"=","[]",".concat","(",await compile(target_arg,ctx),")",";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__343 in __elements__344) {
-                                __array__346.push(await __for_body__345(__elements__344[__iter__343]));
+                            for(let __iter__345 in __elements__346) {
+                                __array__348.push(await __for_body__347(__elements__346[__iter__345]));
                                 if(__BREAK__FLAG__) {
-                                     __array__346.pop();
+                                     __array__348.pop();
                                     break;
                                     
                                 }
-                            }return __array__346;
+                            }return __array__348;
                              
                         })();
                         await (async function() {
-                            let __for_body__349=async function(t) {
+                            let __for_body__351=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__350=[],__elements__348=["if","(","!",target_argument_ref," ","instanceof"," ","Array",")","{","throw"," ","new"," ","TypeError","(","\"Invalid final argument to apply - an array is required\"",")","}"];
+                            let __array__352=[],__elements__350=["if","(","!",target_argument_ref," ","instanceof"," ","Array",")","{","throw"," ","new"," ","TypeError","(","\"Invalid final argument to apply - an array is required\"",")","}"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__347 in __elements__348) {
-                                __array__350.push(await __for_body__349(__elements__348[__iter__347]));
+                            for(let __iter__349 in __elements__350) {
+                                __array__352.push(await __for_body__351(__elements__350[__iter__349]));
                                 if(__BREAK__FLAG__) {
-                                     __array__350.pop();
+                                     __array__352.pop();
                                     break;
                                     
                                 }
-                            }return __array__350;
+                            }return __array__352;
                              
                         })();
                         await (async function() {
-                            let __for_body__353=async function(token) {
+                            let __for_body__355=async function(token) {
                                 preceding_arg_ref=await gen_temp_name("pre_arg");
                                 if (check_true (await (async function(){
-                                    let __array_op_rval__355=is_form_ques_;
-                                     if (__array_op_rval__355 instanceof Function){
-                                        return await __array_op_rval__355(token) 
+                                    let __array_op_rval__357=is_form_ques_;
+                                     if (__array_op_rval__357 instanceof Function){
+                                        return await __array_op_rval__357(token) 
                                     } else {
-                                        return[__array_op_rval__355,token]
+                                        return[__array_op_rval__357,token]
                                     }
                                 })())){
                                      await (async function() {
-                                        let __for_body__358=async function(t) {
+                                        let __for_body__360=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__359=[],__elements__357=["let"," ",preceding_arg_ref,"=",await wrap_assignment_value(await compile((token && token["val"]),ctx),ctx),";"];
+                                        let __array__361=[],__elements__359=["let"," ",preceding_arg_ref,"=",await wrap_assignment_value(await compile((token && token["val"]),ctx),ctx),";"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__356 in __elements__357) {
-                                            __array__359.push(await __for_body__358(__elements__357[__iter__356]));
+                                        for(let __iter__358 in __elements__359) {
+                                            __array__361.push(await __for_body__360(__elements__359[__iter__358]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__359.pop();
+                                                 __array__361.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__359;
+                                        }return __array__361;
                                          
                                     })()
                                 } else {
                                      preceding_arg_ref=await wrap_assignment_value(await compile(token,ctx))
                                 };
                                  return  (acc).push(await (async function(){
-                                    let __array_op_rval__360=target_argument_ref;
-                                     if (__array_op_rval__360 instanceof Function){
-                                        return await __array_op_rval__360(".unshift","(",preceding_arg_ref,")",";") 
+                                    let __array_op_rval__362=target_argument_ref;
+                                     if (__array_op_rval__362 instanceof Function){
+                                        return await __array_op_rval__362(".unshift","(",preceding_arg_ref,")",";") 
                                     } else {
-                                        return[__array_op_rval__360,".unshift","(",preceding_arg_ref,")",";"]
+                                        return[__array_op_rval__362,".unshift","(",preceding_arg_ref,")",";"]
                                     }
                                 })())
                             };
-                            let __array__354=[],__elements__352=args;
+                            let __array__356=[],__elements__354=args;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__351 in __elements__352) {
-                                __array__354.push(await __for_body__353(__elements__352[__iter__351]));
+                            for(let __iter__353 in __elements__354) {
+                                __array__356.push(await __for_body__355(__elements__354[__iter__353]));
                                 if(__BREAK__FLAG__) {
-                                     __array__354.pop();
+                                     __array__356.pop();
                                     break;
                                     
                                 }
-                            }return __array__354;
+                            }return __array__356;
                              
                         })();
                          await (async function() {
-                            let __for_body__363=async function(t) {
+                            let __for_body__365=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__364=[],__elements__362=["return"," ","(",function_ref,")",".","apply","(","this",",",target_argument_ref,")"];
+                            let __array__366=[],__elements__364=["return"," ","(",function_ref,")",".","apply","(","this",",",target_argument_ref,")"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__361 in __elements__362) {
-                                __array__364.push(await __for_body__363(__elements__362[__iter__361]));
+                            for(let __iter__363 in __elements__364) {
+                                __array__366.push(await __for_body__365(__elements__364[__iter__363]));
                                 if(__BREAK__FLAG__) {
-                                     __array__364.pop();
+                                     __array__366.pop();
                                     break;
                                     
                                 }
-                            }return __array__364;
+                            }return __array__366;
                              
                         })()
                     } else {
                         if (check_true (await (async function(){
-                            let __array_op_rval__365=is_form_ques_;
-                             if (__array_op_rval__365 instanceof Function){
-                                return await __array_op_rval__365(args) 
+                            let __array_op_rval__367=is_form_ques_;
+                             if (__array_op_rval__367 instanceof Function){
+                                return await __array_op_rval__367(args) 
                             } else {
-                                return[__array_op_rval__365,args]
+                                return[__array_op_rval__367,args]
                             }
                         })())){
                             await (async function() {
-                                let __for_body__368=async function(t) {
+                                let __for_body__370=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__369=[],__elements__367=["let"," ",args_ref,"=",await wrap_assignment_value(await compile((args && args["val"]),ctx),ctx),";"];
+                                let __array__371=[],__elements__369=["let"," ",args_ref,"=",await wrap_assignment_value(await compile((args && args["val"]),ctx),ctx),";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__366 in __elements__367) {
-                                    __array__369.push(await __for_body__368(__elements__367[__iter__366]));
+                                for(let __iter__368 in __elements__369) {
+                                    __array__371.push(await __for_body__370(__elements__369[__iter__368]));
                                     if(__BREAK__FLAG__) {
-                                         __array__369.pop();
+                                         __array__371.pop();
                                         break;
                                         
                                     }
-                                }return __array__369;
+                                }return __array__371;
                                  
                             })();
                              complex_ques_=true
                         };
                         await (async function() {
-                            let __for_body__372=async function(t) {
+                            let __for_body__374=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__373=[],__elements__371=["return"," ","("," ",function_ref,")",".","apply","(","this"];
+                            let __array__375=[],__elements__373=["return"," ","("," ",function_ref,")",".","apply","(","this"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__370 in __elements__371) {
-                                __array__373.push(await __for_body__372(__elements__371[__iter__370]));
+                            for(let __iter__372 in __elements__373) {
+                                __array__375.push(await __for_body__374(__elements__373[__iter__372]));
                                 if(__BREAK__FLAG__) {
-                                     __array__373.pop();
+                                     __array__375.pop();
                                     break;
                                     
                                 }
-                            }return __array__373;
+                            }return __array__375;
                              
                         })();
                         if (check_true (args)){
@@ -13853,20 +13869,20 @@ export async function init_dlisp(Environment)  {
                     preamble=(opts && opts["preamble"]);
                     add_args=async function() {
                          return  await (async function() {
-                            let __for_body__376=async function(token) {
+                            let __for_body__378=async function(token) {
                                 (acc).push(",");
                                  return  (acc).push(await wrap_assignment_value(await compile(token,ctx),ctx))
                             };
-                            let __array__377=[],__elements__375=await tokens["slice"].call(tokens,3);
+                            let __array__379=[],__elements__377=await tokens["slice"].call(tokens,3);
                             let __BREAK__FLAG__=false;
-                            for(let __iter__374 in __elements__375) {
-                                __array__377.push(await __for_body__376(__elements__375[__iter__374]));
+                            for(let __iter__376 in __elements__377) {
+                                __array__379.push(await __for_body__378(__elements__377[__iter__376]));
                                 if(__BREAK__FLAG__) {
-                                     __array__377.pop();
+                                     __array__379.pop();
                                     break;
                                     
                                 }
-                            }return __array__377;
+                            }return __array__379;
                              
                         })()
                     };
@@ -13882,50 +13898,50 @@ export async function init_dlisp(Environment)  {
                              return  await async function(){
                                 if (check_true( ((tokens && tokens.length)===3))) {
                                      return await (async function() {
-                                        let __for_body__380=async function(t) {
+                                        let __for_body__382=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__381=[],__elements__379=await (async function(){
-                                            let __array_op_rval__382=(preamble && preamble["0"]);
-                                             if (__array_op_rval__382 instanceof Function){
-                                                return await __array_op_rval__382(" ",target,"[",method,"]","()") 
+                                        let __array__383=[],__elements__381=await (async function(){
+                                            let __array_op_rval__384=(preamble && preamble["0"]);
+                                             if (__array_op_rval__384 instanceof Function){
+                                                return await __array_op_rval__384(" ",target,"[",method,"]","()") 
                                             } else {
-                                                return[__array_op_rval__382," ",target,"[",method,"]","()"]
+                                                return[__array_op_rval__384," ",target,"[",method,"]","()"]
                                             }
                                         })();
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__378 in __elements__379) {
-                                            __array__381.push(await __for_body__380(__elements__379[__iter__378]));
+                                        for(let __iter__380 in __elements__381) {
+                                            __array__383.push(await __for_body__382(__elements__381[__iter__380]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__381.pop();
+                                                 __array__383.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__381;
+                                        }return __array__383;
                                          
                                     })()
                                 } else  {
                                     await (async function() {
-                                        let __for_body__385=async function(t) {
+                                        let __for_body__387=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__386=[],__elements__384=await (async function(){
-                                            let __array_op_rval__387=(preamble && preamble["0"]);
-                                             if (__array_op_rval__387 instanceof Function){
-                                                return await __array_op_rval__387(" ",target,"[",method,"]",".call","(",target) 
+                                        let __array__388=[],__elements__386=await (async function(){
+                                            let __array_op_rval__389=(preamble && preamble["0"]);
+                                             if (__array_op_rval__389 instanceof Function){
+                                                return await __array_op_rval__389(" ",target,"[",method,"]",".call","(",target) 
                                             } else {
-                                                return[__array_op_rval__387," ",target,"[",method,"]",".call","(",target]
+                                                return[__array_op_rval__389," ",target,"[",method,"]",".call","(",target]
                                             }
                                         })();
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__383 in __elements__384) {
-                                            __array__386.push(await __for_body__385(__elements__384[__iter__383]));
+                                        for(let __iter__385 in __elements__386) {
+                                            __array__388.push(await __for_body__387(__elements__386[__iter__385]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__386.pop();
+                                                 __array__388.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__386;
+                                        }return __array__388;
                                          
                                     })();
                                     await add_args();
@@ -13934,54 +13950,54 @@ export async function init_dlisp(Environment)  {
                             } ()
                         } else if (check_true( ((opts && opts["type"])===2))) {
                             await (async function() {
-                                let __for_body__390=async function(t) {
+                                let __for_body__392=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__391=[],__elements__389=["{"," ","let"," ","__call_target__","=",target,","," ","__call_method__","=",method,";"];
+                                let __array__393=[],__elements__391=["{"," ","let"," ","__call_target__","=",target,","," ","__call_method__","=",method,";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__388 in __elements__389) {
-                                    __array__391.push(await __for_body__390(__elements__389[__iter__388]));
+                                for(let __iter__390 in __elements__391) {
+                                    __array__393.push(await __for_body__392(__elements__391[__iter__390]));
                                     if(__BREAK__FLAG__) {
-                                         __array__391.pop();
+                                         __array__393.pop();
                                         break;
                                         
                                     }
-                                }return __array__391;
+                                }return __array__393;
                                  
                             })();
                             await async function(){
                                 if (check_true( ((tokens && tokens.length)===3))) {
                                      return await (async function() {
-                                        let __for_body__394=async function(t) {
+                                        let __for_body__396=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__395=[],__elements__393=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]","()"];
+                                        let __array__397=[],__elements__395=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]","()"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__392 in __elements__393) {
-                                            __array__395.push(await __for_body__394(__elements__393[__iter__392]));
+                                        for(let __iter__394 in __elements__395) {
+                                            __array__397.push(await __for_body__396(__elements__395[__iter__394]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__395.pop();
+                                                 __array__397.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__395;
+                                        }return __array__397;
                                          
                                     })()
                                 } else  {
                                     await (async function() {
-                                        let __for_body__398=async function(t) {
+                                        let __for_body__400=async function(t) {
                                              return  (acc).push(t)
                                         };
-                                        let __array__399=[],__elements__397=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]",".","call","(","__call_target__"];
+                                        let __array__401=[],__elements__399=["return"," ",(preamble && preamble["0"])," ","__call_target__","[","__call_method__","]",".","call","(","__call_target__"];
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__396 in __elements__397) {
-                                            __array__399.push(await __for_body__398(__elements__397[__iter__396]));
+                                        for(let __iter__398 in __elements__399) {
+                                            __array__401.push(await __for_body__400(__elements__399[__iter__398]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__399.pop();
+                                                 __array__401.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__399;
+                                        }return __array__401;
                                          
                                     })();
                                     await add_args();
@@ -13996,38 +14012,38 @@ export async function init_dlisp(Environment)  {
                 check_needs_wrap=async function(stmts) {
                     let fst;
                     fst=(((stmts instanceof Array)&& await first(stmts)&& (await first(stmts) instanceof Object)&& await not(await (async function(){
-                        let __targ__400=await first(stmts);
-                        if (__targ__400){
-                             return(__targ__400)["ctype"]
+                        let __targ__402=await first(stmts);
+                        if (__targ__402){
+                             return(__targ__402)["ctype"]
                         } 
                     })() instanceof Function)&& await (async function(){
-                        let __targ__401=await first(stmts);
-                        if (__targ__401){
-                             return(__targ__401)["ctype"]
+                        let __targ__403=await first(stmts);
+                        if (__targ__403){
+                             return(__targ__403)["ctype"]
                         } 
                     })()&& await async function(){
                         if (check_true( (await (async function(){
-                            let __targ__402=await first(stmts);
-                            if (__targ__402){
-                                 return(__targ__402)["ctype"]
+                            let __targ__404=await first(stmts);
+                            if (__targ__404){
+                                 return(__targ__404)["ctype"]
                             } 
                         })() instanceof String || typeof await (async function(){
-                            let __targ__402=await first(stmts);
-                            if (__targ__402){
-                                 return(__targ__402)["ctype"]
+                            let __targ__404=await first(stmts);
+                            if (__targ__404){
+                                 return(__targ__404)["ctype"]
                             } 
                         })()==='string'))) {
                              return await (async function(){
-                                let __targ__403=await first(stmts);
-                                if (__targ__403){
-                                     return(__targ__403)["ctype"]
+                                let __targ__405=await first(stmts);
+                                if (__targ__405){
+                                     return(__targ__405)["ctype"]
                                 } 
                             })()
                         } else  {
                              return await sub_type(await (async function(){
-                                let __targ__404=await first(stmts);
-                                if (__targ__404){
-                                     return(__targ__404)["ctype"]
+                                let __targ__406=await first(stmts);
+                                if (__targ__406){
+                                     return(__targ__406)["ctype"]
                                 } 
                             })())
                         }
@@ -14042,7 +14058,7 @@ export async function init_dlisp(Environment)  {
                 };
                 compile_import=async function(tokens,ctx) {
                     let symbol_tokens;
-                    let __symbols__405= async function(){
+                    let __symbols__407= async function(){
                         return []
                     };
                     let from_tokens;
@@ -14050,7 +14066,7 @@ export async function init_dlisp(Environment)  {
                     let acc;
                     {
                         symbol_tokens=(tokens && tokens["1"]);
-                        let symbols=await __symbols__405();
+                        let symbols=await __symbols__407();
                         ;
                         from_tokens=null;
                         from_place=null;
@@ -14070,35 +14086,35 @@ export async function init_dlisp(Environment)  {
                         await async function(){
                             if (check_true( ((symbol_tokens && symbol_tokens["val"]) instanceof Array))) {
                                 await (async function() {
-                                    let __for_body__408=async function(s) {
+                                    let __for_body__410=async function(s) {
                                          return  (symbols).push((s && s.name))
                                     };
-                                    let __array__409=[],__elements__407=(symbol_tokens && symbol_tokens["val"]);
+                                    let __array__411=[],__elements__409=(symbol_tokens && symbol_tokens["val"]);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__406 in __elements__407) {
-                                        __array__409.push(await __for_body__408(__elements__407[__iter__406]));
+                                    for(let __iter__408 in __elements__409) {
+                                        __array__411.push(await __for_body__410(__elements__409[__iter__408]));
                                         if(__BREAK__FLAG__) {
-                                             __array__409.pop();
+                                             __array__411.pop();
                                             break;
                                             
                                         }
-                                    }return __array__409;
+                                    }return __array__411;
                                      
                                 })();
                                  return  await (async function() {
-                                    let __for_body__412=async function(t) {
+                                    let __for_body__414=async function(t) {
                                          return  (acc).push(t)
                                     };
-                                    let __array__413=[],__elements__411=await flatten(["{"," ",symbols," ","}"," ","from"," ",from_place]);
+                                    let __array__415=[],__elements__413=await flatten(["{"," ",symbols," ","}"," ","from"," ",from_place]);
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__410 in __elements__411) {
-                                        __array__413.push(await __for_body__412(__elements__411[__iter__410]));
+                                    for(let __iter__412 in __elements__413) {
+                                        __array__415.push(await __for_body__414(__elements__413[__iter__412]));
                                         if(__BREAK__FLAG__) {
-                                             __array__413.pop();
+                                             __array__415.pop();
                                             break;
                                             
                                         }
-                                    }return __array__413;
+                                    }return __array__415;
                                      
                                 })()
                             } else  {
@@ -14156,19 +14172,19 @@ export async function init_dlisp(Environment)  {
                         ctype:"statement",meta:metaval
                     });
                     await (async function() {
-                        let __for_body__417=async function(t) {
+                        let __for_body__419=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__418=[],__elements__416=await flatten([(preamble && preamble["0"])," ","import"," ","(",from_place,")"]);
+                        let __array__420=[],__elements__418=await flatten([(preamble && preamble["0"])," ","import"," ","(",from_place,")"]);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__415 in __elements__416) {
-                            __array__418.push(await __for_body__417(__elements__416[__iter__415]));
+                        for(let __iter__417 in __elements__418) {
+                            __array__420.push(await __for_body__419(__elements__418[__iter__417]));
                             if(__BREAK__FLAG__) {
-                                 __array__418.pop();
+                                 __array__420.pop();
                                 break;
                                 
                             }
-                        }return __array__418;
+                        }return __array__420;
                          
                     })();
                      return  acc
@@ -14179,7 +14195,7 @@ export async function init_dlisp(Environment)  {
                     acc=[];
                     text=null;
                     await (async function() {
-                        let __for_body__421=async function(t) {
+                        let __for_body__423=async function(t) {
                              return  await async function(){
                                 if (check_true((t && t["ref"]))) {
                                      return (acc).push((t && t.name))
@@ -14190,16 +14206,16 @@ export async function init_dlisp(Environment)  {
                                 }
                             } ()
                         };
-                        let __array__422=[],__elements__420=(await (await Environment.get_global("rest"))(tokens)|| []);
+                        let __array__424=[],__elements__422=(await (await Environment.get_global("rest"))(tokens)|| []);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__419 in __elements__420) {
-                            __array__422.push(await __for_body__421(__elements__420[__iter__419]));
+                        for(let __iter__421 in __elements__422) {
+                            __array__424.push(await __for_body__423(__elements__422[__iter__421]));
                             if(__BREAK__FLAG__) {
-                                 __array__422.pop();
+                                 __array__424.pop();
                                 break;
                                 
                             }
-                        }return __array__422;
+                        }return __array__424;
                          
                     })();
                      return  acc
@@ -14230,19 +14246,19 @@ export async function init_dlisp(Environment)  {
                     ;
                     has_lisp_globals=true;
                     await async function(){
-                        let __target_obj__423=(root_ctx && root_ctx["defined_lisp_globals"]);
-                        __target_obj__423[target]=AsyncFunction;
-                        return __target_obj__423;
+                        let __target_obj__425=(root_ctx && root_ctx["defined_lisp_globals"]);
+                        __target_obj__425[target]=AsyncFunction;
+                        return __target_obj__425;
                         
                     }();
                     if (check_true ((tokens && tokens["3"]))){
                          metavalue=await (async function () {
                              if (check_true (await (async function(){
-                                let __array_op_rval__424=is_complex_ques_;
-                                 if (__array_op_rval__424 instanceof Function){
-                                    return await __array_op_rval__424((tokens && tokens["3"])) 
+                                let __array_op_rval__426=is_complex_ques_;
+                                 if (__array_op_rval__426 instanceof Function){
+                                    return await __array_op_rval__426((tokens && tokens["3"])) 
                                 } else {
-                                    return[__array_op_rval__424,(tokens && tokens["3"])]
+                                    return[__array_op_rval__426,(tokens && tokens["3"])]
                                 }
                             })())){
                                   return await compile_wrapper_fn((tokens && tokens["3"]),ctx)
@@ -14263,8 +14279,8 @@ export async function init_dlisp(Environment)  {
                                 }
                             };
                             await async function(){
-                                let __target_obj__425=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                __target_obj__425[target]=await async function(){
+                                let __target_obj__427=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                __target_obj__427[target]=await async function(){
                                     if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="Function"))) {
                                          return Function
                                     } else if (check_true( ((assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])==="AsyncFunction"))) {
@@ -14277,7 +14293,7 @@ export async function init_dlisp(Environment)  {
                                          return (assignment_value && assignment_value["0"] && assignment_value["0"]["ctype"])
                                     }
                                 } ();
-                                return __target_obj__425;
+                                return __target_obj__427;
                                 
                             }();
                             if (check_true (wrap_as_function_ques_)){
@@ -14286,16 +14302,16 @@ export async function init_dlisp(Environment)  {
                         } else  {
                             if (check_true (((assignment_value instanceof Array)&& ((assignment_value && assignment_value["0"])==="await")))){
                                   return await async function(){
-                                    let __target_obj__426=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                    __target_obj__426[target]=AsyncFunction;
-                                    return __target_obj__426;
+                                    let __target_obj__428=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                    __target_obj__428[target]=AsyncFunction;
+                                    return __target_obj__428;
                                     
                                 }()
                             } else {
                                   return await async function(){
-                                    let __target_obj__427=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                    __target_obj__427[target]=assignment_value;
-                                    return __target_obj__427;
+                                    let __target_obj__429=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                    __target_obj__429[target]=assignment_value;
+                                    return __target_obj__429;
                                     
                                 }()
                             }
@@ -14306,18 +14322,18 @@ export async function init_dlisp(Environment)  {
                          (clog)("assignment_value: ",await (await Environment.get_global("as_lisp"))(assignment_value))
                     };
                     acc=await (async function ()  {
-                        let __array_arg__430=(async function() {
+                        let __array_arg__432=(async function() {
                             if (check_true (((Function===await (async function(){
-                                let __targ__428=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                if (__targ__428){
-                                     return(__targ__428)[target]
+                                let __targ__430=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                if (__targ__430){
+                                     return(__targ__430)[target]
                                 } 
                             })())|| await (async function(){
-                                let __array_op_rval__429=in_sync_ques_;
-                                 if (__array_op_rval__429 instanceof Function){
-                                    return await __array_op_rval__429(ctx) 
+                                let __array_op_rval__431=in_sync_ques_;
+                                 if (__array_op_rval__431 instanceof Function){
+                                    return await __array_op_rval__431(ctx) 
                                 } else {
-                                    return[__array_op_rval__429,ctx]
+                                    return[__array_op_rval__431,ctx]
                                 }
                             })()))){
                                   return ""
@@ -14325,14 +14341,14 @@ export async function init_dlisp(Environment)  {
                                   return "await"
                             }
                         } );
-                        let __array_arg__431=(async function() {
+                        let __array_arg__433=(async function() {
                             if (check_true ((metavalue|| (opts && opts["constant"])))){
                                   return ","
                             } else {
                                   return ""
                             }
                         } );
-                        let __array_arg__432=(async function() {
+                        let __array_arg__434=(async function() {
                             if (check_true (metavalue)){
                                   return metavalue
                             } else {
@@ -14343,14 +14359,14 @@ export async function init_dlisp(Environment)  {
                                 }
                             }
                         } );
-                        let __array_arg__433=(async function() {
+                        let __array_arg__435=(async function() {
                             if (check_true ((opts && opts["constant"]))){
                                   return ","
                             } else {
                                   return ""
                             }
                         } );
-                        let __array_arg__434=(async function() {
+                        let __array_arg__436=(async function() {
                             if (check_true ((opts && opts["constant"]))){
                                   return "true"
                             } else {
@@ -14359,7 +14375,7 @@ export async function init_dlisp(Environment)  {
                         } );
                         return [{
                             ctype:"statement"
-                        },await __array_arg__430()," ","Environment",".","set_global","(","","\"",(tokens && tokens["1"] && tokens["1"]["name"]),"\"",",",assignment_value,await __array_arg__431(),await __array_arg__432(),await __array_arg__433(),await __array_arg__434(),")"]
+                        },await __array_arg__432()," ","Environment",".","set_global","(","","\"",(tokens && tokens["1"] && tokens["1"]["name"]),"\"",",",assignment_value,await __array_arg__433(),await __array_arg__434(),await __array_arg__435(),await __array_arg__436(),")"]
                     } )();
                      return  acc
                 };
@@ -14378,16 +14394,16 @@ export async function init_dlisp(Environment)  {
                     acc=[];
                     acc=await JSON.stringify((lisp_struct && lisp_struct["1"]));
                      return  await (async function(){
-                        let __array_op_rval__435=acc;
-                         if (__array_op_rval__435 instanceof Function){
-                            return await __array_op_rval__435() 
+                        let __array_op_rval__437=acc;
+                         if (__array_op_rval__437 instanceof Function){
+                            return await __array_op_rval__437() 
                         } else {
-                            return[__array_op_rval__435]
+                            return[__array_op_rval__437]
                         }
                     })()
                 };
                 wrap_and_run=async function(js_code,ctx,run_opts) {
-                    let __assembly__436= async function(){
+                    let __assembly__438= async function(){
                         return null
                     };
                     let result;
@@ -14397,19 +14413,19 @@ export async function init_dlisp(Environment)  {
                     let needs_braces_ques_;
                     let in_quotem;
                     let run_log;
-                    let __needs_return_ques___437= async function(){
+                    let __needs_return_ques___439= async function(){
                         return await (async function ()  {
                             ctype=await (async function () {
                                  if (check_true (((js_code instanceof Array)&& await first(js_code)&& (await first(js_code) instanceof Object)&& await (async function(){
-                                    let __targ__438=await first(js_code);
-                                    if (__targ__438){
-                                         return(__targ__438)["ctype"]
+                                    let __targ__440=await first(js_code);
+                                    if (__targ__440){
+                                         return(__targ__440)["ctype"]
                                     } 
                                 })()))){
                                       return await (async function(){
-                                        let __targ__439=await first(js_code);
-                                        if (__targ__439){
-                                             return(__targ__439)["ctype"]
+                                        let __targ__441=await first(js_code);
+                                        if (__targ__441){
+                                             return(__targ__441)["ctype"]
                                         } 
                                     })()
                                 } 
@@ -14442,7 +14458,7 @@ export async function init_dlisp(Environment)  {
                     };
                     let assembled;
                     {
-                        let assembly=await __assembly__436();
+                        let assembly=await __assembly__438();
                         ;
                         result=null;
                         fst=null;
@@ -14459,7 +14475,7 @@ export async function init_dlisp(Environment)  {
                                 })
                             } 
                         })();
-                        let needs_return_ques_=await __needs_return_ques___437();
+                        let needs_return_ques_=await __needs_return_ques___439();
                         ;
                         assembled=null;
                         ;
@@ -14478,11 +14494,11 @@ export async function init_dlisp(Environment)  {
                                  (run_log)("specified namespace: ",(comp_meta && comp_meta["namespace"]))
                             };
                             result=await Environment["evaluate_local"].call(Environment,await (async function(){
-                                let __array_op_rval__441=comp_meta;
-                                 if (__array_op_rval__441 instanceof Function){
-                                    return await __array_op_rval__441(await assemble_output(assembled)) 
+                                let __array_op_rval__443=comp_meta;
+                                 if (__array_op_rval__443 instanceof Function){
+                                    return await __array_op_rval__443(await assemble_output(assembled)) 
                                 } else {
-                                    return[__array_op_rval__441,await assemble_output(assembled)]
+                                    return[__array_op_rval__443,await assemble_output(assembled)]
                                 }
                             })(),ctx,{
                                 compiled_source:true
@@ -14518,9 +14534,9 @@ export async function init_dlisp(Environment)  {
                             await (async function(){
                                 try /* TRY SIMPLE */ {
                                       return assembly=new AsyncFunction("Environment",assembled) 
-                                } catch(__exception__442) {
-                                      if (__exception__442 instanceof Error) {
-                                         let e=__exception__442;
+                                } catch(__exception__444) {
+                                      if (__exception__444 instanceof Error) {
+                                         let e=__exception__444;
                                          {
                                             debugger;
                                             ;
@@ -14534,11 +14550,11 @@ export async function init_dlisp(Environment)  {
                                  assembly=await (await Environment.get_global("bind_function"))(assembly,Environment)
                             };
                             result=await (async function(){
-                                let __array_op_rval__443=assembly;
-                                 if (__array_op_rval__443 instanceof Function){
-                                    return await __array_op_rval__443(Environment) 
+                                let __array_op_rval__445=assembly;
+                                 if (__array_op_rval__445 instanceof Function){
+                                    return await __array_op_rval__445(Environment) 
                                 } else {
-                                    return[__array_op_rval__443,Environment]
+                                    return[__array_op_rval__445,Environment]
                                 }
                             })();
                             if (check_true (await verbosity(ctx))){
@@ -14582,11 +14598,11 @@ export async function init_dlisp(Environment)  {
                                         } else  {
                                             if (check_true (in_concat)){
                                                   return await quote_tree(await (async function(){
-                                                    let __array_op_rval__444=elem;
-                                                     if (__array_op_rval__444 instanceof Function){
-                                                        return await __array_op_rval__444() 
+                                                    let __array_op_rval__446=elem;
+                                                     if (__array_op_rval__446 instanceof Function){
+                                                        return await __array_op_rval__446() 
                                                     } else {
-                                                        return[__array_op_rval__444]
+                                                        return[__array_op_rval__446]
                                                     }
                                                 })(),ctx,acc)
                                             } else {
@@ -14644,14 +14660,14 @@ export async function init_dlisp(Environment)  {
                     await set_ctx(ctx,"__IN_QUOTEM__",true);
                     if (check_true (await verbosity(ctx))){
                         {
-                            let __array_arg__445=(async function() {
+                            let __array_arg__447=(async function() {
                                 if (check_true (await get_ctx(ctx,"__IN_LAMBDA__"))){
                                       return "[IN LAMBDA]"
                                 } else {
                                       return ""
                                 }
                             } );
-                            (quotem_log)("->",await __array_arg__445(),await JSON.stringify((lisp_struct && lisp_struct["1"])))
+                            (quotem_log)("->",await __array_arg__447(),await JSON.stringify((lisp_struct && lisp_struct["1"])))
                         }
                     };
                     if (check_true (await get_ctx(ctx,"__IN_LAMBDA__"))){
@@ -14680,7 +14696,7 @@ export async function init_dlisp(Environment)  {
                     } 
                 })();
                 compile_eval=async function(tokens,ctx) {
-                    let __assembly__446= async function(){
+                    let __assembly__448= async function(){
                         return null
                     };
                     let type_mark;
@@ -14688,7 +14704,7 @@ export async function init_dlisp(Environment)  {
                     let preamble;
                     let result;
                     {
-                        let assembly=await __assembly__446();
+                        let assembly=await __assembly__448();
                         ;
                         type_mark=null;
                         acc=[];
@@ -14713,11 +14729,11 @@ export async function init_dlisp(Environment)  {
                     preamble=await calling_preamble(ctx);
                     ;
                      return  await (async function(){
-                        let __array_op_rval__447=(preamble && preamble["2"]);
-                         if (__array_op_rval__447 instanceof Function){
-                            return await __array_op_rval__447((preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()") 
+                        let __array_op_rval__449=(preamble && preamble["2"]);
+                         if (__array_op_rval__449 instanceof Function){
+                            return await __array_op_rval__449((preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()") 
                         } else {
-                            return[__array_op_rval__447,(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()"]
+                            return[__array_op_rval__449,(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()"," ","{",await compile_for_each_inner(tokens,ctx,preamble)," ","}",")","()"]
                         }
                     })()
                 };
@@ -14759,11 +14775,11 @@ export async function init_dlisp(Environment)  {
                     })();
                     for_body=(tokens && tokens["2"]);
                     body_is_block_ques_=await (async function(){
-                        let __array_op_rval__448=is_block_ques_;
-                         if (__array_op_rval__448 instanceof Function){
-                            return await __array_op_rval__448((for_body && for_body["val"])) 
+                        let __array_op_rval__450=is_block_ques_;
+                         if (__array_op_rval__450 instanceof Function){
+                            return await __array_op_rval__450((for_body && for_body["val"])) 
                         } else {
-                            return[__array_op_rval__448,(for_body && for_body["val"])]
+                            return[__array_op_rval__450,(for_body && for_body["val"])]
                         }
                     })();
                     if (check_true ((iter_count<1))){
@@ -14771,25 +14787,25 @@ export async function init_dlisp(Environment)  {
                         
                     };
                     await (async function() {
-                        let __for_body__451=async function(iter_idx) {
+                        let __for_body__453=async function(iter_idx) {
                             (idx_iters).push(for_args[iter_idx]);
                              return  await set_ctx(ctx,await clean_quoted_reference(await (async function(){
-                                let __targ__453=await last(idx_iters);
-                                if (__targ__453){
-                                     return(__targ__453)["name"]
+                                let __targ__455=await last(idx_iters);
+                                if (__targ__455){
+                                     return(__targ__455)["name"]
                                 } 
                             })()),ArgumentType)
                         };
-                        let __array__452=[],__elements__450=await (await Environment.get_global("range"))(iter_count);
+                        let __array__454=[],__elements__452=await (await Environment.get_global("range"))(iter_count);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__449 in __elements__450) {
-                            __array__452.push(await __for_body__451(__elements__450[__iter__449]));
+                        for(let __iter__451 in __elements__452) {
+                            __array__454.push(await __for_body__453(__elements__452[__iter__451]));
                             if(__BREAK__FLAG__) {
-                                 __array__452.pop();
+                                 __array__454.pop();
                                 break;
                                 
                             }
-                        }return __array__452;
+                        }return __array__454;
                          
                     })();
                     await set_ctx(ctx,collector_ref,ArgumentType);
@@ -14805,35 +14821,35 @@ export async function init_dlisp(Environment)  {
                     }();
                     (acc).push(await compile(prebuild,ctx));
                     await (async function() {
-                        let __for_body__457=async function(t) {
+                        let __for_body__459=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__458=[],__elements__456=["let"," ",collector_ref,"=","[]",",",element_list,"=",await wrap_assignment_value(await compile(elements,ctx),ctx),";"];
+                        let __array__460=[],__elements__458=["let"," ",collector_ref,"=","[]",",",element_list,"=",await wrap_assignment_value(await compile(elements,ctx),ctx),";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__455 in __elements__456) {
-                            __array__458.push(await __for_body__457(__elements__456[__iter__455]));
+                        for(let __iter__457 in __elements__458) {
+                            __array__460.push(await __for_body__459(__elements__458[__iter__457]));
                             if(__BREAK__FLAG__) {
-                                 __array__458.pop();
+                                 __array__460.pop();
                                 break;
                                 
                             }
-                        }return __array__458;
+                        }return __array__460;
                          
                     })();
                     await (async function() {
-                        let __for_body__461=async function(t) {
+                        let __for_body__463=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__462=[],__elements__460=["let"," ",break_out,"=","false",";"];
+                        let __array__464=[],__elements__462=["let"," ",break_out,"=","false",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__459 in __elements__460) {
-                            __array__462.push(await __for_body__461(__elements__460[__iter__459]));
+                        for(let __iter__461 in __elements__462) {
+                            __array__464.push(await __for_body__463(__elements__462[__iter__461]));
                             if(__BREAK__FLAG__) {
-                                 __array__462.pop();
+                                 __array__464.pop();
                                 break;
                                 
                             }
-                        }return __array__462;
+                        }return __array__464;
                          
                     })();
                     if (check_true (await (await Environment.get_global("blank?"))((preamble && preamble["0"])))){
@@ -14845,58 +14861,58 @@ export async function init_dlisp(Environment)  {
                         if (check_true( (((for_args && for_args.length)===2)&& await not(((for_args && for_args["1"]) instanceof Array))))) {
                             await set_ctx(ctx,idx_iter,NumberType);
                             await (async function() {
-                                let __for_body__465=async function(t) {
+                                let __for_body__467=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__466=[],__elements__464=["for","(","let"," ",idx_iter," ","in"," ",element_list,")"," ","{"];
+                                let __array__468=[],__elements__466=["for","(","let"," ",idx_iter," ","in"," ",element_list,")"," ","{"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__463 in __elements__464) {
-                                    __array__466.push(await __for_body__465(__elements__464[__iter__463]));
+                                for(let __iter__465 in __elements__466) {
+                                    __array__468.push(await __for_body__467(__elements__466[__iter__465]));
                                     if(__BREAK__FLAG__) {
-                                         __array__466.pop();
+                                         __array__468.pop();
                                         break;
                                         
                                     }
-                                }return __array__466;
+                                }return __array__468;
                                  
                             })();
                             await (async function() {
-                                let __for_body__469=async function(t) {
+                                let __for_body__471=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__470=[],__elements__468=await (async function(){
-                                    let __array_op_rval__471=collector_ref;
-                                     if (__array_op_rval__471 instanceof Function){
-                                        return await __array_op_rval__471(".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";") 
+                                let __array__472=[],__elements__470=await (async function(){
+                                    let __array_op_rval__473=collector_ref;
+                                     if (__array_op_rval__473 instanceof Function){
+                                        return await __array_op_rval__473(".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";") 
                                     } else {
-                                        return[__array_op_rval__471,".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";"]
+                                        return[__array_op_rval__473,".","push","(",(preamble && preamble["0"])," ",body_function_ref,"(",element_list,"[",idx_iter,"]",")",")",";"]
                                     }
                                 })();
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__467 in __elements__468) {
-                                    __array__470.push(await __for_body__469(__elements__468[__iter__467]));
+                                for(let __iter__469 in __elements__470) {
+                                    __array__472.push(await __for_body__471(__elements__470[__iter__469]));
                                     if(__BREAK__FLAG__) {
-                                         __array__470.pop();
+                                         __array__472.pop();
                                         break;
                                         
                                     }
-                                }return __array__470;
+                                }return __array__472;
                                  
                             })();
                             await (async function() {
-                                let __for_body__474=async function(t) {
+                                let __for_body__476=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__475=[],__elements__473=["if","(",break_out,")"," ","{"," ",collector_ref,".","pop","()",";","break",";","}"];
+                                let __array__477=[],__elements__475=["if","(",break_out,")"," ","{"," ",collector_ref,".","pop","()",";","break",";","}"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__472 in __elements__473) {
-                                    __array__475.push(await __for_body__474(__elements__473[__iter__472]));
+                                for(let __iter__474 in __elements__475) {
+                                    __array__477.push(await __for_body__476(__elements__475[__iter__474]));
                                     if(__BREAK__FLAG__) {
-                                         __array__475.pop();
+                                         __array__477.pop();
                                         break;
                                         
                                     }
-                                }return __array__475;
+                                }return __array__477;
                                  
                             })();
                              return  (acc).push("}")
@@ -14935,51 +14951,51 @@ export async function init_dlisp(Environment)  {
                     };
                     (prebuild).push(await compile(await build_fn_with_assignment(body_ref,(body && body["val"]),null,ctx),ctx));
                     await (async function() {
-                        let __for_body__478=async function(t) {
+                        let __for_body__480=async function(t) {
                              return  (prebuild).push(t)
                         };
-                        let __array__479=[],__elements__477=["let"," ",break_out,"=","false",";"];
+                        let __array__481=[],__elements__479=["let"," ",break_out,"=","false",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__476 in __elements__477) {
-                            __array__479.push(await __for_body__478(__elements__477[__iter__476]));
+                        for(let __iter__478 in __elements__479) {
+                            __array__481.push(await __for_body__480(__elements__479[__iter__478]));
                             if(__BREAK__FLAG__) {
-                                 __array__479.pop();
+                                 __array__481.pop();
                                 break;
                                 
                             }
-                        }return __array__479;
+                        }return __array__481;
                          
                     })();
                     await (async function() {
-                        let __for_body__482=async function(t) {
+                        let __for_body__484=async function(t) {
                              return  (prebuild).push(t)
                         };
-                        let __array__483=[],__elements__481=["while","(",(preamble && preamble["0"])," ",test_condition_ref,"()",")"," ","{",(preamble && preamble["0"])," ",body_ref,"()",";"," ","if","(",break_out,")"," ","{"," ","break",";","}","}"," ","",";"];
+                        let __array__485=[],__elements__483=["while","(",(preamble && preamble["0"])," ",test_condition_ref,"()",")"," ","{",(preamble && preamble["0"])," ",body_ref,"()",";"," ","if","(",break_out,")"," ","{"," ","break",";","}","}"," ","",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__480 in __elements__481) {
-                            __array__483.push(await __for_body__482(__elements__481[__iter__480]));
+                        for(let __iter__482 in __elements__483) {
+                            __array__485.push(await __for_body__484(__elements__483[__iter__482]));
                             if(__BREAK__FLAG__) {
-                                 __array__483.pop();
+                                 __array__485.pop();
                                 break;
                                 
                             }
-                        }return __array__483;
+                        }return __array__485;
                          
                     })();
                     await (async function() {
-                        let __for_body__486=async function(t) {
+                        let __for_body__488=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__487=[],__elements__485=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{"," ",prebuild,"}",")","()"];
+                        let __array__489=[],__elements__487=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{"," ",prebuild,"}",")","()"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__484 in __elements__485) {
-                            __array__487.push(await __for_body__486(__elements__485[__iter__484]));
+                        for(let __iter__486 in __elements__487) {
+                            __array__489.push(await __for_body__488(__elements__487[__iter__486]));
                             if(__BREAK__FLAG__) {
-                                 __array__487.pop();
+                                 __array__489.pop();
                                 break;
                                 
                             }
-                        }return __array__487;
+                        }return __array__489;
                          
                     })();
                      return  acc
@@ -15025,11 +15041,11 @@ export async function init_dlisp(Environment)  {
                     })();
                     for_body=(tokens && tokens["2"]);
                     body_is_block_ques_=await (async function(){
-                        let __array_op_rval__488=is_block_ques_;
-                         if (__array_op_rval__488 instanceof Function){
-                            return await __array_op_rval__488((for_body && for_body["val"])) 
+                        let __array_op_rval__490=is_block_ques_;
+                         if (__array_op_rval__490 instanceof Function){
+                            return await __array_op_rval__490((for_body && for_body["val"])) 
                         } else {
-                            return[__array_op_rval__488,(for_body && for_body["val"])]
+                            return[__array_op_rval__490,(for_body && for_body["val"])]
                         }
                     })();
                     if (check_true ((iter_count<1))){
@@ -15037,25 +15053,25 @@ export async function init_dlisp(Environment)  {
                         
                     };
                     await (async function() {
-                        let __for_body__491=async function(iter_ref) {
+                        let __for_body__493=async function(iter_ref) {
                             (idx_iters).push(for_args[iter_ref]);
                              return  await set_ctx(ctx,await clean_quoted_reference(await (async function(){
-                                let __targ__493=await last(idx_iters);
-                                if (__targ__493){
-                                     return(__targ__493)["name"]
+                                let __targ__495=await last(idx_iters);
+                                if (__targ__495){
+                                     return(__targ__495)["name"]
                                 } 
                             })()),ArgumentType)
                         };
-                        let __array__492=[],__elements__490=await (await Environment.get_global("range"))(iter_count);
+                        let __array__494=[],__elements__492=await (await Environment.get_global("range"))(iter_count);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__489 in __elements__490) {
-                            __array__492.push(await __for_body__491(__elements__490[__iter__489]));
+                        for(let __iter__491 in __elements__492) {
+                            __array__494.push(await __for_body__493(__elements__492[__iter__491]));
                             if(__BREAK__FLAG__) {
-                                 __array__492.pop();
+                                 __array__494.pop();
                                 break;
                                 
                             }
-                        }return __array__492;
+                        }return __array__494;
                          
                     })();
                     await set_ctx(ctx,generator_expression,"arg");
@@ -15070,77 +15086,77 @@ export async function init_dlisp(Environment)  {
                     }();
                     (acc).push(await compile(prebuild,ctx));
                     await (async function() {
-                        let __for_body__497=async function(t) {
+                        let __for_body__499=async function(t) {
                              return  (acc).push(t)
                         };
-                        let __array__498=[],__elements__496=["let"," ",break_out,"=","false",";"];
+                        let __array__500=[],__elements__498=["let"," ",break_out,"=","false",";"];
                         let __BREAK__FLAG__=false;
-                        for(let __iter__495 in __elements__496) {
-                            __array__498.push(await __for_body__497(__elements__496[__iter__495]));
+                        for(let __iter__497 in __elements__498) {
+                            __array__500.push(await __for_body__499(__elements__498[__iter__497]));
                             if(__BREAK__FLAG__) {
-                                 __array__498.pop();
+                                 __array__500.pop();
                                 break;
                                 
                             }
-                        }return __array__498;
+                        }return __array__500;
                          
                     })();
                     await set_ctx(ctx,body_function_ref,AsyncFunction);
                     await async function(){
                         if (check_true( (((for_args && for_args.length)===2)&& await not(((for_args && for_args["1"]) instanceof Array))))) {
                             await (async function() {
-                                let __for_body__501=async function(t) {
+                                let __for_body__503=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__502=[],__elements__500=["for"," ",(preamble && preamble["0"])," ","(","const"," ",iter_ref," ","of"," ",await wrap_assignment_value(await compile(elements,ctx),ctx),")"," ","{"];
+                                let __array__504=[],__elements__502=["for"," ",(preamble && preamble["0"])," ","(","const"," ",iter_ref," ","of"," ",await wrap_assignment_value(await compile(elements,ctx),ctx),")"," ","{"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__499 in __elements__500) {
-                                    __array__502.push(await __for_body__501(__elements__500[__iter__499]));
+                                for(let __iter__501 in __elements__502) {
+                                    __array__504.push(await __for_body__503(__elements__502[__iter__501]));
                                     if(__BREAK__FLAG__) {
-                                         __array__502.pop();
+                                         __array__504.pop();
                                         break;
                                         
                                     }
-                                }return __array__502;
+                                }return __array__504;
                                  
                             })();
                             await (async function() {
-                                let __for_body__505=async function(t) {
+                                let __for_body__507=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__506=[],__elements__504=await (async function(){
-                                    let __array_op_rval__507=(preamble && preamble["0"]);
-                                     if (__array_op_rval__507 instanceof Function){
-                                        return await __array_op_rval__507(" ",body_function_ref,"(",iter_ref,")",";") 
+                                let __array__508=[],__elements__506=await (async function(){
+                                    let __array_op_rval__509=(preamble && preamble["0"]);
+                                     if (__array_op_rval__509 instanceof Function){
+                                        return await __array_op_rval__509(" ",body_function_ref,"(",iter_ref,")",";") 
                                     } else {
-                                        return[__array_op_rval__507," ",body_function_ref,"(",iter_ref,")",";"]
+                                        return[__array_op_rval__509," ",body_function_ref,"(",iter_ref,")",";"]
                                     }
                                 })();
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__503 in __elements__504) {
-                                    __array__506.push(await __for_body__505(__elements__504[__iter__503]));
+                                for(let __iter__505 in __elements__506) {
+                                    __array__508.push(await __for_body__507(__elements__506[__iter__505]));
                                     if(__BREAK__FLAG__) {
-                                         __array__506.pop();
+                                         __array__508.pop();
                                         break;
                                         
                                     }
-                                }return __array__506;
+                                }return __array__508;
                                  
                             })();
                             await (async function() {
-                                let __for_body__510=async function(t) {
+                                let __for_body__512=async function(t) {
                                      return  (acc).push(t)
                                 };
-                                let __array__511=[],__elements__509=["if","(",break_out,")"," ","break",";"];
+                                let __array__513=[],__elements__511=["if","(",break_out,")"," ","break",";"];
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__508 in __elements__509) {
-                                    __array__511.push(await __for_body__510(__elements__509[__iter__508]));
+                                for(let __iter__510 in __elements__511) {
+                                    __array__513.push(await __for_body__512(__elements__511[__iter__510]));
                                     if(__BREAK__FLAG__) {
-                                         __array__511.pop();
+                                         __array__513.pop();
                                         break;
                                         
                                     }
-                                }return __array__511;
+                                }return __array__513;
                                  
                             })();
                              return  (acc).push("}")
@@ -15182,15 +15198,15 @@ export async function init_dlisp(Environment)  {
                     declaration=null;
                     dec_struct=null;
                     await (async function() {
-                        let __for_body__514=async function(exp) {
+                        let __for_body__516=async function(exp) {
                             declaration=(exp && exp["val"] && exp["val"]["0"] && exp["val"]["0"]["name"]);
                             targeted=await (await Environment.get_global("rest"))((exp && exp["val"]));
                             if (check_true (await (async function(){
-                                let __array_op_rval__516=verbosity;
-                                 if (__array_op_rval__516 instanceof Function){
-                                    return await __array_op_rval__516(ctx) 
+                                let __array_op_rval__518=verbosity;
+                                 if (__array_op_rval__518 instanceof Function){
+                                    return await __array_op_rval__518(ctx) 
                                 } else {
-                                    return[__array_op_rval__516,ctx]
+                                    return[__array_op_rval__518,ctx]
                                 }
                             })())){
                                  (declare_log)("declaration: ",declaration,"targeted: ",await (await Environment.get_global("each"))(targeted,"name"),targeted)
@@ -15209,42 +15225,42 @@ export async function init_dlisp(Environment)  {
                                     }
                                 } else if (check_true( (declaration==="include"))) {
                                      return  await (async function() {
-                                        let __for_body__520=async function(name) {
+                                        let __for_body__522=async function(name) {
                                             sanitized_name=await sanitize_js_ref_name(name);
                                             dec_struct=await get_declaration_details(ctx,name);
                                             if (check_true (dec_struct)){
                                                 await (async function() {
-                                                    let __for_body__524=async function(t) {
+                                                    let __for_body__526=async function(t) {
                                                          return  (acc).push(t)
                                                     };
-                                                    let __array__525=[],__elements__523=["let"," ",sanitized_name,"="];
+                                                    let __array__527=[],__elements__525=["let"," ",sanitized_name,"="];
                                                     let __BREAK__FLAG__=false;
-                                                    for(let __iter__522 in __elements__523) {
-                                                        __array__525.push(await __for_body__524(__elements__523[__iter__522]));
+                                                    for(let __iter__524 in __elements__525) {
+                                                        __array__527.push(await __for_body__526(__elements__525[__iter__524]));
                                                         if(__BREAK__FLAG__) {
-                                                             __array__525.pop();
+                                                             __array__527.pop();
                                                             break;
                                                             
                                                         }
-                                                    }return __array__525;
+                                                    }return __array__527;
                                                      
                                                 })();
                                                 await async function(){
                                                     if (check_true( ((dec_struct && dec_struct["value"]) instanceof Function&& await (async function(){
-                                                        let __targ__527=await (async function(){
-                                                            let __targ__526=(Environment && Environment["definitions"]);
-                                                            if (__targ__526){
-                                                                 return(__targ__526)[name]
-                                                            } 
-                                                        })();
-                                                        if (__targ__527){
-                                                             return(__targ__527)["fn_body"]
-                                                        } 
-                                                    })()))) {
-                                                        details=await (async function(){
+                                                        let __targ__529=await (async function(){
                                                             let __targ__528=(Environment && Environment["definitions"]);
                                                             if (__targ__528){
                                                                  return(__targ__528)[name]
+                                                            } 
+                                                        })();
+                                                        if (__targ__529){
+                                                             return(__targ__529)["fn_body"]
+                                                        } 
+                                                    })()))) {
+                                                        details=await (async function(){
+                                                            let __targ__530=(Environment && Environment["definitions"]);
+                                                            if (__targ__530){
+                                                                 return(__targ__530)[name]
                                                             } 
                                                         })();
                                                         source=("(fn "+ (details && details["fn_args"])+ " "+ (details && details["fn_body"])+ ")");
@@ -15268,24 +15284,24 @@ export async function init_dlisp(Environment)  {
                                             };
                                             await set_declaration(ctx,name,"inlined",true);
                                             if (check_true ((("undefined"===await (async function(){
-                                                let __targ__529=await get_declarations(ctx,name);
-                                                if (__targ__529){
-                                                     return(__targ__529)["type"]
+                                                let __targ__531=await get_declarations(ctx,name);
+                                                if (__targ__531){
+                                                     return(__targ__531)["type"]
                                                 } 
                                             })())&& (dec_struct && dec_struct["value"]) instanceof Function))){
                                                   return await set_declaration(ctx,name,"type",Function)
                                             }
                                         };
-                                        let __array__521=[],__elements__519=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__523=[],__elements__521=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__518 in __elements__519) {
-                                            __array__521.push(await __for_body__520(__elements__519[__iter__518]));
+                                        for(let __iter__520 in __elements__521) {
+                                            __array__523.push(await __for_body__522(__elements__521[__iter__520]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__521.pop();
+                                                 __array__523.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__521;
+                                        }return __array__523;
                                          
                                     })()
                                 } else if (check_true( (declaration==="verbose"))) {
@@ -15301,11 +15317,11 @@ export async function init_dlisp(Environment)  {
                                         };
                                         verbosity=check_verbosity;
                                          return  (declare_log)("compiler: verbosity set: ",await (async function(){
-                                            let __array_op_rval__530=verbosity;
-                                             if (__array_op_rval__530 instanceof Function){
-                                                return await __array_op_rval__530(ctx) 
+                                            let __array_op_rval__532=verbosity;
+                                             if (__array_op_rval__532 instanceof Function){
+                                                return await __array_op_rval__532(ctx) 
                                             } else {
-                                                return[__array_op_rval__530,ctx]
+                                                return[__array_op_rval__532,ctx]
                                             }
                                         })())
                                     } else {
@@ -15313,161 +15329,178 @@ export async function init_dlisp(Environment)  {
                                     }
                                 } else if (check_true( (declaration==="local"))) {
                                      return await (async function() {
-                                        let __for_body__533=async function(name) {
+                                        let __for_body__535=async function(name) {
                                             dec_struct=await get_declaration_details(ctx,name);
                                              return  await set_ctx(ctx,name,(dec_struct && dec_struct["value"]))
                                         };
-                                        let __array__534=[],__elements__532=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__536=[],__elements__534=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__531 in __elements__532) {
-                                            __array__534.push(await __for_body__533(__elements__532[__iter__531]));
+                                        for(let __iter__533 in __elements__534) {
+                                            __array__536.push(await __for_body__535(__elements__534[__iter__533]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__534.pop();
+                                                 __array__536.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__534;
+                                        }return __array__536;
                                          
                                     })()
                                 } else if (check_true( (declaration==="function"))) {
                                      return  await (async function() {
-                                        let __for_body__537=async function(name) {
+                                        let __for_body__539=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Function)
                                         };
-                                        let __array__538=[],__elements__536=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__540=[],__elements__538=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__535 in __elements__536) {
-                                            __array__538.push(await __for_body__537(__elements__536[__iter__535]));
+                                        for(let __iter__537 in __elements__538) {
+                                            __array__540.push(await __for_body__539(__elements__538[__iter__537]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__538.pop();
+                                                 __array__540.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__538;
+                                        }return __array__540;
                                          
                                     })()
                                 } else if (check_true( (declaration==="fn"))) {
                                      return  await (async function() {
-                                        let __for_body__541=async function(name) {
+                                        let __for_body__543=async function(name) {
                                              return  await set_declaration(ctx,name,"type",AsyncFunction)
                                         };
-                                        let __array__542=[],__elements__540=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__544=[],__elements__542=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__539 in __elements__540) {
-                                            __array__542.push(await __for_body__541(__elements__540[__iter__539]));
+                                        for(let __iter__541 in __elements__542) {
+                                            __array__544.push(await __for_body__543(__elements__542[__iter__541]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__542.pop();
+                                                 __array__544.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__542;
+                                        }return __array__544;
                                          
                                     })()
                                 } else if (check_true( (declaration==="array"))) {
                                      return  await (async function() {
-                                        let __for_body__545=async function(name) {
+                                        let __for_body__547=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Array)
                                         };
-                                        let __array__546=[],__elements__544=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__548=[],__elements__546=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__543 in __elements__544) {
-                                            __array__546.push(await __for_body__545(__elements__544[__iter__543]));
+                                        for(let __iter__545 in __elements__546) {
+                                            __array__548.push(await __for_body__547(__elements__546[__iter__545]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__546.pop();
+                                                 __array__548.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__546;
+                                        }return __array__548;
                                          
                                     })()
                                 } else if (check_true( (declaration==="number"))) {
                                      return  await (async function() {
-                                        let __for_body__549=async function(name) {
+                                        let __for_body__551=async function(name) {
                                              return  await set_declaration(ctx,name,"type",NumberType)
                                         };
-                                        let __array__550=[],__elements__548=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__552=[],__elements__550=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__547 in __elements__548) {
-                                            __array__550.push(await __for_body__549(__elements__548[__iter__547]));
+                                        for(let __iter__549 in __elements__550) {
+                                            __array__552.push(await __for_body__551(__elements__550[__iter__549]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__550.pop();
+                                                 __array__552.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__550;
+                                        }return __array__552;
                                          
                                     })()
                                 } else if (check_true( (declaration==="string"))) {
                                      return  await (async function() {
-                                        let __for_body__553=async function(name) {
+                                        let __for_body__555=async function(name) {
                                              return  await set_declaration(ctx,name,"type",StringType)
                                         };
-                                        let __array__554=[],__elements__552=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__556=[],__elements__554=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__551 in __elements__552) {
-                                            __array__554.push(await __for_body__553(__elements__552[__iter__551]));
+                                        for(let __iter__553 in __elements__554) {
+                                            __array__556.push(await __for_body__555(__elements__554[__iter__553]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__554.pop();
+                                                 __array__556.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__554;
+                                        }return __array__556;
                                          
                                     })()
                                 } else if (check_true( (declaration==="boolean"))) {
                                      return  await (async function() {
-                                        let __for_body__557=async function(name) {
+                                        let __for_body__559=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Boolean)
                                         };
-                                        let __array__558=[],__elements__556=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__560=[],__elements__558=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__555 in __elements__556) {
-                                            __array__558.push(await __for_body__557(__elements__556[__iter__555]));
+                                        for(let __iter__557 in __elements__558) {
+                                            __array__560.push(await __for_body__559(__elements__558[__iter__557]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__558.pop();
+                                                 __array__560.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__558;
+                                        }return __array__560;
                                          
                                     })()
                                 } else if (check_true( (declaration==="regexp"))) {
                                      return  await (async function() {
-                                        let __for_body__561=async function(name) {
+                                        let __for_body__563=async function(name) {
                                              return  await set_declaration(ctx,name,"type",RegExp)
                                         };
-                                        let __array__562=[],__elements__560=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__564=[],__elements__562=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__559 in __elements__560) {
-                                            __array__562.push(await __for_body__561(__elements__560[__iter__559]));
+                                        for(let __iter__561 in __elements__562) {
+                                            __array__564.push(await __for_body__563(__elements__562[__iter__561]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__562.pop();
+                                                 __array__564.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__562;
+                                        }return __array__564;
                                          
                                     })()
                                 } else if (check_true( (declaration==="object"))) {
                                      return  await (async function() {
-                                        let __for_body__565=async function(name) {
+                                        let __for_body__567=async function(name) {
                                              return  await set_declaration(ctx,name,"type",Object)
                                         };
-                                        let __array__566=[],__elements__564=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __array__568=[],__elements__566=await (await Environment.get_global("each"))(targeted,"name");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__563 in __elements__564) {
-                                            __array__566.push(await __for_body__565(__elements__564[__iter__563]));
+                                        for(let __iter__565 in __elements__566) {
+                                            __array__568.push(await __for_body__567(__elements__566[__iter__565]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__566.pop();
+                                                 __array__568.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__566;
+                                        }return __array__568;
+                                         
+                                    })()
+                                } else if (check_true( (declaration==="global"))) {
+                                     return  await (async function() {
+                                        let __for_body__571=async function(name) {
+                                             return  await set_declaration(ctx,name,"location","global")
+                                        };
+                                        let __array__572=[],__elements__570=await (await Environment.get_global("each"))(targeted,"name");
+                                        let __BREAK__FLAG__=false;
+                                        for(let __iter__569 in __elements__570) {
+                                            __array__572.push(await __for_body__571(__elements__570[__iter__569]));
+                                            if(__BREAK__FLAG__) {
+                                                 __array__572.pop();
+                                                break;
+                                                
+                                            }
+                                        }return __array__572;
                                          
                                     })()
                                 } else if (check_true( (declaration==="optimize"))) {
                                      return  await (async function() {
-                                        let __for_body__569=async function(factor) {
+                                        let __for_body__575=async function(factor) {
                                             factor=await (await Environment.get_global("each"))(factor,"name");
                                              return  await async function(){
                                                 if (check_true( ((factor && factor["0"])==="safety"))) {
@@ -15475,16 +15508,16 @@ export async function init_dlisp(Environment)  {
                                                 }
                                             } ()
                                         };
-                                        let __array__570=[],__elements__568=await (await Environment.get_global("each"))(targeted,"val");
+                                        let __array__576=[],__elements__574=await (await Environment.get_global("each"))(targeted,"val");
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__567 in __elements__568) {
-                                            __array__570.push(await __for_body__569(__elements__568[__iter__567]));
+                                        for(let __iter__573 in __elements__574) {
+                                            __array__576.push(await __for_body__575(__elements__574[__iter__573]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__570.pop();
+                                                 __array__576.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__570;
+                                        }return __array__576;
                                          
                                     })()
                                 } else if (check_true( (declaration==="namespace"))) {
@@ -15496,23 +15529,24 @@ export async function init_dlisp(Environment)  {
                                         throw new SyntaxError("namespace compiler declaration must be toplevel");
                                         
                                     };
-                                     return  target_namespace=(targeted && targeted["0"] && targeted["0"]["name"])
+                                    target_namespace=(targeted && targeted["0"] && targeted["0"]["name"]);
+                                     return  Environment=await Environment["get_namespace_handle"].call(Environment,(targeted && targeted["0"] && targeted["0"]["name"]))
                                 } else  {
                                     (warnings).push(("unknown declaration directive: "+ declaration));
                                      return  await (await Environment.get_global("warn"))(("compiler: unknown declaration directive: "+ declaration))
                                 }
                             } ()
                         };
-                        let __array__515=[],__elements__513=expressions;
+                        let __array__517=[],__elements__515=expressions;
                         let __BREAK__FLAG__=false;
-                        for(let __iter__512 in __elements__513) {
-                            __array__515.push(await __for_body__514(__elements__513[__iter__512]));
+                        for(let __iter__514 in __elements__515) {
+                            __array__517.push(await __for_body__516(__elements__515[__iter__514]));
                             if(__BREAK__FLAG__) {
-                                 __array__515.pop();
+                                 __array__517.pop();
                                 break;
                                 
                             }
-                        }return __array__515;
+                        }return __array__517;
                          
                     })();
                      return  acc
@@ -15612,20 +15646,20 @@ export async function init_dlisp(Environment)  {
                         }
                     } ();
                     if (check_true (await (async function(){
-                        let __array_op_rval__571=verbosity;
-                         if (__array_op_rval__571 instanceof Function){
-                            return await __array_op_rval__571(ctx) 
+                        let __array_op_rval__577=verbosity;
+                         if (__array_op_rval__577 instanceof Function){
+                            return await __array_op_rval__577(ctx) 
                         } else {
-                            return[__array_op_rval__571,ctx]
+                            return[__array_op_rval__577,ctx]
                         }
                     })())){
                         {
-                            let __array_arg__572=(async function() {
+                            let __array_arg__578=(async function() {
                                 if (check_true (("local"===call_type))){
                                       return (" local sanitized to: "+ await sanitize_js_ref_name((tokens && tokens["0"] && tokens["0"]["name"])))
                                 }
                             } );
-                            (sr_log)("SYMBOL: ",(tokens && tokens["0"] && tokens["0"]["name"]),"  found as:",call_type," of type:",ref_type,"sanitized as: ",await __array_arg__572())
+                            (sr_log)("SYMBOL: ",(tokens && tokens["0"] && tokens["0"]["name"]),"  found as:",call_type," of type:",ref_type,"sanitized as: ",await __array_arg__578())
                         }
                     };
                     rval=await async function(){
@@ -15641,10 +15675,10 @@ export async function init_dlisp(Environment)  {
                             })());
                             (acc).push("(");
                             await (async function(){
-                                 let __test_condition__573=async function() {
+                                 let __test_condition__579=async function() {
                                      return  (idx<((tokens && tokens.length)- 1))
                                 };
-                                let __body_ref__574=async function() {
+                                let __body_ref__580=async function() {
                                     idx+=1;
                                     token=tokens[idx];
                                     stmt=await compile(token,ctx);
@@ -15655,8 +15689,8 @@ export async function init_dlisp(Environment)  {
                                     }
                                 };
                                 let __BREAK__FLAG__=false;
-                                while(await __test_condition__573()) {
-                                    await __body_ref__574();
+                                while(await __test_condition__579()) {
+                                    await __body_ref__580();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -15678,10 +15712,10 @@ export async function init_dlisp(Environment)  {
                             })());
                             (acc).push("(");
                             await (async function(){
-                                 let __test_condition__575=async function() {
+                                 let __test_condition__581=async function() {
                                      return  (idx<((tokens && tokens.length)- 1))
                                 };
-                                let __body_ref__576=async function() {
+                                let __body_ref__582=async function() {
                                     idx+=1;
                                     token=tokens[idx];
                                     stmt=await compile(token,ctx);
@@ -15692,8 +15726,8 @@ export async function init_dlisp(Environment)  {
                                     }
                                 };
                                 let __BREAK__FLAG__=false;
-                                while(await __test_condition__575()) {
-                                    await __body_ref__576();
+                                while(await __test_condition__581()) {
+                                    await __body_ref__582();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -15713,10 +15747,10 @@ export async function init_dlisp(Environment)  {
                         } else if (check_true( ((ref_type===ArgumentType)&& (tokens instanceof Array)))) {
                             (acc).push("[");
                             await (async function(){
-                                 let __test_condition__577=async function() {
+                                 let __test_condition__583=async function() {
                                      return  (idx<(tokens && tokens.length))
                                 };
-                                let __body_ref__578=async function() {
+                                let __body_ref__584=async function() {
                                     token=tokens[idx];
                                     (acc).push(await compile(token,ctx));
                                     if (check_true ((idx<((tokens && tokens.length)- 1)))){
@@ -15725,8 +15759,8 @@ export async function init_dlisp(Environment)  {
                                      return  idx+=1
                                 };
                                 let __BREAK__FLAG__=false;
-                                while(await __test_condition__577()) {
-                                    await __body_ref__578();
+                                while(await __test_condition__583()) {
+                                    await __body_ref__584();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -15776,7 +15810,7 @@ export async function init_dlisp(Environment)  {
                     if (check_true ((declarations && declarations["inlined"]))){
                          refname=await sanitize_js_ref_name(refname)
                     };
-                    if (check_true (((reftype==="StringType")&& await not((refval===undefined))))){
+                    if (check_true ((((reftype==="StringType")|| (reftype==="String"))&& await not((refval===undefined))))){
                          refval="text"
                     };
                      return  await async function(){
@@ -15787,11 +15821,11 @@ export async function init_dlisp(Environment)  {
                         } else if (check_true( await not((refval===undefined)))) {
                             has_lisp_globals=true;
                             if (check_true (await (async function(){
-                                let __array_op_rval__579=verbosity;
-                                 if (__array_op_rval__579 instanceof Function){
-                                    return await __array_op_rval__579(ctx) 
+                                let __array_op_rval__585=verbosity;
+                                 if (__array_op_rval__585 instanceof Function){
+                                    return await __array_op_rval__585(ctx) 
                                 } else {
-                                    return[__array_op_rval__579,ctx]
+                                    return[__array_op_rval__585,ctx]
                                 }
                             })())){
                                  await console.log("compile_lisp_scoped_reference: has_first_level? ",await get_ctx(ctx,"has_first_level"),": ",refname)
@@ -15838,74 +15872,74 @@ export async function init_dlisp(Environment)  {
                 is_complex_ques_=async function(tokens) {
                     let rval;
                     rval=(await (async function(){
-                        let __array_op_rval__580=is_block_ques_;
-                         if (__array_op_rval__580 instanceof Function){
-                            return await __array_op_rval__580(tokens) 
+                        let __array_op_rval__586=is_block_ques_;
+                         if (__array_op_rval__586 instanceof Function){
+                            return await __array_op_rval__586(tokens) 
                         } else {
-                            return[__array_op_rval__580,tokens]
+                            return[__array_op_rval__586,tokens]
                         }
                     })()|| (((tokens && tokens["type"])==="arr")&& await (async function(){
-                        let __array_op_rval__581=is_block_ques_;
-                         if (__array_op_rval__581 instanceof Function){
-                            return await __array_op_rval__581((tokens && tokens["val"])) 
+                        let __array_op_rval__587=is_block_ques_;
+                         if (__array_op_rval__587 instanceof Function){
+                            return await __array_op_rval__587((tokens && tokens["val"])) 
                         } else {
-                            return[__array_op_rval__581,(tokens && tokens["val"])]
+                            return[__array_op_rval__587,(tokens && tokens["val"])]
                         }
                     })())|| ((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"])==="if")|| ((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"])==="let"));
                      return  rval
                 };
                 is_form_ques_=async function(token) {
                      return  (((token && token["val"]) instanceof Array)|| await (async function(){
-                        let __array_op_rval__582=is_block_ques_;
-                         if (__array_op_rval__582 instanceof Function){
-                            return await __array_op_rval__582((token && token["val"])) 
+                        let __array_op_rval__588=is_block_ques_;
+                         if (__array_op_rval__588 instanceof Function){
+                            return await __array_op_rval__588((token && token["val"])) 
                         } else {
-                            return[__array_op_rval__582,(token && token["val"])]
+                            return[__array_op_rval__588,(token && token["val"])]
                         }
                     })())
                 };
                 op_lookup=await ( async function(){
-                    let __obj__583=new Object();
-                    __obj__583["+"]=infix_ops;
-                    __obj__583["*"]=infix_ops;
-                    __obj__583["/"]=infix_ops;
-                    __obj__583["-"]=infix_ops;
-                    __obj__583["**"]=infix_ops;
-                    __obj__583["%"]=infix_ops;
-                    __obj__583["<<"]=infix_ops;
-                    __obj__583[">>"]=infix_ops;
-                    __obj__583["and"]=infix_ops;
-                    __obj__583["or"]=infix_ops;
-                    __obj__583["apply"]=compile_apply;
-                    __obj__583["call"]=compile_call;
-                    __obj__583["->"]=compile_call;
-                    __obj__583["set_prop"]=compile_set_prop;
-                    __obj__583["prop"]=compile_prop;
-                    __obj__583["="]=compile_assignment;
-                    __obj__583["setq"]=compile_assignment;
-                    __obj__583["=="]=compile_compare;
-                    __obj__583["eq"]=compile_compare;
-                    __obj__583[">"]=compile_compare;
-                    __obj__583["<"]=compile_compare;
-                    __obj__583["<="]=compile_compare;
-                    __obj__583[">="]=compile_compare;
-                    __obj__583["return"]=compile_return;
-                    __obj__583["new"]=compile_new;
-                    __obj__583["do"]=compile_block;
-                    __obj__583["progn"]=compile_block;
-                    __obj__583["progl"]=async function(tokens,ctx) {
+                    let __obj__589=new Object();
+                    __obj__589["+"]=infix_ops;
+                    __obj__589["*"]=infix_ops;
+                    __obj__589["/"]=infix_ops;
+                    __obj__589["-"]=infix_ops;
+                    __obj__589["**"]=infix_ops;
+                    __obj__589["%"]=infix_ops;
+                    __obj__589["<<"]=infix_ops;
+                    __obj__589[">>"]=infix_ops;
+                    __obj__589["and"]=infix_ops;
+                    __obj__589["or"]=infix_ops;
+                    __obj__589["apply"]=compile_apply;
+                    __obj__589["call"]=compile_call;
+                    __obj__589["->"]=compile_call;
+                    __obj__589["set_prop"]=compile_set_prop;
+                    __obj__589["prop"]=compile_prop;
+                    __obj__589["="]=compile_assignment;
+                    __obj__589["setq"]=compile_assignment;
+                    __obj__589["=="]=compile_compare;
+                    __obj__589["eq"]=compile_compare;
+                    __obj__589[">"]=compile_compare;
+                    __obj__589["<"]=compile_compare;
+                    __obj__589["<="]=compile_compare;
+                    __obj__589[">="]=compile_compare;
+                    __obj__589["return"]=compile_return;
+                    __obj__589["new"]=compile_new;
+                    __obj__589["do"]=compile_block;
+                    __obj__589["progn"]=compile_block;
+                    __obj__589["progl"]=async function(tokens,ctx) {
                          return  await compile_block(tokens,ctx,{
                             no_scope_boundary:true,suppress_return:true
                         })
                     };
-                    __obj__583["break"]=compile_break;
-                    __obj__583["inc"]=compile_val_mod;
-                    __obj__583["dec"]=compile_val_mod;
-                    __obj__583["try"]=compile_try;
-                    __obj__583["throw"]=compile_throw;
-                    __obj__583["let"]=compile_let;
-                    __obj__583["defvar"]=compile_defvar;
-                    __obj__583["defconst"]=async function(tokens,ctx) {
+                    __obj__589["break"]=compile_break;
+                    __obj__589["inc"]=compile_val_mod;
+                    __obj__589["dec"]=compile_val_mod;
+                    __obj__589["try"]=compile_try;
+                    __obj__589["throw"]=compile_throw;
+                    __obj__589["let"]=compile_let;
+                    __obj__589["defvar"]=compile_defvar;
+                    __obj__589["defconst"]=async function(tokens,ctx) {
                         if (check_true (await get_ctx(ctx,"local_scope"))){
                               return await compile_defvar(tokens,ctx,{
                                 constant:true
@@ -15916,45 +15950,45 @@ export async function init_dlisp(Environment)  {
                             })
                         }
                     };
-                    __obj__583["while"]=compile_while;
-                    __obj__583["for_each"]=compile_for_each;
-                    __obj__583["if"]=compile_if;
-                    __obj__583["cond"]=compile_cond;
-                    __obj__583["fn"]=compile_fn;
-                    __obj__583["lambda"]=compile_fn;
-                    __obj__583["function*"]=async function(tokens,ctx) {
+                    __obj__589["while"]=compile_while;
+                    __obj__589["for_each"]=compile_for_each;
+                    __obj__589["if"]=compile_if;
+                    __obj__589["cond"]=compile_cond;
+                    __obj__589["fn"]=compile_fn;
+                    __obj__589["lambda"]=compile_fn;
+                    __obj__589["function*"]=async function(tokens,ctx) {
                          return  await compile_fn(tokens,ctx,{
                             generator:true
                         })
                     };
-                    __obj__583["defglobal"]=compile_set_global;
-                    __obj__583["list"]=compile_list;
-                    __obj__583["function"]=async function(tokens,ctx) {
+                    __obj__589["defglobal"]=compile_set_global;
+                    __obj__589["list"]=compile_list;
+                    __obj__589["function"]=async function(tokens,ctx) {
                          return  await compile_fn(tokens,ctx,{
                             synchronous:true
                         })
                     };
-                    __obj__583["=>"]=async function(tokens,ctx) {
+                    __obj__589["=>"]=async function(tokens,ctx) {
                          return  await compile_fn(tokens,ctx,{
                             arrow:true
                         })
                     };
-                    __obj__583["yield"]=compile_yield;
-                    __obj__583["for_with"]=compile_for_with;
-                    __obj__583["quotem"]=compile_quotem;
-                    __obj__583["quote"]=compile_quote;
-                    __obj__583["quotel"]=compile_quotel;
-                    __obj__583["eval"]=compile_eval;
-                    __obj__583["jslambda"]=compile_jslambda;
-                    __obj__583["javascript"]=compile_javascript;
-                    __obj__583["instanceof"]=compile_instanceof;
-                    __obj__583["typeof"]=compile_typeof;
-                    __obj__583["unquotem"]=compile_unquotem;
-                    __obj__583["debug"]=compile_debug;
-                    __obj__583["declare"]=compile_declare;
-                    __obj__583["static_import"]=compile_import;
-                    __obj__583["dynamic_import"]=compile_dynamic_import;
-                    return __obj__583;
+                    __obj__589["yield"]=compile_yield;
+                    __obj__589["for_with"]=compile_for_with;
+                    __obj__589["quotem"]=compile_quotem;
+                    __obj__589["quote"]=compile_quote;
+                    __obj__589["quotel"]=compile_quotel;
+                    __obj__589["eval"]=compile_eval;
+                    __obj__589["jslambda"]=compile_jslambda;
+                    __obj__589["javascript"]=compile_javascript;
+                    __obj__589["instanceof"]=compile_instanceof;
+                    __obj__589["typeof"]=compile_typeof;
+                    __obj__589["unquotem"]=compile_unquotem;
+                    __obj__589["debug"]=compile_debug;
+                    __obj__589["declare"]=compile_declare;
+                    __obj__589["static_import"]=compile_import;
+                    __obj__589["dynamic_import"]=compile_dynamic_import;
+                    return __obj__589;
                     
                 })();
                 comp_log=await (async function () {
@@ -16010,23 +16044,23 @@ export async function init_dlisp(Environment)  {
                         
                     }();
                     await (async function() {
-                        let __for_body__587=async function(token) {
+                        let __for_body__593=async function(token) {
                             if (check_true ((((token && token["type"])==="keyval")&& await check_invalid_js_ref((token && token.name))))){
                                 has_valid_key_literals=false;
                                 __BREAK__FLAG__=true;
                                 return
                             }
                         };
-                        let __array__588=[],__elements__586=((tokens && tokens["val"])|| []);
+                        let __array__594=[],__elements__592=((tokens && tokens["val"])|| []);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__585 in __elements__586) {
-                            __array__588.push(await __for_body__587(__elements__586[__iter__585]));
+                        for(let __iter__591 in __elements__592) {
+                            __array__594.push(await __for_body__593(__elements__592[__iter__591]));
                             if(__BREAK__FLAG__) {
-                                 __array__588.pop();
+                                 __array__594.pop();
                                 break;
                                 
                             }
-                        }return __array__588;
+                        }return __array__594;
                          
                     })();
                     if (check_true (has_valid_key_literals)){
@@ -16037,15 +16071,15 @@ export async function init_dlisp(Environment)  {
                         } else {
                             (acc).push("{");
                             await (async function(){
-                                 let __test_condition__589=async function() {
+                                 let __test_condition__595=async function() {
                                      return  (idx<total_length)
                                 };
-                                let __body_ref__590=async function() {
+                                let __body_ref__596=async function() {
                                     idx+=1;
                                     kvpair=await (async function(){
-                                        let __targ__591=(tokens && tokens["val"]);
-                                        if (__targ__591){
-                                             return(__targ__591)[idx]
+                                        let __targ__597=(tokens && tokens["val"]);
+                                        if (__targ__597){
+                                             return(__targ__597)[idx]
                                         } 
                                     })();
                                     key=await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx);
@@ -16063,8 +16097,8 @@ export async function init_dlisp(Environment)  {
                                     }
                                 };
                                 let __BREAK__FLAG__=false;
-                                while(await __test_condition__589()) {
-                                    await __body_ref__590();
+                                while(await __test_condition__595()) {
+                                    await __body_ref__596();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -16082,62 +16116,62 @@ export async function init_dlisp(Environment)  {
                         debugger;
                         ;
                         await (async function() {
-                            let __for_body__594=async function(t) {
+                            let __for_body__600=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__595=[],__elements__593=[{
+                            let __array__601=[],__elements__599=[{
                                 ctype:"statement"
                             },(preamble && preamble["0"])," ","("," ",(preamble && preamble["1"])," ","function","()","{","let"," ",tmp_name,"=","new"," ","Object","()",";"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__592 in __elements__593) {
-                                __array__595.push(await __for_body__594(__elements__593[__iter__592]));
+                            for(let __iter__598 in __elements__599) {
+                                __array__601.push(await __for_body__600(__elements__599[__iter__598]));
                                 if(__BREAK__FLAG__) {
-                                     __array__595.pop();
+                                     __array__601.pop();
                                     break;
                                     
                                 }
-                            }return __array__595;
+                            }return __array__601;
                              
                         })();
                         await (async function(){
-                             let __test_condition__596=async function() {
+                             let __test_condition__602=async function() {
                                  return  (idx<total_length)
                             };
-                            let __body_ref__597=async function() {
+                            let __body_ref__603=async function() {
                                 idx+=1;
                                 kvpair=await (async function(){
-                                    let __targ__598=(tokens && tokens["val"]);
-                                    if (__targ__598){
-                                         return(__targ__598)[idx]
+                                    let __targ__604=(tokens && tokens["val"]);
+                                    if (__targ__604){
+                                         return(__targ__604)[idx]
                                     } 
                                 })();
                                  return  await (async function() {
-                                    let __for_body__601=async function(t) {
+                                    let __for_body__607=async function(t) {
                                          return  (acc).push(t)
                                     };
-                                    let __array__602=[],__elements__600=await (async function(){
-                                        let __array_op_rval__603=tmp_name;
-                                         if (__array_op_rval__603 instanceof Function){
-                                            return await __array_op_rval__603("[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";") 
+                                    let __array__608=[],__elements__606=await (async function(){
+                                        let __array_op_rval__609=tmp_name;
+                                         if (__array_op_rval__609 instanceof Function){
+                                            return await __array_op_rval__609("[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";") 
                                         } else {
-                                            return[__array_op_rval__603,"[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";"]
+                                            return[__array_op_rval__609,"[","\"",await cl_encode_string(await get_val((kvpair && kvpair["val"] && kvpair["val"]["0"]),ctx)),"\"","]","=",await compile_elem((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx),";"]
                                         }
                                     })();
                                     let __BREAK__FLAG__=false;
-                                    for(let __iter__599 in __elements__600) {
-                                        __array__602.push(await __for_body__601(__elements__600[__iter__599]));
+                                    for(let __iter__605 in __elements__606) {
+                                        __array__608.push(await __for_body__607(__elements__606[__iter__605]));
                                         if(__BREAK__FLAG__) {
-                                             __array__602.pop();
+                                             __array__608.pop();
                                             break;
                                             
                                         }
-                                    }return __array__602;
+                                    }return __array__608;
                                      
                                 })()
                             };
                             let __BREAK__FLAG__=false;
-                            while(await __test_condition__596()) {
-                                await __body_ref__597();
+                            while(await __test_condition__602()) {
+                                await __body_ref__603();
                                  if(__BREAK__FLAG__) {
                                      break;
                                     
@@ -16146,19 +16180,19 @@ export async function init_dlisp(Environment)  {
                             
                         })();
                         await (async function() {
-                            let __for_body__606=async function(t) {
+                            let __for_body__612=async function(t) {
                                  return  (acc).push(t)
                             };
-                            let __array__607=[],__elements__605=["return"," ",tmp_name,";","}",")","()"];
+                            let __array__613=[],__elements__611=["return"," ",tmp_name,";","}",")","()"];
                             let __BREAK__FLAG__=false;
-                            for(let __iter__604 in __elements__605) {
-                                __array__607.push(await __for_body__606(__elements__605[__iter__604]));
+                            for(let __iter__610 in __elements__611) {
+                                __array__613.push(await __for_body__612(__elements__611[__iter__610]));
                                 if(__BREAK__FLAG__) {
-                                     __array__607.pop();
+                                     __array__613.pop();
                                     break;
                                     
                                 }
-                            }return __array__607;
+                            }return __array__613;
                              
                         })();
                          return  acc
@@ -16176,7 +16210,7 @@ export async function init_dlisp(Environment)  {
                     let operator_type;
                     let op_token;
                     let rcv;
-                    let __op__613= async function(){
+                    let __op__619= async function(){
                         return null
                     };
                     let acc;
@@ -16189,7 +16223,7 @@ export async function init_dlisp(Environment)  {
                         operator_type=null;
                         op_token=null;
                         rcv=null;
-                        let op=await __op__613();
+                        let op=await __op__619();
                         ;
                         _cdepth=(_cdepth|| 100);
                         acc=[];
@@ -16222,9 +16256,9 @@ export async function init_dlisp(Environment)  {
                                         if (check_true( (await is_number_ques_(tokens)|| (tokens instanceof String || typeof tokens==='string')|| (await sub_type(tokens)==="Boolean")))) {
                                              return tokens
                                         } else if (check_true( ((tokens instanceof Array)&& (tokens && tokens["0"] && tokens["0"]["ref"])&& await not((await get_ctx(ctx,(tokens && tokens["0"] && tokens["0"]["name"]))===UnknownType))&& (op_lookup[(tokens && tokens["0"] && tokens["0"]["name"])]|| (Function===await get_ctx(ctx,(tokens && tokens["0"] && tokens["0"]["name"])))|| (AsyncFunction===await get_ctx(ctx,(tokens && tokens["0"] && tokens["0"]["name"])))|| ("function"===typeof await (async function(){
-                                            let __targ__615=(root_ctx && root_ctx["defined_lisp_globals"]);
-                                            if (__targ__615){
-                                                 return(__targ__615)[(tokens && tokens["0"] && tokens["0"]["name"])]
+                                            let __targ__621=(root_ctx && root_ctx["defined_lisp_globals"]);
+                                            if (__targ__621){
+                                                 return(__targ__621)[(tokens && tokens["0"] && tokens["0"]["name"])]
                                             } 
                                         })())|| await get_lisp_ctx((tokens && tokens["0"] && tokens["0"]["name"])) instanceof Function)))) {
                                             op_token=await first(tokens);
@@ -16236,9 +16270,9 @@ export async function init_dlisp(Environment)  {
                                                 if (check_true(op)) {
                                                      return (op)(tokens,ctx)
                                                 } else if (check_true( await (async function(){
-                                                    let __targ__616=(Environment && Environment["inlines"]);
-                                                    if (__targ__616){
-                                                         return(__targ__616)[operator]
+                                                    let __targ__622=(Environment && Environment["inlines"]);
+                                                    if (__targ__622){
+                                                         return(__targ__622)[operator]
                                                     } 
                                                 })())) {
                                                      return await compile_inline(tokens,ctx)
@@ -16272,47 +16306,47 @@ export async function init_dlisp(Environment)  {
                                                          declared_type=await get_declarations(ctx,(tokens && tokens["0"] && tokens["0"]["name"]))
                                                     };
                                                     if (check_true (await (async function(){
-                                                        let __array_op_rval__617=verbosity;
-                                                         if (__array_op_rval__617 instanceof Function){
-                                                            return await __array_op_rval__617(ctx) 
+                                                        let __array_op_rval__623=verbosity;
+                                                         if (__array_op_rval__623 instanceof Function){
+                                                            return await __array_op_rval__623(ctx) 
                                                         } else {
-                                                            return[__array_op_rval__617,ctx]
+                                                            return[__array_op_rval__623,ctx]
                                                         }
                                                     })())){
                                                          (comp_log)(("compile: "+ _cdepth+ " array: "),"potential operator: ",(tokens && tokens["0"] && tokens["0"]["name"]),"declarations: ",declared_type)
                                                     };
                                                     await (async function() {
-                                                        let __for_body__620=async function(t) {
+                                                        let __for_body__626=async function(t) {
                                                             if (check_true (await not(await get_ctx_val(ctx,"__IN_LAMBDA__")))){
                                                                  await set_ctx(ctx,"__LAMBDA_STEP__",0)
                                                             };
                                                              return  (compiled_values).push(await compile(t,ctx,await add(_cdepth,1)))
                                                         };
-                                                        let __array__621=[],__elements__619=await (await Environment.get_global("rest"))(tokens);
+                                                        let __array__627=[],__elements__625=await (await Environment.get_global("rest"))(tokens);
                                                         let __BREAK__FLAG__=false;
-                                                        for(let __iter__618 in __elements__619) {
-                                                            __array__621.push(await __for_body__620(__elements__619[__iter__618]));
+                                                        for(let __iter__624 in __elements__625) {
+                                                            __array__627.push(await __for_body__626(__elements__625[__iter__624]));
                                                             if(__BREAK__FLAG__) {
-                                                                 __array__621.pop();
+                                                                 __array__627.pop();
                                                                 break;
                                                                 
                                                             }
-                                                        }return __array__621;
+                                                        }return __array__627;
                                                          
                                                     })();
                                                     await map(async function(compiled_element,idx) {
                                                         let inst;
                                                         inst=await async function(){
                                                             if (check_true( (((compiled_element && compiled_element["0"]) instanceof Object)&& await (async function(){
-                                                                let __targ__622=(compiled_element && compiled_element["0"]);
-                                                                if (__targ__622){
-                                                                     return(__targ__622)["ctype"]
+                                                                let __targ__628=(compiled_element && compiled_element["0"]);
+                                                                if (__targ__628){
+                                                                     return(__targ__628)["ctype"]
                                                                 } 
                                                             })()))) {
                                                                  return await (async function(){
-                                                                    let __targ__623=(compiled_element && compiled_element["0"]);
-                                                                    if (__targ__623){
-                                                                         return(__targ__623)["ctype"]
+                                                                    let __targ__629=(compiled_element && compiled_element["0"]);
+                                                                    if (__targ__629){
+                                                                         return(__targ__629)["ctype"]
                                                                     } 
                                                                 })()
                                                             } else if (check_true( ((compiled_element && compiled_element["0"])==="{"))) {
@@ -16324,55 +16358,55 @@ export async function init_dlisp(Environment)  {
                                                          return  await async function(){
                                                             if (check_true( ((inst==="block")|| (inst==="letblock")))) {
                                                                  return  (symbolic_replacements).push(await (async function(){
-                                                                    let __array_op_rval__624=idx;
-                                                                     if (__array_op_rval__624 instanceof Function){
-                                                                        return await __array_op_rval__624(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]) 
+                                                                    let __array_op_rval__630=idx;
+                                                                     if (__array_op_rval__630 instanceof Function){
+                                                                        return await __array_op_rval__630(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]) 
                                                                     } else {
-                                                                        return[__array_op_rval__624,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]]
+                                                                        return[__array_op_rval__630,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ",compiled_element," ",")"]]
                                                                     }
                                                                 })())
                                                             } else if (check_true( (inst==="ifblock"))) {
                                                                  return  (symbolic_replacements).push(await (async function(){
-                                                                    let __array_op_rval__625=idx;
-                                                                     if (__array_op_rval__625 instanceof Function){
-                                                                        return await __array_op_rval__625(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]) 
+                                                                    let __array_op_rval__631=idx;
+                                                                     if (__array_op_rval__631 instanceof Function){
+                                                                        return await __array_op_rval__631(await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]) 
                                                                     } else {
-                                                                        return[__array_op_rval__625,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]]
+                                                                        return[__array_op_rval__631,await gen_temp_name("array_arg"),[(preamble && preamble["2"]),"(",(preamble && preamble["1"])," ","function","()"," ","{",compiled_element,"}"," ",")"]]
                                                                     }
                                                                 })())
                                                             }
                                                         } ()
                                                     },compiled_values);
                                                     await (async function() {
-                                                        let __for_body__628=async function(elem) {
+                                                        let __for_body__634=async function(elem) {
                                                             await (async function() {
-                                                                let __for_body__632=async function(t) {
+                                                                let __for_body__638=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__633=[],__elements__631=["let"," ",(elem && elem["1"]),"=",(elem && elem["2"]),";"];
+                                                                let __array__639=[],__elements__637=["let"," ",(elem && elem["1"]),"=",(elem && elem["2"]),";"];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__630 in __elements__631) {
-                                                                    __array__633.push(await __for_body__632(__elements__631[__iter__630]));
+                                                                for(let __iter__636 in __elements__637) {
+                                                                    __array__639.push(await __for_body__638(__elements__637[__iter__636]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__633.pop();
+                                                                         __array__639.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__633;
+                                                                }return __array__639;
                                                                  
                                                             })();
                                                              return  await compiled_values["splice"].call(compiled_values,(elem && elem["0"]),1,[(preamble && preamble["0"])," ",(elem && elem["1"]),"()"])
                                                         };
-                                                        let __array__629=[],__elements__627=symbolic_replacements;
+                                                        let __array__635=[],__elements__633=symbolic_replacements;
                                                         let __BREAK__FLAG__=false;
-                                                        for(let __iter__626 in __elements__627) {
-                                                            __array__629.push(await __for_body__628(__elements__627[__iter__626]));
+                                                        for(let __iter__632 in __elements__633) {
+                                                            __array__635.push(await __for_body__634(__elements__633[__iter__632]));
                                                             if(__BREAK__FLAG__) {
-                                                                 __array__629.pop();
+                                                                 __array__635.pop();
                                                                 break;
                                                                 
                                                             }
-                                                        }return __array__629;
+                                                        }return __array__635;
                                                          
                                                     })();
                                                     if (check_true (((symbolic_replacements && symbolic_replacements.length)>0))){
@@ -16390,26 +16424,26 @@ export async function init_dlisp(Environment)  {
                                                             };
                                                             is_operation=true;
                                                             await (async function() {
-                                                                let __for_body__636=async function(t) {
+                                                                let __for_body__642=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__637=[],__elements__635=await (async function(){
-                                                                    let __array_op_rval__638=prefix;
-                                                                     if (__array_op_rval__638 instanceof Function){
-                                                                        return await __array_op_rval__638("(",rcv,")","(") 
+                                                                let __array__643=[],__elements__641=await (async function(){
+                                                                    let __array_op_rval__644=prefix;
+                                                                     if (__array_op_rval__644 instanceof Function){
+                                                                        return await __array_op_rval__644("(",rcv,")","(") 
                                                                     } else {
-                                                                        return[__array_op_rval__638,"(",rcv,")","("]
+                                                                        return[__array_op_rval__644,"(",rcv,")","("]
                                                                     }
                                                                 })();
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__634 in __elements__635) {
-                                                                    __array__637.push(await __for_body__636(__elements__635[__iter__634]));
+                                                                for(let __iter__640 in __elements__641) {
+                                                                    __array__643.push(await __for_body__642(__elements__641[__iter__640]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__637.pop();
+                                                                         __array__643.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__637;
+                                                                }return __array__643;
                                                                  
                                                             })();
                                                             await push_as_arg_list(acc,compiled_values);
@@ -16430,36 +16464,36 @@ export async function init_dlisp(Environment)  {
                                                                  (acc).push(" ")
                                                             };
                                                             await (async function() {
-                                                                let __for_body__641=async function(t) {
+                                                                let __for_body__647=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__642=[],__elements__640=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{","let"," ",tmp_name,"=",rcv,";"," ","if"," ","(",tmp_name," ","instanceof"," ","Function",")","{","return"," ",(preamble && preamble["0"])," ",tmp_name,"("];
+                                                                let __array__648=[],__elements__646=[(preamble && preamble["0"])," ","(",(preamble && preamble["1"])," ","function","()","{","let"," ",tmp_name,"=",rcv,";"," ","if"," ","(",tmp_name," ","instanceof"," ","Function",")","{","return"," ",(preamble && preamble["0"])," ",tmp_name,"("];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__639 in __elements__640) {
-                                                                    __array__642.push(await __for_body__641(__elements__640[__iter__639]));
+                                                                for(let __iter__645 in __elements__646) {
+                                                                    __array__648.push(await __for_body__647(__elements__646[__iter__645]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__642.pop();
+                                                                         __array__648.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__642;
+                                                                }return __array__648;
                                                                  
                                                             })();
                                                             await push_as_arg_list(acc,compiled_values);
                                                             await (async function() {
-                                                                let __for_body__645=async function(t) {
+                                                                let __for_body__651=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__646=[],__elements__644=[")"," ","}"," ","else"," ","{","return","[",tmp_name];
+                                                                let __array__652=[],__elements__650=[")"," ","}"," ","else"," ","{","return","[",tmp_name];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__643 in __elements__644) {
-                                                                    __array__646.push(await __for_body__645(__elements__644[__iter__643]));
+                                                                for(let __iter__649 in __elements__650) {
+                                                                    __array__652.push(await __for_body__651(__elements__650[__iter__649]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__646.pop();
+                                                                         __array__652.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__646;
+                                                                }return __array__652;
                                                                  
                                                             })();
                                                             if (check_true ((await length(await (await Environment.get_global("rest"))(tokens))>0))){
@@ -16467,39 +16501,39 @@ export async function init_dlisp(Environment)  {
                                                                  await push_as_arg_list(acc,compiled_values)
                                                             };
                                                              return  await (async function() {
-                                                                let __for_body__649=async function(t) {
+                                                                let __for_body__655=async function(t) {
                                                                      return  (acc).push(t)
                                                                 };
-                                                                let __array__650=[],__elements__648=["]","}","}",")","()"];
+                                                                let __array__656=[],__elements__654=["]","}","}",")","()"];
                                                                 let __BREAK__FLAG__=false;
-                                                                for(let __iter__647 in __elements__648) {
-                                                                    __array__650.push(await __for_body__649(__elements__648[__iter__647]));
+                                                                for(let __iter__653 in __elements__654) {
+                                                                    __array__656.push(await __for_body__655(__elements__654[__iter__653]));
                                                                     if(__BREAK__FLAG__) {
-                                                                         __array__650.pop();
+                                                                         __array__656.pop();
                                                                         break;
                                                                         
                                                                     }
-                                                                }return __array__650;
+                                                                }return __array__656;
                                                                  
                                                             })()
                                                         } else  {
-                                                            let __array_arg__651=(async function() {
+                                                            let __array_arg__657=(async function() {
                                                                 if (check_true ((await length(await (await Environment.get_global("rest"))(tokens))>0))){
                                                                     (acc).push(",");
                                                                      await push_as_arg_list(acc,compiled_values)
                                                                 }
                                                             } );
                                                             return await (async function(){
-                                                                let __array_op_rval__652=await (async function() {
+                                                                let __array_op_rval__658=await (async function() {
                                                                     if (check_true (((symbolic_replacements && symbolic_replacements.length)>0))){
                                                                         (acc).push("return");
                                                                          (acc).push(" ")
                                                                     }
                                                                 } )();
-                                                                 if (__array_op_rval__652 instanceof Function){
-                                                                    return await __array_op_rval__652((acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__651(),(acc).push("]")) 
+                                                                 if (__array_op_rval__658 instanceof Function){
+                                                                    return await __array_op_rval__658((acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__657(),(acc).push("]")) 
                                                                 } else {
-                                                                    return[__array_op_rval__652,(acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__651(),(acc).push("]")]
+                                                                    return[__array_op_rval__658,(acc).push("["),rcv=await check_statement(rcv),(acc).push(rcv),await __array_arg__657(),(acc).push("]")]
                                                                 }
                                                             })()
                                                         }
@@ -16558,11 +16592,11 @@ export async function init_dlisp(Environment)  {
                                                     snt_name=await sanitize_js_ref_name((tokens && tokens.name));
                                                     snt_value=await get_ctx_val(ctx,snt_name);
                                                     if (check_true (await (async function(){
-                                                        let __array_op_rval__654=verbosity;
-                                                         if (__array_op_rval__654 instanceof Function){
-                                                            return await __array_op_rval__654(ctx) 
+                                                        let __array_op_rval__660=verbosity;
+                                                         if (__array_op_rval__660 instanceof Function){
+                                                            return await __array_op_rval__660(ctx) 
                                                         } else {
-                                                            return[__array_op_rval__654,ctx]
+                                                            return[__array_op_rval__660,ctx]
                                                         }
                                                     })())){
                                                          (comp_log)("compile: singleton: ","name: ",(tokens && tokens.name)," sanitized: ",snt_name,"found locally as:",snt_value)
@@ -16584,11 +16618,11 @@ export async function init_dlisp(Environment)  {
                                                      return (tokens && tokens.name)
                                                 } else if (check_true( await not((undefined===await get_lisp_ctx((tokens && tokens.name)))))) {
                                                     if (check_true (await (async function(){
-                                                        let __array_op_rval__655=verbosity;
-                                                         if (__array_op_rval__655 instanceof Function){
-                                                            return await __array_op_rval__655(ctx) 
+                                                        let __array_op_rval__661=verbosity;
+                                                         if (__array_op_rval__661 instanceof Function){
+                                                            return await __array_op_rval__661(ctx) 
                                                         } else {
-                                                            return[__array_op_rval__655,ctx]
+                                                            return[__array_op_rval__661,ctx]
                                                         }
                                                     })())){
                                                          (comp_log)("compile: singleton: found global: ",(tokens && tokens.name))
@@ -16605,9 +16639,9 @@ export async function init_dlisp(Environment)  {
                                         }
                                     } ()
                                 } 
-                            } catch(__exception__614) {
-                                  if (__exception__614 instanceof Error) {
-                                     let e=__exception__614;
+                            } catch(__exception__620) {
+                                  if (__exception__620 instanceof Error) {
+                                     let e=__exception__620;
                                      {
                                         if (check_true ((is_error&& (e && e["handled"])))){
                                             throw e;
@@ -16666,19 +16700,19 @@ export async function init_dlisp(Environment)  {
                     insert_indent=async function() {
                         (text).push("\n");
                          return  await (async function() {
-                            let __for_body__660=async function(spacer) {
+                            let __for_body__666=async function(spacer) {
                                  return  (text).push(spacer)
                             };
-                            let __array__661=[],__elements__659=format_depth;
+                            let __array__667=[],__elements__665=format_depth;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__658 in __elements__659) {
-                                __array__661.push(await __for_body__660(__elements__659[__iter__658]));
+                            for(let __iter__664 in __elements__665) {
+                                __array__667.push(await __for_body__666(__elements__665[__iter__664]));
                                 if(__BREAK__FLAG__) {
-                                     __array__661.pop();
+                                     __array__667.pop();
                                     break;
                                     
                                 }
-                            }return __array__661;
+                            }return __array__667;
                              
                         })()
                     };
@@ -16715,7 +16749,7 @@ export async function init_dlisp(Environment)  {
                     };
                     assemble=async function(js_tokens) {
                          return  await (async function() {
-                            let __for_body__664=async function(t) {
+                            let __for_body__670=async function(t) {
                                  return  await async function(){
                                     if (check_true( (t instanceof Array))) {
                                          return  await assemble(t)
@@ -16744,26 +16778,26 @@ export async function init_dlisp(Environment)  {
                                     }
                                 } ()
                             };
-                            let __array__665=[],__elements__663=js_tokens;
+                            let __array__671=[],__elements__669=js_tokens;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__662 in __elements__663) {
-                                __array__665.push(await __for_body__664(__elements__663[__iter__662]));
+                            for(let __iter__668 in __elements__669) {
+                                __array__671.push(await __for_body__670(__elements__669[__iter__668]));
                                 if(__BREAK__FLAG__) {
-                                     __array__665.pop();
+                                     __array__671.pop();
                                     break;
                                     
                                 }
-                            }return __array__665;
+                            }return __array__671;
                              
                         })()
                     };
                     {
                         await assemble(await flatten(await (async function(){
-                            let __array_op_rval__666=js_tree;
-                             if (__array_op_rval__666 instanceof Function){
-                                return await __array_op_rval__666() 
+                            let __array_op_rval__672=js_tree;
+                             if (__array_op_rval__672 instanceof Function){
+                                return await __array_op_rval__672() 
                             } else {
-                                return[__array_op_rval__666]
+                                return[__array_op_rval__672]
                             }
                         })()));
                         if (check_true (suppress_join)){
@@ -16794,28 +16828,28 @@ export async function init_dlisp(Environment)  {
                     }
                 };
                 if (check_true (await (async function(){
-                    let __array_op_rval__667=verbosity;
-                     if (__array_op_rval__667 instanceof Function){
-                        return await __array_op_rval__667(ctx) 
+                    let __array_op_rval__673=verbosity;
+                     if (__array_op_rval__673 instanceof Function){
+                        return await __array_op_rval__673(ctx) 
                     } else {
-                        return[__array_op_rval__667,ctx]
+                        return[__array_op_rval__673,ctx]
                     }
                 })())){
                     await (async function(){
-                        let __array_op_rval__668=main_log;
-                         if (__array_op_rval__668 instanceof Function){
-                            return await __array_op_rval__668("namespace set to: ",(Environment && Environment["namespace"])) 
+                        let __array_op_rval__674=main_log;
+                         if (__array_op_rval__674 instanceof Function){
+                            return await __array_op_rval__674("namespace set to: ",(Environment && Environment["namespace"])) 
                         } else {
-                            return[__array_op_rval__668,"namespace set to: ",(Environment && Environment["namespace"])]
+                            return[__array_op_rval__674,"namespace set to: ",(Environment && Environment["namespace"])]
                         }
                     })();
                     if (check_true ((opts && opts["fully_qualified_globals"]))){
                          await (async function(){
-                            let __array_op_rval__669=main_log;
-                             if (__array_op_rval__669 instanceof Function){
-                                return await __array_op_rval__669("fully qualified globals") 
+                            let __array_op_rval__675=main_log;
+                             if (__array_op_rval__675 instanceof Function){
+                                return await __array_op_rval__675("fully qualified globals") 
                             } else {
-                                return[__array_op_rval__669,"fully qualified globals"]
+                                return[__array_op_rval__675,"fully qualified globals"]
                             }
                         })()
                     }
@@ -16841,9 +16875,9 @@ export async function init_dlisp(Environment)  {
                         await (async function(){
                             try /* TRY COMPLEX */ {
                                  return  final_token_assembly=await tokenize(tree,root_ctx)
-                            }  catch(__exception__671) {
-                                  if (__exception__671 instanceof Error) {
-                                     let e=__exception__671;
+                            }  catch(__exception__677) {
+                                  if (__exception__677 instanceof Error) {
+                                     let e=__exception__677;
                                       return is_error=e
                                 } 
                             }
@@ -16879,42 +16913,42 @@ export async function init_dlisp(Environment)  {
                         };
                         if (check_true (((assembly && assembly["0"] && assembly["0"]["ctype"])&& (assembly && assembly["0"] && assembly["0"]["ctype"]) instanceof Function))){
                              await async function(){
-                                let __target_obj__672=(assembly && assembly["0"]);
-                                __target_obj__672["ctype"]=await map_value_to_ctype((assembly && assembly["0"] && assembly["0"]["ctype"]));
-                                return __target_obj__672;
+                                let __target_obj__678=(assembly && assembly["0"]);
+                                __target_obj__678["ctype"]=await map_value_to_ctype((assembly && assembly["0"] && assembly["0"]["ctype"]));
+                                return __target_obj__678;
                                 
                             }()
                         };
                         await async function(){
                             if (check_true( (await not(is_error)&& assembly&& (await first(assembly) instanceof Object)&& await (async function(){
-                                let __targ__673=await first(assembly);
-                                if (__targ__673){
-                                     return(__targ__673)["ctype"]
+                                let __targ__679=await first(assembly);
+                                if (__targ__679){
+                                     return(__targ__679)["ctype"]
                                 } 
                             })()&& (await not((await (async function(){
-                                let __targ__674=await first(assembly);
-                                if (__targ__674){
-                                     return(__targ__674)["ctype"]
+                                let __targ__680=await first(assembly);
+                                if (__targ__680){
+                                     return(__targ__680)["ctype"]
                                 } 
                             })() instanceof String || typeof await (async function(){
-                                let __targ__674=await first(assembly);
-                                if (__targ__674){
-                                     return(__targ__674)["ctype"]
+                                let __targ__680=await first(assembly);
+                                if (__targ__680){
+                                     return(__targ__680)["ctype"]
                                 } 
                             })()==='string'))|| await (async function ()  {
                                 let val;
                                 val=await (async function(){
-                                    let __targ__675=await first(assembly);
-                                    if (__targ__675){
-                                         return(__targ__675)["ctype"]
+                                    let __targ__681=await first(assembly);
+                                    if (__targ__681){
+                                         return(__targ__681)["ctype"]
                                     } 
                                 })();
                                  return  (await not((val==="assignment"))&& await not(await contains_ques_("block",val))&& await not(await contains_ques_("unction",val)))
                             } )())))) {
                                  return await async function(){
-                                    let __target_obj__676=(assembly && assembly["0"]);
-                                    __target_obj__676["ctype"]="statement";
-                                    return __target_obj__676;
+                                    let __target_obj__682=(assembly && assembly["0"]);
+                                    __target_obj__682["ctype"]="statement";
+                                    return __target_obj__682;
                                     
                                 }()
                             } else if (check_true( (assembly&& (await first(assembly) instanceof String || typeof await first(assembly)==='string')&& (await first(assembly)==="throw")))) {
@@ -16922,9 +16956,9 @@ export async function init_dlisp(Environment)  {
                                     ctype:"block"
                                 },assembly]
                             } else if (check_true( (await not(is_error)&& assembly&& (await not((await first(assembly) instanceof Object))|| await not(await (async function(){
-                                let __targ__677=await first(assembly);
-                                if (__targ__677){
-                                     return(__targ__677)["ctype"]
+                                let __targ__683=await first(assembly);
+                                if (__targ__683){
+                                     return(__targ__683)["ctype"]
                                 } 
                             })()))))) {
                                  return assembly=[{
@@ -16955,9 +16989,9 @@ export async function init_dlisp(Environment)  {
                 } ();
                 if (check_true (((await first(output) instanceof Object)&& target_namespace))){
                      await async function(){
-                        let __target_obj__678=await first(output);
-                        __target_obj__678["namespace"]=target_namespace;
-                        return __target_obj__678;
+                        let __target_obj__684=await first(output);
+                        __target_obj__684["namespace"]=target_namespace;
+                        return __target_obj__684;
                         
                     }()
                 };
@@ -18575,7 +18609,412 @@ options=options||{}
             return await __call_target__[__call_method__]()
         } 
     })())/ 1000))
-};__obj__1["juno_logo"]="data:image/png;base64,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";__obj__1["html_package"]="WyI9Omlwcm9nbiIsWyI9OndoZW4iLFsiPTpjb250YWlucz8iLCJodG1sIixbIj06bmFtZXNwYWNlcyJdXSxbIj06ZGVsZXRlX25hbWVzcGFjZSIsImh0bWwiXV0sWyI9OmNyZWF0ZV9uYW1lc3BhY2UiLCJodG1sIl0sWyI9OnByb2duIixbIj06ZGVjbGFyZSIsWyI9Om5hbWVzcGFjZSIsImh0bWwiXV0sWyI9OmRlZmdsb2JhbCIsIj06KkRPTV9UQUdTKiIsWyJiYXNlIiwiaGVhZCIsImxpbmsiLCJtZXRhIiwic3R5bGUiLCJ0aXRsZSIsImJvZHkiLCJhZGRyZXNzIiwiYXJ0aWNsZSIsImFzaWRlIiwiZm9vdGVyIiwiaGVhZGVyIiwiaDEiLCJoMiIsImgzIiwiaDQiLCJoNSIsImg2IiwibWFpbiIsIm5hdiIsInNlY3Rpb24iLCJibG9ja3F1b3RlIiwiZGQiLCJkaXYiLCJkbCIsImR0IiwiZmlnY2FwdGlvbiIsImZpZ3VyZSIsImhyIiwibGkiLCJtZW51Iiwib2wiLCJwIiwicHJlIiwidWwiLCJhIiwiYWJiciIsImIiLCJiZGkiLCJiZG8iLCJiciIsImNpdGUiLCJjb2RlIiwiZGF0YSIsImRmbiIsImVtIiwiaSIsImtiZCIsIm1hcmsiLCJxIiwicnAiLCJydCIsInJ1YnkiLCJzIiwic2FtcCIsInNtYWxsIiwic3BhbiIsInN0cm9uZyIsInN1YiIsInRpbWUiLCJ1IiwidmFyIiwid2JyIiwiYXJlYSIsImF1ZGlvIiwiaW1nIiwibWFwIiwidHJhY2siLCJ2aWRlbyIsImVtYmVkIiwiaWZyYW1lIiwib2JqZWN0IiwicGljdHVyZSIsInBvcnRhbCIsInNvdXJjZSIsInN2ZyIsIm1hdGgiLCJjYW52YXMiLCJub3NjcmlwdCIsInNjcmlwdCIsImRlbCIsImlucyIsImNhcHRpb24iLCJjb2wiLCJjb2xncm91cCIsInRhYmxlIiwidGJvZHkiLCJ0ZCIsInRmb290IiwidGgiLCJ0aGVhZCIsInRyIiwiYnV0dG9uIiwiZGF0YWxpc3QiLCJmaWVsZHNldCIsImZvcm0iLCJpbnB1dCIsImxhYmVsIiwibGVnZW5kIiwibWV0ZXIiLCJvcHRncm91cCIsIm9wdGlvbiIsIm91dHB1dCIsInByb2dyZXNzIiwic2VsZWN0IiwidGV4dGFyZWEiLCJkZXRhaWxzIiwiZGlhbG9nIiwic3VtbWFyeSIsInNsb3QiLCJ0ZW1wbGF0ZSJdXSxbIj06ZGVmbWFjcm8iLCI9OmdldF9ieV9pZCIsWyI9OmlkIl0sWyI9OnF1b3RlbSIsWyI9Oi0+IiwiPTpkb2N1bWVudCIsImdldEVsZW1lbnRCeUlkIiwiPTojIyIsIj06aWQiXV0seyJkZXNjcmlwdGlvbiI6IkdpdmVuIGFuIGlkLCB0aGlzIG1hY3JvIGlzIHNob3J0aGFuZCBmb3IgY2FsbGluZyBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCB3aXRoIHRoZSBwYXNzZWQgaWQiLCJ1c2FnZSI6WyJpZDpzdHJpbmciXSwidGFncyI6WyJodG1sIiwiRE9NIiwiaWQiLCJmaW5kIl19XSxbIj06ZGVmdW4iLCI9OmFwcGVuZF9jaGlsZHJlbiIsWyI9OnBhcmVudCIsIj06Y2hpbGRyZW4iXSxbIj06d2hlbiIsWyI9OmFuZCIsWyI9OmlzX2VsZW1lbnQ/IiwiPTpwYXJlbnQiXSxbIj06aXNfYXJyYXk/IiwiPTpjaGlsZHJlbiJdXSxbIj06Zm9yX2VhY2giLFsiPTpjaGlsZCIsIj06Y2hpbGRyZW4iXSxbIj06LT4iLCI9OnBhcmVudCIsImFwcGVuZENoaWxkIiwiPTpjaGlsZCJdXV0sIj06cGFyZW50Il0sWyI9OmRlZmdsb2JhbCIsIj06Y3JlYXRlX2VsZW1lbnQiLFsiPTotPiIsIj06ZG9jdW1lbnQuY3JlYXRlRWxlbWVudCIsImJpbmQiLCI9OmRvY3VtZW50Il0seyJkZXNjcmlwdGlvbiI6IkJpbmRpbmcgZm9yIGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQifV0sWyI9OmRlZnVuIiwiPTpjcmVhdGVfZG9tX2VsZW1lbnQiLFsiPTplbGVtZW50X25hbWUiLCImIiwiPTphcmdzIl0sWyI9OmxldCIsW1siPTpvcHRzIixbIj06aWYiLFsiPTppc19vYmplY3Q/IiwiPTphcmdzLjAiXSwiPTphcmdzLjAiLCI9Om5pbCJdXSxbIj06Y29udGVudCIsWyI9OmlmIiwiPTpvcHRzIixbIj06aWYiLFsiPTo+IiwiPTphcmdzLmxlbmd0aCIsMF0sWyI9OnJlc3QiLCI9OmFyZ3MiXSxbXV0sWyI9Om9yIiwiPTphcmdzIixbXV1dXSxbIj06YXBwZW5kX2NoaWxkcmVuIixbIj06Zm4iLFsiPTpwYXJlbnQiLCI9OmNoaWxkcmVuIl0sWyI9OmRvIixbIj06Zm9yX2VhY2giLFsiPTpjaGlsZCIsIj06Y2hpbGRyZW4iXSxbIj06aWYiLFsiPTppc19hcnJheT8iLCI9OmNoaWxkIl0sWyI9OmFwcGVuZF9jaGlsZHJlbiIsIj06cGFyZW50IiwiPTpjaGlsZCJdLFsiPTotPiIsIj06cGFyZW50IiwiYXBwZW5kQ2hpbGQiLCI9OmNoaWxkIl1dXSwiPTpwYXJlbnQiXV1dLFsiPTplbGVtIixbIj06LT4iLCI9OmRvY3VtZW50IiwiY3JlYXRlRWxlbWVudCIsIj06ZWxlbWVudF9uYW1lIl1dXSxbIj06d2hlbiIsIj06b3B0cyIsWyI9OmZvcl9lYWNoIixbIj06cHNldCIsWyI9OnBhaXJzIiwiPTpvcHRzIl1dLFsiPTpkbyIsWyI9OmNvbmQiLFsiPTppc19mdW5jdGlvbj8iLCI9OnBzZXQuMSJdLFsiPTpzZXRfcHJvcCIsIj06ZWxlbSIsIj06cHNldC4wIiwiPTpwc2V0LjEiXSwiPTplbHNlIixbIj06LT4iLCI9OmVsZW0iLCJzZXRBdHRyaWJ1dGUiLCI9OnBzZXQuMCIsIj06cHNldC4xIl1dXV1dLFsiPTp3aGVuIixbIj06PiIsIj06Y29udGVudC5sZW5ndGgiLDBdLFsiPTpmb3JfZWFjaCIsWyI9OmNoaWxkIiwiPTpjb250ZW50Il0sWyI9OmNvbmQiLFsiPTppc19lbGVtZW50PyIsIj06Y2hpbGQiXSxbIj06LT4iLCI9OmVsZW0iLCJhcHBlbmRDaGlsZCIsIj06Y2hpbGQiXSxbIj06aXNfYXJyYXk/IiwiPTpjaGlsZCJdLFsiPTphcHBlbmRfY2hpbGRyZW4iLCI9OmVsZW0iLCI9OmNoaWxkIl0sWyI9OmlzX3N0cmluZz8iLCI9OmNoaWxkIl0sWyI9Oi0+IiwiPTplbGVtIiwiYXBwZW5kQ2hpbGQiLFsiPTotPiIsIj06ZG9jdW1lbnQiLCJjcmVhdGVUZXh0Tm9kZSIsIj06Y2hpbGQiXV0sIj06ZWxzZSIsWyI9Oi0+IiwiPTplbGVtIiwiYXBwZW5kQ2hpbGQiLFsiPTotPiIsIj06ZG9jdW1lbnQiLCJjcmVhdGVUZXh0Tm9kZSIsWyI9OisiLCIiLCI9OmNoaWxkIl1dXV1dXSwiPTplbGVtIl1dLFsiPTpmb3JfZWFjaCIsWyI9OnRhZ25hbWUiLCI9OipET01fVEFHUyoiXSxbIj06bGV0IixbWyI9OmJvdW5kX2ZuIixbIj06LT4iLCI9OmNyZWF0ZV9kb21fZWxlbWVudCIsImJpbmQiLCI9OmNyZWF0ZV9kb21fZWxlbWVudCIsIj06dGFnbmFtZSJdXV0sWyI9Oi0+IiwiPTpFbnZpcm9ubWVudCIsInNldF9nbG9iYWwiLCI9OnRhZ25hbWUiLCI9OmJvdW5kX2ZuIl1dXSxbIj06ZGVmdW4iLCI9OnNldF9zdHlsZSIsWyI9OnN0eWxlX2F0dHJpYnV0ZXMiLCI9OmVsZW0iXSxbIj06d2hlbiIsWyI9OmlzX2VsZW1lbnQ/IiwiPTplbGVtIl0sWyI9OmxldCIsW1siY3VycmVudF9zdHlsZSIsWyI9Oi0+IiwiPTplbGVtIiwiZ2V0QXR0cmlidXRlIiwic3R5bGUiXV0sWyJhdHRyaWJzIixbIj06b3IiLFsiPTpub19lbXB0aWVzIixbIj06ZnJvbV9zdHlsZV90ZXh0IiwiPTpjdXJyZW50X3N0eWxlIl1dLFtdXV0sWyJjb21iaW5lZCIsWyI9OnBhaXJzIixbIj06dG9fb2JqZWN0IixbIj06Y29uaiIsIj06YXR0cmlicyIsIj06c3R5bGVfYXR0cmlidXRlcyJdXV1dLFsibmV3dGV4dCIsWyI9OmpvaW4iLCI7IixbIj06Zm9yX2VhY2giLFsiYXRyIiwiPTpjb21iaW5lZCJdLFsiPTpqb2luIiwiOiAiLCI9OmF0ciJdXV1dXSxbIj06LT4iLCI9OmVsZW0iLCJzZXRBdHRyaWJ1dGUiLCJzdHlsZSIsIj06bmV3dGV4dCJdLCI9OmVsZW0iXV0seyJ0YWdzIjpbInVpIiwiaHRtbCIsImNzcyIsImVsZW1lbnQiLCJzdHlsZSJdLCJkZXNjcmlwdGlvbiI6IkdpdmVuIGEgc2V0IG9mIHN0eWxlIGF0dHJpYnV0ZXMgaW4gdGhlIFtbYXR0cmlidXRlIHZhbHVlXV0gZm9ybSwgYW5kIGFuIGVsZW1lbnQsIHNldHMgdGhlIGVsZW1lbnQgc3R5bGUgYXR0cmlidXRlIHRvIGNvbnRhaW4gdGhlIHNwZWNpZmllZCB2YWx1ZXMuIFJldHVybnMgdGhlIGVsZW1lbnQuIiwidXNhZ2UiOlsic3R5bGVfYXR0cmlidXRlczpsaXN0IiwiZWxlbWVudDpFbGVtZW50Il19XSxbIj06ZGVmdW4iLCI9Omhhc19jbGFzcz8iLFsiPTpjbGFzc25hbWUiLCI9OmVsZW0iXSxbIj06aWYiLFsiPTphbmQiLCI9OmVsZW0iLFsiPTppc19lbGVtZW50PyIsIj06ZWxlbSJdXSxbIj06LT4iLCI9OmVsZW0uY2xhc3NMaXN0IiwiY29udGFpbnMiLCI9OmNsYXNzbmFtZSJdLGZhbHNlXSx7InVzYWdlIjpbImNsYXNzbmFtZTpzdHJpbmciLCJlbGVtZW50OkVsZW1lbnQiXSwiZGVzY3JpcHRpb24iOiJJZiB0aGUgcHJvdmlkZWQgZWxlbWVudCBoYXMgdGhlIHNwZWNpZmllZCBDU1MgY2xhc3MsIHJldHVybnMgdHJ1ZSwgb3RoZXJ3aXNlIHRoZSBmdW5jdGlvbiByZXR1cm5zIGZhbHNlIiwidGFncyI6WyJjc3MiLCJET00iLCJjbGFzcyIsInVpIiwiZWxlbWVudCIsImh0bWwiXX1dLFsiPTpkZWZ1biIsIj06YWRkX2NsYXNzIixbIj06Y2xhc3NfbmFtZSIsIiYiLCI9OmVsZW1zIl0sWyI9OmRvIixbIj06ZGVmdmFyIiwiZWZmZWN0ZWQiLFtdXSxbIj06PSIsIj06ZWxlbXMiLFsiPTpmbGF0dGVuIiwiPTplbGVtcyJdXSxbIj06d2hlbiIsWyI9Om5vdCIsWyI9OmVxIiwiPTpuaWwiLCI9OmVsZW1zIl1dLFsiPTo9IiwiPTplbGVtcyIsWyI9OmlmIixbIj06b3IiLFsiPTppbnN0YW5jZW9mIiwiPTplbGVtcy4wIiwiPTpOb2RlTGlzdCJdLFsiPTppbnN0YW5jZW9mIiwiPTplbGVtcy4wIiwiPTpIVE1MQ29sbGVjdGlvbiJdLFsiPTppc19hcnJheT8iLCI9OmVsZW1zLjAiXV0sIj06ZWxlbXMuMCIsIj06ZWxlbXMiXV0sWyI9OmZvcl9lYWNoIixbImUiLCI9OmVsZW1zIl0sWyI9OmRvIixbIj06d2hlbiIsIj06ZS5jbGFzc0xpc3QiLFsiPTpwdXNoIiwiPTplZmZlY3RlZCIsIj06ZSJdLFsiPTotPiIsIj06ZS5jbGFzc0xpc3QiLCJhZGQiLCI9OmNsYXNzX25hbWUiXV1dXV0sIj06ZWZmZWN0ZWQiXSx7InVzYWdlIjpbImNsYXNzX25hbWU6c3RyaW5nIiwiZWxlbWVudDpFbGVtZW50IiwiZWxlbWVudD86RWxlbWVudCJdLCJkZXNjcmlwdGlvbiI6IlJlbW92ZXMgdGhlIGRlc2lnbmF0ZWQgQ1NTIGNsYXNzIGZyb20gdGhlIHByb3ZpZGVkIGVsZW1lbnQgb3IgZWxlbWVudHMuIFJldHVybnMgdGhlIGxpc3Qgb2Ygbm9kZXMuIiwidGFncyI6WyJ1aSIsImh0bWwiLCJjc3MiLCJjbGFzcyJdfV0sWyI9OmRlZnVuIiwiPTpyZW1vdmVfY2xhc3MiLFsiPTpjbGFzc19uYW1lIiwiJiIsIj06ZWxlbXMiXSxbIj06ZG8iLFsiPTpkZWZ2YXIiLCJlZmZlY3RlZCIsW11dLFsiPTo9IiwiPTplbGVtcyIsWyI9OmZsYXR0ZW4iLCI9OmVsZW1zIl1dLFsiPTp3aGVuIixbIj06bm90IixbIj06ZXEiLCI9Om5pbCIsIj06ZWxlbXMiXV0sWyI9Oj0iLCI9OmVsZW1zIixbIj06aWYiLFsiPTpvciIsWyI9Omluc3RhbmNlb2YiLCI9OmVsZW1zLjAiLCI9Ok5vZGVMaXN0Il0sWyI9Omluc3RhbmNlb2YiLCI9OmVsZW1zLjAiLCI9OkhUTUxDb2xsZWN0aW9uIl0sWyI9OmlzX2FycmF5PyIsIj06ZWxlbXMuMCJdXSwiPTplbGVtcy4wIiwiPTplbGVtcyJdXSxbIj06Zm9yX2VhY2giLFsiZSIsIj06ZWxlbXMiXSxbIj06ZG8iLFsiPTp3aGVuIiwiPTplLmNsYXNzTGlzdCIsWyI9OnB1c2giLCI9OmVmZmVjdGVkIiwiPTplIl0sWyI9Oi0+IiwiPTplLmNsYXNzTGlzdCIsInJlbW92ZSIsIj06Y2xhc3NfbmFtZSJdXV1dXSwiPTplZmZlY3RlZCJdLHsidXNhZ2UiOlsiY2xhc3NfbmFtZTpzdHJpbmciLCJlbGVtZW50OkVsZW1lbnQiLCJlbGVtZW50PzpFbGVtZW50Il0sImRlc2NyaXB0aW9uIjoiUmVtb3ZlcyB0aGUgZGVzaWduYXRlZCBDU1MgY2xhc3MgZnJvbSB0aGUgcHJvdmlkZWQgZWxlbWVudCBvciBlbGVtZW50cy4gUmV0dXJucyB0aGUgbGlzdCBvZiBub2Rlcy4iLCJ0YWdzIjpbInVpIiwiaHRtbCIsImNzcyIsImNsYXNzIl19XSxbIj06ZGVmdW4iLCI9OnNldF9kaXNhYmxlZCIsWyImIiwiPTphcmdzIl0sWyI9OndoZW4iLFsiPTphbmQiLCI9OmFyZ3MiLFsiPTo+IixbIj06bGVuZ3RoIiwiPTphcmdzIl0sMF1dLFsiPTpmb3JfZWFjaCIsWyJlbGVtIixbIj06ZmxhdHRlbiIsIj06YXJncyJdXSxbIj06aWYiLCI9OmVsZW0iLFsiPTotPiIsIj06ZWxlbSIsInNldEF0dHJpYnV0ZSIsImRpc2FibGVkIiwidHJ1ZSJdXV1dLHsiZGVzY3JpcHRpb24iOiJHaXZlbiBhbiBhcmJpdHJhcnkgbGlzdCBvZiBFbGVtZW50cywgc2V0IHRoZW0gdG8gZGlzYWJsZWQuIiwidGFncyI6WyJ1aSIsImh0bWwiLCJjc3MiXSwidXNhZ2UiOlsiZWxlbWVudDpFbGVtZW50IiwiZWxlbWVudD86RWxlbWVudCJdfV0sWyI9OmRlZnVuIiwiPTpzZXRfZW5hYmxlZCIsWyImIiwiPTphcmdzIl0sWyI9OndoZW4iLFsiPTphbmQiLCI9OmFyZ3MiLFsiPTo+IixbIj06bGVuZ3RoIiwiPTphcmdzIl0sMF1dLFsiPTpmb3JfZWFjaCIsWyJlbGVtIixbIj06ZmxhdHRlbiIsIj06YXJncyJdXSxbIj06aWYiLCI9OmVsZW0iLFsiPTotPiIsIj06ZWxlbSIsInJlbW92ZUF0dHJpYnV0ZSIsImRpc2FibGVkIl1dXV0seyJkZXNjcmlwdGlvbiI6IkdpdmVuIGFuIGFyYml0cmFyeSBsaXN0IG9mIEVsZW1lbnRzLCBzZXQgdGhlbSB0byBlbmFibGVkIChyZW1vdmVzIHRoZSBkaXNhYmxlZCBwcm9wZXJ0eSBmcm9tIHRoZSBFbGVtZW50KS4iLCJ0YWdzIjpbInVpIiwiaHRtbCIsImNzcyJdLCJ1c2FnZSI6WyJlbGVtZW50OkVsZW1lbnQiLCJlbGVtZW50PzpFbGVtZW50Il19XSxbIj06ZGVmdW4iLCI9OnJlbW92ZV9hdHRyaWJ1dGUiLFsiPTplbGVtIiwiJiIsIj06YXR0cmlicyJdLFsiPTp3aGVuIixbIj06YW5kIiwiPTplbGVtIixbIj06aXNfZWxlbWVudD8iLCI9OmVsZW0iXSwiPTphdHRyaWJzIixbIj06PiIsIj06YXR0cmlicy5sZW5ndGgiLDBdXSxbIj06Zm9yX2VhY2giLFsiPTphdHRyaWIiLFsiPTpmbGF0dGVuIiwiPTphdHRyaWJzIl1dLFsiPTotPiIsIj06ZWxlbSIsInJlbW92ZUF0dHJpYnV0ZSIsIj06YXR0cmliIl1dXSx7ImRlc2NyaXB0aW9uIjoiUHJvdmlkZWQgYSB0YXJnZXQgRE9NIGVsZW1lbnQgYW5kIDEgb3IgbW9yZSBhdHRyaWJ1dGVzLCByZW1vdmVzIGVhY2ggYXR0cmlidXRlIGZyb20gdGhlIHRhcmdldGVkIERPTSBlbGVtZW50LiIsInVzYWdlIjpbImVsZW1lbnQ6RWxlbWVudCIsImF0dHJpYjA6c3RyaW5nIiwiYXR0cmliTjpzdHJpbmciXSwidGFncyI6WyJ1aSIsImh0bWwiLCJhdHRyaWJ1dGUiLCJkZWxldGUiXX1dLFsiPTpkZWZ1biIsIj06YXR0YWNoX2V2ZW50X2xpc3RlbmVyIixbIj06ZWxlbSIsIj06ZXZlbnRfdHlwZSIsIj06aGFuZGxlcl9mdW5jdGlvbiJdLFsiPTp3aGVuIiwiPTplbGVtIixbWyI9OmpzbGFtYmRhIixbImVsZW0iLCJldmVudCIsImYiXSwicmV0dXJuIGVsZW0uYWRkRXZlbnRMaXN0ZW5lcihldmVudCxmKTsiXSwiPTplbGVtIiwiPTpldmVudF90eXBlIiwiPTpoYW5kbGVyX2Z1bmN0aW9uIl1dLHsidXNhZ2UiOlsiZWxlbWVudDpFbGVtZW50IiwiZXZlbnRfdHlwZTpzdHJpbmciLCJoYW5kbGVyOmZ1bmN0aW9uIl0sImRlc2NyaXB0aW9uIjoiR2l2ZW4gYW4gZWxlbWVudCwgYW4gZXZlbnQgdHlwZSBzdWNoIGFzIGBjbGljaywgYW5kIGEgZnVuY3Rpb24sIGF0dGFjaGVzIHRoZSBwcm92aWRlZCBmdW5jdGlvbiBhcyBhbiBldmVudCBoYW5kbGVyIHRvIHRoZSBIVE1MIEVsZW1lbnQuIiwidGFncyI6WyJ1aSIsImV2ZW50cyIsIkhUTUwiLCJldmVudHMiLCIiXX1dLFsiPTpkZWZ1biIsIj06cmVtb3ZlX2Nzc19lbnRyeSIsWyI9OmVudHJ5X25hbWUiXSxbIj06ZG8iLFsiPTppZiIsWyI9OmdldF9ieV9pZCIsWyI9OisiLCJjbGFzc18iLCI9OmVudHJ5X25hbWUiXV0sWyI9Oi0+IixbIj06Z2V0X2J5X2lkIixbIj06KyIsImNsYXNzXyIsIj06ZW50cnlfbmFtZSJdXSwicmVtb3ZlIl1dXSx7InVzYWdlIjpbImVudHJ5X25hbWU6c3RyaW5nIl0sImRlc2NyaXB0aW9uIjoiSWYgYSBjbGFzcyBoYXMgYmVlbiBjcmVhdGVkIGJ5IGNyZWF0ZV9jc3NfZW50cnksIHVzZSB0aGlzIGZ1bmN0aW9uIHRvIHJlbW92ZSB0aGUgY2xhc3MgZnJvbSB0aGUgZG9jdW1lbnQuIiwidGFncyI6WyJodG1sIiwiY3NzIiwidWkiXX1dLFsiPTpkZWZ1biIsIj06Y3JlYXRlX2Nzc19lbnRyeSIsWyI9OmVudHJ5X25hbWUiLCI9OmNzc19hdHRyaWJ1dGVfbGlzdCJdLFsiPTpsZXQiLFtbIj06c3R5bGUiLFsiPTpjcmVhdGVfZWxlbWVudCIsInN0eWxlIl1dLFsiPTpjc3NfYXR0cmlidXRlcyIsWyI9Om1hcCIsWyI9OmZuIixbIj06diJdLFsiPTorIiwiPTp2LjAiLCI6ICIsIj06di4xIl1dLCI9OmNzc19hdHRyaWJ1dGVfbGlzdCJdXSxbIj06aGVhZF9lbGVtIixbIj06LT4iLCI9OmRvY3VtZW50IiwicXVlcnlTZWxlY3RvciIsImhlYWQiXV0sWyI9Om5ld19zdHlsZSIsIj06bmlsIl1dLFsiPTp3aGVuIiwiPTpoZWFkX2VsZW0iLFsiPTpyZW1vdmVfY3NzX2VudHJ5IiwiPTplbnRyeV9uYW1lIl0sWyI9Oi0+IiwiPTpoZWFkX2VsZW0iLCJhcHBlbmRDaGlsZCIsWyI9Oj0iLCI9Om5ld19zdHlsZSIsWyI9OnN0eWxlIix7ImlkIjpbIj06KyIsImNsYXNzXyIsIj06ZW50cnlfbmFtZSJdLCJ0eXBlIjoidGV4dC9jc3MifSxbIj06KyIsIiIsIj06ZW50cnlfbmFtZSIsIntcbiAgIixbIj06am9pbiIsIjtcbiIsIj06Y3NzX2F0dHJpYnV0ZXMiXSwiIH0iXV1dXV0sIj06bmV3X3N0eWxlIl0seyJ1c2FnZSI6WyJlbnRyeV9uYW1lOnN0cmluZyIsImNzc19hdHRyaWJ1dGVfbGlzdDphcnJheSJdLCJkZXNjcmlwdGlvbiI6IiBHaXZlbiBhIG5hbWUgZm9yIHRoZSBjbGFzcyBhbmQgYSBsaXN0IG9mIGZvcm1hdHRlZCBjc3MgYXR0cmlidXRlc1xuICAgICAgICAgICAgICAgICAgICAgICAgIGNyZWF0ZSBhbmQgbG9hZCB0aGUgQ1NTIG9iamVjdCBpbnRvIHRoZSBET00uPGJyPiBFeGFtcGxlOiA8YnI+PGNvZGU+XG4gICAgICAgICAgICAgICAgICAgICAgICAgIChjcmVhdGVfY3NzX2VudHJ5ICdGaWx0ZXJlZFNlbGVjdDpmb2N1cy13aXRoaW4nXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBbWydib3gtc2hhZG93JyAnMHB4IDBweCAxMHB4IDBweCByZ2JhKDAsMCwwLDAuNzUpOyddXSk8YnI+XG4gICAgICAgICAgICAgICAgICAgICAgICAgICA8L2NvZGU+ICIsInRhZ3MiOlsiaHRtbCIsImNzcyIsInVpIl19XSxbIj06ZGVmdW4iLCI9OmNzc19lbnRyeV90b19jc3NfZm9ybWF0IixbIj06ZW50cnlfbmFtZSIsIj06Y3NzX2F0dHJpYnV0ZV9saXN0Il0sWyI9OmxldCIsW1sic3R5bGUiLFsiPTpjcmVhdGVfZWxlbWVudCIsInN0eWxlIl1dLFsiY3NzX2F0dHJpYnV0ZXMiLFsiPTptYXAiLFsiPTpmbiIsWyI9OnYiXSxbIj06KyIsIj06di4wIiwiOiAiLCI9OnYuMSJdXSwiPTpjc3NfYXR0cmlidXRlX2xpc3QiXV1dLFsiPTorIiwiIiwiPTplbnRyeV9uYW1lIiwiIHtcbiAgICIsWyI9OmpvaW4iLCI7XG4gICAiLCI9OmNzc19hdHRyaWJ1dGVzIl0sIjtcbn0iXV0seyJ1c2FnZSI6WyJlbnRyeV9uYW1lOnN0cmluZyIsImNzc19hdHRyaWJ1dGVfbGlzdDphcnJheSJdLCJkZXNjcmlwdGlvbiI6WyI9OisiLCJHaXZlbiBhIG5hbWUgZm9yIHRoZSBjbGFzcyBhbmQgYSBsaXN0IG9mIGZvcm1hdHRlZCBjc3MgYXR0cmlidXRlcyByZXR1cm5zIGEgZm9ybWF0dGVkIHN0cmluZyBpbiBDU1Mgc3ludGF4Ljxicj4gRXhhbXBsZTogPGJyPjxjb2RlPiIsIihjcmVhdGVfY3NzX2VudHJ5ICdGaWx0ZXJlZFNlbGVjdDpmb2N1cy13aXRoaW4nXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBbWydib3gtc2hhZG93JyAnMHB4IDBweCAxMHB4IDBweCByZ2JhKDAsMCwwLDAuNzUpOyddXSk8YnI+IiwiPC9jb2RlPiJdLCJ0YWdzIjpbImh0bWwiLCJjc3MiLCJ1aSIsImNvbnZlcnQiXX1dLFsiPTpjb25zb2xlLmxvZyIsImh0bWwgaXMgbG9hZGVkIl0sWyI9OnJlZ2lzdGVyX2ZlYXR1cmUiLCJodG1sIl0sdHJ1ZV1d";__obj__1["browser_repl_package"]="WyI9Omlwcm9nbiIsWyI9OmRlZnVuIiwiPTpsaW5lX3JlYWRlciIsWyI9Om9wdGlvbnMiXSxbIj06bGV0IixbWyI9OmVudHJ5X2FyZWEiLFsiPTpodG1sL3RleHRhcmVhIix7InN0eWxlIjoiZm9udC1zaXplOiAxLjFlbTsgaGVpZ2h0OiBjYWxjKDEwMCUgLSAyMHB4KTsgd2lkdGg6IGNhbGMoMTAwJSAtIDEwcHgpOyJ9XV0sWyI9OnJlc3VsdCIsIj06bmlsIl0sWyI9Om91dHB1dF9jb250YWluZXIiLCI9Om9wdGlvbnMub3V0cHV0X2NvbnRhaW5lciJdLFsiPTpoYW5kbGVfdGV4dF9pbnB1dF9ldmVudHMiLFsiPTpmbiIsWyI9OmUiXSxbIj06ZG8iLFsiPTp3aGVuIixbIj06YW5kIixbIj06PT0iLCI9OmUua2V5IiwiRW50ZXIiXSwiPTplLnNoaWZ0S2V5Il0sWyI9OmNvbnNvbGUubG9nIiwiLT4iLFsiPTpwcm9wIiwiPTplbnRyeV9hcmVhIiwidmFsdWUiXV0sWyI9OnRyeSIsWyI9Oj0iLCI9OnJlc3VsdCIsWyI9OmV2YWx1YXRlIixbIj06cHJvcCIsIj06ZW50cnlfYXJlYSIsInZhbHVlIl1dXSxbIj06Y2F0Y2giLCI9OkVycm9yIixbIj06ZXgiXSxbIj06PSIsIj06cmVzdWx0IiwiPTpleCJdXV0sWyI9OmNvbnNvbGUubG9nIiwiPC0iLCI9OnJlc3VsdCJdLFsiPTotPiIsIj06b3V0cHV0X2NvbnRhaW5lciIsInByZXBlbmQiLFsiPTpodG1sL2RpdiIseyJzdHlsZSI6ImJvcmRlci10b3A6IDFweCBzb2xpZCAjQzBDMEMwOyBwYWRkaW5nOiA1cHg7IG1hcmdpbi10b3A6IDFweDsgYmFja2dyb3VuZDogI0ZBRkFGQTsgd2lkdGg6IGNhbGMoMTAwJSAtIDEwcHgpOyBkaXNwbGF5OiBpbmxpbmUtYmxvY2s7ICJ9LFsiPTpodG1sL2NvZGUiLHsic3R5bGUiOiJmb250LXN0eWxlOiBpdGFsaWM7IGNvbG9yOiBkYXJrYmx1ZTsifSwiPT4gIixbIj06cHJvcCIsIj06ZW50cnlfYXJlYSIsInZhbHVlIl1dXV0sWyI9Oi0+IiwiPTpvdXRwdXRfY29udGFpbmVyIiwicHJlcGVuZCIsWyI9Omh0bWwvZGl2Iix7InN0eWxlIjoicGFkZGluZzogNXB4OyBtYXJnaW4tdG9wOiAwcHg7IGJhY2tncm91bmQ6ICNGQUZBRkE7IHdpZHRoOiBjYWxjKDEwMCUgLSAxMHB4KTsgZGlzcGxheTogaW5saW5lLWJsb2NrOyAifSxbIj06Y29uZCIsWyI9OmlzX2VsZW1lbnQ/IiwiPTpyZXN1bHQiXSwiPTpyZXN1bHQiLFsiPTppc19udW1iZXI/IiwiPTpyZXN1bHQiXSxbIj06aHRtbC9jb2RlIix7InN0eWxlIjoiZm9udC1zaXplOiAxLjFlbTsgY29sb3I6IGdyZWVuOyJ9LCI9OnJlc3VsdCJdLFsiPTpvciIsWyI9Oj09Iix0cnVlLCI9OnJlc3VsdCJdLFsiPTo9PSIsZmFsc2UsIj06cmVzdWx0Il1dLFsiPTpodG1sL2NvZGUiLHsic3R5bGUiOiJmb250LXNpemU6IDEuMWVtOyBjb2xvcjogb3JhbmdlOyJ9LCI9OnJlc3VsdCJdLFsiPTppc19mdW5jdGlvbj8iLCI9OnJlc3VsdCJdLFsiPTpodG1sL2NvZGUiLHsic3R5bGUiOiJmb250LXNpemU6IDEuMWVtOyBjb2xvcjogZGFya2JsdWU7In0sIkZ1bmN0aW9uOiAiLFsiPTppZiIsIj06cmVzdWx0Lm5hbWUiLCI9OnJlc3VsdC5uYW1lIiwiYW5vbnltb3VzIl1dLFsiPTphbmQiLFsiPTppc19hcnJheT8iLCI9OnJlc3VsdCJdLFsiPTppbnN0YW5jZW9mIiwiPTpyZXN1bHQuMCIsIj06RXJyb3IiXV0sWyI9Omh0bWwvcHJlIix7InN0eWxlIjoiZm9udC1zaXplOiAxLjFlbTsgY29sb3I6IGRhcmtyZWQ7In0sIkVSUk9SOiAiLFsiPTpzdWJ0eXBlIiwiPTpyZXN1bHQuMCJdLCJcbiIsIj06cmVzdWx0LjAubWVzc2FnZSJdLFsiPTppbnN0YW5jZW9mIiwiPTpyZXN1bHQiLCI9OkVycm9yIl0sWyI9Omh0bWwvcHJlIix7InN0eWxlIjoiZm9udC1zaXplOiAxLjFlbTsgY29sb3I6IGRhcmtyZWQ7In0sIkVSUk9SOiAiLFsiPTpzdWJ0eXBlIiwiPTpyZXN1bHQiXSwiPTpyZXN1bHQubWVzc2FnZSJdLCI9OmVsc2UiLFsiPTpodG1sL3ByZSIseyJzdHlsZSI6ImZvbnQtc2l6ZTogMS4xZW07In0sWyI9OkpTT04uc3RyaW5naWZ5IiwiPTpyZXN1bHQiLCI9Om5pbCIsM11dXV1dLFsiPTpzZXRfcHJvcCIsIj06b3V0cHV0X2NvbnRhaW5lciIsInNjcm9sbFRvcCIsIj06b3V0cHV0X2NvbnRhaW5lci5vZmZzZXRIZWlnaHQiXSxbIj06c2V0X3Byb3AiLCI9OmVudHJ5X2FyZWEiLCJ2YWx1ZSIsIiJdXV1dXV0sWyI9Omh0bWwvYXR0YWNoX2V2ZW50X2xpc3RlbmVyIiwiPTplbnRyeV9hcmVhIiwia2V5dXAiLCI9OmhhbmRsZV90ZXh0X2lucHV0X2V2ZW50cyJdLCI9OmVudHJ5X2FyZWEiXV0sWyI9OmRlZnVuIiwiPTpicm93c2VyX3JlcGwiLFtdLFsiPTpsZXQiLFtbIj06Ym9keV9lbGVtZW50IixbIj06LT4iLCI9OmRvY3VtZW50IiwicXVlcnlTZWxlY3RvciIsImJvZHkiXV0sWyI9Om91dHB1dF9jb250YWluZXIiLFsiPTpodG1sL2RpdiIseyJpZCI6Im91dHB1dC1jb250YWluZXIiLCJzdHlsZSI6ImhlaWdodDogNzAlOyBvdmVyZmxvdzogc2Nyb2xsOyBkaXNwbGF5OiBmbGV4OyBmbGV4LWRpcmVjdGlvbjogY29sdW1uLXJldmVyc2U7IHdpZHRoOiAxMDAlOyB2ZXJ0aWNhbC1hbGlnbjpib3R0b207ICJ9XV0sWyI9OnJlc2l6ZV9vYnNlcnZlciIsIj06bmlsIl0sWyI9OnJlYWRlciIsWyI9OmxpbmVfcmVhZGVyIix7Im91dHB1dF9jb250YWluZXIiOiI9Om91dHB1dF9jb250YWluZXIifV1dLFsiPTppbnB1dF9jb250YWluZXIiLFsiPTpodG1sL2RpdiIseyJpZCI6ImlucHV0LWNvbnRhaW5lciIsInN0eWxlIjoiaGVpZ2h0OiBjYWxjKDMwJSAtIDE1cHgpOyBvdmVyZmxvdzogaGlkZGVuOyAifSwiPTpyZWFkZXIiXV0sWyI9Omp1bm8tY29udGFpbmVyIixbIj06aHRtbC9kaXYiLHsiaWQiOiJqdW5vLWNvbnRhaW5lciIsInN0eWxlIjoiaGVpZ2h0OiBpbmhlcml0OyBtYXgtaGVpZ2h0OiAxMDAlOyBvdmVyZmxvdzogaGlkZGVuOyJ9LCI9Om91dHB1dF9jb250YWluZXIiLCI9OmlucHV0X2NvbnRhaW5lciJdXSxbIj06cGVyZm9ybV9yZXNpemUiLFsiPTpmbiIsW10sWyI9OnByb2duIixbIj06Y29uc29sZS5sb2ciLCJyZXNpemU6ICIsWyI9OnByb3AiLCI9Omp1bm8tY29udGFpbmVyLnBhcmVudEVsZW1lbnQiLCJvZmZzZXRXaWR0aCJdXSxbIj06aHRtbC9zZXRfc3R5bGUiLFtbIndpZHRoIixbIj06KyIsIiIsWyI9Oi0iLFsiPTpwcm9wIiwiPTpqdW5vLWNvbnRhaW5lci5wYXJlbnRFbGVtZW50Iiwib2Zmc2V0V2lkdGgiXSwyXSwicHgiXV1dLCI9Omp1bm8tY29udGFpbmVyIl1dXV1dLFsiPTo9IiwiPTpyZXNpemVfb2JzZXJ2ZXIiLFsiPTpuZXciLCI9OlJlc2l6ZU9ic2VydmVyIiwiPTpwZXJmb3JtX3Jlc2l6ZSJdXSxbIj06LT4iLCI9OnJlc2l6ZV9vYnNlcnZlciIsIm9ic2VydmUiLCI9OmJvZHlfZWxlbWVudCJdLFsiPTp3aGVuIiwiPTpib2R5X2VsZW1lbnQiLFsiPTotPiIsIj06Ym9keV9lbGVtZW50IiwiYXBwZW5kQ2hpbGQiLCI9Omp1bm8tY29udGFpbmVyIl1dXV0sWyI9Omh0bWwvc2V0X3N0eWxlIixbWyJmb250LWZhbWlseSIsIi1hcHBsZS1zeXN0ZW0sQmxpbmtNYWNTeXN0ZW1Gb250LCdTZWdvZSBVSScsJ0hlbHZldGljYSBOZXVlJyxIZWx2ZXRpY2Esc2Fucy1zZXJpZjsiXV0sWyI9Oi0+IiwiPTpkb2N1bWVudCIsInF1ZXJ5U2VsZWN0b3IiLCJib2R5Il1dLFsiPTpsZXQiLFtbIj06aGVhZGVyIixbIj06LT4iLCI9OmRvY3VtZW50IiwicXVlcnlTZWxlY3RvciIsImhlYWRlciJdLCI9Omh0bWwvaW1nIix7InNyYyI6Ij06Y29yZS9qdW5vX2xvZ28iLCJoZWlnaHQiOiIxNSJ9XV0sWyI9Oi0+IiwiPTpoZWFkZXIiLCJhcHBlbmRDaGlsZCIsWyI9Omh0bWwvaW1nIix7InNyYyI6Ij06Y29yZS9qdW5vX2xvZ28iLCJoZWlnaHQiOiIxNSJ9XV0sWyI9Oi0+IiwiPTpoZWFkZXIiLCJhcHBlbmRDaGlsZCIsWyI9Omh0bWwvc3BhbiIseyJzdHlsZSI6ImRpc3BsYXk6IGlubGluZS1ibG9jazsgbWFyZ2luLWxlZnQ6IDEwcHg7IGZvbnQtc2l6ZTogMC45ZW07IGxpbmUtaGVpZ2h0OiAxNXB4OyJ9LCI9OkVudmlyb25tZW50LmJ1aWxkX3ZlcnNpb24iXV0sWyI9OmJyb3dzZXJfcmVwbCJdXV0=";return __obj__1;})(),children_declarations:async function() {
+};__obj__1["juno_logo"]="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAArCAYAAAA9iMeyAAABoWlDQ1BJQ0MgUHJvZmlsZQAAKJF9kL9LQlEUx79qqaQRkUODw4OsSUNsaUwNRDAQM0hr6Pn8Cfp6PZ9U0Bi0NAgFZQ2VDS3NtTq0BkFRBNHYH2A/lpDXuT5DLerA5Xz43nPOPfcL6Ld5Scr3uIGCqMiRgI+bj8U50wvMMMICO2y8UJS84XAIFN+5Oz7uoWP51sVmOeOHK1VLNV4fNO7a8hXxd31X9CdTRQHQccRTgiQrxEvEI6uKxHiT2CbTUsT7jDManzNOaFxr1kQjfuI7Yk7I8kniN2KnkJULgJ7NdyQLSdL10xqLjLOMEx29mQ4u5EtCa0/2Q2tKnJtl9XTsCCCIGYTBIYEScshDgYuySEoREbr3Kak1hTX7l6V1OZfJKpyXHEpxQVEYd3Iet8cDML9/+tjWlo+ByXfAUG5riT3gcgsYfmxrjiNggLy6uJJ4mW9KBjr6dBqon5HNMWDoBuhbKKYnPNqPrD6g91lVX0cB0w7QKKvq54mqNqrU/ATURM271iycPgDRDSB0DVQOgLEMvbn4h0fmpkctH/6tafn4BTJpfiFP7xAAAAAAhGVYSWZNTQAqAAAACAAGAQYAAwAAAAEAAgAAARIAAwAAAAEAAQAAARoABQAAAAEAAABWARsABQAAAAEAAABeASgAAwAAAAEAAgAAh2kABAAAAAEAAABmAAAAAAAAAEgAAAABAAAASAAAAAEAAqACAAQAAAABAAAAyKADAAQAAAABAAAAKwAAAABnD8GIAAAACXBIWXMAAAsTAAALEwEAmpwYAAADF2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNi4wLjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyIKICAgICAgICAgICAgeG1sbnM6ZXhpZj0iaHR0cDovL25zLmFkb2JlLmNvbS9leGlmLzEuMC8iPgogICAgICAgICA8dGlmZjpDb21wcmVzc2lvbj4xPC90aWZmOkNvbXByZXNzaW9uPgogICAgICAgICA8dGlmZjpSZXNvbHV0aW9uVW5pdD4yPC90aWZmOlJlc29sdXRpb25Vbml0PgogICAgICAgICA8dGlmZjpYUmVzb2x1dGlvbj43MjwvdGlmZjpYUmVzb2x1dGlvbj4KICAgICAgICAgPHRpZmY6WVJlc29sdXRpb24+NzI8L3RpZmY6WVJlc29sdXRpb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICAgICA8ZXhpZjpQaXhlbFhEaW1lbnNpb24+NDA4PC9leGlmOlBpeGVsWERpbWVuc2lvbj4KICAgICAgICAgPGV4aWY6UGl4ZWxZRGltZW5zaW9uPjg3PC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+ChRLZm0AAC/BSURBVHgB7Z17sF1XedjX3uecq5eF3za2wTaOgcQmHcABJkaSLzA20ODJJK47aUnbSUszQ9Im6TRth5Z0TqdTWtqBpqVPmtLyyiRVHVJoalJjc/EDg4kggG0eAfmJbVl+ybakq3vO2bu/37fWPjq6urKupWvRP1j2uXvvtdf61vf+vrX22lsp/aj8iAM/4sAROVAd8c4Lf+P5jN0eAZ3VwjhS/yOAXZNqcfthjLsmyP8ISObAahVsrfnFuNfWKe3meCZK5PG5ysJ4hbv0uayf0uYZJXxmBTiL1K2nzQ5hzLRdAeKxVxVcHKsrjjl73dWf2aS0Ej3X9mjhj/LsDJxcc/DvScBd6f5++uwG9l1LB9se75k47R6kdADY647Auw2l/nrHPUKbI+IB3E4PlF3Hr0tKh7vL0evuXL4+V+n0Qb3abtvZ9rPnzwXkh3lviGEcU4GB0zJ7Pq1cxcmx9nsO0MdMzyzMNcQrDG0W9rGeH6ucjjYecOfXp/T2dRxxcC9kkReO4e/SuZR+ekP+rX7cNRTMagi9DG+0Y5Tmtl6S2upv02Mzv2f5dRFigsF7XqWqWsL216e2fTyN1/3blD63h3rKEAYPm7Txjeempd67abkhVS39KrxDiwelV1M1qU4yf5KatAisp9Oo+gie27EUvO3WoMhoosH6bS9Lk+rqwLdqD4BCDX29wKutGA/cqjQCvZOovytNbv50Gbzjf5v6829L1eRi2j5D2zGwgN3CL+HVA+oWA2aivmr3xhgJHkVpqzSpmzSYfD0t3rozK9/19DvmIl7w8w0vYriT0voKhe43qapHaf+Bg15406BJe5fg5Qb4f+OT9DkKX1XSI0Y4+PR26H0Upe5De59xFoF7Fr+n6Tfg+oDn/LrofC26MmTYa8F3O/XPp6iLF4Hvc/cDkRNZNptCjFLTnoUivAOhn4oY9nBEACguql0UveJ8Qj3KX+1OGxY/mvbTjpsoZFbw8dyp6P9fp25TGESIFMPoShPpyohLlez+tKF3HTAwkHn6Lxxs17U/puMBYKPM4/Yiju89SI/GoYKDj3ZradMSCnYG178PZZ2BcMMUAyFVzc+RYf0yOvYsbeFT22IQGkAND3pc0i5gySfp4hpIUckgdXsSRvIF6Lsmpeuf4ghPFxa5fwxlHu9O37kNV2HU/wwKXwR+wGowwl7Hu15aato06KOkS/vT6PKrUvriowwWkjh80BnjGGx9LehvAfUfg5YL6aGjZMy94LxJnqonwN3Eby+/HvWMnQacnwbNMnUTTW7kehvj7YIX2zivuNfiiOR1womE893PcULdo/DzG6lX3ZOWFsjXcNRpB32NZEdOD0+wgZR8ta4fB+HvgPhp0PoEx5P44SUrvR7Mkcd4zFBuFK3p40GiwJh5GLWAg1l6Mo17dwJnXW4eHlvhwaiW9qGZKhJeOz2WmkWNcI1Ll5fX+xjuHoA/Bg0YssoMPvlItYaCeab2JVw8vDIS7bdRAn5JfoCrwk4oeoUAMZaUCg9CCWBQpeysl2Z5xnVzdupP/iYc+FfwCOOap24BfhxjmUz2pxqZVIno0AIvxlZ5SVWCv+IKfjX4iO6KhXvhBHK06239GVr9IvDO4XgusAdQIS0K3Z/0aCRGSq6tCjp1CBRwkOq4ETjYvvChFY4/6yxNaYuTSY8Dbw/O+ck0uOIuun8sjRb+FONQ52KQ6LHsj8BOYHEiGQWhVacg9xeDmsoMk4MoGB/Idt6R9jCpbWRYKXdlGG0Pr4qBJbxbViCNwSI828g0jAzYOQUrtK40kbfbcZRqgkBqxjOdaqGlKspsuqgQNZgQuoJbmectaVQiCpiKZcPSqFQii0oJTUGX18LpaPRaY3SsjQz33tTf1qTxzR9gAcQ2jt0pjG1XX/oYeSNNAcOjOGgJKnuhkbPUMv7czLV1XRnSZzhJvSveDoveh1TO5KdM8PBGfA1Q4xN2OBbhz0Ub7SNkK2+DhxkTYmuB7pH0NVJrIoepYPDF27YyC+lH69Yo1RLBK0JPZWT8Bfj0Jeo+kMa33IYRQ8Ph6dbKwhL8C1K6CNLflybj74H8Poh6hqE0AJkFkk1Wqor8uw0G7k31OHufwOlSmLI9pf3tYurXD8IcjKQaA0tPkHN/jSoUkXAbHi49kurevuh+yKpXrjn2v90KTh9BTJ5EloxnFIy5g/SMQnhNeF4VnrlFRVTgTAHOFucYKf2AauYg0N1Aj/MofWDdGYiRhF8D3KAxUjB5V5QX+HUoyeuSacxo+1fTMaVaha5J/TTj3JPHYtxag9GAwxGoyIwbRovMevJ6WRlyfwgfyPfr9ipumvp8G4qQJw4yy8gUyL7Com3Hm3AsS6mua7y+vFJXSc/hRaTkGmU4Ivlsv/WgshtcjTDy0ghEG0olT6ZOk4qGiNKeTN2bYSMGczXp7Xb1Qz4Ka1pOsIGUcaslCO6djqxfBrGE6S6N0BN0Hgvh5xC7LjVz5qjLCh6zas+m8nR+qFE3UY9YrwJCbI0Qg0l98nMYkh5I6QWIIAqjVeAV8yIUPIxSAfNzei42qVIRzuKcqDCP4JalPm2zCRlCC/S7OFF5xNAPmlI541ApxACqMDkJz+sNxosc/DWAuTitv/yatLhwX165ud3xV1lKpG8nmzCKC+mk8uZFgsqxgqc6JOgIz46CL2ZlpLIU8Bk2ad2WV6CPn6TuDH7OUc4EY/WO+6Znyivw1+B0hN4zJdJoVHYNQgOxeLQfbXSmGkZEH8cm+zAqUaqYoNAmorJ9XOwRrlEOp4VjzvLYxflPp/6eT6Tx1l9N6ZaHuX9IsdMJLI8qULw/EWTQPgByzg8ep0ZGyRA8kd4/PAPXhNaqRenG3i9lWI4YSFvt4gKmhGFx2gmrY6hGozfXk6uwL1CpJvtQgoehByUSH/FvFKT0doqzl/t6UFd7Di9V0PID+j+FeuDxQFdDUWnM0SMVjf56X6KItKm4YSwYEvMuDSe8rZ6UqDzuvTOl+X+JMWIcZQWRG0cvJYJUPXCePMj4zBGNVnhyoyAXjKPRGCFJcUNRrZ8pQ+gfYrD1q4oMdnLTaGc7iNOrt0ZTrsORwbNIT3UwjsUhFNp68A/HKU/VEwvnrY5TpddYjQDoSeDpNfcbjxoTvIk5lEC5Dmcq79T/p2i5DSiXM+p1XDuGJRA4wQZyEYPvcAGinw6E978AdPDsocQqM/fFz5CqQqv47SaqVZRlZRMpy+KZVJ5FWxla+gogctLSXmVlmbcdFVq7h1HLwB3TZedpGwRQvQQQm0GbSboeLISuElP0dtCRWvLvCnx3K5xSykPSlhW9lC4Ge1K1uJWdiafZ4+Y+cU/2hGHII+ul3YiDAqtIQb+LHr+V5pjXLKV/mFdt5uHBwjJFjrGW/Sl01ZOTwfdCbqJ4kT52E2SGC4cDrE42sWjQwQGfYYke6f20ccxz+YmrclBGHMOxofARBZCxMMIYUOyQv3yzXgeZ6Q9jkOZaODjYcAwaAlmE801X2yIFLcZYeeRXqyNyD5jKIwzVaE3kBnab/l5Kr19I6Q4dNvjl4iAnsPikl7IXTzuXvhHnTYXlU13FJJOJd+SKMkNiOEJM1ehpumI9pQfT2z9DUNzDI+T1CnJwvJDPQXJ/IQzC29YhUKqP9iRW2KstM562IX2rqheBNXl7RECev0gYfw3vRg+XHav2EbKMzIcYxie+lCrh9aEn1buBgXLH/AnlUfFRqohO7QboWQ9UFU7ZkaOrACxiRMDSUVgf3pY5TPVdxr4gDbZclka34plmDZOWRywFv6aHsjR/xphOmk2PPIILCt3GSpbzKpyAc6z1KmkpQw2EKTJpdGp3UklUpUfGWYWlmHLKpzAOcYYn4dlZ2o8Jte1VZI+mhxqNTtQoQX0YglFZJ2RUIS2lacu8qcbw1CMfG6j82QHTRFBhMBhRWUypYin4FG6ckwbrzweSBjItJ9hAZvL/Jl0C8pfDFxAKiw7qqJNRegiRJI1qT0HxLuT86/wsWjdt9ysY8tt0ETX7o9a700ASF84BMDCMsAkPTeVZAdi7x1+6VbkJOXPvHAYnv3aZN1IkBQmu4dUV7AFwOw18vC/fVXLKTvGRFpe6fxLBu1SsEhUjsn+kMwibYyyJ6ilNKSBWCiU+FMHzKJlHbYMiV6/HXsizr3hnGn/h9rSqSXsxpJYUpk4/DlS9+HlAdlyKqVWkS3EBHtCyqJcvZZjxqJq/wvjKGacR7cUV5VZI0QQaY1WM2+EQGCccyWPc9qGufHsSQ5+DG068cQBErLx4wT14qONp5ZcKH8Y2pq2rgT5CICprNYzZRpYir7uHrhs5N/V6gv60758OKj9P3df4WYKHJ9hAfHK5g7E34BH2fhGC9CxGB5kL4+I5CMyOSTv3YGRVn4p31Ht1JTM/LRDut90AGS/hRue9oCe8kG1ghsuDURbJeB7Lp2UeVG4c36FExBpvOElfBpbLrKRzoQxMGl2ejomiyk5EQeFavHrsmepGLjxpJvejCJ+mvd5Nz6lsxF9+ACssX0+q6IwUCD/o1rCsd9VPgWts9NOYIu3RhFCK5jKWMu9gtQb4R5uPdHTVLKA0twEbXBq9NEcVPNK4rKDhDFTeAQY7LZnvFauMbfoSfZl3EV2zwkOPso70Cr60KGplJDiLtsi8+gy37ocPzNcm0MkOgbbWMOnncrpOoecqlAqsgVBfE4km4mXE1Rg2oDOnowHztPlJugBfXYsxxQ2nyX805h6pb8A+g0xDQ7Zk/DlRCCewdJsS78crnn4J+F3J4K5iqRCUWOIVcS1dJUC4LOPW7R9y3pWwbC4k4jX88LoRfqmPHLO7bxOFkRWt6RUYaxlBzhRP0B6gwJMrwMgoUiJiKDT3G2kDV4TXhpIw5zoTgQZ9HEoEqesLaHUVIsNhRC4+FRKNFD60xAPQR4DzHs5/g/q3IvhdHPXwRhhppxhxKHEVxoJiwevBrleTQrwrz0eey0g6upqz4P3lQAKeqbCGH8YhZA3En7RgIPu7CFL4P89zLnYHVD6nYotKBETnDcEXadNpWKzj//Y/pNEtv52r1ujvJH0qrX/zBWk8/jAQWSxgLhq6FnqmsTl3lFfqiauIOJHpE/+gQ+U5gaXk28k9NJ//MghyJCWRXbXzCMJtxcOu7BncMmB6RN7b3DuD5EHFqaoFYDzCz9UhPYReE2UNz4rSuI8pvOgo9Sa7gg2Rms1AO67TZ1QQVB2jmEv/i7HO4gpvHkqk0urhimeNHJsFh/QQEVRvbIGWEkGMLFX7WapcVXGVyn7k+zX0hOKjnKGoi6xO7WTf1b+gnnkLy6/ZIxe+xByOqq5EXxXgFH6jNJjHSHyCHLteizJ3bbtjoavX3gsm/4dxMOqa1SUNVC8cSm5fnZg6xNibxcNS8NjMvT3IuKJvS7pUE+nsF05MWuAdfNIBsvZOoLjBziW6iS9thxz8WYbxN//pzlc6Rh04DO1PYnbTfam/9UaGLnvcXBwIo6CNJCSuw9BJs9zVUZxDocObP4QC4mnbpSD9M+BIzg3jfByW5x9ibVqgh/F3MvTcxtHcrCu5TWqIHtVbqHwmt+8iURBMG7dAmHvChHF9K8fvxHn2GJwebynRaH2zIU3aLUC7iN8exlQIOXJISS4Yazz5/ypZZfbwIaESQarmPC6vpI3bcDjV82sQEQ2k1yhiv8U0WPook+6vpN782SjWh6h7Kt+L1Mx+3U88OFepYyKrV786zW37tbS08Aczymj7mVLoasCpqq8AhkaKwUqTCi5fG2DXKLLHWDXCIUj7kHvDNs09dTHypW8YBA6B1bQ4t20opTjJo1NB8RNp6ba7Up4faXTiw2/IoSvD7mTmuLxuei0OwJ9nzAX2ttXfxAH/Eh1xODG3IaqJV/CGtjjmWMrWGfWNhBo79SFIDiesxP78PJrev4KhjRMrVzMooTbhZWSiCuF2kuURxJYykFLdihAe4+jqlU9cs1eK7SXeRzF8Kk0jNql9P8wmFe/o7eMuLhRQFvGQ/fp6+G2ahKflr/hk/jJpVLEadgSYYrVEkFNUDgt0dBGkdy9Z0meo0pBKCUU0EilM61FGaOyxUiOHJulWxvk3nL0W5sGHSHdoY8oVAlaBwTGWRKmih89LWpekr4Xn2+H9SqkWKbClchWrvT3GDOE4X3BkZRQpH2MxP0jm7oslUg7tSfVkT5r0b/aM++LEzxQnsgaVEBxDXE6qb+GacqZUdbyJmmP8U/TjmczLHAn/iLHhfxi5+Ktf6gZjMsmvpM2IPM4y5cKxRfxEl7BM+PBTKM4vIkaY5mQWJchRQ0Z2SCqMs+Dxd0CScB3F/hYJeCMH8vDKHbBO6KkzYoTX1dxcBbPlHGL6GtffXNtVrA0wmTHW9zalyeRq9OYnIANvDl+DvZHu5NUnn9U0LF/WFZ7y0Y/QphhCF0HaV1D3l6EdpQzPCp3h5aRXQbqQ7RIo23Sa36PuHrzjU6jrb7P57uPc/2vUsWM1VnBidGCpbKYxwsh8y6tf16a5XW9LS1vpcwtKMc27aWaZzkHOBd+3Q5cKpGdXX4RJUUaRblmHnDa+nyPOIbaew5XexYx4NXXKkrFDptAcaHjNz8l13McxWHw5K67j6vj/lN3jTvJT82bocCeDDlmcNFxoMUWNKLeZuicRizhZRDQsO65O0J8iOIc35YHpsXKhpxQhI4BpAoLNO3v3gjtLp63K3ZWDMJrmU7Rzb4+EWo+wPIRiCrOcw4C2QTEtxevni+P8exIemrLYZ4do8wnOyPN9IBVFWqSJX0QAlkbZTpLqR8jX95Y2HK6m3Q6b3M7T+PfRxsk87brIGlGRuVg8gPRBI4uc/V0RQabev/0g3HsEh8P8p9lPGxwCY+an3So0TAklKAmf8zoUcR34HvD5y10ouArTKX83B+nhmJrfB3Yf2Hp/PT80i5NGHEd4rvz25xW2/BYfd6v7GeOT4GKEcXxoZMzYyg8N8X6MD1SBbVshHrK65/XxlkJHn2dL4+YmxkQ+saCjE1VRup+6onHCByfwUbwXHiFfnrC/1yIIdk1OWtfH/yrDlrAbAlKZCiahXHqcs/mZPtwxg6KNSGPqKzm+gx/twktyGrf4o7xDMHp5hNTbxfHrTJC97pjA6fGUu4WFaMcbGOovYJeXMiZeVCTCe3ssA0TqZIr1fWTBxDeeh3DzM8IwOryOw69z/iTGoLBQ7IiE3G8ghlUk34/R643TDdy/F0Oz7yiNbv4amxOJoNVHaIcHZOwWZXZml5WYZjqNUApgldW9Jv0a/d7L6tF/sgE/mca43Xs7kwvo9vO0d1kUOTm+96UtnJBKBA7S1vw7ziklgkyqC6HjmnyvVj4uUIiPHty9UShj0Mn2HFawopwPDsWP5Yrj/NvNpQ6cBJqvZrwXMzbj+3Q+lsblq3wBPx9OulJ3kry3yI8THkEYczoP+RoofAwcisfV42nBeltDn8wMIbCdoF7ONQVjs8+QSn4P4ajwCCr6ShhFECpvbPlAeZovWwED1sg4hHUJ8EVtjkWCff+eqMiEk5eIwmuKgNHQ8anLO3nnSI8exaD22psCHV0EmYBf/QFowMDMj0OZEJwe2AdhKmWsIh3AG0KzJXL2rNSjJ+5Mg9P/NeO8Cr78II9Lk3jiDT+r2JfEeOyOzQ/NOG9OxvmDTxTgzxMNFmRc5lFv8D0ef3wIGOTn8laHKg4qj6CA24SCgcNGlYxS5Nub3Ifc/iDXxTyI5zQseVcxoaca43fFsWLyX/f35Ii4ls+oHLlkCwcGj/NC5Gcx/zMD78AfAuKha0QxJ+UYvzxa7DIA6V0pgpiPnodAHqfB6TDCl4Ieoum5/Hx5vyvevwiAh++h71qsfCwepmoByLpzE8uUMF4vb9HLBRMVlKRg9a1CvDWu488QPIa0672ey5+jkcJRqagPo7IVAkBJ4yk0E8LWSWW6m/9th9KuRelgTVgirN8Fg1HOeJIOD0EvG6z04MvDc/FmHisqaCE/nxSD70JW8NS/hD5/hx95cNBCv3AU4msbAeL54Neg+VMU6mFAyDdoD8Veou6jqX/Fe6j7uwxN6sTEs+r4EXm3MB1VePLqABx6dxps+/uB/9LCnRlWibLj8SsxoF+hJfrgHqko4mNhZ4D8jWV0+Dn+j9TtORhBeqyAtT9LHcrnald4aeaECd6EOSjfM+DLLsgEvmUt98kFQPkzZkn8fMZ9K2MZAZU9tIfu5/sRZWM3NjwbdPTZ5rAIAuN8Z3il94bJkw8r1q38oslhTacV5X0On4732jsRANtAYvlSBZaR4ODGImWIENwuMGnum3aPk6HKQtOYePvOuR5AYqnHW0fBc+et2QASVv0nub7z+vnq+P52sPbx9Lz/cZTsdOCpSIZw8AlcFD7PQ0i93JBYu9pUVlcC3/DYNKkwnOafcyItpjRuLwdOrBzJFwQXKzATVsweyh63m08tdEInw59cx0NlFgmIzDEh7wzENC0ig7y1PTBR7oqNli2T5d4SkcuyQL1pMKXf/w4R5MPgYRRjDgUF8eov91wdjMjCdpbYLbCf9MRSIkifCDKu/ycVjBUrVzoNZaMCesS48N6tqeMIGJbZPWq55vj+ljnIqHkk9XufY3hwAO+a1ayGtK+OFE9ehIKAEbTvz4454xhKNYtDk/pb30rFW1Bc0wCeTJDb2z02AEaYZUmVjw80rFgMBh9L+7f/YOWlwlmwRzhv46Gge2NUbIdjJBXCSV/MKXxB5hwu7z3U55d5TK85HULfRF92wLKGXaNEsWlPeMog/iAQGFFNpIc5SPc039vHW8oKVFq3Dp5cyTjsW6qe4FiUIPYIQZgRBApCIXzyvfl6Rna1izIPzQsNq2B661+izVO0JR2R/m4pMrfkb1bUcUU65rstZbUp0yksdkkvfJfjfwHCB6m4kFsYnIowm3528zVauKJTobiT3i8TfT6axme9P6WdwTxwOh98ruHHuD7sQ1/y5r/M33hWE5NwnMJJ/1loKQ3zL+8ueAMXwiJ11jCMoiihG0g10jZ2OD/NoxRkblntZsrc+uh/L4KHOPF+/XLQ2ML4jMsqYF52Nz10ywpjh16z2VGe+tQ/Cn0PjyC0ZctDal4H8g/nZgjJDFory/t8AFwDjNWSCRsJ4y24VW/fgFl3aW4UkYrJJ55WHoZncePZ4yg64xFJGrxxRWrkV0kOKV0U6j0CDMPY4/zYfyPjA1eJFAY/07WYuJJerXUpzzDSAdKcwRchAwarkFGcNOOd+Jnzm3vH1mxpsX1Xyu6CuncfLPkjYGg45se+rASvpxER2pxL4JhGSw+V3nq/mYKhRVl4JFXb/hAYb+QHTsiQtS/YnYVfu/1FJwRsHZ9fYmmdPzm2z0ZK6VUP8LUWc3ccJe2mT9KBGgXDrxt3TxM9JoWmYb7VGxExjYqWME6Ximmjs4jFB/Wgj6yZg/SMupS13GktvGLoNQs0DSuhebcGizuNO6JH0GX01PjFRfyI7tMSNJqWLCuTHbQnV1aQCsewCDOr2FNkW82FfihuzfOHKF2oz1er+luzi7dlM1vsVdJTMnmM8ViqbMLTnAockYSpsx5P6AsShMD40kVsVmRjWmyX52o6l4lzlxG7/ub2XwpvDfKcBwM4HkfpIkhfR/Hn4Nl54ESqEpEQmmIcPHRJId3G3bb3skPD8Q8tLe9epOpV/Ix0ejOXROF1KCbGYWjU4BDmAGMc+XpuNweagoInQ3gzbNLSzf+D98DZwsG8psXRmBBlXuN4gnwdhyekY+XaZyj9rewH40smo9u+RGp7LvdfE20yv8CH1KRFwaSx4uFnQxpYGV360nuwxIc2+IhEXrLWcKVG3cEAlbc1rLS1GE/TvpSre9d4DgJR5SNybWMkewM8MJrqFEi1wIW47SFKTve+gWxIsw6WWQMJLuUIkl5PRxQqJmBCgMDwOBCmkCLHXiQ/vT2Dej6hsXtBCMvNyi1MlYIi45hz+E5FTVg3J4z0yygwW7p3KBBM27sX9Ig04QUhPPJKaAk8C75uh2juyRDmUSDz7LUoXQThVc1q6+3g/WLGxRuGR2IAWRfPCjia96MQtXOUuSIVcehWfYjYTbtAIC24OUG3mY4jRGN/DIXrHg8jgyMr5exDlTE7kDk8+Ki9kX44ElO/eDAHsIjcQIgIC490hD0Hg9tuJ48vzeBT6508WF6gOZv6QrmEq5LLX8aJQ57DLMvd+YTV3tSvmPRP5x80JoLlUTw6YaYOXvWask/ufK7vonpNCiN1r1ewqOEr3jqDyjkTRhk7n+OZk86IZ0c4r0ixilEVFGYNRNRNdL6Sxm4wmyCo8OwSIdO5P90+nvvlZTJuRWikXZDPYcXifcqMMbXNA8DEw8ZET1NQgci/9Xh6XUOh1h4PyXL3+FtSrLphq0q8UZjHNpemEz8nt7YUd3GlrveyNHjT7jT6PCmZe3QUuIYmLMsw/q7uj223A3ensPeluW1/EYZfzTk8iwd7KHIgwHXwjHaRXpwGJsyD1s0YfPfcoM9T3mYb7cAr+C4I8GaFJ4TpHIYHiG6nmcQWdO7P8JKrmUI/tpDsX3iQ44fS3KbfApsrcZ5OxLNi1nDajz+o8k6yfamr1SGxCtfU70z9bb/Ld6++hcN8C/rEZLqkR8FLnWWEnQl+0wgCPc3vzIzP6ZgFlsFrgQmvQ3/kAfyIyHiwqe/hN+nlyORX+AQPjvIqov4SzsAt913KNau0ndLP1h0El43ClN+Pzd32TFq/5SLSxH8AjucGfXlfmZkHcofP8UUUMpbYbl9tn3GeoVMKuCtZycasxLihreqZmiggBotQLFNs6x/Ba3mmMF9lIqTAg9UoGu2GXPqzDP1jn+iMh8g5bkukqKtXUk14rhkH5c6pG/lsyW0lQE/TRMQSzrLCR8zainlIeEIViL5xDjygxcfGPIKaE9/eUkkJ2cA2LfDkeZehPaSj0IKnTQ3pG4bt11XyC0bmtgha4xQHwzkKHnOCeeoWqLJ0EYR32pvm87QRJnKJB2rytAgTT+tqk95u1Dxsz4PPYfLVoX93ODZlB5NS3ptJzW6CD7yyaLTxTMKlcHCLlBD+ea6Y2DPWm9wDGt+FhOuCHlcbW+YbORWWHnCMiTb9YvdAmUcI33IKyr4PevTMpp2099NG+WMM6E88T3E4YULzSJgM/n9LNsHV8RX0l7I4eiwN1n0WmshYOkevPuuE1G2dmvPfyDxIsaZFRkjktERFGvUeIAP4OF8BAelxnzCZ6wMM4X2iJwlgHJiH9Oe3pPHSd8tX9QA2zO2zYUyB55UuLtdvegle8DIYRN5e3cxPHEBQ/qA3bUQU3iALz8S6eb2ZzXllo2GAA/4wTtKB+h6eCbAdBS9kmhAvJIWHFBAeJHab5rYyp+nx5Hgb4/GRtpZl3179KEblq7FSh3r7WU0+p4nLieuNJuso075IP6Iq7q0bbGSF51wqtjDmjzM2hhkw9MJFMSOSZDhhI5EUEZk1piFjdKWLIMDzDUs3NSZ3lQYclCcY4wG4RkMcwGCO1MlXYA+bg3RAPTqGCgBmN99ERHBT4G9G/6g3dYuIaxsn8fBHBVUnOEz47likXpHeUqG3RTa2yi+BQZsvUenEfFCrEmK80+ID2b2vAntX9qwnqsKTvDpX6I+5GSDQp0GPd0e2saLVfhmZ3E+d2cFu+gEHB+qKWatC9xhXcXFdUR/wwilybZt4C9KXn9ipEStX8pDxwxg4lT6fm8nLcPzoSfDYZ2X/xAYU5SYvbDwtuXL9gZMxjncjDyfhfgcptwkl4g2vTJMKTXhlObNtNjJpvCelrRDmfqB6TxA0JcJIBB/9LE6VXorYL+X8AkaF6Hj41CkUTAtPBvXAzp/88U2zU3hQfsYUy4x8uSTFaM/gaTDe0Il9I+EKK9IU11787haCtQ7hSq8rKEaans9XmBMEIyYKmhij9x6XFIe2SzxPqIDFG9/Axb9GDo1xQHMv1tIfpj/0dqtCBa3MXMbzc5lgAQJUgRueOe+pmjY8GEF6D7HxlvRPgw2Dow0yiklu8IX+Gk2PSMhqExiv4rkB4w5RqiFktd9iTvG/AUgUYg7TBj3iR9ERMPepFdqEQXFO7YR2GodKBy9gHH5DRVtifO7HeyrgI1s1trnOOOhv4QFyve2PUdRvFji0ca5jehbKIUzqLIwhDx3Ju9ygjiSQV5RhAEM4Z7GOXdljnHS0L63lsSoq3sCta5ZtgVVX36LH94EHXsDymY1b3SfIolcMKvDAOCsXhngVoT/hu8kO71i5CLkruXLx1nvTui1/C56VPJ3XFyVAxF1xiK8I9rmCqWHRIgsz24HKZz0I64G1dBSpGp/Gtmcn23iw5iFwfRBAoBGeh7amV7wuqRB6vpJqGDYUEp0y5fvSaN9XOiTFIp+H4BHW/O+CylsDv3zLnB0Dpsa0Kn/8AFwUBrlyt3bvXrBcJziFRz9Tj0OYBwzwiS3j4ORWCeEq6IlCFs+oEwY0dX1D8MCKVMZ70uMzhKf5ghEp6WwZcuHvAPf7L84wHQNFijREg44t2QhZuhiv6d1OB0qXj+erlf8OGdst7ezaHaUPE0F/Fbh/HnwwkvhiiHKGljBmoy4oMH5455LuZQNBYUNuKCaKGrI3AoFqrCDu+zRwSnoUsmGNiChQV3+DcYjypsnQlDcpKg95aX8dJTCn8xruxR3umVng6afPXuCxW1swk8xb+dpFwogGLotDa1gMDqVGr5DJ9LEBhlDHg1ccoc5dQ2eZOb+7/nVE8EmHpoiD4wcgj5auEsJ676DTtSBDzloMRFyij55Yj6NCqAD2i3Bc+qvYnPrkWCWPT7EYzlhJMo+NsBxjqTR0d/8LhMhkkc2TUqSkcPTwRpm5L9DQNKaMwVm6y3Oaj01bXg5qj3FbJO2rlLnPr52ugDkBNTp0hHiqd+FaRZcXwRP+BFmZtvwiV6FVmOIQ6Y79HI4/KpfKEmMCR0WOcbhvIxXLXNv6veAWRVjcG5YrIlXT3kebLLyMUx5PxxRKrHIwN1kasyJluYhxCTpHLfFvo5RWLc4GPjQ9+BVGYb00FTz5AIXOrY2VLVSR1CQerJke4eh6E2XCMxWMqhfpMX2dfPe7CAK4ofiC8dy302B0Hf2fxfkReTFRvxKZP0JhGwwjDADZdCmQfENmcqyHd/e9+m6rvUYUmYxyRV75iyYBhvaZR71wrNaZOgFL2uBtcDKjlWFIL3O6muzB7KZtvpfSzdARpTQ81ECmlWm88XfSuv2fRlaE2D6eSyIcmE/gk3dkpQjFyIhGPaEvNsExca7cnEbJ+/BFEKvGCMhNMFwQ91qCVKgQTLF6+kZh7oMkQHpd2tDckUa3F4UIJuQmsQeMbS6j7TvSOnPXtBV4edzwTsJVyOa+nVEUD5xzWgzzEE+P8YTugpOKo0eK//Mx42oDcQQu1XHUsMKLSYNtpQslD2Aai804UkaL/5XXWpywRmXUpSEHfg3vlLR+K0yHoDe1BH/yacDFO7qSNccWnSX3Yu0Un0JzabbyQT4Acx5+LdyR5rbxfGTyG9QZPVRs7tkk5MSJ8kNc8rGp/LKJCR3Rgfp4gY0dELVLpBiJc8RwhvtvoA087GgbgtuQfVZvug/2/yZtTZdNVolPOBijewyqJw+jEAEHRc849bOhTfBSJyc/wIn6vF3eE9Om0p67scDDMfehPlgooGwoeQEIWCEb0j/k1uIMjMp+LX88+Uv0ttiRfrlkwXVX05tveDY1N/1T8HWZTuUkpxNhjKBySTAmPb41pyfBK4xBAs8XEzgnbsKXKPNcCXa7c+SfBm8IDYJtRNuy0zM8pm2AU/XYhxTKcDL2uJN2TEhXKmW5tyE1S+mnIPZx+j/N+Ho5YEc08xyFVQimK+IjE7yESfl7XFQZGTWwqdFS57ltJchUUC9ndAoCPRRaNCgXNdzK0HllhRvtVCRyaeFM3+zjsivDfFLj5drAfQ/skS/APKTIGyCixH3mEFFWG0GiMf3ngbmAj5t7KK1b4qk9KzuNW1vCYdlIeck3Iy3zrImfbGWfmXzQCQSdOjhSnXgJCTUD5MR55rMah0W6KcOM/7i+M801H6GaSOQ8DJVrY56DLsCzdkzqZRf5GwbKEd7F0j/8jm8NE52VWywcWUdqmFfOeJWartUEp8O/KRIrq46BDlZ9+DnGAZjq1z7nYOCQn4Np2IzNp1WVW13xzO9s5pJRCv75gs5HKjwrWMeDL6PBItsI1g9gDAYSHCnRI7py3i6iaNb5G0MgNGscrVHDYr9y3cZXCDMSfr4FqmFMwUNrtg9zF7cHxO7SAOD9QxCP2vzn4D0/kFZVL6NatsEQlVlF1Wj1Nj4oM2pEGsO5RhPPYDIOmcEKSD9nfyf4KHgYDf3DOLrxOEYqp1FJpz/HpahMKFp8YM2JOc8tlm75RtyiE8dZWmzLQvb8hbDuGm6rDOJsri8jgRs4g5c4cbeufw/efDvPLWKJnerVlnlgLGQ8B1vfBbit/EzrXDnrirSDQ6Se8s5reSSuGd/YlRuk6HTYrl7/OnCL4XZgZmjtb/tH1F7Oj6Xw4C+dwzDhXxTnuii3JcYBxxhTmaHE4ODePTc3ZrxwfNPiP5hkJBAh8QNfeBo/U19LRArTbKOIY7LV3i3q1fvS6Av/LZpwwbG0zzUCWl5KI54VNFfwVLv6x+wiwO+7fdpdonygQKMJ7ytjx7QnDROZVkUxo+G93lAwJt/+S1GxghMeAqRRntiLo8cOTyJTCPPdxkXnIX4EunHSd+dy5Fa4lqCMcxu7ad/IlZNFtzA4AcOz1VwrDJuam0ZzPWWhNeYPWQHjX4SKyMB9PE6s09vMThqvxhKpm1XSLbOpU6FibmId7Xh7sMFD1/Dr0HKIAKa35Ol0e09EM1eVxJH2wTvGCUcy5jla8XbPK4KUoYpxeFW3N+OfTIEeZ2wdgTwSj2AUDRjfBRiUK3inA8ShVT29LhtJR6Zopt/I75kyQS/D5MNBWsf9/8585AboMaK6KqmyPss1sP3+lan5iPFwmvHdqzHnofQaJ6fKxOdAZhzyIYyrOCS+rh+ZiLgAN9qKQJfu67TXlZSKtNLo1I9vfrHG1Z/NTg7ia3eKIx+lbFFZB2kDX3toEHbNFoL9G1G6AwzqP5Pl9uAN/Nw+0e0x6rZSdO+SzA7hP6+1mXExrI0THgISmdoDPjFfn0aje8jRSZEOKcGdQ2pWvljW7o2bibqvRhgKUUphnNHCowqH8uf9W/AzohaKbX14TmHhvUPpFRRFgWjQplJ6qBASgmHZVVg14zjZi417Y5YTR3eU77xGb/4sw6+r7uq3npPmqjdFO6NspHwRQYqnDKPUi7La1/9UOnDT91OaB4+FoiRTeKs8Ke+hz237CWC+B+PwuRTOKpa+4QOeLry2+El7fNPKeulAqeVjnOuJn+Cp+y/wyg6pStTBp0PKobT3t7wN3/KzyObHaA2tfjtr2g+awhodCzgRRXQyOh6vqXfZXsMKPICto9PJxZF2RKD80pqwMEQdTcBkusCyc8t7M+NbbqTuqEUAz1UYOIgG7hYe2feuwbovxxNgNPHPYhFh2Opt+pRfdhGe58IsdZsMwR2BBdEl8j+QXsLjVmMiU/8u2t/KP3X3GLGkMxD6B1HLmS3slYrt6DP0BxP9N+140t9r3kxseyW6fj5MO48WzFciZVHoGU4EEvltcdiudCh010VGcdmhRc7bksP6vas23cs4dwP3cwffsOsEG7R0gGaOZet+P70CPD/I+AjfpWWunKi6oBy7YEUM5fDTSJPxV7mPgWiooagcnm8p+7iWTr4vze3ZRW+Ule975X+6TmDm7WQCESWVMc6AB6+xnQe5xc7kuA9eftVkxP0oHWPK5SF1maHjW/84pfk/wQQvhqSLGPOlRCR2cLj93RLb0oULHyJSmGHgSBvnmmYAjqVTYl6j8keKC5/YepT/WQPOWcaQb/EuPSucTfsgz7nu5uMrD5adHzEQf1bC13tRRPhopWuTAW3E0y3VF+NsLwA0/2KPrzGaV/nUGoHlyRB4SgQeuIml1Oy5KxTJ7dr+YzN+GLnHZ/r94MH0H+gMVDITj4bVc99fAcY8yjTCUEcweLAuzQ1OIxKb0xopeiwp8l65cxQ/rBDFVMA5ALfdESwjg+EIiyjiQyf/2YOlORYGnmKSeDVeYajXmy0r4DF7e/bcF898Q/B+xjm/8NxzFXmBXzxx75RwtuPxnD8P/I5nmP/v+q6a7iKIVRGwaqCrgnZYoyHueagR+lurIkxgHaa4awV/ORx4FBFBQ1lLOpaPs5bXR9KB2fqOlueqW+4cjoZjgTXkWJ5pHdbDVcohteEcxKHDo2vp9SxOnNu2K+4c777mGXveVoLRNV7x+P8A1Hk3kuBuLMYAAAAASUVORK5CYII=";__obj__1["html_package"]=";; Juno HTML Pakage\n\n;; For browser based DOM utilization and manipulation\n\n;; Initializes and loads the html namespace \n;; (c) 2022 Kina\n;; Author: Alex Nygren\n\n(when (contains? \"html\" (namespaces))\n  (delete_namespace `html))\n(create_namespace `html { `serialize_with_image: false })\n\n\n(declare (namespace `html))\n\n\n;; Tag component names sourced from\n;; https://developer.mozilla.org/en-US/docs/Web/HTML/Element\n\n\n(defglobal *DOM_TAGS* [`html `base `head `link `meta `style `title\n                       `body `address `article `aside `footer `header\n                       `h1 `h2 `h3 `h4 `h5 `h6\n                       `main `nav `section\n                       `blockquote `dd `div `dl `dt `figcaption `figure\n                       `hr `li `menu `ol `p `pre `ul\n                       `a `abbr `b `bdi `bdo `br `cite `code `data `dfn `em\n                       `i `kbd `mark `q `rp `rt `ruby `s `samp `small `span\n                       `strong `sub `time `u `var `wbr\n                       `area `audio `img  `track `video\n                       `embed `iframe `object `picture `portal `source\n                       `svg `math `canvas `noscript `script\n                       `del `ins\n                       `caption `col `colgroup `table `tbody `td `tfoot\n                       `th `thead `tr\n                       `button `datalist `fieldset `form `input `label `legend\n                       `meter `optgroup `option `output `progress `select `textarea\n                       `details `dialog `summary\n                       `slot `template ])\n\n\n(defmacro get_by_id (id)\n  `(-> document `getElementById ,#id)\n  {\n   `description: \"Given an id, this macro is shorthand for calling document.getElementById with the passed id\"\n   `usage: [\"id:string\"]\n   `tags: [\"html\" \"DOM\" \"id\" \"find\" ]\n   })\n\n(defun get_by_tag (tagname)\n  (if tagname\n    (-> document `querySelectorAll tagname)\n    (throw \"get_by_tag: invalid tagname provided\"))\n  {\n   `description: \"Deprecated: use query_all: Returns all tags in the document matching the provided tagname\"\n   `usage: [\"tagname:string\"]\n   `tags: [\"html\" \"DOM\" \"id\" \"find\" ]\n   })\n\n(defun query_all (query)\n  (if (is_string? query)\n    (-> document `querySelectorAll query)\n    (throw ReferenceError \"query_all: argument must be a string\"))\n  {\n   `description: \"Returns all tags in the document matching the provided tagname\"\n   `usage: [\"tagname:string\"]\n   `tags: [\"html\" \"DOM\" \"id\" \"find\" ]\n   })\n\n(defun append_children (parent children)\n  (when (and (is_element? parent)\n             (is_array? children))\n    (for_each (child children)\n              (-> parent `appendChild child)))\n  parent)\n\n\n;(defbinding (html/create_element (document.createElement document.createElement)))\n\n;(defglobal html/create_element (-> document.createElement `bind document)\n ;  {\n  ;  `description: \"Binding for document.createElement\"\n   ; `initializer: (quote  (-> document.createElement `bind document))\n    ;})\n\n(defun create_element (element_name)\n  (-> document.createElement element_name))\n\n;; first create the base constructor function which will be called\n;; with the tag to create\n\n\n(defun create_dom_element (element_name `& args)\n  (let\n      ((opts (if (is_object? args.0)\n               args.0\n               nil))\n       (content (if opts\n                  (if (> args.length 0)\n                    (rest args)\n                    [])\n                  (or args\n                      [])))\n       (append_children (fn (parent children)\n                          (do\n                            (for_each (child children)\n                                      (if (is_array? child)\n                                        (append_children parent child)\n                                        (-> parent `appendChild child)))\n                            parent)))\n       (elem (-> document `createElement element_name)))\n    \n    (when opts\n      (for_each (pset (pairs opts))\n                (do\n                  (cond\n                    (is_function? pset.1)\n                    (set_prop elem\n                              pset.0\n                              pset.1)\n                    else\n                    (-> elem `setAttribute pset.0 pset.1)))))\n    (when (> content.length 0)\n      (for_each (child content)\n                (cond\n                  (is_element? child)\n                  (-> elem `appendChild child)\n                  (is_array? child)\n                  (append_children elem child)\n                  (is_string? child)\n                  (-> elem `appendChild (-> document `createTextNode child))\n                  else\n                  (-> elem `appendChild (-> document `createTextNode (+ \"\" child))))))\n    elem))\n\n\n\n;; next create the individual pointers to the create_dom_element function\n;; for every tag name in the *DOM_TAG* list create the construction function\n\n(for_each (tagname *DOM_TAGS*)\n          (let\n              ((bound_fn (-> create_dom_element `bind create_dom_element tagname)))\n            ;; use the set_global function directly since we are dynamically creating the symbol names\n            (-> Environment `set_global\n                tagname\n                bound_fn\n                {\n                 `initializer: `((quote quote) (-> create_element `bind create_dom_element ,#tagname))\n                 })))\n\n\n;; various helper functions \n\n(defun set_style (style_attributes elem)\n  (when (is_element? elem)\n    (let ((`current_style (-> elem `getAttribute \"style\"))\n          (`attribs       (or (no_empties (from_style_text current_style)) []))\n          (`combined      (pairs\n                           (to_object\n                            (conj attribs style_attributes))))\n          (`newtext\n           (join \";\"\n                 (for_each (`atr combined)\n                           (join \": \" atr)))))\n\n      (-> elem `setAttribute \"style\" newtext)\n      elem))\n  {\n   `tags:[\"ui\" \"html\" \"css\" \"element\" \"style\"]\n   `description:\"Given a set of style attributes in the [[attribute value]] form, and an element, sets the element style attribute to contain the specified values. Returns the element.\"\n   `usage:[\"style_attributes:list\" \"element:Element\"]\n   })\n\n(defun has_class? (classname elem)\n  (if (and elem\n           (is_element? elem))\n    (-> elem.classList `contains classname)\n    false)\n  {\n   `usage: [\"classname:string\" \"element:Element\"]\n   `description: \"If the provided element has the specified CSS class, returns true, otherwise the function returns false\"\n   `tags: [\"css\" \"DOM\" \"class\" \"ui\" \"element\" \"html\"]\n   })\n\n(defun add_class (class_name `& elems)\n  (do\n    (defvar `effected [])\n    (= elems (flatten elems))\n    (when (not (eq nil elems))\n      (= elems (if (or (instanceof elems.0 NodeList)\n                       (instanceof elems.0 HTMLCollection)\n                       (is_array? elems.0))\n                 elems.0\n                 elems))\n      (for_each (`e elems)\n                (do\n                  (when e.classList\n                    (push effected e)\n                    (-> e.classList `add class_name)))))\n    effected)\n  {\n   `usage: [\"class_name:string\" \"element:Element\" \"element?:Element\"]\n   `description: \"Removes the designated CSS class from the provided element or elements. Returns the list of nodes.\"\n   `tags: [\"ui\" \"html\" \"css\" \"class\"]\n   })\n\n(defun remove_class (class_name `& elems)\n  (do\n    (defvar `effected [])\n    (= elems (flatten elems))\n    (when (not (eq nil elems))\n      (= elems (if (or (instanceof elems.0 NodeList)\n                       (instanceof elems.0 HTMLCollection)\n                       (is_array? elems.0))\n                 elems.0\n                 elems))\n      (for_each (`e elems)\n                (do\n                  (when e.classList\n                    (push effected e)\n                    (-> e.classList `remove class_name)))))\n    effected)\n  {\n   `usage: [\"class_name:string\" \"element:Element\" \"element?:Element\"]\n   `description: \"Removes the designated CSS class from the provided element or elements. Returns the list of nodes.\"\n   `tags: [\"ui\" \"html\" \"css\" \"class\"]\n   })\n\n(defun set_disabled (`& args)\n  (when (and args (> (length args) 0))\n    (for_each (`elem (flatten args))\n              (if elem (-> elem `setAttribute `disabled \"true\"))))\n  { `description: \"Given an arbitrary list of Elements, set them to disabled.\"\n   `tags: [\"ui\" \"html\" \"css\"]\n   `usage: [\"element:Element\" \"element?:Element\"]\n   } )\n\n(defun set_enabled (`& args)\n  (when (and args (> (length args) 0))\n    (for_each (`elem (flatten args))\n              (if elem (-> elem `removeAttribute `disabled))))\n  { `description: \"Given an arbitrary list of Elements, set them to enabled (removes the disabled property from the Element).\"\n   `tags: [\"ui\" \"html\" \"css\"]\n   `usage: [\"element:Element\" \"element?:Element\"]\n   } )\n\n(defun remove_attribute (elem `& attribs)\n  (when (and elem\n             (is_element? elem)\n             attribs\n             (> attribs.length 0))\n    (for_each (attrib (flatten attribs))\n              (-> elem `removeAttribute attrib)))\n  {\n   `description: \"Provided a target DOM element and 1 or more attributes, removes each attribute from the targeted DOM element.\"\n   `usage: [\"element:Element\" \"attrib0:string\" \"attribN:string\"]\n   `tags: [ `ui `html `attribute `delete ]\n   })\n\n(defun attach_event_listener (elem event_type handler_function)\n  (when elem\n    ((jslambda (`elem `event `f) \"return elem.addEventListener(event,f);\")  elem event_type handler_function))\n  {\n   `usage:[\"element:Element\" \"event_type:string\" \"handler:function\"]\n   `description:\"Given an element, an event type such as `click, and a function, attaches the provided function as an event handler to the HTML Element.\"\n   `tags:[\"ui\" \"events\" \"HTML\" \"events\" \"\"]\n   })\n\n(defun remove_css_entry (entry_name)\n  (do\n    (if (get_by_id (+ \"class_\" entry_name))\n      (-> (get_by_id (+ \"class_\" entry_name)) `remove)))\n  {\n   `usage:[\"entry_name:string\"]\n   `description:\"If a class has been created by create_css_entry, use this function to remove the class from the document.\"\n   `tags: [\"html\" \"css\" \"ui\"]\n   })\n\n(defun create_css_entry (entry_name css_attribute_list)\n  (let\n      ((style (create_element \"style\"))\n       (css_attributes (map (fn (v)\n                              (+ v.0 \": \" v.1))\n                            css_attribute_list))\n       (head_elem (-> document `querySelector \"head\"))\n       (new_style nil))\n    \n    (when head_elem\n      (remove_css_entry entry_name)\n      (-> head_elem `appendChild\n          (= new_style\n             (style { `id: (+ \"class_\" entry_name ) `type: \"text/css\" }\n                    (+ \"\" entry_name \"{\\n  \" (join \";\\n\" css_attributes) \" }\")))))\n    new_style)\n  { `usage: [\"entry_name:string\" \"css_attribute_list:array\"]\n   `description: \" Given a name for the class and a list of formatted css attributes\n                         create and load the CSS object into the DOM.<br> Example: <br><code>\n                          (create_css_entry 'FilteredSelect:focus-within'\n                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>\n                           </code> \"\n   `tags: [\"html\" \"css\" \"ui\"]\n   } )\n\n(defun css_entry_to_css_format (entry_name css_attribute_list)\n  (let\n      ((`style (create_element \"style\"))\n       (`css_attributes (map (fn (v)\n                               (+ v.0 \": \" v.1))\n                             css_attribute_list)))\n    (+ \"\" entry_name \" {\\n   \" (join \";\\n   \" css_attributes) \";\\n}\")\n    )\n\n  { `usage: [\"entry_name:string\" \"css_attribute_list:array\"]\n   `description: (+ \"Given a name for the class and a list of formatted css attributes returns a formatted string in CSS syntax.<br> Example: <br><code>\"\n                    \"(create_css_entry 'FilteredSelect:focus-within'\n                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>\"\n                    \"</code>\")\n   `tags: [\"html\" \"css\" \"ui\" \"convert\"]\n   } )\n\n(defun_sync handle_event (e)\n  (progn\n   (-> e `preventDefault)\n   (-> e `stopPropagation)))\n\n\n\n(defun file_picker_button (button_text on_selection)\n  (let\n      ((elem (html/input { type: \"file\" \n                          value: (or button_text \"Open\")\n                          onchange: (fn (e)\n                                      (let\n                                          ((items e.srcElement.files)\n                                           (status nil))\n                                        (when on_selection\n                                          (on_selection items)))) })))\n    (declare (fn on_selection html/input)\n             (global html/input))\n    (when (eq nil on_selection)\n      (throw \"on_selection is required for file_picker_button\"))\n    elem))\n\n(defun notify (text type on_click)\n        (let\n            ((type (or type \"info\"))\n             (timer nil)\n             (view (div { `style: (+ \"z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; background: #FFFFFF; border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses; font-size: 0.9em;\" \n                                     (cond\n                                         (== type \"error\")\n                                         \"border-left: 5px solid #bf0a0a;\"\n                                         (== type \"success\")\n                                         \"border-left: 5px solid #95dc95;\"\n                                         else\n                                         \"border-left: 5px solid #5489da;\")) }\n                         (or text \"-\"))))\n            (when (eq nil (get_by_id \"lower_right_corner\"))\n                  (-> (get_by_id \"body\")\n                      `appendChild (div { `id: \"lower_right_corner\" `style: \"position: absolute; right: 50px; bottom: 5px; width: 255px;\" } )))\n            \n            (-> (get_by_id \"lower_right_corner\") `appendChild view)\n            (-> view `animate [{ `background: \"#FFFFFF\"  `easing: `ease-in }\n                               { `background: \"#FFF18830\"  `opacity: 1    `easing: `ease-out  `offset: 0.1 }\n                               { `background: \"#FFFFFF\" `opacity: 1 `easing: `ease-out } ] \n                           { `duration: 3000 })\n            \n            (= timer (setTimeout (fn ()\n                                   (do \n                                     (-> view `animate [{ `opacity: 0  `easing: `ease-in } ] { `duration: 250 })\n                                     (setTimeout (fn () (do\n                                                          (-> view `remove)\n                                                          (= timer nil)\n                                                          (= view nil)))\n                                                 250)))                                                   \n                            10000))\n            (setTimeout (fn ()\n                            (set_style [[\"opacity\" 1]] view))\n                        200)\n            (attach_event_listener view\n                 `click\n                 (fn (e)\n                     (do\n                         (when timer (clearTimeout timer))\n                         (when view (-> view `remove))\n                         (= view nil)\n                         (= timer nil)\n                         (when on_click\n                               (on_click type text)))))\n            true)\n        {\n         `usage: [\"text:string\" \"type?:string\" \"on_click?:function\"]\n         `description: (+ \"Given a obligatory text string, and an optional type, and on_click function, \" \n                          \"show an alert for 10 seconds in the lower right hand corner.\"\n                          \"<br><br>\"\n                          \"Types are as follows: <br>\"\n                          \"error<br>\"\n                          \"success<br>\"\n                          \"info (default)<br>\"\n                          \"<br>Returns true, but is of no significance.\")\n         `tags: [\"ui\" \"alerts\" \"alerting\" \"message\" \"notify\"]\n         })\n\n(console.log \"html is loaded\");\n(register_feature \"html\")\ntrue\n";__obj__1["browser_repl_package"]=";; Browser Based Workspace\n;; Sets up the basic environment\n;; Initialize a simple REPL from which to start working\n\n\n\n(declare (namespace core))\n\n(defun line_reader (options)\n  (let\n      ((entry_area (html/textarea { `style: \"font-size: 1.1em; height: calc(100% - 20px); width: calc(100% - 10px);\" } ))\n       (result nil)\n       (output_container options.output_container)\n       (handle_text_input_events (fn (e)\n                                   (let\n                                       ((lisp_source nil))\n                                   \n                                     (= lisp_source (prop entry_area `value))\n                                     (when (and (== e.key \"Enter\")\n                                                e.shiftKey)\n                                         (html/handle_event e)\n                                       (console.log \"lisp_source: -> \" lisp_source)\n                                       (options.evaluator lisp_source)\n                                       (setTimeout (fn () (set_prop entry_area `value \"\")) 200)\n                                       )))))\n    (html/attach_event_listener entry_area\n                           `keydown\n                           handle_text_input_events)\n    entry_area))\n\n\n\n(defun browser_repl ()\n  (let\n      ((body_element (-> document `querySelector \"body\"))\n       (output_container (html/div { `id: \"output-container\"  `style: \"height: 70%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; \" } ))\n       (resize_observer nil)                                                      \n                                        ;(result nil)\n       (current_env Environment)\n       (error_state nil)\n       (evaluator (fn (lisp_text)\n                    (let\n                        ((result nil))\n                      (setq error_state nil)\n                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      \n                      (try\n                        (= result (-> current_env `evaluate lisp_text))\n                        (catch Error (ex)\n                          (do\n                            (= error_state true)\n                            (= result ex))))\n                      (console.log \"<-\" result)                                       \n                      (-> output_container\n                          `prepend\n                          (html/div { style:\"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; \" }\n                                    (html/code { `style: \"font-style: italic; color: darkblue;\" }\n                                               lisp_text)))\n                      (-> output_container\n                          `prepend\n                          (html/div { `style: \"padding: 5px; margin-top: 0px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; \" }\n                                    (cond\n                                      (is_element? result)\n                                      result\n                                      (is_number? result)\n                                      (html/code { `style: \"font-size: 1.1em; color: green;\" }\n                                                 result)\n                                      (or (== true result)\n                                          (== false result))\n                                      (html/code { `style: \"font-size: 1.1em; color: orange;\" }\n                                                 result)\n                                      (is_function? result)\n                                      (html/code { `style: \"font-size: 1.1em; color: darkblue;\" } \"Function: \"\n                                                 (if result.name result.name \"anonymous\"))\n                                      \n                                      (and (is_array? result)\n                                           (instanceof result.0 Error))\n                                      (html/pre { `style: \"font-size: 1.1em; color: darkred;\" } \"ERROR: \"\n                                                (subtype result.0)\n                                                \"\\n\"\n                                                result.0.message)\n                                      (or error_state\n                                          (instanceof result Error))\n                                      (html/pre { `style: \"font-size: 1.1em; color: darkred;\" } \"ERROR: \"\n                                                (subtype result)\n                                                \"\\n\"\n                                                result.message)                                                                 \n                                      else\n                                      (html/pre { `style: \"font-size: 1.1em;\" } (JSON.stringify result nil 3 )))))\n                      (set_prop output_container\n                                `scrollTop\n                                output_container.offsetHeight)\n                      result)))\n       (reader (line_reader { `output_container: output_container `evaluator: evaluator}))\n       (input_container (html/div { `id: \"input-container\" `style: \"height: calc(30% - 15px); overflow: hidden; \" }\n                                  reader))\n       (juno_container (html/div { `id: \"juno_container\" `style: \"height: inherit; max-height: 100%; overflow: hidden;\" }\n                                 output_container\n                                 input_container))\n       (perform_resize (fn ()\n                         (progn\n                          (console.log \"resize: \" (prop juno_container.parentElement `offsetWidth))\n                          (html/set_style [[\"width\" (+ \"\" (- (prop juno_container.parentElement `offsetWidth) 2) \"px\")]] juno_container)))))\n    \n    \n    (= resize_observer (new ResizeObserver perform_resize))\n    (-> resize_observer `observe body_element)\n    {\n     `view: juno_container\n     `evaluate: (fn (lisp_text)\n                  (evaluator lisp_text))\n     }))\n     \n(html/set_style [[ \"font-family\" \"-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;\"]]\n                (-> document `querySelector \"body\"))\n(let\n    ((header (-> document `querySelector \"header\") html/img { src: core/juno_logo height: \"15\" })\n     (handle_filepick (fn (files)\n                        (console.log files))))\n  \n  (-> header `appendChild\n      (html/img { src: core/juno_logo height: \"15\" }))\n  (-> header `appendChild\n      (html/span { `style: \"display: inline-block; margin-left: 10px; font-size: 0.9em; line-height: 15px;\" } Environment.build_version))  \n  \n  (set_prop *env_config*.export\n            `save_path\n            nil))\n;; ez page header access\n\n(defun core/page_header ()\n  (first (html/query_all \"head\")))\n\n(defglobal core/*env_skeleton* (reader (atob (clone *env_template*))))\n\n(defun core/read_text_file (file)\n  (console.log \"reading text file stub called\"))\n\n(defun core/save_image (options)\n   (let\n       ((js_resource (save_env { `want_buffer: true\n                                 `do_not_include: (conj (map (fn (v) (+ \"html/\" v)) (html/symbols)) [ `browser_repl `line_reader  ])}))\n        (boot_up core/browser_boot_code)\n        (dcomps (date_components (new Date)))\n        (file_version_tag (if (not (blank? options.version_tag))\n                              options.version_tag\n                              (join \".\" [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))\n        (scaffold_1 (prop\n                          (html/head { `title: \"Juno Browser\" }\n                                     (html/script { `type: \"module\" }\n                                                  js_resource\n                                                  \"\\n\\n\"                               \n                                                  boot_up\n                                                  \"\\n\\n\"\n                                                  ))\n                          `outerHTML))\n        (scaffold_2 (prop\n                          \n                          (html/body { style: \"height: 100vh; overflow: hidden;\" }\n                                     (html/header {  style: \"max-height: 20px; height: 20px; display: flex;\" }\n                                                  )\n                                     (html/div { `id: \"lower_right_corner\" style: \"position: absolute; right: 50px; bottom: 5px; width: 255px;\" } )\n                                     )\n                          `outerHTML))\n        (storage nil))\n     ;(setq storage\n      ;     (html/get_by_id \"page_header\"))\n     ;(-> storage `remove)\n   \n     (setTimeout (fn ()\n                   (do\n                     (save_locally (or options.save_as\n                                      (+ \"juno_image-\" file_version_tag \".html\"))\n                                   (+ \"<DOCTYPE html><html>\\n\"\n                                      scaffold_1\n                                      scaffold_2\n                                      \"</html>\")\n                                   \"text/html\" )\n                     ;(-> (first (html/query_all \"body\"))\n                                        ;`prepend storage)\n                     ))\n                 100)\n   true))\n  \n(-> (-> document `querySelector \"body\")\n    `appendChild (prop (core/browser_repl)\n                       `view))\n      \n\n    \n\n\n\n                                    \n                                    \n";__obj__1["load"]=async function(filename) {
+        let fname;
+        let js_mod;
+        let comps;
+        fname=filename;
+        js_mod=null;
+        comps=await (await Environment.get_global("path.parse"))(fname);
+         return  await async function(){
+            if (check_true( ((comps && comps["ext"])===".lisp"))) {
+                 return await (await Environment.get_global("evaluate"))(await (await Environment.get_global("read_text_file"))(fname),null,{
+                    source_name:fname
+                })
+            } else if (check_true( ((comps && comps["ext"])===".js"))) {
+                js_mod=await import (fname);
+                if (check_true ((js_mod && js_mod["initializer"]))){
+                      return await (async function(){
+                        let __array_op_rval__2=(js_mod && js_mod["initializer"]);
+                         if (__array_op_rval__2 instanceof Function){
+                            return await __array_op_rval__2(Environment) 
+                        } else {
+                            return[__array_op_rval__2,Environment]
+                        }
+                    })()
+                } else throw new EvalError("load: unable to find function named initializer in export, use dynamic_import for this.");
+                
+            } else if (check_true( ((comps && comps["ext"])===".json"))) {
+                 return await (await Environment.get_global("evaluate"))(await JSON.parse(await (await Environment.get_global("read_text_file"))(fname)),null,{
+                    json_in:true
+                })
+            }
+        } ()
+    };__obj__1["with_fs_events"]=async function(...args) {
+    let event_binding;
+    let location;
+    let body;
+    event_binding=(args && args["0"] && args["0"]["0"]);
+    location=(args && args["0"] && args["0"]["1"]);
+    body=(args && args["1"]);
+     return  ["=:let",[["=:watcher",["=:->","=:Deno","watchFs",location]]],["=:declare",["=:object","=:watcher"]],["=:for_with",[event_binding,"=:watcher"],["=:progn",body]]]
+};__obj__1["compile_buffer"]=async function(input_buffer,export_function_name,options) {
+    let output_filename;
+    let opts;
+    let segments;
+    let export_segment;
+    let include_boilerplate;
+    let start_time;
+    let compile_time;
+    let write_file;
+    let import_headers;
+    let include_source;
+    let compiled;
+    let invalid_js_ref_chars;
+    let invalid_js_ref_chars_regex;
+    let boilerplate;
+    let compiled_js;
+    output_filename=(options && options["output_file"]);
+    opts=await (await Environment.get_global("add"))(new Object(),(options|| new Object()),{
+        want_buffer:await (async function(){
+            if (check_true (((options && options["want_buffer"])|| (null==output_filename)))){
+                  return true
+            } else {
+                  return false
+            }
+        })()
+    });
+    export_function_name=(export_function_name|| "initializer");
+    segments=[];
+    export_segment=[];
+    include_boilerplate=await (async function () {
+         if (check_true ((false===(opts && opts["include_boilerplate"])))){
+              return false
+        } else {
+              return true
+        } 
+    })();
+    start_time=await Date.now();
+    compile_time=null;
+    write_file=true;
+    import_headers=await (async function () {
+         if (check_true (((options && options["imports"]) instanceof Object))){
+              return await (await Environment.get_global("map"))(async function(import_set,idx) {
+                let target;
+                let imp_details;
+                target=(import_set && import_set["1"] && import_set["1"]["symbol"]);
+                imp_details=(import_set && import_set["1"] && import_set["1"]["location"]);
+                 return  await (async function(){
+                    let __array_op_rval__1=("import * as "+ (target+ "_module")+ " from '"+ imp_details+ "'\n"+ "export const "+ target+ "="+ (target+ "_module")+ ";");
+                     if (__array_op_rval__1 instanceof Function){
+                        return await __array_op_rval__1() 
+                    } else {
+                        return[__array_op_rval__1]
+                    }
+                })()
+            },await (await Environment.get_global("pairs"))((options && options["imports"])))
+        } else {
+              return []
+        } 
+    })();
+    include_source=await (async function () {
+         if (check_true ((opts && opts["include_source"]))){
+              return true
+        } else {
+              return false
+        } 
+    })();
+    compiled=null;
+    invalid_js_ref_chars="+?-%&^#!*[]~{}|";
+    invalid_js_ref_chars_regex=new RegExp("[\%\+\[\>\?\<\\}\{&\#\^\=\~\*\!\)\(\-]+");
+    boilerplate="var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");";
+    compiled_js=null;
+    if (check_true ((await (await Environment.get_global("length"))(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,export_function_name))>0))){
+        throw new SyntaxError(("export function name contains an invalid JS character: "+ export_function_name+ ", cannot contain: "+ invalid_js_ref_chars));
+        
+    };
+    (segments).push(("// Source: "+ (options && options["input_filename"])+ "  "));
+    if (check_true (((import_headers && import_headers.length)>0))){
+        await (async function() {
+            let __for_body__4=async function(static_import) {
+                 return  (segments).push(static_import)
+            };
+            let __array__5=[],__elements__3=import_headers;
+            let __BREAK__FLAG__=false;
+            for(let __iter__2 in __elements__3) {
+                __array__5.push(await __for_body__4(__elements__3[__iter__2]));
+                if(__BREAK__FLAG__) {
+                     __array__5.pop();
+                    break;
+                    
+                }
+            }return __array__5;
+             
+        })();
+         (segments).push("\n")
+    };
+    if (check_true (((opts && opts["build_headers"]) instanceof Array))){
+        await (async function() {
+            let __for_body__8=async function(header) {
+                 return  (segments).push(header)
+            };
+            let __array__9=[],__elements__7=(opts && opts["build_headers"]);
+            let __BREAK__FLAG__=false;
+            for(let __iter__6 in __elements__7) {
+                __array__9.push(await __for_body__8(__elements__7[__iter__6]));
+                if(__BREAK__FLAG__) {
+                     __array__9.pop();
+                    break;
+                    
+                }
+            }return __array__9;
+             
+        })();
+         (segments).push("\n")
+    };
+    (segments).push("\n");
+    if (check_true (include_boilerplate)){
+         (segments).push(boilerplate)
+    };
+    if (check_true (((opts && opts["js_headers"]) instanceof Array))){
+        await (async function() {
+            let __for_body__12=async function(header) {
+                 return  (segments).push(header)
+            };
+            let __array__13=[],__elements__11=(opts && opts["js_headers"]);
+            let __BREAK__FLAG__=false;
+            for(let __iter__10 in __elements__11) {
+                __array__13.push(await __for_body__12(__elements__11[__iter__10]));
+                if(__BREAK__FLAG__) {
+                     __array__13.pop();
+                    break;
+                    
+                }
+            }return __array__13;
+             
+        })();
+         (segments).push("\n")
+    };
+    if (check_true (((export_function_name==="init_dlisp")|| (opts && opts["toplevel"])))){
+         (segments).push("if (typeof AsyncFunction === \"undefined\") {\n  globalThis.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;\n}")
+    };
+    if (check_true (((input_buffer instanceof Array)&& ((input_buffer && input_buffer["0"])==="=:iprogn")))){
+         await async function(){
+            input_buffer[0]="=:progn";
+            return input_buffer;
+            
+        }()
+    };
+    if (check_true ((opts && opts["verbose"]))){
+         await console.log("input_buffer: ",input_buffer)
+    };
+    compiled=await (await Environment.get_global("compiler"))(input_buffer,await (await Environment.get_global("add"))({
+        env:Environment,formatted_output:true,include_source:include_source,source_name:((opts && opts["input_filename"])|| "anonymous")
+    },opts));
+    compile_time=await (await Environment.get_global("add"))(await (async function() {
+        {
+             let __call_target__=((await Date.now()- start_time)/ 1000), __call_method__="toFixed";
+            return await __call_target__[__call_method__].call(__call_target__,3)
+        } 
+    })(),"s");
+    await async function(){
+        if (check_true((compiled && compiled["error"]))) {
+             throw new Error((await Environment.get_global("indirect_new"))(compiled.error,(compiled && compiled["message"])));
+            
+        } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&& ((compiled && compiled["0"] && compiled["0"]["ctype"])==="FAIL")))) {
+            write_file=false;
+             return  await (await Environment.get_global("warn"))((compiled && compiled["1"]))
+        } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&& (await (await Environment.get_global("contains?"))("block",(compiled && compiled["0"] && compiled["0"]["ctype"]))|| ((compiled && compiled["0"] && compiled["0"]["ctype"])==="assignment")|| ((compiled && compiled["0"] && compiled["0"]["ctype"])==="__!NOT_FOUND!__"))))) {
+             if (check_true (await (async function(){
+                let __array_op_rval__15=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
+                 if (__array_op_rval__15 instanceof Function){
+                    return await __array_op_rval__15() 
+                } else {
+                    return[__array_op_rval__15]
+                }
+            })())){
+                (segments).push(("export async function "+ export_function_name+ "(Environment)  {"));
+                (segments).push((compiled && compiled["1"]));
+                 (segments).push("}")
+            } else {
+                (segments).push(("export async function "+ export_function_name+ "() {"));
+                (segments).push((compiled && compiled["1"]));
+                 (segments).push("}")
+            }
+        } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&& (("AsyncFunction"===(compiled && compiled["0"] && compiled["0"]["ctype"]))|| ("statement"===(compiled && compiled["0"] && compiled["0"]["ctype"]))|| ("objliteral"===(compiled && compiled["0"] && compiled["0"]["ctype"])))))) {
+            if (check_true (await (async function(){
+                let __array_op_rval__16=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
+                 if (__array_op_rval__16 instanceof Function){
+                    return await __array_op_rval__16() 
+                } else {
+                    return[__array_op_rval__16]
+                }
+            })())){
+                (segments).push(("export async function "+ export_function_name+ "(Environment) {"));
+                 return  (segments).push(("  return "+ (compiled && compiled["1"])+ "} "))
+            } else {
+                (segments).push(("export async function "+ export_function_name+ "() {"));
+                 return  (segments).push(("  return "+ (compiled && compiled["1"])+ "} "))
+            }
+        } else if (check_true( ((compiled && compiled["0"] && compiled["0"]["ctype"])&& ("Function"===(compiled && compiled["0"] && compiled["0"]["ctype"]))))) {
+            if (check_true (await (async function(){
+                let __array_op_rval__17=(compiled && compiled["0"] && compiled["0"]["has_lisp_globals"]);
+                 if (__array_op_rval__17 instanceof Function){
+                    return await __array_op_rval__17() 
+                } else {
+                    return[__array_op_rval__17]
+                }
+            })())){
+                (segments).push(("export function "+ export_function_name+ "(Environment) {"));
+                 return  (segments).push(("  return "+ (compiled && compiled["1"])+ "}"))
+            } else {
+                (segments).push(("export function "+ export_function_name+ "() {"));
+                 return  (segments).push(("  return "+ (compiled && compiled["1"])+ " } "))
+            }
+        } else  {
+            await console.log("warning: unhandled return: ",compiled);
+             return  write_file=false
+        }
+    } ();
+    if (check_true ((opts && opts["bundle"]))){
+        (segments).push(("await init_dlisp();"));
+         (segments).push(("let env = await dlisp_env("+ await (async function () {
+             if (check_true ((opts && opts["bundle_options"]))){
+                  return await JSON.stringify((opts && opts["bundle_options"]))
+            } else {
+                  return ""
+            } 
+        })()+ ");"))
+    };
+    if (check_true (((opts && opts["exports"]) instanceof Array))){
+        (export_segment).push("export { ");
+        await (await Environment.get_global("map"))(async function(exp,i,len) {
+            {
+                await async function(){
+                    if (check_true( ((exp instanceof Array)&& ((exp && exp.length)===2)))) {
+                        (export_segment).push((exp && exp["0"]));
+                        (export_segment).push(" as ");
+                         return  (export_segment).push((exp && exp["1"]))
+                    } else if (check_true( (exp instanceof String || typeof exp==='string'))) {
+                         return (export_segment).push(exp)
+                    } else  {
+                         throw new SyntaxError(("Invalid export format: "+ exp));
+                        
+                    }
+                } ();
+                if (check_true ((i<(len- 1)))){
+                     return  (export_segment).push(",")
+                }
+            }
+        },(opts && opts["exports"]));
+         (segments).push((export_segment).join(""))
+    };
+     return  await async function(){
+        if (check_true( (write_file&& await (await Environment.get_global("not"))((opts && opts["want_buffer"]))))) {
+            await (await Environment.get_global("write_text_file"))(output_filename,(segments).join("\n"));
+            await (await Environment.get_global("success"))(("["+ compile_time+ "] compiled: "),((opts && opts["input_filename"])|| (opts && opts["namespace"])|| "anonymous"),"->",output_filename);
+             return  output_filename
+        } else if (check_true( (write_file&& (opts && opts["want_buffer"])))) {
+             return (segments).join("\n")
+        } else  {
+            await (await Environment.get_global("warn"))("cannot compile: ",((opts && opts["input_filename"])|| (opts && opts["namespace"])|| "anonymous"));
+             return  null
+        }
+    } ()
+};__obj__1["compile_file"]=async function(lisp_file,export_function_name,options) {
+    let input_components;
+    let input_filename;
+    let input_buffer;
+    input_components=await (await Environment.get_global("path.parse"))(lisp_file);
+    input_filename=await (await Environment.get_global("path.basename"))(lisp_file);
+    input_buffer=null;
+    input_buffer=await (await Environment.get_global("read_text_file"))(lisp_file);
+    if (check_true (((input_components && input_components["ext"])===".lisp"))){
+         input_buffer=await (await Environment.get_global("read_lisp"))(input_buffer,{
+            implicit_progn:false,source_name:input_filename
+        })
+    };
+     return  await (await Environment.get_global("compile_buffer"))(input_buffer,export_function_name,await (await Environment.get_global("add"))(new Object(),{
+        input_filename:input_filename
+    },await (async function() {
+         if (check_true (options)){
+              return options
+        } else {
+              return new Object()
+        } 
+    } )()))
+};__obj__1["rebuild_env"]=async function(opts) {
+    let issues;
+    let source_dir;
+    let output_dir;
+    let dcomps;
+    let version_tag;
+    let build_time;
+    let build_headers;
+    let include_source;
+    let source_path;
+    let output_path;
+    issues=[];
+    source_dir=((opts && opts["source_dir"])|| "./src");
+    output_dir=((opts && opts["output_dir"])|| "./js");
+    dcomps=await (await Environment.get_global("date_components"))(new Date());
+    version_tag=await (async function () {
+         if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("blank?"))((opts && opts["version_tag"]))))){
+              return (opts && opts["version_tag"])
+        } else {
+              return (await (async function(){
+                let __array_op_rval__18=(dcomps && dcomps["year"]);
+                 if (__array_op_rval__18 instanceof Function){
+                    return await __array_op_rval__18((dcomps && dcomps["month"]),(dcomps && dcomps["day"]),(dcomps && dcomps["hour"]),(dcomps && dcomps["minute"])) 
+                } else {
+                    return[__array_op_rval__18,(dcomps && dcomps["month"]),(dcomps && dcomps["day"]),(dcomps && dcomps["hour"]),(dcomps && dcomps["minute"])]
+                }
+            })()).join(".")
+        } 
+    })();
+    build_time=await (await Environment.get_global("formatted_date"))(new Date());
+    build_headers=[];
+    include_source=((opts && opts["include_source"])|| false);
+    source_path=async function(filename) {
+         return  (await (async function(){
+            let __array_op_rval__19=source_dir;
+             if (__array_op_rval__19 instanceof Function){
+                return await __array_op_rval__19(filename) 
+            } else {
+                return[__array_op_rval__19,filename]
+            }
+        })()).join((await Environment.get_global("path.sep")))
+    };
+    output_path=async function(filename) {
+         return  (await (async function(){
+            let __array_op_rval__20=output_dir;
+             if (__array_op_rval__20 instanceof Function){
+                return await __array_op_rval__20(filename) 
+            } else {
+                return[__array_op_rval__20,filename]
+            }
+        })()).join((await Environment.get_global("path.sep")))
+    };
+    await console.log("Environment Build Time: ",build_time);
+    await console.log("Version Tag: ",version_tag);
+    await console.log("Source Directory: ",source_dir);
+    await console.log("Output Directory: ",output_dir);
+    (build_headers).push(("// Build Time: "+ build_time));
+    (build_headers).push(("// Version: "+ version_tag));
+    (build_headers).push(("export const DLISP_ENV_VERSION='"+ version_tag+ "';"));
+    await (await Environment.get_global("load"))(await source_path("reader.lisp"));
+    await (await Environment.get_global("success"))("reloaded reader");
+    await (await Environment.get_global("compile_file"))(await source_path("compiler.lisp"),"init_compiler",{
+        output_file:await output_path("compiler.js"),include_source:include_source,build_headers:build_headers
+    });
+    await (await Environment.get_global("compile_file"))(await source_path("reader.lisp"),null,{
+        output_file:await output_path("reader.js"),include_source:include_source,build_headers:build_headers
+    });
+    await (await Environment.get_global("compile_file"))(await source_path("environment.lisp"),"init_dlisp",{
+        output_file:await output_path("environment.js"),include_source:include_source,toplevel:true,build_headers:build_headers
+    });
+    await (await Environment.get_global("compile_file"))(await source_path("core.lisp"),"environment_boot",{
+        output_file:await output_path("core.js"),include_source:include_source,build_headers:build_headers
+    });
+    await (await Environment.get_global("compile_file"))(await source_path("core-ext.lisp"),"load_core",{
+        output_file:await output_path("core-ext.js"),include_source:include_source,build_headers:build_headers
+    });
+    await (await Environment.get_global("compile_file"))(await source_path("base-io.lisp"),null,{
+        output_file:await output_path("base-io.js"),include_source:include_source,build_headers:build_headers
+    });
+    await (await Environment.get_global("success"))("complete");
+     return  true
+};__obj__1["browser_boot_code"]="\naddEventListener('DOMContentLoaded', async function() {\n  try {    \n    console.log(\"Starting browser boot..\")   \n    let pkg=await env.evaluate(\"core/html_package\");   \n    await env.evaluate(pkg);\n    console.log(\"initializing browser_repl_package\");\n    //await env.evaluate('(set_namespace \"core\")');\n    await env.evaluate('(eval (reader (clone browser_repl_package)))');\n    await env.evaluate('(console.log *namespace* (current_namespace))');\n    //await env.evaluate('(eval core/browser_workspace)');\n    globalThis.env = env;\n  } catch (ex) {\n    console.error(ex);\n  }\n});\n";__obj__1["*env_template*"]="OzsgRW52aXJvbm1lbnQgLS0gRmFjaWxpdGF0ZXMgYW5kIG9yZ2FuaXplcyB0aGUgbGlzcCB0b3AgbGV2ZWwgYW5kIHJlc291cmNlcwo7OyBBdXRob3I6IEFsZXggTnlncmVuCgo7OyBDb3B5cmlnaHQgKGMpIDIwMjIsIEtpbmEsIExMQwoKOzsgUGVybWlzc2lvbiBpcyBoZXJlYnkgZ3JhbnRlZCwgZnJlZSBvZiBjaGFyZ2UsIHRvIGFueSBwZXJzb24gb2J0YWluaW5nIGEgY29weQo7OyBvZiB0aGlzIHNvZnR3YXJlIGFuZCBhc3NvY2lhdGVkIGRvY3VtZW50YXRpb24gZmlsZXMgKHRoZSAiU29mdHdhcmUiKSwgdG8gZGVhbAo7OyBpbiB0aGUgU29mdHdhcmUgd2l0aG91dCByZXN0cmljdGlvbiwgaW5jbHVkaW5nIHdpdGhvdXQgbGltaXRhdGlvbiB0aGUgcmlnaHRzCjs7IHRvIHVzZSwgY29weSwgbW9kaWZ5LCBtZXJnZSwgcHVibGlzaCwgZGlzdHJpYnV0ZSwgc3VibGljZW5zZSwgYW5kL29yIHNlbGwKOzsgY29waWVzIG9mIHRoZSBTb2Z0d2FyZSwgYW5kIHRvIHBlcm1pdCBwZXJzb25zIHRvIHdob20gdGhlIFNvZnR3YXJlIGlzCjs7IGZ1cm5pc2hlZCB0byBkbyBzbywgc3ViamVjdCB0byB0aGUgZm9sbG93aW5nIGNvbmRpdGlvbnM6Cgo7OyBUaGUgYWJvdmUgY29weXJpZ2h0IG5vdGljZSBhbmQgdGhpcyBwZXJtaXNzaW9uIG5vdGljZSBzaGFsbCBiZSBpbmNsdWRlZCBpbiBhbGwKOzsgY29waWVzIG9yIHN1YnN0YW50aWFsIHBvcnRpb25zIG9mIHRoZSBTb2Z0d2FyZS4KCjs7IFRIRSBTT0ZUV0FSRSBJUyBQUk9WSURFRCAiQVMgSVMiLCBXSVRIT1VUIFdBUlJBTlRZIE9GIEFOWSBLSU5ELCBFWFBSRVNTIE9SCjs7IElNUExJRUQsIElOQ0xVRElORyBCVVQgTk9UIExJTUlURUQgVE8gVEhFIFdBUlJBTlRJRVMgT0YgTUVSQ0hBTlRBQklMSVRZLAo7OyBGSVRORVNTIEZPUiBBIFBBUlRJQ1VMQVIgUFVSUE9TRSBBTkQgTk9OSU5GUklOR0VNRU5ULiBJTiBOTyBFVkVOVCBTSEFMTCBUSEUKOzsgQVVUSE9SUyBPUiBDT1BZUklHSFQgSE9MREVSUyBCRSBMSUFCTEUgRk9SIEFOWSBDTEFJTSwgREFNQUdFUyBPUiBPVEhFUgo7OyBMSUFCSUxJVFksIFdIRVRIRVIgSU4gQU4gQUNUSU9OIE9GIENPTlRSQUNULCBUT1JUIE9SIE9USEVSV0lTRSwgQVJJU0lORyBGUk9NLAo7OyBPVVQgT0YgT1IgSU4gQ09OTkVDVElPTiBXSVRIIFRIRSBTT0ZUV0FSRSBPUiBUSEUgVVNFIE9SIE9USEVSIERFQUxJTkdTIElOIFRIRQo7OyBTT0ZUV0FSRS4KCjs7ID09PT09PQoKOzsgVGhlICJ3b3JsZCIgdGhhdCBpcyB0aGUgc2NvcGUgb2YgdGhlIGNvbXBpbGVyIGFuZCB0aGUgY29tcGlsZWQgY29kZS4KOzsgRmFjaWxpYXRlcyBkeW5hbWljIHNjb3BlLCBsaXNwIGdsb2JhbHMsIGRlZmluaXRpb25zIGFuZCBvdGhlciBwcm9wZXJ0aWVzLgo7OyBJdCBpcyB0aGUgaW50ZXJmYWNlIHRoZSB0b3AgbGV2ZWwgZnVuY3Rpb24gY2FsbHMgaW50byBhcyB0aGUgY29tcGlsZXIKOzsgaXMgYWNjZXNzZWQgdmlhIGFuIGVudmlyb25tZW50IG9iamVjdC4gIAoKOzsgVXNlIGV2YWx1YXRlKGxpc3BfdGV4dCkgdG8gY29tcGlsZSBhbmQgZXZhbHVhdGUgbGlzcCB0ZXh0IGFuZCBmb3JtcyBmcm9tCjs7IGphdmFzY3JpcHQuCgo7OyBPcHRpb25zIGFyZSBhcyBmb2xsb3dzOgo7OyBwYXJlbnRfZW52aXJvbm1lbnQgLSBpZiB0aGlzIGluc3RhbmNlIGlzIHRvIGJlIGEgbmFtZXNwYWNlIG90aGVyIHRoYW4gImNvcmUiCjs7ICAgICAgICAgICAgICAgICAgICAgIHRoaXMgc2hvdWxkIGJlIHNldCB3aXRoIHRoZSBjYWxsaW5nIGVudmlyb25tZW50IG9iamVjdC4KCjs7IG5hbWVzcGFjZSAtIGlmIGdpdmVuIGEgcGFyZW50X2Vudmlyb25tZW50IHdlIG5lZWQgdG8gaGF2ZSBhbiBhZGRyZXNzYWJsZQo7OyAgICAgICAgICAgICBuYW1lLiAgVGhpcyBtdXN0IGJlIHNldCBpZiB1c2luZyB0aGUgcGFyZW50X2Vudmlyb25tZW50IG9wdGlvbi4KCjs7IGVudiAtIGlmIGdpdmVuIGFuIGVudmlyb25tZW50IG9iamVjdCB1c2luZyB0aGUgZW52IGtleSwgdGhlIHJldHVybmVkCjs7ICAgICAgIGVudmlyb25tZW50IGluc3RhbmNlIHdpbGwgaGF2ZSBiZSBhIGNsb25lIG9mIHRoZSBwcm92aWRlZCBlbnZpcm9ubWVudC4KOzsgICAgICAgVGhpcyBpcyB1c2VkIHdoZW4gZXhwb3J0aW5nIGFuIGVudmlyb25tZW50IGltYWdlLgoKOzsgaW5saW5lcyAtIG9iamVjdCB0aGF0IGNvbnRhaW5zIG9wZXJhdG9yIGtleXMgYW5kIGZ1bmN0aW9uIHZhbHVlcyB0aGF0Cjs7ICAgICAgICAgICByZXR1cm4gYXJyYXlzOiAoZm4gKGFyZ3MpIFtgamF2YXNjcmlwdCBgdG9rZW5zIF0uLiBzZWUgaW5saW5lcwo7OyAgICAgICAgICAgYmVsb3cgZm9yIHRoZSBzcGVjaWZpY3MuCgo7OyBsb2dfZXJyb3JzIC0gYm9vbGVhbiAoZGVmYXVsdCBmYWxzZSkgaWYgdHJ1ZSwgdGhlIGVudmlyb25tZW50IGl0c2VsZgo7OyAgICAgICAgICAgd2lsbCBsb2cgYW55IGVycm9ycyB0byB0aGUgY29uc29sZSwgb3RoZXJ3aXNlIGl0IHdpbGwgZWl0aGVyCjs7ICAgICAgICAgICByZS10aHJvdyB0aGUgZXJyb3Igb3IgcmV0dXJuIGl0IGRlcGVuZGluZyBvbiBjYXRjaF9lcnJvcnMuCgo7OyBjYXRjaF9lcnJvcnMgLSBib29sZWFuIChkZWZhdWx0IGlzIGZhbHNlKSAtIGlmIHRydWUsIGVycm9ycyB3aWxsIGJlCjs7ICAgICAgICAgICBjYXVnaHQgYW5kIHJldHVybmVkLCBhbmQgbm90IHRocm93biwgb3RoZXJ3aXNlIHRoZSBlcnJvcgo7OyAgICAgICAgICAgd2lsbCBiZSByZS10aHJvd24uCgo7OyBXZSBuZWVkIHNvbWUgZ2xvYmFsIHR5cGVzIHNpbmNlIEphdmFzY3JpcHQgZXZhbCgpIGlzbid0IHVzZWQgaW4gSnVubwoKKHNldF9wcm9wIGdsb2JhbFRoaXMKICAgICAgICAgIGBzdWJ0eXBlIHN1YnR5cGUKICAgICAgICAgIGBjaGVja190cnVlIGNoZWNrX3RydWUKICAgICAgICAgIGBjbG9uZSBjbG9uZQogICAgICAgICAgYGxpc3Bfd3JpdGVyIGxpc3Bfd3JpdGVyCiAgICAgICAgICBgTGlzcFN5bnRheEVycm9yIExpc3BTeW50YXhFcnJvcikKCihpZiAoPT0gInVuZGVmaW5lZCIgKHR5cGVvZiBkbGlzcF9lbnZpcm9ubWVudF9jb3VudCkpCiAgKHNldF9wcm9wIGdsb2JhbFRoaXMKICAgICAgICAgICAgYGRsaXNwX2Vudmlyb25tZW50X2NvdW50CiAgICAgICAgICAgIDApKQoKCjs7IFdlIGNhbid0IGltbWVkaWF0ZWx5IGRlZmluZSBhIG1hY3JvIGZvciB0aGUgYmVsb3cgYmVjYXVzZSB3ZSBkb24ndCBoYXZlCjs7IGFuIGVudmlyb25tZW50IHlldCB0byBwbGFjZSBpdC4gIFNvIHdoZW4gd2Ugd2FudCB0byBzYXZlIHRoZSBjdXJyZW50Cjs7IGVudmlyb25tZW50LCB3ZSB3aWxsIHNwbGljZSBkaXJlY3RseSBpbnRvIHRoZSBKU09OIHJlcHJlc2VudGF0aW9uCjs7IG9mIHRoaXMgZmlsZS4KOzsgZGVmZXh0ZXJuYWwgcGxhY2VzIHRoZSBzeW1ib2wgYW5kIHRoZSBhc3NvY2lhdGVkIHZhbHVlIG9uIG9uIGdsb2JhbFRoaXMsCjs7IGluc3RlYWQgb2YgaW5zaWRlIHRoZSBlbnZpcm9ubWVudCAod2hpY2ggZG9lc24ndCBleGlzdCBhdCB0aGlzIHBvaW50KS4KCihkZWZleHRlcm5hbCBkbGlzcF9lbnYKICAoZm4gKG9wdHMpCiAgICAocHJvZ24KICAgICAKICAgICA7OyBTdGF0ZSB0byB0aGUgY29tcGlsZXIgdGhhdCB3ZSBkbyBub3Qgd2FudCB0byBiZSBwYXNzZWQgYW4gRW52aXJvbm1lbnQKICAgICA7OyBieSBkZWNsYXJpbmcgdGhhdCB0aGlzIGlzIHRvcGxldmVsLgogICAgIAogICAgIChkZWNsYXJlICh0b3BsZXZlbCB0cnVlKQogICAgICAgICAgICAgIChpbmNsdWRlIHN1YnR5cGUgZ2V0X29iamVjdF9wYXRoIGdldF9vdXRzaWRlX2dsb2JhbCkKICAgICAgICAgICAgICAobG9jYWwgY2xvbmUgZ2V0X25leHRfZW52aXJvbm1lbnRfaWQgY2hlY2tfdHJ1ZSkpCgogICAgIDs7IE5PVElDRToKICAgICA7OyBXZSBkbyBub3QgaGF2ZSBhY2Nlc3MgdG8gdGhlIEVudmlyb25tZW50IHRoaW5ncyBhdCB0aGlzIHBvaW50LCBzbyB3ZSBhcmUKICAgICA7OyB2ZXJ5IGxpbWl0ZWQgdW50aWwgYWZ0ZXIgKGRlZmluZV9lbnYpLi4uCiAgICAgOzsgLS0tLS0tIFN0YXJ0IExpbWl0ZWQgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KICAgICAoPSBvcHRzCiAgICAgICAoaWYgKD09IG9wdHMgdW5kZWZpbmVkKQogICAgICAgICB7fQogICAgICAgICBvcHRzKSkKICAgICAgICAgIAogICAgIDs7IENvbnN0cnVjdCB0aGUgZW52aXJvbm1lbnQKICAgICA7OyBBcmUgd2UgdGhlIGNvcmUsIG9yIGFyZSB3ZSBhIG5hbWVzcGFjZSBvZmYgb2YgdGhlIGNvcmU/CiAgICAgCiAgICAgKGRlZnZhciBuYW1lc3BhY2UgKG9yIG9wdHMubmFtZXNwYWNlICJjb3JlIikpCiAgICAKICAgICAoZGVmdmFyIHBhcmVudF9lbnZpcm9ubWVudCAoaWYgKD09IG5hbWVzcGFjZSAiY29yZSIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuaWwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG9wdHMucGFyZW50X2Vudmlyb25tZW50KSkKICAgICAKICAgICA7OyBUaGUgY3VycmVudGx5IGFjdGl2ZSBuYW1lc3BhY2UKICAgICA7OyBJZiB3ZSBhcmUgYSBjaGlsZCBlbnYsIGl0IHNob3VsZCBhbHdheXMgZXF1YWwgb3VyIG5hbWUKICAgICA7OyBvdGhlcndpc2UgaWYgd2UgYXJlIHRoZSBjb3JlLCB0aGVuIHRoaXMgcG9pbnRzIHRvIHRoZQogICAgIDs7IGN1cnJlbnQgbmFtZXNwYWNlIGFjY2Vzc2VkIGJ5IGN1cnJlbnRfbmFtZXNwYWNlCiAgICAgOzsgaW4gdGhlIGNvcmUgZW52aXJvbm1lbnQuCiAgICAgCiAgICAgKGRlZnZhciBhY3RpdmVfbmFtZXNwYWNlIG5hbWVzcGFjZSkKCiAgICAgKGRlZnZhciBjb250YWluZWQgKG9yIG9wdHMuY29udGFpbmVkIGZhbHNlKSkKICAgICAKICAgICA7OyBTZXQgdXAgb3VyIGluaXRpYWwgc2tlbGV0b24uLgoKICAgICAoZGVmdmFyIEVudmlyb25tZW50ICAgICAgICAgICAgICAgICAKICAgICAgIHsgOzsgb25jZSB3ZSBoYXZlIGJ1aWx0IHRoZSBlbnZpcm9ubWVudCwgaWYgdGhlcmUgYXJlIGFueSBpbmNsdXNpb25zIHdlIHdpbGwgbWVyZ2UgdGhlbSBpbgogICAgICAgIDs7IHRvIGdsb2JhbF9jdHggc2luY2UgdGhleSB3aWxsIGhhdmUgdGhlIHBvdGVudGlhbCB0byByZWZlciB0byB0aGluZ3MgdGhhdCBoYXZlIHlldAogICAgICAgIDs7IHRvIGJlIGRlZmluZWQgdG8gdGhlIGNvbXBpbGVyLi4KICAgICAgICAKICAgICAgICAgIGBnbG9iYWxfY3R4OiB7CiAgICAgICAgICAgICAgICAgICAgICAgICBgc2NvcGU6IHt9CiAgICAgICAgICAgICAgICAgICAgICAgICBgbmFtZTogIG5hbWVzcGFjZSAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICBgYnVpbGRfdmVyc2lvbjogKGphdmFzY3JpcHQgRExJU1BfRU5WX1ZFUlNJT04pCiAgICAgICAgICBgZGVmaW5pdGlvbnM6IChvciBvcHRzLmRlZmluaXRpb25zCiAgICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9KSAgICAgICAgICAKICAgICAgICAgIGBkZWNsYXJhdGlvbnM6IChvciBvcHRzLmRlY2xhcmF0aW9ucwogICAgICAgICAgICAgICAgICAgICAgICAgICAgIHsgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBzYWZldHk6IHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBsZXZlbDogMgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9KSAgICAgICAgICAKICAgICAgICAgIH0pCiAgICAgICAgICAKICAgICAKICAgICAoZGVmdmFyIGlkICAoZ2V0X25leHRfZW52aXJvbm1lbnRfaWQpKQoKICAgICA7OyBpZiB3ZSBoYXZlIGEgbmFtZXNwYWNlIG90aGVyIHRoYW4gY29yZSB3ZSBzaG91bGQKICAgICA7OyBoYXZlIGEgcGFyZW50IGVudmlyb25tZW50CiAgICAgICAgICAgICAgCiAgICAgKHNldF9wcm9wIEVudmlyb25tZW50CiAgICAgICAgICAgICAgIGBjb250ZXh0CiAgICAgICAgICAgICAgIEVudmlyb25tZW50Lmdsb2JhbF9jdHgpCgogICAgIDs7IG5vIGNvbXBpbGVyIHVudGlsIGl0IGlzIHByb3ZpZGVkLgogICAgIChkZWZ2YXIgdW5zZXRfY29tcGlsZXIgIChmbiAoKSAodGhyb3cgRXZhbEVycm9yICgrICJjb21waWxlciBtdXN0IGJlIHNldCBmb3IgIiAgbmFtZXNwYWNlICkpKSkKICAgICAoZGVmdmFyIGNvbXBpbGVyIHVuc2V0X2NvbXBpbGVyKQogICAgIAogICAgIAogICAgIChkZWZ2YXIgY29tcGlsZXJfb3BlcmF0b3JzIChuZXcgU2V0KSkKICAgICAoZGVmdmFyIHNwZWNpYWxfaWRlbnRpdHkgKGZuICh2KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHYpKQoKICAgICA7OyAtLS0tLS0tIEVuZCBMaW1pdGVkIFpvbmUgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KICAgICAKICAgICA7OyB0aGUgZGVmaW5lX2VudiBtYWNybyBwb3B1bGF0ZXMgZ2xvYmFsX2N0eCBzY29wZSBvYmplY3QgdG8gbG9jYWwgdmFsdWVzIGluIG91cgogICAgIDs7IGNsb3N1cmUKICAgICAKICAgICAKICAgICAoZGVmaW5lX2VudiAKICAgICAgICAgKE1BWF9TQUZFX0lOVEVHRVIgOTAwNzE5OTI1NDc0MDk5MSkKICAgICAgICAgKExpc3BTeW50YXhFcnJvciBnbG9iYWxUaGlzLkxpc3BTeW50YXhFcnJvcikKICAgICAgICAgKHN1Yl90eXBlIHN1YnR5cGUKICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlJldHVybnMgYSBzdHJpbmcgdGhlIGRldGVybWluZWQgYWN0dWFsIHR5cGUgb2YgdGhlIHByb3ZpZGVkIHZhbHVlLiIKICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbInZhbHVlOioiXQogICAgICAgICAgICAgICAgICBgdGFnczogWyJ0eXBlIiAiY2xhc3MiICJwcm90b3R5cGUiICJ0eXBlb2YiICJpbnN0YW5jZW9mIl0KICAgICAgICAgICAgICAgICAgfSkgICAgICAgIAogICAgICAgICAoX19WRVJCT1NJVFlfXyAwCiAgICAgICAgICAgICAgICAgICAgICAgIHsgCiAgICAgICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJTZXQgX19WRVJCT1NJVFlfXyB0byBhIHBvc2l0aXZlIGludGVnZXIgZm9yIHZlcmJvc2UgY29uc29sZSBvdXRwdXQgb2Ygc3lzdGVtIGFjdGl2aXR5LiIKICAgICAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbImRlYnVnIiAiY29tcGlsZXIiICJlbnZpcm9ubWVudCIgImdsb2JhbCJdCiAgICAgICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGludCBwYXJzZUludAogICAgICAgICAgICAgIHsgYHVzYWdlOiAidmFsdWU6c3RyaW5nfG51bWJlciIgCiAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkNvbnZlbmllbmNlIG1ldGhvZCBmb3IgcGFyc2VJbnQsIHNob3VsZCBiZSB1c2VkIGluIG1hcCB2cy4gZGlyZWN0bHkgY2FsbGluZyBwYXJzZUludCwgd2hpY2ggd2lsbCBub3Qgd29yayBkaXJlY3RseSIKICAgICAgICAgICAgICAgYHRhZ3M6IFsiY29udmVyc2lvbiIgIm51bWJlciJdCiAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoZmxvYXQgcGFyc2VGbG9hdAogICAgICAgICAgICAgICAgeyBgdXNhZ2U6ICJ2YWx1ZTpzdHJpbmd8bnVtYmVyIiAKICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJDb252ZW5pZW5jZSBtZXRob2QgZm9yIHBhcnNlRmxvYXQsIHNob3VsZCBiZSB1c2VkIGluIG1hcCB2cy4gZGlyZWN0bHkgY2FsbGluZyBwYXJzZUZsb2F0LCB3aGljaCB3aWxsIG5vdCB3b3JrIGRpcmVjdGx5IgogICAgICAgICAgICAgICAgIGB0YWdzOiBbImNvbnZlcnNpb24iICJudW1iZXIiXQogICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAodmFsdWVzIChuZXcgRnVuY3Rpb24gIi4uLmFyZ3MiCiAgICAgICAgICAgICAgICAgICAgICAiewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCBhY2MgPSBbXTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmb3IgKGxldCBfaSBpbiBhcmdzKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCB2YWx1ZSA9IGFyZ3NbX2ldOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgdHlwZSA9IHN1YnR5cGUodmFsdWUpOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAodmFsdWUgaW5zdGFuY2VvZiBTZXQpICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhY2MgPSBhY2MuY29uY2F0KEFycmF5LmZyb20odmFsdWUpKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmICh0eXBlPT09J2FycmF5JykgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYWNjID0gYWNjLmNvbmNhdCh2YWx1ZSk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAodHlwZT09PSdvYmplY3QnKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhY2MgPSBhY2MuY29uY2F0KE9iamVjdC52YWx1ZXModmFsdWUpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYWNjID0gYWNjLmNvbmNhdCh2YWx1ZSk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIGFjYzsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0iKQogICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiR2l2ZW4gYSBjb250YWluZXIsIHJldHVybnMgYSBsaXN0IGNvbnRhaW5pbmcgdGhlIHZhbHVlcyBvZiBlYWNoIHN1cHBsaWVkIGFyZ3VtZW50LiBOb3RlIHRoYXQgZm9yIG9iamVjdHMsIG9ubHkgdGhlIHZhbHVlcyBhcmUgcmV0dXJuZWQsIG5vdCB0aGUga2V5cy4gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJJZiBnaXZlbiBtdWx0aXBsZSB2YWx1ZXMsIHRoZSByZXR1cm5lZCB2YWx1ZSBpcyBhIGNvbmNhdGVudGF0aW9uIG9mIGFsbCBjb250YWluZXJzIHByb3ZpZGVkIGluIHRoZSBhcmd1bWVudHMuIikKICAgICAgICAgICAgICAgICAgYHVzYWdlOlsgImFyZzA6KiIgImFyZ246KiJdCiAgICAgICAgICAgICAgICAgIGB0YWdzOiBbIGBhcnJheSBgY29udGFpbmVyIGBvYmplY3QgYGtleXMgYGVsZW1lbnRzIF0KICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChwYWlycyAobmV3IEZ1bmN0aW9uICJvYmoiCiAgICAgICAgICAgICAgICAgICAgICJ7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChzdWJ0eXBlKG9iaik9PT0nYXJyYXknKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgcnZhbCA9IFtdOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgaSA9IDA7IGkgPCBvYmoubGVuZ3RoOyBpKz0yKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcnZhbC5wdXNoKFtvYmpbaV0sb2JqW2krMV1dKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiBydmFsOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGV0IGtleXMgPSBPYmplY3Qua2V5cyhvYmopOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGV0IHJ2YWwgPSBrZXlzLnJlZHVjZShmdW5jdGlvbihhY2MseCxpKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYWNjLnB1c2goW3gsb2JqW3hdXSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gYWNjOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSxbXSk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gcnZhbDsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0iKQogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkdpdmVuIGEgcGFzc2VkIG9iamVjdCBvciBhcnJheSwgcmV0dXJucyBhIGxpc3QgY29udGFpbmluZyBhIDIgZWxlbWVudCBsaXN0IGZvciBlYWNoIGtleS92YWx1ZSBwYWlyIG9mIHRoZSBzdXBwbGllZCBvYmplY3QuIgogICAgICAgICAgICAgICAgIGB0YWdzOiBbImFycmF5IiAiY29udGFpbmVyIiAib2JqZWN0IiBdCiAgICAgICAgICAgICAgICAgYHVzYWdlOiBbIm9iajpvYmplY3QiXQogICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoa2V5cyAobmV3IEZ1bmN0aW9uICJvYmoiCiAgICAgICAgICAgICAgICAgICAgInsgIHJldHVybiBPYmplY3Qua2V5cyhvYmopOyAgfSIpCiAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkdpdmVuIGFuIG9iamVjdCwgcmV0dXJucyB0aGUga2V5cyBvZiB0aGUgb2JqZWN0LiIKICAgICAgICAgICAgICAgIGB0YWdzOiBbIm9iamVjdCIgInZhbHVlcyIgImtleXMiICJpbmRleGVzIiAiY29udGFpbmVyIiBdCiAgICAgICAgICAgICAgICBgdXNhZ2U6IFsib2JqOm9iamVjdCJdCiAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKHRha2UgKG5ldyBGdW5jdGlvbiAicGxhY2UiICJ7IHJldHVybiBwbGFjZS5zaGlmdCgpIH0iKQogICAgICAgICAgICAgewogICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlRha2VzIHRoZSBmaXJzdCB2YWx1ZSBvZmYgdGhlIGxpc3QsIGFuZCByZXR1cm5zIHRoZSB2YWx1ZS4iCiAgICAgICAgICAgICAgYHRhZ3M6IFsiYXJyYXkiICJjb250YWluZXIiICJtdXRhdGUiICJmaXJzdCJdCiAgICAgICAgICAgICAgYHVzYWdlOiBbInBsYWNlOmNvbnRhaW5lciJdCiAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChwcmVwZW5kIChuZXcgRnVuY3Rpb24gInBsYWNlIiAidGhpbmciICJ7IHJldHVybiBwbGFjZS51bnNoaWZ0KHRoaW5nKSB9IikKICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJQbGFjZXMgdGhlIHZhbHVlIGFyZ3VtZW50IG9udG8gdGhlIGZpcnN0IG9mIHRoZSBsaXN0ICh1bnNoaWZ0KSBhbmQgcmV0dXJucyB0aGUgbGlzdC4iCiAgICAgICAgICAgICAgICAgYHRhZ3M6IFsiYXJyYXkiICJtdXRhdGUiICJjb250YWluZXIiIF0KICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsicGxhY2U6YXJyYXkiICJ0aGluZzoqIl0KICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGZpcnN0IChuZXcgRnVuY3Rpb24gIngiICJ7IHJldHVybiB4WzBdIH0iKQogICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiR2l2ZW4gYW4gYXJyYXksIHJldHVybnMgdGhlIGZpcnN0IGVsZW1lbnQgaW4gdGhlIGFycmF5LiIKICAgICAgICAgICAgICAgYHVzYWdlOiBbIng6YXJyYXkiXQogICAgICAgICAgICAgICBgdGFnczogWyJhcnJheSIgImNvbnRhaW5lciIgImVsZW1lbnRzIiBdCiAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAobGFzdCAobmV3IEZ1bmN0aW9uICJ4IiAieyByZXR1cm4geFt4Lmxlbmd0aCAtIDFdIH0iKQogICAgICAgICAgICAgewogICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJHaXZlbiBhbiBhcnJheSwgcmV0dXJucyB0aGUgbGFzdCBlbGVtZW50IGluIHRoZSBhcnJheS4iCiAgICAgICAgICAgICAgIGB1c2FnZTogWyJ4OmFycmF5Il0KICAgICAgICAgICAgICAgYHRhZ3M6IFsiYXJyYXkiICJjb250YWluZXIiICJlbGVtZW50cyIgImVuZCJdCiAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAobGVuZ3RoIChuZXcgRnVuY3Rpb24gIm9iaiIKICAgICAgICAgICAgICAgICAgICAgICJ7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYob2JqIGluc3RhbmNlb2YgQXJyYXkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIG9iai5sZW5ndGg7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmIChvYmogaW5zdGFuY2VvZiBTZXQpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIG9iai5zaXplOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAoKG9iaiA9PT0gdW5kZWZpbmVkKXx8KG9iaj09PW51bGwpKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiAwOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAodHlwZW9mIG9iaj09PSdvYmplY3QnKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiBPYmplY3Qua2V5cyhvYmopLmxlbmd0aDsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgaWYgKHR5cGVvZiBvYmo9PT0nc3RyaW5nJykgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gb2JqLmxlbmd0aDsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiAwOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgfSIpCiAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICgrICJSZXR1cm5zIHRoZSBsZW5ndGggb2YgdGhlIHN1cHBsaWVkIHR5cGUgKGFycmF5LCBvYmplY3QsIHNldCwgc3RyaW5nLCBudW1iZXIpLiAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIklmIHRoZSBzdXBwbGllZCB2YWx1ZSBpcyBuaWwgb3IgYSBub24tY29udGFpbmVyIHR5cGUsIHJldHVybnMgMC4iKQogICAgICAgICAgICAgICAgICBgdGFnczogWyJzaXplIiAiZWxlbWVudHMiICJjb250YWluZXIiICJkaW1lbnNpb24iICJhcnJheSIgInNldCIgInN0cmluZyIgIm51bWJlciIgXQogICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsidGhpbmc6Y29udGFpbmVyIl0KICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChjb25qIChuZXcgRnVuY3Rpb24gIi4uLmFyZ3MiCiAgICAgICAgICAgICAgICAgICAgInsgICBsZXQgbGlzdCA9IFtdOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChhcmdzWzBdIGluc3RhbmNlb2YgQXJyYXkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGlzdCA9IGFyZ3NbMF07CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGlzdCA9IFthcmdzWzBdXTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYXJncy5zbGljZSgxKS5tYXAoZnVuY3Rpb24oeCkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsaXN0ID0gbGlzdC5jb25jYXQoeCk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIGxpc3Q7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IikKICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiQ29uam9pbnMgb3IgY29uY2F0ZW5hdGVzIHRoaW5ncyAodHlwaWNhbGx5IGFycmF5cykgdG9nZXRoZXIgYW5kIHJldHVybnMgYW4gYXJyYXkuICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIkV4YW1wbGVzOjxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICIoY29uaiBbIDEgMiBdIFsgMyA0IF0pID0+IFsgMSAyIDMgNCBdPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihjb25qIFsgMSAyIF0gMyA0ICkgPT4gWyAxIDIgMyA0IF08YnI+IgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKGNvbmogMSAyIFsgMyA0IF0pID0+IFsgMSAyIDMgNCBdPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihjb25qIHsgYGFiYzogMTIzIH0gWyAyIDNdKSA9PiBbIHsgYWJjOiAxMjMgfSwgMiwgMyBdPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihjb25qIFsgMSAyIDMgWyA0IF1dIFsgNSA2IFsgNyBdXSkgPT4gWyAxIDIgMyBbIDQgXSA1IDYgWyA3IF0gXSIpCiAgICAgICAgICAgICAgICBgdGFnczogW2BlbGVtZW50cyBgY29uY2F0IGBhcnJheSBgY29uam9pbiBgYXBwZW5kXQogICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzA6KiIgImFyZ046KiJdCiAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgCiAgICAgICAgIAogICAgICAgICAocmV2ZXJzZSAobmV3IEZ1bmN0aW9uICJjb250YWluZXIiICJ7IHJldHVybiBjb250YWluZXIuc2xpY2UoMCkucmV2ZXJzZSB9IikKICAgICAgICAgICAgICAgICAgeyAidXNhZ2UiOiBbImNvbnRhaW5lcjpsaXN0Il0gCiAgICAgICAgICAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiUmV0dXJucyBhIGNvcHkgb2YgdGhlIHBhc3NlZCBsaXN0IGFzIHJldmVyc2VkLiAgVGhlIG9yaWdpbmFsIGlzIG5vdCBjaGFuZ2VkLiIgCiAgICAgICAgICAgICAgICAgICBgdGFnczogWyJsaXN0IiAic29ydCIgIm9yZGVyIl0gCiAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKG1hcCAobmV3IEFzeW5jRnVuY3Rpb24gImxhbWJkYSIgImFycmF5X3ZhbHVlcyIgCiAgICAgICAgICAgICAgICAgICAieyB0cnkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGV0IHJ2YWwgPSBbXSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgdGwgPSBhcnJheV92YWx1ZXMubGVuZ3RoOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgaSA9IDA7IGkgPCBhcnJheV92YWx1ZXMubGVuZ3RoOyBpKyspIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBydmFsLnB1c2goYXdhaXQgbGFtYmRhLmFwcGx5KHRoaXMsW2FycmF5X3ZhbHVlc1tpXSwgaSwgdGxdKSk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIHJ2YWw7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gY2F0Y2ggKGV4KSB7ICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChsYW1iZGEgPT09IHVuZGVmaW5lZCB8fCBsYW1iZGEgPT09IG51bGwpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRocm93IG5ldyBSZWZlcmVuY2VFcnJvcihcIm1hcDogbGFtYmRhIGFyZ3VtZW50IChwb3NpdGlvbiAwKSBpcyB1bmRlZmluZWQgb3IgbmlsXCIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgaWYgKGFycmF5X3ZhbHVlcyA9PT0gdW5kZWZpbmVkIHx8IGFycmF5X3ZhbHVlcyA9PT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgdGhyb3cgbmV3IFJlZmVyZW5jZUVycm9yKFwibWFwOiBjb250YWluZXIgYXJndW1lbnQgKHBvc2l0aW9uIDEpIGlzIHVuZGVmaW5lZCBvciBuaWxcIikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAoIShsYW1iZGEgaW5zdGFuY2VvZiBGdW5jdGlvbikpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRocm93IG5ldyBSZWZlcmVuY2VFcnJvcihcIm1hcDogbGFtYmRhIGFyZ3VtZW50IG11c3QgYmUgYSBmdW5jdGlvbjogcmVjZWl2ZWQ6IFwiKyB0eXBlb2YgbGFtYmRhKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmICghKGFycmF5X3ZhbHVlcyBpbnN0YW5jZW9mIEFycmF5KSkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgdGhyb3cgbmV3IFJlZmVyZW5jZUVycm9yKFwibWFwOiBpbnZhbGlkIGFycmF5IGFyZ3VtZW50LCByZWNlaXZlZDogXCIgKyB0eXBlb2YgYXJyYXlfdmFsdWVzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIC8vIHNvbWV0aGluZyBlbHNlIGp1c3QgcGFzcyBvbiB0aGUgZXJyb3IKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgdGhyb3cgZXg7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSIpCiAgICAgICAgICAgICAgewogICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICgrICJQcm92aWRlZCBhIGZ1bmN0aW9uIGFzIGEgZmlyc3QgYXJndW1lbnQsIG1hcCBjYWxscyB0aGUgZnVuY3Rpb24gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICIoaXRlbSwgY3VycmVudF9pbmRleCwgdG90YWxfbGVuZ3RoKSB3aXRoIGVhY2ggZWxlbWVudCBmcm9tIHRoZSBzZWNvbmQgYXJndW1lbnQsIHdoaWNoIHNob3VsZCBiZSBhIGxpc3QuIFJldHVybnMgYSBuZXcgbGlzdCBjb250YWluaW5nIHRoZSByZXR1cm4gdmFsdWVzIHJlc3VsdGluZyBmcm9tIGV2YWx1YXRpbmcuIikKICAgICAgICAgICAgICAgYHRhZ3M6IFtgYXJyYXkgYGNvbnRhaW5lciBgZWxlbWVudHMgYGl0ZXJhdGlvbiBdCiAgICAgICAgICAgICAgIGB1c2FnZTogWyAibGFtYmRhOmZ1bmN0aW9uIiAiZWxlbWVudHM6YXJyYXkiXSAKICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChiaW5kIChuZXcgRnVuY3Rpb24gImZ1bmMsdGhpc19hcmciCiAgICAgICAgICAgICAgICAgICAgInsgcmV0dXJuIGZ1bmMuYmluZCh0aGlzX2FyZykgfSIpCiAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkdpdmVuIGEgZnVuY3Rpb24gYW5kIGEgdGhpcyB2YWx1ZSwgdGhlIGJpbmQgZnVuY3Rpb24gcmV0dXJucyBhIG5ldyBmdW5jdGlvbiB0aGF0IGhhcyBpdHMgdGhpcyBrZXl3b3JkIHNldCB0byB0aGUgcHJvdmlkZWQgdmFsdWUgaW4gdGhpc19hcmcuIgogICAgICAgICAgICAgICAgYHVzYWdlOiBbICJmdW5jOmZ1bmN0aW9uIiAidGhpc19hcmc6KiIgXQogICAgICAgICAgICAgICAgYHRhZ3M6IFsgYGJpbmQgYHRoaXMgYGZ1bmN0aW9uIF0KICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAgICAgICAgICAKICAgICAgICAgKHRvX29iamVjdCAobmV3IEZ1bmN0aW9uICJhcnJheV92YWx1ZXMiCiAgICAgICAgICAgICAgICAgICAgICAgICAiewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCBvYmo9e30KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhcnJheV92YWx1ZXMuZm9yRWFjaCgocGFpcik9PnsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgb2JqW3BhaXJbMF1dPXBhaXJbMV0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9KTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gb2JqOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IikKICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkdpdmVuIGFuIGFycmF5IG9mIHBhaXJzIGluIHRoZSBmb3JtIG9mIFtba2V5IHZhbHVlXSBba2V5IHZhbHVlXSAuLi5dLCBjb25zdHJ1Y3RzIGFuICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAib2JqZWN0IHdpdGggdGhlIGZpcnN0IGFycmF5IGVsZW1lbnQgb2YgdGhlIHBhaXIgYXMgdGhlIGtleSBhbmQgdGhlIHNlY29uZCAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImVsZW1lbnQgYXMgdGhlIHZhbHVlLiBBIHNpbmdsZSBvYmplY3QgaXMgcmV0dXJuZWQuIikKICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbInBhaXJlZF9hcnJheTphcnJheSJdCiAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbImNvbnZlcnNpb24iICJvYmplY3QiICJhcnJheSIgImxpc3QiICJwYWlycyJdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAodG9fYXJyYXkgKGZuIChjb250YWluZXIpCiAgICAgICAgICAgICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAgICAgICAgICAgKGlzX2FycmF5PyBjb250YWluZXIpCiAgICAgICAgICAgICAgICAgICAgICAgY29udGFpbmVyCiAgICAgICAgICAgICAgICAgICAgICAgKGlzX3NldD8gY29udGFpbmVyKQogICAgICAgICAgICAgICAgICAgICAgIChkbyAKICAgICAgICAgICAgICAgICAgICAgICAgIChkZWZ2YXIgYWNjIFtdKQogICAgICAgICAgICAgICAgICAgICAgICAgKC0+IGNvbnRhaW5lciBgZm9yRWFjaCAoZm4gKHYpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHB1c2ggYWNjIHYpKSkKICAgICAgICAgICAgICAgICAgICAgICAgIGFjYykKICAgICAgICAgICAgICAgICAgICAgICAoaXNfc3RyaW5nPyBjb250YWluZXIpCiAgICAgICAgICAgICAgICAgICAgICAgKHNwbGl0X2J5ICIiIGNvbnRhaW5lcikKICAgICAgICAgICAgICAgICAgICAgICAoaXNfb2JqZWN0PyBjb250YWluZXIpCiAgICAgICAgICAgICAgICAgICAgICAgKHBhaXJzIGNvbnRhaW5lcikKICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgW2NvbnRhaW5lcl0pKQogICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkdpdmVuIGEgY29udGFpbmVyIG9mIHR5cGUgQXJyYXksIFNldCwgT2JqZWN0LCBvciBhIHN0cmluZywgIiAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJpdCB3aWxsIGNvbnZlcnQgdGhlIG1lbWJlcnMgb2YgdGhlIGNvbnRhaW5lciB0byBhbiBhcnJheSBmb3JtLCAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiYW5kIHJldHVybiBhIG5ldyBhcnJheSB3aXRoIHRoZSB2YWx1ZXMgb2YgdGhlIHByb3ZpZGVkIGNvbnRhaW5lci4gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIkluIHRoZSBjYXNlIG9mIGFuIG9iamVjdCwgdGhlIGtleXMgYW5kIHZhbHVlcyB3aWxsIGJlIGNvbnRhaW5lZCBpbiAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAicGFpcmVkIGFycmF5cyBpbiB0aGUgcmV0dXJuZWQgYXJyYXkuICBBIHN0cmluZyB3aWxsIGJlIHNwbGl0IGludG8gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImluZGl2aWR1YWwgY2hhcmFjdGVycy4gSWYgcHJvdmlkZWQgYSBkaWZmZXJlbnQgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInR5cGUgb3RoZXIgdGhhbiB0aGUgbGlzdGVkIHZhbHVlcyBhYm92ZSwgdGhlIHZhbHVlIHdpbGwgYmUgcGxhY2VkICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJpbiBhbiBhcnJheSBhcyBhIHNpbmdsZSBlbGVtZW50LiIpCiAgICAgICAgICAgICAgICAgICAgYHVzYWdlOlsiY29udGFpbmVyOioiXQogICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbICJhcnJheSIgImNvbnZlcnNpb24iICJzZXQiICJvYmplY3QiICJzdHJpbmciICJwYWlycyJdCiAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChzbGljZSAoZnVuY3Rpb24gKHRhcmdldCBmcm9tIHRvKQogICAgICAgICAgICAgICAgICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAgICAgICAgICAgICAgICB0bwogICAgICAgICAgICAgICAgICAgICAgICAgICAgKC0+IHRhcmdldCBgc2xpY2UgZnJvbSB0bykKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGZyb20KICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiB0YXJnZXQgYHNsaWNlIGZyb20pCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgU3ludGF4RXJyb3IgInNsaWNlIHJlcXVpcmVzIDIgb3IgMyBhcmd1bWVudHMiKSkpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiR2l2ZW4gYW4gYXJyYXksIHdpdGggYSBzdGFydGluZyBpbmRleCBhbmQgYW4gb3B0aW9uYWwgZW5kaW5nIGluZGV4LCBzbGljZSByZXR1cm5zIGEgbmV3IGFycmF5IGNvbnRhaW5pbmcgdGhlIGVsZW1lbnRzIGluIHRoZSByYW5nZSBvZiBwcm92aWRlZCBpbmRpY2VzLiIKICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsidGFyZ2V0OmFycmF5IiAiZnJvbTpudW1iZXIiICJ0bzpudW1iZXIiXQogICAgICAgICAgICAgICAgIGB0YWdzOiBbImFycmF5IiAic2xpY2luZyIgImRpbWVuc2lvbnMiICJzdWJzZXQiXQogICAgICAgICAgICAgICAgIH0pCiAgICAgICAKICAgICAgICAgKHJlc3QgKGZ1bmN0aW9uICh4KQogICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIChpbnN0YW5jZW9mIHggQXJyYXkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiB4IGBzbGljZSAxKQogICAgICAgICAgICAgICAgICAgICAgICAgICAoaXNfc3RyaW5nPyB4KQogICAgICAgICAgICAgICAgICAgICAgICAgICAoLT4geCBgc3Vic3RyIDEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgbmlsKSkKICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiUmV0dXJucyBhIG5ldyBhcnJheSBjb250YWluaW5nIHRoZSBlbGVtZW50cyBpbiB0aGUgMm5kIHRocm91Z2ggbGFzdCBwb3NpdGlvbiAodGhlIHRhaWwpIG9mIHRoZSBwcm92aWRlZCBhcnJheS4iCiAgICAgICAgICAgICAgICBgdXNhZ2U6IFsieDphcnJheSJdCiAgICAgICAgICAgICAgICBgdGFnczogWyJhcnJheSIgInN1YnNldCIgInNsaWNlIiAidGFpbCIgImVuZCJdCiAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKHNlY29uZCAgKG5ldyBGdW5jdGlvbiAieCIgInsgcmV0dXJuIHhbMV0gfSIpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiUmV0dXJucyB0aGUgc2Vjb25kIGVsZW1lbnQgaW4gdGhlIHByb3ZpZGVkIGFycmF5ICh0aGUgZWxlbWVudCBhdCBpbmRleCAxKSIKICAgICAgICAgICAgICAgICBgdGFnczogWyJhcnJheSIgInN1YnNldCIgImVsZW1lbnQiICJmaXJzdCIgXQogICAgICAgICAgICAgICAgIGB1c2FnZTogWyJ4OmFycmF5Il0KICAgICAgICAgICAgICAgICB9KQogICAgICAgICAodGhpcmQgKG5ldyBGdW5jdGlvbiAieCIgInsgcmV0dXJuIHhbMl0gfSIpCiAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlJldHVybnMgdGhlIHRoaXJkIGVsZW1lbnQgaW4gdGhlIHByb3ZpZGVkIGFycmF5ICh0aGUgZWxlbWVudCBhdCBpbmRleCAyKSIKICAgICAgICAgICAgICAgICBgdGFnczogWyJhcnJheSIgInN1YnNldCIgImVsZW1lbnQiICJmaXJzdCIgXQogICAgICAgICAgICAgICAgIGB1c2FnZTogWyJ4OmFycmF5Il0KICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGNob3AgIChuZXcgRnVuY3Rpb24gIngiICJ7IGlmICh4IGluc3RhbmNlb2YgQXJyYXkpIHsgcmV0dXJuIHguc2xpY2UoMCwgeC5sZW5ndGgtMSkgfSBlbHNlIHsgcmV0dXJuIHguc3Vic3RyKDAseC5sZW5ndGgtMSkgfSB9IikKICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlJldHVybnMgYSBuZXcgY29udGFpbmVyIGNvbnRhaW5pbmcgYWxsIGl0ZW1zIGV4Y2VwdCB0aGUgbGFzdCBpdGVtLiAgVGhpcyBmdW5jdGlvbiB0YWtlcyBlaXRoZXIgYW4gYXJyYXkgb3IgYSBzdHJpbmcuIgogICAgICAgICAgICAgICBgdXNhZ2U6IFsiY29udGFpbmVyOmFycmF5fHN0cmluZyJdCiAgICAgICAgICAgICAgIGB0YWdzOiBbImFycmF5IiAic2xpY2UiICJzdWJzZXQiICJmaXJzdCIgInN0cmluZyJdCiAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoY2hvbXAgKG5ldyBGdW5jdGlvbiAieCIgInsgcmV0dXJuIHguc3Vic3RyKHgubGVuZ3RoLTEpIH0iKQogICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiR2l2ZW4gYSBzdHJpbmcgcmV0dXJucyBhIG5ldyBzdHJpbmcgY29udGFpbmluZyBhbGwgY2hhcmFjdGVycyBleGNlcHQgdGhlIGxhc3QgY2hhcmFjdGVyLiIKICAgICAgICAgICAgICAgYHVzYWdlOiBbIng6c3RyaW5nIl0KICAgICAgICAgICAgICAgYHRhZ3M6IFtgc2xpY2UgYHN1YnNldCBgc3RyaW5nIF0KICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChub3QgKG5ldyBGdW5jdGlvbiAieCIgInsgaWYgKGNoZWNrX3RydWUoeCkpIHsgcmV0dXJuIGZhbHNlIH0gZWxzZSB7IHJldHVybiB0cnVlIH0gfSIpCiAgICAgICAgICAgIHsKICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlJldHVybnMgdGhlIGxvZ2ljYWwgb3Bwb3NpdGUgb2YgdGhlIGdpdmVuIHZhbHVlLiAgSWYgZ2l2ZW4gYSB0cnV0aHkgdmFsdWUsIGEgZmFsc2UgaXMgcmV0dXJuZWQuICBJZiBnaXZlbiBhIGZhbHNleSB2YWx1ZSwgdHJ1ZSBpcyByZXR1cm5lZC4iCiAgICAgICAgICAgICBgdXNhZ2U6IFsieDoqIl0KICAgICAgICAgICAgIGB0YWdzOiBbImxvZ2ljIiAibm90IiAiaW52ZXJzZSJdCiAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKHB1c2ggIChuZXcgRnVuY3Rpb24gInBsYWNlIiAidGhpbmciICJ7IHJldHVybiBwbGFjZS5wdXNoKHRoaW5nKSB9IikKICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkdpdmVuIGFuIGFycmF5IGFzIGEgcGxhY2UsIGFuZCBhbiBhcmJpdHJhcnkgdmFsdWUsIGFwcGVuZHMgKHB1c2hlcykgdGhlIHZhbHVlIHRvIHRoZSBlbmQgb2YgdGhlIGFycmF5LiIKICAgICAgICAgICAgICAgYHVzYWdlOiBbInBsYWNlOmFycmF5IiAidGhpbmc6KiJdCiAgICAgICAgICAgICAgIGB0YWdzOiBbImFycmF5IiAibXV0YXRlIiAiYXBwZW5kIiAiY29uY2F0IiAicG9wIl0KICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChwb3AgIChuZXcgRnVuY3Rpb24gInBsYWNlIiAieyByZXR1cm4gcGxhY2UucG9wKCkgfSIpCiAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiR2l2ZW4gYW4gYXJyYXkgYXMgYW4gYXJndW1lbnRzLCByZW1vdmVzIHRoZSBsYXN0IHZhbHVlIGZyb20gdGhlIGdpdmVuIGFycmF5IGFuZCByZXR1cm5zIGl0LiIKICAgICAgICAgICAgICBgdXNhZ2U6IFsicGxhY2U6YXJyYXkiXQogICAgICAgICAgICAgIGB0YWdzOiBbImFycmF5IiAibXV0YXRlIiAidGFrZSIgInJlbW92ZSIgInB1c2giXQogICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAobGlzdCAgKGZuIChgJiBhcmdzKSBhcmdzKQogICAgICAgICAgICAgICAgeyBgZGVzY3JpcHRpb246ICJHaXZlbiBhIHNldCBvZiBhcmJpdHJhcnkgYXJndW1lbnRzLCByZXR1cm5zIGFuIGFycmF5IGNvbnRhaW5pbmcgdGhlIHByb3ZpZGVkIGFyZ3VtZW50cy4gSWYgbm8gYXJndW1lbnRzIGFyZSBwcm92aWRlZCwgcmV0dXJucyBhbiBlbXB0eSBhcnJheS4iCiAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJhcmcwOioiICJhcmdOOioiXQogICAgICAgICAgICAgICAgIGB0YWdzOiBbICJhcnJheSIgImNvbnRhaW5lciIgImVsZW1lbnRzIiBdCiAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgICAoZmxhdHRlbiAobmV3IEZ1bmN0aW9uICJ4IiAieyByZXR1cm4geC5mbGF0KDk5OTk5OTk5OTk5OSkgfSAiKQogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkdpdmVuIGEgbmVzdGVkIGFycmF5IHN0cnVjdHVyZSwgcmV0dXJucyBhIGZsYXR0ZW5lZCB2ZXJzaW9uIG9mIHRoZSBhcnJheSIKICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsieDphcnJheSJdCiAgICAgICAgICAgICAgICAgYHRhZ3M6IFsgYGFycmF5IGBjb250YWluZXIgYGZsYXQgYHRyZWUgXQogICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoanNsYW1iZGEgKGZ1bmN0aW9uIChgJiBhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIChhcHBseSBGdW5jdGlvbiAoZmxhdHRlbiBhcmdzKSkpCiAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiUHJveHkgZm9yIEphdmFzY3JpcHQgRnVuY3Rpb24uICBHaXZlbiBhIHNldCBvZiBzdHJpbmcgYmFzZWQgYXJndW1lbnRzLCBhbGwgYnV0IHRoZSBsYXN0IGFyZSBjb25zaWRlcmVkIGFyZ3VtZW50cyB0byB0aGUgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImZ1bmN0aW9uIHRvIGJlIGRlZmluZWQuICBUaGUgbGFzdCBhcmd1bWVudCBpcyBjb25zaWRlcmVkIHRoZSBib2R5IG9mIHRoZSBmdW5jdGlvbiBhbmQgc2hvdWxkIGJlIHByb3ZpZGVkIGFzIGEgc3RyaW5nIG9mICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJqYXZhc2NyaXB0LiBSZXR1cm5zIGEgamF2YXNjcmlwdCBmdW5jdGlvbi4gPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICIoanNsYW1iZGEgKGBhIGBiKSBcInsgcmV0dXJuIGErYiB9XCIpPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICIoanNsYW1iZGEgKCkgXCJ7IHJldHVybiBuZXcgRGF0ZSgpIH1cIikiICkKICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiYXJndW1lbnRfbGlzdDphcnJheSIgImFyZ246c3RyaW5nIl0KICAgICAgICAgICAgICAgICAgICBgdGFnczogWyBgamF2YXNjcmlwdCBgZW1iZWQgYGZ1bmN0aW9uIF0KICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGpvaW4gKGZ1bmN0aW9uIChgJiBhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IGFyZ3MubGVuZ3RoIDEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBhcmdzLjAgYGpvaW4gIiIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgKC0+IGFyZ3MuMSBgam9pbiBhcmdzLjApKSkKICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiR2l2ZW4gYW4gb3B0aW9uYWwgam9pbmluZyBzdHJpbmcgYW5kIGFuIGFycmF5IG9mIHN0cmluZ3MsIHJldHVybnMgYSBzdHJpbmcgY29udGFpbmluZyB0aGUgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiZWxlbWVudHMgb2YgdGhlIGFycmF5IGludGVybGFjZWQgd2l0aCB0aGUgb3B0aW9uYWwgam9pbmluZyBzdHJpbmcuPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihqb2luIFwiLFwiIFsgXCJyZWRcIiBcImZveFwiIF0pIC0+IFwicmVkLGZveFwiPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihqb2luIFtcInJlZFwiIFwiZm94XCJdKSAtPiByZWRmb3giKQogICAgICAgICAgICAgICAgYHRhZ3M6IFsiYXJyYXkiICJjb21iaW5lIiAic3BsaXQiICJzdHJpbmciICJ0ZXh0IiBdCiAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiam9pbmluZ19zdHJpbmc/OnN0cmluZyIgImNvbnRhaW5lcjphcnJheSJdCiAgICAgICAgICAgICAgICB9KQogICAgICAgICAobG93ZXJjYXNlIChmdW5jdGlvbiAoeCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKC0+IHggYHRvTG93ZXJDYXNlKSkKICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIkdpdmVuIGEgc3RyaW5nLCBjb252ZXJ0cyBhbGwgY2FwaXRhbCBjaGFyYWN0ZXJzIHRvIGxvd2VyY2FzZSBjaGFyYWN0ZXJzLiIKICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsic3RyaW5nIiAidGV4dCIgInVwcGVyY2FzZSIgImNhc2UiICJjb252ZXJ0IiBdCiAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJ0ZXh0OnN0cmluZyJdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAodXBwZXJjYXNlIChmdW5jdGlvbiAoeCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKC0+IHggYHRvVXBwZXJDYXNlKSkKICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJHaXZlbiBhIHN0cmluZywgY29udmVydHMgYWxsIGNhcGl0YWwgY2hhcmFjdGVycyB0byB1cHBlcmNhc2UgY2hhcmFjdGVycy4iCiAgICAgICAgICAgICAgICAgICAgICBgdGFnczogWyJzdHJpbmciICJ0ZXh0IiAibG93ZXJjYXNlIiAiY2FzZSIgImNvbnZlcnQiIF0KICAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJ0ZXh0OnN0cmluZyJdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAobG9nIChmdW5jdGlvbiAoYCYgYXJncykKICAgICAgICAgICAgICAgICAgICAgICAgKGFwcGx5IGNvbnNvbGUubG9nIGFyZ3MpKQogICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAibG9nIGlzIGEgc2hvcnRoYW5kIGNhbGwgZm9yIGNvbnNvbGUubG9nIGJ5IGRlZmF1bHQsIGFuZCBzZXJ2ZXMgdG8gcHJvdmlkZSBhIGJhc2UgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJhYnN0cmFjdGlvbiBmb3IgbG9nZ2luZy4gIExvZyBiZWhhdmlvciBjYW4gYmUgY2hhbmdlZCBieSByZWRlZmluaW5nIGxvZyB0byAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImJldHRlciBzdWl0IHRoZSBlbnZpcm9ubWVudGFsIGNvbnRleHQuICBGb3IgZXhhbXBsZSwgd3JpdGluZyBsb2cgb3V0cHV0IHRvIGEgZmlsZSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIm9yIEhUTUwgY29udGFpbmVyLiIpCiAgICAgICAgICAgICAgIGB1c2FnZTogWyJhcmdzMDoqIiAiYXJnc046KiJdCiAgICAgICAgICAgICAgIGB0YWdzOiBbImxvZ2dpbmciICJjb25zb2xlIiAib3V0cHV0IiBdCiAgICAgICAgICAgICAgIH0pCiAgICAgICAKICAgICAgICAgKHNwbGl0IChuZXcgRnVuY3Rpb24gImNvbnRhaW5lciIgInRva2VuIiAieyByZXR1cm4gY29udGFpbmVyLnNwbGl0KHRva2VuKSB9IikKICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkdpdmVuIGEgc3RyaW5nIHRvIHBhcnRpdGlvbiBhbmQgYSBzdHJpbmcgZm9yIGEgc3BsaXR0aW5nIHRva2VuLCByZXR1cm4gYW4gYXJyYXkgd2hvc2UgZWxlbWVudHMgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJhcmUgdGhlIHRleHQgZm91bmQgYmV0d2VlbiBlYWNoIHNwbGl0dGluZyB0b2tlbi4gPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKHNwbGl0IFwicmVkLGZveFwiIFwiLFwiKSA9PiBbIFwicmVkXCIgXCJmb3hcIiBdIikKICAgICAgICAgICAgICAgYHRhZ3M6IFsicGFydGl0aW9uIiAiam9pbiIgInNlcGFyYXRlIiAic3RyaW5nIiAiYXJyYXkiIF0KICAgICAgICAgICAgICAgYHVzYWdlOiBbInN0cmluZ190b19zcGxpdDpzdHJpbmciICJzcGxpdF90b2tlbjpzdHJpbmciIF0KICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChzcGxpdF9ieSAobmV3IEZ1bmN0aW9uICJ0b2tlbiIgImNvbnRhaW5lciIgInsgcmV0dXJuIGNvbnRhaW5lci5zcGxpdCh0b2tlbikgfSIpCiAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkdpdmVuIGEgc3RyaW5nIGZvciBhIHNwbGl0dGluZyB0b2tlbiBhbmQgYSBzdHJpbmcgdG8gcGFydGl0aW9uLCByZXR1cm4gYW4gYXJyYXkgd2hvc2UgZWxlbWVudHMgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiYXJlIHRoZSB0ZXh0IGZvdW5kIGJldHdlZW4gZWFjaCBzcGxpdHRpbmcgdG9rZW4uIDxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICIoc3BsaXRfYnkgXCIsXCIgXCJyZWQsZm94XCIpID0+IFsgXCJyZWRcIiBcImZveFwiIF0iKQogICAgICAgICAgICAgICAgYHRhZ3M6IFsicGFydGl0aW9uIiAiam9pbiIgInNlcGFyYXRlIiAic3RyaW5nIiAiYXJyYXkiIF0KICAgICAgICAgICAgICAgIGB1c2FnZTogWyJzcGxpdF90b2tlbjpzdHJpbmciICJzdHJpbmdfdG9fc3BsaXQ6c3RyaW5nIiBdCiAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoaXNfb2JqZWN0PyAobmV3IEZ1bmN0aW9uICJ4IiAieyByZXR1cm4geCBpbnN0YW5jZW9mIE9iamVjdCB9IikKICAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiZm9yIHRoZSBnaXZlbiB2YWx1ZSB4LCByZXR1cm5zIHRydWUgaWYgeCBpcyBhbiBKYXZhc2NyaXB0IG9iamVjdCB0eXBlLiIKICAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJhcmc6dmFsdWUiXQogICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsidHlwZSIgImNvbmRpdGlvbiIgInN1YnR5cGUiICJ2YWx1ZSIgIndoYXQiIF0KICAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoaXNfYXJyYXk/IChuZXcgRnVuY3Rpb24gIngiICJ7IHJldHVybiB4IGluc3RhbmNlb2YgQXJyYXkgfSIpCiAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJmb3IgdGhlIGdpdmVuIHZhbHVlIHgsIHJldHVybnMgdHJ1ZSBpZiB4IGlzIGFuIGFycmF5LiIKICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzp2YWx1ZSJdCiAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbInR5cGUiICJjb25kaXRpb24iICJzdWJ0eXBlIiAidmFsdWUiICJ3aGF0IiBdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoaXNfbnVtYmVyPyAoZnVuY3Rpb24gKHgpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPT0gKHN1YnR5cGUgeCkgIk51bWJlciIpKQogICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJmb3IgdGhlIGdpdmVuIHZhbHVlIHgsIHJldHVybnMgdHJ1ZSBpZiB4IGlzIGEgbnVtYmVyLiIKICAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJhcmc6dmFsdWUiXQogICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsidHlwZSIgImNvbmRpdGlvbiIgInN1YnR5cGUiICJ2YWx1ZSIgIndoYXQiICJmdW5jdGlvbiJdCiAgICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGlzX2Z1bmN0aW9uPyAoZnVuY3Rpb24gKHgpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpbnN0YW5jZW9mIHggRnVuY3Rpb24pKQogICAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiZm9yIHRoZSBnaXZlbiB2YWx1ZSB4LCByZXR1cm5zIHRydWUgaWYgeCBpcyBhIGZ1bmN0aW9uLiIKICAgICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzp2YWx1ZSJdCiAgICAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbInR5cGUiICJjb25kaXRpb24iICJzdWJ0eXBlIiAidmFsdWUiICJ3aGF0IiAiZnVuY3Rpb24iXQogICAgICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGlzX3NldD8gKG5ldyBGdW5jdGlvbiAieCIgInsgcmV0dXJuIHggaW5zdGFuY2VvZiBTZXQgfSIpCiAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogImZvciB0aGUgZ2l2ZW4gdmFsdWUgeCwgcmV0dXJucyB0cnVlIGlmIHggaXMgYSBzZXQuIgogICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzp2YWx1ZSJdCiAgICAgICAgICAgICAgICAgICBgdGFnczogWyJ0eXBlIiAiY29uZGl0aW9uIiAic3VidHlwZSIgInZhbHVlIiAid2hhdCIgXQogICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChpc19lbGVtZW50PyAobmV3IEZ1bmN0aW9uICJ4IiAieyByZXR1cm4geCBpbnN0YW5jZW9mIEVsZW1lbnQgfSIpCiAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiZm9yIHRoZSBnaXZlbiB2YWx1ZSB4LCByZXR1cm5zIHRydWUgaWYgeCBpcyBhbiBFbGVtZW50IG9iamVjdCIKICAgICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiYXJnOnZhbHVlIl0KICAgICAgICAgICAgICAgICAgICAgICBgdGFnczogWyJ0eXBlIiAiY29uZGl0aW9uIiAic3VidHlwZSIgInZhbHVlIiAid2hhdCIgXQogICAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoaXNfc3RyaW5nPyAoZnVuY3Rpb24gKHgpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAob3IgKGluc3RhbmNlb2YgeCBTdHJpbmcpIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSAodHlwZW9mIHgpICJzdHJpbmciKSkpCiAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogImZvciB0aGUgZ2l2ZW4gdmFsdWUgeCwgcmV0dXJucyB0cnVlIGlmIHggaXMgYSBTdHJpbmcgb2JqZWN0IgogICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzp2YWx1ZSJdCiAgICAgICAgICAgICAgICAgICAgICBgdGFnczogWyJ0eXBlIiAiY29uZGl0aW9uIiAic3VidHlwZSIgInZhbHVlIiAid2hhdCIgXQogICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChpc19uaWw/IChmdW5jdGlvbiAoeCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSB4IG5pbCkpCiAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogImZvciB0aGUgZ2l2ZW4gdmFsdWUgeCwgcmV0dXJucyB0cnVlIGlmIHggaXMgZXhhY3RseSBlcXVhbCB0byBuaWwuIgogICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzp2YWx1ZSJdCiAgICAgICAgICAgICAgICAgICBgdGFnczogWyJ0eXBlIiAiY29uZGl0aW9uIiAic3VidHlwZSIgInZhbHVlIiAid2hhdCIgXQogICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChpc19yZWdleD8gKGZ1bmN0aW9uICh4KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPT0gKHN1Yl90eXBlIHgpICJSZWdFeHAiKSkKICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogImZvciB0aGUgZ2l2ZW4gdmFsdWUgeCwgcmV0dXJucyB0cnVlIGlmIHggaXMgYSBKYXZhc2NyaXB0IHJlZ2V4IG9iamVjdCIKICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImFyZzp2YWx1ZSJdCiAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbInR5cGUiICJjb25kaXRpb24iICJzdWJ0eXBlIiAidmFsdWUiICJ3aGF0IiBdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoaXNfZGF0ZT8gKGZ1bmN0aW9uICh4KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSAoc3ViX3R5cGUgeCkgIkRhdGUiKSkKICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJmb3IgdGhlIGdpdmVuIHZhbHVlIHgsIHJldHVybnMgdHJ1ZSBpZiB4IGlzIGEgRGF0ZSBvYmplY3QuIgogICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJhcmc6dmFsdWUiXQogICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbInR5cGUiICJjb25kaXRpb24iICJzdWJ0eXBlIiAidmFsdWUiICJ3aGF0IiBdCiAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChlbmRzX3dpdGg/IChuZXcgRnVuY3Rpb24gInZhbCIgInRleHQiICJ7IGlmICh0ZXh0IGluc3RhbmNlb2YgQXJyYXkpIHsgcmV0dXJuIHRleHRbdGV4dC5sZW5ndGgtMV09PT12YWwgfSBlbHNlIGlmIChzdWJ0eXBlKHRleHQpPT0nU3RyaW5nJykgeyByZXR1cm4gdGV4dC5lbmRzV2l0aCh2YWwpIH0gZWxzZSB7IHJldHVybiBmYWxzZSB9fSIpCiAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogImZvciBhIGdpdmVuIHN0cmluZyBvciBhcnJheSwgY2hlY2tzIHRvIHNlZSBpZiBpdCBlbmRzIHdpdGggdGhlIGdpdmVuIHN0YXJ0X3ZhbHVlLiAgTm9uIHN0cmluZyBhcmdzIHJldHVybiBmYWxzZS4iCiAgICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiZW5kX3ZhbHVlOnZhbHVlIiAiY29sbGVjdGlvbjphcnJheXxzdHJpbmciIF0KICAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbInN0cmluZyIgInRleHQiICJsaXN0IiAiYXJyYXkiICJmaWx0ZXIiICJyZWR1Y2UiXQogICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgKHN0YXJ0c193aXRoPyAobmV3IEZ1bmN0aW9uICJ2YWwiICJ0ZXh0IiAieyBpZiAodGV4dCBpbnN0YW5jZW9mIEFycmF5KSB7IHJldHVybiB0ZXh0WzBdPT09dmFsIH0gZWxzZSBpZiAoc3VidHlwZSh0ZXh0KT09J1N0cmluZycpIHsgcmV0dXJuIHRleHQuc3RhcnRzV2l0aCh2YWwpIH0gZWxzZSB7IHJldHVybiBmYWxzZSB9fSIpCiAgICAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiZm9yIGEgZ2l2ZW4gc3RyaW5nIG9yIGFycmF5LCBjaGVja3MgdG8gc2VlIGlmIGl0IHN0YXJ0cyB3aXRoIHRoZSBnaXZlbiBzdGFydF92YWx1ZS4gIE5vbiBzdHJpbmcgYXJncyByZXR1cm4gZmFsc2UuIgogICAgICAgICAgICAgICAgICAgICAgICAidXNhZ2UiOiBbInN0YXJ0X3ZhbHVlOnZhbHVlIiAiY29sbGVjdGlvbjphcnJheXxzdHJpbmciIF0KICAgICAgICAgICAgICAgICAgICAgICAgInRhZ3MiOiBbInN0cmluZyIgInRleHQiICJsaXN0IiAiYXJyYXkiICJmaWx0ZXIiICJyZWR1Y2UiICJiZWdpbiJdCiAgICAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIChkZWxldGVfcHJvcCAobmV3IEZ1bmN0aW9uICJvYmoiICIuLi5hcmdzIgogICAgICAgICAgICAgICAgICAgICAgICAgICAiewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGFyZ3MubGVuZ3RoID09IDEpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gZGVsZXRlIG9ialthcmdzWzBdXTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgd2hpbGUgKGFyZ3MubGVuZ3RoID4gMCkgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgcHJvcCA9IGFyZ3Muc2hpZnQoKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZGVsZXRlIG9ialtwcm9wXTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gb2JqOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IikKICAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICgrICJSZW1vdmVzIHRoZSBrZXkgb3Iga2V5cyBvZiB0aGUgcHJvdmlkZWQgb2JqZWN0LCBhbmQgcmV0dXJucyB0aGUgbW9kaWZpZWQgb2JqZWN0Ljxicj5FeGFtcGxlOjxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKGRlZmdsb2JhbCBmb28geyBhYmM6IDEyMyBkZWY6IDQ1NiBnaGk6IDc4OSB9KTxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKGRlbGV0ZV9wcm9wIGZvbyBgYWJjIGBkZWYpID0+IHsgZ2hpOiA3ODkgfTxicj4iKQogICAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJvYmo6b2JqZWN0cyIgImtleTA6c3RyaW5nIiAia2V5Tj86c3RyaW5nIl0KICAgICAgICAgICAgICAgICAgICAgICBgdGFnczogWyBgZGVsZXRlIGBrZXlzIGBvYmplY3QgYHJlbW92ZSBgcmVtb3ZlX3Byb3AgYG11dGF0ZSBdCiAgICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgKGJsYW5rPyAoZnVuY3Rpb24gKHZhbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgKG9yIChlcSB2YWwgbmlsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGFuZCAoaXNfc3RyaW5nPyB2YWwpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSB2YWwgIiIpKSkpCiAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJHaXZlbiBhIHZhbHVlLCBpZiBpdCBpcyBlcXVhbCAodmlhIGVxKSB0byBuaWwgb3IgdG8gXCJcIiAoYW4gZW1wdHkgc3RyaW5nKSwgcmV0dXJucyB0cnVlLCBvdGhlcndpc2UgZmFsc2UuIgogICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsidmFsOioiXQogICAgICAgICAgICAgICAgICBgdGFnczogWyJzdHJpbmciICJlbXB0eSIgInRleHQiIF0KICAgICAgICAgICAgICAgICAgfSkKICAgICAgIAogICAgICAgICAoY29udGFpbnM/IChuZXcgRnVuY3Rpb24gInZhbHVlIiAiY29udGFpbmVyIgogICAgICAgICAgICAgICAgICAgICAgICAgInsgaWYgKCF2YWx1ZSAmJiAhY29udGFpbmVyKSB7IHJldHVybiBmYWxzZSB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UgaWYgKGNvbnRhaW5lciA9PT0gbnVsbCkgeyB0aHJvdyBuZXcgVHlwZUVycm9yKFwiY29udGFpbnM/OiBwYXNzZWQgbmlsL3VuZGVmaW5lZCBjb250YWluZXIgdmFsdWVcIik7IH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZSBpZiAoY29udGFpbmVyIGluc3RhbmNlb2YgQXJyYXkpIHJldHVybiBjb250YWluZXIuaW5jbHVkZXModmFsdWUpOwogICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlIGlmIChjb250YWluZXIgaW5zdGFuY2VvZiBTZXQpIHJldHVybiBjb250YWluZXIuaGFzKHZhbHVlKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZSBpZiAoKGNvbnRhaW5lciBpbnN0YW5jZW9mIFN0cmluZykgfHwgdHlwZW9mIGNvbnRhaW5lciA9PT0gXCJzdHJpbmdcIikgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChzdWJ0eXBlKHZhbHVlKSA9PT0gXCJOdW1iZXJcIikgcmV0dXJuIGNvbnRhaW5lci5pbmRleE9mKFwiXCIrdmFsdWUpPi0xOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UgcmV0dXJuIGNvbnRhaW5lci5pbmRleE9mKHZhbHVlKT4tMTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgfSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlIHRocm93IG5ldyBUeXBlRXJyb3IoXCJjb250YWlucz86IHBhc3NlZCBpbnZhbGlkIGNvbnRhaW5lciB0eXBlOiBcIitzdWJ0eXBlKGNvbnRhaW5lcikpIH0iKQogICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiR2l2ZW4gYSB0YXJnZXQgdmFsdWUgYW5kIGNvbnRhaW5lciB2YWx1ZSAoYXJyYXksIHNldCwgb3Igc3RyaW5nKSwgY2hlY2tzIGlmIHRoZSBjb250YWluZXIgaGFzIHRoZSB2YWx1ZS4gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJJZiBpdCBpcyBmb3VuZCwgdHJ1ZSBpcyByZXR1cm5lZCwgb3RoZXJ3aXNlIGZhbHNlIGlmIHJldHVybmVkLiAgIikKICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsic3RyaW5nIiAiYXJyYXkiICJzZXQiICJoYXMiICJpbmNsdWRlcyIgImluZGV4T2YiIF0KICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbInZhbHVlOioiICJjb250YWluZXI6YXJyYXl8c2V0fHN0cmluZyJdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAobWFrZV9zZXQgKGZ1bmN0aW9uICh2YWxzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoaW5zdGFuY2VvZiB2YWxzIEFycmF5KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5ldyBTZXQgdmFscykKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChsZXQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoKGB2dHlwZSAoc3ViX3R5cGUgdmFscykpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29uZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSB2dHlwZSAiU2V0IikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAobmV3IFNldCB2YWxzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSB2dHlwZSAib2JqZWN0IikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAobmV3IFNldCAodmFsdWVzIHZhbHMpKSkpKSkKICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICgrICJJZiBnaXZlbiBhbiBhcnJheSwgYSBuZXcgU2V0IGlzIHJldHVybmVkIGNvbnRhaW5pbmcgdGhlIGVsZW1lbnRzIG9mIHRoZSBhcnJheS4gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIklmIGdpdmVuIGFuIG9iamVjdCwgYSBuZXcgU2V0IGlzIHJldHVybmVkIGNvbnRhaW5pbmcgdGhlIHZhbHVlcyBvZiB0aGUgb2JqZWN0LCBhbmQgdGhlIGtleXMgYXJlIGRpc2NhcmRlZC4gIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIklmIGdpdmVuIGEgc2V0LCBuZXcgU2V0IGlzIGNyZWF0ZWQgYW5kIHJldHVyZW5kICBmcm9tIHRoZSB2YWx1ZXMgb2YgdGhlIG9sZCBzZXQuIikgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJ2YWxzOmFycmF5fG9iamVjdHxzZXQiXQogICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbYGFycmF5IGBzZXQgYG9iamVjdCBgdmFsdWVzIGBjb252ZXJ0IF0KICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgCiAgICAgICAgIChtZXRhX2Zvcl9zeW1ib2wgKGZuIChxdW90ZWRfc3ltYm9sIHNlYXJjaF9tb2RlKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHdoZW4gKGlzX3N0cmluZz8gcXVvdGVkX3N5bWJvbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOzsgaWYgd2UgaGF2ZSBiZWVuIGdpdmVuIGEgc3RyaW5nLCBnZXQgYW55IGxvY2FsIGRhdGEgd2UgaGF2ZSBpbiBvdXIgZ2xvYmFsIGNvbnRleHQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRlZnZhciBsb2NhbF9kYXRhIChwcm9wIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUgcXVvdGVkX3N5bWJvbCkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkZWZ2YXIgYWNjIFtdKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgc2VhcmNoX21vZGUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGVuIGxvY2FsX2RhdGEKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHB1c2ggYWNjCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgrIHsgYG5hbWVzcGFjZTogbmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgbmFtZTogcXVvdGVkX3N5bWJvbAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYHR5cGU6IChzdWJ0eXBlIGxvY2FsX2RhdGEpIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOzsgaW5jbHVkZSBhbnkgc3ltYm9scyB3ZSBuZWVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChhaWYgKHByb3AgRW52aXJvbm1lbnQuZGVmaW5pdGlvbnMgcXVvdGVkX3N5bWJvbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpdAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHt9KSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHdoZW4gcGFyZW50X2Vudmlyb25tZW50CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChyZWR1Y2UgKGluZm8gKC0+ICgtPiBwYXJlbnRfZW52aXJvbm1lbnQgYG1ldGFfZm9yX3N5bWJvbCBxdW90ZWRfc3ltYm9sIHRydWUpIGBmbGF0IDEpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHB1c2ggYWNjIGluZm8pKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGVuICg+IChsZW5ndGggKGtleXMgY2hpbGRyZW4pKSAwKSAgOzsgd2UgZG9uJ3QgaGF2ZSBhIHBhcmVudCwgYnV0IHdlIGhhdmUgY2hpbGRyZW4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocmVkdWNlIChgZGV0YWlscyAocmVkdWNlIChgY2hpbGRfZGF0YSAocGFpcnMgY2hpbGRyZW4pKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGVuIChub3QgKD09IGNoaWxkX2RhdGEuMCAoY3VycmVudF9uYW1lc3BhY2UpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBjaGlsZF9kYXRhLjEgYG1ldGFfZm9yX3N5bWJvbCBxdW90ZWRfc3ltYm9sKSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChwdXNoIGFjYyBkZXRhaWxzKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhY2MpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPSBxdW90ZWRfc3ltYm9sIChpZiAoc3RhcnRzX3dpdGg/IChxdW90ZSAiPToiKSBxdW90ZWRfc3ltYm9sKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBxdW90ZWRfc3ltYm9sIGBzdWJzdHIgMikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBxdW90ZWRfc3ltYm9sKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChhaWYgKHByb3AgRW52aXJvbm1lbnQuZGVmaW5pdGlvbnMgcXVvdGVkX3N5bWJvbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKCsgeyBgbmFtZXNwYWNlOiBuYW1lc3BhY2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgdHlwZTogKHN1Yl90eXBlIGxvY2FsX2RhdGEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYG5hbWU6IHF1b3RlZF9zeW1ib2wgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpdCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmlsKSkpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkdpdmVuIGEgcXVvdGVkIHN5bWJvbCBhbmQgYSBib29sZWFuIGluZGljYXRpbmcgd2hldGhlciBvciBub3QgYWxsIG5hbWVzcGFjZXMgc2hvdWxkIGJlIHNlYXJjaGVkLCByZXR1cm5zICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAidGhlIG1ldGEgZGF0YSBhc3NvY2lhdGVkIHdpdGggdGhlIHN5bWJvbCBmb3IgZWFjaCBlbnZpcm9ubWVudC4gIElmIHNlYXJjaCBtb2RlIGlzIHJlcXVlc3RlZCwgdGhlIHZhbHVlIHJldHVybmVkICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiaXMgYW4gYXJyYXksIHNpbmNlIHRoZXJlIGNhbiBiZSBzeW1ib2xzIHdpdGggdGhlIHNhbWUgbmFtZSBpbiBkaWZmZXJlbnQgZW52aXJvbm1lbnRzLiBJZiBubyB2YWx1ZXMgYXJlIGZvdW5kICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiYW4gZW1wdHkgYXJyYXkgaXMgcmV0dXJuZWQuICBJZiBub3QgaW4gc2VhcmNoIG1vZGUsIG1ldGFfZm9yX3N5bWJvbCBzZWFyY2hlcyB0aGUgY3VycmVudCBuYW1lc3BhY2UgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJvbmx5LCBhbmQgaWYgYSBtYXRjaGluZyBzeW1ib2wgaXMgZm91bmQsIHJldHVybnMgYW4gb2JqZWN0IHdpdGggYWxsIGZvdW5kIG1ldGFkYXRhLCBvdGhlcndpc2UgbmlsIGlzIHJldHVybmVkLiIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJxdW90ZWRfc3ltYm9sOnN0cmluZyIgInNlYXJjaF9tb2RlOmJvb2xlYW4iXQogICAgICAgICAgICAgICAgICAgICAgICAgICBgdGFnczogW2BkZXNjcmliZSBgbWV0YSBgaGVscCBgZGVmaW5pdGlvbiBgc3ltYm9sIGBtZXRhZGF0YSBdCiAgICAgICAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAKICAgICAgIChkZXNjcmliZSAoZm4gKHF1b3RlZF9zeW1ib2wgc2VhcmNoX21vZGUpCiAgICAgICAgICAgICAgICAgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAoZGVmdmFyIGludGVybmFsX3Jlc3VsdHMgKG1ldGFfZm9yX3N5bWJvbCBxdW90ZWRfc3ltYm9sIHRydWUpKQogICAgICAgICAgICAgICAgICAgIChpZiAoYW5kIChpc19hcnJheT8gaW50ZXJuYWxfcmVzdWx0cykKICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpbnRlcm5hbF9yZXN1bHRzLjApICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgKGlmIHNlYXJjaF9tb2RlCiAgICAgICAgICAgICAgICAgICAgICAgIGludGVybmFsX3Jlc3VsdHMgICAgICAgICAgOzsgaWYgd2UgZm91bmQgc29tZXRoaW5nIGludGVybmFsLCByZXR1cm4gYWxsIHJlc3VsdHMKICAgICAgICAgICAgICAgICAgICAgICAgKGZpcnN0IGludGVybmFsX3Jlc3VsdHMpKSA7OyB3ZSBhcmUgaW50ZXJlc3RlZCBpbiB0aGUgZmlyc3QgcmVzdWx0IG9ubHUKICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAoZGVmdmFyIGV4dGVybmFsX3Jlc3VsdHMgKGdldF9vdXRzaWRlX2dsb2JhbCBxdW90ZWRfc3ltYm9sKSkKICAgICAgICAgICAgICAgICAgICAgICAgKGlmIGV4dGVybmFsX3Jlc3VsdHMKICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgIGBsb2NhdGlvbjogImV4dGVybmFsIgogICAgICAgICAgICAgICAgICAgICAgICAgICBgdHlwZTogKHN1YnR5cGUgZXh0ZXJuYWxfcmVzdWx0cykKICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgIG5pbCkpKSkpCiAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJHaXZlbiBhIHF1b3RlZCBzeW1ib2wgcmV0dXJucyB0aGUgcmVsZXZhbnQgbWV0YWRhdGEgcGVydGluZW50IHRvIHRoZSBjdXJyZW50IG5hbWVzcGFjZSBjb250ZXh0LiIKICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbInF1b3RlZF9zeW1ib2w6c3RyaW5nIiAic2VhcmNoX21vZGU6Ym9vbGVhbiJdCiAgICAgICAgICAgICAgICAgIGB0YWdzOiBbIGBtZXRhIGBoZWxwIGBkZWZpbml0aW9uIGBzeW1ib2wgYG1ldGFkYXRhIGBpbmZvIGBtZXRhX2Zvcl9zeW1ib2wgXQogICAgICAgICAgICAgICAgICB9KQogICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAodW5kZWZpbmUgKGZ1bmN0aW9uIChxdW90ZWRfc3ltYm9sKQoJCQkgICAgIChpZiAoaXNfc3RyaW5nPyBxdW90ZWRfc3ltYm9sKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGxldAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgoYG5hbWVzcGFjZV9pZGVudGl0eSAoc3BsaXRfYnkgIi8iIHF1b3RlZF9zeW1ib2wpKSAgIDs7ICBzcGxpdC4ubmFtZXNwYWNlX2lkZW50aXR5IG1heSBvbmx5IGhhdmUgMSBjb21wb25lbnQgdGhvdWdoCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChgcGFyZW50X2NhbGwgbmlsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYGNoaWxkX2NhbGwgbmlsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYHRhcmdldF9zeW1ib2wgbmlsKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRlY2xhcmUgKGZ1bmN0aW9uIHBhcmVudF9jYWxsKSkKCQkJICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAob3IgKGFuZCAoPT0gbmFtZXNwYWNlX2lkZW50aXR5Lmxlbmd0aCAxKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlIG5hbWVzcGFjZV9pZGVudGl0eS4wKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGFuZCAoPiBuYW1lc3BhY2VfaWRlbnRpdHkubGVuZ3RoIDEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IG5hbWVzcGFjZV9pZGVudGl0eS4wIG5hbWVzcGFjZSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IGl0J3Mgbm90IHF1YWxpZmllZCBhbmQgaW4gb3VyIGxvY2FsIGVudmlyb25tZW50CgkJCQkgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gdGFyZ2V0X3N5bWJvbCAoaWYgKD4gbmFtZXNwYWNlX2lkZW50aXR5Lmxlbmd0aCAxKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmFtZXNwYWNlX2lkZW50aXR5LjEKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG5hbWVzcGFjZV9pZGVudGl0eS4wKSkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkZWxldGVfcHJvcCBFbnZpcm9ubWVudC5kZWZpbml0aW9ucyB0YXJnZXRfc3ltYm9sKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSB0YXJnZXRfc3ltYm9sKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkZWxldGVfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlIHRhcmdldF9zeW1ib2wpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZmFsc2UpKQoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYW5kICg+IG5hbWVzcGFjZV9pZGVudGl0eS5sZW5ndGggMSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhcmVudF9lbnZpcm9ubWVudCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldHEgcGFyZW50X2NhbGwgKC0+IHBhcmVudF9lbnZpcm9ubWVudCBgZ2V0X2dsb2JhbCAidW5kZWZpbmUiKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHBhcmVudF9jYWxsIHF1b3RlZF9zeW1ib2wpKQoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYW5kICg+IG5hbWVzcGFjZV9pZGVudGl0eS5sZW5ndGggMSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChwcm9wIGNoaWxkcmVuIG5hbWVzcGFjZV9pZGVudGl0eS4wKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7OyBjaGlsZCBuYW1lc3BhY2UsIHNlbmQgaXQgdGhlcmUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldHEgY2hpbGRfY2FsbCAoLT4gKHByb3AgY2hpbGRyZW4gbmFtZXNwYWNlX2lkZW50aXR5LjApIGBnZXRfZ2xvYmFsICJ1bmRlZmluZSIpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY2hpbGRfY2FsbCBxdW90ZWRfc3ltYm9sKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZQoJCQkJICAgZmFsc2UpKQoJCQkgICAgICAgKHRocm93IFN5bnRheEVycm9yICJ1bmRlZmluZSByZXF1aXJlcyBhIHF1b3RlZCBzeW1ib2wiKSkpCiAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiR2l2ZW4gYSBxdW90ZWQgc3ltYm9sIHJlbW92ZXMgdGhlIHN5bWJvbCBhbmQgYW55IGRlZmluaXRpb24gaW5mb3JtYXRpb24gZnJvbSB0aGUgbmFtZXNwYWNlLiAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiSWYgdGhlIG5hbWVzcGFjZSBpcyBmdWxseS1xdWFsaWZpZWQsIHRoZW4gdGhlIHN5bWJvbCB3aWxsIGJlIHJlbW92ZWQgZnJvbSB0aGUgc3BlY2lmaWVkIG5hbWVzcGFjZSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiaW5zdGVhZCBvZiB0aGUgY3VycmVudGx5IGFjdGl2ZSBuYW1lc3BhY2UuIElmIHRoZSBzeW1ib2wgaXMgc3VjY2Vzc2Z1bGx5IHJlbW92ZWQsIHRoZSBmdW5jdGlvbiAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAid2lsbCByZXR1cm4gdHJ1ZSwgb3RoZXJ3aXNlIGlmIGl0IGlzIG5vdCBmb3VuZCwgZmFsc2Ugd2lsbCBiZSByZXR1cm5lZC4gIE5vdGUgdGhhdCBpZiB0aGUgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInNwZWNpZmllZCBzeW1ib2wgaXMgbm9uLXF1YWxpZmllZCwgYnV0IGV4aXN0cyBpbiBhIGRpZmZlcmVudCwgYWNjZXNzaWJsZSBuYW1lc3BhY2UsIGJ1dCB0aGUgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInN5bWJvbCBpc24ndCBwcmVzZW50IGluIHRoZSBjdXJyZW50IG5hbWVzcGFjZSwgdGhlIHN5bWJvbCB3aWxsIG5vdCBiZSBkZWxldGVkLiAgVGhlIGVudmlyb25tZW50ICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJpcyBub3Qgc2VhcmNoZWQgYW5kIHRoZXJlZm9yZSBzeW1ib2xzIGhhdmUgdG8gYmUgZXhwbGljaXRseSBmdWxseS1xdWFsaWZpZWQgZm9yIGFueSBlZmZlY3QgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIm9mIHRoaXMgZnVuY3Rpb24gb3V0c2lkZSB0aGUgY3VycmVudCBuYW1lc3BhY2UuIikKICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsicXVvdGVkX3N5bWJvbDpzdHJpbmciXQogICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbIGBzeW1ib2wgYGRlbGV0ZSBgcmVtb3ZlIGB1bmludGVybiBgcmVmZXJlbmNlIGB2YWx1ZSBdCiAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIChldmFsX2V4cCAoZm4gKGV4cHJlc3Npb24pCiAgICAgICAgICAgICAgICAgICAgIChkbyAKICAgICAgICAgICAgICAgICAgICAgICAoZXhwcmVzc2lvbikpKQogICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkV2YWx1YXRlcyB0aGUgZ2l2ZW4gZXhwcmVzc2lvbiBhbmQgcmV0dXJucyB0aGUgdmFsdWUuIikKICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiZXhwcmVzc2lvbjoqIl0KICAgICAgICAgICAgICAgICAgICBgdGFnczogWyBgZXZhbCBgZXZhbHVhdGlvbiBgZXhwcmVzc2lvbiBdICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoaW5kaXJlY3RfbmV3IChuZXcgRnVuY3Rpb24gIi4uLmFyZ3MiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAiewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgdGFyZ2V0Q2xhc3MgPSBhcmdzWzBdOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAoc3VidHlwZSh0YXJnZXRDbGFzcyk9PT1cIlN0cmluZ1wiKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgdG1wZj1uZXcgRnVuY3Rpb24oXCJ7IHJldHVybiBcIit0YXJnZXRDbGFzcytcIiB9XCIpOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgdGFyZ2V0Q2xhc3MgPSB0bXBmKCk7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGFyZ3MubGVuZ3RoPT0xKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgZiA9IGZ1bmN0aW9uKENsYXNzKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIG5ldyAoRnVuY3Rpb24ucHJvdG90eXBlLmJpbmQuYXBwbHkoQ2xhc3MsIGFyZ3MpKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCBydmFsID0gZi5hcHBseSh0aGlzLFt0YXJnZXRDbGFzc10pOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIHJ2YWw7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgZiA9IGZ1bmN0aW9uKENsYXNzKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIG5ldyAoRnVuY3Rpb24ucHJvdG90eXBlLmJpbmQuYXBwbHkoQ2xhc3MsIGFyZ3MpKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCBydmFsID0gZi5hcHBseSh0aGlzLFt0YXJnZXRDbGFzc10uY29uY2F0KGFyZ3Muc2xpY2UoMSkpKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiBydmFsOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9fSIpCiAgICAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICgrICJVc2VkIGJ5IHRoZSBjb21waWxlciBmb3IgaW1wbGVtZW50YXRpb24gb2YgdGhlIG5ldyBvcGVyYXRvciBhbmQgc2hvdWxkbid0IGJlIGRpcmVjdGx5IGNhbGxlZCBieSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInVzZXIgcHJvZ3JhbXMuICBUaGUgbmV3IG9wZXJhdG9yIHNob3VsZCBiZSBjYWxsZWQgaW5zdGVhZC4iKQogICAgICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiYXJnMDoqIiAiYXJnc046KiJdCiAgICAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbIGBzeXN0ZW0gYGNvbXBpbGVyIGBpbnRlcm5hbCBdCiAgICAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAocmFuZ2UgKGZ1bmN0aW9uIChgJiBhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgIChsZXQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKChgZnJvbV90byAoaWYgYXJncy4xCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBbIChpbnQgYXJncy4wKSAoaW50IGFyZ3MuMSkgXQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgWyAwIChpbnQgYXJncy4wKSBdKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChgc3RlcCAoaWYgYXJncy4yCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZmxvYXQgYXJncy4yKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYGlkeCBmcm9tX3RvLjApCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYGFjYyBbXSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYXNzZXJ0ICg+IHN0ZXAgMCkgInJhbmdlOiBzdGVwIG11c3QgYmUgPiAwIikKICAgICAgICAgICAgICAgICAgICAgICAgICAgIChhc3NlcnQgKD49IGZyb21fdG8uMSBmcm9tX3RvLjApICJyYW5nZTogbG93ZXIgYm91bmQgbXVzdCBiZSBncmVhdGVyIG9yIGVxdWFsIHRoYW4gdXBwZXIgYm91bmQiKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGlsZSAoPCBpZHggZnJvbV90by4xKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHVzaCBhY2MgaWR4KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpbmMgaWR4IHN0ZXApKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFjYykpCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgYHVzYWdlOiBbInN0YXJ0X29yX2VuZDpudW1iZXIiICJlbmQ6bnVtYmVyIiAic3RlcDpudW1iZXIiXQogICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIlJhbmdlIGhhcyBhIHZhcmlhYmxlIGZvcm0gZGVwZW5kaW5nIG9uIHRoZSBhbW91bnQgb2YgYXJndW1lbnRzIHByb3ZpZGVkIHRvIHRoZSBmdW5jdGlvbiB3aGVuICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJjYWxsaW5nIGl0LiBJZiBwcm92aWRlZCBvbmUgYXJndW1lbnQsIHJhbmdlIHdpbGwgcHJvZHVjZSBhbiBhcnJheSBmcm9tIDAgdXAgdG8sIGJ1dCBub3QgaW5jbHVkaW5nICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ0aGUgcHJvdmlkZWQgdmFsdWUuIElmIGdpdmVuIHR3byBhcmd1bWVudHMsIHRoZSBmaXJzdCBhcmd1bWVudCB3aWxsIGJlIHRoZSBzdGFyZ2luZyB2YWx1ZSBhbmQgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInRoZSBsYXN0IHZhbHVlIHdpbGwgYmUgdXNlZCBhcyB0aGUgdXBwZXIgYm91bmRpbmcgdmFsdWUsIHJldHVybmluZyBhbiBhcnJheSB3aXRoIGVsZW1lbnRzIHN0YXJ0aW5nICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJhdCB0aGUgc3RhcnQgdmFsdWUgYW5kIHVwIHRvLCBidXQgbm90IGluY2x1ZGluZyB0aGUgYm91bmRpbmcgdmFsdWUuIElmIGdpdmVuIGEgdGhpcmQgdmFsdWUsIHRoZSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAidmFsdWUgd2lsbCBiZSBpbnRlcnByZXRlZCBhcyB0aGUgc3RlcCB2YWx1ZSwgYW5kIHRoZSByZXR1cm5lZCBhcnJheSB3aWxsIGNvbnRhaW4gdmFsdWVzIHRoYXQgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImluY3JlbWVudCBieSB0aGUgc3RlcCBhbW91bnQuICBSYW5nZSB3aWxsIHRocm93IGFuIGVycm9yIGlmIGEgbmVnYXRpdmUgcmFuZ2UgaXMgc3BlY2lmaWVkLiAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiRm9yIG5lZ2F0aXZlIHJhbmdlcyBzZWUgbmVnX3JhbmdlLiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICI8YnI+PGJyPkV4YW1wbGVzOjxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKHJhbmdlIDUpIC0+IFsgMCAxIDIgMyA0IF08YnI+IgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihyYW5nZSAxMCAxNSkgLT4gWyAxMCAxMSAxMiAxMyAxNCBdPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICIocmFuZ2UgMTAgMjApIC0+IFsgMTAgMTIgMTQgMTYgMTggXTxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKHJhbmdlIC01IDApIC0+IFsgLTUgLTQgLTMgLTIgLTEgXTxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKHJhbmdlIC0zIDMpIC0+IFsgLTMsIC0yLCAtMSwgMCwgMSwgMiBdPGJyPiIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgCiAgICAgICAgIChhZGQgKG5ldyBGdW5jdGlvbiAiLi4uYXJncyIKICAgICAgICAgICAgICAgICAgICJ7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbGV0IGFjYzsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAodHlwZW9mIGFyZ3NbMF09PT1cIm51bWJlclwiKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFjYyA9IDA7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIGlmIChhcmdzWzBdIGluc3RhbmNlb2YgQXJyYXkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIGFyZ3NbMF0uY29uY2F0KGFyZ3Muc2xpY2UoMSkpOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSBpZiAodHlwZW9mIGFyZ3NbMF09PT0nb2JqZWN0JykgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCBydmFsID0ge307CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgaSBpbiBhcmdzKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAodHlwZW9mIGFyZ3NbaV0gPT09ICdvYmplY3QnKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgayBpbiBhcmdzW2ldKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJ2YWxba10gPSBhcmdzW2ldW2tdOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIHJ2YWw7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYWNjID0gXCJcIjsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZm9yIChsZXQgaSBpbiBhcmdzKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFjYyArPSBhcmdzW2ldOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gYWNjOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0iKQogICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiQWRkIGlzIGFuIG92ZXJsb2FkZWQgZnVuY3Rpb24gdGhhdCwgYmFzZWQgb24gdGhlIGZpcnN0IGFyZ3VtZW50IHByb3ZpZGVkLCBkZXRlcm1pbmVzIGhvdyB0byBcJ2FkZFwnIHRoZSBhcmd1bWVudHMuICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiSWYgcHJvdmlkZWQgYSBudW1iZXIgYXMgYSBmaXJzdCBhcmd1bWVudCwgdGhlbiBpdCB3aWxsIGFzc3VtZSB0aGUgcmVzdCBvZiB0aGUgYXJndW1lbnRzIGFyZSBudW1iZXJzIGFuZCBhZGQgdGhlbSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInRvIHRoZSBmaXJzdCwgcmV0dXJuaW5nIHRoZSBudW1lcmljYWwgc3VtIG9mIHRoZSBhcmd1bWVudHMuIElmIGFuIG9iamVjdCwgaXQgd2lsbCBtZXJnZSB0aGUga2V5cyBvZiB0aGUgcHJvdmlkZWQgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJhcmd1bWVudHMsIHJldHVybmluZyBhIGNvbWJpbmVkIG9iamVjdC4gIEJlIGF3YXJlIHRoYXQgaWYgbWVyZ2luZyBvYmplY3RzLCBpZiBhcmd1bWVudHMgdGhhdCBoYXZlIHRoZSBzYW1lIGtleXMgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ0aGUgYXJndW1lbnQgd2hvIGFwcGVhcnMgbGFzdCB3aXRoIHRoZSBrZXkgd2lsbCBwcmV2YWlsLiAgSWYgY2FsbGVkIHdpdGggYW4gYXJyYXkgYXMgYSBmaXJzdCBhcmd1bWVudCwgdGhlICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAic3Vic2VxdWVudCBhcmd1bWVudHMgd2lsbCBiZSBhZGRlZCB0byB0aGUgZmlyc3QgdmlhICdjb25jYXQnLiAgSWYgc3RyaW5ncywgdGhlIHN0cmluZ3Mgd2lsbCBiZSBqb2luZWQgaW50byBhICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAic2luZ2xlIHN0cmluZyBhbmQgcmV0dXJuZWQuPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKGFkZCAxIDIgMykgPT4gNjxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIihhZGQgeyBgYWJjOiAxMjMgYGRlZjogMzQ1IH0geyBgZGVmOiA0NTYgfSkgPT4geyBhYmM6IDEyMywgZGVmOiA0NTYgfSIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKGFkZCBbIDEgMiAzIF0gWyA0IDUgNl0gNykgPT4gWyAxLCAyLCAzLCBbIDQsIDUsIDYgXSwgNyBdPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKGFkZCBcImFiY1wiIFwiZGVmXCIpID0+IFwiYWJjZGVmXCI8YnI+PGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiTm90ZSB0aGF0IGFkZCBkb2Vzbid0IHR5cGljYWxseSBuZWVkIHRvIGV4cGxpY2lseSBjYWxsZWQuICBUaGUgY29tcGlsZXIgd2lsbCB0cnkgYW5kIGRldGVybWluZSB0aGUgYmVzdCAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIndheSB0byBoYW5kbGUgYWRkaW5nIGJhc2VkIG9uIHRoZSBhcmd1bWVudHMgdG8gYmUgYWRkZWQsIHNvIHRoZSArIG9wZXJhdG9yIHNob3VsZCBiZSB1c2VkIGluc3RlYWQsIHNpbmNlICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiaXQgZ2l2ZXMgdGhlIGNvbXBpbGVyIGFuIG9wcG9ydHVuaXR5IHRvIGlubGluZSBpZiBwb3NzaWJsZS4iKQogICAgICAgICAgICAgICBgdXNhZ2U6IFsgImFyZzA6KiIgImFyZ046KiIgXQogICAgICAgICAgICAgICBgdGFnczogWyBgYWRkIGArIGBzdW0gYG51bWJlciBgYWRkaXRpb24gYG1lcmdlIGBqb2luIGBjb25jYXQgXQogICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKG1lcmdlX29iamVjdHMgKG5ldyBGdW5jdGlvbiAieCIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBsZXQgcnZhbCA9IHt9OwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmb3IgKGxldCBpIGluIHgpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmICh0eXBlb2YgaSA9PT0gJ29iamVjdCcpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmb3IgKGxldCBrIGluIHhbaV0pIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcnZhbFtrXSA9IHhbaV1ba107CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiBydmFsOwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IikKICAgICAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiTWVyZ2Ugb2JqZWN0cyB0YWtlcyBhbiBhcnJheSBvZiBvYmplY3RzIGFuZCByZXR1cm5zIGFuIG9iamVjdCB3aG9zZSBrZXlzIGFuZCB2YWx1ZXMgYXJlICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInRoZSBzdW0gb2YgdGhlIHByb3ZpZGVkIG9iamVjdHMgKHNhbWUgYmVoYXZpb3IgYXMgYWRkIHdpdGggb2JqZWN0cykuICBJZiBvYmplY3RzIGhhdmUgdGhlICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInNhbWUga2V5cywgdGhlIGxhc3QgZWxlbWVudCBpbiB0aGUgYXJyYXkgd2l0aCB0aGUgZHVwbGljYXRlIGtleSB3aWxsIGJlIHVzZWQgdG8gcHJvdmlkZSB0aGUgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAidmFsdWUgZm9yIHRoYXQga2V5LiIpCiAgICAgICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsib2JqZWN0czphcnJheSJdCiAgICAgICAgICAgICAgICAgICAgICAgICBgdGFnczogWyBgYWRkIGBtZXJnZSBga2V5cyBgdmFsdWVzIGBvYmplY3RzIGB2YWx1ZSBdCiAgICAgICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGluZGV4X29mIChuZXcgRnVuY3Rpb24gInZhbHVlIiAiY29udGFpbmVyIgogICAgICAgICAgICAgICAgICAgICAgICAoKyAieyByZXR1cm4gY29udGFpbmVyLmluZGV4T2YodmFsdWUpIH0iKSkKICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJHaXZlbiBhIHZhbHVlIGFuZCBhbiBhcnJheSBjb250YWluZXIsIHJldHVybnMgdGhlIGluZGV4IG9mIHRoZSB2YWx1ZSBpbiB0aGUgYXJyYXksIG9yIC0xIGlmIG5vdCBmb3VuZC4iCiAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbInZhbHVlOm51bWJlcnxzdHJpbmd8Ym9vbGVhbiIgImNvbnRhaW5lcjphcnJheSIgXQogICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbIGBmaW5kIGBwb3NpdGlvbiBgaW5kZXggYGFycmF5IGBjb250YWlucyBdCiAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgIAogICAgICAgICAocmVzb2x2ZV9wYXRoIChuZXcgRnVuY3Rpb24gInBhdGgsb2JqIiAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAodHlwZW9mIHBhdGg9PT0nc3RyaW5nJykgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhdGggPSBwYXRoLnNwbGl0KFwiLlwiKTsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxldCBzPW9iajsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybiBwYXRoLnJlZHVjZShmdW5jdGlvbihwcmV2LCBjdXJyKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuIHByZXYgPyBwcmV2W2N1cnJdIDogdW5kZWZpbmVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9LCBvYmogfHwge30pCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0iKQogICAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAoKyAiR2l2ZW4gYSBwYXRoIGFuZCBhIHRyZWUgc3RydWN0dXJlLCB3aGljaCBjYW4gYmUgZWl0aGVyIGFuIGFycmF5IG9yIGFuIG9iamVjdCwgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ0cmF2ZXJzZSB0aGUgdHJlZSBzdHJ1Y3R1cmUgYW5kIHJldHVybiB0aGUgdmFsdWUgYXQgdGhlIHBhdGggaWYgaXQgZXhpc3RzLCBvdGhlcndpc2UgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ1bmRlZmluZWQgaXMgcmV0dXJuZWQuPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiKHJlc29sdmVfcGF0aCBbIDIgMSBdIFsgMSAyIFsgMyA0IDUgXSA2IDddKSA9PiA0KSIpCiAgICAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyAicGF0aDphcnJheSIgInRyZWVfc3RydWN0dXJlOmFycmF5fG9iamVjdCIgXQogICAgICAgICAgICAgICAgICAgICAgICBgdGFnczogWyBgZmluZCBgcG9zaXRpb24gYGluZGV4IGBwYXRoIGBhcnJheSBgdHJlZSBgY29udGFpbnMgYHNldF9wYXRoIF0KICAgICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgICAgICAgICAgCiAgICAgICAgIAogICAgICAgICAKICAgICAgICAgKG1pbl92YWx1ZSAobmV3IEZ1bmN0aW9uICJlbGVtZW50cyIgInsgcmV0dXJuIE1hdGgubWluKC4uLmVsZW1lbnRzKTsgfSIpCiAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJSZXR1cm5zIHRoZSBtaW5pbXVtIHZhbHVlIGluIHRoZSBwcm92aWRlZCBhcnJheSBvZiBudW1iZXJzLiIKICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImVsZW1lbnRzOmFycmF5Il0KICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsgYG1pbiBgbWF4X3ZhbHVlIGBhcnJheSBgZWxlbWVudHMgYG1pbmltdW0gYG51bWJlciBdCiAgICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgKG1heF92YWx1ZSAobmV3IEZ1bmN0aW9uICJlbGVtZW50cyIgInsgcmV0dXJuIE1hdGgubWF4KC4uLmVsZW1lbnRzKTsgfSIpCiAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJSZXR1cm5zIHRoZSBtYXhpbXVtIHZhbHVlIGluIHRoZSBwcm92aWRlZCBhcnJheSBvZiBudW1iZXJzLiIKICAgICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImVsZW1lbnRzOmFycmF5Il0KICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsgYG1pbiBgbWF4X3ZhbHVlIGBhcnJheSBgZWxlbWVudHMgYG1pbmltdW0gYG51bWJlciBdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAKICAgICAgICAgKGludGVybGFjZSAoZm4gKGAmIGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAobGV0IAogICAgICAgICAgICAgICAgICAgICAgICAgICgobWluX2xlbmd0aCAgKG1pbl92YWx1ZSAobWFwIGxlbmd0aCBhcmdzKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgIChybGVuZ3RoX2FyZ3MgKHJhbmdlIChsZW5ndGggYXJncykpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAocnZhbCBbXSkpCiAgICAgICAgICAgICAgICAgICAgICAgIChmb3JfZWFjaCAoYGkgKHJhbmdlIG1pbl9sZW5ndGgpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGZvcl9lYWNoIChgaiBybGVuZ3RoX2FyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHB1c2ggcnZhbCAocHJvcCAocHJvcCBhcmdzIGopIGkpKSkpCiAgICAgICAgICAgICAgICAgICAgICAgIHJ2YWwpKQogICAgICAgICAgICAgICAgICAgIHsgYHVzYWdlOiBbImxpc3QwOmFycmF5IiAibGlzdDE6YXJyYXkiICJsaXN0bj86YXJyYXkiXSAKICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiUmV0dXJucyBhIGxpc3QgY29udGFpbmluZyBhIGNvbnNlY3V0aXZlIHZhbHVlcyBmcm9tIGVhY2ggbGlzdCwgaW4gYXJndW1lbnQgb3JkZXIuICBJLmUuIGxpc3QwLjAgbGlzdDEuMCBsaXN0bi4wIGxpc3QwLjEgbGlzdDEuMSBsaXN0bi4xIC4uLiIgCiAgICAgICAgICAgICAgICAgICAgIGB0YWdzOiBbImxpc3QiLCJhcnJheSIsImpvaW4iICJtZXJnZSJdCiAgICAgICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAodHJpbSAoZnVuY3Rpb24gKHgpCiAgICAgICAgICAgICAgICAgICAgICAgICAoLT4geCBgdHJpbSkpCiAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlJlbW92ZXMgbGVhZGluZyBhbmQgdHJhaWxpbmcgc3BhY2VzIGZyb20gdGhlIHByb3ZpZGVkIHN0cmluZyB2YWx1ZS4iCiAgICAgICAgICAgICAgICBgdXNhZ2U6IFsidmFsdWU6c3RyaW5nIl0KICAgICAgICAgICAgICAgIGB0YWdzOiBbInN0cmluZyIgInNwYWNlcyIgImNsZWFuIiAic3F1ZWV6ZSIgImxlYWRpbmciICJ0cmFpbGluZyIgInNwYWNlIl0KICAgICAgICAgICAgICAgIH0pCiAgICAgICAgIAogICAgICAgICAoYXNzZXJ0IChmdW5jdGlvbiAoYXNzZXJ0aW9uX2Zvcm0gZmFpbHVyZV9tZXNzYWdlKQogICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgYXNzZXJ0aW9uX2Zvcm0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFzc2VydGlvbl9mb3JtCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgRXZhbEVycm9yIChvciBmYWlsdXJlX21lc3NhZ2UgImFzc2VydGlvbiBmYWlsdXJlIikpKSkKICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIklmIHRoZSBldmFsdWF0ZWQgYXNzZXJ0aW9uIGZvcm0gaXMgdHJ1ZSwgdGhlIHJlc3VsdCBpcyByZXR1cm5lZCwgb3RoZXJ3aXNlIGFuIEV2YWxFcnJvciBpcyB0aHJvd24gd2l0aCB0aGUgb3B0aW9uYWxseSBwcm92aWRlZCBmYWlsdXJlIG1lc3NhZ2UuIgogICAgICAgICAgICAgICAgICBgdXNhZ2U6WyJmb3JtOioiICJmYWlsdXJlX21lc3NhZ2U6c3RyaW5nPyJdCiAgICAgICAgICAgICAgICAgIGB0YWdzOlsidHJ1ZSIgImVycm9yIiAiY2hlY2siICJkZWJ1ZyIgInZhbGlkIiAiYXNzZXJ0aW9uIl0KICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgCiAgICAgICAgIAogICAgICAgICAodW5xdW90aWZ5IChmbiAodmFsKQogICAgICAgICAgICAgICAgICAgICAgKGxldAogICAgICAgICAgICAgICAgICAgICAgICAgICgoZHZhbCB2YWwpKQogICAgICAgICAgICAgICAgICAgICAgICAoaWYgKHN0YXJ0c193aXRoPyAiXCIiIGR2YWwpCiAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gZHZhbCAoLT4gZHZhbCBgc3Vic3RyIDEgKC0gZHZhbC5sZW5ndGggMikpKSkKICAgICAgICAgICAgICAgICAgICAgICAgKGlmIChzdGFydHNfd2l0aD8gIj06IiBkdmFsKQogICAgICAgICAgICAgICAgICAgICAgICAgICg9IGR2YWwgKC0+IGR2YWwgYHN1YnN0ciAyKSkpCiAgICAgICAgICAgICAgICAgICAgICAgIGR2YWwpKQogICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgYGRlc2NyaXB0aW9uOiAiUmVtb3ZlcyBiaW5kaW5nIHN5bWJvbHMgYW5kIHF1b3RlcyBmcm9tIGEgc3VwcGxpZWQgdmFsdWUuICBGb3IgdXNlIGluIGNvbXBpbGUgdGltZSBmdW5jdGlvbiBzdWNoIGFzIG1hY3Jvcy4iCiAgICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJ2YWw6c3RyaW5nIl0KICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6WyJtYWNybyIgInF1b3RlIiAicXVvdGVzIiAiZGVzeW0iXQogICAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKG9yX2FyZ3MgKGZuIChhcmdzZXQpCiAgICAgICAgICAgICAgICAgICAgKGxldAogICAgICAgICAgICAgICAgICAgICAgICAoKGlzX3RydWUgZmFsc2UpKQogICAgICAgICAgICAgICAgICAgICAgKGZvcl9lYWNoIChgZWxlbSBhcmdzZXQpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGlmIGVsZW0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPSBpc190cnVlIHRydWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChicmVhaykpKSkKICAgICAgICAgICAgICAgICAgICAgIGlzX3RydWUpKQogICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICBgZGVzY3JpcHRpb246ICJQcm92aWRlZCBhbiBhcnJheSBvZiB2YWx1ZXMsIHJldHVybnMgdHJ1ZSBpZiBhbnkgb2YgdGhlIHZhbHVlcyBhcmUgdHJ1ZSwgb3RoZXJ3aXNlIHdpbGwgcmV0dXJuIGZhbHNlLiIKICAgICAgICAgICAgICAgICAgIGB1c2FnZTogWyJhcmdzZXQ6YXJyYXkiXQogICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsgIm9yIiAidHJ1ZSIgImZhbHNlIiAiYXJyYXkiICJsb2dpYyIgXQogICAgICAgICAgICAgICAgICAgfSkKCiAgICAgICAgIAogICAgICAgICAoc3BlY2lhbF9vcGVyYXRvcnMgKGZuICgpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChtYWtlX3NldCAoY29tcGlsZXIgW10geyBgc3BlY2lhbF9vcGVyYXRvcnM6IHRydWUgYGVudjogRW52aXJvbm1lbnQgfSkpKSkKCiAgICAgICAgIChkZWZjbG9nIChmbiAob3B0cykKICAgICAgICAgICAgICAgICAgICAobGV0CiAgICAgICAgICAgICAgICAgICAgICAgICgoYHN0eWxlICgrICJwYWRkaW5nOiA1cHg7IgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgb3B0cy5iYWNrZ3JvdW5kCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKCsgImJhY2tncm91bmQ6ICIgb3B0cy5iYWNrZ3JvdW5kICI7IikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiIikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGlmIG9wdHMuY29sb3IKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoKyAiY29sb3I6ICIgb3B0cy5jb2xvciAiOyIpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiIikpKQogICAgICAgICAgICAgICAgICAgICAgKGZuIChgJiBhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAoYXBwbHkgY29uc29sZS5sb2cgKCsgIiVjIiAoaWYgb3B0cy5wcmVmaXgKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBvcHRzLnByZWZpeAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0YWtlIGFyZ3MpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb25qIFsgc3R5bGUgXQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYXJncykpKSkpCiAgICAgICAgICAgewogICAgICAgICAgICBgZGVzY3JpcHRpb246ICgrICJHaXZlbiBhIGRlc2NyaXB0aW9uIG9iamVjdCwgY29udGFpbmluZyBzcGVjaWZpYyBrZXlzLCByZXR1cm5zIGEgY3VzdG9taXplZCBjb25zb2xlIGxvZ2dpbmcgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICJmdW5jdGlvbiBpbXBsZW1lbnRzIHRoZSBnaXZlbiByZXF1ZXN0ZWQgcHJvcGVydGllcy48YnI+T3B0aW9uczxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgInByZWZpeDpzdHJpbmc6VGhlIHByZWZpeCB0byBsb2cgcHJpb3IgdG8gYW55IHN1cHBsaWVkIHVzZXIgYXJndW1lbnRzLjxicj4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgImNvbG9yOnN0cmluZzpUaGUgdGV4dCBjb2xvciB0byB1c2Ugb24gdGhlIHByZWZpeCAob3IgaW5pdGlhbCBhcmd1bWVudCBpZiBubyBwcmVmaXgpPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiYmFja2dyb3VuZDpzdHJpbmc6VGhlIGJhY2tncm91bmQgY29sb2UgdG8gdXNlIG9uIHRoZSBwcmVmaXggKG9yIGluaXRpYWwgYXJndW1lbnQgaWYgbm8gcHJlZml4KTxicj4iKQogICAgICAgICAgICBgdXNhZ2U6IFsib3B0aW9uczpvYmplY3QiXQogICAgICAgICAgICBgdGFnczogWyJsb2ciICJsb2dnaW5nIiAiY29uc29sZSIgInV0aWxpdHkiXQogICAgICAgICAgICB9KQoKICAgICAKICAgICAgICAgKE5PVF9GT1VORCAobmV3IFJlZmVyZW5jZUVycm9yICJub3QgZm91bmQiKSkKICAgICAgICAgICAgICAKICAgICAgICAgKGNoZWNrX2V4dGVybmFsX2Vudl9kZWZhdWx0IChpZiAoPT0gbmFtZXNwYWNlICJjb3JlIikgdHJ1ZSBmYWxzZSkpCiAgICAgICAgICgqbmFtZXNwYWNlKiBuYW1lc3BhY2UpCiAgICAgICAgIChzeW1ib2xzIChmdW5jdGlvbiAoKSAoa2V5cyBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlKSkKICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlJldHVybnMgYW4gYXJyYXkgb2YgdGhlIGRlZmluZWQgZ2xvYmFsIHN5bWJvbHMgZm9yIHRoZSBsb2NhbCBlbnZpcm9ubWVudC4iCiAgICAgICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFtdCiAgICAgICAgICAgICAgICAgICAgICAgICBgdGFnczogW2BzeW1ib2wgYG5hbWVzIGBkZWZpbml0aW9ucyBgdmFsdWVzIGBzY29wZV0KICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgKHNldF9nbG9iYWwgCiAgICAgICAgICAoZnVuY3Rpb24gKHJlZm5hbWUgdmFsdWUgbWV0YSBpc19jb25zdGFudCB0YXJnZXRfbmFtZXNwYWNlIGNvbnRhaW5lZF9yZXEpCiAgICAgICAgICAgICAgICAgICAgKHByb2duCgkJICAgICAoY29uZCAobm90ICg9PSAodHlwZW9mIHJlZm5hbWUpICJzdHJpbmciKSkKCQkJICAgKHRocm93IFR5cGVFcnJvciAicmVmZXJlbmNlIG5hbWUgbXVzdCBiZSBhIHN0cmluZyB0eXBlIikKCQkJICAgKG9yICg9PSBFbnZpcm9ubWVudCB2YWx1ZSkKCQkJICAgICAgICg9PSBFbnZpcm9ubWVudC5nbG9iYWxfY3R4IHZhbHVlKQoJCQkgICAgICAgKD09IEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUgdmFsdWUpKQoJCQkgICAoZG8KICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7KGRlYnVnKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBFdmFsRXJyb3IgImNhbm5vdCBzZXQgdGhlIGVudmlyb25tZW50IHNjb3BlIGFzIGEgZ2xvYmFsIHZhbHVlIikpKQoJCSAgICAgCiAgICAgICAgICAgICAgICAgICAgICh3aGVuIChyZXNvbHZlX3BhdGggWyByZWZuYW1lIGBjb25zdGFudCBdIEVudmlyb25tZW50LmRlZmluaXRpb25zKQogICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBUeXBlRXJyb3IgKCsgIkFzc2lnbm1lbnQgdG8gY29uc3RhbnQgdmFyaWFibGUgIiByZWZuYW1lICkpKQoKICAgICAgICAgICAgICAgICAgICAgOzsgd2UgbmVlZCB0byBkZXRlcm1pbmUgd2hhdCB3ZSd2ZSBiZWVuIGdpdmVuLiAgV2UgY291bGQgaGF2ZToKICAgICAgICAgICAgICAgICAgICAgOzsgMS4gcmVmbmFtZSBieSBpdHNlbGYsIHdpdGggbm8gbmFtZSBzcGFjZSwgc28gd2UgbmVlZCB0byBjaGVjawogICAgICAgICAgICAgICAgICAgICA7OyAgICBpZiBpdCBpcyB1cywgYW5kIGlmIGl0IGlzIG5vdCwgaGFuZCBpdCB1cCB0byBvdXIgcGFyZW50CiAgICAgICAgICAgICAgICAgICAgIDs7IDIuIGZ1bGx5L3F1YWxpZmllZCByZWZuYW1lIC0gbmVhZCB0byBzcGxpdCBhbmQgdGhlbiBjaGVjawogICAgICAgICAgICAgICAgICAgICA7OyAzLiByZWZuYW1lIGFuZCB0YXJnZXRfbmFtZXNwYWNlIC0gaWYgdXMgd2UgZGVhbCB3aXRoIG9yCiAgICAgICAgICAgICAgICAgICAgIDs7ICAgIHNlbmQgb253YXJkcyBpZiBub3QgdXMuCgogICAgICAgICAgICAgICAgICAgICAoZGVmdmFyIG5hbWVzcGFjZV9pZGVudGl0eSAoaWYgdGFyZ2V0X25hbWVzcGFjZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFt0YXJnZXRfbmFtZXNwYWNlIHJlZm5hbWVdCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNwbGl0X2J5ICIvIiByZWZuYW1lKSkpCiAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAoY29uZAogICAgICAgICAgICAgICAgICAgICAgIDs7IGNoZWNrIGlmIHdlIGFscmVhZHkgaGF2ZSBhbiBleHBsaWNpdCBuYW1lc3BhY2UgYW5kIGl0IGlzbid0IHVzLAogICAgICAgICAgICAgICAgICAgICAgIDs7IHNlbmQgaXQgdG8gb3VyIHBhcmVudCB0byBkZWFsIHdpdGguLgogICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgIChhbmQgcGFyZW50X2Vudmlyb25tZW50CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPiBuYW1lc3BhY2VfaWRlbnRpdHkubGVuZ3RoIDEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAobm90ICg9PSBuYW1lc3BhY2UgbmFtZXNwYWNlX2lkZW50aXR5LjApKSkKICAgICAgICAgICAgICAgICAgICAgICAoLT4gcGFyZW50X2Vudmlyb25tZW50IGBzZXRfZ2xvYmFsIG5hbWVzcGFjZV9pZGVudGl0eS4xIHZhbHVlIG1ldGEgaXNfY29uc3RhbnQgbmFtZXNwYWNlX2lkZW50aXR5LjAgKG9yIGNvbnRhaW5lZCBjb250YWluZWRfcmVxKSkKCiAgICAgICAgICAgICAgICAgICAgICAgOzsgbm90IHVzIGJ1dCB3ZSBhcmUgdGhlIGNvcmUsIHNvIHdlIG5lZWQgdG8gc2VuZCBpdCB0byB0aGUgYXBwcm9wcmlhdGUgbmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgKGFuZCAoPiBuYW1lc3BhY2VfaWRlbnRpdHkubGVuZ3RoIDEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAobm90ICg9PSBuYW1lc3BhY2VfaWRlbnRpdHkuMCBuYW1lc3BhY2UpKSkKICAgICAgICAgICAgICAgICAgICAgICAoZG8KICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoYW5kIChwcm9wIGNoaWxkcmVuIG5hbWVzcGFjZV9pZGVudGl0eS4wKSAgIDs7IGRvIHdlIGhhdmUgdGhlIHJlcXVlc3RlZCBuYW1lc3BhY2U/CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAobm90IGNvbnRhaW5lZF9yZXEpKSAgICAgICAgICAgICAgICAgICA7OyBjYW4gd2UgYWNjZXNzIGl0PwogICAgICAgICAgICAgICAgICAgICAgICAgICAoLT4gKHByb3AgY2hpbGRyZW4gbmFtZXNwYWNlX2lkZW50aXR5LjApICAgICAgIDs7IGRpc3BhdGNoIGl0IHRoZXJlLi4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBzZXRfZ2xvYmFsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuYW1lc3BhY2VfaWRlbnRpdHkuMSB2YWx1ZSBtZXRhIGlzX2NvbnN0YW50IG5hbWVzcGFjZV9pZGVudGl0eS4wKQogICAgICAgICAgICAgICAgICAgICAgICAgICA7OyBubyBzdWNoIG5hbWVzcGFjZSBzbyBpdCBpcyBhbiBlcnJvci4uLgogICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgRXZhbEVycm9yICgrICJuYW1lc3BhY2UgIiBuYW1lc3BhY2VfaWRlbnRpdHkuMCAiIGRvZXNuJ3QgZXhpc3QiKSkpKQogICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICA7OyBpdCdzIG9uIHVzLi4uICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAoZG8KICAgICAgICAgICAgICAgICAgICAgICAgIChkZWZ2YXIgY29tcHMgKGdldF9vYmplY3RfcGF0aCAoaWYgKD09IDEgbmFtZXNwYWNlX2lkZW50aXR5Lmxlbmd0aCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG5hbWVzcGFjZV9pZGVudGl0eS4wCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuYW1lc3BhY2VfaWRlbnRpdHkuMSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgKHNldF9wcm9wIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29tcHMuMAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHZhbHVlKQogICAgICAgICAgICAgICAgICAgICAgICAgKGlmIChhbmQgKGlzX29iamVjdD8gbWV0YSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChub3QgKGlzX2FycmF5PyBtZXRhKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGVuIGlzX2NvbnN0YW50CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc2V0X3Byb3AgbWV0YQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBjb25zdGFudAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRydWUpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5kZWZpbml0aW9ucwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb21wcy4wCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG1ldGEpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAod2hlbiBpc19jb25zdGFudAogICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5kZWZpbml0aW9ucwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb21wcy4wCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBjb25zdGFudDogdHJ1ZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSBjb21wcy4wKSkpKSkpCiAgICAgICAgIAogICAgICAgICAoZ2V0X2dsb2JhbCAKICAgICAgICAgIChmdW5jdGlvbiAocmVmbmFtZSB2YWx1ZV9pZl9ub3RfZm91bmQgc3VwcHJlc3NfY2hlY2tfZXh0ZXJuYWxfZW52IHRhcmdldF9uYW1lc3BhY2UgcGF0aF9jb21wcyBjb250YWluZWRfcmVxKQogICAgICAgICAgICAgICAgICAgIChjb25kIAogICAgICAgICAgICAgICAgICAgICAgKG5vdCAoPT0gKHR5cGVvZiByZWZuYW1lKSAic3RyaW5nIikpCiAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgVHlwZUVycm9yICJyZWZlcmVuY2UgbmFtZSBtdXN0IGJlIGEgc3RyaW5nIHR5cGUiKQogICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAoPT0gcmVmbmFtZSAiRW52aXJvbm1lbnQiKQogICAgICAgICAgICAgICAgICAgICAgRW52aXJvbm1lbnQKICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgKC0+IGNvbXBpbGVyX29wZXJhdG9ycyBgaGFzIHJlZm5hbWUpCiAgICAgICAgICAgICAgICAgICAgICBzcGVjaWFsX2lkZW50aXR5CgogICAgICAgICAgICAgICAgICAgICAgZWxzZQogICAgICAgICAgICAgICAgICAgICAgKGxldAogICAgICAgICAgICAgICAgICAgICAgICAgICgoYG5hbWVzcGFjZV9pZGVudGl0eSAoaWYgdGFyZ2V0X25hbWVzcGFjZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFt0YXJnZXRfbmFtZXNwYWNlIHJlZm5hbWVdICA7OyBhbHJlYWR5IGhhcyBiZWVuIHNwbGl0IG9yIGV4cGxpY2l0bHkgc3BlY2lmaWVkLCBzbyB1c2UgaXQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc3BsaXRfYnkgIi8iIHJlZm5hbWUpKSkgICAgOzsgb3RoZXJ3aXNlIHNwbGl0Li5uYW1lc3BhY2VfaWRlbnRpdHkgbWF5IG9ubHkgaGF2ZSAxIGNvbXBvbmVudCB0aG91Z2gKICAgICAgICAgICAgICAgICAgICAgICAgICAgKGBjb21wcyAob3IgcGF0aF9jb21wcwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZ2V0X29iamVjdF9wYXRoIChpZiAoPT0gMSBuYW1lc3BhY2VfaWRlbnRpdHkubGVuZ3RoKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmFtZXNwYWNlX2lkZW50aXR5LjAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG5hbWVzcGFjZV9pZGVudGl0eS4xKSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAoYHJlZnZhbCBuaWwpCiAgICAgICAgICAgICAgICAgICAgICAgICAgIChgc3ltYm9sX25hbWUgbmlsKQogICAgICAgICAgICAgICAgICAgICAgICAgICA7OyBzaGFkb3cgdGhlIGVudmlyb25tZW50cyBzY29wZSBjaGVjayBpZiB0aGUgc3VwcHJlc3NfY2hlY2tfZXh0ZXJuYWxfZW52IGlzIHNldCB0byB0cnVlCiAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IHRoaXMgaXMgdXNlZnVsIHdoZW4gd2UgaGF2ZSByZWZlcmVuY2UgbmFtZXMgdGhhdCBhcmUgbm90IGxlZ2FsIGpzIHJlZmVyZW5jZSBuYW1lcwogICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgKGBjaGVja19leHRlcm5hbF9lbnYgKGlmIHN1cHByZXNzX2NoZWNrX2V4dGVybmFsX2VudgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGZhbHNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2hlY2tfZXh0ZXJuYWxfZW52X2RlZmF1bHQpKSkgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgICA7OyBnaXZlbiBhIGZ1bGx5IHF1YWxpZmllZCBuYW1lLCBpZiBub3QgdXMsIHBhc3MgaXQgdXAKICAgICAgICAgICAgICAgICAgICAgICAgICAoYW5kIHBhcmVudF9lbnZpcm9ubWVudAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD4gbmFtZXNwYWNlX2lkZW50aXR5Lmxlbmd0aCAxKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5vdCAoPT0gbmFtZXNwYWNlX2lkZW50aXR5LjAgbmFtZXNwYWNlKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgOzsgcGFzcyBpdCB1cC4uLm5vdGUgdGhhdCBpcyB3ZSBhcmUgYSBjb250YWluZWQgZW52aXJvbm1lbnQsIG91ciByZXF1ZXN0IHdpbGwgdHVybiBjb250YWluZWQgdG8gdHJ1ZQogICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBwYXJlbnRfZW52aXJvbm1lbnQgYGdldF9nbG9iYWwgbmFtZXNwYWNlX2lkZW50aXR5LjEgdmFsdWVfaWZfbm90X2ZvdW5kIHN1cHByZXNzX2NoZWNrX2V4dGVybmFsX2VudiBuYW1lc3BhY2VfaWRlbnRpdHkuMCBjb21wcyAob3IgY29udGFpbmVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb250YWluZWRfcmVxKSkgICAgICAKCiAgICAgICAgICAgICAgICAgICAgICAgICAgOzsgd2UgYXJlIGF0IHRoZSByb290IChjb3JlKSBidXQgaXQgaXMgbm90IHVzLCBzbyB3ZSBuZWVkIHRvIHNlZSBpZiB3ZSBoYXZlIGEgbmFtZXNwYWNlIHRoYXQgYWxpZ25lcyBhbmQgaWYgc28sIGNhbGwgaXQncyBnZXRfZ2xvYmFsIHNwZWNpZmljYWxseQogICAgICAgICAgICAgICAgICAgICAgICAgIChhbmQgKD4gbmFtZXNwYWNlX2lkZW50aXR5Lmxlbmd0aCAxKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5vdCAoPT0gbmFtZXNwYWNlX2lkZW50aXR5LjAgbmFtZXNwYWNlKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgKGlmIChhbmQgKHByb3AgY2hpbGRyZW4gbmFtZXNwYWNlX2lkZW50aXR5LjApCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAobm90IGNvbnRhaW5lZF9yZXEpKSAgICAgICAgICAgICAgICAgICA7OyBjYW4gd2UgYWNjZXNzIGl0PwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoLT4gKHByb3AgY2hpbGRyZW4gbmFtZXNwYWNlX2lkZW50aXR5LjApCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgZ2V0X2dsb2JhbAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmFtZXNwYWNlX2lkZW50aXR5LjEgdmFsdWVfaWZfbm90X2ZvdW5kIHN1cHByZXNzX2NoZWNrX2V4dGVybmFsX2VudiBuYW1lc3BhY2VfaWRlbnRpdHkuMCBjb21wcykKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93IEV2YWxFcnJvciAoKyAibmFtZXNwYWNlICIgbmFtZXNwYWNlX2lkZW50aXR5LjAgIiBkb2Vzbid0IGV4aXN0IikpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICA7OyBzZWFyY2ggcGF0aCBpcyB0byBmaXJzdCBjaGVjayB0aGUgZ2xvYmFsIExpc3AgRW52aXJvbm1lbnQKICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IGFuZCBpZiB0aGUgY2hlY2tfZXh0ZXJuYWxfZW52IGZsYWcgaXMgdHJ1ZSwgdGhlbiBnbyB0byB0aGUKICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IGV4dGVybmFsIEpTIGVudmlyb25tZW50LgogICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPSByZWZ2YWwgKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSBjb21wcy4wKSkKCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKGFuZCAoPT0gdW5kZWZpbmVkIHJlZnZhbCkgICAgICAgICAgICAgOzsgaWYgd2UgZGlkbid0IGZpbmQgYW55dGhpbmcgaGVyZSwgYW5kIGlmIHRoZSByZWZuYW1lIHdhcwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IG5hbWVzcGFjZV9pZGVudGl0eS5sZW5ndGggMSkgIDs7IG5vbi1xdWFsaWZpZWQgd2UgbmVlZCB0byBjaGVjayB1cHdhcmQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhcmVudF9lbnZpcm9ubWVudCkgICAgICAgICAgICAgICA7OyBpZiBwb3NzaWJsZS4uCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkZWZ2YXIgcnZhbCAoLT4gcGFyZW50X2Vudmlyb25tZW50IGBnZXRfZ2xvYmFsIHJlZm5hbWUgdmFsdWVfaWZfbm90X2ZvdW5kIHN1cHByZXNzX2NoZWNrX2V4dGVybmFsX2VudiBuaWwgY29tcHMgKG9yIGNvbnRhaW5lZCBjb250YWluZWRfcmVxKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcnZhbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOzsgdGhpcyBpcyB1cwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoYW5kICg9PSB1bmRlZmluZWQgcmVmdmFsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNoZWNrX2V4dGVybmFsX2VudikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IHJlZnZhbCAoaWYgY2hlY2tfZXh0ZXJuYWxfZW52CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAob3IgKGdldF9vdXRzaWRlX2dsb2JhbCBjb21wcy4wKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIE5PVF9GT1VORCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIE5PVF9GT1VORCkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IGJhc2VkIG9uIHRoZSB2YWx1ZSBvZiByZWZ2YWwsIHJldHVybiB0aGUgdmFsdWUgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChhbmQgKD09IE5PVF9GT1VORCByZWZ2YWwpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChub3QgKD09IHVuZGVmaW5lZCB2YWx1ZV9pZl9ub3RfZm91bmQpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHZhbHVlX2lmX25vdF9mb3VuZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPT0gTk9UX0ZPVU5EIHJlZnZhbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgUmVmZXJlbmNlRXJyb3IgKCsgInN5bWJvbCBub3QgZm91bmQ6ICIgKGlmICg+IG5hbWVzcGFjZV9pZGVudGl0eS5sZW5ndGggMSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgrIG5hbWVzcGFjZSAiLyIgbmFtZXNwYWNlX2lkZW50aXR5LjEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoKyBuYW1lc3BhY2UgIi8iIG5hbWVzcGFjZV9pZGVudGl0eS4wKSkpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBjb21wcy5sZW5ndGggMSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlZnZhbAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPiBjb21wcy5sZW5ndGggMSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbyAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHJlc29sdmVfcGF0aCAocmVzdCBjb21wcykgcmVmdmFsKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb25zb2xlLndhcm4gImdldF9nbG9iYWw6IGNvbmRpdGlvbiBmYWxsIHRocm91Z2g6ICIgY29tcHMpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIE5PVF9GT1VORCkpKSkpKSkpKSkKICAgICAgIAogICAgICAgKHN5bWJvbF9kZWZpbml0aW9uIChmbiAoc3ltbmFtZSB0YXJnZXRfbmFtZXNwYWNlKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgKGxldAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgobmFtZXNwYWNlX2lkZW50aXR5IChpZiB0YXJnZXRfbmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBbIHRhcmdldF9uYW1lc3BhY2Ugc3ltbmFtZSBdCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKD4gKGxlbmd0aCBzeW1uYW1lKSAyKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc3BsaXRfYnkgIi8iIHN5bW5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFtzeW1uYW1lXSApKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDsoY29uc29sZS5sb2cgInN5bWJvbF9kZWZpbml0aW9uOiAiIHN5bW5hbWUgbmFtZXNwYWNlX2lkZW50aXR5KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29uZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBuYW1lc3BhY2VfaWRlbnRpdHkubGVuZ3RoIDEpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IG5vdCBmdWxseSBxdWFsaWZpZWQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYWlmIChwcm9wIEVudmlyb25tZW50LmRlZmluaXRpb25zIHN5bW5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpdCA7OyB3ZSBoYXZlIGl0IGhlcmUgc28gcmV0dXJuIGl0IAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGlmIHBhcmVudF9lbnZpcm9ubWVudAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoLT4gcGFyZW50X2Vudmlyb25tZW50IGBzeW1ib2xfZGVmaW5pdGlvbiBzeW1uYW1lKSkpCgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBuYW1lc3BhY2VfaWRlbnRpdHkuMCAgbmFtZXNwYWNlKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChwcm9wIEVudmlyb25tZW50LmRlZmluaXRpb25zIHN5bW5hbWUpCgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhcmVudF9lbnZpcm9ubWVudAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBwYXJlbnRfZW52aXJvbm1lbnQgYHN5bWJvbF9kZWZpbml0aW9uIG5hbWVzcGFjZV9pZGVudGl0eS4xIG5hbWVzcGFjZV9pZGVudGl0eS4wKQoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPT0gbmFtZXNwYWNlX2lkZW50aXR5Lmxlbmd0aCAyKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiAocHJvcCBjaGlsZHJlbiBuYW1lc3BhY2VfaWRlbnRpdHkuMCkgYHN5bWJvbF9kZWZpbml0aW9uIG5hbWVzcGFjZV9pZGVudGl0eS4xKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB1bmRlZmluZWQpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkdpdmVuIGEgc3ltYm9sIG5hbWUgYW5kIGFuIG9wdGlvbmFsIG5hbWVzcGFjZSwgZWl0aGVyIGFzIGEgZnVsbHkgcXVhbGlmaWVkIHBhdGggIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJvciB2aWEgdGhlIHRhcmdldF9uYW1lc3BhY2UgYXJndW1lbnQsIHJldHVybnMgZGVmaW5pdGlvbiBpbmZvcm1hdGlvbiBhYm91dCB0aGUgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJyZXRxdWVzdGVkIHN5bWJvbC4gICIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiVXNlZCBwcmltYXJpbHkgYnkgdGhlIGNvbXBpbGVyIHRvIGZpbmQgbWV0YWRhdGEgZm9yIGEgc3BlY2lmaWMgc3ltYm9sIGR1cmluZyBjb21waWxhdGlvbi4iKQogICAgICAgICAgICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsic3ltbmFtZTpzdHJpbmciICJuYW1lc3BhY2U6c3RyaW5nIl0KICAgICAgICAgICAgICAgICAgICAgICAgICAgYHRhZ3M6IFsiY29tcGlsZXIiICJzeW1ib2xzIiAibmFtZXNwYWNlIiAic2VhcmNoIiAiY29udGV4dCIgImVudmlyb25tZW50Il0KICAgICAgICAgICAgICAgICAgICAgICAgICAgfSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAoY29tcGlsZSAoZm4gKGpzb25fZXhwcmVzc2lvbiBvcHRzKQogICAgICAgICAgICAgICAgICAgIChsZXQKICAgICAgICAgICAgICAgICAgICAgICAgKChvcHRzICgrIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgZW52OiBFbnZpcm9ubWVudCAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBvcHRzCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYG1ldGE6IChpZiAoYW5kIG9wdHMgb3B0cy5tZXRhKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRydWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmYWxzZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9KSkKICAgICAgICAgICAgICAgICAgICAgICAgIChvdXQgbmlsKSkKICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgKD0gb3V0CiAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZXIganNvbl9leHByZXNzaW9uIG9wdHMpKQogICAgICAgICAgICAgICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgKGFuZCAoaXNfYXJyYXk/IG91dCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICBvdXQuMC5jdHlwZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBvdXQuMC5jdHlwZSAiRkFJTCIpKQogICAgICAgICAgICAgICAgICAgICAgICBvdXQKICAgICAgICAgICAgICAgICAgICAgICAgb3B0cy5tZXRhCiAgICAgICAgICAgICAgICAgICAgICAgIG91dAogICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgIG91dC4xKSkpCiAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogKCsgIkNvbXBpbGVzIHRoZSBnaXZlbiBKU09OIG9yIHF1b3RlZCBsaXNwIGFuZCByZXR1cm5zIGEgc3RyaW5nIGNvbnRhaW5pbmcgIgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAidGhlIGxpc3AgZm9ybSBvciBleHByZXNzaW9uIGFzIGphdmFzY3JpcHQuPGJyPiIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIklmIHBhc3NlZCB0aGUgb3B0aW9uIHsgbWV0YTogdHJ1ZSB9ICwgYW4gYXJyYXkgaXMgcmV0dXJuZWQgY29udGFpbmluZyBjb21waWxhdGlvbiBtZXRhZGF0YSAiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICJpbiBlbGVtZW50IDAgYW5kIHRoZSBjb21waWxlZCBjb2RlIGluIGVsZW1lbnQgMS4iKQogICAgICAgICAgICAgICAgICAgYHVzYWdlOiBbImpzb25fZXhwcmVzc2lvbjoqIiAib3B0czpvYmplY3QiXQogICAgICAgICAgICAgICAgICAgYHRhZ3M6WyJtYWNybyIgInF1b3RlIiAicXVvdGVzIiAiZGVzeW0iICJjb21waWxlciJdCiAgICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGVudl9sb2cgKGRlZmNsb2cgeyBgcHJlZml4OiAoKyAiZW52IiBpZCkgYGJhY2tncm91bmQ6ICIjQjBGMEMwIiB9KQogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgIGBkZXNjcmlwdGlvbjogIlRoZSBlbnZpcm9ubWVudCBsb2dnaW5nIGZ1bmN0aW9uIHVzZWQgYnkgdGhlIGVudmlyb25tZW50LiIKICAgICAgICAgICAgICAgICBgdXNhZ2U6IFsiYXJnMDoqIiAiYXJnTjoqIl0KICAgICAgICAgICAgICAgICB9KQogICAgICAgICAKICAgICAgICAgKGV2YWx1YXRlX2xvY2FsIChmbiAoZXhwcmVzc2lvbiBjdHggb3B0cykKICAgICAgICAgICAgICAgICAgICAgICAgICAgKGxldAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKChvcHRzIChvciBvcHRzCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHt9KSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZWQgbmlsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChlcnJvcl9kYXRhIG5pbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocmVzdWx0IG5pbCkpCgkJCSAgICAgOzsoZGVidWcpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOzsoY29uc29sZS5sb2cgImV2YWx1YXRlX2xvY2FsIFsgIiBuYW1lc3BhY2UgIl0gOiIgRW52aXJvbm1lbnQuY29udGV4dC5uYW1lKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiBvcHRzLmNvbXBpbGVkX3NvdXJjZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gY29tcGlsZWQgZXhwcmVzc2lvbikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0cnkgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IGNvbXBpbGVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb21waWxlciAoaWYgb3B0cy5qc29uX2luCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGV4cHJlc3Npb24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKC0+IEVudmlyb25tZW50IGByZWFkX2xpc3AgZXhwcmVzc2lvbiB7IGBzb3VyY2VfbmFtZTogb3B0cy5zb3VyY2VfbmFtZSB9KSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgZW52OiBFbnZpcm9ubWVudCAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgY3R4OiBjdHggCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGZvcm1hdHRlZF9vdXRwdXQ6IHRydWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgc291cmNlX25hbWU6IG9wdHMuc291cmNlX25hbWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgdGhyb3dfb25fZXJyb3I6IG9wdHMudGhyb3dfb25fZXJyb3IKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgZXJyb3JfcmVwb3J0OiAob3Igb3B0cy5lcnJvcl9yZXBvcnQgbmlsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBxdWlldF9tb2RlOiAob3Igb3B0cy5xdWlldF9tb2RlIGZhbHNlKSB9KSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNhdGNoIEVycm9yIChgZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8gCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAod2hlbiBvcHRzLnRocm93X29uX2Vycm9yCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBlKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGVuIChpbnN0YW5jZW9mIGUgTGlzcFN5bnRheEVycm9yKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc2V0X3Byb3AgZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYG1lc3NhZ2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChKU09OLnBhcnNlIGUubWVzc2FnZSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGluc3RhbmNlb2YgZSBMaXNwU3ludGF4RXJyb3IpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IGVycm9yX2RhdGEgKCsgeyBgZXJyb3I6ICJMaXNwU3ludGF4RXJyb3IiICB9CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZS5tZXNzYWdlKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPSBlcnJvcl9kYXRhICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGVycm9yOiAoc3ViX3R5cGUgZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBtZXNzYWdlOiAgZS5tZXNzYWdlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgc3RhY2s6IGUuc3RhY2sgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGZvcm06IChjb25kIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGFuZCAoaXNfc3RyaW5nPyBleHByZXNzaW9uKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPiBleHByZXNzaW9uLmxlbmd0aCAxMDApKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKCsgKC0+IGV4cHJlc3Npb24gYHN1YnN0ciAwIDEwMCkgIi4uLiIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYXNfbGlzcCBleHByZXNzaW9uKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBwYXJlbnRfZm9ybXM6IFtdCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgc291cmNlX25hbWU6IG9wdHMuc291cmNlX25hbWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBpbnZhbGlkOiB0cnVlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9KSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiBvcHRzLmVycm9yX3JlcG9ydAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAob3B0cy5lcnJvcl9yZXBvcnQgZXJyb3JfZGF0YSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNvbnNvbGUuZXJyb3IgIkNvbXBpbGF0aW9uIEVycm9yOiAiIGVycm9yX2RhdGEpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gY29tcGlsZWQgWyB7IGBlcnJvcjogdHJ1ZSB9IG5pbCAgXSkpKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29uZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGVxIG5pbCBjb21waWxlZCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IHdlIGdvdCBub3RoaW5nIGJhY2sgLSBmb3Igbm93IG5vdGUgaXQgYW5kIHJldHVybiBuaWwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IGlmIHdlIGhhZCBhbiBlcnJvciBpdCBzaG91bGQgb2YgYmVlbiByZXBvcnRlZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmlsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYW5kIGNvbXBpbGVkLjAubmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChub3QgKD09IGNvbXBpbGVkLjAubmFtZXNwYWNlIG5hbWVzcGFjZSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHBhcmVudF9lbnZpcm9ubWVudCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IG5vdCB1cyBhbmQgaWYgd2UgYXJlIGEgY2hpbGQsIHBhc3MgaXQgdXAgdG8gb3VyIHBhcmVudCB0byBkZWFsIHdpdGgKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBwYXJlbnRfZW52aXJvbm1lbnQgYGV2YWx1YXRlX2xvY2FsIGNvbXBpbGVkIGN0eCAoKyB7fQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG9wdHMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB7IGBjb21waWxlZF9zb3VyY2U6IHRydWUgfSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYW5kIGNvbXBpbGVkLjAubmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChub3QgKD09IGNvbXBpbGVkLjAubmFtZXNwYWNlIG5hbWVzcGFjZSkpKQoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IG5vdCB1cywgYnV0IHdlIGFyZSBhIHJvb3QgYXMgd2UgaGF2ZSBubyBwYXJlbnQsIHNvIGRvIHdlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7OyBoYXZlIGEgY2hpbGQgbmFtZXNwYWNlIHRoYXQgbWF0Y2hlcz8KCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKHByb3AgY2hpbGRyZW4gY29tcGlsZWQuMC5uYW1lc3BhY2UpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiAocHJvcCBjaGlsZHJlbiBjb21waWxlZC4wLm5hbWVzcGFjZSkgYGV2YWx1YXRlX2xvY2FsIGNvbXBpbGVkIGN0eCAoKyB7fQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgb3B0cwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgeyBgY29tcGlsZWRfc291cmNlOiB0cnVlIH0pKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgRXZhbEVycm9yICgrICJ1bmtub3duIG5hbWVzcGFjZSAiIGNvbXBpbGVkLjAubmFtZXNwYWNlICIgYXNzaWdubWVudCIpKSkKCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7OyB0aGlzIGlzIHVzIG9yIG5vIG5hbWVzcGFjZSBkZXNpZ25hdGVkIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgb3B0cy5vbl9jb21waWxhdGlvbl9jb21wbGV0ZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChvcHRzLm9uX2NvbXBpbGF0aW9uX2NvbXBsZXRlIGNvbXBpbGVkKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRyeQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHdoZW4gKGFuZCAoaXNfYXJyYXk/IGNvbXBpbGVkKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaXNfb2JqZWN0PyBjb21waWxlZC4wKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb21waWxlZC4wLmN0eXBlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChub3QgKGlzX3N0cmluZz8gY29tcGlsZWQuMC5jdHlwZSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc2V0X3Byb3AgY29tcGlsZWQuMAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGN0eXBlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc3VidHlwZSBjb21waWxlZC4wLmN0eXBlKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPSByZXN1bHQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGNvbXBpbGVkLmVycm9yICA7OyBjb21waWxlciBlcnJvcgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgKG5ldyBjb21waWxlZC5lcnJvciBjb21waWxlZC5tZXNzYWdlKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChhbmQgY29tcGlsZWQuMC5jdHlwZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChvciAoY29udGFpbnM/ICJibG9jayIgY29tcGlsZWQuMC5jdHlwZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IGNvbXBpbGVkLjAuY3R5cGUgImFzc2lnbm1lbnQiKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPT0gY29tcGlsZWQuMC5jdHlwZSAiX18hTk9UX0ZPVU5EIV9fIikpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKGNvbXBpbGVkLjAuaGFzX2xpc3BfZ2xvYmFscykKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8gCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc2V0X3Byb3AgY29tcGlsZWQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAxCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5ldyBBc3luY0Z1bmN0aW9uICJFbnZpcm9ubWVudCIgKCsgInsgIiBjb21waWxlZC4xICJ9IikpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZWQuMSBFbnZpcm9ubWVudCkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldF9wcm9wIGNvbXBpbGVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChuZXcgQXN5bmNGdW5jdGlvbiAgKCsgInsiIGNvbXBpbGVkLjEgIn0iKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZWQuMSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGFuZCBjb21waWxlZC4wLmN0eXBlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG9yICg9PSAiQXN5bmNGdW5jdGlvbiIgY29tcGlsZWQuMC5jdHlwZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09ICJzdGF0ZW1lbnQiIGNvbXBpbGVkLjAuY3R5cGUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSAib2JqbGl0ZXJhbCIgY29tcGlsZWQuMC5jdHlwZSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKGNvbXBpbGVkLjAuaGFzX2xpc3BfZ2xvYmFscykKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOyhjb25zb2xlLmxvZyAiZW52OiBjb21waWxlZCB0ZXh0OiAiICgrICJ7IHJldHVybiAiIGNvbXBpbGVkLjEgIn0gIikpICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldF9wcm9wIGNvbXBpbGVkCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAxCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAobmV3IEFzeW5jRnVuY3Rpb24gIkVudmlyb25tZW50IiAoKyAieyByZXR1cm4gIiBjb21waWxlZC4xICJ9ICIpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNvbXBpbGVkLjEgRW52aXJvbm1lbnQpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBjb21waWxlZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5ldyBBc3luY0Z1bmN0aW9uICgrICJ7IHJldHVybiAiIGNvbXBpbGVkLjEgIn0iKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb21waWxlZC4xKSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGFuZCBjb21waWxlZC4wLmN0eXBlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09ICJGdW5jdGlvbiIgY29tcGlsZWQuMC5jdHlwZSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoY29tcGlsZWQuMC5oYXNfbGlzcF9nbG9iYWxzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBjb21waWxlZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5ldyBGdW5jdGlvbiAiRW52aXJvbm1lbnQiICgrICJ7IHJldHVybiAiIGNvbXBpbGVkLjEgIn0gIikpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZWQuMSBFbnZpcm9ubWVudCkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8gCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBjb21waWxlZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5ldyBGdW5jdGlvbiAoKyAieyByZXR1cm4gIiBjb21waWxlZC4xICJ9IikpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZWQuMSkpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZSA7OyB0aGlzIGlzIGEgc2ltcGxlIGV4cHJlc3Npb24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29tcGlsZWQuMSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjYXRjaCBFcnJvciAoZSkKCQkJCSAgICAgKGRvCgkJCQkgICAgICAod2hlbiAob3Igb3B0cy5sb2dfZXJyb3JzCgkJCQkJCSAgICg+IEVudmlyb25tZW50LmNvbnRleHQuc2NvcGUuX19WRVJCT1NJVFlfXyAgNCkpCSAgIAoJCQkJCShpZiBlLmRldGFpbHMJCQkJCSAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChlbnZfbG9nICJjYXVnaHQgZXJyb3I6ICIgZS5kZXRhaWxzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZW52X2xvZyAiY2F1Z2h0IGVycm9yOiAiIGUubmFtZSBlLm1lc3NhZ2UgZSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoYW5kICg9PSAoc3ViX3R5cGUgZSkgIlN5bnRheEVycm9yIikKCQkJCQkgICAgICAgKG9yIG9wdHMubG9nX2Vycm9ycwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPiBFbnZpcm9ubWVudC5jb250ZXh0LnNjb3BlLl9fVkVSQk9TSVRZX18gIDQpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29uc29sZS5sb2cgY29tcGlsZWQuMSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh3aGVuIG9wdHMuZXJyb3JfcmVwb3J0CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG9wdHMuZXJyb3JfcmVwb3J0IChpZiBlLmRldGFpbHMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBlLmRldGFpbHMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBlcnJvcjogZS5uYW1lCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBtZXNzYWdlOiBlLm1lc3NhZ2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGZvcm06IG5pbAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgcGFyZW50X2Zvcm1zOiBuaWwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGludmFsaWQ6IHRydWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYHRleHQ6IGUuc3RhY2sKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfSkpKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gcmVzdWx0IGUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAob3IgKG5vdCBvcHRzLmNhdGNoX2Vycm9ycykKCQkJCQkgICAgICAgKGFuZCBjdHggY3R4LmluX3RyeSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHByb2duCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgcmVzdWx0KSkpKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlc3VsdCkpKSkpCiAgICAgICAKCSAoZXZhbHVhdGUgKGZuIChleHByZXNzaW9uIGN0eCBvcHRzKQoJCSAgICAgICAocHJvZ24JCQkgCgkJCShjb25kCiAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IG5hbWVzcGFjZSBhY3RpdmVfbmFtZXNwYWNlKQoJCQkgIChldmFsdWF0ZV9sb2NhbCBleHByZXNzaW9uIGN0eCBvcHRzKSAgOzsgd2UgYnkgZGVmYXVsdCB1c2UgZXZhbHVhdGUgbG9jYWwKICAgICAgICAgICAgICAgICAgICAgICAgICA7cGFyZW50X2Vudmlyb25tZW50CiAgICAgICAgICAgICAgICAgICAgICAgICAgOygtPiBwYXJlbnRfZW52aXJvbm1lbnQgYGV2YWx1YXRlIGV4cHJlc3Npb24gY3R4IG9wdHMpCiAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IG5hbWVzcGFjZSAiY29yZSIpICAgICAgICAgICAgICAgICAgICAgICAgICAKCQkJICAgKC0+IChwcm9wIGNoaWxkcmVuIGFjdGl2ZV9uYW1lc3BhY2UpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgZXZhbHVhdGUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGV4cHJlc3Npb24gY3R4IG9wdHMpKSkpKSA7OyBvdGhlcndpc2UgZXZhbHVhdGUgdXNpbmcgdGhlIGFjdGl2ZSBuYW1lc3BhY2UKICAgICAgIAogICAgICAgKGV2YWxfc3RydWN0IChmbiAobGlzcF9zdHJ1Y3QgY3R4IG9wdHMpCiAgICAgICAgICAgICAgICAgICAgICAobGV0CiAgICAgICAgICAgICAgICAgICAgICAgICAgKChydmFsIG5pbCkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7KGVudl9sb2cgImV2YWxfc3RydWN0IC0+IiAoY2xvbmUgbGlzcF9zdHJ1Y3QpIGN0eCBvcHRzKQogICAgICAgICAgICAgICAgICAgICAgICAoaWYgKGlzX2Z1bmN0aW9uPyBsaXNwX3N0cnVjdCkKICAgICAgICAgICAgICAgICAgICAgICAgICAoPSBydmFsIChsaXNwX3N0cnVjdCkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gcnZhbCAoZXZhbHVhdGUgbGlzcF9zdHJ1Y3QgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY3R4IAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgrIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGpzb25faW46IHRydWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChvciBvcHRzIHt9KSkpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDsoZW52X2xvZyAiZXZhbF9zdHJ1Y3QgPC0iIChjbG9uZSBydmFsKSkKICAgICAgICAgICAgICAgICAgICAgICAgcnZhbCkpKSkKCiAgICAgOzsgdGhlc2UgYXJlIHNlbGVjdGVkIG5hbWVzIHdoaWNoIHdlIGRvbid0IG5lZWQgdG8gcHJvcG9nYXRlIHRvIGNoaWxkcmVuCiAgICAgOzsgaG93ZXZlciwgYW55dGhpbmcgdGhhdCBvcGVyYXRlcyBvbiB0aGUgdG9wbGV2ZWwgY29udGV4dCBuZWVkcyB0byByZW1haW4KICAgICA7OyBzbyBnZXRfZ2xvYmFsLCB1bmRlZmluZSwgc2V0X2dsb2JhbCwgZXRjLiAKICAgICAKICAgICAoZGVmdmFyIGJ1aWx0X2lucwogICAgICAgWyJNQVhfU0FGRV9JTlRFR0VSIiwiTGlzcFN5bnRheEVycm9yIiwic3ViX3R5cGUiLCJfX1ZFUkJPU0lUWV9fIiwiaW50IiwiZmxvYXQiLAogICAgICAgICJ2YWx1ZXMiLCJwYWlycyIsImtleXMiLCJ0YWtlIiwicHJlcGVuZCIsImZpcnN0IiwibGFzdCIsImxlbmd0aCIsImNvbmoiLCJyZXZlcnNlIiwKICAgICAgICAibWFwIiwiYmluZCIsInRvX29iamVjdCIsInRvX2FycmF5Iiwic2xpY2UiLCJyZXN0Iiwic2Vjb25kIiwidGhpcmQiLCJjaG9wIiwiY2hvbXAiLAoJIm5vdCIsInB1c2giLCJwb3AiLCJsaXN0IiwiZmxhdHRlbiIsImpzbGFtYmRhIiwiam9pbiIsImxvd2VyY2FzZSIsInVwcGVyY2FzZSIsImxvZyIsCgkic3BsaXQiLCJzcGxpdF9ieSIsImlzX29iamVjdD8iLCJpc19hcnJheT8iLCAiaXNfbnVtYmVyPyIsICJpc19mdW5jdGlvbj8iLCAiaXNfc2V0PyIsCgkiaXNfZWxlbWVudD8iLCAiaXNfc3RyaW5nPyIsICJpc19uaWw/IiwgImlzX3JlZ2V4PyIsICJpc19kYXRlPyIsICJlbmRzX3dpdGg/IiwgInN0YXJ0c193aXRoPyIsCgkiYmxhbms/IiwiY29udGFpbnM/IiwibWFrZV9zZXQiLCAiZXZhbF9leHAiLCAiaW5kaXJlY3RfbmV3IiwgImdldF9pbXBvcnRfZW50cnkiCiAgICAgICAgInJhbmdlIiwgImFkZCIsICJtZXJnZV9vYmplY3RzIiwgImluZGV4X29mIiwgInJlc29sdmVfcGF0aCIsICJkZWxldGVfcHJvcCIsCgkibWluX3ZhbHVlIiwibWF4X3ZhbHVlIiwiaW50ZXJsYWNlIiwidHJpbSIsImFzc2VydCIsInVucXVvdGlmeSIsIm9yX2FyZ3MiLAoJInNwZWNpYWxfb3BlcmF0b3JzIiwiZGVmY2xvZyIsIk5PVF9GT1VORCIsImNoZWNrX2V4dGVybmFsX2Vudl9kZWZhdWx0IiAiYnVpbHRfaW5zIl0pCgogICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlCgkgICAgICAgYGJ1aWx0X2lucwoJICAgICAgIGJ1aWx0X2lucykKICAgICAKICAgICA7OyBUaGlzIHdpbGwgYWxsb3cgdXMgdG8gc3dhcCBvdXQgY29tcGlsZXIgZnVuY3Rpb25zIGZvciB3aGVuIHdlIGFyZSB1c2luZyBwb3RlbnRpYWxseQogICAgIDs7IG11bHRpcGxlIGNvbXBpbGVycywgZm9yIGV4YW1wbGUgaW4gdGhlIGRldmVsb3BtZW50IG9mIHRoZSBjb21waWxlci4KICAgICAKICAgICAoZGVmdmFyIHNldF9jb21waWxlciAoZm4gKGNvbXBpbGVyX2Z1bmN0aW9uKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IGNvbXBpbGVyIGNvbXBpbGVyX2Z1bmN0aW9uKQkJCSAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IGNvbXBpbGVyX29wZXJhdG9ycwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29tcGlsZXIgW10geyBgc3BlY2lhbF9vcGVyYXRvcnM6IHRydWUgYGVudjogRW52aXJvbm1lbnQgfSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiY29tcGlsZXIiCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjb21waWxlcikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHJlZ2lzdGVyX2ZlYXR1cmUgImNvbXBpbGVyIikKCSAgICAgICAgICAgICAgICAgICAgICBjb21waWxlcikpKQkgIAogICAgIAogICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlCgkgICAgICAgYHNldF9jb21waWxlcgoJICAgICAgIHNldF9jb21waWxlcikKICAgICAgICAgIAogICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlCgkgICAgICAgYGNsb25lCgkgICAgICAgKGZuICh2YWwpCgkJIChpZiAoPT0gdmFsIEVudmlyb25tZW50KQoJCSAgIEVudmlyb25tZW50CgkJICAgKGNsb25lIHZhbCAwIEVudmlyb25tZW50KSkpKQoKICAgICA7OyBFeHBvc2Ugb3VyIGdsb2JhbCBzZXR0ZXJzL2dldHRlcnMgZm9yIHRoZSBkeW5hbWljIGFuZCB0b3AgbGV2ZWwgY29udGV4dHMKICAgICAKICAgICAoc2V0X3Byb3AgRW52aXJvbm1lbnQKICAgICAgICAgICAgICAgYGdldF9nbG9iYWwgZ2V0X2dsb2JhbAogICAgICAgICAgICAgICBgc2V0X2dsb2JhbCBzZXRfZ2xvYmFsICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgIGBzeW1ib2xfZGVmaW5pdGlvbiBzeW1ib2xfZGVmaW5pdGlvbiAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgIGBuYW1lc3BhY2UgbmFtZXNwYWNlKQoKICAgICAKICAgICA7OyBJZiB3ZSBoYXZlIGNoaWxkIGVudmlyb25tZW50cyAobmFtZXNwYWNlcykgd2UgbmVlZCB0byBrbm93IGFib3V0IHRoZW0KICAgICA7OyBiZWNhdXNlIHdlIG5lZWQgdG8gYmUgYWJsZSB0byBtYW5hZ2UgdGhlbSBhbmQgd2UgbmVlZCB0byBiZSBhYmxlIHRvCiAgICAgOzsgc2V0IG91ciBjdXJyZW50IGV2YWx1YXRpb24gcGF0aCB0byB0aGUgY29ycmVjdCBlbnZpcm9ubWVudCBhcyB0aGUKICAgICA7OyBlbnRyeSBwb2ludC4KICAgICA7OyBjb250YWluZXIgZm9yIHRoZSBjaGlsZCBlbnZpcm9ubWVudHMKICAgICAgIAogICAgIChkZWZ2YXIgY2hpbGRyZW4gKG9yIG9wdHMuY2hpbGRyZW4ge30pKQogICAgIAogICAgIDs7IGNvbnRhaW5lciBmb3IgZGVjbGFyYXRpb25zIHBlcnRhaW5pbmcgdG8gb3VyIGNoaWxkIGVudmlyb25tZW50cwogICAgIAogICAgIChkZWZ2YXIgY2hpbGRyZW5fZGVjbGFyYXRpb25zIChvciBvcHRzLmNoaWxkcmVuX2RlY2xhcmF0aW9ucyB7fSkpCgogICAgICAgICAgOzsgbm93IGJyaW5nIGFueSBpbmNsdWRlcyBmcm9tIHRoZSBvcHRpb25zLi4uCiAgICAgOzsgdGhlIG5pbCB2YWx1ZSBvZiBpbmNsdWRlZF9nbG9iYWxzIGlzIHJlcGxhY2VkIHdpdGggdGhlIHNhdmVfZW52CiAgICAgOzsgZnVuY3Rpb24KICAgICAKICAgCgogICAgIDs7IHdoZW4gaW5jbHVkZWRfZ2xvYmFscyBoYXMgYSBwb3B1bGF0ZWQgdmFsdWUgKHdoaWNoIGl0IGdldHMgZnJvbSBzYXZlX2VudikKICAgICA7OyB0aGUgZGVmaW5pdGlvbnMgZ2V0IHJlaW50ZWdyYXRlZCBpbnRvIHRoaXMgZW52aXJvbm1lbnQKICAgICAKICAgICAKICAgICAKICAgICA7OyB0aGUgY29yZSBuYW1lc3BhY2UgaGFzIHNwZWNpYWwgcmVzcG9uc2liaWxpdGllcywgbmFtZWx5IHRvIG1hbmFnZQogICAgIDs7IHRoZSBuYW1lc3BhY2VzIGFuZCB0aGUgb3ZlcmFsbCBjb25maWd1cmF0aW9uLCB3aGljaCBpcyBhdmFpbGFibGUKICAgICA7OyB2aWEgdGhlICplbnZfY29uZmlnKiBvYmplY3QKCiAgICAgKHdoZW4gKD09IG5hbWVzcGFjZSAiY29yZSIpCiAgICAgICAKICAgICAgICh3aGVuIChub3QgKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZQoJCQlgKmVudl9jb25maWcqKSkKCSAoc2V0X3Byb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZQoJCSAgIGAqZW52X2NvbmZpZyoKCQkgICB7IGBleHBvcnQ6IHsgYHNhdmVfcGF0aDogImpzL2p1bm8uanMiCgkJICAgICAgICAgICAgICAgIGBkZWZhdWx0X25hbWVzcGFjZTogImNvcmUiCgkJICAgICAgICAgICAgICAgIGBpbmNsdWRlX3NvdXJjZTogZmFsc2UgfQoJCSAgICAgYGZlYXR1cmVzOiBbXQoJCSAgICAgYGJ1aWxkOiAoamF2YXNjcmlwdCBETElTUF9FTlZfVkVSU0lPTikKICAgICAgICAgICAgICAgICAgICAgYGltcG9ydHM6IHt9IH0pKQoKICAgICAgIDs7IHJldHVybnMgdGhlIGN1cnJlbnQgbmFtZXNwYWNlIAoKICAgICAgIChkZWZ2YXIgY3VycmVudF9uYW1lc3BhY2UgKGZ1bmN0aW9uICgpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBhY3RpdmVfbmFtZXNwYWNlKSkKICAgICAgIAogICAgICAgKGRlZnZhciBjcmVhdGVfbmFtZXNwYWNlIChmbiAobmFtZSBvcHRpb25zKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG5vdCAoaXNfc3RyaW5nPyBuYW1lKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93IFR5cGVFcnJvciAibmFtZXNwYWNlIG5hbWUgbXVzdCBiZSBhIHN0cmluZyIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChwcm9wIGNoaWxkcmVuIG5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBFdmFsRXJyb3IgIm5hbWVzcGFjZSBhbHJlYWR5IGV4aXN0cyIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChsZXQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgob3B0aW9ucyAob3Igb3B0aW9ucyB7fSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGNoaWxkX2VudiAoZGxpc3BfZW52IHsgYHBhcmVudF9lbnZpcm9ubWVudDogRW52aXJvbm1lbnQgYG5hbWVzcGFjZTogbmFtZSBgY29udGFpbmVkOiBvcHRpb25zLmNvbnRhaW5lZCB9KSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgY2hpbGRfZW52LmV2YWx1YXRlICAgOzsgd2UgZ290IGFuIGxlZ2l0IGVudiBiYWNrIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBjaGlsZF9lbnYgYHNldF9jb21waWxlciBjb21waWxlcikgOzsgd2UgYWxsIHNoYXJlIGEgc2luZ2xlIGNvbXBpbGVyIGJ5IGRlZmF1bHQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldF9wcm9wIGNoaWxkcmVuCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuYW1lCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjaGlsZF9lbnYpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBjaGlsZHJlbl9kZWNsYXJhdGlvbnMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG5hbWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHt9KQoJCQkJCSAgKC0+IGNoaWxkX2VudiBgZXZhbHVhdGVfbG9jYWwgIihmb3JfZWFjaCAoc3ltIGJ1aWx0X2lucykgKGRlbGV0ZV9wcm9wIEVudmlyb25tZW50LmNvbnRleHQuc2NvcGUgc3ltKSkiKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoLT4gY2hpbGRfZW52IGBldmFsdWF0ZV9sb2NhbCAiKGZvcl9lYWNoIChzeW0gYnVpbHRfaW5zKSAoZGVsZXRlX3Byb3AgRW52aXJvbm1lbnQuZGVmaW5pdGlvbnMgc3ltKSkiKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgb3B0aW9ucy5jb250YWluZWQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoc2V0X3Byb3AgKHByb3AgY2hpbGRyZW5fZGVjbGFyYXRpb25zIG5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBjb250YWluZWQgdHJ1ZSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCAocHJvcCBjaGlsZHJlbl9kZWNsYXJhdGlvbnMgbmFtZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYHNlcmlhbGl6ZV93aXRoX2ltYWdlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoPT0gZmFsc2Ugb3B0aW9ucy5zZXJpYWxpemVfd2l0aF9pbWFnZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmYWxzZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHRydWUpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuYW1lKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb25zb2xlLmVycm9yICJFTlY6IGNvdWxkbid0IGNyZWF0ZSB0aGUgY2hpbGQgZW52aXJvbm1lbnQuIFJlY2VpdmVkOiAiIGNoaWxkX2VudikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93IEV2YWxFcnJvciAoKyAidW5hYmxlIHRvIGNyZWF0ZSBuYW1lc3BhY2UgIiBuYW1lKSkpKSkpKSkKICAgICAgIAogICAgICAgKGRlZnZhciBzZXRfbmFtZXNwYWNlIChmbiAobmFtZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChub3QgKGlzX3N0cmluZz8gbmFtZSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBUeXBlRXJyb3IgIm5hbWVzcGFjZSBuYW1lIG11c3QgYmUgYSBzdHJpbmciKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoYW5kIChub3QgKD09ICJjb3JlIiBuYW1lKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZXEgbmlsIChwcm9wIGNoaWxkcmVuIG5hbWUpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93IEV2YWxFcnJvciAoKyAibmFtZXNwYWNlICIgbmFtZSAiIGRvZXNuJ3QgZXhpc3QiKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZWxzZSAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAoPT0gbmFtZSAiY29yZSIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoZG8gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IGFjdGl2ZV9uYW1lc3BhY2UgImNvcmUiKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9IGFjdGl2ZV9uYW1lc3BhY2UgbmFtZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKSkgIDs7IHBvaW50IHRoZSBldmFsdWF0ZSBmdW5jdGlvbiBhdCB0aGUgcmlnaHQgZW52aXJvbm1lbnQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBuYW1lKSkpKQoKICAgICAgIChkZWZ2YXIgZGVsZXRlX25hbWVzcGFjZSAoZm4gKG5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoY29uZAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAobm90IChpc19zdHJpbmc/IG5hbWUpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgVHlwZUVycm9yICJuYW1lc3BhY2UgbmFtZSBtdXN0IGJlIGEgc3RyaW5nIikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09ICJjb3JlIiBuYW1lKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAodGhyb3cgRXZhbEVycm9yICJjb3JlIG5hbWVzcGFjZSBjYW5ub3QgYmUgcmVtb3ZlZCIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChlcSBuaWwgKHByb3AgY2hpbGRyZW4gbmFtZSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBFdmFsRXJyb3IgKCsgIm5hbWVzcGFjZSAiIG5hbWUgImRvZXNuJ3QgZXhpc3QiKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD09IG5hbWUgKGN1cnJlbnRfbmFtZXNwYWNlKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93IEV2YWxFcnJvciAibmFtZXNwYWNlIGlzIHRoZSBjdXJyZW50IG5hbWVzcGFjZSIpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHJlbW92ZV9wcm9wIGNoaWxkcmVuIG5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGZvcl9lYWNoIChgayAob3IgKHJlc29sdmVfcGF0aCBbIGBnbG9iYWxfY3R4IGBzY29wZSBgKmVudl9jb25maWcqIGBpbXBvcnRzXSBFbnZpcm9ubWVudCkgW10pKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAod2hlbiAoc3RhcnRzX3dpdGg/IGsgbmFtZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocmVtb3ZlX3Byb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC4qZW52X2NvbmZpZyouaW1wb3J0cyBrKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmFtZSkpKSkKCiAgICAgICAKICAgICAgIDs7IGlmIHdlIGFyZSBpbiBjb3JlLCBzZXQgdXAgdGhlIGFjdGl2ZSBuYW1lc3BhY2UKICAgICAgIAogICAgICAgKHNldF9wcm9wIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUKICAgICAgICAgICAgICAgICAiY3JlYXRlX25hbWVzcGFjZSIgY3JlYXRlX25hbWVzcGFjZQogICAgICAgICAgICAgICAgICJzZXRfbmFtZXNwYWNlIiBzZXRfbmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgImRlbGV0ZV9uYW1lc3BhY2UiIGRlbGV0ZV9uYW1lc3BhY2UgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgIm5hbWVzcGFjZXMiIChmdW5jdGlvbiAoKSAoKyAoa2V5cyBjaGlsZHJlbikgImNvcmUiKSkgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgImN1cnJlbnRfbmFtZXNwYWNlIiBjdXJyZW50X25hbWVzcGFjZSkpCgogICAgIChkZWZ2YXIgZ2V0X25hbWVzcGFjZV9oYW5kbGUgKGZuIChuYW1lKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBuYW1lc3BhY2UgbmFtZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgRW52aXJvbm1lbnQgIDs7IGp1c3QgcmV0dXJuIHVzCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBuYW1lc3BhY2UgImNvcmUiKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKGFuZCAoaXNfc3RyaW5nPyBuYW1lKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvcCBjaGlsZHJlbiBuYW1lKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvcCBjaGlsZHJlbiBuYW1lKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgcGFyZW50X2Vudmlyb25tZW50CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICgtPiBwYXJlbnRfZW52aXJvbm1lbnQgYGdldF9uYW1lc3BhY2VfaGFuZGxlIG5hbWUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93ICJpbnZhbGlkIG5hbWVzcGFjZSBoYW5kbGUgcmVxdWVzdGVkIikpKSkpCiAgICAgICAKICAgICAKICAgICA7OyBpbmNsdWRlZF9nbG9iYWxzIG5pbCB2YWx1ZSB3aWxsIGJlIHJlcGxhY2VkIGluIHRoZSBKU09OIHRyZWUKICAgICA7OyB3aXRoIHZhbHVlcyBmcm9tIHRoaXMgZW52aXJvbm1lbnQgdXBvbiBzYXZpbmcgdGhlIGltYWdlLiBJdAogICAgIDs7IGlzIHRoZW4gdXNlZCB0byByZWh5ZHJhdGUgdGhlIHZhbHVlcyBvbiByZXN0YXJ0CiAgICAgCiAgICAgKGRlZnZhciBpbmNsdWRlZF9nbG9iYWxzIG5pbCkKICAgICAKICAgICAod2hlbiAoYW5kIGluY2x1ZGVkX2dsb2JhbHMKCQkoPT0gbmFtZXNwYWNlICJjb3JlIikpCgogICAgICAgOzsgZXZhbHVhdGUgdGhlIGluc2VydGVkIGNvZGUuLi4gCiAgICAgICAKICAgICAgICg9IGluY2x1ZGVkX2dsb2JhbHMgKGluY2x1ZGVkX2dsb2JhbHMpKQogICAgICAgCiAgICAgICA7OyBpZiBub3QgYWxyZWFkeSBkZWZpbmVkIGJ5IHRoZSBlbnZpcm9ubWVudCBpdHNlbGYsIG1lcmdlIHRoZQogICAgICAgOzsgcHJvdmlkZWQgbmFtZXMgYW5kIHZhbHVlcyBpbnRvIHRoZSBnbG9iYWwgY29udGV4dC4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDsoY29uc29sZS5sb2cgImltcG9ydGluZyBzeW1ib2xzOiAiIChwcm9wIGluY2x1ZGVkX2dsb2JhbHMgYHN5bWJvbHMpKQoKICAgICAgICh3aGVuIChyZXNvbHZlX3BhdGggWyBgc3ltYm9scyBgY29tcGlsZXIgXSBpbmNsdWRlZF9nbG9iYWxzKQogICAgICAgICAoc2V0X3Byb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZQogICAgICAgICAgICAgICAgICAgYGNvbXBpbGVyCiAgICAgICAgICAgICAgICAgICAocmVzb2x2ZV9wYXRoIFsgYHN5bWJvbHMgYGNvbXBpbGVyIF0gaW5jbHVkZWRfZ2xvYmFscykpCiAgICAgICAgIDs7IHVub2ZmaWNpYWxseSBzZXQgdGhlIGNvbXBpbGVyLCBidXQgd2Ugd2lsbCBjb21wbGV0ZSB0aGUgc2V0dGluZyBvZiBpdCBvbmNlCiAgICAgICAgIDs7IHRoZSByZW1haW5kZXIgb2YgdGhlIGZ1bmN0aW9ucyBoYXZlIGJlZW4gZW1iZWRkZWQKICAgICAgICAgKGRlYnVnKQogICAgICAgICAoPSBjb21waWxlciBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlLmNvbXBpbGVyKSkKCiAgICAgICA7OyBsb2FkIHRoZSBleHBvcnRlZCBjb25maWcgCiAgICAgICAod2hlbiAoaXNfb2JqZWN0PyAocHJvcCBpbmNsdWRlZF9nbG9iYWxzIGBjb25maWcpKQogICAgICAgICAoc2V0X3Byb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZQogICAgICAgICAgICAgICAgICAgIiplbnZfY29uZmlnKiIKICAgICAgICAgICAgICAgICAgIGluY2x1ZGVkX2dsb2JhbHMuY29uZmlnKSkKICAgICAgICAgICAgICAgICAgIAoKICAgICAgIDs7IGJpbmQgYW55IHN0YXRpYyBpbXBvcnRzIGZvciB0aGUgY29yZSBuYW1lc3BhY2UKICAgICAgIDs7IHRoYXQgbWF5IGJlIG5lZWRlZCBhcyBkZXBlbmRlbmNpZXMKCiAgICAgICAoZGVmdmFyIGltcHMgbmlsKQogICAgICAgCiAgICAgICAod2hlbiAoaXNfb2JqZWN0PyAocHJvcCBpbmNsdWRlZF9nbG9iYWxzIGBpbXBvcnRzKSkgICAgICAgICAKICAgICAgICAgKD0gaW1wcyAocHJvcCBpbmNsdWRlZF9nbG9iYWxzIGBpbXBvcnRzKSkgICAgICAgICAKICAgICAgICAgKHdoZW4gaW1wcwogICAgICAgICAgIChmb3JfZWFjaCAoaW1wX3NvdXJjZSAodmFsdWVzIGltcHMpKQogICAgICAgICAgICAgIChwcm9nbiAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAoY29uZAogICAgICAgICAgICAgICAgICg9PSBpbXBfc291cmNlLm5hbWVzcGFjZSBuYW1lc3BhY2UpICA7OyBvbmx5IGZvciBjb3JlIGF0IHRoaXMgcG9pbnQuLgogICAgICAgICAgICAgICAgIChwcm9nbiAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGltcF9zb3VyY2Uuc3ltYm9sCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGltcF9zb3VyY2UuaW5pdGlhbGl6ZXIpKSkpKSkpCgogICAgICAgOzsgTmV4dCBzZXR1cCB0aGUgc3ltYm9scyBhbmQgdGhlaXIgdmFsdWVzIGluIGNvcmUgZ2xvYmFsIHNjb3BlLi4uCiAgICAgICAKICAgICAgICh3aGVuIChpc19vYmplY3Q/IChwcm9wIGluY2x1ZGVkX2dsb2JhbHMgYHN5bWJvbHMpKQogICAgICAgICAoZm9yX2VhY2ggKHN5bXNldCAocGFpcnMgaW5jbHVkZWRfZ2xvYmFscy5zeW1ib2xzKSkKICAgICAgICAgICAgICAgICAgICh3aGVuIChlcSBuaWwgKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSBzeW1zZXQuMCkpCiAgICAgICAgICAgICAgICAgICAgICAgICA7ICAgICg9PSBzeW1zZXQuMCAiKmVudl9jb25maWcqIikpICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzeW1zZXQuMAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgc3ltc2V0LjEpKSkpCiAgICAgICAKICAgICAgIDs7IFRoZW4sIHNldHVwIHRoZWlyIGRlZmluaXRpb25zLi4KICAgICAgIAogICAgICAgKHdoZW4gKGlzX29iamVjdD8gKHByb3AgaW5jbHVkZWRfZ2xvYmFscyBgZGVmaW5pdGlvbnMpKSAgICAgICAgIAogICAgICAgICAoZm9yX2VhY2ggKHN5bXNldCAocGFpcnMgaW5jbHVkZWRfZ2xvYmFscy5kZWZpbml0aW9ucykpCiAgICAgICAgICAgICAgICAgICAod2hlbiAoZXEgbmlsIChwcm9wIEVudmlyb25tZW50LmRlZmluaXRpb25zIHN5bXNldC4wKSkgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgKHNldF9wcm9wIEVudmlyb25tZW50LmRlZmluaXRpb25zCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzeW1zZXQuMAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgc3ltc2V0LjEpKSkpCgogICAgICAgOzsgQW55IGRlY2xhcmF0aW9ucyBmb3IgY29yZS4uCiAgICAgICAKICAgICAgICh3aGVuIChpc19vYmplY3Q/IChwcm9wIGluY2x1ZGVkX2dsb2JhbHMgYGRlY2xhcmF0aW9ucykpCiAgICAgICAgIChmb3JfZWFjaCAoc3ltc2V0IChwYWlycyBpbmNsdWRlZF9nbG9iYWxzLmRlY2xhcmF0aW9ucykpCiAgICAgICAgICAgICAgICAgICAod2hlbiAoZXEgbmlsIChwcm9wIEVudmlyb25tZW50LmRlY2xhcmF0aW9ucyBzeW1zZXQuMCkpICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBFbnZpcm9ubWVudC5kZWNsYXJhdGlvbnMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHN5bXNldC4wCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocXVvdGVsIHN5bXNldC4xKSkpKSkKCiAgICAgICA7OyBpZiB3ZSBoYXZlIGEgY29tcGlsZXIsIHNldCB0aGUgZW52aXJvbm1lbnQgdG8gdXNlIGl0LgogICAgIAogICAgICAgKHdoZW4gKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSBgY29tcGlsZXIpICAgICAgICAgCgkgKHNldF9jb21waWxlciAocHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlIGBjb21waWxlcikpKQoKICAgICAgIDs7IG5leHQgZm9yIGFueSBjaGlsZCBuYW1lc3BhY2VzIChlbnZpcm9ubWVudHMpLCBjcmVhdGUgdGhlbS4uCiAgICAgIAogICAgICAgKHdoZW4gKGlzX29iamVjdD8gKHByb3AgaW5jbHVkZWRfZ2xvYmFscyBgY2hpbGRyZW4pKQogICAgICAgICAoZm9yX2VhY2ggKGNoaWxkc2V0IChwYWlycyBpbmNsdWRlZF9nbG9iYWxzLmNoaWxkcmVuKSkKCSAgICAgICAgICAgKGRvCSAgICAgICAKCSAgICAgICAgICAgICAoY3JlYXRlX25hbWVzcGFjZSBjaGlsZHNldC4wCgkJCQkgICAgICAgKGlmIChwcm9wIGluY2x1ZGVkX2dsb2JhbHMuY2hpbGRyZW5fZGVjbGFyYXRpb25zIGNoaWxkc2V0LjApCgkJCQkgICAgICAgICAocHJvcCBpbmNsdWRlZF9nbG9iYWxzLmNoaWxkcmVuX2RlY2xhcmF0aW9ucyBjaGlsZHNldC4wKQoJCQkJICAgICAgICAge30pKSkpICAgICAgICAgICAgICAgICAgCgogICAgICAgICA7OyBvbmNlIHRoZSBuYW1lc3BhY2VzIGFyZSBjcmVhdGVkLCBzZXQgYW55IHN0YXRpYyBpbXBvcnRzIHRoZXkgaGF2ZQogICAgICAgICA7OyBhbmQgZXZhbHVhdGUgdGhlIGNoaWxkIAogICAgICAgICAKICAgICAgICAgKGZvcl9lYWNoIChjaGlsZHNldCAocGFpcnMgaW5jbHVkZWRfZ2xvYmFscy5jaGlsZHJlbikpCgkgICAgICAgICAgIChkbyAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICA7KGNvbnNvbGUubG9nICJpbnN0YWxsaW5nIGNoaWxkIHN5bWJvbHM6ICIgY2hpbGRzZXQuMCkKICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgIChkZWZ2YXIgY2hpbGRlbnYgKHByb3AgY2hpbGRyZW4gY2hpbGRzZXQuMCkpCiAgICAgICAgICAgICAgICAgICAgICh3aGVuIChpc19vYmplY3Q/IChwcm9wIGluY2x1ZGVkX2dsb2JhbHMgYGltcG9ydHMpKQogICAgICAgICAgICAgICAgICAgICAgICg9ICBpbXBzIChwcm9wIGluY2x1ZGVkX2dsb2JhbHMgYGltcG9ydHMpKSAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgKHdoZW4gaW1wcwogICAgICAgICAgICAgICAgICAgICAgICAgKGZvcl9lYWNoIChpbXBfc291cmNlICh2YWx1ZXMgaW1wcykpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHByb2duICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChpZiAocHJvcCBjaGlsZHJlbiBpbXBfc291cmNlLm5hbWVzcGFjZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldF9nbG9iYWwgKCsgIiIgaW1wX3NvdXJjZS5uYW1lc3BhY2UgIi8iIGltcF9zb3VyY2Uuc3ltYm9sKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpbXBfc291cmNlLmluaXRpYWxpemVyKSkpICkpKSkKICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBjaGlsZHNldAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKC0+IGNoaWxkZW52IGBldmFsIGNoaWxkc2V0LjEpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKCSAgICAgICAgICAgICAoZm9yX2VhY2ggKHN5bXNldCBjaGlsZHNldC4xKQoJCQkgICAgICAgKHdoZW4gKGVxIG5pbCAocmVzb2x2ZV9wYXRoIFsgY2hpbGRzZXQuMCBgY29udGV4dCBgc2NvcGUgc3ltc2V0LjAgXSBjaGlsZHJlbikpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDs7IHRoZSBjaGlsZCBlbnYgaXMgYWxyZWFkeSBjb21waWxlZCBhdCB0aGlzIHBvaW50CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7KGNvbnNvbGUubG9nIGNoaWxkc2V0LjAgIjogIiBzeW1zZXQuMCBzeW1zZXQuMSkgICAgICAgICAgICAgICAgICAgICAgICAgIAoJCQkgICAgICAgICAoc2V0X3BhdGggWyBjaGlsZHNldC4wIGBjb250ZXh0IGBzY29wZSBzeW1zZXQuMCBdIGNoaWxkcmVuCQkJCQkgIAoJCQkJICAgICAgICAgICBzeW1zZXQuMSkpKSkpKSkKCiAgICAgOzsgY2xvbmVfdG9fbmV3OiBhbiBlYXJsaWVyIGV4cGVyaW1lbnQgaW4gd29ya2luZyB3aXRoIGVudmlyb25tZW50cy4uLgogICAgIDs7IG1heSBub3QgYmUgcmVxdWlyZWQgYnV0IGtlZXBpbmcgaXQgZm9yIG5vdyB1bnRpbCBhbmFseXNpcyBjYW4gYmUgZG9uZS4KICAgICAKICAgICAoZGVmdmFyIGNsb25lX3RvX25ldyAoZm4gKG9wdGlvbnMpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAobGV0CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKChuZXdfZW52IG5pbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG15X2NoaWxkcmVuIG5pbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKG15X2NoaWxkcmVuX2RlY2xhcmF0aW9ucyBuaWwpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGVudl9sb2cgbmFtZXNwYWNlICJjbG9uaW5nOiAjIGNoaWxkcmVuOiAiIChsZW5ndGggY2hpbGRyZW4pKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoPSBuZXdfZW52CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChkbGlzcF9lbnYgeyBgZW52OiAoY2xvbmUgRW52aXJvbm1lbnQpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBjaGlsZHJlbjogKGNsb25lIGNoaWxkcmVuKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgY2hpbGRyZW5fZGVjbGFyYXRpb25zOiAoY2xvbmUgY2hpbGRyZW5fZGVjbGFyYXRpb25zKSB9KSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGVudl9sb2cgbmFtZXNwYWNlICJjb25zdHJ1Y3RlZDogIiAoLT4gIG5ld19lbnYgYGlkKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgbmV3X2VudikpKQoKICAgIAogICAgIDs7IGZhY2lsYXRlIHRoZSBleHBvcnRhdGlvbiAoc2VyaWFsaXphdGlvbiB0byBKU09OKSBvZiBzeW1ib2xzIGZyb20gdGhlIGVudmlyb25tZW50Li4KICAgICA7OyBub3RlIHRoYXQgdGhlcmUgd2lsbCBiZSBhIGxvdCBvZiBKYXZhc2NyaXB0IGVtYmVkZGVkIGluIHRoZSBwcm9kdWNlZCBvdXRwdXQKICAgICA7OyBzaW5jZSBhbnkgY2FsbGFibGUgY29kZSBtdXN0IGJlIGluIEpTIGZvcm0uCiAgICAgCiAgICAgKGRlZnZhciBleHBvcnRfc3ltYm9sX3NldAogICAgICAgKGZuIChvcHRpb25zKQoJICAgKHJlZHVjZSAoc3ltc2V0IChwYWlycyAoY2xvbmUgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSkpKQogICAgICAgICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgICAgICAgKGNvbmQKCQkgICAgIChhbmQgb3B0aW9ucyBvcHRpb25zLm5vX2NvbXBpbGVyCgkJCSAgKD09IHN5bXNldC4wICJjb21waWxlciIpKQoJCSAgICAgbmlsCgkJICAgICAoc3RhcnRzX3dpdGg/ICIkIiBzeW1zZXQuMCkgIDs7IGFueSB2YWx1ZXMgc3RhcnRpbmcgd2l0aCAkIGRvIG5vdCBnZXQgZXhwb3J0ZWQKCQkgICAgIG5pbAogICAgICAgICAgICAgICAgICAgICAoYW5kIG9wdGlvbnMgb3B0aW9ucy5kb19ub3RfaW5jbHVkZQogICAgICAgICAgICAgICAgICAgICAgICAgIChjb250YWlucz8gc3ltc2V0LjAgb3B0aW9ucy5kb19ub3RfaW5jbHVkZSkpCiAgICAgICAgICAgICAgICAgICAgIG5pbAoKICAgICAgICAgICAgICAgICAgICAgKD09IHN5bXNldC4wICIqZW52X3NrZWxldG9uKiIpCiAgICAgICAgICAgICAgICAgICAgIFsgc3ltc2V0LjAgWyhxdW90ZSBxdW90ZWwpIChwcm9wIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUgIiplbnZfc2tlbGV0b24qIikgXV0KCiAgICAgICAgICAgICAgICAgICAgIChyZXNvbHZlX3BhdGggWyBzeW1zZXQuMCBgaW5pdGlhbGl6ZXIgXSBFbnZpcm9ubWVudC5kZWZpbml0aW9ucykgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICAgW3N5bXNldC4wIChyZXNvbHZlX3BhdGggWyBzeW1zZXQuMCBgaW5pdGlhbGl6ZXIgXSBFbnZpcm9ubWVudC5kZWZpbml0aW9ucyldCiAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgICg9PSBuaWwgc3ltc2V0LjEpCiAgICAgICAgICAgICAgICAgICAgIFtzeW1zZXQuMCAocXVvdGUgbmlsKV0KICAgICAgICAgICAgICAgICAgICAgKD09IHVuZGVmaW5lZCBzeW1zZXQuMSkKICAgICAgICAgICAgICAgICAgICAgW3N5bXNldC4wIChxdW90ZSB1bmRlZmluZWQpXQogICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgIFtzeW1zZXQuMCBzeW1zZXQuMV0pKSkpKQoKICAgICA7OyBUaGlzIHJvdXRpbmUgc2F2ZXMgdGhlIGVudmlyb25tZW50IGltYWdlIGludG8gZWZmZWN0aXZlbHkgYSBKYXZhc2NyaXB0CiAgICAgOzsgZmlsZSBvciBMaXNwIGZpbGUuLi4KICAgICAKICAgICAoZGVmdmFyIHNhdmVfZW52CiAgICAgICAoZm4gKG9wdGlvbnMpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgKGxldAogICAgICAgICAgICAgKChuZXdfZW52IG5pbCkKICAgICAgICAgICAgICAobXlfY2hpbGRyZW4gbmlsKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAoZW52X2NvbnN0cnVjdG9yIG5pbCkKICAgICAgICAgICAgICAoZGNvbXBzIChkYXRlX2NvbXBvbmVudHMgKG5ldyBEYXRlKSkpCiAgICAgICAgICAgICAgKG9wdGlvbnMgKG9yIG9wdGlvbnMge30pKQogICAgICAgICAgICAgICh2ZXJzaW9uX3RhZyAoaWYgKG5vdCAoYmxhbms/IG9wdHMudmVyc2lvbl90YWcpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIG9wdHMudmVyc2lvbl90YWcKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoam9pbiAiLiIgWyBkY29tcHMueWVhciBkY29tcHMubW9udGggZGNvbXBzLmRheSBkY29tcHMuaG91ciBkY29tcHMubWludXRlIF0pKSkKICAgICAgICAgICAgICAoYnVpbGRfdGltZSAoZm9ybWF0dGVkX2RhdGUgKG5ldyBEYXRlKSkpCiAgICAgICAgICAgICAgKGJ1aWxkX2hlYWRlcnMgW10pICAgICAgICAgICAgICAKICAgICAgICAgICAgICAoY2hpbGRfZW52IG5pbCkKICAgICAgICAgICAgICAod2FudF9idWZmZXIgKG9yIG9wdGlvbnMud2FudF9idWZmZXIgZmFsc2UpKQogICAgICAgICAgICAgIChjb21wX2J1ZmZlciBuaWwpCgkgICAgICAocHJlc2VydmVfaW1wb3J0cyAoaWYgKGFuZCBvcHRpb25zCgkJCQkJICg9PSBvcHRpb25zLnByZXNlcnZlX2ltcG9ydHMgZmFsc2UpKQoJCQkJCWZhbHNlCgkJCQkgICAgICAgIHRydWUpKQogICAgICAgICAgICAgIChpbmNsdWRlX3NvdXJjZSBmYWxzZSkKICAgICAgICAgICAgICAoZXhwb3J0cyBbXSkKICAgICAgICAgICAgICAoc3JjIChpZiAoLT4gRW52aXJvbm1lbnQgYGdldF9nbG9iYWwgIiplbnZfc2tlbGV0b24qIiBuaWwpCiAgICAgICAgICAgICAgICAgICAgIChjbG9uZSAoLT4gRW52aXJvbm1lbnQgYGdldF9nbG9iYWwgIiplbnZfc2tlbGV0b24qIikpCgkJICAgICAocmVhZGVyIChyZWFkX3RleHRfZmlsZSAgIi4vc3JjL2Vudmlyb25tZW50Lmxpc3AiKSkpKQogICAgICAgICAgICAgICh0YXJnZXRfaW5zZXJ0aW9uX3BhdGggbmlsKSAgOzsgd2hlcmUgd2UgaW5qZWN0IG91ciBjb250ZXh0IGludG8gdGhlIHNvdXJjZSB0cmVlICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgIChvdXRwdXRfcGF0aCBuaWwpKQkJCSAgICAgICAKCiAgICAgICAgICAgKHdoZW4gKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSAiKmVudl9za2VsZXRvbioiKQogICAgICAgICAgICAgKHJlZ2lzdGVyX2ZlYXR1cmUgIiplbnZfc2tlbGV0b24qIikpCiAgICAgICAgICAgOzsgY29uc3RydWN0IG91ciBmb3JtIGJ5IGRvaW5nIHN1cmdlcnkgb24gb3Vyc2VsdmVzLi4KICAgICAgICAgICAKICAgICAgICAgICAoPSB0YXJnZXRfaW5zZXJ0aW9uX3BhdGggKGZpcnN0IChmaW5kcGF0aHMgKHF1b3RlIGluY2x1ZGVkX2dsb2JhbHMpIHNyYykpKQogICAgICAgICAgIAogICAgICAgICAgIChpZiAobm90IChpc19hcnJheT8gdGFyZ2V0X2luc2VydGlvbl9wYXRoKSkKICAgICAgICAgICAgICh0aHJvdyBFdmFsRXJyb3IgIlVuYWJsZSB0byBmaW5kIHRoZSBmaXJzdCBpbmNsdWRlZF9nbG9iYWxzIHN5bWJvbCIpKQoKICAgICAgICAgICAoPSB0YXJnZXRfaW5zZXJ0aW9uX3BhdGggKGNvbmogKGNob3AgdGFyZ2V0X2luc2VydGlvbl9wYXRoKSBbIDIgXSkpIDs7IG1vdmUgb25lIGZvcndhcmQgdG8gdGhlIHZhbHVlIHBvc2l0aW9uCiAgICAgICAgICAgCiAgICAgICAgICAgCiAgICAgICAgICAgKHdoZW4gb3B0aW9ucy5pbmNsdWRlX3NvdXJjZQogICAgICAgICAgICAgKD0gaW5jbHVkZV9zb3VyY2UgdHJ1ZSkpCiAgICAgICAgICAgCiAgICAgICAgICAgKGVudl9sb2cgbmFtZXNwYWNlICJjbG9uaW5nOiAjIGNoaWxkcmVuOiAiIChsZW5ndGggY2hpbGRyZW4pKSAgICAgICAgICAgICAgICAgICAgICAgICAgIAoJICAgKGVudl9sb2cgbmFtZXNwYWNlICJwcmVzZXJ2ZV9pbXBvcnRzOiAiIHByZXNlcnZlX2ltcG9ydHMpCgkgICAoPSBleHBvcnRzIChleHBvcnRfc3ltYm9sX3NldCAoaWYgb3B0aW9ucy5kb19ub3RfaW5jbHVkZQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgeyBkb19ub3RfaW5jbHVkZTogb3B0aW9ucy5kb19ub3RfaW5jbHVkZSB9KSkpCiAgICAgICAgICAgCgkgICAKCSAgICg9IG15X2NoaWxkcmVuCgkgICAgICAodG9fb2JqZWN0CiAgICAgICAgICAgICAgIChyZWR1Y2UgKGNoaWxkIChwYWlycyBjaGlsZHJlbikpCiAgICAgICAgICAgICAgICAgICAgICAgKGlmIChyZXNvbHZlX3BhdGggWyBjaGlsZC4wICJzZXJpYWxpemVfd2l0aF9pbWFnZSIgXSBjaGlsZHJlbl9kZWNsYXJhdGlvbnMpCiAgICAgICAgICAgICAgICAgICAgICAgICAocHJvZ24KICAgICAgICAgICAgICAgICAgICAgICAgICAoPSBjaGlsZF9lbnYgKC0+IGNoaWxkLjEKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBjb21waWxlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoLT4gY2hpbGQuMSBgZXhwb3J0X3N5bWJvbF9zZXQgeyBgbm9fY29tcGlsZXI6IHRydWUgfSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHsgYHRocm93X29uX2Vycm9yOiB0cnVlIGBtZXRhOiB0cnVlIH0pKQogICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgIFtjaGlsZC4wICBgKGphdmFzY3JpcHQgLCNjaGlsZF9lbnYpIF0pKSkpKQogICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgO1socXVvdGUgbGV0KQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgOyAgW1socXVvdGUgRW52aXJvbm1lbnQpIFsocXVvdGUgcHJvcCkgKHF1b3RlIGNoaWxkcmVuKSBjaGlsZC4wXV1dCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA7ICBbKHF1b3RlIGphdmFzY3JpcHQpIGNoaWxkX2Vudi4xXV1dKSkpKSkKCSAgIAoJICAgOzsgKGNvbnNvbGUubG9nICJteV9jaGlsZHJlbjogIiBteV9jaGlsZHJlbikKICAgICAgICAgICA7OyBub3cgZW1iZWQgb3VyIGNvbXBpbGVkIGV4aXN0aW5nIGNvbnRleHQgaW50byB0aGUgc291cmNlIHRyZWUuLi4JCQkgICAgCiAgICAgICAgICAgKHNldF9wYXRoIHRhcmdldF9pbnNlcnRpb25fcGF0aCBzcmMKCQkgICAgIGAoZm4gKCkKICAgICAgICAgICAgICAgICAgICAgICAgLCModG9fb2JqZWN0CiAgICAgICAgICAgICAgICAgICAgICAgICAgIFtbYGRlZmluaXRpb25zICBbKHF1b3RlbCBxdW90ZSkgKGNsb25lIEVudmlyb25tZW50LmRlZmluaXRpb25zKV1dCgkJCSAgICBbYGRlY2xhcmF0aW9ucyAoY2xvbmUgRW52aXJvbm1lbnQuZGVjbGFyYXRpb25zKV0KICAgICAgICAgICAgICAgICAgICAgICAgICAgIFtgY29uZmlnIDsoY2xvbmUgKHByb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSAiKmVudl9jb25maWcqIikpIF0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChsZXQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoKGV4cF9jb25mIChjbG9uZSAocHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlICIqZW52X2NvbmZpZyoiKSkpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAod2hlbiAobm90IHByZXNlcnZlX2ltcG9ydHMpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNldF9wcm9wIGV4cF9jb25mCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBpbXBvcnRzCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHt9KSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHdoZW4gb3B0aW9ucy5mZWF0dXJlcwogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzZXRfcHJvcCBleHBfY29uZgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgZmVhdHVyZXMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgb3B0aW9ucy5mZWF0dXJlcykpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGV4cF9jb25mKSBdCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBbYGltcG9ydHMgICAgICAoaWYgcHJlc2VydmVfaW1wb3J0cwoJCQkJCSAgICAgICAodG9fb2JqZWN0CgkJCQkJCShmb3JfZWFjaCAoaW1wX3NvdXJjZSAodmFsdWVzIChvciAocmVzb2x2ZV9wYXRoIFsiKmVudl9jb25maWcqIiAiaW1wb3J0cyJdIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUpIHt9KSkpCgkJCQkJCQkgIFsgaW1wX3NvdXJjZS5zeW1ib2wgeyBgaW5pdGlhbGl6ZXI6IGAoamF2YXNjcmlwdCAibmV3IGZ1bmN0aW9uICgpIHsgcmV0dXJuICIgLCNpbXBfc291cmNlLnN5bWJvbCAiIH0iKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYHN5bWJvbDogaW1wX3NvdXJjZS5zeW1ib2wKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBuYW1lc3BhY2U6IGltcF9zb3VyY2UubmFtZXNwYWNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IF0pKQoJCQkJCSAgICAge30pIF0KICAgICAgICAgICAgICAgICAgICAgICAgICAgIFtgc3ltYm9scyAgICAgIFsocXVvdGUgamF2YXNjcmlwdCkgKGNvbXBpbGUgKHRvX29iamVjdCBleHBvcnRzKSB7IGB0aHJvd19vbl9lcnJvcjogdHJ1ZSB9ICkgXV0KCQkJICAgIFsgYGNoaWxkcmVuX2RlY2xhcmF0aW9ucyBgKGZuICgpICwjKGNsb25lIGNoaWxkcmVuX2RlY2xhcmF0aW9ucykpIF0KICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsgYGNoaWxkcmVuICAgIG15X2NoaWxkcmVuIF1dKSkpCgogICAgICAgICAgIAogICAgICAgICAgIAogICAgICAgICAgICg9IG91dHB1dF9wYXRoIChpZiBvcHRpb25zLndhbnRfYnVmZmVyCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBuaWwKICAgICAgICAgICAgICAgICAgICAgICAgICAgIChvciBvcHRpb25zLnNhdmVfYXMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocmVzb2x2ZV9wYXRoIFsiKmVudl9jb25maWcqIiAiZXhwb3J0IiAic2F2ZV9wYXRoIiBdIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUpKSkpCiAgICAgICAgICAgCiAgICAgICAgICAgOzsgaWYgb3VyIG91dHB1dCBwYXRoIGlzIGEgZnVuY3Rpb24sIGNhbGwgaXQgdG8gZ2V0IGFuIGFjdHVhbCBuYW1lLi4uCiAgICAgICAgICAgKGlmIChpc19mdW5jdGlvbj8gb3V0cHV0X3BhdGgpCiAgICAgICAgICAgICAoPSBvdXRwdXRfcGF0aCAob3V0cHV0X3BhdGgpKSkKICAgICAgICAgICAKICAgICAgICAgICAoaWYgKGFuZCAobm90IChpc19zdHJpbmc/IG91dHB1dF9wYXRoKSkKICAgICAgICAgICAgICAgICAgICBvdXRwdXRfcGF0aCkKICAgICAgICAgICAgICh0aHJvdyBFdmFsRXJyb3IgImludmFsaWQgbmFtZSBmb3IgdGFyZ2V0IGZvciBzYXZpbmcgdGhlIGVudmlyb25tZW50LiAgTXVzdCBiZSBhIHN0cmluZyBvciBmdW5jdGlvbiIpKQogICAgICAgICAgIAogICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAob3Igd2FudF9idWZmZXIKICAgICAgICAgICAgICAgICAoYW5kIG91dHB1dF9wYXRoCiAgICAgICAgICAgICAgICAgICAgICAoZW5kc193aXRoPyAiLmpzIiBvdXRwdXRfcGF0aCkpKQogICAgICAgICAgICAgKGRvCiAgICAgICAgICAgICAgIChwdXNoIGJ1aWxkX2hlYWRlcnMKICAgICAgICAgICAgICAgICAgICAgKCsgIi8vIEJ1aWxkIFRpbWU6ICIgYnVpbGRfdGltZSkpCiAgICAgICAgICAgICAgIChwdXNoIGJ1aWxkX2hlYWRlcnMKICAgICAgICAgICAgICAgICAgICAgKCsgIi8vIFZlcnNpb246ICIgdmVyc2lvbl90YWcpKSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgIChwdXNoIGJ1aWxkX2hlYWRlcnMKICAgICAgICAgICAgICAgICAgICAgKCsgImV4cG9ydCBjb25zdCBETElTUF9FTlZfVkVSU0lPTj0nIiB2ZXJzaW9uX3RhZyAiJzsiKSkKICAgICAgICAgICAgICAgKGVudl9sb2cgInNhdmluZyB0bzogIiBvdXRwdXRfcGF0aCkKICAgICAgICAgICAgICAgKGNvbXBpbGVfYnVmZmVyIHNyYyAiaW5pdF9kbGlzcCIKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgbmFtZXNwYWNlOiBuYW1lc3BhY2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgdG9wbGV2ZWw6IHRydWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgaW5jbHVkZV9ib2lsZXJwbGF0ZTogZmFsc2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgdmVyYm9zZTogZmFsc2UKCQkJCWBidW5kbGU6IHRydWUKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBgd2FudF9idWZmZXI6IHdhbnRfYnVmZmVyCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGltcG9ydHM6IChpZiBwcmVzZXJ2ZV9pbXBvcnRzCgkJCQkJICAgIChyZXNvbHZlX3BhdGggWyIqZW52X2NvbmZpZyoiICJpbXBvcnRzIiBdIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBqc19oZWFkZXJzOiBbKHNob3cgY2hlY2tfdHJ1ZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzaG93IGdldF9uZXh0X2Vudmlyb25tZW50X2lkKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNob3cgZ2V0X291dHNpZGVfZ2xvYmFsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNob3cgc3VidHlwZSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIChzaG93IGxpc3Bfd3JpdGVyKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNob3cgY2xvbmUpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKHNob3cgTGlzcFN5bnRheEVycm9yKV0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKCQkJCWBidW5kbGVfb3B0aW9uczogeyBkZWZhdWx0X25hbWVzcGFjZTogKHJlc29sdmVfcGF0aCBbIiplbnZfY29uZmlnKiIgImV4cG9ydCIgImRlZmF1bHRfbmFtZXNwYWNlIiBdIEVudmlyb25tZW50Lmdsb2JhbF9jdHguc2NvcGUpCgkJCQkJCSAgfQoJCQkJCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYG91dHB1dF9maWxlOiBvdXRwdXRfcGF0aAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGBpbmNsdWRlX3NvdXJjZTogKG9yIG9wdGlvbnMuaW5jbHVkZV9zb3VyY2UKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAocmVzb2x2ZV9wYXRoIFsiKmVudl9jb25maWcqIiAiZXhwb3J0IiAiaW5jbHVkZV9zb3VyY2UiIF0gRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYHRvcGxldmVsOiB0cnVlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgYGJ1aWxkX2hlYWRlcnM6IGJ1aWxkX2hlYWRlcnMKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB9KSkKCSAgICAgKGFuZCBvdXRwdXRfcGF0aAoJCSAgKGVuZHNfd2l0aD8gIi5saXNwIiBvdXRwdXRfcGF0aCkpCgkgICAgICh3cml0ZV90ZXh0X2ZpbGUgb3V0cHV0X3BhdGggKEpTT04uc3RyaW5naWZ5IHNyYyBuaWwgNCkpCiAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICBzcmMpKSkpCiAgICAgICAgICAgICAgICAgICAgICAgICAgIAogICAgIAogICAgIAogICAgICAgICAgCiAgICAgOzsgSW4gdGhlIGNvbXBpbGVyIGNvbnRleHQsIHdlIGhhdmUgYWNjZXNzIHRvIHRoZSBleGlzdGluZyBlbnZpcm9ubWVudCwKICAgICA7OyBicmluZyB0aGUgbmVlZGVkIGZ1bmN0aW9ucyBpbiBhbmQgcmVidWlsZCB0aGVtIGluIHRoZSBjdXJyZW50IHNjb3BlLgogICAgIAogICAgIChkZWNsYXJlIChsb2NhbCBsaXNwX3dyaXRlcikKICAgICAgICAgICAgICAoaW5jbHVkZSByZWFkZXIgYWRkX2VzY2FwZV9lbmNvZGluZyAKICAgICAgICAgICAgICAgICAgICAgICBkb19kZWZlcnJlZF9zcGxpY2Ugc2FmZV9hY2Nlc3MgZW1iZWRfY29tcGlsZWRfcXVvdGUpKSAgICAgICAgCiAgICAgCiAgICAgCiAgICAgKGRlZnZhciBhc19saXNwIGxpc3Bfd3JpdGVyKQogICAgIChkZWZ2YXIgcmVhZF9saXNwIHJlYWRlcikKICAgICAKICAgICAoc2V0X3Byb3AgRW52aXJvbm1lbnQuZ2xvYmFsX2N0eC5zY29wZQogICAgICAgICAgICAgICBgZXZhbCBldmFsX2V4cAogICAgICAgICAgICAgICBgcmVhZGVyIHJlYWRlcgogICAgICAgICAgICAgICBgYWRkX2VzY2FwZV9lbmNvZGluZyBhZGRfZXNjYXBlX2VuY29kaW5nCiAgICAgICAgICAgICAgIGBnZXRfb3V0c2lkZV9nbG9iYWwgZ2V0X291dHNpZGVfZ2xvYmFsCiAgICAgICAgICAgICAgIGBhc19saXNwIGxpc3Bfd3JpdGVyCiAgICAgICAgICAgICAgIGBsaXNwX3dyaXRlciBsaXNwX3dyaXRlcgogICAgICAgICAgICAgICBgY2xvbmVfdG9fbmV3IGNsb25lX3RvX25ldwogICAgICAgICAgICAgICBgc2F2ZV9lbnYgc2F2ZV9lbnYKICAgICAgICAgICAgICAgYG51bGwgbnVsbCkKCiAgICAKICAgICAgIAogICAgIDs7IGlubGluZSBmdW5jdGlvbnMgZm9yIG1vcmUgZWZmaWNpZW50IGNvbXBpbGVkIGNvZGUuLi4KICAgICA7OyBpbnN0ZWFkIG9mIGNhbGxpbmcgZnVuY3Rpb25zIHRoZXNlIHNlcnZlIHRvIGlubGluZSBpbnNpZGUKICAgICA7OyBvZiB0aGUgcHJvZHVjZWQgamF2YXNjcmlwdCB0cmVlCiAgICAgOzsgYWRkIHlvdXIgb3duIHdpdGggdGhlIGlubGluZSBvcHRpb246CiAgICAgOzsgZm9ybWF0IGlzOiB7IG9wZXJhdG9yOiAoZm4gKGFyZ3MpIFsgYGpzIGB0byBgYmUgYGluc2VydGVkIF0pIH0KICAgICA7OyBSZXR1cm4gYW4gYXJyYXkgb2YgdG9rZW5zIHRvIGJlIGRpcmVjdGx5IGluc2VydGVkIGludG8gdGhlIHRyZWUKICAgICA7OyB0aGUgaW5saW5lIGZ1bmN0aW9uIG11c3QgYWRkIHNwYWNlcy4KICAgICAKICAgICAoZGVmdmFyIGlubGluZXMKICAgICAgIChpZiBwYXJlbnRfZW52aXJvbm1lbnQKICAgICAgICAgKCsge30KICAgICAgICAgICAgcGFyZW50X2Vudmlyb25tZW50LmlubGluZXMKICAgICAgICAgICAgKGlmIG9wdHMuaW5saW5lcwogICAgICAgICAgICAgIG9wdHMuaW5saW5lcwogICAgICAgICAgICAgIHt9KSkKICAgICAgICAgKCsgIHt9IAogICAgICAgICAgICAgKGlmIG9wdHMuaW5saW5lcwogICAgICAgICAgICAgICBvcHRzLmlubGluZXMKICAgICAgICAgICAgICAge30pCiAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgYHBvcDogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgWyIoIiBhcmdzLjAgIikiICIuIiAicG9wKCkiXSkKICAgICAgICAgICAgICBgcHVzaDogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgIFsiKCIgYXJncy4wICIpIiAiLnB1c2giICIoIiBhcmdzLjEgIikiXSkKICAgICAgICAgICAgICBgY2hvbXA6IChmbiAoYXJncykKICAgICAgICAgICAgICAgICAgICAgICAgWyIoIiBhcmdzLjAgIikiICIuc3Vic3RyIiAiKCIgMCAiLCIgIigiIGFyZ3MuMCAiLmxlbmd0aCIgIi0iIDEgIikiICIpIiBdKQogICAgICAgICAgICAgIGBqb2luOiAoZm4gKGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgKGlmICg9PSBhcmdzLmxlbmd0aCAxKSAKICAgICAgICAgICAgICAgICAgICAgICAgIFsiKCIgYXJncy4wICIpIiAiLmpvaW4iICIoJycpIl0KICAgICAgICAgICAgICAgICAgICAgICAgIFsiKCIgYXJncy4xICIpIiAiLmpvaW4iICIoIiBhcmdzLjAgIikiIF0pKQogICAgICAgICAgICAgIGB0YWtlOiAoZm4gKGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgWyIoIiBhcmdzLjAgIikiICIuc2hpZnQiICIoKSIgXSkKICAgICAgICAgICAgICBgcHJlcGVuZDogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgIFsgIigiIGFyZ3MuMCAiKSIgIi51bnNoaWZ0IiAiKCIgYXJncy4xICIpIl0pCiAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgYHRyaW06IChmbiAoYXJncykKICAgICAgICAgICAgICAgICAgICAgICBbICIoIiBhcmdzLjAgIikiICIudHJpbSgpIl0pCgogICAgICAgICAgICAgIAogICAgICAgICAgICAgIGBsb3dlcmNhc2U6IChmbiAoYXJncykKICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsiKCIgYXJncy4wICIpIiAiLnRvTG93ZXJDYXNlKCkiXSkKICAgICAgICAgICAgICBgdXBwZXJjYXNlOiAoZm4gKGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBbIigiIGFyZ3MuMCAiKSIgIi50b1VwcGVyQ2FzZSgpIl0pICAgICAgICAgICAgCiAgICAgICAgICAgICAgYGlzbGljZTogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgKGNvbmQgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBhcmdzLmxlbmd0aCAzKQogICAgICAgICAgICAgICAgICAgICAgICAgICBbICIoIiBhcmdzLjAgIikiICIuc2xpY2UoIiBhcmdzLjEgIiwiIGFyZ3MuMiAiKSJdCiAgICAgICAgICAgICAgICAgICAgICAgICAgICg9PSBhcmdzLmxlbmd0aCAyKQogICAgICAgICAgICAgICAgICAgICAgICAgICBbICIoIiBhcmdzLjAgIikiICIuc2xpY2UoIiBhcmdzLjEgIikiXQogICAgICAgICAgICAgICAgICAgICAgICAgICBlbHNlCiAgICAgICAgICAgICAgICAgICAgICAgICAgICh0aHJvdyBTeW50YXhFcnJvciAic2xpY2UgcmVxdWlyZXMgMiBvciAzIGFyZ3VtZW50cyIpKSkKICAgICAgICAgICAgICBgc3BsaXRfYnk6IChmbiAoYXJncykKICAgICAgICAgICAgICAgICAgICAgICAgICAgWyAiKCIgYXJncy4xICIpIiAiLnNwbGl0IiAiKCIgYXJncy4wICIpIl0pCiAgICAgICAgICAgICAgYGJpbmRmOiAoZm4gKGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgIFsgICBhcmdzLjAgIi5iaW5kKCIgYXJncy4xICIpIl0pCiAgICAgICAgICAgICAgYGlzX2FycmF5PzogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgWyAiKCIgYXJncy4wICIgaW5zdGFuY2VvZiBBcnJheSIgIikiXSkKICAgICAgICAgICAgICBgaXNfb2JqZWN0PzogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsgIigiIGFyZ3MuMCAiIGluc3RhbmNlb2YgT2JqZWN0IiAiKSIgXSkKICAgICAgICAgICAgICBgaXNfc3RyaW5nPzogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsgIigiIGFyZ3MuMCAiIGluc3RhbmNlb2YgU3RyaW5nIHx8IHR5cGVvZiAiIGFyZ3MuMCAiPT09IiAiJ3N0cmluZyciICIpIl0pCiAgICAgICAgICAgICAgYGlzX2Z1bmN0aW9uPzogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgWyBhcmdzLjAgIiBpbnN0YW5jZW9mIEZ1bmN0aW9uIl0pCiAgICAgICAgICAgICAgYGlzX2VsZW1lbnQ/OiAoZm4gKGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFsgYXJncy4wICIgaW5zdGFuY2VvZiBFbGVtZW50Il0pCiAgICAgICAgICAgICAgYGxvZzogKGZuIChhcmdzKQogICAgICAgICAgICAgICAgICAgICAgWyJjb25zb2xlLmxvZyIgIigiIChtYXAgKGZuICh2YWwgaWR4IHRsKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAoaWYgKDwgaWR4ICgtIHRsIDEpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFt2YWwgIiwiXQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFt2YWxdKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGFyZ3MpICIpIl0pCiAgICAgICAgICAgICAgYHJldmVyc2U6IChmbiAoYXJncykKICAgICAgICAgICAgICAgICAgICAgICAgICBbIigiYXJncy4wICIpIiAiLnNsaWNlKDApLnJldmVyc2UoKSJdKQogICAgICAgICAgICAgIAogICAgICAgICAgICAgIGBpbnQ6IChmbiAoYXJncykKICAgICAgICAgICAgICAgICAgICAgIChjb25kCiAgICAgICAgICAgICAgICAgICAgICAgICg9PSBhcmdzLmxlbmd0aCAxKQogICAgICAgICAgICAgICAgICAgICAgICBbInBhcnNlSW50KCIgYXJncy4wICIpIl0KICAgICAgICAgICAgICAgICAgICAgICAgKD09IGFyZ3MubGVuZ3RoIDIpCiAgICAgICAgICAgICAgICAgICAgICAgIFsicGFyc2VJbnQoIiBhcmdzLjAgIiwiIGFyZ3MuMSAiKSJdCiAgICAgICAgICAgICAgICAgICAgICAgIGVsc2UKICAgICAgICAgICAgICAgICAgICAgICAgKHRocm93ICJTeW50YXhFcnJvciIgKCsgImludmFsaWQgbnVtYmVyIG9mIGFyZ3VtZW50cyB0byBpbnQ6IHJlY2VpdmVkICIgYXJncy5sZW5ndGgpKSkpCiAgICAgICAgICAgICAgYGZsb2F0OiAoZm4gKGFyZ3MpCiAgICAgICAgICAgICAgICAgICAgICAgIFsicGFyc2VGbG9hdCgiIGFyZ3MuMCAiKSJdKQogICAgICAgICAgICAgIAogICAgICAgICAgICAgIH0pKSkKICAgICAgICAgIAogICAgIDs7IEZpbmFsbHkgdGhlIGludGVyZmFjZSB0aGF0IGlzIGV4cG9zZWQgdG8gY29tcGlsZXIgYW5kIHRoZSBjb21waWxlZCBjb2RlLi4uCiAgICAgCiAgICAgKHNldF9wcm9wIEVudmlyb25tZW50CiAgICAgICAgICAgICAgIGBldmFsIGV2YWxfc3RydWN0CiAgICAgICAgICAgICAgIGBpZGVudGlmeSBzdWJ0eXBlCiAgICAgICAgICAgICAgIGBtZXRhX2Zvcl9zeW1ib2wgbWV0YV9mb3Jfc3ltYm9sCiAgICAgICAgICAgICAgIGBzZXRfY29tcGlsZXIgc2V0X2NvbXBpbGVyCiAgICAgICAgICAgICAgIGByZWFkX2xpc3AgcmVhZGVyCiAgICAgICAgICAgICAgIGBhc19saXNwIGFzX2xpc3AKICAgICAgICAgICAgICAgYHN5bWJvbHMgc3ltYm9scwogICAgICAgICAgICAgICBgaW5saW5lcyBpbmxpbmVzCiAgICAgICAgICAgICAgIGBjbG9uZV90b19uZXcgY2xvbmVfdG9fbmV3CgkgICAgICAgYGV4cG9ydF9zeW1ib2xfc2V0IGV4cG9ydF9zeW1ib2xfc2V0CgkgICAgICAgYHNhdmVfZW52IHNhdmVfZW52CiAgICAgICAgICAgICAgIGBzcGVjaWFsX29wZXJhdG9ycyBzcGVjaWFsX29wZXJhdG9ycwogICAgICAgICAgICAgICBgZGVmaW5pdGlvbnMgRW52aXJvbm1lbnQuZGVmaW5pdGlvbnMKICAgICAgICAgICAgICAgYGRlY2xhcmF0aW9ucyBFbnZpcm9ubWVudC5kZWNsYXJhdGlvbnMKICAgICAgICAgICAgICAgYGdldF9uYW1lc3BhY2VfaGFuZGxlIGdldF9uYW1lc3BhY2VfaGFuZGxlCiAgICAgICAgICAgICAgIGBjb21waWxlIGNvbXBpbGUJICAgICAgIAogICAgICAgICAgICAgICBgZXZhbHVhdGUgZXZhbHVhdGUKICAgICAgICAgICAgICAgYGV2YWx1YXRlX2xvY2FsIGV2YWx1YXRlX2xvY2FsCiAgICAgICAgICAgICAgIGBkb19kZWZlcnJlZF9zcGxpY2UgZG9fZGVmZXJyZWRfc3BsaWNlCiAgICAgICAgICAgICAgIGBpZCAoZm4gKCkgaWQpCiAgICAgICAgICAgICAgIGBzZXRfY2hlY2tfZXh0ZXJuYWxfZW52IChmbiAoc3RhdGUpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKGRvIAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKD0gY2hlY2tfZXh0ZXJuYWxfZW52X2RlZmF1bHQKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHN0YXRlKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2hlY2tfZXh0ZXJuYWxfZW52X2RlZmF1bHQpKQogICAgICAgICAgICAgICBgY2hlY2tfZXh0ZXJuYWxfZW52IChmbiAoKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2hlY2tfZXh0ZXJuYWxfZW52X2RlZmF1bHQpKQoKICAgICA7OyBnZXQgdGhlIGNvcmUvKmluaXRpYWxpemVyKi4uLgogICAgIChkZWZ2YXIgaW5pdCAocHJvcCBFbnZpcm9ubWVudC5nbG9iYWxfY3R4LnNjb3BlICIqaW5pdGlhbGl6ZXIqIikpCiAgICAgCiAgICAgOzsgc2V0IHRoZSBkZWZhdWx0IG5hbWVzcGFjZSBpZiB3ZSBoYXZlIGJlZW4gZ2l2ZW4gb25lIGFuZCB3ZSBoYXZlIGNoaWxkcmVuLi4KICAgICAod2hlbiAoYW5kIG9wdHMuZGVmYXVsdF9uYW1lc3BhY2UKCSAgICAgICAgKG5vdCAoPT0gY29tcGlsZXIgdW5zZXRfY29tcGlsZXIpKQkKCQkocHJvcCBjaGlsZHJlbiBvcHRzLmRlZmF1bHRfbmFtZXNwYWNlKSkKICAgICAgIChzZXRfbmFtZXNwYWNlIG9wdHMuZGVmYXVsdF9uYW1lc3BhY2UpKQoKICAgICA7OyBjYWxsIHRoZSBpbml0aWFsaXplciAgICAgCiAgICAgKHdoZW4gaW5pdCAKICAgICAgIChldmFsIGluaXQpKQogICAgIAogICAgIEVudmlyb25tZW50KSkpCgoKCg==";return __obj__1;})(),children_declarations:async function() {
      return  {
         user:{
             serialize_with_image:true
@@ -18616,27 +19055,27 @@ options=options||{}
                                             };
                                             ;
                                             await (async function() {
-                                                let __for_body__119=async function(__item) {
+                                                let __for_body__121=async function(__item) {
                                                     __result=await __action(__item);
                                                     if (check_true (__result)){
                                                           return (__collector).push(__result)
                                                     }
                                                 };
-                                                let __array__120=[],__elements__118=await (async function() {
+                                                let __array__122=[],__elements__120=await (async function() {
                                                     {
                                                          let __call_target__=await parent_environment["meta_for_symbol"].call(parent_environment,quoted_symbol,true), __call_method__="flat";
                                                         return await __call_target__[__call_method__].call(__call_target__,1)
                                                     } 
                                                 })();
                                                 let __BREAK__FLAG__=false;
-                                                for(let __iter__117 in __elements__118) {
-                                                    __array__120.push(await __for_body__119(__elements__118[__iter__117]));
+                                                for(let __iter__119 in __elements__120) {
+                                                    __array__122.push(await __for_body__121(__elements__120[__iter__119]));
                                                     if(__BREAK__FLAG__) {
-                                                         __array__120.pop();
+                                                         __array__122.pop();
                                                         break;
                                                         
                                                     }
-                                                }return __array__120;
+                                                }return __array__122;
                                                  
                                             })();
                                              __collector
@@ -18654,20 +19093,20 @@ options=options||{}
                                             };
                                             ;
                                             await (async function() {
-                                                let __for_body__123=async function(__item) {
+                                                let __for_body__125=async function(__item) {
                                                     __result=await __action(__item);
                                                     if (check_true (__result)){
                                                           return (__collector).push(__result)
                                                     }
                                                 };
-                                                let __array__124=[],__elements__122=await (async function ()  {
-                                                    let ____collector__125= async function(){
+                                                let __array__126=[],__elements__124=await (async function ()  {
+                                                    let ____collector__127= async function(){
                                                         return []
                                                     };
-                                                    let ____result__126= async function(){
+                                                    let ____result__128= async function(){
                                                         return null
                                                     };
-                                                    let ____action__127= async function(){
+                                                    let ____action__129= async function(){
                                                         return async function(child_data) {
                                                             if (check_true (await not((child_data['0']===await (await get_global("current_namespace"))())))){
                                                                  return  await child_data['1']["meta_for_symbol"].call(child_data['1'],quoted_symbol)
@@ -18675,44 +19114,44 @@ options=options||{}
                                                         }
                                                     };
                                                     {
-                                                        let __collector=await ____collector__125();
+                                                        let __collector=await ____collector__127();
                                                         ;
-                                                        let __result=await ____result__126();
+                                                        let __result=await ____result__128();
                                                         ;
-                                                        let __action=await ____action__127();
+                                                        let __action=await ____action__129();
                                                         ;
                                                         ;
                                                         await (async function() {
-                                                            let __for_body__130=async function(__item) {
+                                                            let __for_body__132=async function(__item) {
                                                                 __result=await __action(__item);
                                                                 if (check_true (__result)){
                                                                       return (__collector).push(__result)
                                                                 }
                                                             };
-                                                            let __array__131=[],__elements__129=await pairs(children);
+                                                            let __array__133=[],__elements__131=await pairs(children);
                                                             let __BREAK__FLAG__=false;
-                                                            for(let __iter__128 in __elements__129) {
-                                                                __array__131.push(await __for_body__130(__elements__129[__iter__128]));
+                                                            for(let __iter__130 in __elements__131) {
+                                                                __array__133.push(await __for_body__132(__elements__131[__iter__130]));
                                                                 if(__BREAK__FLAG__) {
-                                                                     __array__131.pop();
+                                                                     __array__133.pop();
                                                                     break;
                                                                     
                                                                 }
-                                                            }return __array__131;
+                                                            }return __array__133;
                                                              
                                                         })();
                                                          __collector
                                                     }
                                                 } )();
                                                 let __BREAK__FLAG__=false;
-                                                for(let __iter__121 in __elements__122) {
-                                                    __array__124.push(await __for_body__123(__elements__122[__iter__121]));
+                                                for(let __iter__123 in __elements__124) {
+                                                    __array__126.push(await __for_body__125(__elements__124[__iter__123]));
                                                     if(__BREAK__FLAG__) {
-                                                         __array__124.pop();
+                                                         __array__126.pop();
                                                         break;
                                                         
                                                     }
-                                                }return __array__124;
+                                                }return __array__126;
                                                  
                                             })();
                                              __collector
@@ -18782,9 +19221,9 @@ options=options||{}
                                                   return namespace_identity['0']
                                             } 
                                         })();
-                                         ( get_global("delete_prop"))(Environment.definitions,target_symbol);
+                                         delete_prop(Environment.definitions,target_symbol);
                                         if (check_true (Environment.global_ctx.scope[target_symbol])){
-                                              return  ( get_global("delete_prop"))(Environment.global_ctx.scope,target_symbol)
+                                              return  delete_prop(Environment.global_ctx.scope,target_symbol)
                                         } else {
                                               return false
                                         }
@@ -19381,16 +19820,18 @@ options=options||{}
                             } ()
                         }],["evaluate",async function(expression,ctx,opts) {
                             {
-                                if (check_true ((namespace===active_namespace))){
-                                      return await evaluate_local(expression,ctx,opts)
-                                } else {
-                                      return await (async function() {
-                                        {
-                                             let __call_target__=children[active_namespace], __call_method__="evaluate";
-                                            return await __call_target__[__call_method__].call(__call_target__,expression,ctx,opts)
-                                        } 
-                                    })()
-                                }
+                                 return  await async function(){
+                                    if (check_true( (namespace===active_namespace))) {
+                                         return await evaluate_local(expression,ctx,opts)
+                                    } else if (check_true( (namespace==="core"))) {
+                                         return await (async function() {
+                                            {
+                                                 let __call_target__=children[active_namespace], __call_method__="evaluate";
+                                                return await __call_target__[__call_method__].call(__call_target__,expression,ctx,opts)
+                                            } 
+                                        })()
+                                    }
+                                } ()
                             }
                         }],["eval_struct",async function(lisp_struct,ctx,opts) {
                             let rval;
@@ -19439,34 +19880,14 @@ options=options||{}
                                 }
                             }],["eval",async function(expression) {
                              return  await (async function(){
-                                let __array_op_rval__138=expression;
-                                 if (__array_op_rval__138 instanceof Function){
-                                    return await __array_op_rval__138() 
+                                let __array_op_rval__140=expression;
+                                 if (__array_op_rval__140 instanceof Function){
+                                    return await __array_op_rval__140() 
                                 } else {
-                                    return[__array_op_rval__138]
+                                    return[__array_op_rval__140]
                                 }
                             })()
-                        }],["reader",async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;
-                start=await Math.max(0,(idx-10));
-                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));
-                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")
-            };
-            position=async function(offset) {
-                 return  ("line: "+line_number+" column: "+await (async function () {
-                     if (check_true (offset)){
-                          return (column_number+offset)
-                    } else {
-                          return column_number
-                    } 
-                })())
-            };
-            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {
-                 if (check_true ((opts && opts["read_table_entries"]))){
-                      return (opts && opts["read_table_entries"])
-                } else {
-                      return new Object()
-                } 
-            } )(),await ( async function(){
+                        }],["reader",async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")            };            position=async function(offset) {                 return  ("line: "+line_number+" column: "+await (async function () {                     if (check_true (offset)){                          return (column_number+offset)                    } else {                          return column_number                    }                 })())            };            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {                 if (check_true ((opts && opts["read_table_entries"]))){                      return (opts && opts["read_table_entries"])                } else {                      return new Object()                }             } )(),await ( async function(){
                 let __obj__1=new Object();
                 __obj__1["("]=[")",async function(block) {
                      return  block
@@ -19945,6 +20366,8 @@ options=options||{}
                             let build_time;
                             let build_headers;
                             let child_env;
+                            let want_buffer;
+                            let comp_buffer;
                             let preserve_imports;
                             let include_source;
                             let exports;
@@ -19973,6 +20396,8 @@ options=options||{}
                             build_time=await (await get_global("formatted_date"))(new Date());
                             build_headers=[];
                             child_env=null;
+                            want_buffer=(options.want_buffer|| false);
+                            comp_buffer=null;
                             preserve_imports=await (async function () {
                                  if (check_true ((options&& (options.preserve_imports===false)))){
                                       return false
@@ -19983,8 +20408,8 @@ options=options||{}
                             include_source=false;
                             exports=[];
                             src=await (async function () {
-                                 if (check_true (Environment.global_ctx.scope["*env_skeleton*"])){
-                                      return await clone(Environment.global_ctx.scope["*env_skeleton*"])
+                                 if (check_true (await Environment["get_global"].call(Environment,"*env_skeleton*",null))){
+                                      return await clone(await Environment["get_global"].call(Environment,"*env_skeleton*"))
                                 } else {
                                       return await (await get_global("reader"))(await (await get_global("read_text_file"))("./src/environment.lisp"))
                                 } 
@@ -20104,7 +20529,7 @@ options=options||{}
                                                             }
                                                         })()
                                                     };
-                                                    let __array__332=[],__elements__330=await values(await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope));
+                                                    let __array__332=[],__elements__330=await values((await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope)|| new Object()));
                                                     let __BREAK__FLAG__=false;
                                                     for(let __iter__329 in __elements__330) {
                                                         __array__332.push(await __for_body__331(__elements__330[__iter__329]));
@@ -20129,7 +20554,13 @@ options=options||{}
                                     })()]],["children",my_children]]
                                 } )()) 
                             })()]);
-                            output_path=(options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope));
+                            output_path=await (async function () {
+                                 if (check_true (options.want_buffer)){
+                                      return null
+                                } else {
+                                      return (options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope))
+                                } 
+                            })();
                             if (check_true (output_path instanceof Function)){
                                  output_path=await (async function(){
                                     let __array_op_rval__337=output_path;
@@ -20143,13 +20574,13 @@ options=options||{}
                             if (check_true ((await not((output_path instanceof String || typeof output_path==='string'))&& output_path)))throw new EvalError("invalid name for target for saving the environment.  Must be a string or function");
                             ;
                              return  await async function(){
-                                if (check_true( (output_path&& await ends_with_ques_(".js",output_path)))) {
+                                if (check_true( (want_buffer|| (output_path&& await ends_with_ques_(".js",output_path))))) {
                                     (build_headers).push(("// Build Time: "+ build_time));
                                     (build_headers).push(("// Version: "+ version_tag));
                                     (build_headers).push(("export const DLISP_ENV_VERSION='"+ version_tag+ "';"));
                                     await env_log("saving to: ",output_path);
                                      return  await (await get_global("compile_buffer"))(src,"init_dlisp",{
-                                        namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,imports:await (async function(){
+                                        namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,want_buffer:want_buffer,imports:await (async function(){
                                             if (check_true (preserve_imports)){
                                                   return await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope)
                                             }
@@ -20529,6 +20960,8 @@ let save_env=async function(options) {
     let build_time;
     let build_headers;
     let child_env;
+    let want_buffer;
+    let comp_buffer;
     let preserve_imports;
     let include_source;
     let exports;
@@ -20557,6 +20990,8 @@ let save_env=async function(options) {
     build_time=await (await get_global("formatted_date"))(new Date());
     build_headers=[];
     child_env=null;
+    want_buffer=(options.want_buffer|| false);
+    comp_buffer=null;
     preserve_imports=await (async function () {
          if (check_true ((options&& (options.preserve_imports===false)))){
               return false
@@ -20567,8 +21002,8 @@ let save_env=async function(options) {
     include_source=false;
     exports=[];
     src=await (async function () {
-         if (check_true (Environment.global_ctx.scope["*env_skeleton*"])){
-              return await clone(Environment.global_ctx.scope["*env_skeleton*"])
+         if (check_true (await Environment["get_global"].call(Environment,"*env_skeleton*",null))){
+              return await clone(await Environment["get_global"].call(Environment,"*env_skeleton*"))
         } else {
               return await (await get_global("reader"))(await (await get_global("read_text_file"))("./src/environment.lisp"))
         } 
@@ -20688,7 +21123,7 @@ let save_env=async function(options) {
                                     }
                                 })()
                             };
-                            let __array__331=[],__elements__329=await values(await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope));
+                            let __array__331=[],__elements__329=await values((await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope)|| new Object()));
                             let __BREAK__FLAG__=false;
                             for(let __iter__328 in __elements__329) {
                                 __array__331.push(await __for_body__330(__elements__329[__iter__328]));
@@ -20713,7 +21148,13 @@ let save_env=async function(options) {
             })()]],["children",my_children]]
         } )()) 
     })()]);
-    output_path=(options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope));
+    output_path=await (async function () {
+         if (check_true (options.want_buffer)){
+              return null
+        } else {
+              return (options.save_as|| await resolve_path(["*env_config*","export","save_path"],Environment.global_ctx.scope))
+        } 
+    })();
     if (check_true (output_path instanceof Function)){
          output_path=await (async function(){
             let __array_op_rval__336=output_path;
@@ -20727,13 +21168,13 @@ let save_env=async function(options) {
     if (check_true ((await not((output_path instanceof String || typeof output_path==='string'))&& output_path)))throw new EvalError("invalid name for target for saving the environment.  Must be a string or function");
     ;
      return  await async function(){
-        if (check_true( (output_path&& await ends_with_ques_(".js",output_path)))) {
+        if (check_true( (want_buffer|| (output_path&& await ends_with_ques_(".js",output_path))))) {
             (build_headers).push(("// Build Time: "+ build_time));
             (build_headers).push(("// Version: "+ version_tag));
             (build_headers).push(("export const DLISP_ENV_VERSION='"+ version_tag+ "';"));
             await env_log("saving to: ",output_path);
              return  await (await get_global("compile_buffer"))(src,"init_dlisp",{
-                namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,imports:await (async function(){
+                namespace:namespace,toplevel:true,include_boilerplate:false,verbose:false,bundle:true,want_buffer:want_buffer,imports:await (async function(){
                     if (check_true (preserve_imports)){
                           return await resolve_path(["*env_config*","imports"],Environment.global_ctx.scope)
                     }
@@ -20749,27 +21190,7 @@ let save_env=async function(options) {
     } ()
 };
 ;
-let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));
-                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));
-                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")
-            };
-            position=async function(offset) {
-                 return  ("line: "+line_number+" column: "+await (async function () {
-                     if (check_true (offset)){
-                          return (column_number+offset)
-                    } else {
-                          return column_number
-                    } 
-                })())
-            };
-            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {
-                 if (check_true ((opts && opts["read_table_entries"]))){
-                      return (opts && opts["read_table_entries"])
-                } else {
-                      return new Object()
-                } 
-            } )(),await ( async function(){
-                let __obj__1=new Object();
+let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")            };            position=async function(offset) {                 return  ("line: "+line_number+" column: "+await (async function () {                     if (check_true (offset)){                          return (column_number+offset)                    } else {                          return column_number                    }                 })())            };            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {                 if (check_true ((opts && opts["read_table_entries"]))){                      return (opts && opts["read_table_entries"])                } else {                      return new Object()                }             } )(),await ( async function(){                let __obj__1=new Object();
                 __obj__1["("]=[")",async function(block) {
                      return  block
                 }];
@@ -21523,6 +21944,7 @@ await async function(){
     Environment["special_operators"]=special_operators;
     Environment["definitions"]=Environment.definitions;
     Environment["declarations"]=Environment.declarations;
+    Environment["get_namespace_handle"]=get_namespace_handle;
     Environment["compile"]=compile;
     Environment["evaluate"]=evaluate;
     Environment["evaluate_local"]=evaluate_local;

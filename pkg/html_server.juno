@@ -16,7 +16,7 @@
                         `a `abbr `b `bdi `bdo `br `cite `code `data `dfn `em
                         `i `kbd `mark `q `rp `rt `ruby `s `samp `small `span
                         `strong `sub `time `u `var `wbr
-                        `area `audio `img `map `track `video
+                        `area `audio `img  `track `video
                         `embed `iframe `object `picture `portal `source
                         `svg `math `canvas `noscript `script
                         `del `ins

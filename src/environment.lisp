@@ -662,7 +662,25 @@
                         "usage": ["start_value:value" "collection:array|string" ]
                         "tags": ["string" "text" "list" "array" "filter" "reduce" "begin"]
                         })
-         
+         (delete_prop (new Function "obj" "...args"
+                           "{
+                                        if (args.length == 1) {
+                                            return delete obj[args[0]];
+                                        } else {
+                                            while (args.length > 0) {
+                                                let prop = args.shift();
+                                                delete obj[prop];
+                                            }
+                                        }
+                                        return obj;
+                                    }")
+                      {
+                       `description: (+ "Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"
+                                        "(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"
+                                        "(delete_prop foo `abc `def) => { ghi: 789 }<br>")
+                       `usage: ["obj:objects" "key0:string" "keyN?:string"]
+                       `tags: [ `delete `keys `object `remove `remove_prop `mutate ]
+                       })
          (blank? (function (val)
                            (or (eq val nil)
                                (and (is_string? val)
@@ -993,25 +1011,7 @@
                         `tags: [ `find `position `index `path `array `tree `contains `set_path ]
                         })
                   
-         (delete_prop (new Function "obj" "...args"
-                           "{
-                                        if (args.length == 1) {
-                                            return delete obj[args[0]];
-                                        } else {
-                                            while (args.length > 0) {
-                                                let prop = args.shift();
-                                                delete obj[prop];
-                                            }
-                                        }
-                                        return obj;
-                                    }")
-                      {
-                       `description: (+ "Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>"
-                                        "(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>"
-                                        "(delete_prop foo `abc `def) => { ghi: 789 }<br>")
-                       `usage: ["obj:objects" "key0:string" "keyN?:string"]
-                       `tags: [ `delete `keys `object `remove `remove_prop `mutate ]
-                       })
+         
          
          (min_value (new Function "elements" "{ return Math.min(...elements); }")
                     {
@@ -1381,7 +1381,7 @@
                                 (compiled nil)
                                 (error_data nil)
                                 (result nil))
-			     ;(debug)
+			     ;;(debug)
                              ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
                              (if opts.compiled_source
                                (= compiled expression)
@@ -1557,8 +1557,12 @@
        
 	 (evaluate (fn (expression ctx opts)
 		       (progn			 
-			 (if (== namespace active_namespace)
-			     (evaluate_local expression ctx opts)  ;; we by default use evaluate local
+			(cond
+                          (== namespace active_namespace)
+			  (evaluate_local expression ctx opts)  ;; we by default use evaluate local
+                          ;parent_environment
+                          ;(-> parent_environment `evaluate expression ctx opts)
+                          (== namespace "core")                          
 			   (-> (prop children active_namespace)
                                `evaluate
                                expression ctx opts))))) ;; otherwise evaluate using the active namespace
@@ -1687,7 +1691,7 @@
                                     (let
                                         ((options (or options {}))
                                          (child_env (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained })))
-                                      
+                                     
                                       (if child_env.evaluate   ;; we got an legit env back 
                                         (do
                                           (-> child_env `set_compiler compiler) ;; we all share a single compiler by default
@@ -1697,8 +1701,8 @@
                                           (set_prop children_declarations
                                                     name
                                                     {})
-					  (-> child_env `evaluate "(for_each (sym built_ins) (delete_prop Environment.context.scope sym))")
-                                          (-> child_env `evaluate "(for_each (sym built_ins) (delete_prop Environment.definitions sym))")
+					  (-> child_env `evaluate_local "(for_each (sym built_ins) (delete_prop Environment.context.scope sym))")
+                                          (-> child_env `evaluate_local "(for_each (sym built_ins) (delete_prop Environment.definitions sym))")
                                           (if options.contained
                                             (set_prop (prop children_declarations name)
                                                       `contained true))
@@ -1748,16 +1752,32 @@
                                                 (when (starts_with? k name)
                                                   (remove_prop Environment.global_ctx.*env_config*.imports k)))
                                       name))))
-            
+
+       
        ;; if we are in core, set up the active namespace
        
        (set_prop Environment.global_ctx.scope
                  "create_namespace" create_namespace
                  "set_namespace" set_namespace
                  "delete_namespace" delete_namespace                
-                 "namespaces" (function () (+ (keys children) "core"))                 
+                 "namespaces" (function () (+ (keys children) "core"))                
                  "current_namespace" current_namespace))
 
+     (defvar get_namespace_handle (fn (name)
+                                    (progn
+                                     (cond
+                                       (== namespace name)
+                                       Environment  ;; just return us
+                                       (== namespace "core")
+                                       (if (and (is_string? name)
+                                                (prop children name))
+                                         (prop children name))
+                                       parent_environment
+                                       (-> parent_environment `get_namespace_handle name)
+                                       else
+                                       (throw "invalid namespace handle requested")))))
+       
+     
      ;; included_globals nil value will be replaced in the JSON tree
      ;; with values from this environment upon saving the image. It
      ;; is then used to rehydrate the values on restart
@@ -1947,14 +1967,16 @@
               (build_time (formatted_date (new Date)))
               (build_headers [])              
               (child_env nil)
+              (want_buffer (or options.want_buffer false))
+              (comp_buffer nil)
 	      (preserve_imports (if (and options
 					 (== options.preserve_imports false))
 					false
 				        true))
               (include_source false)
               (exports [])
-              (src (if (prop Environment.global_ctx.scope "*env_skeleton*")
-                     (clone (prop Environment.global_ctx.scope "*env_skeleton*"))
+              (src (if (-> Environment `get_global "*env_skeleton*" nil)
+                     (clone (-> Environment `get_global "*env_skeleton*"))
 		     (reader (read_text_file  "./src/environment.lisp"))))
               (target_insertion_path nil)  ;; where we inject our context into the source tree                               
               (output_path nil))			       
@@ -2017,7 +2039,7 @@
                                              exp_conf) ]
                             [`imports      (if preserve_imports
 					       (to_object
-						(for_each (imp_source (values (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope)))
+						(for_each (imp_source (values (or (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope) {})))
 							  [ imp_source.symbol { `initializer: `(javascript "new function () { return " ,#imp_source.symbol " }")
                                                           `symbol: imp_source.symbol
                                                           `namespace: imp_source.namespace
@@ -2029,8 +2051,11 @@
 
            
            
-           (= output_path (or options.save_as
-                              (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope)))
+           (= output_path (if options.want_buffer
+                            nil
+                            (or options.save_as
+                                (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope))))
+           
            ;; if our output path is a function, call it to get an actual name...
            (if (is_function? output_path)
              (= output_path (output_path)))
@@ -2040,8 +2065,9 @@
              (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
            
            (cond
-             (and output_path
-                  (ends_with? ".js" output_path))
+             (or want_buffer
+                 (and output_path
+                      (ends_with? ".js" output_path)))
              (do
                (push build_headers
                      (+ "// Build Time: " build_time))
@@ -2050,7 +2076,6 @@
                (push build_headers
                      (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
                (env_log "saving to: " output_path)
-               
                (compile_buffer src "init_dlisp"
                                {
                                 `namespace: namespace
@@ -2058,8 +2083,9 @@
                                 `include_boilerplate: false
                                 `verbose: false
 				`bundle: true
+                                `want_buffer: want_buffer
                                 `imports: (if preserve_imports
-					      (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope))
+					    (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope))
                                 `js_headers: [(show check_true)
                                               (show get_next_environment_id)
                                               (show get_outside_global)
@@ -2214,6 +2240,7 @@
                `special_operators special_operators
                `definitions Environment.definitions
                `declarations Environment.declarations
+               `get_namespace_handle get_namespace_handle
                `compile compile	       
                `evaluate evaluate
                `evaluate_local evaluate_local

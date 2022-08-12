@@ -397,8 +397,12 @@
                               ;; inferred scope.
                               ;; do it with the full path 
                               (= declared_type_value (get_declarations ctx ref_name))
-                              (if declared_type_value.type
+                              (cond
+			          declared_type_value.declared_global
+			          undefined
+			          declared_type_value.type
                                   declared_type_value.type
+				  else
                                   (do
                                     (= ref_name (first (get_object_path ref_name)))
                                     (cond
@@ -457,14 +461,29 @@
                                                     `type:undefined
                                                     `inlined: false
                                                     }))
-                                 (set_prop dec_struct
-                                           declaration_type
-                                           value)
-                                 (set_prop ctx.declared_types
-                                           sname
-                                           dec_struct)
-                                 (prop ctx.declared_types
-                                       sname))))
+				 (cond
+				  (and (== declaration_type "location")
+				       (== value "global"))
+				  (do
+				      (= has_lisp_globals true)
+				      (if (== undefined (prop dec_struct `type))
+					  (throw SyntaxError "global declaration must be after declaration of type for symbol"))
+				      (set_prop dec_struct
+						`declared_global
+						true)
+				      (set_prop root_ctx.defined_lisp_globals
+					       name
+					       (prop dec_struct `type)))
+				  else
+				   (do
+                                    (set_prop dec_struct
+                                              declaration_type
+                                              value)
+                                    (set_prop ctx.declared_types
+                                              sname
+                                              dec_struct)
+                                    (prop ctx.declared_types
+					  sname))))))
        
        ;; If a variable isn't declared, it can cause ambiguity in knowing
        ;; the value it represents after being assigned to by a function.
@@ -4046,7 +4065,11 @@
                                             (== declaration "object")
                                             (do
                                                (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type Object)))
+							 (set_declaration ctx name `type Object)))
+					    (== declaration "global")
+                                            (do
+                                               (for_each (`name (each targeted `name))
+							 (set_declaration ctx name `location "global")))
                                             (== declaration "optimize")
                                             (do                                                 
                                                 (for_each (`factor (each targeted `val))
@@ -4062,7 +4085,10 @@
                                                 (throw SyntaxError "namespace declaration requires exactly 1 value"))
                                               (when (get_ctx ctx "__IN_LAMBDA__")
                                                 (throw SyntaxError "namespace compiler declaration must be toplevel"))
-                                              (setq target_namespace targeted.0.name))                                       
+                                              (setq target_namespace targeted.0.name)
+					      ;; reset our environment pointer
+					      (setq Environment
+						    (-> Environment `get_namespace_handle targeted.0.name)))
                                               
                                             
                                             else
@@ -4099,8 +4125,8 @@
                   (`val nil)
                   (`call_type (cond 
                                 (not tokens.0.ref)
-                                "literal"
-                                (get_ctx_val ctx tokens.0.name)
+                                "literal"			
+				(get_ctx_val ctx tokens.0.name)
                                 "local"
                                 (get_lisp_ctx tokens.0.name)
                                 "lisp"))

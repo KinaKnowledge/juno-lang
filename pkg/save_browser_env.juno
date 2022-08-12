@@ -14,15 +14,26 @@
 ;(import "doc/help.lisp")
 (import "html/logo.juno")
 
+
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
-(defglobal core/browser_repl_package ((quote quote) (reader (read_text_file "pkg/browser_workspace.juno"))))
+
+
+(defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
+
+
 
 ;; Make sure we have the ability to produce a file..
 (when (not (contains? "io" *env_config*.features))
   (import "src/base-io.lisp"))
 
 (import "src/build-tools.lisp")
+
+(defglobal core/browser_boot_code
+  (read_text_file "js/browser_boot.js"))
+
+(defglobal core/*env_template* (btoa (read_text_file  "./src/environment.lisp")))
 ;; everything loaded above this line is what will be preserved..
+
 (defglobal *core_symbols* (core/symbols))
 
 
@@ -44,8 +55,8 @@
 	(conj no_includes
 	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file"]))
   ;; print them out 
-  (console.log "NOT INCLUDING: ")
-  (console.table (sort no_includes))
+  ;(console.log "NOT INCLUDING: ")
+;  (console.table (sort no_includes))
 
   ;; save the image 
   
@@ -78,8 +89,10 @@
                                 ))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
-                   (html/header { style: "max-height: 20px; height: 20px; display: flex;" }
-                                )))))
+                   (html/header { `id: "page_header"  style: "max-height: 20px; height: 20px; display: flex;" }
+                               )
+                   (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
+                   ))))
    
     (write_text_file "html/starter.html"
                      doctext)
