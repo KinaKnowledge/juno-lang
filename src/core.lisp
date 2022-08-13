@@ -2312,8 +2312,8 @@ such as things that connect or use environmental resources.
 
 (defun object_methods (obj)
     (let
-        ((`properties (new Set))
-         (`current_obj  obj))
+        ((properties (new Set))
+         (current_obj  obj))
      (while current_obj
         (do
             (map (fn (item)
@@ -2556,86 +2556,111 @@ such as things that connect or use environmental resources.
    `tags: ["time" "date" "system"]
    })
     
-    (defglobal system_date_formatter
-        (new Intl.DateTimeFormat [] system_date_format)
-	{
-	 `initializer: `(new Intl.DateTimeFormat [] ,#system_date_format)
-         `tags: ["time" "date" "system"]
-         `description: "The instantiation of the system_date_format.  See system_date_format for additional information."
-	})
+(defglobal system_date_formatter
+  (new Intl.DateTimeFormat [] system_date_format)
+  {
+    `initializer: `(new Intl.DateTimeFormat [] ,#system_date_format)
+    `tags: ["time" "date" "system"]
+    `description: "The instantiation of the system_date_format.  See system_date_format for additional information."
+  })
 
-    (defun tzoffset ()
-        (* 60 (-> (new Date) `getTimezoneOffset))
-        {
-             `description: "Returns the number of seconds the local timezone is offset from GMT"
-             `usage: []
-             `tags: ["time" "date" "timezone"]
-        })
+(defun tzoffset ()
+  (* 60 (-> (new Date) `getTimezoneOffset))
+  {
+    `description: "Returns the number of seconds the local timezone is offset from GMT"
+    `usage: []
+    `tags: ["time" "date" "timezone"]
+   })
 
      
-    (defun date_components (date_value date_formatter)
-            (if (is_date? date_value)
-                (to_object
-                  (map (fn (x)
-                         [x.type x.value])
-                         (if date_formatter
-                             (bind_and_call date_formatter date_formatter `formatToParts date_value)
-                             (bind_and_call system_date_formatter system_date_formatter `formatToParts date_value))))
-                nil)
-              {
-               `usage: ["date_value:Date" "date_formatter:DateTimeFormat?"] 
-               `description: "Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument."
-               `tags: ["date" "time" "object" "component"]
-               })
+(defun date_components (date_value date_formatter)
+  (if (is_date? date_value)
+    (to_object
+     (map (fn (x)
+            [x.type x.value])
+          (if date_formatter
+            (bind_and_call date_formatter date_formatter `formatToParts date_value)
+            (bind_and_call system_date_formatter system_date_formatter `formatToParts date_value))))
+    nil)
+  {
+   `usage: ["date_value:Date" "date_formatter:DateTimeFormat?"] 
+   `description: "Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument."
+   `tags: ["date" "time" "object" "component"]
+   })
         
-    (defun formatted_date (dval date_formatter)
-            (let
-                ((`comps (date_components dval date_formatter)))
-                (if comps
-                    (if date_formatter
-                        (join "" (values comps)) 
-                        (+ "" comps.year "-" comps.month "-" comps.day " " comps.hour ":" comps.minute ":" comps.second))
-                    nil))
-                ;(-> dval `toString "yyyy-MM-d HH:mm:ss")
-            {
-             `usage: ["dval:Date" "date_formatter:DateTimeFormat?"]
-             `description: "Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument."
-             `tags:["date" "format" "time" "string"]
-             })
+(defun formatted_date (dval date_formatter)
+  (let
+      ((`comps (date_components dval date_formatter)))
+    (if comps
+      (if date_formatter
+        (join "" (values comps)) 
+        (+ "" comps.year "-" comps.month "-" comps.day " " comps.hour ":" comps.minute ":" comps.second))
+      nil))
+                                        ;(-> dval `toString "yyyy-MM-d HH:mm:ss")
+  {
+   `usage: ["dval:Date" "date_formatter:DateTimeFormat?"]
+   `description: "Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument."
+   `tags:["date" "format" "time" "string"]
+   })
 
-  (defglobal *LANGUAGE* {})
+(defglobal *LANGUAGE* {})
 
-  (defun dtext (default_text)
-        (or
-          (prop *LANGUAGE* default_text)
-          default_text)
-       { `usage: ["text:string" "key:string?"]
-         `description: (+ "Given a default text string and an optional key, if a key "  
-                          "exists in the global object *LANGUAGE*, return the text associated with the key. "
-                          "If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. "
-                          "If that is a nil entry, returns the default text.")
-         `tags: ["text" "multi-lingual" "language" "translation" "translate"]
-        })
+(defun dtext (default_text)
+  (or
+   (prop *LANGUAGE* default_text)
+   default_text)
+  { `usage: ["text:string" "key:string?"]
+   `description: (+ "Given a default text string and an optional key, if a key "  
+                    "exists in the global object *LANGUAGE*, return the text associated with the key. "
+                    "If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. "
+                    "If that is a nil entry, returns the default text.")
+   `tags: ["text" "multi-lingual" "language" "translation" "translate"]
+   })
 
-  (defun nth (idx collection)
-        (cond 
-              (is_array? idx)
-              (map (lambda (v) (nth v collection)) idx)
-              (and (is_number? idx) (< idx 0) (>= (length collection) (* -1 idx)))
-              (prop collection (+ (length collection) idx))
-              (and (is_number? idx) (< idx 0) (< (length collection) (* -1 idx)))
-              undefined
-              else
-              (prop collection idx))
-        {
-           "description":(+ "Based on the index or index list passed as the first argument, " 
-                            "and a collection as a second argument, return the specified values " 
-                            "from the collection. If an index value is negative, the value "
-                            "retrieved will be at the offset starting from the end of the array, "
-                            "i.e. -1 will return the last value in the array.")
-           "tags":["filter" "select" "pluck" "object" "list" "key" "array"]
-           "usage":["idx:string|number|array","collection:list|object"]
-         })
+(defun nth (idx collection)
+  (cond 
+    (is_array? idx)
+    (map (lambda (v) (nth v collection)) idx)
+    (and (is_number? idx) (< idx 0) (>= (length collection) (* -1 idx)))
+    (prop collection (+ (length collection) idx))
+    (and (is_number? idx) (< idx 0) (< (length collection) (* -1 idx)))
+    undefined
+    else
+    (prop collection idx))
+  {
+   "description":(+ "Based on the index or index list passed as the first argument, " 
+                    "and a collection as a second argument, return the specified values " 
+                    "from the collection. If an index value is negative, the value "
+                    "retrieved will be at the offset starting from the end of the array, "
+                    "i.e. -1 will return the last value in the array.")
+   "tags":["filter" "select" "pluck" "object" "list" "key" "array"]
+   "usage":["idx:string|number|array","collection:list|object"]
+   })
+
+(defmacro use_symbols (namespace symbol_list)
+  (let
+      ((acc [(quote progn)])
+       (nspace (if namespace
+                 (deref namespace))
+                 (throw "nill namespace provided to use_symbols")))
+    (assert (is_string? nspace))
+    (assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
+    (for_each (sym symbol_list)
+              (push acc `(defglobal ,#(deref sym)
+                           ,#(+ "=:" nspace "/" (deref sym))
+                           {
+                            `initializer: (quote ,#(+ "=:" nspace "/" (deref sym)))
+                            })))
+   
+    acc)
+  {
+   `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
+                    "the macro will faciltate the binding of the symbols into the "
+                    "current namespace.")
+   `usage: [ "namespace:string|symbol" "symbol_list:array" ]
+   `tags: [ `namespace `binding `import `use `symbols ]
+   })
+  
 
 true
  
