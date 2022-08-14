@@ -1131,8 +1131,7 @@
          (*namespace* namespace)
          (pending_ns_loads {})
          (pend_load (fn (from_namespace target_namespace symbol initializer)
-                      (progn
-                       (debug)
+                      (progn                       
                       (when (eq nil (prop pending_ns_loads from_namespace))
                         (set_prop pending_ns_loads from_namespace []))                      
                       (push (prop pending_ns_loads from_namespace)
@@ -1715,7 +1714,7 @@
        (defvar current_namespace (function ()
                                            active_namespace))
        
-       (defvar create_namespace (fn (name options)
+       (defvar create_namespace (fn (name options defer_initialization)
                                   (cond
                                     (not (is_string? name))
                                     (throw TypeError "namespace name must be a string")
@@ -1724,7 +1723,7 @@
                                     else                                  
                                     (let
                                         ((options (or options {}))
-                                         (child_env (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained })))
+                                         (child_env (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained `defer_initialization: defer_initialization})))
                                       (if child_env.evaluate   ;; we got an legit env back 
                                         (do
                                           (-> child_env `set_compiler compiler) ;; we all share a single compiler by default
@@ -1902,7 +1901,8 @@
 	             (create_namespace childset.0
 				       (if (prop included_globals.children_declarations childset.0)
 				         (prop included_globals.children_declarations childset.0)
-				         {}))))                  
+				         {})
+                                       true)))                  
 
          ;; once the namespaces are created, set any static imports they have
          ;; and evaluate the child 
@@ -2286,19 +2286,41 @@
                `check_external_env (fn ()
                                      check_external_env_default))
 
-     ;; get the core/*initializer*...
-     (setq in_boot false)     
+     ;; two initializations - one for the system and one for the user
+    
+     
+     (setq in_boot false)
+     
+     (defvar sys_init (prop Environment.global_ctx.scope "*system_initializer*"))
      (defvar init (prop Environment.global_ctx.scope "*initializer*"))
      
+     ;(console.log "env: " namespace ": initializer: " init "system: " sys_init)
      ;; set the default namespace if we have been given one and we have children..
      (when (and opts.default_namespace
 	        (not (== compiler unset_compiler))	
 		(prop children opts.default_namespace))
        (set_namespace opts.default_namespace))
 
-     ;; call the initializer     
-     (when init 
-       (eval init))
+     
+    
+     (when (== namespace "core")
+        ;; call the system initializer
+       (when sys_init
+         (eval sys_init))
+     
+     ;; call the user initializer     
+       (when init 
+         (eval init))
+
+       ;; we will have deferred initializations of the namespaces
+       ;; if there were any children in the export, so do these now
+
+       (for_each (child children)
+                 (progn                  
+                  (debug)
+                  (-> child `evaluate_local
+                      (+ "(progn (console.log \"child running initialization..\") (debug) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")))))
+                                    
      
      Environment)))
 

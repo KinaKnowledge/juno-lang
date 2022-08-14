@@ -28,11 +28,26 @@
 
 (import "src/build-tools.lisp")
 
-(defglobal core/browser_boot_code
-  (read_text_file "js/browser_boot.js"))
+;(defglobal core/browser_boot_code
+ ; (read_text_file "js/browser_boot.js"))
+
+(defun core/*system_initializer* ()
+  (let
+      ((pkg (-> Environment `evaluate "core/html_package")))
+    (-> Environment `evaluate pkg)
+    (console.log "initializing browser_repl_package")
+    (eval (reader (clone browser_repl_package)))
+    (set_prop globalThis `env Environment) ;; establish a global handle (not necessary but handy for development)
+    (console.log "system initializer Complete")))
+
+
+  
+
 
 (defglobal core/*env_template* (btoa (read_text_file  "./src/environment.lisp")))
-;; everything loaded above this line is what will be preserved..
+
+;; everything loaded above this line is what will be preserved.....
+;; -----------------------------------------------------------
 
 (defglobal *core_symbols* (core/symbols))
 
@@ -44,6 +59,8 @@
 ;; Set the new environments default namespace 
 (set_path [ `export `default_namespace ] *env_config* "user")
 
+
+       
 
 (progn
  
@@ -84,7 +101,7 @@
                    (html/script { `type: "module" }
                                 js_resource
                                 "\n\n"                               
-                                boot_up
+                                ;;boot_up
                                 "\n\n"
                                 ))
                                 

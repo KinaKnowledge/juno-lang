@@ -139,7 +139,7 @@
    (let
        ((js_resource (save_env { `want_buffer: true
                                  `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
-        (boot_up core/browser_boot_code)
+        ;;(boot_up core/browser_boot_code)
         (dcomps (date_components (new Date)))
         (file_version_tag (if (not (blank? options.version_tag))
                               options.version_tag
@@ -149,7 +149,7 @@
                                      (html/script { `type: "module" }
                                                   js_resource
                                                   "\n\n"                               
-                                                  boot_up
+                                                  ;; boot_up
                                                   "\n\n"
                                                   ))
                           `outerHTML))
