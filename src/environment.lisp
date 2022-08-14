@@ -1626,7 +1626,8 @@
 	"blank?","contains?","make_set", "eval_exp", "indirect_new", "get_import_entry"
         "range", "add", "merge_objects", "index_of", "resolve_path", "delete_prop", "load_pends",
 	"min_value","max_value","interlace","trim","assert","unquotify","or_args", "pending_ns_loads",
-	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"])
+	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"
+        "reader"])
 
      (set_prop Environment.global_ctx.scope
 	       `built_ins
