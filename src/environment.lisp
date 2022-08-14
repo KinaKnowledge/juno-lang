@@ -1147,8 +1147,8 @@
                          (defvar acc [])
                          (setq acc
                                (for_each (`load_instruction (prop pending_ns_loads from_namespace))
-                                         `(defglobal ,#(+ load_instruction.target_ns "/" load_instruction.symbol)
-                                            (eval ,#load_instruction.initializer))))
+                                         `(use_symbols ,#load_instruction.source_ns [ ,#load_instruction.symbol ] ,#load_instruction.target_ns)))
+                                            
                          (console.log "load_pends: " acc)
                          (eval acc)
                          true)))

@@ -2689,7 +2689,7 @@ such as things that connect or use environmental resources.
                  
              
 
-(defmacro use_symbols (namespace symbol_list)
+(defmacro use_symbols (namespace symbol_list target_namespace)
   (let
       ((acc [(quote progn)])
        (nspace (if namespace
@@ -2701,14 +2701,14 @@ such as things that connect or use environmental resources.
               (push acc `(defglobal ,#(deref sym)
                            ,#(+ "=:" nspace "/" (deref sym))
                            {
-                            `initializer: `(pend_load ,#nspace ,#(current_namespace) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))                            
+                            `initializer: `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))                            
                             })))
     acc)
   {
    `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
                     "the macro will faciltate the binding of the symbols into the "
                     "current namespace.")
-   `usage: [ "namespace:string|symbol" "symbol_list:array" ]
+   `usage: [ "namespace:string|symbol" "symbol_list:array" "target_namespace?:string"]
    `tags: [ `namespace `binding `import `use `symbols ]
    })
   

@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-08-14 07:24:15
-// Version: 2022.08.14.07.24
-export const DLISP_ENV_VERSION='2022.08.14.07.24';
+// Build Time: 2022-08-14 07:33:19
+// Version: 2022.08.14.07.33
+export const DLISP_ENV_VERSION='2022.08.14.07.33';
 
 
 
@@ -3440,7 +3440,7 @@ await Environment.set_global("use_symbols_old",async function(namespace,symbol_l
 },{ "eval_when":{ "compile_time":true
 },"name":"use_symbols_old","macro":true,"fn_args":"(namespace symbol_list)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array"],"tags":["namespace","binding","import","use","symbols"]
 });
-await Environment.set_global("use_symbols",async function(namespace,symbol_list) {
+await Environment.set_global("use_symbols",async function(namespace,symbol_list,target_namespace) {
     let acc;
     let nspace;
     acc=["=:progn"];
@@ -3478,7 +3478,7 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list)
                     }
                 } )()) 
             })(),{ "initializer":["=:quotem",["=:pend_load",nspace,await (async function(){
-                 return await (await Environment.get_global("current_namespace"))() 
+                 return (target_namespace|| await (await Environment.get_global("current_namespace"))()) 
             })(),await (async function(){
                 let mval;
                 mval=sym;
@@ -3514,7 +3514,7 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list)
 })();
  return  acc
 },{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array"],"tags":["namespace","binding","import","use","symbols"]
+},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"]
 });
  return  true
 }
