@@ -1279,17 +1279,8 @@
                               (-> (prop children namespace_identity.0)
                                   `get_global
                                   namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)
-                              (do
-                                (if false
-                                  (do
-                                    (if (is_array? (prop pending_loads namespace_identity.0))
-                                      (push (prop pending_loads namespace_identity.0)
-                                            [list refname refval])
-                                      (do
-                                        (set_prop pending_loads namespace_identity.0 [])
-                                        (push (prop pending_loads namespace_identity.0)
-                                            [list refname refval]))))                                    
-                                   (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))))
+                              (do                                                                    
+                                (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist")))))
                           else
                           (do
                                                         
@@ -1733,7 +1724,7 @@
                                     else                                  
                                     (let
                                         ((options (or options {}))
-                                         (child_env (progn (console.log "creating namespace: " name) (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained }))))
+                                         (child_env (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained })))
                                       (if child_env.evaluate   ;; we got an legit env back 
                                         (do
                                           (-> child_env `set_compiler compiler) ;; we all share a single compiler by default
@@ -1863,7 +1854,6 @@
          (when imps
            (for_each (imp_source (values imps))
              (progn
-               (console.log "importing: " imp_source)
                (cond
                  (== imp_source.namespace namespace)  ;; only for core at this point..
                  (progn                     
@@ -2297,8 +2287,7 @@
                                      check_external_env_default))
 
      ;; get the core/*initializer*...
-     (setq in_boot false)
-     (console.log "pending_loads: " pending_loads)
+     (setq in_boot false)     
      (defvar init (prop Environment.global_ctx.scope "*initializer*"))
      
      ;; set the default namespace if we have been given one and we have children..
