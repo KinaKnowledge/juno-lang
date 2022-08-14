@@ -403,4 +403,5 @@
 
 (console.log "html is loaded");
 (register_feature "html")
+(load_pends "html")
 true

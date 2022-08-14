@@ -2660,7 +2660,60 @@ such as things that connect or use environmental resources.
    `usage: [ "namespace:string|symbol" "symbol_list:array" ]
    `tags: [ `namespace `binding `import `use `symbols ]
    })
+
+(defmacro use_symbols_old (namespace symbol_list)
+  (let
+      ((acc [(quote progn)])
+       (nspace (if namespace
+                 (deref namespace))
+                 (throw "nill namespace provided to use_symbols")))
+    (assert (is_string? nspace))
+    (assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
+    (for_each (sym symbol_list)
+              (push acc `(defglobal ,#(deref sym)
+                           ,#(+ "=:" nspace "/" (deref sym))
+                           {
+                            `initializer: (quote ,#(+ "=:" nspace "/" (deref sym)))
+                            `requires: [ ,@(nspace) ]
+                            })))
+    acc)
+  {
+   `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
+                    "the macro will faciltate the binding of the symbols into the "
+                    "current namespace.")
+   `usage: [ "namespace:string|symbol" "symbol_list:array" ]
+   `tags: [ `namespace `binding `import `use `symbols ]
+   })
+
+
+                 
+             
+
+(defmacro use_symbols (namespace symbol_list)
+  (let
+      ((acc [(quote progn)])
+       (nspace (if namespace
+                 (deref namespace))
+                 (throw "nill namespace provided to use_symbols")))
+    (assert (is_string? nspace))
+    (assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
+    (for_each (sym symbol_list)
+              (push acc `(defglobal ,#(deref sym)
+                           ,#(+ "=:" nspace "/" (deref sym))
+                           {
+                            `initializer: `(pend_load ,#nspace ,#(current_namespace) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))                            
+                            })))
+    acc)
+  {
+   `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
+                    "the macro will faciltate the binding of the symbols into the "
+                    "current namespace.")
+   `usage: [ "namespace:string|symbol" "symbol_list:array" ]
+   `tags: [ `namespace `binding `import `use `symbols ]
+   })
   
+  
+
 
 true
  

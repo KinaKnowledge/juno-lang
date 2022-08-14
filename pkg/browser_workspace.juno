@@ -138,7 +138,7 @@
 (defun core/save_image (options)
    (let
        ((js_resource (save_env { `want_buffer: true
-                                 `do_not_include: (conj (map (fn (v) (+ "html/" v)) (html/symbols)) [ `browser_repl `line_reader  ])}))
+                                 `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
         (boot_up core/browser_boot_code)
         (dcomps (date_components (new Date)))
         (file_version_tag (if (not (blank? options.version_tag))
@@ -160,17 +160,12 @@
                                                   )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
-                          `outerHTML))
-        (storage nil))
-     ;(setq storage
-      ;     (html/get_by_id "page_header"))
-     ;(-> storage `remove)
-   
+                          `outerHTML)))               
      (setTimeout (fn ()
                    (do
                      (save_locally (or options.save_as
                                       (+ "juno_image-" file_version_tag ".html"))
-                                   (+ "<DOCTYPE html><html>\n"
+                                   (+ "<!DOCTYPE html><html>\n"
                                       scaffold_1
                                       scaffold_2
                                       "</html>")

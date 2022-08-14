@@ -79,7 +79,7 @@
 (defexternal dlisp_env
   (fn (opts)
     (progn
-     
+     ;(console.log "dlisp_env: initializing: " (clone opts))
      ;; State to the compiler that we do not want to be passed an Environment
      ;; by declaring that this is toplevel.
      
@@ -100,6 +100,13 @@
      ;; Are we the core, or are we a namespace off of the core?
      
      (defvar namespace (or opts.namespace "core"))
+     (defvar in_boot true)  ;; this is true while we are initializing the environment
+     
+     ;; Define a holding tank for symbols that reference yet unloaded namespaces...
+     ;; while in boot mode
+     ;; once the namespace is loaded the symbols are initiailzed
+     ;; key->array of symbols per namespace 
+     (defvar pending_loads {}) 
     
      (defvar parent_environment (if (== namespace "core")
                                   nil
@@ -1122,6 +1129,29 @@
               
          (check_external_env_default (if (== namespace "core") true false))
          (*namespace* namespace)
+         (pending_ns_loads {})
+         (pend_load (fn (from_namespace target_namespace symbol initializer)
+                      (progn
+                       (debug)
+                      (when (eq nil (prop pending_ns_loads from_namespace))
+                        (set_prop pending_ns_loads from_namespace []))                      
+                      (push (prop pending_ns_loads from_namespace)
+                            { `symbol: symbol
+                              `source_ns: from_namespace
+                              `target_ns: target_namespace
+                              `initializer: [(quote quote) initializer]
+                            }
+                            ))))
+         (load_pends (fn (from_namespace)
+                       (when (prop pending_ns_loads from_namespace)
+                         (defvar acc [])
+                         (setq acc
+                               (for_each (`load_instruction (prop pending_ns_loads from_namespace))
+                                         `(defglobal ,#(+ load_instruction.target_ns "/" load_instruction.symbol)
+                                            (eval ,#load_instruction.initializer))))
+                         (console.log "load_pends: " acc)
+                         (eval acc)
+                         true)))
          (symbols (function () (keys Environment.global_ctx.scope))
                    {
                          `description: "Returns an array of the defined global symbols for the local environment."
@@ -1230,7 +1260,7 @@
                            
                            (`check_external_env (if suppress_check_external_env
                                                   false
-                                                  check_external_env_default)))                     
+                                                  check_external_env_default)))                        
                         (cond
                           ;; given a fully qualified name, if not us, pass it up
                           (and parent_environment
@@ -1249,7 +1279,17 @@
                               (-> (prop children namespace_identity.0)
                                   `get_global
                                   namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)
-                              (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))
+                              (do
+                                (if false
+                                  (do
+                                    (if (is_array? (prop pending_loads namespace_identity.0))
+                                      (push (prop pending_loads namespace_identity.0)
+                                            [list refname refval])
+                                      (do
+                                        (set_prop pending_loads namespace_identity.0 [])
+                                        (push (prop pending_loads namespace_identity.0)
+                                            [list refname refval]))))                                    
+                                   (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))))
                           else
                           (do
                                                         
@@ -1594,8 +1634,8 @@
 	"split","split_by","is_object?","is_array?", "is_number?", "is_function?", "is_set?",
 	"is_element?", "is_string?", "is_nil?", "is_regex?", "is_date?", "ends_with?", "starts_with?",
 	"blank?","contains?","make_set", "eval_exp", "indirect_new", "get_import_entry"
-        "range", "add", "merge_objects", "index_of", "resolve_path", "delete_prop",
-	"min_value","max_value","interlace","trim","assert","unquotify","or_args",
+        "range", "add", "merge_objects", "index_of", "resolve_path", "delete_prop", "load_pends",
+	"min_value","max_value","interlace","trim","assert","unquotify","or_args", "pending_ns_loads",
 	"special_operators","defclog","NOT_FOUND","check_external_env_default" "built_ins"])
 
      (set_prop Environment.global_ctx.scope
@@ -1635,6 +1675,9 @@
                `symbol_definition symbol_definition              
                `namespace namespace)
 
+
+
+    
      
      ;; If we have child environments (namespaces) we need to know about them
      ;; because we need to be able to manage them and we need to be able to
@@ -1690,8 +1733,7 @@
                                     else                                  
                                     (let
                                         ((options (or options {}))
-                                         (child_env (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained })))
-                                     
+                                         (child_env (progn (console.log "creating namespace: " name) (dlisp_env { `parent_environment: Environment `namespace: name `contained: options.contained }))))
                                       (if child_env.evaluate   ;; we got an legit env back 
                                         (do
                                           (-> child_env `set_compiler compiler) ;; we all share a single compiler by default
@@ -1820,7 +1862,8 @@
          (= imps (prop included_globals `imports))         
          (when imps
            (for_each (imp_source (values imps))
-              (progn               
+             (progn
+               (console.log "importing: " imp_source)
                (cond
                  (== imp_source.namespace namespace)  ;; only for core at this point..
                  (progn                     
@@ -2001,7 +2044,7 @@
 	   (= exports (export_symbol_set (if options.do_not_include
                                            { do_not_include: options.do_not_include })))
            
-	   
+	  
 	   (= my_children
 	      (to_object
                (reduce (child (pairs children))
@@ -2010,8 +2053,7 @@
                           (= child_env (-> child.1
                                            `compile
                                            (-> child.1 `export_symbol_set { `no_compiler: true })
-                                           { `throw_on_error: true `meta: true }))
-                          
+                                           { `throw_on_error: true `meta: true }))                        
                           [child.0  `(javascript ,#child_env) ])))))
            
                                         ;[(quote let)
@@ -2255,6 +2297,8 @@
                                      check_external_env_default))
 
      ;; get the core/*initializer*...
+     (setq in_boot false)
+     (console.log "pending_loads: " pending_loads)
      (defvar init (prop Environment.global_ctx.scope "*initializer*"))
      
      ;; set the default namespace if we have been given one and we have children..
