@@ -1,0 +1,62 @@
+
+
+(defun make_menu (menu_items)
+  (let
+      ((menu_items menu_items)
+       (view nil))
+    (setq view
+          (div { `class: "pure-menu pure-menu-horizontal" }               
+               (ul { `class: "pure-menu-list" }                 
+                   (map (fn (item idx)                     
+                          (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0)))
+                        (or menu_items [])))))
+    (attach_event_listener view
+                           `click
+                           (fn (e)
+                             (progn
+                              (defvar idx (-> e.srcElement `getAttribute `idx))
+                              (defvar item (prop menu_items idx))
+                             
+                              (console.log "clicked item: " idx item item.1)
+                               (when item
+                                 (item.1 e))
+                              (-> view `remove))))
+    view))
+
+
+(defun show_main_menu ()
+  (let
+      ((view nil))
+    (setq view
+          (div { `style: "position: absolute; top: 30px; left: 5px; border-radius: 3px; padding: 5px; width: 200px" }
+               (make_menu [["Save Image" (fn (e) (save_image)) ] ["Load Resource" (fn (e) (notify "Loading Resource")) ]])))    
+    (-> (first (get_by_id "juno_container")) `appendChild view)))
+               
+
+(defun user/*initializer* ()
+  (let
+      ((header nil))
+       
+    (console.log "user/*initializer is running.")
+    (debug)
+    (defglobal main_menu_button (button { `style: "margin-top: -5px" }
+                                             (span { `style: "margin-top: -2px; font-weight: bold;" } "λ")))
+    
+    (setq header (-> document `querySelector "header"))
+    
+    (-> header `appendChild main_menu_button)
+    (-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
+    
+    (set_prop *env_config*.export
+	      `save_path
+	      nil)
+  
+  (attach_event_listener main_menu_button
+			      `click
+			      (fn (e)
+				(show_main_menu)))
+  
+  (notify (+ "Hello " *namespace* ))
+  true))
+
+  
