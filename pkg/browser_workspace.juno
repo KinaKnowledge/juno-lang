@@ -8,7 +8,7 @@
 
 (defun line_reader (options)
   (let
-      ((entry_area (html/textarea { `style: "font-size: 1.1em; height: calc(100% - 20px); width: calc(100% - 10px);" } ))
+      ((entry_area (html/textarea { `style: "height: calc(100% - 20px); width: calc(100% - 10px);" } ))
        (result nil)
        (output_container options.output_container)
        (handle_text_input_events (fn (e)
@@ -38,23 +38,26 @@
                                         ;(result nil)
        (current_env Environment)
        (error_state nil)
-       (evaluator (fn (lisp_text)
+       (evaluator (fn (lisp_text no_eval)
                     (let
                         ((result nil))
                       (setq error_state nil)
                       (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      
                       (try
-                        (= result (-> current_env `evaluate lisp_text))
+                        (= result (if no_eval
+                                    lisp_text
+                                    (-> current_env `evaluate lisp_text)))
                         (catch Error (ex)
                           (do
                             (= error_state true)
                             (= result ex))))
-                      (console.log "<-" result)                                       
-                      (-> output_container
-                          `prepend
-                          (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
-                                    (html/code { `style: "font-style: italic; color: darkblue;" }
-                                               lisp_text)))
+                      (console.log "<-" result)
+                      (when (not no_eval)
+                        (-> output_container
+                            `prepend
+                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
+                                      (html/code { `style: "font-style: italic; color: darkblue;" }
+                                                 lisp_text))))
                       (-> output_container
                           `prepend
                           (html/div { `style: "padding: 5px; margin-top: 0px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
@@ -106,25 +109,17 @@
     (-> resize_observer `observe body_element)
     {
      `view: juno_container
+     `log: (fn (val)
+             (evaluator val true))
      `evaluate: (fn (lisp_text)
                   (evaluator lisp_text))
      }))
      
 (html/set_style [[ "font-family" "-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;"]]
                 (-> document `querySelector "body"))
-(let
-    ((header (-> document `querySelector "header") html/img { src: core/juno_logo height: "15" })
-     (handle_filepick (fn (files)
-                        (console.log files))))
-  
-  (-> header `appendChild
-      (html/img { src: core/juno_logo height: "15" }))
-  (-> header `appendChild
-      (html/span { `style: "display: inline-block; margin-left: 10px; font-size: 0.9em; line-height: 15px;" } Environment.build_version))  
-  
-  (set_prop *env_config*.export
-            `save_path
-            nil))
+
+
+
 ;; ez page header access
 
 (defun core/page_header ()
@@ -145,8 +140,9 @@
                               options.version_tag
                               (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
         (scaffold_1 (prop
-                          (html/head { `title: "Juno Browser" }
-                                     (html/script { `type: "module" }
+                     (html/head { `title: "Juno Browser" }
+                                (html/style { `id: "juno-css" } "body { font-family: '-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;' }")
+                                     (html/script { `id: "juno-core" `type: "module" }
                                                   js_resource
                                                   "\n\n"                               
                                                   ;; boot_up
@@ -156,8 +152,7 @@
         (scaffold_2 (prop
                           
                           (html/body { style: "height: 100vh; overflow: hidden;" }
-                                     (html/header {  style: "max-height: 20px; height: 20px; display: flex;" }
-                                                  )
+                                     (html/header {  `id: "page-header" style: "background: #F3F3F3; height: 28px; display: flex;" } )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))               
@@ -175,15 +170,52 @@
                      ))
                  100)
    true))
-  
+
+(defglobal `repl (core/browser_repl))
+(defun rlog (val)
+  (progn
+   (console.log "rlog:" val)
+   (-> repl `log val)))
+
 (-> (-> document `querySelector "body")
-    `appendChild (prop (core/browser_repl)
+    `appendChild (prop repl
                        `view))
       
+;; announce ourselves to the world..
 
-    
 
+(rlog (html/div { `style: "display: flex padding: 5px" }
+                (html/img { `style: "margin-left: 5px;margin-right: 10px; " src: core/juno_logo height: "15" })
+                (html/span { `style: "font-weight: bold; display: inline-block; font-size: 0.9em; line-height: 15px;" } "Browser REPL")
+                (html/span { `style: "display: inline-block; margin-left: 10px; font-size: 0.9em; line-height: 15px;" }
+                           "Version: " Environment.build_version   )))
+(rlog (html/div "Namespace: " (current_namespace)))
+
+(setTimeout (fn ()
+              (rlog (if (prop globalThis `in_starter)
+                      (html/div "In starter mode")
+                      (html/div "Ready"))))
+            10)
+      
+
+
+
+(setTimeout (fn ()
+              (progn
+               (when (prop globalThis `in_starter)
+                 (rlog (html/div "Bootstrapping new image.."))
+                 
+                 (-> repl `evaluate |
+                     (use_unique_symbols "html")
+                     (evaluate browser_initializer)
+                     (describe `*initializer*)
+                     (save_image) | )
+                 (rlog (html/div "Complete..Open the newly created html file to use.")))))
+            100)
+            
 
 
                                     
+                                    
+           
                                     

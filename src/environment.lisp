@@ -1151,10 +1151,27 @@
                          (console.log "load_pends: " acc)
                          (eval acc)
                          true)))
-         (symbols (function () (keys Environment.global_ctx.scope))
+         (symbols (fn (opts)
+                            (cond
+                              (eq nil opts)
+                              (keys Environment.global_ctx.scope)
+                              opts.unique
+                              (progn
+                               (defvar no_includes (make_set (conj [ "meta_for_symbol", "describe", "undefine", "*namespace*",
+                                                                      "pend_load", "symbols", "set_global", "get_global", "symbol_definition",
+                                                                      "compile", "env_log", "evaluate_local", "evaluate", "eval_struct",
+                                                                      "set_compiler", "clone", "eval", "add_escape_encoding",
+                                                                      "get_outside_global", "as_lisp", "lisp_writer", "clone_to_new",
+                                                                      "save_env", "null", "compiler" ] built_ins)))
+                               (reduce (sym (keys Environment.global_ctx.scope))
+                                       (if (-> no_includes `has sym)
+                                         nil
+                                         sym)))))
                    {
-                         `description: "Returns an array of the defined global symbols for the local environment."
-                         `usage: []
+                    `description: (+ "Returns an array of the defined global symbols for the local environment.  "
+                                     "If opts.unique is true, only symbols that are not part of the built ins are "
+                                     "included.")
+                         `usage: ["opts:object"]
                          `tags: [`symbol `names `definitions `values `scope]
                      })
          (set_global 

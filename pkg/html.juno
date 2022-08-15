@@ -403,7 +403,48 @@
          `tags: ["ui" "alerts" "alerting" "message" "notify"]
          })
 
-
+(defun read_file (file options)
+    (new Promise
+         (fn (resolve reject)
+           (let
+               ((reader (new FileReader file))                
+                (options (+ {}                          
+                            {
+                             `read_as: "binary"
+                             `details: false
+                             }
+                            options))
+                (read_as options.read_as))
+             (set_prop reader
+                       `onload
+                       (function (e)
+                                 (progn
+                                  (resolve
+                                   (cond
+                                     options.details
+                                     {
+                                      `name: file.name
+                                      `type: file.type
+                                      `size: file.size
+                                      `data: reader.result                                     
+                                      }
+                                     else
+                                     reader.result))))
+                       `error
+                       (function (e)
+                                 (reject e)))
+             
+             (cond
+               (or (== read_as "binary")
+                   (== read_as "ArrayBuffer"))
+               (-> reader `readAsArrayBuffer)
+               (== read_as "text")
+               (-> reader `readAsText)
+               (== read_as "binaryString")
+               (-> reader `readAsBinaryString)
+               (== read_as "dataURL")
+               (-> reader `readAsDataURL))))))
+                   
 (defun tabs (tab_list)
   (let
       ((view nil)       
@@ -447,21 +488,21 @@
                                   (idx (-> src `getAttribute "idx")))
                                (for_each (elem header.children)
                                          (cond
-                                           (== elem e.srcElement)
+                                           (and (== e.srcElement.tagName "LI")
+                                                (== elem e.srcElement))
                                            (progn
                                             (-> elem.classList `add "open")
                                             (= btab (prop body_tabs (parseInt (-> src `getAttribute `idx))))
                                             (when btab
                                               (-> btab.classList `add "open")))
-                                           (is_element? elem)
+                                           (and (== e.srcElement.tagName "LI")
+                                                (is_element? elem))
                                            (progn
                                             (-> elem.classList `remove "open")
                                             (= btab (prop body_tabs (parseInt (-> elem `getAttribute `idx))))
                                             (when btab
                                               (-> btab.classList `remove "open"))))))))
-                                          
-                                                  
-                                         
+                                  
     {
      `view: view
      `add_tab: add_tab
@@ -470,43 +511,11 @@
           
  ;; (defglobal tabview (tabs [["Tab 1" (div "Hi this is tab 1") true ] ["Tab 2" (div "This is tab 2") ]]))                
 
-(-> (page_header)
-    `append
-    (style { }
-           | 
-           .tabWrap, .tabWrap * {
-                                 font-family: arial, sans-serif;
-                                 box-sizing: border-box;
-                                 }
-           .tabWrap {
-                     margin: 0 auto;
-                     box-shadow: 5px 5px 10px -1px rgba(0,0,0,0.28);
-                     }
-                      
-           .tabHead {
-                     display: flex;
-                     background: #efefef;
-                     padding: 0; margin: 0;
-                     list-style: none;
-                     }
-           .tabHead li {
-                        padding: 10px 20px;
-                        /*flex-grow: 1; flex-basis: 0;*/
-                        cursor: pointer;
-                        }
-           .tabHead li.open {
-                             color: #fff;
-                             background: #2a87d7;
-                             }
 
-           /* (C) CONTENT TABS */
-           .tabBody {
-                     padding: 20px;
-                     display: none;
-                     }
-           .tabBody.open { display: block; } |
-                          ))
-
+(set_prop (get_by_id "juno-css")
+          `textContent
+          style_css)
+    
 (console.log "html is loaded");
 (register_feature "html")
 (load_pends "html")

@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-08-14 11:34:05
-// Version: 2022.08.14.11.34
-export const DLISP_ENV_VERSION='2022.08.14.11.34';
+// Build Time: 2022-08-15 13:02:12
+// Version: 2022.08.15.13.02
+export const DLISP_ENV_VERSION='2022.08.15.13.02';
 
 
 
@@ -2053,6 +2053,10 @@ export async function init_compiler(Environment) {
                     if (check_true (await verbosity(ctx))){
                          await console.log("compile_typeof -> ",tokens)
                     };
+                    if (check_true (((tokens && tokens.length)<2))){
+                        throw new SyntaxError("typeof requires 1 argument");
+                        
+                    };
                      return  await async function(){
                         if (check_true( ((tokens && tokens["1"] && tokens["1"]["ref"])&& local_details))) {
                              return ["typeof"," ",await compile((tokens && tokens["1"]),ctx)]
@@ -2136,6 +2140,10 @@ export async function init_compiler(Environment) {
                         ;
                         left=tokens[1];
                         right=tokens[2];
+                        if (check_true (((tokens && tokens.length)<3))){
+                            throw new SyntaxError("comparison operation requires 2 arguments");
+                            
+                        };
                         await set_ctx(ctx,"__COMP_INFIX_OPS__",true);
                         (acc).push("(");
                         (acc).push(await compile(left,ctx));

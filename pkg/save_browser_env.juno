@@ -17,8 +17,10 @@
 
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
 
-
+(defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
+(defglobal core/browser_initializer ((quote quote) (read_text_file "pkg/browser_initializer.juno")))
 (defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
+
 
 
 
@@ -89,7 +91,7 @@
   
   (let
       ((js_resource (read_text_file "js/juno_browser.js"))              
-       (doctext nil)                      
+       (doctext nil)       
        (boot_up (compile
                   `(javascript ,#(read_text_file "js/browser_boot.js"))
                   { `formatted_output: true })))    
@@ -97,16 +99,17 @@
     (= doctext
        (html/serialize_document
          (html/html 
-           (html/head { `title: "Juno Browser" }
-                   (html/script { `type: "module" }
+          (html/head { `title: "Juno Browser" }
+                   (html/style { `id: "juno-css" } "body { `font-family: \"-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;\" }")
+                   (html/script { `id: "juno-core" `type: "module" }
                                 js_resource
                                 "\n\n"                               
-                                ;;boot_up
+                                "globalThis.in_starter=true;"
                                 "\n\n"
                                 ))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
-                   (html/header { `id: "page_header"  style: "max-height: 20px; height: 20px; display: flex;" }
+                   (html/header { `id: "page_header"  style: "background: #F3F3F3; height: 28px; display: flex;" }
                                )
                    (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                    ))))
