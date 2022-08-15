@@ -2642,20 +2642,26 @@ such as things that connect or use environmental resources.
 
 (defmacro use_symbols (namespace symbol_list target_namespace)
   (let
-      ((acc [(quote progn)])
+      ((acc [(quote progn)])       
        (nspace (if namespace
                  (deref namespace))
-                 (throw "nill namespace provided to use_symbols")))
+               (throw "nill namespace provided to use_symbols"))
+       (nspace_handle nil)
+       (decs nil))
     (assert (is_string? nspace))
     (assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
+    (setq nspace_handle
+          (-> Environment `get_namespace_handle nspace))
+    
     (for_each (sym symbol_list)
-              (push acc `(defglobal ,#(deref sym)
+              (do
+                (= decs (prop nspace_handle.definitions (deref sym)))                
+                (push acc `(defglobal ,#(deref sym)
                            ,#(+ "=:" nspace "/" (deref sym))
-                            {
-                                  `initializer: `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))
-                                 }
-                                
-                                 )))
+                          
+                           (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))]
+                                       [ `eval_when ,#(and decs (prop decs `eval_when)) ]]                       
+                                 )))))
     acc)
   {
    `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "

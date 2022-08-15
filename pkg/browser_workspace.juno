@@ -151,7 +151,7 @@
                           `outerHTML))
         (scaffold_2 (prop
                           
-                          (html/body { style: "height: 100vh; overflow: hidden;" }
+                          (html/body { style: "height: 100vh; overflow: hidden;" `id: "body" }
                                      (html/header {  `id: "page-header" style: "background: #F3F3F3; height: 28px; display: flex;" } )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )

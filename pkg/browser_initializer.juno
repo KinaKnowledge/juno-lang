@@ -1,15 +1,26 @@
 
+(defglobal main_menu_button nil) ;; placeholder
 
-(defun make_menu (menu_items)
+(defun make_menu (for_element menu_items)
   (let
       ((menu_items menu_items)
+       (for_element for_element)
+       (pos nil)
        (view nil))
     (setq view
-          (div { `class: "pure-menu pure-menu-horizontal" }               
-               (ul { `class: "pure-menu-list" }                 
-                   (map (fn (item idx)                     
-                          (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0)))
-                        (or menu_items [])))))
+          (div { `id: `cmenu `style: "position: absolute;" }
+               (div {  `class: "pure-menu pure-menu-horizontal" `style: "box-shadow: 1px 1px 4px 0px #00000082" }               
+                    (ul { `class: "pure-menu-list" }                 
+                        (map (fn (item idx)                     
+                               (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0)))
+                             (or menu_items []))))))
+    (when for_element
+      (setq pos
+            (-> for_element `getBoundingClientRect))
+      (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
+                  ["left" (+ "" (Math.max pos.left 0) "px") ]] view)
+      (console.log "POS:  " for_element pos))
+    
     (attach_event_listener view
                            `click
                            (fn (e)
@@ -20,7 +31,8 @@
                               (console.log "clicked item: " idx item item.1)
                                (when item
                                  (item.1 e))
-                              (-> view `remove))))
+                               (-> view `remove))))
+    (-> (get_by_id "body") `appendChild view) 
     view))
 
 
@@ -28,9 +40,9 @@
   (let
       ((view nil))
     (setq view
-          (div { `style: "position: absolute; top: 30px; left: 5px; border-radius: 3px; padding: 5px; width: 200px" }
-               (make_menu [["Save Image" (fn (e) (save_image)) ] ["Load Resource" (fn (e) (notify "Loading Resource")) ]])))    
-    (-> (first (get_by_id "juno_container")) `appendChild view)))
+          (make_menu main_menu_button
+                     [["Save Image" (fn (e) (save_image)) ] ["Load Resource" (fn (e) (notify "Loading Resource")) ]]))))   
+    
                
 
 (defun user/*initializer* ()
@@ -46,6 +58,12 @@
     
     (-> header `appendChild main_menu_button)
     (-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
+
+    (attach_event_listener (get_by_id "juno_container") `click
+                           (fn (e)
+                             (progn
+                              (defvar menu (get_by_id `cmenu))
+                              (when menu (-> menu `remove)))))
     
     (set_prop *env_config*.export
 	      `save_path

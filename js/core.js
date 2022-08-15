@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-08-15 13:02:12
-// Version: 2022.08.15.13.02
-export const DLISP_ENV_VERSION='2022.08.15.13.02';
+// Build Time: 2022-08-15 15:53:14
+// Version: 2022.08.15.15.53
+export const DLISP_ENV_VERSION='2022.08.15.15.53';
 
 
 
@@ -3299,150 +3299,11 @@ await Environment.set_global("nth",async function(idx,collection) {
     } ()
 },{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"]
 });
-await Environment.set_global("use_symbols",async function(namespace,symbol_list) {
-    let acc;
-    let nspace;
-    acc=["=:progn"];
-    nspace=await (async function () {
-         if (check_true (namespace)){
-            let mval;
-            mval=namespace;
-            if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                  return await mval["substr"].call(mval,2)
-            } else {
-                  return mval
-            }
-        } 
-    })();
-    await (await Environment.get_global("assert"))((nspace instanceof String || typeof nspace==='string'));
-    await (await Environment.get_global("assert"))((symbol_list instanceof Array),"invalid symbol list provided to use_symbols");
-    await (async function() {
-        let __for_body__281=async function(sym) {
-             return  (acc).push(["=:defglobal",await (async function(){
-                let mval;
-                mval=sym;
-                if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                      return await mval["substr"].call(mval,2)
-                } else {
-                      return mval
-                }
-            })(),await (async function(){
-                 return ("=:"+ nspace+ "/"+ await (async function ()  {
-                    let mval;
-                    mval=sym;
-                    if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                          return await mval["substr"].call(mval,2)
-                    } else {
-                          return mval
-                    }
-                } )()) 
-            })(),{ "initializer":["=:quote",await (async function(){
-                 return ("=:"+ nspace+ "/"+ await (async function ()  {
-                    let mval;
-                    mval=sym;
-                    if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                          return await mval["substr"].call(mval,2)
-                    } else {
-                          return mval
-                    }
-                } )()) 
-            })()]
-        }])
-    };
-    let __array__282=[],__elements__280=symbol_list;
-    let __BREAK__FLAG__=false;
-    for(let __iter__279 in __elements__280) {
-        __array__282.push(await __for_body__281(__elements__280[__iter__279]));
-        if(__BREAK__FLAG__) {
-             __array__282.pop();
-            break;
-            
-        }
-    }return __array__282;
-     
-})();
- return  acc
-},{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array"],"tags":["namespace","binding","import","use","symbols"]
-});
-await Environment.set_global("use_symbols_old",async function(namespace,symbol_list) {
-    let acc;
-    let nspace;
-    acc=["=:progn"];
-    nspace=await (async function () {
-         if (check_true (namespace)){
-            let mval;
-            mval=namespace;
-            if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                  return await mval["substr"].call(mval,2)
-            } else {
-                  return mval
-            }
-        } 
-    })();
-    await (await Environment.get_global("assert"))((nspace instanceof String || typeof nspace==='string'));
-    await (await Environment.get_global("assert"))((symbol_list instanceof Array),"invalid symbol list provided to use_symbols");
-    await (async function() {
-        let __for_body__285=async function(sym) {
-             return  (acc).push(["=:defglobal",await (async function(){
-                let mval;
-                mval=sym;
-                if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                      return await mval["substr"].call(mval,2)
-                } else {
-                      return mval
-                }
-            })(),await (async function(){
-                 return ("=:"+ nspace+ "/"+ await (async function ()  {
-                    let mval;
-                    mval=sym;
-                    if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                          return await mval["substr"].call(mval,2)
-                    } else {
-                          return mval
-                    }
-                } )()) 
-            })(),{ "initializer":["=:quote",await (async function(){
-                 return ("=:"+ nspace+ "/"+ await (async function ()  {
-                    let mval;
-                    mval=sym;
-                    if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                          return await mval["substr"].call(mval,2)
-                    } else {
-                          return mval
-                    }
-                } )()) 
-            })()],"requires":[].concat(await (async function(){
-                 return await (async function(){
-                    let __array_op_rval__287=nspace;
-                     if (__array_op_rval__287 instanceof Function){
-                        return await __array_op_rval__287() 
-                    } else {
-                        return[__array_op_rval__287]
-                    }
-                })() 
-            })())
-        }])
-    };
-    let __array__286=[],__elements__284=symbol_list;
-    let __BREAK__FLAG__=false;
-    for(let __iter__283 in __elements__284) {
-        __array__286.push(await __for_body__285(__elements__284[__iter__283]));
-        if(__BREAK__FLAG__) {
-             __array__286.pop();
-            break;
-            
-        }
-    }return __array__286;
-     
-})();
- return  acc
-},{ "eval_when":{ "compile_time":true
-},"name":"use_symbols_old","macro":true,"fn_args":"(namespace symbol_list)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array"],"tags":["namespace","binding","import","use","symbols"]
-});
 await Environment.set_global("use_symbols",async function(namespace,symbol_list,target_namespace) {
     let acc;
     let nspace;
+    let nspace_handle;
+    let decs;
     acc=["=:progn"];
     nspace=await (async function () {
          if (check_true (namespace)){
@@ -3455,10 +3316,27 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
             }
         } 
     })();
+    nspace_handle=null;
+    decs=null;
     await (await Environment.get_global("assert"))((nspace instanceof String || typeof nspace==='string'));
     await (await Environment.get_global("assert"))((symbol_list instanceof Array),"invalid symbol list provided to use_symbols");
+    nspace_handle=await Environment["get_namespace_handle"].call(Environment,nspace);
     await (async function() {
-        let __for_body__290=async function(sym) {
+        let __for_body__281=async function(sym) {
+            decs=await (async function(){
+                let __targ__283=(nspace_handle && nspace_handle["definitions"]);
+                if (__targ__283){
+                     return(__targ__283)[await (async function ()  {
+                        let mval;
+                        mval=sym;
+                        if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
+                              return await mval["substr"].call(mval,2)
+                        } else {
+                              return mval
+                        }
+                    } )()]
+                } 
+            })();
              return  (acc).push(["=:defglobal",await (async function(){
                 let mval;
                 mval=sym;
@@ -3477,7 +3355,7 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
                           return mval
                     }
                 } )()) 
-            })(),{ "initializer":["=:quotem",["=:pend_load",nspace,await (async function(){
+            })(),["=:to_object",[["initializer",["=:quotem",["=:pend_load",nspace,await (async function(){
                  return (target_namespace|| await (await Environment.get_global("current_namespace"))()) 
             })(),await (async function(){
                 let mval;
@@ -3497,22 +3375,23 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
                           return mval
                     }
                 } )()) 
-            })()]]]
-        }])
-    };
-    let __array__291=[],__elements__289=symbol_list;
-    let __BREAK__FLAG__=false;
-    for(let __iter__288 in __elements__289) {
-        __array__291.push(await __for_body__290(__elements__289[__iter__288]));
-        if(__BREAK__FLAG__) {
-             __array__291.pop();
-            break;
-            
-        }
-    }return __array__291;
-     
-})();
- return  acc
+            })()]]]],["eval_when",await (async function(){
+                 return (decs&& decs["eval_when"]) 
+            })()]]]])
+        };
+        let __array__282=[],__elements__280=symbol_list;
+        let __BREAK__FLAG__=false;
+        for(let __iter__279 in __elements__280) {
+            __array__282.push(await __for_body__281(__elements__280[__iter__279]));
+            if(__BREAK__FLAG__) {
+                 __array__282.pop();
+                break;
+                
+            }
+        }return __array__282;
+         
+    })();
+     return  acc
 },{ "eval_when":{ "compile_time":true
 },"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"]
 });
