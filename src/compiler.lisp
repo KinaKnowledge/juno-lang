@@ -1123,8 +1123,7 @@
                                   (inc idx)
                                   (= token (prop tokens idx))
                                    (add_operand)
-                                   (push acc (wrap_assignment_value (compile token ctx) ctx))))                                   
-                                     
+                                   (push acc (wrap_assignment_value (compile token ctx) ctx))))                                     
                                  (push acc ")")
                                 acc)))))
 
@@ -1316,6 +1315,8 @@
                                                          false))                             
                              (when (verbosity ctx)
                                (console.log "compile_typeof -> " tokens))
+			     (when (< tokens.length 2)
+			       (throw SyntaxError "typeof requires 1 argument"))
                              (cond
                                (and tokens.1.ref
                                     local_details)
@@ -1370,6 +1371,8 @@
                                   
                                   (`left (prop tokens 1))
                                   (`right (prop tokens 2)))
+			       (when (< tokens.length 3)
+				 (throw SyntaxError "comparison operation requires 2 arguments"))
                                (set_ctx ctx
                                         `__COMP_INFIX_OPS__
                                         true)
