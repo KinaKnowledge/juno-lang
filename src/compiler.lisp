@@ -3360,6 +3360,7 @@
                              (push acc (compile t ctx))
                              else
                              (push acc t.val))))
+		   ;(debug)
                 acc)))
      
        (`compile_set_global 

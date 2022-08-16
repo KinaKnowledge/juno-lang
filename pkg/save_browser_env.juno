@@ -16,7 +16,6 @@
 
 
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
-
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
 (defglobal core/browser_initializer ((quote quote) (read_text_file "pkg/browser_initializer.juno")))
 (defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
@@ -92,9 +91,9 @@
   (let
       ((js_resource (read_text_file "js/juno_browser.js"))              
        (doctext nil)       
-       (boot_up (compile
-                  `(javascript ,#(read_text_file "js/browser_boot.js"))
-                  { `formatted_output: true })))    
+       (embedded_editor (compile
+                         `(javascript ,#(read_text_file "html/ace-editor/ace.js"))
+                         { `formatted_output: true })))    
     
     (= doctext
        (html/serialize_document
@@ -106,7 +105,9 @@
                                 "\n\n"                               
                                 "globalThis.in_starter=true;"
                                 "\n\n"
-                                ))
+                                )
+                   (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
+                                embedded_editor))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
                    (html/header { `id: "page_header"  style: "background: #F3F3F3; height: 28px; display: flex;" }

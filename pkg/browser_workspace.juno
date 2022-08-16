@@ -5,10 +5,23 @@
 
 
 (declare (namespace core))
+(console.log "browser_workspace: running")
+
+
+(defun core/*initializer* ()
+  (let
+      ((scripts (-> (page_header) `querySelectorAll "script[id]")))
+    ;(console.log "core/*initializer* running: " *namespace*)
+    (if (> scripts.length 0)
+      (map (fn (idx)
+             (when (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
+               (eval `(defglobal ,#(+ "$" (-> (prop scripts idx) `getAttribute `id)) ,#(prop scripts idx)))))
+           (range scripts.length)))))
+
 
 (defun line_reader (options)
   (let
-      ((entry_area (html/textarea { `style: "height: calc(100% - 20px); width: calc(100% - 10px);" } ))
+      ((entry_area (html/textarea { `style: "font-family: monospace;  height: calc(100% - 20px); width: calc(100% - 10px);" } ))
        (result nil)
        (output_container options.output_container)
        (handle_text_input_events (fn (e)
@@ -52,43 +65,48 @@
                             (= error_state true)
                             (= result ex))))
                       (console.log "<-" result)
-                      (when (not no_eval)
+                      (when (not no_eval)                        
                         (-> output_container
                             `prepend
-                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
+                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                       (html/code { `style: "font-style: italic; color: darkblue;" }
                                                  lisp_text))))
                       (-> output_container
                           `prepend
-                          (html/div { `style: "padding: 5px; margin-top: 0px; background: #FAFAFA; width: calc(100% - 10px); display: inline-block; " }
+                          (html/div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                     (cond
                                       (is_element? result)
                                       result
                                       (is_number? result)
-                                      (html/code { `style: "font-size: 1.1em; color: green;" }
+                                      (html/code { `style: " color: green;" }
                                                  result)
                                       (or (== true result)
                                           (== false result))
-                                      (html/code { `style: "font-size: 1.1em; color: orange;" }
+                                      (html/code { `style: " color: orange;" }
                                                  result)
                                       (is_function? result)
-                                      (html/code { `style: "font-size: 1.1em; color: darkblue;" } "Function: "
+                                      (html/code { `style: " color: darkblue;" } "Function: "
                                                  (if result.name result.name "anonymous"))
                                       
                                       (and (is_array? result)
                                            (instanceof result.0 Error))
-                                      (html/pre { `style: "font-size: 1.1em; color: darkred;" } "ERROR: "
+                                      (html/pre { `style: " color: darkred;" } "ERROR: "
                                                 (subtype result.0)
                                                 "\n"
                                                 result.0.message)
                                       (or error_state
                                           (instanceof result Error))
-                                      (html/pre { `style: "font-size: 1.1em; color: darkred;" } "ERROR: "
+                                      (html/pre { `style: " color: darkred;" } "ERROR: "
                                                 (subtype result)
                                                 "\n"
-                                                result.message)                                                                 
+                                                result.message)
+                                      (and (is_array? result)
+                                           result.0.error)
+                                      (html/pre { `style: " color: darkred;" }                                                 
+                                                (JSON.stringify result nil 3 ))
+                                           
                                       else
-                                      (html/pre { `style: "font-size: 1.1em;" } (JSON.stringify result nil 3 )))))
+                                      (html/pre { `style: "" } (JSON.stringify result nil 3 )))))
                       (set_prop output_container
                                 `scrollTop
                                 output_container.offsetHeight)
@@ -109,6 +127,8 @@
     (-> resize_observer `observe body_element)
     {
      `view: juno_container
+     `input_container: input_container
+     `output_container: output_container
      `log: (fn (val)
              (evaluator val true))
      `evaluate: (fn (lisp_text)
@@ -133,7 +153,16 @@
 (defun core/save_image (options)
    (let
        ((js_resource (save_env { `want_buffer: true
-                                 `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
+                                `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
+        (scripts (-> (page_header) `querySelectorAll "script[id]"))
+        
+        (additional_embeds (let
+                               ((acc []))
+                             (map (fn (idx)
+                                   (when (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
+                                     (push acc (prop scripts idx))))
+                                  (range scripts.length))
+                             acc))       
         ;;(boot_up core/browser_boot_code)
         (dcomps (date_components (new Date)))
         (file_version_tag (if (not (blank? options.version_tag))
@@ -142,17 +171,20 @@
         (scaffold_1 (prop
                      (html/head { `title: "Juno Browser" }
                                 (html/style { `id: "juno-css" } "body { font-family: '-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;' }")
-                                     (html/script { `id: "juno-core" `type: "module" }
-                                                  js_resource
-                                                  "\n\n"                               
-                                                  ;; boot_up
-                                                  "\n\n"
-                                                  ))
+                                (html/script { `id: "juno-core" `type: "module" }
+                                             js_resource
+                                             "\n\n"                               
+                                             ;; boot_up
+                                             "\n\n"
+                                             )
+                                (for_each (scr (or additional_embeds []))                                       
+                                     scr))
+                                        
                           `outerHTML))
         (scaffold_2 (prop
                           
                           (html/body { style: "height: 100vh; overflow: hidden;" `id: "body" }
-                                     (html/header {  `id: "page-header" style: "background: #F3F3F3; height: 28px; display: flex;" } )
+                                     (html/header {  `id: "page-header" style: "background: #F8F6F6; height: 28px; display: flex;" } )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))               
@@ -180,12 +212,13 @@
 (-> (-> document `querySelector "body")
     `appendChild (prop repl
                        `view))
-      
+
+
+
 ;; announce ourselves to the world..
 
 
-(rlog (html/div { `style: "display: flex padding: 5px" }
-                (html/img { `style: "margin-left: 5px;margin-right: 10px; " src: core/juno_logo height: "15" })
+(rlog (html/div { `style: "display: flex padding: 5px" }                
                 (html/span { `style: "font-weight: bold; display: inline-block; font-size: 0.9em; line-height: 15px;" } "Browser REPL")
                 (html/span { `style: "display: inline-block; margin-left: 10px; font-size: 0.9em; line-height: 15px;" }
                            "Version: " Environment.build_version   )))
@@ -207,9 +240,8 @@
                  
                  (-> repl `evaluate |
                      (use_unique_symbols "html")
-                     (evaluate browser_initializer)
-                     (describe `*initializer*)
-                     (save_image) | )
+                     (evaluate browser_initializer) | )
+                 (-> repl `evaluate | (save_image) | )
                  (rlog (html/div "Complete..Open the newly created html file to use.")))))
             100)
             

@@ -1,5 +1,8 @@
 
-(defglobal main_menu_button nil) ;; placeholder
+(defglobal main_menu_button nil) ;; placeholders 
+(defglobal resource_loader_button nil)
+(defglobal juno_container nil)
+(defglobal repl_editor nil)
 
 (defun make_menu (for_element menu_items)
   (let
@@ -7,6 +10,8 @@
        (for_element for_element)
        (pos nil)
        (view nil))
+    (aif (get_by_id "cmenu")
+         (-> it `remove))
     (setq view
           (div { `id: `cmenu `style: "position: absolute;" }
                (div {  `class: "pure-menu pure-menu-horizontal" `style: "box-shadow: 1px 1px 4px 0px #00000082" }               
@@ -18,8 +23,7 @@
       (setq pos
             (-> for_element `getBoundingClientRect))
       (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
-                  ["left" (+ "" (Math.max pos.left 0) "px") ]] view)
-      (console.log "POS:  " for_element pos))
+                  ["left" (+ "" (Math.max pos.left 0) "px") ]] view))
     
     (attach_event_listener view
                            `click
@@ -35,31 +39,201 @@
     (-> (get_by_id "body") `appendChild view) 
     view))
 
+(defun request_user_input (prompt type)
+  (new Promise (fn (resolve reject)                 
+                 (let
+                     ((user_input  (input { `type: (or type "text") }))
+                      (ok_button (button { `class: "pure-button-primary" `style: "float:right" } "OK"))
+                      (cancel_button (button  "Cancel"))
+                      (dwin (dialog prompt                                    
+                                    (br)
+                                    user_input
+                                    (br)
+                                    (div { `class: "pure-button-group" `role: "group" }
+                                         cancel_button
+                                         ok_button))))
+                   (attach_event_listener ok_button
+                                          `click
+                                          (fn (e)
+                                            (do                                              
+                                              (resolve user_input.value)
+                                              (-> dwin `remove))))
+                   (attach_event_listener cancel_button
+                                          `click
+                                          (fn (e)
+                                            (do
+                                              (-> dwin `remove)
+                                              (resolve nil))))
+                   (-> juno_container
+                       `appendChild dwin)
+                   (when (is_function? dwin.showModal)
+                     (-> dwin `showModal))))))
+                                           
+    
+                     
+(defun message (text)
+  (rlog (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text)))
+
+(defun error_message (text)
+  (rlog (div { `style: "border-left: 5px solid red; padding: 5px;" } text)))
+
+(defun load_js_file (file)
+  (let
+      ((fdata (try
+                (read_file file { `read_as: "text" })
+                (catch Error (e)
+                  e)))
+       (assignment_to nil)
+       (error nil))
+    (message (+ "found and read JS " file.name ", size: " file.size))
+    (cond
+      (and fdata
+           (not (instanceof fdata Error)))
+      (progn
+       (aif (request_user_input "Enter a name for a reference to the loaded Javascript" "text")
+            (do
+              (= assignment_to it)              
+              (try
+                (progn
+                 (debug)
+                 (cond
+                   (or (== assignment_to "global")
+                       (== assignment_to "script"))
+                   (-> (page_header) `append (script { `type: "text/javascript" `charset: "utf-8" }
+                                                     (javascript fdata)))
+                   else
+                   (eval `(defglobal ,#assignment_to (javascript ,#fdata)))))
+                (catch Error (e)
+                  (do
+                    (= error true)
+                    (error_message (+ "Unable to create " assignment_to ": " e.message))
+                    (console.error "ERROR: " e))))                                                    
+              (when (not error)
+                (message (+ "Loaded JS to " assignment_to ))))
+            (notify "Entry Cancelled")))
+      else
+      (progn
+       (rlog "Unable to read the file")
+       (console.error fdata)))))
+
+(defun embed_js_orig (name js_text) 
+  (progn
+   (debug)
+   (-> (page_header) `append (html/script { `id: name `type: "text/javascript" `charset: "utf-8" }
+                                     (javascript js_text)))   
+   (eval `(defglobal ,#name (html/get_by_id ,#name)
+            {
+             `embedded_script: true
+             }))))
+
+(defun embed_js (name js_text) 
+  (progn
+   (debug)
+   (eval `(-> (page_header) `append (html/script { `id: name `type: "text/javascript" `charset: "utf-8" }
+                                     (javascript ,#js_text))))
+   (eval `(defglobal ,#name (html/get_by_id ,#name)
+            {
+             `embedded_script: true
+             }))))
+
+(defun embed_js_file (file)
+  (let
+      ((fdata (try
+                (read_file file { `read_as: "text" })
+                (catch Error (e)
+                  e)))
+       (assignment_to nil)
+       (error nil))
+    (message (+ "found and read JS " file.name ", size: " file.size))
+    (cond
+      (and fdata
+           (not (instanceof fdata Error)))
+      (progn
+       (aif (request_user_input "Enter a name for a reference to the loaded Javascript" "text")
+            (do
+              (= assignment_to it)              
+              (try
+                (embed_js_orig assignment_to fdata)                   
+                (catch Error (e)
+                  (do
+                    (= error true)
+                    (error_message (+ "Unable to create " assignment_to ": " e.message))
+                    (console.error "ERROR: " e))))                                                    
+              (when (not error)
+                (message (+ "Loaded JS to " assignment_to ))))
+            (notify "Entry Cancelled")))
+      else
+      (progn
+       (rlog "Unable to read the file")
+       (console.error fdata)))))
+
+(defun load_files (files)
+  (when (> files.length 0)
+    (for_each (file files)
+       (do
+         (cond
+           (== file.type "text/javascript")
+           (embed_js_file file)
+           (== file.type "text/plain")
+           (notify "Text Resource")
+           (or (ends_with? file.name ".lisp")
+               (ends_with? file.name ".juno"))
+           (notify "Loading lisp file"))))))
+
+
+           
+
+
 
 (defun show_main_menu ()
   (let
       ((view nil))
+    
     (setq view
           (make_menu main_menu_button
-                     [["Save Image" (fn (e) (save_image)) ] ["Load Resource" (fn (e) (notify "Loading Resource")) ]]))))   
+                     [["Save Image" (fn (e) (save_image)) ]
+                      ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
+                      ["Style CSS" (fn (e) (notify "View Site CSS"))]
+                      ]))))   
     
-               
+
+
 
 (defun user/*initializer* ()
   (let
-      ((header nil))
+      ((header nil)       
+       (scripts (-> (page_header) `querySelectorAll "script[id]"))        
+       (embeds  nil)
+       (repl_ed nil))
+    (declare (object repl_ed repl_ed.commands))
+           
+                                
+                
        
-    (console.log "user/*initializer is running.")
-    (debug)
+    (console.log "user/*initializer is running." )
+   
     (defglobal main_menu_button (button { `style: "margin-top: -5px" }
                                              (span { `style: "margin-top: -2px; font-weight: bold;" } "λ")))
+
+    (defglobal resource_loader_button (file_picker_button "" load_files))    
+    (set_style [["position" "absolute"]
+                ["top" "-100px"]
+                ["left" "-100px"]
+                ["width" "1px"]
+                ["height" "1px"]] resource_loader_button)
+    
+    (-> (get_by_id "body") `appendChild resource_loader_button)
+
+    
+
+    (defglobal juno_container (get_by_id "juno_container"))
     
     (setq header (-> document `querySelector "header"))
     
     (-> header `appendChild main_menu_button)
     (-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
 
-    (attach_event_listener (get_by_id "juno_container") `click
+    (attach_event_listener juno_container `click
                            (fn (e)
                              (progn
                               (defvar menu (get_by_id `cmenu))
@@ -68,13 +242,31 @@
     (set_prop *env_config*.export
 	      `save_path
 	      nil)
-  
-  (attach_event_listener main_menu_button
+        
+    (attach_event_listener main_menu_button
 			      `click
 			      (fn (e)
 				(show_main_menu)))
+
+    ;; make the repl more sophisticated
+    (when (is_symbol? `$ace_editor)
+      (= repl_ed (ace.edit repl.input_container))
+      (= repl_editor repl_ed)
+      (-> repl_ed.commands `addCommand
+          {
+           `name: "execute"
+           `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
+           `exec: (function (editor)
+                            (let
+                                ((val (-> editor `getValue)))
+                              (-> repl `evaluate val)
+                              (-> editor `setValue "", -1)))
+                                 
+           }))
+  
   
   (notify (+ "Hello " *namespace* ))
   true))
 
-  
+
+

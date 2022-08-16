@@ -407,7 +407,7 @@
     (new Promise
          (fn (resolve reject)
            (let
-               ((reader (new FileReader file))                
+               ((reader (new FileReader))                
                 (options (+ {}                          
                             {
                              `read_as: "binary"
@@ -437,13 +437,13 @@
              (cond
                (or (== read_as "binary")
                    (== read_as "ArrayBuffer"))
-               (-> reader `readAsArrayBuffer)
+               (-> reader `readAsArrayBuffer file)
                (== read_as "text")
-               (-> reader `readAsText)
+               (-> reader `readAsText file)
                (== read_as "binaryString")
-               (-> reader `readAsBinaryString)
+               (-> reader `readAsBinaryString file)
                (== read_as "dataURL")
-               (-> reader `readAsDataURL))))))
+               (-> reader `readAsDataURL file))))))
                    
 (defun tabs (tab_list)
   (let
