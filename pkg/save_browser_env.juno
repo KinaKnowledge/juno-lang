@@ -96,9 +96,13 @@
                          { `formatted_output: true }))
        (embedded_juno_mode (compile
                             `(javascript ,#(read_text_file "js_lib/mode-juno.js"))
-                            { `formatted_output: true })))
-                       
-    
+                            { `formatted_output: true }))
+       (embedded_js_mode (compile
+                            `(javascript ,#(read_text_file "js_lib/mode-javascript.js"))
+                            { `formatted_output: true }))
+       (embedded_css_mode (compile
+                           `(javascript ,#(read_text_file "js_lib/mode-css.js"))
+                           { `formatted_output: true })))
     (= doctext
        (html/serialize_document
          (html/html 
@@ -113,7 +117,11 @@
                    (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_editor)
                    (html/script { `id: "ace_juno_mode" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_juno_mode))
+                                embedded_juno_mode)
+                   (html/script { `id: "ace_js_mode" `type: "text/javascript" `charset: "utf-8" }
+                                embedded_js_mode)
+                   (html/script { `id: "ace_css_mode" `type: "text/javascript" `charset: "utf-8" }
+                                embedded_css_mode))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
                    (html/header { `id: "page_header"  style: "background: #F3F3F3; height: 28px; display: flex;" }
