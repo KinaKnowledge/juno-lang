@@ -261,7 +261,9 @@
                               (-> repl `evaluate val)
                               (-> editor `setValue "", -1)))
                                  
-           }))
+           })
+      (-> repl_editor.session `setUseSoftTabs true)
+      (-> repl_editor.session `setMode "ace/mode/juno"))
   
   
   (notify (+ "Hello " *namespace* ))

@@ -12,7 +12,7 @@
   (delete_namespace "tests"))
 
 ;(import "doc/help.lisp")
-(import "html/logo.juno")
+(import "pkg/logo.juno")
 
 
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
@@ -92,8 +92,12 @@
       ((js_resource (read_text_file "js/juno_browser.js"))              
        (doctext nil)       
        (embedded_editor (compile
-                         `(javascript ,#(read_text_file "html/ace-editor/ace.js"))
-                         { `formatted_output: true })))    
+                         `(javascript ,#(read_text_file "js_lib/ace.js"))
+                         { `formatted_output: true }))
+       (embedded_juno_mode (compile
+                            `(javascript ,#(read_text_file "js_lib/mode-juno.js"))
+                            { `formatted_output: true })))
+                       
     
     (= doctext
        (html/serialize_document
@@ -107,7 +111,9 @@
                                 "\n\n"
                                 )
                    (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_editor))
+                                embedded_editor)
+                   (html/script { `id: "ace_juno_mode" `type: "text/javascript" `charset: "utf-8" }
+                                embedded_juno_mode))
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
                    (html/header { `id: "page_header"  style: "background: #F3F3F3; height: 28px; display: flex;" }
