@@ -1984,6 +1984,8 @@
 		     nil
 		     (starts_with? "$" symset.0)  ;; any values starting with $ do not get exported
 		     nil
+                     (== (resolve_path [ symset.0 `serialize_with_image ] Environment.definitions) false )
+                     nil
                      (and options options.do_not_include
                           (contains? symset.0 options.do_not_include))
                      nil
@@ -2159,7 +2161,12 @@
              else
              src))))
                            
-     
+
+     (if (== "undefined" (typeof Element))
+       (set_prop globalThis
+                 `Element
+                 (function () false)))
+
      
           
      ;; In the compiler context, we have access to the existing environment,

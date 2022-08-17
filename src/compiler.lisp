@@ -650,7 +650,9 @@
                                ;; what type of thing is it? a string description...
                                {   `type: (cond (is_array? name)
                                                 "arr"    ;; TODO - change this to be "Array"
-                                                (is_object? name)
+						(is_element? name)
+						"dom"
+						(is_object? name)
                                                 (sub_type name)
                                                 special
                                                 "special"                                                 
@@ -796,7 +798,11 @@
                                        (is_object? ref_type)
                                        (contains? comps.0 (object_methods ref_type)))
                                   (prop ref_type comps.0)
-                                  
+
+				  (and (is_function? ref_type)
+				       (is_ambiguous? root_ctx ref_name))
+				  ref_type				  
+				  
                                   (is_object? ref_type)
                                   (resolve_path comps ref_type)
                                   
@@ -807,7 +813,11 @@
                                                  (> comps.length 0))
                                         (= ref_type (prop ref_type (take comps))))
                                       ref_type)
-                                  
+
+				  (== ref_type "objliteral")
+				  ref_type
+
+				  
                                   else
                                   (do
                                    (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)                                  
@@ -874,8 +884,17 @@
        
        (`tokenize_object (fn (obj ctx _path)
                              (do
+			      (defvar ser nil)
+			      (try
+			       (= ser (JSON.stringify obj))
+			       (catch Error (e)
+				      (do
+				       (console.warn "compiler: cannot serialize: ", obj)
+				       (console.error e)
+				       (= ser ""))))
+				       
                               (= _path (or _path []))                             
-                              (if  (== (JSON.stringify obj) "{}")
+                              (if  (== ser "{}")
                                    (do                                        
                                     { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true  `path: _path})
                                    (for_each (`pset (pairs obj))
@@ -992,8 +1011,10 @@
                                   (and (== argtype "String") is_ref)
                                   {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx) }
                                   (== argtype "String")
-                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}
-                                  (is_object? arg)
+                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}				  
+				  (== argtype "dom")  ;; we cannot compile DOM elements directly - they must be reproduced on initiation
+                                  {`type: `null `__token__:true `val: null `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}	
+				  (is_object? arg)
                                   (do 
                                    {`type: `objlit `__token__:true  `val: (tokenize_object arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx)})
                                   (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
@@ -3421,9 +3442,11 @@
                    (do 
                        (if (and (is_array? assignment_value)
                                 (== assignment_value.0 "await"))
-                           (set_prop root_ctx.defined_lisp_globals
-                                     target
-                                     AsyncFunction)
+                           (do
+			     (set_prop root_ctx.defined_lisp_globals
+                                       target
+                                       AsyncFunction)
+			     (set_ambiguous root_ctx target))
                            (set_prop root_ctx.defined_lisp_globals
                                      target
                                      assignment_value))))
