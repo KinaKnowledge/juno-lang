@@ -2261,6 +2261,9 @@
   []
   "{let is_block_ques_;is_block_ques_=async function() { return  true}; return  await is_block_ques_()}"
   "Reference locally shadowed global function with invalid JS characters."]
- 
+ ["(undefine `abc) (defun testf () (progn  (defglobal abc { `command: { `testf: (function () true ) } }) (-> abc.command `testf)))"
+  []
+  true
+  "Define and evaluate sub-object containing function in global object" ]
  
 ])

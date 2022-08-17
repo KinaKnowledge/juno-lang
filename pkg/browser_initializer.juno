@@ -203,9 +203,8 @@
   (let
       ((header nil)       
        (scripts (-> (page_header) `querySelectorAll "script[id]"))        
-       (embeds  nil)
-       (repl_ed nil))
-    (declare (object repl_ed repl_ed.commands))
+       (embeds  nil))
+    ;(declare (object repl_editor repl_editor.commands))
            
                                 
                 
@@ -223,8 +222,6 @@
                 ["height" "1px"]] resource_loader_button)
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
-
-    
 
     (defglobal juno_container (get_by_id "juno_container"))
     
@@ -250,9 +247,11 @@
 
     ;; make the repl more sophisticated
     (when (is_symbol? `$ace_editor)
-      (= repl_ed (ace.edit repl.input_container))
-      (= repl_editor repl_ed)
-      (-> repl_ed.commands `addCommand
+      (defglobal repl_editor (ace.edit repl.input_container)
+         {
+          `serialize_with_image: false
+          })
+      (-> repl_editor.commands `addCommand
           {
            `name: "execute"
            `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
