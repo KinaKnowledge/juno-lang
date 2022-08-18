@@ -263,8 +263,14 @@
                                  
            })
       (-> repl_editor.session `setUseSoftTabs true)
-      (-> repl_editor.session `setMode "ace/mode/juno"))
-  
+      (-> repl_editor.session `setMode "ace/mode/juno")
+      (-> repl_editor `setOptions {
+                                   `enableBasicAutocompletion: true
+                                   `enableLiveAutocompletion: true
+                                   `showFoldWidgets: true
+                                   })
+      (-> repl_editor.session `setUseWorker true)
+      (-> repl_editor `setShowFoldWidgets true))
   
   (notify (+ "Hello " *namespace* ))
   true))
