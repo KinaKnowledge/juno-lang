@@ -786,7 +786,8 @@
                                     (set_prop referenced_global_symbols
                                               ref_name
                                               ref_type)))
-                                
+                                (when (verbosity root_ctx)
+				  (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
                                 (cond 
                                   (== NOT_FOUND_THING ref_type)                                                                       
                                   undefined 
@@ -802,6 +803,12 @@
 				  (and (is_function? ref_type)
 				       (is_ambiguous? root_ctx ref_name))
 				  ref_type				  
+
+				  (is_array? ref_type)				      
+				  ref_type
+
+				  (== ref_type "array")
+				  []
 				  
                                   (is_object? ref_type)
                                   (resolve_path comps ref_type)
@@ -816,7 +823,7 @@
 
 				  (== ref_type "objliteral")
 				  ref_type
-
+				  
 				  
                                   else
                                   (do
@@ -3971,8 +3978,7 @@
 		     false))
        (`verbosity silence)
        (`check_verbosity (fn (ctx)
-			     (or (get_ctx ctx "__VERBOSITY__")
-				 (-> Environment `get_global "__VERBOSITY__"))))
+			     (-> Environment `get_global "__VERBOSITY__")))
                        
        (`declare_log (if opts.quiet_mode
                          log
@@ -4923,8 +4929,10 @@
 			  
                                                                              
                           else
-                          (do 
-                              (throw ReferenceError (+ "compile: unknown reference: " tokens.name)))))
+                          (do
+			   (when (verbosity)
+			     (comp_log "compile: resolver fall through:" tokens.name "-  not found globally or in local context"))
+                           (throw ReferenceError (+ "compile: unknown/not found reference: " tokens.name)))))
                       else
                       (do 
                        
