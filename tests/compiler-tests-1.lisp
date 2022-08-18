@@ -949,7 +949,7 @@
               (do 
                   e.message)))))"
     []
-    [{"error":"ReferenceError" "source_name":"anonymous" "message":"compile: unknown reference: x" "form":"x" "parent_forms":("(+ x y)") "invalid":true}]
+    [{"error":"ReferenceError" "source_name":"anonymous" "message":"compile: unknown/not found reference: x" "form":"x" "parent_forms":("(+ x y)") "invalid":true}]
     "let returning quoted closure then eval"
     nil
     "(-> env `set_check_external_env false)"
@@ -2265,5 +2265,14 @@
   []
   true
   "Define and evaluate sub-object containing function in global object" ]
+ ["(undefine `abc) (defglobal abc []) (defun testf () (progn (push abc 10) abc.0)) (testf)"
+  []
+  10
+  "Define a global level array and reference content via dot notation" ]
+ ["(undefine `abc) (defun testf () (progn  (defglobal abc []) (push abc 20) abc.0)) (testf)"
+  []
+  20
+  "Define a global array within a function block, access the reference, and access element in dot notation."]
+ 
  
 ])
