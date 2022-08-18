@@ -97,12 +97,17 @@
        (embedded_juno_mode (compile
                             `(javascript ,#(read_text_file "js_lib/mode-juno.js"))
                             { `formatted_output: true }))
-       (embedded_js_mode (compile
-                            `(javascript ,#(read_text_file "js_lib/mode-javascript.js"))
-                            { `formatted_output: true }))
        (embedded_lang_tools (compile
                            `(javascript ,#(read_text_file "js_lib/ext-language_tools.js"))
                            { `formatted_output: true }))
+       (embedded_json_mode (compile
+                             `(javascript ,#(read_text_file "js_lib/mode-json.js"))
+                            { `formatted_output: true }))
+                            
+       (embedded_js_mode (compile
+                            `(javascript ,#(read_text_file "js_lib/mode-javascript.js"))
+                            { `formatted_output: true }))
+       
        (embedded_css_mode (compile
                            `(javascript ,#(read_text_file "js_lib/mode-css.js"))
                            { `formatted_output: true })))
@@ -125,6 +130,8 @@
                                 embedded_juno_mode)
                    (html/script { `id: "ace_js_mode" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_js_mode)
+                   (html/script { `id: "ace_json_mode" `type: "text/javascript" `charset: "utf-8" }
+                                embedded_json_mode)
                    (html/script { `id: "ace_css_mode" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_css_mode))
                                 
