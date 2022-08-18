@@ -1,8 +1,13 @@
 
+;; main browser initialization file - initializes the user browser environment
+;; after the browser_workspace has setup the underlying environment
+
 (defglobal main_menu_button nil) ;; placeholders 
 (defglobal resource_loader_button nil)
 (defglobal juno_container nil)
 (defglobal repl_editor nil)
+
+(defglobal controls nil)
 
 (defun make_menu (for_element menu_items)
   (let
@@ -13,7 +18,7 @@
     (aif (get_by_id "cmenu")
          (-> it `remove))
     (setq view
-          (div { `id: `cmenu `style: "position: absolute;" }
+          (div { `id: `cmenu `style: "position: absolute; z-index: 20" }
                (div {  `class: "pure-menu pure-menu-horizontal" `style: "box-shadow: 1px 1px 4px 0px #00000082" }               
                     (ul { `class: "pure-menu-list" }                 
                         (map (fn (item idx)                     
@@ -181,9 +186,166 @@
            (notify "Loading lisp file"))))))
 
 
-           
+(defun make_editor (content options)
+  (let
+      ((options (or options {
+                             `type: "juno"
+                             }))
+       (resize_observer nil)
+       (content (or content ""))
+       (controls (div { `style: "display: flex; height: 1.2em; " }))
+       (editor_div (div { `style: "height: calc(100% - 15px); width: 100%;" }))
+       (view (div { `style: "overflow: hidden; height: calc(100% - 5px); display: inline-block; width: inherit;" }                  
+                  editor_div))
+       (perform_resize (fn ()
+                         (when view.parentElement
+                          (console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
+                          (html/set_style [["width" (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
+                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
+                                          view)
+                          (-> editor `resize true)
+                          )))
+       (editor nil)
+       (initialize_editor (fn ()
+                            (progn
+                             (setq editor
+                                   (ace.edit editor_div))
+                             (when options.evaluator
+                               (-> editor.commands `addCommand
+                                   {
+                                    `name: "execute"
+                                    `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
+                                    `exec: (function (editor)
+                                                     (let
+                                                         ((val nil)
+                                                          (copytext (-> editor `getCopyText)))
+                                                       (if (blank? copytext)
+                                                         (notify (dtext "Please highlight text to evaluate"))
+                                                         (try
+                                                           (options.evaluator val)
+                                                           (catch Error (e)
+                                                             (progn
+                                                              (notify (+ (dtext "Unhandled error") ": " e.message ))
+                                                              (console.error e)))))))
+                                    }))
+                             (when options.on_save
+                               (-> editor.commands `addCommand
+                                   {
+                                    `name: "save"
+                                    `bindKey: { `win: "Ctrl-s" `mac: "Command-Enter" }
+                                    `exec: (function (editor)
+                                                     (options.on_save (-> editor `getValue)))
+                                    }))
+                             (-> editor.session `setUseSoftTabs true)
+                             (-> editor `setOptions {
+                                   `enableBasicAutocompletion: true
+                                   `enableLiveAutocompletion: true
+                                   `showFoldWidgets: true
+                                   })
+                             (-> editor.session `setUseWorker true)
+                             (-> editor `setShowFoldWidgets true)
+                             (cond
+                               (== options.type "juno")
+                               (-> editor.session `setMode "ace/mode/juno")
+                               (== options.type "javascript")
+                               (-> editor.session `setMode "ace/mode/javascript")
+                               (== options.type "css")
+                               (-> editor.session `setMode "ace/mode/css"))
+                             (console.log "editor initialized")
+                             (-> editor `resize true)
+                             ))))
+       
+    
+    (if (not (is_symbol? `$ace_editor))
+      (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
+    
+    
+      
+    (= resize_observer (new ResizeObserver perform_resize))
+   
+    {
+     `view: view
+     `editor: editor
+     `options: options
+     `initialize: (fn ()
+                    (when view.parentElement
+                      (console.log "editor: performing initialization")
+                      (-> resize_observer `observe view.parentElement)
+                      (initialize_editor)
+                      ))
+     }))
 
 
+(defun split_view_vertical (content_a content_b options)
+  (let
+      ((center_divider (div { `class: "juno-vertical-dragger" } ""))
+       (left_container (div { `class: "juno-view-container" }
+                           (if content_a.view
+                             content_a.view
+                             content_a)))
+       (right_container (div { `class: "juno-view-container" }
+                           (if content_b.view
+                             content_b.view
+                             content_b)))
+       (view (div { `class: "juno-vertical-split-container"  `style: "height: calc(100% - 5px); width: 100%;" } 
+                  left_container
+                  center_divider
+                  right_container))
+       (left_content content_a)
+       (body_element (-> document `querySelector "body"))
+       (right_content content_b)
+       (split_size_left "50%")
+       (resize_observer nil)
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                (new_width (- (prop view.parentElement `offsetWidth) 2))
+                                (center center_divider.offsetLeft))
+                             (set_style [["width" (+ "" new_width "px")]
+                                         ["height" (+ "" new_height "px")]]
+                                        view)
+                             (set_style [["width" (+ "" center "px")]
+                                         ["height" (+ "" new_height "px")]] left_container)
+                             (set_style [["width" (+ "" (- new_width center 4) "px")]
+                                         ["height" (+ "" new_height "px")]] right_container)
+                             (console.log "split_view: performed resize" center)))))
+       (initial_style [["display" "inline-block"]
+                       [ "width" split_size_left]
+                       [ "height" "100%"]]))
+    (set_style initial_style left_content)
+    (set_style initial_style right_content)
+    (= resize_observer (new ResizeObserver perform_resize))
+    
+    {
+     `view: view
+     `initialize: (fn ()
+                    (progn
+                     (console.log "split_view_vertical: initializing" center_divider.offsetLeft)
+                     (-> resize_observer `observe view.parentElement)
+                     (= split_size_left (+ "" center_divider.offsetLeft "px"))
+                     ;; and cascade..
+                     (when left_content.initialize
+                       (-> left_content `initialize))
+                     (when right_content.initialize
+                       (-> right_content `initialize))))
+                     
+     `set_left_pane_content: (fn (content)
+                               (when (or (is_element? content)
+                                         (is_element? content.view))                                 
+                                 (set_style [["display" "inline-block"]
+                                             [ "width" split_size_left]
+                                             [ "height" "100%"]]
+                                            (if content.view
+                                              content.view
+                                              content))
+                                 (-> left_content `replaceWith
+                                     content)
+                                 (setq left_content
+                                       content)))                                 
+     }))
+    
+                  
 
 (defun show_main_menu ()
   (let
@@ -199,16 +361,15 @@
 
 
 
+
+
 (defun user/*initializer* ()
   (let
       ((header nil)       
        (scripts (-> (page_header) `querySelectorAll "script[id]"))        
-       (embeds  nil))
-    ;(declare (object repl_editor repl_editor.commands))
-           
-                                
-                
-       
+       (embeds  nil)
+       (initial_split nil))
+                                                               
     (console.log "user/*initializer is running." )
    
     (defglobal main_menu_button (button { `style: "margin-top: -5px" }
@@ -224,7 +385,8 @@
     (-> (get_by_id "body") `appendChild resource_loader_button)
 
     (defglobal juno_container (get_by_id "juno_container"))
-    
+    (defglobal controls [])
+      
     (setq header (-> document `querySelector "header"))
     
     (-> header `appendChild main_menu_button)
@@ -246,7 +408,8 @@
 				(show_main_menu)))
 
     ;; make the repl more sophisticated
-    (when (is_symbol? `$ace_editor)
+    (when (and (is_symbol? `$ace_editor)
+               repl)
       (defglobal repl_editor (ace.edit repl.input_container)
          {
           `serialize_with_image: false
@@ -264,6 +427,7 @@
            })
       (-> repl_editor.session `setUseSoftTabs true)
       (-> repl_editor.session `setMode "ace/mode/juno")
+            
       (-> repl_editor `setOptions {
                                    `enableBasicAutocompletion: true
                                    `enableLiveAutocompletion: true
@@ -271,9 +435,21 @@
                                    })
       (-> repl_editor.session `setUseWorker true)
       (-> repl_editor `setShowFoldWidgets true))
-  
+
+    (push controls
+          (make_editor "" { `type: "juno" }))
+    
+    (when (is_symbol? `repl)
+      (-> repl.view `remove)      
+      (setq initial_split
+            (split_view_vertical controls.0
+                                 repl))
+      (-> (get_by_id "body") `appendChild initial_split.view)    
+      (-> initial_split `initialize))
   (notify (+ "Hello " *namespace* ))
   true))
+
+
 
 
 

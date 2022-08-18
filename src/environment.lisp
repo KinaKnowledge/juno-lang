@@ -1851,7 +1851,7 @@
                    (resolve_path [ `symbols `compiler ] included_globals))
          ;; unofficially set the compiler, but we will complete the setting of it once
          ;; the remainder of the functions have been embedded
-         (debug)
+         ;;(debug)
          (= compiler Environment.global_ctx.scope.compiler))
 
        ;; load the exported config 
@@ -2341,10 +2341,9 @@
        ;; if there were any children in the export, so do these now
 
        (for_each (child children)
-                 (progn                  
-                  (debug)
+                 (progn                                    
                   (-> child `evaluate_local
-                      (+ "(progn (console.log \"child running initialization..\") (debug) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")))))
+                      (+ "(progn (console.log \"child running initialization..\") (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")))))
                                     
      
      Environment)))

@@ -1383,3 +1383,35 @@ striping:
 .pure-table-horizontal tbody > tr:last-child > td {
     border-bottom-width: 0;
 }
+
+
+/* ----- Specific Juno Styles ----- */
+
+.juno-vertical-split-container {
+  overflow: hidden;
+  margin: 0px;
+  padding: 0px;
+  position: relative;
+  display: flex
+}
+
+.juno-view-container {
+  display: inline-block;
+  width: inherit;
+  height: inherit;
+}
+
+.juno-vertical-dragger {
+  border-left: 5px dashed transparent;
+  z-index: 5;
+  width: 2px;
+  height: 100%;
+  cursor: col-resize;
+  display: inline-block;
+  background: #F8F6F6;
+}
+
+.juno-vertical-dragger:hover {
+  border-left: 5px dashed #223070;
+  
+}

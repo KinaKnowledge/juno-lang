@@ -11,7 +11,7 @@
 (defun core/*initializer* ()
   (let
       ((scripts (-> (page_header) `querySelectorAll "script[id]")))
-    ;(console.log "core/*initializer* running: " *namespace*)
+    (console.log "core/*initializer* running: " *namespace*)
     (if (> scripts.length 0)
       (map (fn (idx)
              (when (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
@@ -119,7 +119,7 @@
                                  input_container))
        (perform_resize (fn ()
                          (progn
-                          (console.log "resize: " (prop juno_container.parentElement `offsetWidth))
+                          ;(console.log "resize: " (prop juno_container.parentElement `offsetWidth))
                           (html/set_style [["width" (+ "" (- (prop juno_container.parentElement `offsetWidth) 2) "px")]] juno_container)))))
     
     
@@ -170,6 +170,7 @@
                               (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
         (scaffold_1 (prop
                      (html/head { `title: "Juno Browser" }
+                                (html/meta { `charset: "utf-8" })
                                 (html/style { `id: "juno-css" } "body { font-family: '-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;' }")
                                 (html/script { `id: "juno-core" `type: "module" }
                                              js_resource
@@ -183,7 +184,7 @@
                           `outerHTML))
         (scaffold_2 (prop
                           
-                          (html/body { style: "height: 100vh; overflow: hidden;" `id: "body" }
+                          (html/body { style: "height: 98vh; overflow: hidden;" `id: "body" }
                                      (html/header {  `id: "page-header" style: "background: #F8F6F6; height: 28px; display: flex;" } )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
@@ -236,11 +237,11 @@
 (setTimeout (fn ()
               (progn
                (when (prop globalThis `in_starter)
-                 (rlog (html/div "Bootstrapping new image.."))
-                 
+                 (rlog (html/div "Bootstrapping new image.."))                 
                  (-> repl `evaluate |
                      (use_unique_symbols "html")
-                     (evaluate browser_initializer) | )
+                     (evaluate browser_initializer)
+                     | )
                  (-> repl `evaluate | (save_image) | )
                  (rlog (html/div "Complete..Open the newly created html file to use.")))))
             100)
