@@ -119,15 +119,20 @@
                                  input_container))
        (perform_resize (fn ()
                          (progn
-                          ;(console.log "resize: " (prop juno_container.parentElement `offsetWidth))
-                          (html/set_style [["width" (+ "" (- (prop juno_container.parentElement `offsetWidth) 2) "px")]] juno_container)))))
+                          (console.log "repl: resize: " (prop juno_container.parentElement `offsetWidth))
+                          (html/set_style [["width" (+ "" (- (prop juno_container.parentElement `offsetWidth) 2) "px")]] juno_container)
+                          )))
+       (initialize (fn ()
+                     (progn
+                      (= resize_observer (new ResizeObserver perform_resize))
+                      (-> resize_observer `observe juno_container.parentElement)))))
     
     
-    (= resize_observer (new ResizeObserver perform_resize))
-    (-> resize_observer `observe body_element)
+    
     {
      `view: juno_container
      `input_container: input_container
+     `initialize: initialize
      `output_container: output_container
      `log: (fn (val)
              (evaluator val true))
@@ -214,6 +219,7 @@
     `appendChild (prop repl
                        `view))
 
+(-> repl `initialize)
 
 
 ;; announce ourselves to the world..

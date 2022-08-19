@@ -203,7 +203,7 @@
                           (html/set_style [["width" (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
                                           view)
-                          (-> editor `resize true)
+                          (-> editor `resize)
                           )))
        (editor nil)
        (initialize_editor (fn ()
@@ -278,8 +278,8 @@
 
 (defun split_view_vertical (content_a content_b options)
   (let
-      ((center_divider (div { `class: "juno-vertical-dragger" } ""))
-       (left_container (div { `class: "juno-view-container" }
+      ((center_divider (div { `draggable: true`class: "juno-vertical-dragger" } ""))
+       (left_container (div { `class: "juno-view-container" `style: "border-right: solid 3px transparent" }
                            (if content_a.view
                              content_a.view
                              content_a)))
@@ -291,7 +291,8 @@
                   left_container
                   center_divider
                   right_container))
-       (left_content content_a)
+       (left_content content_a)      
+       (drag_status nil)
        (body_element (-> document `querySelector "body"))
        (right_content content_b)
        (split_size_left "50%")
@@ -315,15 +316,64 @@
                        [ "height" "100%"]]))
     (set_style initial_style left_content)
     (set_style initial_style right_content)
-    (= resize_observer (new ResizeObserver perform_resize))
     
+    (= resize_observer (new ResizeObserver perform_resize))
+    (attach_event_listener center_divider
+                           `dragstart
+                           (function (e)
+                                     (progn
+                                      ;(-> e `preventDefault)
+                                      (= drag_status {
+                                                      `start: left_container.offsetWidth
+                                                      `deltaX: 0
+                                                      })
+                                      (set_style [["border-right" "solid 3px #F0F0F0"]] left_container)
+                                      (set_style [["opacity" 0 ]] center_divider))))
+    (attach_event_listener center_divider
+                           `drag
+                           (function (e)
+                                     (progn
+                                      (-> e `preventDefault)                                    
+                                       (set_prop drag_status
+                                                 `deltaX
+                                                 (+ e.offsetX drag_status.deltaX)
+                                                 `pct
+                                                 (Math.max 5 (Math.min 95  (* 100 (/ (+ drag_status.start drag_status.deltaX) view.offsetWidth)))))                                       
+                                       (set_style [["width" (+ "" (- 100 drag_status.pct)
+                                                               "%") ]] right_container)
+                                       (set_style [["width" (+ "" drag_status.pct  "%") ]] left_container)
+                                       (= split_size_left (+ "" drag_status.pct "%"))
+                                       (set_style [["left" (+ "" left_container.offsetWidth "px") ]] center_divider))))
+    
+    (attach_event_listener view
+                           `dragover
+                           (function (e)
+                                     (-> e `preventDefault)))
+    (attach_event_listener view
+                           `drop
+                           (function (e)
+                                     (progn
+                                      (-> e `preventDefault)
+                                      (console.log "view.drop: " e)
+                                      (set_style [["border-right" "solid 3px transparent"]] left_container)
+                                      (set_style [["opacity" 1]] center_divider))))
+                                      
+                                     
+    (attach_event_listener center_divider
+                           `dragend
+                           (function (e)
+                                     (progn                                      
+                                      (-> e `preventDefault)                                      
+                                      (console.log "center_divider: drag end: " e.offsetX ))))
     {
      `view: view
      `initialize: (fn ()
                     (progn
-                     (console.log "split_view_vertical: initializing" center_divider.offsetLeft)
+                     (console.log "split_view_vertical: initializing" center_divider.offsetLeft)                     
                      (-> resize_observer `observe view.parentElement)
+                     (set_style [[ "left" (+ "" left_container.offsetWidth "px") ]] center_divider)
                      (= split_size_left (+ "" center_divider.offsetLeft "px"))
+                     
                      ;; and cascade..
                      (when left_content.initialize
                        (-> left_content `initialize))

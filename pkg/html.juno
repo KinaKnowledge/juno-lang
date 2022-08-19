@@ -90,7 +90,7 @@
 ;; with the tag to create
 
 
-(defun create_dom_element (element_name `& args)
+(defun_sync create_dom_element (element_name `& args)
   (let
       ((opts (if (and (is_object? args.0)
                       (not (is_array? args.0))
