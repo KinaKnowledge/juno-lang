@@ -46,11 +46,12 @@
 (defun browser_repl ()
   (let
       ((body_element (-> document `querySelector "body"))
-       (output_container (html/div { `id: "output-container"  `style: "height: 70%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (output_container (html/div { `id: "output-container"  `style: "font-size: 0.9em; height: 80%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
        (resize_observer nil)                                                      
                                         ;(result nil)
        (current_env Environment)
        (error_state nil)
+       (initialized false)
        (evaluator (fn (lisp_text no_eval)
                     (let
                         ((result nil))
@@ -112,20 +113,29 @@
                                 output_container.offsetHeight)
                       result)))
        (reader (line_reader { `output_container: output_container `evaluator: evaluator}))
-       (input_container (html/div { `id: "input-container" `style: "height: calc(30% - 15px); overflow: hidden; " }
+       (input_container (html/div { `id: "input-container" `style: "height: calc(20% - 15px); overflow: hidden; " }
                                   reader))
        (juno_container (html/div { `id: "juno_container" `style: "height: inherit; max-height: 100%; overflow: hidden;" }
                                  output_container
                                  input_container))
        (perform_resize (fn ()
                          (progn
-                          (console.log "repl: resize: " (prop juno_container.parentElement `offsetWidth))
+                          ;(console.log "repl: resize: " (prop juno_container.parentElement `offsetWidth))
                           (html/set_style [["width" (+ "" (- (prop juno_container.parentElement `offsetWidth) 2) "px")]] juno_container)
                           )))
        (initialize (fn ()
                      (progn
-                      (= resize_observer (new ResizeObserver perform_resize))
-                      (-> resize_observer `observe juno_container.parentElement)))))
+                      (if initialized
+                        (evaluator (html/div { `style: "display: flex padding: 5px" } "WARNING: REPL already initialized") true)
+                        (progn
+                         (= initialized true)
+                         (= resize_observer (new ResizeObserver perform_resize))
+                         (-> resize_observer `observe juno_container.parentElement)
+                         (evaluator (html/div { `style: "display: flex padding: 5px" }                
+                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Browser REPL")
+                                              (html/span { `style: "display: inline-block; margin-left: 10px;" }
+                                                         "Version: " Environment.build_version   )) true)
+                         (evaluator (html/div "Namespace: " (current_namespace)) true)))))))
     
     
     
@@ -140,8 +150,8 @@
                   (evaluator lisp_text))
      }))
      
-(html/set_style [[ "font-family" "-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;"]]
-                (-> document `querySelector "body"))
+;(html/set_style [[ "font-family" "-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;"]]
+ ;               (-> document `querySelector "body"))
 
 
 
@@ -159,24 +169,26 @@
    (let
        ((js_resource (save_env { `want_buffer: true
                                 `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
-        (scripts (-> (page_header) `querySelectorAll "script[id]"))
-        
+        (scripts (-> (page_header) `querySelectorAll "script[id]"))        
         (additional_embeds (let
-                               ((acc []))
+                               ((acc [])
+                                (deduper (new Set)))
                              (map (fn (idx)
-                                   (when (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
-                                     (push acc (prop scripts idx))))
+                                    (when (and (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
+                                               (not (-> deduper `has (-> (prop scripts idx) `getAttribute `id))))
+                                      (-> deduper `add (-> (prop scripts idx) `getAttribute `id))
+                                      (push acc (prop scripts idx))))
                                   (range scripts.length))
-                             acc))       
+                             acc))
         ;;(boot_up core/browser_boot_code)
         (dcomps (date_components (new Date)))
         (file_version_tag (if (not (blank? options.version_tag))
                               options.version_tag
                               (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
         (scaffold_1 (prop
-                     (html/head { `title: "Juno Browser" }
+                     (html/head { `title: "Seedling" }
                                 (html/meta { `charset: "utf-8" })
-                                (html/style { `id: "juno-css" } "body { font-family: '-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;' }")
+                                (html/style { `id: "juno-css" } "")
                                 (html/script { `id: "juno-core" `type: "module" }
                                              js_resource
                                              "\n\n"                               
@@ -190,7 +202,7 @@
         (scaffold_2 (prop
                           
                           (html/body { style: "height: 98vh; overflow: hidden;" `id: "body" }
-                                     (html/header {  `id: "page-header" style: "background: #F8F6F6; height: 28px; display: flex;" } )
+                                     (html/header {  `id: "page-header" style: "height: 28px; display: flex;" } )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))               
@@ -219,21 +231,13 @@
     `appendChild (prop repl
                        `view))
 
-(-> repl `initialize)
 
-
-;; announce ourselves to the world..
-
-
-(rlog (html/div { `style: "display: flex padding: 5px" }                
-                (html/span { `style: "font-weight: bold; display: inline-block; font-size: 0.9em; line-height: 15px;" } "Browser REPL")
-                (html/span { `style: "display: inline-block; margin-left: 10px; font-size: 0.9em; line-height: 15px;" }
-                           "Version: " Environment.build_version   )))
-(rlog (html/div "Namespace: " (current_namespace)))
 
 (setTimeout (fn ()
               (rlog (if (prop globalThis `in_starter)
-                      (html/div "In starter mode")
+                      (progn
+                       (-> repl `initialize)
+                       (html/div "In starter mode"))
                       (html/div "Ready"))))
             10)
       

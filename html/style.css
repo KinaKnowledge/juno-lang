@@ -1,4 +1,19 @@
 
+/* Seedling Default CSS */
+
+/* Variables */
+
+:root {
+  --main-bg-color: #F8F6F6;
+  --main-mono-space: ui-monospace,
+    "Cascadia Mono", "Segoe UI Mono",    
+    "Roboto Mono",
+    "Ubuntu Mono",
+    Menlo, Monaco, Consolas,
+    monospace;
+}
+
+
 /*!
 Pure v2.1.0
 Copyright 2013 Yahoo!
@@ -33,6 +48,7 @@ html {
 
 body {
   margin: 0;
+  background: var(--main-bg-color, #F8F6F6);
 }
 
 /**
@@ -74,7 +90,7 @@ hr {
  */
 
 pre {
-  font-family: monospace, monospace; /* 1 */
+  font-family: var(--main-mono-space, monospace, monospace); /* 1 */
   font-size: 1em; /* 2 */
 }
 
@@ -118,7 +134,7 @@ strong {
 code,
 kbd,
 samp {
-  font-family: monospace, monospace; /* 1 */
+  font-family: var(--main-mono-space, monospace, monospace); /* 1 */
   font-size: 1em; /* 2 */
 }
 
@@ -374,7 +390,7 @@ template {
  */
 
 html {
-    font-family: sans-serif;
+  font-family: FreeSans, Arimo, "Droid Sans", Helvetica, Arial, sans-serif;
 }
 
 /**
@@ -691,7 +707,7 @@ this the same font stack that Normalize.css sets for the `body`.
 
 /*csslint outline-none:false*/
 
-.pure-button,button {
+.pure-button {
     font-family: inherit;
     font-size: 100%;
     padding: 0.5em 1em;
@@ -1387,6 +1403,9 @@ striping:
 
 /* ----- Specific Juno Styles ----- */
 
+
+
+
 .juno-vertical-split-container {
   overflow: hidden;
   margin: 0px;
@@ -1414,4 +1433,77 @@ striping:
   box-shadow: 0px 1px 3px 0px #00000042;
   /* background: #00000040; */
   
+}
+
+.juno-buffer-bar {  
+  font-size: 0.9em;
+  background: #00000010;
+  width: 100%;
+  cursor: default;
+  white-space: nowrap;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.juno-buffer-bar button {
+  margin-left: 5px;
+  margin-right: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border: none;
+  border-radius: 0px;
+  font-weight: bold;
+  background: #00000019;
+}
+
+.juno-buffer-bar button:hover {
+  background: #00000030;
+}
+
+.juno-title {
+  color: black;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-weight: bold;
+}
+
+span.juno-namespace {
+  font-family: var(--main-mono-space);
+  color: #976464;
+}
+
+span.juno-focused {
+  background: #FFFFFFA0;
+}
+
+span.juno-needs-save {
+  color: #016783;
+}
+
+.juno-menu {
+  position: absolute;
+  z-index: 20;
+  animation: slide-in 0.2s ease-out;
+  box-shadow: 1px 1px 4px 0px #00000082;
+}
+
+.juno-header {
+  color: #026783;
+  padding: 4px;
+  margin-left: 5px;
+  margin-right: 10px;
+  font-weight: bold;
+  display: inline-block;
+  cursor: default;
+}
+
+@keyframes slide-in {
+    0% {
+        margin-left:-6px;
+        opacity: 0
+    }
+    100% {
+        margin-left:-0px;
+        opacity: 1
+    }
 }

@@ -6,20 +6,21 @@
 (defglobal resource_loader_button nil)
 (defglobal juno_container nil)
 (defglobal repl_editor nil)
-
-(defglobal controls nil)
+(defglobal *scratch* ";; *scratch* buffer\n\n")
+(defglobal $controls nil)
 
 (defun make_menu (for_element menu_items)
   (let
       ((menu_items menu_items)
        (for_element for_element)
        (pos nil)
+       (disappear_timer nil)
        (view nil))
     (aif (get_by_id "cmenu")
          (-> it `remove))
     (setq view
-          (div { `id: `cmenu `style: "position: absolute; z-index: 20" }
-               (div {  `class: "pure-menu pure-menu-horizontal" `style: "box-shadow: 1px 1px 4px 0px #00000082" }               
+          (div { `id: `cmenu `class: "juno-menu"  }
+               (div {  `class: "pure-menu pure-menu-horizontal"  }               
                     (ul { `class: "pure-menu-list" }                 
                         (map (fn (item idx)                     
                                (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0)))
@@ -41,6 +42,29 @@
                                (when item
                                  (item.1 e))
                                (-> view `remove))))
+
+    (attach_event_listener view
+                           `mouseleave
+                           (function (e)
+                                     (progn
+                                      (when disappear_timer
+                                        (clearTimeout disappear_timer))
+                                      (= disappear_timer (setTimeout (fn ()
+                                                                       (progn
+                                                                        (-> view `remove)
+                                                                        (= disappear_timer nil)))
+                                                                     500)))))
+    (attach_event_listener view
+                           `mouseenter
+                           (function (e)
+                                     (when disappear_timer
+                                       (clearTimeout disappear_timer)
+                                       (= disappear_timer nil))))
+
+    
+                                      
+                                      
+    
     (-> (get_by_id "body") `appendChild view) 
     view))
 
@@ -81,6 +105,16 @@
 
 (defun error_message (text)
   (rlog (div { `style: "border-left: 5px solid red; padding: 5px;" } text)))
+
+(defun log_error (message error_instance)
+  (progn
+   (error_message message)
+   (console.error message)
+   (when error_instance
+     (when error_instance.messasge
+       (error_message error_instance.message))
+     (console.error error_instance))))
+     
 
 (defun load_js_file (file)
   (let
@@ -192,14 +226,16 @@
                              `type: "juno"
                              }))
        (resize_observer nil)
+       (intf {})
        (content (or content ""))
-       (controls (div { `style: "display: flex; height: 1.2em; " }))
+       (controls (div { `style: "display: flex; " }))
        (editor_div (div { `style: "height: calc(100% - 15px); width: 100%;" }))
        (view (div { `style: "overflow: hidden; height: calc(100% - 5px); display: inline-block; width: inherit;" }                  
+                  controls
                   editor_div))
        (perform_resize (fn ()
                          (when view.parentElement
-                          (console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
+                          ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
                           (html/set_style [["width" (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
                                           view)
@@ -232,15 +268,31 @@
                                (-> editor.commands `addCommand
                                    {
                                     `name: "save"
-                                    `bindKey: { `win: "Ctrl-s" `mac: "Command-Enter" }
+                                    `bindKey: { `win: "Ctrl-s" `mac: "Command-s" }
                                     `exec: (function (editor)
                                                      (options.on_save (-> editor `getValue)))
                                     }))
+
+                             
+                             
+                             (when (is_array? options.commands)
+                               (for_each (command options.commands)
+                                  (do
+                                    (-> editor.commands `addCommand
+                                        command))))
+                                              
+                             (when options.on_focus
+                               (-> editor `on `focus options.on_focus))
+                             (when options.on_blur
+                               (-> editor `on `blur options.on_blur))
+                             (when options.read_only
+                               (-> editor `setReadOnly true))
                              (-> editor.session `setUseSoftTabs true)
                              (-> editor `setOptions {
                                    `enableBasicAutocompletion: true
                                    `enableLiveAutocompletion: true
                                    `showFoldWidgets: true
+                                   `fontFamily: "Roboto Mono"                  
                                    })
                              (-> editor.session `setUseWorker true)
                              (-> editor `setShowFoldWidgets true)
@@ -251,29 +303,39 @@
                                (-> editor.session `setMode "ace/mode/javascript")
                                (== options.type "css")
                                (-> editor.session `setMode "ace/mode/css"))
-                             (console.log "editor initialized")
-                             (-> editor `resize true)
+                             (console.log "editor initialized: content: " (subtype content) content)
+                             
+                             
+                             (-> editor `setValue content -1)
+
+                             (when options.on_change
+                               (-> editor `on `change (function (val)
+                                                                (options.on_change editor val))))
+                             
+                             (-> editor `resize true)                             
+                             (set_prop intf `editor editor)                             
                              ))))
        
     
     (if (not (is_symbol? `$ace_editor))
       (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
     
-    
+    (when (is_element? options.command_bar)
+      (-> controls `prepend options.command_bar))
       
     (= resize_observer (new ResizeObserver perform_resize))
-   
-    {
-     `view: view
-     `editor: editor
-     `options: options
-     `initialize: (fn ()
-                    (when view.parentElement
-                      (console.log "editor: performing initialization")
-                      (-> resize_observer `observe view.parentElement)
-                      (initialize_editor)
-                      ))
-     }))
+    (= intf
+       {
+        `view: view
+        `editor: editor
+        `options: options
+        `initialize: (fn ()
+                       (when view.parentElement
+                         (console.log "editor: performing initialization")
+                         (-> resize_observer `observe view.parentElement)
+                         (initialize_editor)
+                         ))
+        })))
 
 
 (defun split_view_vertical (content_a content_b options)
@@ -327,6 +389,7 @@
                                                       `start: left_container.offsetWidth
                                                       `deltaX: 0
                                                       })
+                                      (= e.dataTransfer.dropEffect "move")
                                       (set_style [["border-right" "solid 3px #F0F0F0"]] left_container)
                                       (set_style [["opacity" 0 ]] center_divider))))
     (attach_event_listener center_divider
@@ -382,17 +445,11 @@
                      
      `set_left_pane_content: (fn (content)
                                (when (or (is_element? content)
-                                         (is_element? content.view))                                 
-                                 (set_style [["display" "inline-block"]
-                                             [ "width" split_size_left]
-                                             [ "height" "100%"]]
-                                            (if content.view
-                                              content.view
-                                              content))
+                                         (is_element? content.view))
                                  (-> left_content `replaceWith
                                      content)
                                  (setq left_content
-                                       content)))                                 
+                                       content)))
      }))
     
                   
@@ -409,7 +466,67 @@
                       ]))))   
     
 
-
+(defun buffer_editor (title namespace path_to_value mode options)
+  (let
+      ((nseval (if (not (blank? namespace))
+                 (-> Environment `get_namespace_handle namespace)
+                 Environment))
+       (title_span (span { `class: "juno-title" } title))
+       (buffer_commands_button (button { `title: "Buffer Commands" } "▸"))
+       (is_dirty? false)
+       (command_bar (or options.command_bar
+                        (div { `class: "juno-buffer-bar" }
+                             buffer_commands_button
+                             title_span                                                             
+                             (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace)
+                             (if options.read_only
+                               (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
+                               ())
+                             (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))))      
+       (init_value (resolve_path path_to_value nseval.global_ctx.scope))
+       (on_save (fn (value)
+                  (progn
+                   (try
+                     (progn
+                      (set_path path_to_value nseval.global_ctx.scope
+                                value)
+                      (remove_class "juno-needs-save" title_span)
+                      (= is_dirty? false)
+                      (notify (+ "Set " title)))
+                     (catch Error (`e)
+                       (progn
+                        (log_error (+ (dtext "Unable to save buffer")
+                                      " "
+                                      title)
+                                   e)))))))
+                                                                        
+                     
+       (edit_control (make_editor (if (is_string? init_value)
+                                    init_value
+                                    "")                                  
+                                  {
+                                   type: mode
+                                   command_bar: command_bar
+                                   on_focus: (fn ()
+                                               (progn
+                                                (console.log "focused editor.")
+                                                (add_class "juno-focused" title_span)))
+                                   on_blur: (fn ()
+                                              (remove_class "juno-focused" title_span))
+                                   on_save: on_save
+                                   read_only: options.read_only
+                                   on_change: (function (editor val)
+                                                        (progn
+                                                         (when (not is_dirty?)
+                                                           (= is_dirty true)
+                                                           (add_class "juno-needs-save" title_span))
+                                                         (when options.on_change
+                                                           (-> options.on_change editor val))))
+                                    evaluator: options.evaluator
+                                   })))
+    (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
+    edit_control))
+    
 
 
 
@@ -422,7 +539,7 @@
                                                                
     (console.log "user/*initializer is running." )
    
-    (defglobal main_menu_button (button { `style: "margin-top: -5px" }
+    (defglobal main_menu_button (button { `class: "pure-button" `style: "margin-top: -5px" }
                                              (span { `style: "margin-top: -2px; font-weight: bold;" } "λ")))
 
     (defglobal resource_loader_button (file_picker_button "" load_files))    
@@ -435,12 +552,13 @@
     (-> (get_by_id "body") `appendChild resource_loader_button)
 
     (defglobal juno_container (get_by_id "juno_container"))
-    (defglobal controls [])
+    (defglobal $controls [])
       
     (setq header (-> document `querySelector "header"))
     
     (-> header `appendChild main_menu_button)
-    (-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
+    (-> header `appendChild (span { `class: "juno-header" } "Seedling" ))
+    ;(-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
 
     (attach_event_listener juno_container `click
                            (fn (e)
@@ -486,13 +604,13 @@
       (-> repl_editor.session `setUseWorker true)
       (-> repl_editor `setShowFoldWidgets true))
 
-    (push controls
-          (make_editor "" { `type: "juno" }))
+    (push $controls
+          (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
     
     (when (is_symbol? `repl)
       (-> repl.view `remove)      
       (setq initial_split
-            (split_view_vertical controls.0
+            (split_view_vertical $controls.0
                                  repl))
       (-> (get_by_id "body") `appendChild initial_split.view)    
       (-> initial_split `initialize))
