@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-08-18 10:12:00
-// Version: 2022.08.18.10.12
-export const DLISP_ENV_VERSION='2022.08.18.10.12';
+// Build Time: 2022-08-30 14:33:07
+// Version: 2022.08.30.14.33
+export const DLISP_ENV_VERSION='2022.08.30.14.33';
 
 
 
@@ -2236,7 +2236,7 @@ export async function init_dlisp(Environment)  {
                                             } 
                                         } )(),{
                                             env:Environment,ctx:ctx,formatted_output:true,source_name:opts.source_name,throw_on_error:opts.throw_on_error,error_report:(opts.error_report|| null),quiet_mode:(opts.quiet_mode|| false)
-                                        }) 
+                                        })
                                     } catch(__exception__235) {
                                           if (__exception__235 instanceof Error) {
                                              let e=__exception__235;
@@ -2577,9 +2577,9 @@ export async function init_dlisp(Environment)  {
                             
                         }();
                         let set_compiler=async function(compiler_function) {
-                            compiler=compiler_function;
-                            compiler_operators=await (async function(){
-                                let __array_op_rval__266=compiler;
+                            let new_ops;
+                            new_ops=await (async function(){
+                                let __array_op_rval__266=compiler_function;
                                  if (__array_op_rval__266 instanceof Function){
                                     return await __array_op_rval__266([],{
                                         special_operators:true,env:Environment
@@ -2590,12 +2590,20 @@ export async function init_dlisp(Environment)  {
                                     }]
                                 }
                             })();
-                            await async function(){
-                                Environment.global_ctx.scope["compiler"]=compiler;
-                                return Environment.global_ctx.scope;
+                            if (check_true (await is_set_ques_(new_ops))){
+                                compiler_operators=new_ops;
+                                compiler=compiler_function;
+                                await async function(){
+                                    Environment.global_ctx.scope["compiler"]=compiler;
+                                    return Environment.global_ctx.scope;
+                                    
+                                }();
+                                 await (await get_global("register_feature"))("compiler")
+                            } else {
+                                await console.error("Invalid compiler function: invalid operators returned. Not installing.");
+                                throw new EvalError("Invalid compiler function");
                                 
-                            }();
-                            await (await get_global("register_feature"))("compiler");
+                            };
                              return  compiler
                         };
                         ;
@@ -3406,13 +3414,7 @@ export async function init_dlisp(Environment)  {
                                 
                             }()
                         };
-                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")            };            position=async function(offset) {                 return  ("line: "+line_number+" column: "+await (async function () {                     if (check_true (offset)){                          return (column_number+offset)                    } else {                          return column_number                    }                 })())            };            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {                 if (check_true ((opts && opts["read_table_entries"]))){                      return (opts && opts["read_table_entries"])                } else {                      return new Object()                }             } )(),await ( async function(){                let __obj__1=new Object();                __obj__1["("]=[")",async function(block) {                     return  block                }];                __obj__1["["]=["]",async function(block) {                     return  block                }];
-                __obj__1["{"]=["}",async function(block) {
-                    let obj;
-                    let __idx__2= async function(){
-                        return -1
-                    };
-                    let key_mode;
+                        let reader=async function(text,opts) {     return  await async function(){        if (check_true( (undefined==text))) {             throw new EvalError(("reader: received undefined, text must be a string."));                    } else if (check_true( await (await Environment.get_global("not"))((text instanceof String || typeof text==='string')))) {             throw new EvalError(("reader: received "+await (await Environment.get_global("sub_type"))(text)+": text must be a string."));                    } else  {            let output_structure;            let idx;            let line_number;            let column_number;            let source_name;            let len;            let debugmode;            let in_buffer;            let in_code;            let in_quotes;            let in_long_text;            let in_comment;            let in_single_quote;            let reading_object;            let mode;            let local_text;            let position;            let read_table;            let get_char;            let error;            let handle_escape_char;            let process_word;            let registered_stop_char;            let handler_stack;            let handler;            let c;            let next_c;            let depth;            let stop;            let read_block;            output_structure=[];            idx=-1;            line_number=1;            column_number=0;            source_name=await (async function () {                 if (check_true ((opts && opts["source_name"]))){                      return (opts && opts["source_name"])                } else {                      return "anonymous"                }             })();            opts=(opts||new Object());            len=(await (await Environment.get_global("length"))(text)-1);            debugmode=await async function(){                if (check_true((opts && opts["verbose"]))) {                     return true                } else if (check_true( ((opts && opts["verbose"])===false))) {                     return false                } else if (check_true( ((await Environment.get_global("__VERBOSITY__"))>6))) {                     return true                } else  {                     return false                }            } ();            in_buffer=(text).split("");            in_code=0;            in_quotes=1;            in_long_text=2;            in_comment=3;            in_single_quote=4;            reading_object=false;            mode=in_code;            local_text=async function() {                let start;                let end;                start=await Math.max(0,(idx-10));                end=await Math.min(await (await Environment.get_global("length"))(in_buffer),(idx+10));                 return  (await (await Environment.get_global("slice"))(in_buffer,start,end)).join("")            };            position=async function(offset) {                 return  ("line: "+line_number+" column: "+await (async function () {                     if (check_true (offset)){                          return (column_number+offset)                    } else {                          return column_number                    }                 })())            };            read_table=await (await Environment.get_global("add"))(new Object(),await (async function() {                 if (check_true ((opts && opts["read_table_entries"]))){                      return (opts && opts["read_table_entries"])                } else {                      return new Object()                }             } )(),await ( async function(){                let __obj__1=new Object();                __obj__1["("]=[")",async function(block) {                     return  block                }];                __obj__1["["]=["]",async function(block) {                     return  block                }];                __obj__1["{"]=["}",async function(block) {                    let obj;                    let __idx__2= async function(){                        return -1                    };                    let key_mode;
                     let need_colon;
                     let value_mode;
                     let key;
@@ -3939,27 +3941,27 @@ export async function init_dlisp(Environment)  {
     } else {
         await async function(){
             comps[0]=await (async function(){
-                let __array_op_rval__218=sanitizer_fn;
-                 if (__array_op_rval__218 instanceof Function){
-                    return await __array_op_rval__218((comps && comps["0"])) 
+                let __array_op_rval__222=sanitizer_fn;
+                 if (__array_op_rval__222 instanceof Function){
+                    return await __array_op_rval__222((comps && comps["0"])) 
                 } else {
-                    return[__array_op_rval__218,(comps && comps["0"])]
+                    return[__array_op_rval__222,(comps && comps["0"])]
                 }
             })();
             return comps;
             
         }();
         await (async function(){
-             let __test_condition__219=async function() {
+             let __test_condition__223=async function() {
                  return  ((comps && comps.length)>0)
             };
-            let __body_ref__220=async function() {
+            let __body_ref__224=async function() {
                 (acc).push((comps).shift());
                  return  (acc_full).push(await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx))
             };
             let __BREAK__FLAG__=false;
-            while(await __test_condition__219()) {
-                await __body_ref__220();
+            while(await __test_condition__223()) {
+                await __body_ref__224();
                  if(__BREAK__FLAG__) {
                      break;
                     

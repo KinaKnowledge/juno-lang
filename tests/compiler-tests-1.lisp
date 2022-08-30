@@ -1686,7 +1686,11 @@
         (my_func))"
    []
    `[1]
-   "Declaration detection within subblock - if`"]      
+   "Declaration detection within subblock - if`"]
+   ["(let ((a 1) (b 2)) (let ((c 3) (d 4)) (+ a b c d)) (+ a b))"
+    []
+    3
+    "Let within let"]
   ["(let
        ((`cnt nil)
         (`val nil)
@@ -1708,7 +1712,7 @@
    []
    `["OK","OK",3,4]
    "Nested if return control"
-   ]
+   ]   
   ["(let
     ((word_acc [])
      (mode 0)
@@ -2273,6 +2277,88 @@
   []
   20
   "Define a global array within a function block, access the reference, and access element in dot notation."]
- 
- 
+ ["((fn ()
+    (progn
+      (defvar e { `aa: 2 })
+      (progl
+       (defvar mma 1)
+       (set_prop Environment.global_ctx.scope \"mma\" mma)
+       ((set_prop Environment.definitions \"mma\" {\"core_lang\":true})))
+      e)))"
+   []
+  { `aa: 2 }
+  "Embedded blocks"]
+ ["((fn (opts)
+  (let
+      ((c false)
+       (r nil))
+    (if c
+      (= r c)
+      (try
+        (throw SyntaxError `Test)
+        (catch SyntaxError (e)
+          (do
+            (when c
+              (throw e))
+            (cond
+              (instanceof e SyntaxError)
+              (= r 0)
+              else
+              (= r { `error_data: e }))
+            (if opts.report
+              (opts.report e)
+               \"Nope\")
+            (inc r)
+            (inc r)))))
+    (== r 2))))"
+  []
+  true
+  "proper return of if in embedded catch"]
+  ["((fn (refname target_namespace)
+    (progn
+      (defvar namespace_identity (if target_namespace
+                                     [target_namespace refname]
+                                     (split_by \"/\" refname)))
+      (cond      
+       (and false)
+       (do
+	(if (and (> 1 0))
+	    true	
+	  (throw EvalError (+ \"namespace \" namespace_identity.0 \" doesn't exist\"))))
+       else    
+       (do
+	(defvar comps (get_object_path (if (== 1 namespace_identity.length)
+					   namespace_identity.0
+					 namespace_identity.1)))
+	comps)))) \"testns/test\")"
+   []
+   `["test"]
+   "Embedded if in call arguments"]
+  ["((fn (lisp_tree)
+    (if (and (is_array? lisp_tree)
+             (is_reference? lisp_tree.0)                     
+             (aif (-> Environment `symbol_definition (-> lisp_tree.0 `substr 2))
+                  (resolve_path [ `eval_when `compile_time ] it)))
+
+        true
+      false)) [(quote when)])"
+   []
+   true
+   "Embedded if expansion in condition."]
+ ["(fn (opts)
+    (progn
+     (defvar tt 0)
+     (let
+         ((somefunc (fn ()
+                      42))
+          (show_hints false))       
+       (when (or opts.show_hints true)
+         (= show_hints true))
+       (when opts.blah
+         true)
+       (somefunc))))"
+  []
+  42
+  "Embedded let in block"]
+
 ])

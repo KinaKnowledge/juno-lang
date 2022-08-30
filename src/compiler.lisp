@@ -43,6 +43,7 @@
 ;; root_environment - if true, indicates that this is the Environment object being compiled
 ;;                    and therefore the Environment is implicit, vs. passed in and
 ;;                    referenced.
+;; only_tokens - if true, return only the tokenized JSON tree
 ;;
 ;; formatted_output - if true, the output code is formatted (somewaht) vs. a long text
 ;;                    stream.
@@ -56,6 +57,8 @@
 ;; show_hints - if true, the compiler will emit messages of where optimizations/declarations
 ;;              could help the code be more efficient.  Note that this can be turned
 ;;              on by a global __VERBOSITY__ level > 3.
+;;
+;; special_operators - when true, return the list of the compiler's special operators
 
 ;; Note that this source was originially written in an earlier version of this lisp,
 ;; which needed symbols to be quoted explicitly in certain form types, principally when
@@ -224,7 +227,7 @@
        ;; root scope if parent is nil, or a contained scope if passed another
        ;; context.
        
-       (`new_ctx (fn (parent)
+       (`new_ctx (function (parent)
                      (let
                          ((`ctx_obj (new Object)))
                        (set_prop ctx_obj
@@ -262,7 +265,7 @@
                        (when parent.in_try
                          (set_prop ctx_obj
                                    `in_try
-                                   (prop parent `in_try)))
+                                   (prop parent `in_try)))                       
                        (when parent.return_point
                          (set_prop ctx_obj
                                    `return_point
@@ -1139,8 +1142,10 @@
                                             `val: (+ (quote "=:") `add)
                                             `name: "add"
                                             `ref: true })
+                                  (set_prop ctx
+                                          `block_step 0)
                                 (= stmts (compile tokens ctx))
-                                
+                               
                                 (= stmts (wrap_assignment_value stmts ctx))                               
                                 stmts)
                                 
@@ -1150,7 +1155,9 @@
                                  (do
                                   (inc idx)
                                   (= token (prop tokens idx))
-                                   (add_operand)
+                                  (add_operand)
+                                  (set_prop ctx
+                                            `block_step 0)
                                    (push acc (wrap_assignment_value (compile token ctx) ctx))))                                     
                                  (push acc ")")
                                 acc)))))
@@ -1588,7 +1595,18 @@
                                    ;; return the last statement for standard compilation.
 				   
                                    (prop lisp_tree (+ idx 1)))))))
-       
+
+       (`cumulative_block_step (function (ctx _sum)                                        
+                                         (let
+                                             ((_sum (or _sum 0)))
+                                           (when ctx.block_step
+                                             (= _sum (+ _sum ctx.block_step)))
+                                          (if (== ctx.return_point 0)
+                                            _sum
+                                            (if ctx.parent
+                                              (cumulative_block_step ctx.parent _sum)
+                                              _sum)))))
+                                            
        (`compile_block (fn (tokens ctx block_options)
                            (let
                                ((`acc [])
@@ -1599,21 +1617,25 @@
                                            log
                                            (defclog { `prefix: (+ "compile_block (" block_id "):") 
                                              `background: "#404080" `color: "white"})))
-                                (`ctx (if block_options.no_scope_boundary
+                                (`ctx (if block_options.force_no_new_ctx ;;block_options.no_scope_boundary
                                           ctx
                                           (new_ctx ctx))) ;; get a local reference
                                 (`token nil)
-                                (`last_stmt nil)
+                                (`last_stmt nil)                                
                                 (`is_first_level false)
                                 (`return_last ctx.return_last_value)
                                 (`stmt nil)
-                                (`stmt_ctype nil)
+                                (`subacc [])
+                                (`ls nil)
+                                (`fmark "rval")
+                                (`stmt_ctype nil)                                
                                 (`lambda_block false)
                                 (`stmts [])
                                 (`idx 0))
                              (when (eq nil ctx)
                                (throw ReferenceError "undefined ctx passed to compile block"))
-                             
+                             (when (verbosity ctx)
+                               (clog "->" tokens ctx block_options))
                              (when needs_first_level                                   
                                (= is_first_level true)
                                (set_ctx ctx `has_first_level true)
@@ -1623,8 +1645,7 @@
                                (when (and tokens.path
                                           (> tokens.path.length 0))
                                  (push acc
-                                     (source_comment tokens))))
-                             
+                                     (source_comment tokens))))                             
                              (set_prop ctx
                                        `block_id
                                        block_id)
@@ -1636,29 +1657,27 @@
 
                              (when (not block_options.no_scope_boundary)
                                (push acc "{"))
+                               
 
                              (when is_first_level
                                (push acc first_level_setup ))
                              
                              (while (< idx (- tokens.length 1))
                                     (do
-                                     (inc idx)
-                                     
+                                      (inc idx)
+                                      (= subacc [])
                                      (= token (prop tokens idx))
+                                     
                                       (when (== idx (- tokens.length 1))
                                         (set_prop ctx
                                                   `final_block_statement
-                                                  true))
-                                              
+                                                  true))                                              
                                       (set_prop ctx
                                                 `block_step 
                                                 (- tokens.length 1 idx))
-                                            
                                       (when lambda_block
                                            (set_ctx ctx "__LAMBDA_STEP__" 
-                                                    (- tokens.length 1 idx)))
-                                                
-                                      
+                                                    (- tokens.length 1 idx)))                                                                                      
                                       (if (and (== token.type "arr")
                                                (== token.val.0.name "return"))
                                           (do 
@@ -1693,17 +1712,19 @@
                                         (== stmt_ctype "no_return")
                                         (push stmts stmt); do nothing... 
                                         (== stmt_ctype "AsyncFunction")
-                                        (do 
+                                        (do
                                            
-                                             (push stmts { `mark: "block<-async" })
+                                            (push stmts { `mark: "block<-async" `block_step: (- tokens.length 1 idx) })
                                             (push stmts stmt))
                                         (== stmt_ctype "block")
-                                        (do 
-                                            
+                                        (do                                             
                                             (push stmts (wrap_assignment_value stmt ctx)))
                                         else
-                                        (do 
-                                            (push stmts { `mark: "standard" })
+                                        (do
+                                          (set_prop ctx
+                                                `block_step 
+                                                (- tokens.length 1 idx))
+                                            (push stmts { `mark: "standard"  `block_id: block_id `block_step: (- tokens.length 1 idx) `cbs: (cumulative_block_step ctx) `rp: ctx.return_point })
                                             (push stmts stmt)))
                                       (when (< idx (- tokens.length 1))                                        
                                         (push stmts ";"))))
@@ -1711,20 +1732,15 @@
                              ;; Now depending on the last value in the stmts array, insert a return
                              
                              (cond (and (not block_options.suppress_return)
-                                        (not ctx.suppress_return)
-                                        
-                                        (or (needs_return? stmts ctx)
-                                            ;(not (get_ctx_val ctx `__IF_BLOCK__))
+                                        (not ctx.suppress_return)                                        
+                                        (or (needs_return? stmts ctx)                                          
                                             (and (> idx 1)
                                                   (needs_return? stmts ctx))))
-                                (do
-                                 
-                                   
+                                (do                                                                    
                                    (= last_stmt (pop stmts))
-                                  
                                    (when (not (== last_stmt.0.mark "no_return"))
                                      (push stmts
-                                           { `mark: "final-return" `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__) } )
+                                           { `mark: "final-return"   `bmark: "end"  `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step  `block_id: block_id  `cbs: (cumulative_block_step ctx) `rp: ctx.return_point `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__) } )
                                   
                                       (push stmts " "))
                                    (push stmts last_stmt))
@@ -1734,18 +1750,21 @@
                                          (needs_return? stmts ctx)))
                                 (do
                                    (= last_stmt (pop stmts))
-                                 
+                                   (= ls (get_ctx_val ctx `__LAMBDA_STEP__))
+                                   (when block_options.force_no_new_ctx
+                                     (= fmark "block-end"))
                                    (push stmts
-                                         { `mark: "block-end"  `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `lambda_step: (get_ctx_val ctx `__LAMBDA_STEP__)} )
+                                         { `mark: fmark  `bmark: "end" `block_id: block_id  `if_id: (get_ctx_val ctx `__IF_BLOCK__) `block_step: ctx.block_step `suppress: ctx.suppress_return `rp: ctx.return_point `cbs: (cumulative_block_step ctx) `lambda_step: ls } )
                                    (push stmts " ")
                                    (push stmts last_stmt)))
                              
                                        
                              (push acc stmts)
                              (when (not block_options.no_scope_boundary)
+                               ;(push acc { `bmark: "end" })
                                (push acc "}"))
-                             
-                             (prepend acc { `ctype: "block" } )
+                                                          ;(push acc { `block_id: block_id `block_step: (+ parent_block_step ctx.block_step) })
+                             (prepend acc { `ctype: "block" `block_id: block_id `block_options: block_options } )
                              
                              acc)))
 
@@ -1764,6 +1783,7 @@
                                 ((`target (clean_quoted_reference (sanitize_js_ref_name tokens.1.name)))
                                  (`wrap_as_function? nil)
                                  (`ctx_details nil)
+                                 (`ctx ctx)
                                  (`allocation_type (if opts.constant
                                                      "const"
                                                      "let"))
@@ -1786,9 +1806,13 @@
                                            true
                                            else
                                            false))))
-                                 (`assignment_value nil))
+                                 (`assignment_value nil))                              
+
                               
-                             
+                              ;(console.log "defvar: target: " (is_complex? tokens.2) target (clone ctx) "tokens: " tokens)
+                              
+                              
+                                        
                               (= assignment_value
                                  (do 
                                   (compile tokens.2 ctx)))
@@ -1797,12 +1821,12 @@
                               (= assignment_type (+ {} ctx_details
                                                     (get_declarations ctx target)))
                               
-
+                              
                               (cond 
                                  (and (is_array? assignment_value)
                                       (is_object? assignment_value.0)
                                        assignment_value.0.ctype)
-                                  (do 
+                                 (do                                   
                                    (set_ctx ctx
                                             target
                                             (map_ctype_to_value assignment_value.0.ctype assignment_value))
@@ -1893,9 +1917,9 @@
                                     (declare (string preamble.2))
                                      (cond
                                        (== "ifblock" fst)
-                                       [preamble.2 {`mark: "wrap_assignment_value"}  preamble.0 " " "(" preamble.1 " " "function" " " "()" " " "{" " " stmts " " "}" ")" "()" ]
+                                       [preamble.2 { `mark: "wrap_assignment_value" `block_step_offset: ctx.block_step}  preamble.0 " " "(" preamble.1 " " "function" " " "()" " " "{" " " stmts " " "}" ")" "()" ]
                                        (contains? "block" fst)
-                                       [preamble.2 {`mark: "wrap_assignment_value"} preamble.0 " " "(" preamble.1 " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
+                                       [preamble.2 { `mark: "wrap_assignment_value" `block_step_offset: ctx.block_step  } preamble.0 " " "(" preamble.1 " " "function" " " "()" " "  " " stmts " "  ")" "()" ]
                                        else
                                        stmts))))
        
@@ -1920,7 +1944,7 @@
                               (`token nil)
                               (`declarations_handled false)
                               (`assignment_value nil)
-                             
+                              (`suppress_return nil)
                               (`block_declarations {})
                               (`my_tokens tokens)
                               (`assignment_type nil)
@@ -2062,8 +2086,8 @@
                                     (= alloc_set (prop (prop allocations idx) `val))
                                     
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
-                                    (when (== "check_external_env" reference_name)
-                                      (debug))
+                                    ;(when (== "check_external_env" reference_name)
+                                     ; (debug))
                                     (= ctx_details (get_declaration_details ctx reference_name))
                                                                         
                                     (cond
@@ -2192,13 +2216,16 @@
                                     (push stmt assignment_value)
                                     (push stmt ";")
                                     
-                                    (push acc stmt)))
-                           
+                                    (push acc stmt)))                           
+                           (= suppress_return (if (> (cumulative_block_step ctx) 0)
+                                                true
+                                                false))
                            (push acc (compile_block (conj ["PLACEHOLDER"]
                                                           block)
                                                     ctx
                                                     {
-                                                    `no_scope_boundary: true
+                                                     `no_scope_boundary: true
+                                                     `suppress_return: suppress_return
                                                     `ignore_declarations: declarations_handled
                                                     }))
                            (for_each (`i (range sub_block_count))
@@ -2207,7 +2234,7 @@
                            (if (== ctx.return_point 1)
                                acc
                                (do
-                                (prepend acc { `ctype: "letblock" })
+                                (prepend acc { `ctype: "letblock" `block_step: ctx.parent.block_step `cbs: (cumulative_block_step ctx) })
                                 acc)))))
 
        
@@ -2219,8 +2246,8 @@
 		       "await")))
 	(`calling_preamble (fn (ctx)
 			     (if (in_sync? ctx)
-				 ["" "" { `ctype: "Function" } "(" ")" ]
-				 ["await" "async" { `ctype: "AsyncFunction" } "" "" ])))
+				 ["" "" { `ctype: "Function" `block_step: 0 } "(" ")" ]
+				 ["await" "async" { `ctype: "AsyncFunction" `block_step: 0 } "" "" ])))
        (`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
 	
        (`compile_fn (fn (tokens ctx fn_opts)
@@ -2241,7 +2268,9 @@
                           (set_prop ctx
                                     `return_point
                                     0)
-                                                   
+                                    
+                          (when (eq undefined body)
+                            (throw SyntaxError "Invalid function call syntax"))
                           (set_ctx ctx
                                    `__IN_LAMBDA__
                                    true)
@@ -2354,7 +2383,7 @@
                              (set_prop ctx
                               `return_last_value
                               true)                              
-                              (push acc { `mark: "nbody" } )
+                              (push acc { `mark: "nbody"  } )
                               (push acc (compile_block nbody
                                                        ctx
                                                        ))))                                                                                 
@@ -2441,7 +2470,8 @@
                   (`conditions [])
                   (`stmts nil)
                   (`fst nil)
-                  
+                  (`subacc [])
+                  (`subblock [])
                   (`ctx (new_ctx ctx))    ;; we are in a function wrapper
                   (`inject_return false)
                   (`block_stmts nil)
@@ -2492,11 +2522,17 @@
                  (throw SyntaxError "cond: Invalid syntax: no conditions provided"))
                (set_ctx ctx
                         `__LAMBDA_STEP__
-                         -1)
+                        -1)
+               (set_ctx ctx
+                        `block_step
+                        0)
+               
                (while (< idx condition_tokens.length)
                       (do
-                       (= inject_return false)
-                       (= condition (prop condition_tokens idx))
+                        (= inject_return false)
+                        (= subacc [])
+                       
+                        (= condition (prop condition_tokens idx))
                         (inc idx)
                         (= condition_block (prop condition_tokens idx))
                         
@@ -2505,64 +2541,70 @@
                           (push acc "else")
                           (push acc " "))
                         (when (not (== condition.name "else"))
-                          (push acc {`ctype: "ifblock" `stype:"cond" } )
-                          (push acc "if")
-                          (push acc " ")
-                          (push acc "("))
+                          (push subacc { `ctype: "ifblockA" `stype:"cond" } )                         
+                          (push subacc "if")
+                          (push subacc " ")
+                          (push subacc "("))
                                                 
                         (cond 
                           (is_form? condition)
-                          (do 
+                          (do                           
                             (= stmts (compile condition ctx))                            
-                            (push acc "check_true")
-                            (push acc "(")
-                            (push acc " ")
-                            (push acc stmts)
-                            (push acc ")"))
+                            (push subacc "check_true")
+                            (push subacc "(")
+                            (push subacc " ")
+                            (push subacc stmts)
+                            (push subacc ")"))
+                           
+                           
                           
                           (== condition.name "else")
                           true
                           
                           else 
                           (do 
-                            (= stmts (compile condition ctx))
-                            (push acc "check_true")                            
-                            (push acc "(")
-                            (push acc stmts)
-                            (push acc ")")))
+                            (= stmts (compile condition ctx))                            
+                            (push subacc "check_true")                            
+                            (push subacc "(")
+                            (push subacc stmts)
+                            (push subacc ")")))
                         
                         (when (not (== condition.name "else"))
-                          (push acc ")"))
+                          (push subacc ")"))
+                        (push acc subacc)
                         
                         (push acc " ")
                         ;; now compile the conditions
                         
                         (= stmts (compile condition_block ctx))
+                        (= subacc [])
                         
                         (when (check_needs_return stmts)
                           (= inject_return true)) ; true
                         
                         (when needs_braces?
-                          (push acc "{")
-                          (push acc " "))
+                          (push subacc "{")
+                          (push subacc " "))
                         (when inject_return
-                          (push acc "return")
-                          (push acc " "))
+                          (push subacc "return")
+                          (push subacc " "))
                         (if (== condition_block.type "arr")
+                            (do                              
+                             (push subacc stmts))
                             (do 
                              
-                             (push acc stmts))
-                            (do 
-                             
-                             (push acc stmts)))
-                        (when needs_braces?
-                          (push acc "}"))                        
+                             (push subacc stmts)))
+                        (when needs_braces?                         
+                          (push subacc "}"))
+                        (push acc subacc)
+                        ;(= subacc [])
                         (inc idx)))               
                acc)))
        
        (`compile_if (fn (tokens ctx)
                         (let
                             ((`acc [])
+                             (`subacc [])
                              (`stmts nil)
                              (`fst nil)
                              (`if_id (inc if_id))                             
@@ -2572,11 +2614,14 @@
                              (`test_form tokens.1)
                              (`if_true tokens.2)
                              (`compiled_test nil)
-                             (`compiled_true nil)
+                             (`compiled_true nil)                             
                              (`compiled_false nil)
-                             (`if_false tokens.3)
+                             (`marker "rval")
+                             (`num_clauses 0)
+                             (`if_false tokens.3)                             
                              (`preamble (calling_preamble ctx))
                              (`needs_braces? false)
+                             (`bc_type nil)
                              (`check_needs_return 
                                (fn (stmts)
                                    (do
@@ -2595,31 +2640,37 @@
                                        (contains? "block" fst)
                                        (do 
                                         (if (== fst "ifblock")
-                                            (= needs_braces? true)
-                                            (= needs_braces? false))
+                                          (do (= needs_braces? true)
+                                              (= bc_type 0))
+                                          (do (= needs_braces? false)
+                                              (= bc_type 1)))
                                         false)
                                        (== (first stmts) "throw")
                                        (do 
-                                        (= needs_braces? false)
+                                         (= bc_type 2)
+                                         (= needs_braces? false)
                                         false)
                                        (and (== ctx.block_step 0)
                                             (< ctx.return_point 3))
                                        (do                                         
-                                        (= needs_braces? true)
-                                        false)  
+                                         (= needs_braces? true)
+                                         (= bc_type 3)
+                                        false)
                                        (and (== ctx.block_step 0)
                                             (> ctx.return_point 2))
-                                       (do 
-                                        
-                                        (= needs_braces? true)
+                                       (do                                         
+                                         (= needs_braces? true)
+                                         (= bc_type 4)
                                         false) 
                                        (> ctx.block_step 0)
-                                       (do 
-                                        (= needs_braces? true)
+                                       (do
+                                         (= bc_type 5)
+                                         (= needs_braces? true)
                                         false)
                                        else
-                                       (do 
-                                        (= needs_braces? true)
+                                       (do
+                                         (= bc_type 6)
+                                         (= needs_braces? true)
                                         false))))))
                           (declare (string preamble.0 preamble.1 preamble.2))
                           
@@ -2630,66 +2681,68 @@
                           
                           (when (eq nil ctx)
                                 (throw ReferenceError "undefined/nil ctx passed to compile_if"))
-                          
-                          (push acc { `ctype: "ifblock" })
-                          
-                          
+
+                          (if if_false
+                            (= num_clauses 2)
+                            (= num_clauses 1))
+                             
+                          (push acc { `ctype: "ifblock" `if_id: if_id `block_step: ctx.block_step `block_id: ctx.block_id  `num_clauses: num_clauses })
+                                                    
                           (= compiled_test (compile_elem test_form ctx))
                           
                           (set_ctx ctx
                                      `__IF_BLOCK__
                                      if_id)
+                          
                           (when (> ctx.block_step 0)
                             
                             (set_prop ctx
                                       `suppress_return
                                       true))
+                           
                          
                           (if (and (is_object? (first compiled_test))
                                    (prop (first compiled_test) `ctype)
                                    (is_string? (prop (first compiled_test) `ctype))
                                    (contains? "unction" (prop (first compiled_test) `ctype)))
                               (for_each (`t ["if" " " "(check_true (" preamble.0 " " compiled_test "()" "))"])
-                                        (push acc t))
+                                        (push subacc t))
                               (for_each (`t ["if" " " "(check_true ("  compiled_test "))"])
-                                        (push acc t)))
-                                                    
-                          (= compiled_true (compile if_true ctx))
+                                        (push subacc t)))
+
+                          (push acc subacc)
                           
+                          (= compiled_true (compile if_true ctx))                          
                           (= inject_return (check_needs_return compiled_true))
-                                                                             
+
+                          (= subacc [])
                           (when needs_braces?
-                            (push acc "{")
-                            (push acc " "))
-                          (push acc (if (and false (== (get_ctx_val ctx "__LAMBDA_STEP__") 0)
-                                             (== ctx.block_step 0))
-                                        { `mark: "final-return" `if_id: if_id }
-                                        { `mark: `rval `if_id: if_id `block_step: ctx.block_step `lambda_step: (Math.max 0 (get_ctx_val ctx "__LAMBDA_STEP__"))}))
-                          (when inject_return
-                            (push acc "return")
-                            (push acc " "))
-                          (push acc compiled_true)
+                            (push subacc "{")
+                            (push subacc " "))
+                          (push subacc [ {  `mark: marker `bmark: `if_vblock  `bc_type: bc_type  `if_id: if_id `suppress: ctx.suppress_return `block_step: ctx.block_step `block_id: ctx.block_id `cbs: (cumulative_block_step ctx) `lambda_step: (Math.max 0 (get_ctx_val ctx "__LAMBDA_STEP__"))}
+                                         compiled_true ])                         
                           (when needs_braces?
-                            (push acc "}"))
-                          (when if_false                            
+                            (push subacc "}"))
+                          (push acc subacc)
+                          (when if_false
+                            (= subacc [])
                             (= compiled_false (compile if_false ctx))                            
                             (= inject_return (check_needs_return compiled_false))                            
                             (push acc " " )
                             (push acc "else")
                             (push acc " ")
                             (when needs_braces?
-                              (push acc "{")
-                              (push acc " "))
-                            (push acc (if (and false (== (get_ctx_val ctx "__LAMBDA_STEP__") 0))
-                                          { `mark: "final-return" }
-                                          { `mark: `rval `if_id: if_id `block_step: ctx.block_step `lambda_step: (Math.max 0 (get_ctx_val ctx "__LAMBDA_STEP__"))} ))
-                            (when inject_return
-                              (push acc "return")
-                              (push acc " "))
-                            (push acc compiled_false)
+                              (push subacc "{")
+                              (push subacc " "))                            
+                            (push subacc  [{ `mark: marker `bmark: `if_vblock `if_id: if_id  `bc_type: bc_type `suppress: ctx.suppress_return `block_step: ctx.block_step `block_id: ctx.block_id `cbs:(cumulative_block_step ctx) `lambda_step: (Math.max 0 (get_ctx_val ctx "__LAMBDA_STEP__"))}
+                                           compiled_false ])                           
+                            
                             (when needs_braces?
-                              (push acc "}")))
-                          
+                              (push subacc "}"))
+                            
+                            (push acc subacc))
+                            
+                          (push acc { `bmark: `end_if `if_id: if_id })
                           (set_ctx ctx
                                      `__IF_BLOCK__
                                      undefined)
@@ -2719,11 +2772,14 @@
                                     (is_block? tokens)
                                     (do
                                      
-                                     (= ctx (new_ctx ctx))
+                                      (= ctx (new_ctx ctx))
+                                      (set_prop ctx
+                                                `block_step
+                                                0)
                                       (set_prop ctx
                                                 `return_point
-                                                1)
-                                      (= acc ["(" preamble.1 " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
+                                                1)                                      
+                                      (= acc [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
                                     (and (is_object? tokens)
                                          (== tokens.val.0.name "if"))
                                     (do 
@@ -2731,7 +2787,10 @@
                                      (set_prop ctx
                                       `return_point
                                       1)
-                                      (for_each (`t ["(" preamble.1 " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
+                                     (set_prop ctx
+                                               `block_step
+                                               0)
+                                      (for_each (`t [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
                                                 (push acc t)))
                                     (is_array? tokens)
                                     (do
@@ -2755,7 +2814,9 @@
                                         (set_prop ctx
                                                   `return_point
                                                   0)
-                                        
+                                        (set_prop ctx
+                                                  `block_step
+                                                  0)
                                         (cond
                                           (is_block? tokens)
                                           (do
@@ -2949,7 +3010,7 @@
                   (`the_exception_ref (gen_temp_name "exception"))
                   (`exception_ref nil)
                   (`orig_ctx ctx)
-                  (`fst nil)
+                  (`fst nil)                 
                   (`needs_braces? false)
                   (`check_needs_return 
                     (fn (stmts)
@@ -2978,10 +3039,12 @@
                   (`insert_catch_block 
                     (fn (err_data stmts)
                         (let
-                            ((`complete false))
+                            ((`complete false)
+                             (`capacc [])
+                             (`subacc []))
                           (when (== err_data.idx 0)
                             (for_each (`t [" " "catch" "(" the_exception_ref ")" " " "{" " "  ] )
-                                      (push acc t)))
+                                      (push subacc t)))
                           (when (== err_data.error_type "Error")
                             (= base_error_caught true))
                           (when (or (== err_data.error_type "Error") ;; catches all
@@ -2990,23 +3053,27 @@
                           
                           (when (>  err_data.idx 0)
                             (for_each (`t [" " "else" " " ])
-                                      (push acc t)))
+                                      (push capacc t)))
                           (for_each (`t [" " "if" " " "(" the_exception_ref " " "instanceof" " " err_data.error_type ")" " " "{" " " "let" " " err_data.error_ref "=" the_exception_ref ";" " " ] )
-                                    (push acc t))                                        
+                                    (push capacc t))
+                          (push subacc capacc)
                           (when err_data.insert_return
-                            (push acc " ")
-                            (push acc "return")
-                            (push acc " "))
-                          (push acc stmts)
+                            (push subacc " ")
+                            (push subacc "return")
+                            (push subacc " "))
+                          (push subacc stmts)
                           
-                          (push acc "}")
+                          (push subacc "}")
+                          (push acc subacc)
+                          (= subacc [])
                           (when (and (== err_data.idx (- err_data.total_catches 1))
                                      (not base_error_caught))
                             (for_each (`t [ " " "else" " " "throw" " " the_exception_ref ";"])
-                                      (push acc t)))
+                                      (push subacc t)))
                           (when complete
                             (for_each (`t [" " "}"])
-                                      (push acc t)))
+                                      (push subacc t)))
+                          (push acc subacc)
                           complete)))
                   
                   (`insert_return? false)
@@ -3018,6 +3085,13 @@
                   (`catches (-> tokens `slice 2)))               
                (when (== (length catches) 0)
                  (throw SyntaxError "try: missing catch form"))
+               (set_ctx ctx
+                        `__LAMBDA_STEP__
+                        -1)
+               (set_prop ctx
+                         `block_step
+                         0)
+                         
                (set_prop ctx
                          `return_last_value
                          true)
@@ -3034,9 +3108,11 @@
                (if (is_complex? try_block)                                                           
                    (for_each (`t ["try" " " "/* TRY COMPLEX */ "   stmts " " ])
                              (push acc t))
-                   (for_each (`t ["try" " " "/* TRY SIMPLE */ " "{" " "  (if (== (get_ctx_val ctx "__LAMBDA_STEP__") 0)
-                                                                             { `mark: "final-return"  }
-                                                                             { `mark: "rval" })  stmts " " "}"])
+                   (for_each (`t ["try" " " "/* TRY SIMPLE */ " "{" " "  (if (or (== (get_ctx_val ctx "__LAMBDA_STEP__") 0)
+                                                                                 (and (== (get_ctx_val ctx "__LAMBDA_STEP__") -1)
+                                                                                      (== ctx.block_step 0)))
+                                                                             { `mark: "final-return" `block_step: ctx.block_step }
+                                                                             { `mark: "rval" `block_step: ctx.block_step `bmark: `stry })  stmts  "}"])
                              (push acc t)))
                
                (while (< idx catches.length)
@@ -3583,8 +3659,7 @@
                                 (try
 				   (= assembly (new AsyncFunction "Environment"  assembled))
 				 (catch Error (`e)
-					(progn
-					  (debug)
+					(progn					 
 					  (throw e))))
                                 (when run_opts.bind_mode
                                   (= assembly (bind_function assembly Environment)))
@@ -3808,7 +3883,9 @@
                
                
                (set_ctx ctx collector_ref ArgumentType)
-                                        
+               (set_ctx ctx
+                        `__LAMBDA_STEP__
+                        -1)
                (set_ctx ctx element_list "arg")
                (when (not body_is_block?)
                  ;; we need to make it a block for our function
@@ -3942,7 +4019,10 @@
                                                      idx_iters
                                                      ctx))
                
-                                        
+               (set_prop ctx
+                         `block_step
+                         0)
+               
                (set_prop ctx
                          `return_last_value
                          true)
@@ -4143,7 +4223,7 @@
                                (if (== undefined rtype)
                                    (sub_type (get_lisp_ctx name))
                                    (sub_type rtype)))))
-      
+       
        
        (`compile_scoped_reference
          (fn (tokens ctx)
@@ -4219,7 +4299,10 @@
                              (do
                               (inc idx)
                               (= token (prop tokens idx))
-                               (= stmt (compile token ctx))                               
+                               (if (and (is_array? token.val)
+                                       (== token.val.0.name "if"))
+                                (= stmt (compile_wrapper_fn token ctx {}))
+                                (= stmt (compile token ctx)))                        
                                (= stmt (check_statement stmt))
                                (push acc stmt)
                                (when (< idx (- tokens.length 1))
@@ -4238,12 +4321,15 @@
                              (do
                               (inc idx)
                               (= token (prop tokens idx))
-                               (= stmt (compile token ctx))
+                              (if (and (is_array? token.val)
+                                       (== token.val.0.name "if"))
+                                (= stmt (compile_wrapper_fn token ctx {}))
+                                (= stmt (compile token ctx)))
                                ;(sr_log "<- (function) compiled_smt: " stmt)
-                               (= stmt (check_statement stmt))
-                               (push acc stmt)
-                               (when (< idx (- tokens.length 1))
-                                 (push acc ","))))
+                              (= stmt (check_statement stmt))
+                              (push acc stmt)
+                              (when (< idx (- tokens.length 1))
+                                (push acc ","))))
                       (push acc ")")
                      acc)
                     
@@ -4396,6 +4482,7 @@
                              ((rval (or (is_block? tokens)					
                                          (and (== tokens.type "arr") 
                                               (is_block? tokens.val))
+                                         (== tokens.0.name "let")
                                          (== tokens.val.0.name "if")
                                          (== tokens.val.0.name "let"))))
                              
@@ -4432,7 +4519,7 @@
                     "do": compile_block
                     "progn": compile_block
                     "progl": (fn (tokens ctx)
-                                 (compile_block tokens ctx { `no_scope_boundary: true `suppress_return:true }))
+                                 (compile_block tokens ctx { `no_scope_boundary: true `suppress_return:true `force_no_new_ctx: true }))
                     "break": compile_break
                     "inc": compile_val_mod
                     "dec": compile_val_mod
@@ -4549,7 +4636,7 @@
                         [{ `ctype: "objliteral" } acc]))
                    (do                   
                     (= tmp_name (gen_temp_name "obj"))
-		    (debug)
+		    
                      (for_each (`t [{ `ctype:`statement }  preamble.0 " " "(" " " preamble.1 " " "function" "()" "{" "let" " " tmp_name "=" "new" " " "Object" "()" ";"])
                                (push acc t))
                      (while (< idx total_length)
@@ -4958,8 +5045,7 @@
                               `details
                               is_error)
                     (if opts.throw_on_error
-                      (throw e))))))))
-                
+                      (throw e))))))))             
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
@@ -5036,8 +5122,8 @@
                                                          (is_array? t)
                                                          (do 
                                                            (assemble t))
-                                                         (== "object" (typeof t)) 
-                                                         (do                                                           
+                                                         (== "object" (typeof t))
+                                                         (do                                                                                                                      
                                                            (when (and t.comment
                                                                       opts.include_source)
                                                              (push text (+ "/* " t.comment " */"))
@@ -5115,6 +5201,8 @@
     (set_prop root_ctx
               `defined_lisp_globals
               {})
+             
+              
 
     (set_ctx root_ctx
               `__SOURCE_NAME__
@@ -5122,7 +5210,8 @@
        
     (set_ctx root_ctx
              `__LAMBDA_STEP__
-              -1) 
+             -1)
+            
     
     (= output
        (cond
@@ -5139,7 +5228,7 @@
          (do
             (try 
                (do
-                   (= final_token_assembly (tokenize tree root_ctx)))
+                 (= final_token_assembly (tokenize tree root_ctx)))                                  
                 (catch Error (`e)
                     (= is_error e)))                                
             (cond
@@ -5176,9 +5265,14 @@
                            has_lisp_globals)
                     (push first_level_setup
                           ["const __GG__=" env_ref "get_global" ";"]))
-                    
-                  (= assembly (splice_in_return_a assembly))
-                  (= assembly (splice_in_return_b assembly))))
+                  
+                   
+                 
+                     (= assembly (splice_in_return_a assembly))
+                     (= assembly (splice_in_return_b assembly))
+                     
+                    assembly))
+                  
             
             ;; if we are compiling with the root_environment option as true
            ;; we don't have a pre-existing environment, because we are
@@ -5230,7 +5324,8 @@
                    [(+ { `has_lisp_globals: has_lisp_globals }
                        (take assembly))
                    (assemble_output assembly)]
-                   [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))
+                   [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))    
+    
     (when (and (is_object? (first output))
                target_namespace)
       (set_prop (first output)

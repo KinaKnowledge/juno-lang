@@ -1654,14 +1654,20 @@
      ;; multiple compilers, for example in the development of the compiler.
      
      (defvar set_compiler (fn (compiler_function)
-                            (do 
-                             (= compiler compiler_function)			     
-                              (= compiler_operators
-                                 (compiler [] { `special_operators: true `env: Environment }))
-                              (set_prop Environment.global_ctx.scope
-                                        "compiler"
-                                        compiler)
-                              (register_feature "compiler")
+                            (let
+                                ((new_ops (compiler_function [] { `special_operators: true `env: Environment })))
+                              (if (is_set? new_ops)                                                           
+                                (do
+                                  (= compiler_operators
+                                     new_ops)
+                                  (= compiler compiler_function)
+                                  (set_prop Environment.global_ctx.scope
+                                            "compiler"
+                                            compiler)
+                                  (register_feature "compiler"))
+                                (do
+                                  (console.error "Invalid compiler function: invalid operators returned. Not installing.")
+                                  (throw EvalError "Invalid compiler function")))
 	                      compiler)))	  
      
      (set_prop Environment.global_ctx.scope
