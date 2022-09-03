@@ -738,7 +738,8 @@
          (`strs    (+ "" search_string)))
          (if (is_regex? regex)
             (do 
-                (= regex.lastIndex 0)
+             (set_prop regex
+		       `lastIndex 0)
                 (while (and (do 
                                (= result (-> regex `exec strs ))
                                 true)

@@ -1526,7 +1526,7 @@
                   (callable 123))))
       (-> testcall `toString)"
      []
-     "async function(callable) {\n    ;\n     return  await (callable)(123)\n}"
+     "async function(callable) {\\n    ;\\n    return await (callable)(123)\\n}"
      "Optimization by using declare - no ambiguity check" 
     ]
     ["(defglobal `testcall 
@@ -1608,7 +1608,7 @@
            (inc blk_counter)))
       `toString)"
     []
-   "async function() {\n            let blk_counter;\n            blk_counter=0;\n             return  blk_counter+=1\n        }"
+   "async function() {\\n            let blk_counter;\\n            blk_counter=0;\\n            return blk_counter+=1\\n        }"
    "Value modification outside of infix_ops - output expression"
      ]
   ["(let
@@ -2194,11 +2194,11 @@
   ]
  [ "(compile `(let () (defconst my_new_constant 123)))"
   []
-  "{const my_new_constant=123;}"
+  "{return const my_new_constant=123;}"
   "defconst in local scope creates a const allocation."]
  [ "(compile `(progn (defconst my_new_constant 123)))"
   []
-  "{ return  await Environment.set_global(\"my_new_constant\",123,null,true)}"
+  "{return await Environment.set_global(\"my_new_constant\",123,null,true)}"
   "defconst in top-level progn compiles to set global scope"]
   [ "(contains? \"defun\" (progn (declare (namespace core)) (keys Environment.context.scope)))"
   []
@@ -2262,8 +2262,8 @@
   "Correctly handle if attached to key value"]
   ["(defun is_block? (val) \   (if (== val.type `block) \     true \     false))
    (compile `(let ((is_block? (fn () true))) (is_block?)))"
-  []
-  "{let is_block_ques_;is_block_ques_=async function() { return  true}; return  await is_block_ques_()}"
+  []  
+  "{let is_block_ques_;is_block_ques_=async function() {return true};return await is_block_ques_()}"
   "Reference locally shadowed global function with invalid JS characters."]
  ["(undefine `abc) (defun testf () (progn  (defglobal abc { `command: { `testf: (function () true ) } }) (-> abc.command `testf)))"
   []
@@ -2360,5 +2360,26 @@
   []
   42
   "Embedded let in block"]
-
+  ["(let
+       ((wrapper []))
+      (for_each (`t [ \"let\" \"=\" ] )
+       (push wrapper t)))"
+  []
+  [1 2]
+  "Array in for_each with non-function first element" ]
+  ["(try (if (eq true true) true false) (catch Error (e) \"NOPE\"))"
+  []
+  true
+  "If in try and catch"]
+  ["(let
+       ((out nil))
+      (= out (try
+               (last [1 2 3])
+	       (catch Error (e)
+		 e)))
+      out)"
+  []
+  3
+  "Return value from try block"]
+  
 ])

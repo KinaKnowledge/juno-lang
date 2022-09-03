@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-08-30 14:33:07
-// Version: 2022.08.30.14.33
-export const DLISP_ENV_VERSION='2022.08.30.14.33';
+// Build Time: 2022-08-24 09:15:21
+// Version: 2022.08.24.09.15
+export const DLISP_ENV_VERSION='2022.08.24.09.15';
 
 
 
@@ -1142,7 +1142,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                 } else {
                                                     return[__array_op_rval__94]
                                                 }
-                                            })()),type:(comp && comp["mark"]),rp:(comp && comp["rp"]),block_step:(comp && comp["block_step"]),cbs:(comp && comp["cbs"]),suppress:(comp && comp["suppress"]),block_id:(comp && comp["block_id"]),if_id:(comp && comp["if_id"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),lambda_step:(comp && comp["lambda_step"])
+                                            })()),type:(comp && comp["mark"]),rpoint:(comp && comp["rpoint"]),block_step:(comp && comp["block_step"]),if_id:(comp && comp["if_id"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),lambda_step:(comp && comp["lambda_step"])
                                         });
                                         if (check_true (((comp && comp["if_id"])&& (null==await (async function(){
                                             let __targ__95=await getf_ctx(_ctx,"if_links");
@@ -1157,7 +1157,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                 
                                             }()
                                         };
-                                        if (check_true (((comp && comp["if_id"])&& await (await Environment.get_global("not"))((comp && comp["suppress"]))))){
+                                        if (check_true ((comp && comp["if_id"]))){
                                              (await (async function(){
                                                 let __targ__97=await getf_ctx(_ctx,"if_links");
                                                 if (__targ__97){
@@ -1175,7 +1175,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                 } else {
                                                     return[__array_op_rval__98]
                                                 }
-                                            })()),if_id:(comp && comp["if_id"]),block_step:(comp && comp["block_step"]),rp:(comp && comp["rp"]),block_id:(comp && comp["block_id"]),lambda_step:(comp && comp["lambda_step"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),type:(comp && comp["mark"])
+                                            })()),if_id:(comp && comp["if_id"]),block_step:(comp && comp["block_step"]),rpoint:(comp && comp["rpoint"]),lambda_step:(comp && comp["lambda_step"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),type:(comp && comp["mark"])
                                         });
                                         if (check_true (((comp && comp["if_id"])&& (null==await (async function(){
                                             let __targ__99=await getf_ctx(_ctx,"if_links");
@@ -1190,7 +1190,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                 
                                             }()
                                         };
-                                        if (check_true (((comp && comp["if_id"])&& await (await Environment.get_global("not"))((comp && comp["suppress"]))))){
+                                        if (check_true ((comp && comp["if_id"]))){
                                              (await (async function(){
                                                 let __targ__101=await getf_ctx(_ctx,"if_links");
                                                 if (__targ__101){
@@ -1208,7 +1208,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                 } else {
                                                     return[__array_op_rval__102]
                                                 }
-                                            })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),block_id:(comp && comp["block_id"]),rp:(comp && comp["rp"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
+                                            })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),rpoint:(comp && comp["rpoint"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
                                         });
                                         if (check_true (((comp && comp["if_id"])&& (null==await (async function(){
                                             let __targ__103=await getf_ctx(_ctx,"if_links");
@@ -1224,14 +1224,12 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                             }()
                                         };
                                         if (check_true ((comp && comp["if_id"]))){
-                                            if (check_true (await (await Environment.get_global("not"))((comp && comp["suppress"])))){
-                                                 (await (async function(){
-                                                    let __targ__105=await getf_ctx(_ctx,"if_links");
-                                                    if (__targ__105){
-                                                         return(__targ__105)[(comp && comp["if_id"])]
-                                                    } 
-                                                })()).push(await last(await getf_ctx(_ctx,"viable_return_points")))
-                                            };
+                                            (await (async function(){
+                                                let __targ__105=await getf_ctx(_ctx,"if_links");
+                                                if (__targ__105){
+                                                     return(__targ__105)[(comp && comp["if_id"])]
+                                                } 
+                                            })()).push(await last(await getf_ctx(_ctx,"viable_return_points")));
                                              (await getf_ctx(_ctx,"potential_return_points")).push({
                                                 path:await conj(_path,await (async function(){
                                                     let __array_op_rval__106=idx;
@@ -1240,7 +1238,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                     } else {
                                                         return[__array_op_rval__106]
                                                     }
-                                                })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),block_id:(comp && comp["block_id"]),rp:(comp && comp["rp"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
+                                                })()),type:(comp && comp["mark"]),lambda_step:(comp && comp["lambda_step"]),block_step:(comp && comp["block_step"]),rpoint:(comp && comp["rpoint"]),source:await JSON.stringify(await clone(await (await Environment.get_global("slice"))(js_tree,idx))),if_id:(comp && comp["if_id"])
                                             })
                                         };
                                         await (await Environment.get_global("setf_ctx"))(_ctx,"return_found",true);
@@ -1275,7 +1273,6 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                         let final_viable_path;
                         let max_viable;
                         let last_return_score;
-                        let handled_blocks;
                         let plength;
                         let rscore;
                         let if_paths;
@@ -1293,7 +1290,6 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                         })());
                         max_viable=0;
                         last_return_score=null;
-                        handled_blocks=[];
                         plength=0;
                         rscore=0;
                         if_paths=[];
@@ -1301,12 +1297,9 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                         final_return_found=await getf_ctx(_ctx,"return_found");
                         await (async function() {
                             let __for_body__110=async function(v) {
-                                await (await Environment.get_global("set_path"))((v && v["path"]),ntree,{
+                                 return  await (await Environment.get_global("set_path"))((v && v["path"]),ntree,{
                                     mark:"return_point",rpoint:(v && v["rpoint"])
-                                });
-                                if (check_true ((v && v["block_id"]))){
-                                     return  (handled_blocks).push((v && v["block_id"]))
-                                }
+                                })
                             };
                             let __array__111=[],__elements__109=viables;
                             let __BREAK__FLAG__=false;
@@ -1351,9 +1344,9 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                      last_return_score=await (await Environment.get_global("path_multiply"))(vpath,max_path_segment_length)
                                 };
                                 rscore=await (await Environment.get_global("path_multiply"))(vpath,max_path_segment_length);
-                                if (check_true (((await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length)>last_return_score)|| (((p && p["block_step"])===0)&& ((p && p["lambda_step"])===0)&& await (await Environment.get_global("not"))((p && p["suppress"])))|| (0===await (await Environment.get_global("length"))(viables))))){
+                                if (check_true (((await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length)>last_return_score)|| (((p && p["block_step"])===0)&& ((p && p["lambda_step"])===0))|| (0===await (await Environment.get_global("length"))(viables))))){
                                     await (await Environment.get_global("set_path"))((p && p["path"]),ntree,{
-                                        mark:"return_point"
+                                        mark:"return_point",rpoint:(p && p["rpoint"])
                                     });
                                     last_return_score=await Math.max(await (await Environment.get_global("path_multiply"))(ppath,max_path_segment_length),last_return_score);
                                     if (check_true (((p && p["if_id"])&& await (async function(){
@@ -1371,7 +1364,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                                         
                                                     }();
                                                      return  await (await Environment.get_global("set_path"))((pinfo && pinfo["path"]),ntree,{
-                                                        mark:"return_point"
+                                                        mark:"return_point",rpoint:(p && p["rpoint"])
                                                     })
                                                 }
                                             };
@@ -1396,7 +1389,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
                                 } else {
                                     if (check_true (((undefined===if_paths[await (await Environment.get_global("as_lisp"))((p && p["path"]))])&& await (await Environment.get_global("not"))(((p && p["type"])==="final-return"))))){
                                          return  await (await Environment.get_global("set_path"))((p && p["path"]),ntree,{
-                                            mark:"ignore"
+                                            mark:"ignore",rpoint:(p && p["rpoint"])
                                         })
                                     }
                                 }
