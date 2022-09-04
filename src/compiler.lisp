@@ -4932,7 +4932,7 @@
        (cond
          opts.special_operators
          (do
-           (console.log "compiler returning special ops")
+           ;(console.log "compiler returning special ops")
            (make_set (keys op_lookup)))
          
          opts.only_tokens
