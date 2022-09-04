@@ -1608,8 +1608,7 @@
                              (when (verbosity ctx)
                                (clog "->" tokens ctx block_options))
                              (when needs_first_level                                   
-                               (= is_first_level true)
-                               (set_ctx ctx `has_first_level true)
+                               (= is_first_level true)                               
                                (= needs_first_level false))  ;; set a rapid way to determine this since we only do this once per compilation
                              
                              (when opts.include_source
@@ -1626,7 +1625,7 @@
                              (if completion_scope.root_block_id
                                (do                                                      
                                  (set_ctx ctx
-                                          `in_sub_block
+                                          `__IN_SUB_BLOCK__
                                           true))
                                (do
                                  (set_prop completion_scope
@@ -1634,7 +1633,7 @@
                                            block_id)
                                  (= block_type "root")
                                  (set_ctx ctx
-                                          `in_sub_block
+                                          `__IN_SUB_BLOCK__
                                           false)))
                              
                              (when (== (get_ctx_val ctx `__LAMBDA_STEP__) -1)
@@ -1896,7 +1895,7 @@
                                      `return_last_value
                                      true)
 
-                           (set_ctx ctx `local_scope
+                           (set_ctx ctx `__LOCAL_SCOPE__
                                     true)
                                      
                            
@@ -1915,8 +1914,7 @@
                               (push acc (compile_declare block.0.val ctx)))
 
                            (when needs_first_level                       ;; if we are on the first level, do some setup for aliases for easier code reading, etc..            
-                             (= is_first_level true)
-                             (set_ctx ctx `has_first_level true)
+                             (= is_first_level true)                             
                              (= needs_first_level false)
                              (when is_first_level
                                (push acc first_level_setup)))
@@ -2569,12 +2567,14 @@
                                      (= ctx (new_ctx ctx))
                                      (set_new_completion_scope ctx)
                                      (= acc (compile_block_to_anon_fn tokens ctx)))
+                                    
                                     (and (is_object? tokens)
                                          (== tokens.type "arr")
                                          (or (== tokens.val.length 0)
                                              (or (== tokens.val.0.type "arg")
-                                                 (contains? tokens.val.0.name [ "or" "and" "==" "fn" "function" "function*" "lambda" "<" ">" ">=" "%" "*" "-" "+" "<<" ">>" "prop" "set_prop" "for_each" "while" ]))))
-                                        
+                                                 (and (== tokens.val.0.type "special")
+                                                      (not (contains? tokens.val.0.name [ "if" "try" "do" "progn" "let" "cond" ]))))))
+                                         ;;(contains? tokens.val.0.name [ "or" "and" "==" "fn" "function" "function*" "lambda" "<" ">" ">=" "%" "*" "-" "+" "<<" ">>" "prop" "set_prop" "for_each" "while" "new" ]))))                                        
                                     (progn
                                      (= needs_await false)
                                      (= acc (compile tokens ctx)))
@@ -3607,8 +3607,8 @@
                          (do
                           (push idx_iters (prop for_args iter_idx))
                           (set_ctx ctx
-                           (clean_quoted_reference (prop (last idx_iters) `name))
-                           ArgumentType)))
+                                   (clean_quoted_reference (prop (last idx_iters) `name))
+                                   ArgumentType)))
                
                
                (set_ctx ctx collector_ref ArgumentType)
@@ -4152,13 +4152,9 @@
                  ;(contains? basename.0 (keys Environment.context.scope))    
                       ;(not (== refval "__!NOT_FOUND!__")))
                  (do
-                   (= has_lisp_globals true)
-                   (when (verbosity ctx)
-                     (console.log "compile_lisp_scoped_reference: has_first_level? " (get_ctx ctx `has_first_level) ": " refname))
-                   (if (and false (get_ctx ctx `has_first_level) (not opts.root_environment))
-                     [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " "__GG__" "(\"" refname  "\")" ")"]
-                     [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"]
-                     ))
+                   (= has_lisp_globals true)                                     
+                   [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"])
+                     
                  ;; this will allow for a non-exception event, for example in a typeof situation where you want to check the type of something at runtime
                  ;; that may not exist at compile time
                  defer_not_found
@@ -4237,7 +4233,7 @@
                     "let": compile_let
                      "defvar": compile_defvar
                      "defconst": (fn (tokens ctx)
-                                   (if (get_ctx ctx `local_scope)
+                                   (if (get_ctx ctx `__LOCAL_SCOPE__)
                                      (compile_defvar tokens ctx { `constant: true })
                                      (compile_set_global tokens ctx { `constant: true })))
                     "while": compile_while

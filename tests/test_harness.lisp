@@ -8,7 +8,10 @@
          (`test_output nil)
          (`tester compiler)
 	 (`env Environment)
-         (`quiet_mode true)
+         (`quiet_mode (if (eq nil opts.quiet_mode)
+			  true
+			  opts.quiet_mode))
+			  
 	 (`fail_count 0)
          (`idx -1)
          (`andf (fn (args)
@@ -37,7 +40,7 @@
          (= quiet_mode false)
          (= tests (nth [ test_numbers ] tests))))
        
-      (if quiet_mode
+      (if false ;quiet_mode
 	(= clog (fn ()
 		    true))
 	(= clog (defclog {  `color: "blue" } )))
@@ -50,10 +53,11 @@
                    (do
                     (defvar `result nil)
                     (= test_output nil)
-                     (inc idx)
-                     ;(clog "START TEST:      " idx test.3)
-                     ;(clog "TEST EXPRESSION: " idx (or opts.test_code
-                      ;                                 (as_lisp test.0)))
+                    (inc idx)
+		    (console.log "")
+                     (clog "START TEST:      " idx test.3)
+                     (clog "TEST EXPRESSION: " idx (or opts.test_code
+                                                       (as_lisp test.0)))
                      ;(sleep 0.01)
                      (when (or opts.setup_code test.5)
                        (-> env `evaluate (or opts.setup_code
@@ -128,7 +132,7 @@
 
 (defun report_tests ()
   (progn
-    (defvar results  (run_tests { `quiet_mode: true `fails: true } ))
+    (defvar results  (run_tests { `quiet_mode: false `fails: true } ))
 					;(cc)
     (console.log "")
     (if (== 0 results.length)
