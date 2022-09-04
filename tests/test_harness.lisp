@@ -40,7 +40,7 @@
          (= quiet_mode false)
          (= tests (nth [ test_numbers ] tests))))
        
-      (if false ;quiet_mode
+      (if quiet_mode
 	(= clog (fn ()
 		    true))
 	(= clog (defclog {  `color: "blue" } )))
@@ -53,8 +53,7 @@
                    (do
                     (defvar `result nil)
                     (= test_output nil)
-                    (inc idx)
-		    (console.log "")
+                    (inc idx)		    
                      (clog "START TEST:      " idx test.3)
                      (clog "TEST EXPRESSION: " idx (or opts.test_code
                                                        (as_lisp test.0)))
