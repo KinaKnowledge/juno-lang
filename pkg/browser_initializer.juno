@@ -389,7 +389,8 @@
                                                       `start: left_container.offsetWidth
                                                       `deltaX: 0
                                                       })
-                                      (= e.dataTransfer.dropEffect "move")
+                                      (set_prop e.dataTransfer
+                                                `dropEffect "move")
                                       (set_style [["border-right" "solid 3px #F0F0F0"]] left_container)
                                       (set_style [["opacity" 0 ]] center_divider))))
     (attach_event_listener center_divider
@@ -518,7 +519,7 @@
                                    on_change: (function (editor val)
                                                         (progn
                                                          (when (not is_dirty?)
-                                                           (= is_dirty true)
+                                                           (= is_dirty? true)
                                                            (add_class "juno-needs-save" title_span))
                                                          (when options.on_change
                                                            (-> options.on_change editor val))))
