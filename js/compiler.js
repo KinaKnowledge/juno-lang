@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-05 07:37:15
-// Version: 2022.09.05.07.37
-export const DLISP_ENV_VERSION='2022.09.05.07.37';
+// Build Time: 2022-09-05 08:06:38
+// Version: 2022.09.05.08.06
+export const DLISP_ENV_VERSION='2022.09.05.08.06';
 
 
 
@@ -2504,6 +2504,7 @@ export async function init_compiler(Environment) {
                 let wrap_as_function_ques_;
                 let preamble;
                 let target;
+                let comps;
                 let target_details;
                 let target_location_compile_time;
                 acc=[];
@@ -2528,7 +2529,8 @@ export async function init_compiler(Environment) {
                         }
                     } () 
                 })());
-                target_details=await get_declaration_details(ctx,target);
+                comps=(target).split(".");
+                target_details=await get_declaration_details(ctx,await first(comps));
                 target_location_compile_time=await (async function(){
                      return await async function(){
                         if (check_true ((target_details && target_details["is_argument"]))) {
@@ -2546,6 +2548,10 @@ export async function init_compiler(Environment) {
                 await (await Environment.get_global("compiler_syntax_validation"))("compile_assignment",tokens,errors,ctx,expanded_tree);
                 if (check_true ((undefined===target_details))){
                     throw new ReferenceError(("assignment to undeclared symbol: "+ target));
+                    
+                };
+                if (check_true (((comps && comps.length)>1))){
+                    throw new SyntaxError(("invalid assignment to an object property, use set_prop instead: "+ target));
                     
                 };
                 await unset_ambiguous(ctx,target);

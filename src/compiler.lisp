@@ -1422,14 +1422,15 @@
                                      (`assignment_value nil)
                                      (`assignment_type nil)
                                      (`wrap_as_function? nil)
-                                     (`preamble (calling_preamble ctx))
+                                     (`preamble (calling_preamble ctx))                                     
                                      (`target (sanitize_js_ref_name 
                                               (cond
-                                                token.ref
+                                                token.ref                                                
                                                 token.name
                                                 else
                                                 (throw SyntaxError (+ "assignment: invalid target: " token.name)))))
-                                     (`target_details (get_declaration_details ctx target))
+                                     (`comps (split_by "." target))
+                                     (`target_details (get_declaration_details ctx (first comps)))
                                      (`target_location_compile_time (cond
                                                                       target_details.is_argument
                                                                       "local"
@@ -1444,6 +1445,8 @@
                                   (compiler_syntax_validation `compile_assignment tokens errors ctx expanded_tree)
                                   (if (== undefined target_details)
                                     (throw ReferenceError (+ "assignment to undeclared symbol: " target)))
+                                  (if (> comps.length 1)
+                                    (throw SyntaxError (+ "invalid assignment to an object property, use set_prop instead: " target)))
                                   (unset_ambiguous ctx target)
                                   
                                   (set_prop ctx

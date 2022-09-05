@@ -1933,7 +1933,6 @@
          
          (for_each (childset (pairs included_globals.children))
 	           (do                     
-                     (console.log "installing child symbols: " childset.0)                     
                      (defvar childenv (prop children childset.0))
                      (when (is_object? (prop included_globals `imports))
                        (=  imps (prop included_globals `imports))     
