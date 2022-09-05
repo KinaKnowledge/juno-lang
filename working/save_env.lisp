@@ -3,7 +3,10 @@
 (when (contains? "tests" (namespaces))
   (delete_namespace "tests"))
 (when (not (contains? "io" *env_config*.features))
-  (import "src/io.lisp"))
+  (import "src/base-io.lisp"))
+(when (not (contains? "build-tools" *env_config*.features))
+  (import "src/build-tools.lisp"))
+
 (set_path [ `export `default_namespace ] *env_config* "user")
 (defglobal core/*env_skeleton*  (reader (read_text_file "./src/environment.lisp")))
 

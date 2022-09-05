@@ -1933,8 +1933,7 @@
          
          (for_each (childset (pairs included_globals.children))
 	           (do                     
-                     ;(console.log "installing child symbols: " childset.0)
-                     
+                     (console.log "installing child symbols: " childset.0)                     
                      (defvar childenv (prop children childset.0))
                      (when (is_object? (prop included_globals `imports))
                        (=  imps (prop included_globals `imports))     
@@ -1945,11 +1944,10 @@
                                       (progn
                                        (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
                                                    imp_source.initializer))) ))))
-                     
+                     (debug)
                      (set_prop childset
                                1
                                (-> childenv `eval childset.1))
-                                          
 	             (for_each (symset childset.1)
 			       (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point
@@ -1984,7 +1982,7 @@
        (fn (options)
 	   (reduce (symset (pairs (clone Environment.global_ctx.scope)))
                    (do
-		    (console.log namespace "/" symset.0 "->" symset.1)
+		    ;(console.log namespace "/" symset.0 "->" symset.1)
                     (cond
 		     (and options options.no_compiler
 			  (== symset.0 "compiler"))
@@ -2070,7 +2068,7 @@
                           (= child_env (-> child.1
                                            `compile
                                            (-> child.1 `export_symbol_set { `no_compiler: true })
-                                           { `throw_on_error: true `meta: true }))                        
+                                           { `throw_on_error: true  }))                        
                           [child.0  `(javascript ,#child_env) ])))))
            
                                         ;[(quote let)
