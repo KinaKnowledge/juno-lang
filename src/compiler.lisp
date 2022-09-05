@@ -2571,6 +2571,7 @@
                                     (and (is_object? tokens)
                                          (== tokens.type "arr")
                                          (or (== tokens.val.length 0)
+                                             (== tokens.val.0.type "literal")
                                              (or (== tokens.val.0.type "arg")
                                                  (and (== tokens.val.0.type "special")
                                                       (not (contains? tokens.val.0.name [ "if" "try" "do" "progn" "let" "cond" ]))))))

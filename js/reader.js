@@ -1,7 +1,7 @@
 // Source: reader.lisp  
-// Build Time: 2022-09-04 07:35:55
-// Version: 2022.09.04.07.35
-export const DLISP_ENV_VERSION='2022.09.04.07.35';
+// Build Time: 2022-09-05 06:04:22
+// Version: 2022.09.05.06.04
+export const DLISP_ENV_VERSION='2022.09.05.06.04';
 
 
 
@@ -106,126 +106,118 @@ export async function initializer(Environment) {
                     }
                 })(),await ( async function(){
                     let __obj__1=new Object();
-                    __obj__1["("]=await (async function(){
-                         return [")",async function(block) {
-                            return block
-                        }] 
-                    })();
-                    __obj__1["["]=await (async function(){
-                         return ["]",async function(block) {
-                            return block
-                        }] 
-                    })();
-                    __obj__1["{"]=await (async function(){
-                         return ["}",async function(block) {
-                            let obj;
-                            let __idx__2= async function(){
-                                return -1
-                            };
-                            let key_mode;
-                            let need_colon;
-                            let value_mode;
-                            let key;
-                            let value;
-                            let cpos;
-                            let state;
-                            let block_length;
-                            {
-                                obj=new Object();
-                                let idx=await __idx__2();
-                                ;
-                                key_mode=0;
-                                need_colon=1;
-                                value_mode=2;
-                                key=null;
-                                value=null;
-                                cpos=null;
-                                state=key_mode;
-                                block_length=(await (await Environment.get_global("length"))(block)- 1);
-                                reading_object=false;
-                                await (async function(){
-                                     let __test_condition__3=async function() {
-                                        return (idx<block_length)
-                                    };
-                                    let __body_ref__4=async function() {
-                                        (idx=idx+1);
-                                        key=block[idx];
-                                        if (check_true (((key instanceof Array)&& ((key && key.length)===2)&& ((key && key["0"])==="=:quotem")&& ((key && key["1"]) instanceof String || typeof (key && key["1"])==='string')))){
-                                            {
-                                                key=(key && key["1"])
-                                            }
-                                        };
-                                        if (check_true (((key instanceof String || typeof key==='string')&& await (await Environment.get_global("starts_with?"))("=:",key)&& (await (await Environment.get_global("length"))(key)>2)))){
-                                            key=await key["substr"].call(key,2)
-                                        };
-                                        return await async function(){
-                                            if (check_true (await (await Environment.get_global("blank?"))(key))) {
-                                                return await error("missing object key",("blank or nil key: "+ block[idx]))
-                                            } else if (check_true (await (await Environment.get_global("is_number?"))(key))) {
-                                                {
-                                                    (idx=idx+1);
-                                                    return await async function(){
-                                                        obj[key]=block[idx];
-                                                        return obj;
-                                                        
-                                                    }()
-                                                }
-                                            } else if (check_true (((key instanceof String || typeof key==='string')&& await (await Environment.get_global("contains?"))(":",key)&& await (await Environment.get_global("not"))(await (await Environment.get_global("ends_with?"))(":",key))))) {
-                                                {
-                                                    cpos=await key["indexOf"].call(key,":");
-                                                    value=await key["substr"].call(key,(cpos+ 1));
-                                                    key=await key["substr"].call(key,0,cpos);
-                                                    value=await process_word((value).split(""),0);
-                                                    return await async function(){
-                                                        obj[key]=value;
-                                                        return obj;
-                                                        
-                                                    }()
-                                                }
-                                            } else {
-                                                {
-                                                    (idx=idx+1);
-                                                    if (check_true (await (await Environment.get_global("ends_with?"))(":",key))){
-                                                        key=await (await Environment.get_global("chop"))(key)
-                                                    } else {
-                                                        {
-                                                            if (check_true ((block[idx]===":"))){
-                                                                (idx=idx+1)
-                                                            } else {
-                                                                await error("missing colon",("expected colon for: "+ key))
-                                                            }
-                                                        }
-                                                    };
-                                                    return await async function(){
-                                                        obj[key]=block[idx];
-                                                        return obj;
-                                                        
-                                                    }()
-                                                }
-                                            }
-                                        } ()
-                                    };
-                                    let __BREAK__FLAG__=false;
-                                    while(await __test_condition__3()) {
-                                        await __body_ref__4();
-                                         if(__BREAK__FLAG__) {
-                                             break;
-                                            
+                    __obj__1["("]=[")",async function(block) {
+                        return block
+                    }];
+                    __obj__1["["]=["]",async function(block) {
+                        return block
+                    }];
+                    __obj__1["{"]=["}",async function(block) {
+                        let obj;
+                        let __idx__2= async function(){
+                            return -1
+                        };
+                        let key_mode;
+                        let need_colon;
+                        let value_mode;
+                        let key;
+                        let value;
+                        let cpos;
+                        let state;
+                        let block_length;
+                        {
+                            obj=new Object();
+                            let idx=await __idx__2();
+                            ;
+                            key_mode=0;
+                            need_colon=1;
+                            value_mode=2;
+                            key=null;
+                            value=null;
+                            cpos=null;
+                            state=key_mode;
+                            block_length=(await (await Environment.get_global("length"))(block)- 1);
+                            reading_object=false;
+                            await (async function(){
+                                 let __test_condition__3=async function() {
+                                    return (idx<block_length)
+                                };
+                                let __body_ref__4=async function() {
+                                    (idx=idx+1);
+                                    key=block[idx];
+                                    if (check_true (((key instanceof Array)&& ((key && key.length)===2)&& ((key && key["0"])==="=:quotem")&& ((key && key["1"]) instanceof String || typeof (key && key["1"])==='string')))){
+                                        {
+                                            key=(key && key["1"])
                                         }
-                                    } ;
-                                    
-                                })();
-                                return obj
-                            }
-                        },async function() {
-                            return reading_object=true
-                        }] 
-                    })();
-                    __obj__1["\""]=await (async function(){
-                         return ["\"",async function(block) {
-                            return ["quotes",block]
-                        }] 
-                    })();
+                                    };
+                                    if (check_true (((key instanceof String || typeof key==='string')&& await (await Environment.get_global("starts_with?"))("=:",key)&& (await (await Environment.get_global("length"))(key)>2)))){
+                                        key=await key["substr"].call(key,2)
+                                    };
+                                    return await async function(){
+                                        if (check_true (await (await Environment.get_global("blank?"))(key))) {
+                                            return await error("missing object key",("blank or nil key: "+ block[idx]))
+                                        } else if (check_true (await (await Environment.get_global("is_number?"))(key))) {
+                                            {
+                                                (idx=idx+1);
+                                                return await async function(){
+                                                    obj[key]=block[idx];
+                                                    return obj;
+                                                    
+                                                }()
+                                            }
+                                        } else if (check_true (((key instanceof String || typeof key==='string')&& await (await Environment.get_global("contains?"))(":",key)&& await (await Environment.get_global("not"))(await (await Environment.get_global("ends_with?"))(":",key))))) {
+                                            {
+                                                cpos=await key["indexOf"].call(key,":");
+                                                value=await key["substr"].call(key,(cpos+ 1));
+                                                key=await key["substr"].call(key,0,cpos);
+                                                value=await process_word((value).split(""),0);
+                                                return await async function(){
+                                                    obj[key]=value;
+                                                    return obj;
+                                                    
+                                                }()
+                                            }
+                                        } else {
+                                            {
+                                                (idx=idx+1);
+                                                if (check_true (await (await Environment.get_global("ends_with?"))(":",key))){
+                                                    key=await (await Environment.get_global("chop"))(key)
+                                                } else {
+                                                    {
+                                                        if (check_true ((block[idx]===":"))){
+                                                            (idx=idx+1)
+                                                        } else {
+                                                            await error("missing colon",("expected colon for: "+ key))
+                                                        }
+                                                    }
+                                                };
+                                                return await async function(){
+                                                    obj[key]=block[idx];
+                                                    return obj;
+                                                    
+                                                }()
+                                            }
+                                        }
+                                    } ()
+                                };
+                                let __BREAK__FLAG__=false;
+                                while(await __test_condition__3()) {
+                                    await __body_ref__4();
+                                     if(__BREAK__FLAG__) {
+                                         break;
+                                        
+                                    }
+                                } ;
+                                
+                            })();
+                            return obj
+                        }
+                    },async function() {
+                        return reading_object=true
+                    }];
+                    __obj__1["\""]=["\"",async function(block) {
+                        return ["quotes",block]
+                    }];
                     return __obj__1;
                     
                 })());

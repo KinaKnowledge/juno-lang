@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-04 07:35:55
-// Version: 2022.09.04.07.35
-export const DLISP_ENV_VERSION='2022.09.04.07.35';
+// Build Time: 2022-09-05 06:04:22
+// Version: 2022.09.05.06.04
+export const DLISP_ENV_VERSION='2022.09.05.06.04';
 
 
 
@@ -291,9 +291,7 @@ await Environment.set_global("do_deferred_splice",async function(tree) {
     rval=null;
     idx=0;
     tval=null;
-    deferred_operator=(await (async function(){
-         return ["=","$","&","!"] 
-    })()).join("");
+    deferred_operator=(["=","$","&","!"]).join("");
     return await async function(){
         if (check_true ((tree instanceof Array))) {
             {
@@ -712,11 +710,7 @@ await Environment.set_global("defmacro",async function(name,lambda_list,...forms
 },{
     eval_when:{
         compile_time:true
-    },description:("Defines the provided name as a compile time macro function in the current namespace environment. "+ "The parameters in the lambda list are destructured and bound to the provided names which are then "+ "available in the macro function.  The forms are used as the basis for the function with the final "+ "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "+ "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "+ "if the final argument to defmacro is an object, this will be used for the metadata associated with "+ "with the bound symbol provided as name.<br>Example:<br>"+ " (defmacro unless (condition `& forms)\n    `(if (not ,#condition)\n       (do \n         ,@forms))\n    {\n     `description: \"opposite of if, if the condition is false then the forms are evaluated\"\n     `usage: [\"condition:array\" \"forms:array\"]\n     `tags: [\"if\" \"not\" \"ifnot\" \"logic\" \"conditional\"]\n     }) "+ "<br>"+ "In the above example the macro unless is defined.  Passed arguments must be explicitly "+ "unquoted or an error may be thrown because the arguments condition and forms *may* not be "+ "defined in the final compilation environment.  Note that if the symbols used by the macro "+ "are defined in the final compilation scope, that this may cause unexpected behavior due to "+ "the form being placed into the compilation tree and then acting on those symbols. <br>"+ "Be aware that if a macro being defined returns an object (not an array) you should explicitly "+ "add the final metadata form to explictly ensure appropriate interpretation of the argument "+ "positions.<br><br>"+ "Since a macro is a function that is defined to operate at compile time vs. run time, the "+ "rules of declare apply.  Declaration operate normally and should be the first form in "+ "the block, or if using let, the first form after the allocation block of the let."),usage:await (async function(){
-         return ["name:symbol","lambda_list:array","forms:array","meta?:object"] 
-    })(),tags:await (async function(){
-         return ["macro","define","compile","function"] 
-    })()
+    },description:("Defines the provided name as a compile time macro function in the current namespace environment. "+ "The parameters in the lambda list are destructured and bound to the provided names which are then "+ "available in the macro function.  The forms are used as the basis for the function with the final "+ "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "+ "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "+ "if the final argument to defmacro is an object, this will be used for the metadata associated with "+ "with the bound symbol provided as name.<br>Example:<br>"+ " (defmacro unless (condition `& forms)\n    `(if (not ,#condition)\n       (do \n         ,@forms))\n    {\n     `description: \"opposite of if, if the condition is false then the forms are evaluated\"\n     `usage: [\"condition:array\" \"forms:array\"]\n     `tags: [\"if\" \"not\" \"ifnot\" \"logic\" \"conditional\"]\n     }) "+ "<br>"+ "In the above example the macro unless is defined.  Passed arguments must be explicitly "+ "unquoted or an error may be thrown because the arguments condition and forms *may* not be "+ "defined in the final compilation environment.  Note that if the symbols used by the macro "+ "are defined in the final compilation scope, that this may cause unexpected behavior due to "+ "the form being placed into the compilation tree and then acting on those symbols. <br>"+ "Be aware that if a macro being defined returns an object (not an array) you should explicitly "+ "add the final metadata form to explictly ensure appropriate interpretation of the argument "+ "positions.<br><br>"+ "Since a macro is a function that is defined to operate at compile time vs. run time, the "+ "rules of declare apply.  Declaration operate normally and should be the first form in "+ "the block, or if using let, the first form after the allocation block of the let."),usage:["name:symbol","lambda_list:array","forms:array","meta?:object"],tags:["macro","define","compile","function"]
 });
 await Environment.set_global("defun",async function(name,lambda_list,body,meta) {
     let fn_name;
@@ -1659,11 +1653,7 @@ await Environment.set_global("splice_in_return_a",async function(js_tree,_ctx,_d
         }
     } ()
 },{
-    description:"For use in the compiler.  identifies proper placement of the return keyword in the assembled JS tree.",usage:await (async function(){
-         return ["tree:array"] 
-    })(),tags:await (async function(){
-         return ["compiler","system"] 
-    })()
+    description:"For use in the compiler.  identifies proper placement of the return keyword in the assembled JS tree.",usage:["tree:array"],tags:["compiler","system"]
 });
 await Environment.set_global("splice_in_return_b",async function(js_tree,_ctx,_depth) {
     return await async function(){
@@ -1750,25 +1740,15 @@ await Environment.set_global("color_for_number",async function(num,saturation,br
     let v;
     h=await Math.abs(await parseInt(num));
     pos=(8% h);
-    color_key=await (async function(){
-         return [0,4,1,5,2,6,3,7] 
-    })();
+    color_key=[0,4,1,5,2,6,3,7];
     rgb=null;
     v=color_key[pos];
     ;
     h=await (async function(){
-         return await (await Environment.get_global("map_range"))((360% (28* h)),await (async function(){
-             return [0,360] 
-        })(),await (async function(){
-             return [0,1] 
-        })()) 
+         return await (await Environment.get_global("map_range"))((360% (28* h)),[0,360],[0,1]) 
     })();
     v=await (async function(){
-         return await (await Environment.get_global("map_range"))([v,await (async function(){
-             return [0,7] 
-        })(),await (async function(){
-             return [0.92,1] 
-        })()]) 
+         return await (await Environment.get_global("map_range"))([v,[0,7],[0.92,1]]) 
     })();
     rgb=await (await Environment.get_global("HSV_to_RGB"))(h,saturation,brightness);
     return ("#"+ await (async function() {
@@ -1917,13 +1897,9 @@ await Environment.set_global("use_quoted_initializer",async function(...forms) {
             }()
         };
         return await async function(){
-            if (check_true (((meta instanceof Array)&& (await (await Environment.get_global("resolve_path"))(await (async function(){
-                 return [3,1] 
-            })(),form) instanceof Object)))) {
+            if (check_true (((meta instanceof Array)&& (await (await Environment.get_global("resolve_path"))([3,1],form) instanceof Object)))) {
                 {
-                    await (await Environment.get_global("set_path"))(await (async function(){
-                         return [3,1,"initializer"] 
-                    })(),form,await (async function(){
+                    await (await Environment.get_global("set_path"))([3,1,"initializer"],form,await (async function(){
                          return ["=:quote",(form && form["2"])] 
                     })());
                     return form
@@ -2068,9 +2044,7 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
         let:await (async function(){
              return [[1,"*",0]] 
         })(),defun:await (async function(){
-             return [[1],await (async function(){
-                 return [2,"*"] 
-            })()] 
+             return [[1],[2,"*"]] 
         })()
     };
     uop=null;
@@ -2684,11 +2658,9 @@ await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_
                 let __body_ref__220=async function() {
                     (acc).push((comps).shift());
                     if (check_true (((comps && comps.length)>0))){
-                        return (acc_full).push((await (async function(){
-                             return ["check_true(",await (async function(){
-                                 return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
-                            })(),")"] 
-                        })()).join(""))
+                        return (acc_full).push((["check_true(",await (async function(){
+                             return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
+                        })(),")"]).join(""))
                     } else {
                         return (acc_full).push(await (async function(){
                              return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
@@ -2705,9 +2677,7 @@ await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_
                 } ;
                 
             })();
-            rval=await (await Environment.get_global("flatten"))(await (async function(){
-                 return ["(",(acc_full).join(" && "),")"] 
-            })());
+            rval=await (await Environment.get_global("flatten"))(["(",(acc_full).join(" && "),")"]);
             return rval
         }
     }
@@ -2761,9 +2731,7 @@ await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn
                 } ;
                 
             })();
-            rval=await (await Environment.get_global("flatten"))(await (async function(){
-                 return ["(",(acc_full).join(" && "),")"] 
-            })());
+            rval=await (await Environment.get_global("flatten"))(["(",(acc_full).join(" && "),")"]);
             return rval
         }
     }
@@ -3176,14 +3144,10 @@ await Environment.set_global("sort",async function(elems,options) {
             {
                 keyed=true;
                 key_path_a=await (async function(){
-                     return await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(await (async function(){
-                         return ["aval"] 
-                    })(),(opts && opts["key"]))) 
+                     return await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(["aval"],(opts && opts["key"]))) 
                 })();
                 key_path_b=await (async function(){
-                     return await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(await (async function(){
-                         return ["bval"] 
-                    })(),(opts && opts["key"]))) 
+                     return await (await Environment.get_global("path_to_js_syntax"))(await (await Environment.get_global("conj"))(["bval"],(opts && opts["key"]))) 
                 })()
             }
         }
@@ -3383,11 +3347,7 @@ await Environment.set_global("warn",await (async function(){
         prefix:"⚠️  "
     }) 
 })(),{
-    description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:await (async function(){
-         return ["args0:*","argsN:*"] 
-    })(),tags:await (async function(){
-         return ["log","warning","error","signal","output","notify","defclog"] 
-    })(),initializer:await (async function(){
+    description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"],initializer:await (async function(){
          return ["=:defclog",{ "prefix":"⚠️  "
     }] 
 })()
@@ -3397,11 +3357,7 @@ await Environment.set_global("success",await (async function(){
         color:"green",prefix:"✓  "
     }) 
 })(),{
-    description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:await (async function(){
-         return ["args0:*","argsN:*"] 
-    })(),tags:await (async function(){
-         return ["log","warning","notify","signal","output","ok","success","defclog"] 
-    })(),initializer:await (async function(){
+    description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:await (async function(){
          return ["=:defclog",{ "color":"green","prefix":"✓  "
     }] 
 })()
@@ -3748,16 +3704,12 @@ await Environment.set_global("import",async function(...args) {
 await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
 },{
-    description:("The system date format structure that is used by the system_date_formatter."+ "If modified, the system_date_formatter, which is a Intl.DateTimeFormat object "+ "should be reinitialized by calling (new Intl.DateTimeFormat [] system_date_format)."),tags:await (async function(){
-         return ["time","date","system"] 
-    })()
+    description:("The system date format structure that is used by the system_date_formatter."+ "If modified, the system_date_formatter, which is a Intl.DateTimeFormat object "+ "should be reinitialized by calling (new Intl.DateTimeFormat [] system_date_format)."),tags:["time","date","system"]
 });
 await Environment.set_global("system_date_formatter",new Intl.DateTimeFormat([],(await Environment.get_global("system_date_format"))),{
     initializer:await (async function(){
          return ["=:new","=:Intl.DateTimeFormat",[],(await Environment.get_global("system_date_format"))] 
-    })(),tags:await (async function(){
-         return ["time","date","system"] 
-    })(),description:"The instantiation of the system_date_format.  See system_date_format for additional information."
+    })(),tags:["time","date","system"],description:"The instantiation of the system_date_format.  See system_date_format for additional information."
 });
 await Environment.set_global("tzoffset",async function() {
     return (60* await (async function() {

@@ -1984,6 +1984,7 @@
        (fn (options)
 	   (reduce (symset (pairs (clone Environment.global_ctx.scope)))
                    (do
+		    (console.log namespace "/" symset.0 "->" symset.1)
                     (cond
 		     (and options options.no_compiler
 			  (== symset.0 "compiler"))
@@ -2076,7 +2077,7 @@
                                         ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
                                         ;  [(quote javascript) child_env.1]]])))))
 	   
-	   ;; (console.log "my_children: " my_children)
+	   
            ;; now embed our compiled existing context into the source tree...			    
            (set_path target_insertion_path src
 		     `(fn ()
