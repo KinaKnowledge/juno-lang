@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-06 08:53:12
-// Version: 2022.09.06.08.53
-export const DLISP_ENV_VERSION='2022.09.06.08.53';
+// Build Time: 2022-09-06 11:08:30
+// Version: 2022.09.06.11.08
+export const DLISP_ENV_VERSION='2022.09.06.11.08';
 
 
 
@@ -34,7 +34,7 @@ export async function environment_boot(Environment)  {
     },{
         eval_when:{
             compile_time:true
-        },description:"simple defmacro for bootstrapping and is replaced by the more sophisticated form."
+        },description:"simple defmacro for bootstrapping and is replaced by the more sophisticated form.",requires:["starts_with?","as_lisp"]
     });
     await Environment.set_global("read_lisp",(await Environment.get_global("reader")));
     await Environment.set_global("desym",async function(val) {
@@ -67,7 +67,7 @@ export async function environment_boot(Environment)  {
             }
         } ()
     },{ "eval_when":{ "compile_time":true
-},"name":"desym","macro":true,"fn_args":"(val)","description":"Given a value or arrays of values, return the provided symbol in it's literal, quoted form, e.g. (desym myval) => \"myval\"","usage":["val:string|array"],"tags":["symbol","reference","literal","desymbolize","dereference","deref","desym_ref"]
+},"name":"desym","macro":true,"fn_args":"(val)","description":"Given a value or arrays of values, return the provided symbol in it's literal, quoted form, e.g. (desym myval) => \"myval\"","usage":["val:string|array"],"tags":["symbol","reference","literal","desymbolize","dereference","deref","desym_ref"],"requires":["as_lisp","is_string?","is_array?"]
 });
 await Environment.set_global("desym_ref",async function(val) {
     return ["=:+","",["=:as_lisp",val]]
@@ -91,7 +91,7 @@ await Environment.set_global("if_compile_time_defined",async function(quoted_sym
         return (not_exists_form|| [])
     }
 },{ "eval_when":{ "compile_time":true
-},"name":"if_compile_time_defined","macro":true,"fn_args":"(quoted_symbol exists_form not_exists_form)","description":"If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled.","tags":["compile","defined","global","symbol","reference"],"usage":["quoted_symbol:string","exists_form:*","not_exists_form:*"]
+},"name":"if_compile_time_defined","macro":true,"fn_args":"(quoted_symbol exists_form not_exists_form)","description":"If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled.","tags":["compile","defined","global","symbol","reference"],"usage":["quoted_symbol:string","exists_form:*","not_exists_form:*"],"requires":["describe"]
 });
 await Environment.set_global("defexternal",async function(name,value) {
     return ["=:let",[["=:symname",["=:desym",].concat(name)]],["=:do",["=:set_prop","=:globalThis","=:symname",value],["=:prop","=:globalThis","=:symname"]]]
@@ -119,7 +119,7 @@ await Environment.set_global("defun",async function(name,args,body,meta) {
     })());
     return ["=:do",["=:defglobal",fn_name,["=:fn",fn_args,fn_body],["=:quote",source_details]]]
 },{ "eval_when":{ "compile_time":true
-},"name":"defun","macro":true,"fn_args":"(name args body meta)"
+},"name":"defun","macro":true,"fn_args":"(name args body meta)","requires":["add","unquotify","as_lisp"]
 });
 await Environment.set_global("defun_sync",async function(name,args,body,meta) {
     let fn_name;
@@ -142,7 +142,7 @@ await Environment.set_global("defun_sync",async function(name,args,body,meta) {
     })());
     return ["=:do",["=:defglobal",fn_name,["=:function",fn_args,fn_body],["=:quote",source_details]]]
 },{ "eval_when":{ "compile_time":true
-},"name":"defun_sync","macro":true,"fn_args":"(name args body meta)","description":["=:+","Creates a top level synchronous function as opposed to the default via defun, which creates an asynchronous top level function.","Doesn't support destructuring bind in the lambda list (args). ","Given a name, an argument list, a body and symbol metadata, will establish a top level synchronous function.  If the name is ","fully qualified, the function will be compiled in the current namespace (and it's lexical environment) and placed in the ","specified namespace."],"usage":["name:string","args:array","body:*","meta:object"],"tags":["define","function","synchronous","toplevel"]
+},"name":"defun_sync","macro":true,"fn_args":"(name args body meta)","description":["=:+","Creates a top level synchronous function as opposed to the default via defun, which creates an asynchronous top level function.","Doesn't support destructuring bind in the lambda list (args). ","Given a name, an argument list, a body and symbol metadata, will establish a top level synchronous function.  If the name is ","fully qualified, the function will be compiled in the current namespace (and it's lexical environment) and placed in the ","specified namespace."],"usage":["name:string","args:array","body:*","meta:object"],"tags":["define","function","synchronous","toplevel"],"requires":["add","unquotify","as_lisp"]
 });
 await Environment.set_global("macroexpand",async function(quoted_form) {
     let macro_name;
@@ -170,7 +170,7 @@ await Environment.set_global("macroexpand",async function(quoted_form) {
         }
     })();
     return expansion
-},{ "name":"macroexpand","fn_args":"(quoted_form)","description":"Given a quoted form, will perform the macro expansion and return the expanded form.","usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"]
+},{ "name":"macroexpand","fn_args":"(quoted_form)","description":"Given a quoted form, will perform the macro expansion and return the expanded form.","usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["is_function?","resolve_path"]
 });
 await Environment.set_global("macroexpand_nq",async function(form) {
     let macro_name;
@@ -197,7 +197,7 @@ await Environment.set_global("macroexpand_nq",async function(form) {
     })();
     return ["=:quote",expansion]
 },{ "eval_when":{ "compile_time":true
-},"name":"macroexpand_nq","macro":true,"fn_args":"(form)","description":"[Deprecated] - use macroexpand.  The nq form takes a non quoted form and returns the expansion. Used primarily during early development.","usage":["form:*"],"tags":["macro","deprecated","expansion","debug","compile","compilation"],"deprecated":true
+},"name":"macroexpand_nq","macro":true,"fn_args":"(form)","description":"[Deprecated] - use macroexpand.  The nq form takes a non quoted form and returns the expansion. Used primarily during early development.","usage":["form:*"],"tags":["macro","deprecated","expansion","debug","compile","compilation"],"deprecated":true,"requires":["is_function?"]
 });
 await Environment.set_global("check_type",async function(thing,type_name,error_string) {
     if (check_true (error_string)){
@@ -280,7 +280,7 @@ await Environment.set_global("check_type",async function(thing,type_name,error_s
                 }
             })()
         }
-    },{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"]
+    },{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"],"requires":["split_by","push","join"]
 })
 };
 await Environment.set_global("do_deferred_splice",async function(tree) {
@@ -360,7 +360,7 @@ await Environment.set_global("do_deferred_splice",async function(tree) {
             return tree
         }
     } ()
-},{ "name":"do_deferred_splice","fn_args":"(tree)","description":"Internally used by the compiler to facilitate splice operations on arrays.","usage":["tree:*"],"tags":["compiler","build"]
+},{ "name":"do_deferred_splice","fn_args":"(tree)","description":"Internally used by the compiler to facilitate splice operations on arrays.","usage":["tree:*"],"tags":["compiler","build"],"requires":["join","is_array?","push","is_object?","pairs"]
 });
 await Environment.set_global("define",async function(...defs) {
     let acc;
@@ -404,7 +404,7 @@ await Environment.set_global("define",async function(...defs) {
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"define","macro":true,"fn_args":"(\"&\" defs)","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"]
+},"name":"define","macro":true,"fn_args":"(\"&\" defs)","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["push","as_lisp","is_object?"]
 });
 await Environment.set_global("defbinding",async function(...args) {
     let binding;
@@ -467,7 +467,7 @@ await Environment.set_global("defbinding",async function(...args) {
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"defbinding","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"]
+},"name":"defbinding","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"]
 });
 await Environment.set_global("define_env",async function(...defs) {
     let acc;
@@ -519,7 +519,7 @@ await Environment.set_global("define_env",async function(...defs) {
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"define_env","macro":true,"fn_args":"(\"&\" defs)","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"]
+},"name":"define_env","macro":true,"fn_args":"(\"&\" defs)","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["push","as_lisp","is_object?","add"]
 });
 await Environment.set_global("type",async function(x) {
     return await async function(){
@@ -573,7 +573,7 @@ await Environment.set_global("destructure_list",async function(elems) {
     };
     await follow_tree(structure,[]);
     return acc
-},{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"]
+},{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["is_array?","map","add","is_object?","pairs","push"]
 });
 await Environment.set_global("destructuring_bind",async function(bind_vars,expression,...forms) {
     let binding_vars;
@@ -632,7 +632,7 @@ await Environment.set_global("destructuring_bind",async function(bind_vars,expre
     acc=await (await Environment.get_global("conj"))(acc,forms);
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"]
+},"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["destructure_list","assert","is_array?","is_value?","push","resolve_path","is_object?","join","conj","range","length"]
 });
 {
      Environment.set_global("split_by_recurse",function(token,container) {
@@ -645,7 +645,7 @@ await Environment.set_global("destructuring_bind",async function(bind_vars,expre
                 },container)
             }
         } )()
-    },{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"]
+    },{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"],"requires":["is_string?","split_by","is_array?","map","split_by_recurse"]
 })
 };
 await Environment.set_global("defmacro",async function(name,lambda_list,...forms) {
@@ -710,7 +710,7 @@ await Environment.set_global("defmacro",async function(name,lambda_list,...forms
 },{
     eval_when:{
         compile_time:true
-    },description:("Defines the provided name as a compile time macro function in the current namespace environment. "+ "The parameters in the lambda list are destructured and bound to the provided names which are then "+ "available in the macro function.  The forms are used as the basis for the function with the final "+ "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "+ "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "+ "if the final argument to defmacro is an object, this will be used for the metadata associated with "+ "with the bound symbol provided as name.<br>Example:<br>"+ " (defmacro unless (condition `& forms)\n    `(if (not ,#condition)\n       (do \n         ,@forms))\n    {\n     `description: \"opposite of if, if the condition is false then the forms are evaluated\"\n     `usage: [\"condition:array\" \"forms:array\"]\n     `tags: [\"if\" \"not\" \"ifnot\" \"logic\" \"conditional\"]\n     }) "+ "<br>"+ "In the above example the macro unless is defined.  Passed arguments must be explicitly "+ "unquoted or an error may be thrown because the arguments condition and forms *may* not be "+ "defined in the final compilation environment.  Note that if the symbols used by the macro "+ "are defined in the final compilation scope, that this may cause unexpected behavior due to "+ "the form being placed into the compilation tree and then acting on those symbols. <br>"+ "Be aware that if a macro being defined returns an object (not an array) you should explicitly "+ "add the final metadata form to explictly ensure appropriate interpretation of the argument "+ "positions.<br><br>"+ "Since a macro is a function that is defined to operate at compile time vs. run time, the "+ "rules of declare apply.  Declaration operate normally and should be the first form in "+ "the block, or if using let, the first form after the allocation block of the let."),usage:["name:symbol","lambda_list:array","forms:array","meta?:object"],tags:["macro","define","compile","function"]
+    },description:("Defines the provided name as a compile time macro function in the current namespace environment. "+ "The parameters in the lambda list are destructured and bound to the provided names which are then "+ "available in the macro function.  The forms are used as the basis for the function with the final "+ "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "+ "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "+ "if the final argument to defmacro is an object, this will be used for the metadata associated with "+ "with the bound symbol provided as name.<br>Example:<br>"+ " (defmacro unless (condition `& forms)\n    `(if (not ,#condition)\n       (do \n         ,@forms))\n    {\n     `description: \"opposite of if, if the condition is false then the forms are evaluated\"\n     `usage: [\"condition:array\" \"forms:array\"]\n     `tags: [\"if\" \"not\" \"ifnot\" \"logic\" \"conditional\"]\n     }) "+ "<br>"+ "In the above example the macro unless is defined.  Passed arguments must be explicitly "+ "unquoted or an error may be thrown because the arguments condition and forms *may* not be "+ "defined in the final compilation environment.  Note that if the symbols used by the macro "+ "are defined in the final compilation scope, that this may cause unexpected behavior due to "+ "the form being placed into the compilation tree and then acting on those symbols. <br>"+ "Be aware that if a macro being defined returns an object (not an array) you should explicitly "+ "add the final metadata form to explictly ensure appropriate interpretation of the argument "+ "positions.<br><br>"+ "Since a macro is a function that is defined to operate at compile time vs. run time, the "+ "rules of declare apply.  Declaration operate normally and should be the first form in "+ "the block, or if using let, the first form after the allocation block of the let."),usage:["name:symbol","lambda_list:array","forms:array","meta?:object"],tags:["macro","define","compile","function"],requires:["last","is_object?","not","blank?","pop","or_args","length","flatten","destructure_list","add","starts_with?","as_lisp"]
 });
 await Environment.set_global("defun",async function(name,lambda_list,body,meta) {
     let fn_name;
@@ -769,7 +769,7 @@ await Environment.set_global("defun",async function(name,lambda_list,body,meta) 
         return ["=:defglobal",fn_name,["=:fn",fn_args,fn_body],["=:quote",source_details]]
     }
 },{ "eval_when":{ "compile_time":true
-},"name":"defun","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"]
+},"name":"defun","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"],"requires":["or_args","length","flatten","destructure_list","add","unquotify","as_lisp"]
 });
 await Environment.set_global("reduce",async function(...args) {
     let elem;
@@ -788,10 +788,10 @@ await Environment.set_global("is_nil?",async function(value) {
 });
 await Environment.set_global("is_regex?",async function(x) {
     return (await (await Environment.get_global("sub_type"))(x)==="RegExp")
-},{ "name":"is_regex?","fn_args":"(x)","description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
+},{ "name":"is_regex?","fn_args":"(x)","description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"]
 });
 await Environment.set_global("bind_function",(await Environment.get_global("bind")),{
-    description:"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description."
+    description:"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description.",requires:["bind"]
 });
 await Environment.set_global("is_reference?",async function(val) {
     return ["=:and",["=:is_string?",val],["=:>",["=:length",val],2],["=:starts_with?",["=:quote","=:"],val]]
@@ -858,7 +858,7 @@ await Environment.set_global("scan_str",async function(regex,search_string) {
         
     };
     return totals
-},{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"]
+},{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"],"requires":["is_regex?","not","push","to_object","map","keys"]
 });
 await Environment.set_global("remove_prop",async function(obj,key) {
     if (check_true (await (await Environment.get_global("not"))((undefined===obj[key])))){
@@ -871,7 +871,7 @@ await Environment.set_global("remove_prop",async function(obj,key) {
             }
         }
     }
-},{ "name":"remove_prop","fn_args":"(obj key)","usage":["obj:object","key:*"],"description":["=:+","If the provided key exists, removes the key from the provided object, ","and returns the removed value if the key exists, otherwise returned undefined."],"tags":["object","key","value","mutate","delete_prop","remove"]
+},{ "name":"remove_prop","fn_args":"(obj key)","usage":["obj:object","key:*"],"description":["=:+","If the provided key exists, removes the key from the provided object, ","and returns the removed value if the key exists, otherwise returned undefined."],"tags":["object","key","value","mutate","delete_prop","remove"],"requires":["not","delete_prop"]
 });
 await Environment.set_global("object_methods",async function(obj) {
     let properties;
@@ -906,7 +906,7 @@ await Environment.set_global("object_methods",async function(obj) {
             })
         } 
     })()
-},{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"]
+},{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"]
 });
 await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
     let comps;
@@ -972,7 +972,7 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
             })()))).join("")
         }
     } ()
-},{ "name":"expand_dot_accessor","fn_args":"(val ctx)","description":"Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]","usage":["val:string","ctx:object"],"tags":["compiler","system"]
+},{ "name":"expand_dot_accessor","fn_args":"(val ctx)","description":"Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]","usage":["val:string","ctx:object"],"tags":["compiler","system"],"requires":["split_by","take","is_object?","contains?","object_methods","not","join","conj","flatten","is_number?"]
 });
 await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
     if (check_true ((ctx&& (name instanceof String || typeof name==='string')))){
@@ -1011,7 +1011,7 @@ await Environment.set_global("getf_ctx",async function(ctx,name,_value) {
         throw new Error("invalid call to getf_ctx: missing argument/s");
         
     }
-},{ "name":"getf_ctx","fn_args":"(ctx name _value)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["tree:array","name:string"],"tags":["compiler","system"]
+},{ "name":"getf_ctx","fn_args":"(ctx name _value)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["tree:array","name:string"],"tags":["compiler","system"],"requires":["is_string?","not","getf_ctx"]
 });
 await Environment.set_global("setf_ctx",async function(ctx,name,value) {
     let found_val;
@@ -1027,7 +1027,7 @@ await Environment.set_global("setf_ctx",async function(ctx,name,value) {
         }()
     };
     return value
-},{ "name":"setf_ctx","fn_args":"(ctx name value)","description":"Used for compilation. Given a context structure, provides a utility function for setting a context place with value.","usage":["tree:array","name:string","value:*"],"tags":["compiler","system"]
+},{ "name":"setf_ctx","fn_args":"(ctx name value)","description":"Used for compilation. Given a context structure, provides a utility function for setting a context place with value.","usage":["tree:array","name:string","value:*"],"tags":["compiler","system"],"requires":["getf_ctx"]
 });
 await Environment.set_global("set_path",async function(path,obj,value) {
     let fpath;
@@ -1053,7 +1053,7 @@ await Environment.set_global("set_path",async function(path,obj,value) {
         throw new RangeError(("set_path: invalid path: "+ path));
         
     }
-},{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"]
+},{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"],"requires":["pop","resolve_path"]
 });
 await Environment.set_global("minmax",async function(container) {
     let value_found;
@@ -1100,7 +1100,7 @@ await Environment.set_global("minmax",async function(container) {
     } else {
         return null
     }
-},{ "name":"minmax","fn_args":"(container)","description":["=:+","Given an array container with numeric values, returns an array with smallest ","and largest values in the given array [ min, max ]<br>","(minmax [ 2 0 1 3]) -> [ 0 3 ]"],"usage":["container:array"],"tags":["min","max","array","number","range"]
+},{ "name":"minmax","fn_args":"(container)","description":["=:+","Given an array container with numeric values, returns an array with smallest ","and largest values in the given array [ min, max ]<br>","(minmax [ 2 0 1 3]) -> [ 0 3 ]"],"usage":["container:array"],"tags":["min","max","array","number","range"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"]
 });
 await Environment.set_global("aif",async function(test_expr,eval_when_true,eval_when_false) {
     return ["=:let",[["=:it",test_expr]],["=:if","=:it",eval_when_true,eval_when_false]]
@@ -1113,7 +1113,8 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
 },"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"]
 });
 await Environment.set_global("map_range",async function(n,from_range,to_range) {
-    return await (await Environment.get_global("add"))((to_range && to_range["0"]),(((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
+    ;
+    return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
 },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "]
 });
 await Environment.set_global("range_inc",async function(start,end,step) {
@@ -1122,7 +1123,7 @@ await Environment.set_global("range_inc",async function(start,end,step) {
     } else {
         return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
     }
-},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"]
+},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"]
 });
  Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
 await Environment.set_global("color_for_number",async function(num,saturation,brightness) {
@@ -1160,7 +1161,7 @@ await Environment.set_global("color_for_number",async function(num,saturation,br
             return await __call_target__[__call_method__].call(__call_target__,2,"0")
         } 
     })())
-},{ "name":"color_for_number","fn_args":"(num saturation brightness)","usage":["number:number","saturation:float","brightness:float"],"description":"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string","tags":["ui","color","view"]
+},{ "name":"color_for_number","fn_args":"(num saturation brightness)","usage":["number:number","saturation:float","brightness:float"],"description":"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string","tags":["ui","color","view"],"requires":["map_range","HSV_to_RGB"]
 });
 await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
     let var_table;
@@ -1206,7 +1207,7 @@ await Environment.set_global("flatten_ctx",async function(ctx,_var_table) {
             return var_table
         }
     }
-},{ "name":"flatten_ctx","fn_args":"(ctx _var_table)","description":"Internal usage by the compiler, flattens the hierarchical context structure to a single level. Shadowing rules apply.","usage":["ctx_object:object"],"tags":["system","compiler"]
+},{ "name":"flatten_ctx","fn_args":"(ctx _var_table)","description":"Internal usage by the compiler, flattens the hierarchical context structure to a single level. Shadowing rules apply.","usage":["ctx_object:object"],"tags":["system","compiler"],"requires":["keys","not","contains?","flatten_ctx"]
 });
 await Environment.set_global("identify_symbols",async function(quoted_form,_state) {
     let acc;
@@ -1270,7 +1271,7 @@ await Environment.set_global("identify_symbols",async function(quoted_form,_stat
         }
     } ();
     return ["=:quote",acc]
-},{ "name":"identify_symbols","fn_args":"(quoted_form _state)"
+},{ "name":"identify_symbols","fn_args":"(quoted_form _state)","requires":["is_array?","push","identify_symbols","is_string?","starts_with?","as_lisp","describe","is_object?","values"]
 });
 await Environment.set_global("unless",async function(condition,...forms) {
     return ["=:if",["=:not",condition],["=:do",].concat(forms)]
@@ -1351,7 +1352,7 @@ await Environment.set_global("use_quoted_initializer",async function(...forms) {
          
     })()
 },{ "eval_when":{ "compile_time":true
-},"name":"use_quoted_initializer","macro":true,"fn_args":"(\"&\" forms)","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"]
+},"name":"use_quoted_initializer","macro":true,"fn_args":"(\"&\" forms)","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"]
 });
 await Environment.set_global("random_int",async function(...args) {
     let top;
@@ -1367,7 +1368,7 @@ await Environment.set_global("random_int",async function(...args) {
         top=await parseInt((args && args["0"]))
     };
     return await parseInt(await (await Environment.get_global("add"))((await Math.random()* (top- bottom)),bottom))
-},{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"]
+},{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"]
 });
 await Environment.set_global("resolve_multi_path",async function(path,obj,not_found) {
     return await async function(){
@@ -1421,7 +1422,7 @@ await Environment.set_global("resolve_multi_path",async function(path,obj,not_fo
             return not_found
         }
     } ()
-},{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":"Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list."
+},{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":"Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list.","requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"]
 });
 await Environment.set_global("symbol_tree",async function(quoted_form,_state,_current_path) {
     let acc;
@@ -1637,7 +1638,7 @@ await Environment.set_global("symbol_tree",async function(quoted_form,_state,_cu
             }
         }
     } ()
-},{ "name":"symbol_tree","fn_args":"(quoted_form _state _current_path)","description":"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.","usage":["quoted_form:quote"],"tags":["structure","development","analysis"]
+},{ "name":"symbol_tree","fn_args":"(quoted_form _state _current_path)","description":"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.","usage":["quoted_form:quote"],"tags":["structure","development","analysis"],"requires":["unquotify","resolve_multi_path","is_array?","push","map","symbol_tree","conj","add","is_string?","starts_with?","is_object?","pairs"]
 });
 await Environment.set_global("except_nil",async function(items) {
     let acc=[];
@@ -1664,7 +1665,7 @@ await Environment.set_global("except_nil",async function(items) {
          
     })();
     return acc
-},{ "name":"except_nil","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"]
+},{ "name":"except_nil","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
 });
 await Environment.set_global("each",async function(items,property) {
     return await async function(){
@@ -1837,7 +1838,7 @@ await Environment.set_global("each",async function(items,property) {
             
         }
     } ()
-},{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"]
+},{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"],"requires":["is_string?","is_number?","except_nil","sub_type","is_array?","push","resolve_path","is_function?"]
 });
 await Environment.set_global("replace",async function(...args) {
     if (check_true (((args && args.length)<3))){
@@ -1952,7 +1953,7 @@ await Environment.set_global("replace",async function(...args) {
             }
         }
     }
-},{ "name":"replace","fn_args":"(\"&\" args)","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"]
+},{ "name":"replace","fn_args":"(\"&\" args)","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"]
 });
 await Environment.set_global("cl_encode_string",async function(text) {
     if (check_true ((text instanceof String || typeof text==='string'))){
@@ -1975,7 +1976,7 @@ await Environment.set_global("cl_encode_string",async function(text) {
     } else {
         return text
     }
-},{ "name":"cl_encode_string","fn_args":"(text)"
+},{ "name":"cl_encode_string","fn_args":"(text)","requires":["is_string?","replace","add","split_by","join"]
 });
 await Environment.set_global("path_to_js_syntax",async function(comps) {
     if (check_true ((comps instanceof Array))){
@@ -2004,7 +2005,7 @@ await Environment.set_global("path_to_js_syntax",async function(comps) {
         throw new TypeError(("path_to_js_syntax: need array - given "+ await (await Environment.get_global("sub_type"))(comps)));
         
     }
-},{ "name":"path_to_js_syntax","fn_args":"(comps)","description":"Used by the compiler, converts an array containing the components of a path to Javascript syntax, which is then returned as a string.","usage":["comps:array"],"tags":["compiler","path","js","javascript"]
+},{ "name":"path_to_js_syntax","fn_args":"(comps)","description":"Used by the compiler, converts an array containing the components of a path to Javascript syntax, which is then returned as a string.","usage":["comps:array"],"tags":["compiler","path","js","javascript"],"requires":["is_array?","join","map","int","starts_with?","sub_type"]
 });
 await Environment.set_global("first_is_upper_case?",async function(str_val) {
     let rval=await str_val["match"].call(str_val,new RegExp("^[A-Z]"));
@@ -2074,7 +2075,7 @@ await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_
             return rval
         }
     }
-},{ "name":"safe_access_2","fn_args":"(token ctx sanitizer_fn)"
+},{ "name":"safe_access_2","fn_args":"(token ctx sanitizer_fn)","requires":["split_by","push","take","join","expand_dot_accessor","flatten"]
 });
 await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn) {
     let comps;
@@ -2128,7 +2129,7 @@ await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn
             return rval
         }
     }
-},{ "name":"safe_access","fn_args":"(token ctx sanitizer_fn)"
+},{ "name":"safe_access","fn_args":"(token ctx sanitizer_fn)","requires":["split_by","push","take","expand_dot_accessor","join","flatten"]
 });
 await Environment.set_global("compile_to_js",async function(quoted_form) {
     return ["=:->","=:Environment","compile",quoted_form]
@@ -2199,7 +2200,7 @@ await Environment.set_global("form_structure",async function(quoted_form,max_dep
         } ()
     };
     return await follow_tree(structure,[],0)
-},{ "name":"form_structure","fn_args":"(quoted_form max_depth)","description":["=:+","Given a form and an optional max_depth positive number, ","traverses the passed JSON form and produces a nested array structure that contains","the contents of the form classified as either a \"symbol\", \"number\", \"string\", \"boolean\", \"array\", \"object\", or the elem itself. ","The returned structure will mirror the passed structure in form, except with the leaf contents ","being replaced with generalized categorizations."],"tags":["validation","compilation","structure"],"usage":["quoted_form:*","max_depth:?number"]
+},{ "name":"form_structure","fn_args":"(quoted_form max_depth)","description":["=:+","Given a form and an optional max_depth positive number, ","traverses the passed JSON form and produces a nested array structure that contains","the contents of the form classified as either a \"symbol\", \"number\", \"string\", \"boolean\", \"array\", \"object\", or the elem itself. ","The returned structure will mirror the passed structure in form, except with the leaf contents ","being replaced with generalized categorizations."],"tags":["validation","compilation","structure"],"usage":["quoted_form:*","max_depth:?number"],"requires":["MAX_SAFE_INTEGER","is_array?","is_object?","map","add","pairs","is_string?","starts_with?","is_number?"]
 });
 await Environment.set_global("validate_form_structure",async function(validation_rules,quoted_form) {
     let results;
@@ -2271,7 +2272,7 @@ await Environment.set_global("validate_form_structure",async function(validation
         
     }();
     return results
-},{ "name":"validate_form_structure","fn_args":"(validation_rules quoted_form)","description":["=:+","Given a validation rule structure and a quoted form to analyze returns an object with ","two keys, valid and invalid, which are arrays containing the outcome of the rule ","evaluation, a rule_count key containing the total rules passed, and an all_passed key","which will be set to true if all rules passed, otherwise it will fail.","If the rule evaluates successfully, valid is populated with the rule path, ","otherwise the rule path is placed in the invalid array.<br><br>","Rule structure is as follows:<br><code>","[ [path [validation validation ...] \"rule_name\"] [path [validation ...] \"rule_name\"] ]<br>","</code>","where path is an array with the index path and ","validation is a single argument lambda (fn (v) v) that must either ","return true or false. If true, the validation is considered correct, ","false for incorrect.  The result of the rule application will be put in the valid array, ","otherwise the result will be put in invalid."],"tags":["validation","rules","form","structure"],"usage":["validation_rules:array","quoted_form:*"]
+},{ "name":"validate_form_structure","fn_args":"(validation_rules quoted_form)","description":["=:+","Given a validation rule structure and a quoted form to analyze returns an object with ","two keys, valid and invalid, which are arrays containing the outcome of the rule ","evaluation, a rule_count key containing the total rules passed, and an all_passed key","which will be set to true if all rules passed, otherwise it will fail.","If the rule evaluates successfully, valid is populated with the rule path, ","otherwise the rule path is placed in the invalid array.<br><br>","Rule structure is as follows:<br><code>","[ [path [validation validation ...] \"rule_name\"] [path [validation ...] \"rule_name\"] ]<br>","</code>","where path is an array with the index path and ","validation is a single argument lambda (fn (v) v) that must either ","return true or false. If true, the validation is considered correct, ","false for incorrect.  The result of the rule application will be put in the valid array, ","otherwise the result will be put in invalid."],"tags":["validation","rules","form","structure"],"usage":["validation_rules:array","quoted_form:*"],"requires":["length","is_array?","resolve_path","not","push"]
 });
 await (async function(){
     let __array_op_rval__185=await Environment.set_global("*compiler_syntax_rules*",{
@@ -2298,7 +2299,7 @@ await (async function(){
         initializer:await (async function(){
              return { "compile_let":[[[0,1,"val"],["=:list","=:is_array?"],"let allocation section"],[[0,2],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"let missing block"]],"compile_cond":[[[0],["=:list",["=:fn",["=:v"],["=:==",["=:%",["=:length",["=:rest","=:v"]],2],0]]],"cond: odd number of arguments"]],"compile_assignment":[[[0,1],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"assignment is missing target and values"],[[0,2],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"assignment is missing value"]]
         } 
-    })()
+    })(),requires:["is_array?","not","length","rest"]
 });
  if (__array_op_rval__185 instanceof Function){
     return await __array_op_rval__185() 
@@ -2328,7 +2329,7 @@ await Environment.set_global("compiler_source_chain",async function(cpath,tree,s
             return sources
         }
     }
-},{ "name":"compiler_source_chain","fn_args":"(cpath tree sources)"
+},{ "name":"compiler_source_chain","fn_args":"(cpath tree sources)","requires":["is_array?","chop","as_lisp","resolve_path","add","not","blank?","push","compiler_source_chain"]
 });
 await Environment.set_global("compiler_syntax_validation",async function(validator_key,tokens,errors,ctx,tree) {
     let validation_results;
@@ -2406,7 +2407,7 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
         await console.log("compiler_syntax_validation: no rules for: ",validator_key," -> tokens: ",tokens,"tree: ",tree)
     };
     return validation_results
-},{ "name":"compiler_syntax_validation","fn_args":"(validator_key tokens errors ctx tree)"
+},{ "name":"compiler_syntax_validation","fn_args":"(validator_key tokens errors ctx tree)","requires":["*compiler_syntax_rules*","validate_form_structure","is_array?","chop","is_object?","not","push","getf_ctx","first","compiler_source_chain","rest"]
 });
 await Environment.set_global("describe_all",async function() {
     return await (async function(){
@@ -2445,7 +2446,7 @@ await Environment.set_global("describe_all",async function() {
         })();
         return ( (await Environment.get_global("add"))).apply(this,__apply_args__193)
     })()
-},{ "name":"describe_all","fn_args":"()","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"]
+},{ "name":"describe_all","fn_args":"()","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"],"requires":["add","to_object","describe","symbols"]
 });
 await Environment.set_global("is_value?",async function(val) {
     if (check_true ((val===""))){
@@ -2550,7 +2551,7 @@ await Environment.set_global("sort",async function(elems,options) {
         return  sort_fn_inner(aval,bval,comparitor)
     };
     return await elems["sort"].call(elems,sort_fn)
-},{ "name":"sort","fn_args":"(elems options)","description":["=:+","Given an array of elements, and an optional options object, returns a new sorted array.","With no options provided, the elements are sorted in ascending order.  If the key ","reversed is set to true in options, then the elements are reverse sorted. ","<br>","An optional synchronous function can be provided (defined by the comparitor key) which is expected to take ","two values and return the difference between them as can be used by the sort method of ","JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array ","which will be used to bind (destructure) the a and b values to be compared to nested values in the elements ","of the array.","<br>","<br>","Options:<br>","reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then ","this key cannot be present, as the comparitor should deal with the sorting order.<br>","key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period ","separated values.  If it is an array, each component of the array is a successive path value in the element to be ","sorted. <br>","comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take ","two arguments, and return the difference between the arguments, either a positive or negative."],"usage":["elements:array","options:object?"],"tags":["array","sorting","order","reverse","comparison","objects"]
+},{ "name":"sort","fn_args":"(elems options)","description":["=:+","Given an array of elements, and an optional options object, returns a new sorted array.","With no options provided, the elements are sorted in ascending order.  If the key ","reversed is set to true in options, then the elements are reverse sorted. ","<br>","An optional synchronous function can be provided (defined by the comparitor key) which is expected to take ","two values and return the difference between them as can be used by the sort method of ","JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array ","which will be used to bind (destructure) the a and b values to be compared to nested values in the elements ","of the array.","<br>","<br>","Options:<br>","reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then ","this key cannot be present, as the comparitor should deal with the sorting order.<br>","key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period ","separated values.  If it is an array, each component of the array is a successive path value in the element to be ","sorted. <br>","comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take ","two arguments, and return the difference between the arguments, either a positive or negative."],"usage":["elements:array","options:object?"],"tags":["array","sorting","order","reverse","comparison","objects"],"requires":["is_object?","is_function?","is_string?","assert","is_array?","not","path_to_js_syntax","get_object_path","conj"]
 });
 await Environment.set_global("and*",async function(...vals) {
     if (check_true (((vals && vals.length)>0))){
@@ -2584,7 +2585,7 @@ await Environment.set_global("and*",async function(...vals) {
             return rval
         }
     }
-},{ "name":"and*","fn_args":"(\"&\" vals)","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"]
+},{ "name":"and*","fn_args":"(\"&\" vals)","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["not","is_value?"]
 });
 await Environment.set_global("or*",async function(...vals) {
     if (check_true (((vals && vals.length)>0))){
@@ -2616,7 +2617,7 @@ await Environment.set_global("or*",async function(...vals) {
             return rval
         }
     }
-},{ "name":"or*","fn_args":"(\"&\" vals)","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"]
+},{ "name":"or*","fn_args":"(\"&\" vals)","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["is_value?"]
 });
 await Environment.set_global("either",async function(...args) {
     let rval;
@@ -2644,7 +2645,7 @@ await Environment.set_global("either",async function(...args) {
          
     })();
     return rval
-},{ "name":"either","fn_args":"(\"&\" args)","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"]
+},{ "name":"either","fn_args":"(\"&\" args)","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["not"]
 });
 await Environment.set_global("is_symbol?",async function(symbol_to_find) {
     return ["=:not",["=:or",["=:==",["=:typeof",symbol_to_find],"undefined"],["=:==",["=:->","=:Environment","get_global",symbol_to_find,"=:ReferenceError"],"=:ReferenceError"]]]
@@ -2670,7 +2671,7 @@ await Environment.set_global("get_function_args",async function(f) {
             },((await (await Environment.get_global("second"))((r && r["0"]))|| "")).split(","))
         }
     }
-},{ "name":"get_function_args","fn_args":"(f)","description":"Given a javascript function, return a list of arg names for that function","usage":["function:function"],"tags":["function","introspect","introspection","arguments"]
+},{ "name":"get_function_args","fn_args":"(f)","description":"Given a javascript function, return a list of arg names for that function","usage":["function:function"],"tags":["function","introspect","introspection","arguments"],"requires":["scan_str","is_object?","map","ends_with?","chop","split_by","second"]
 });
 await Environment.set_global("findpaths",async function(value,structure) {
     let acc;
@@ -2733,7 +2734,7 @@ await Environment.set_global("findpaths",async function(value,structure) {
     };
     await search(structure,[]);
     return acc
-},{ "name":"findpaths","fn_args":"(value structure)"
+},{ "name":"findpaths","fn_args":"(value structure)","requires":["is_array?","map","is_object?","conj","push","pairs"]
 });
 await Environment.set_global("warn",await (async function(){
      return await (await Environment.get_global("defclog"))({
@@ -2743,7 +2744,7 @@ await Environment.set_global("warn",await (async function(){
     description:"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","error","signal","output","notify","defclog"],initializer:await (async function(){
          return ["=:defclog",{ "prefix":"⚠️  "
     }] 
-})()
+})(),requires:["defclog"]
 });
 await Environment.set_global("success",await (async function(){
      return await (await Environment.get_global("defclog"))({
@@ -2753,7 +2754,7 @@ await Environment.set_global("success",await (async function(){
     description:"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.",usage:["args0:*","argsN:*"],tags:["log","warning","notify","signal","output","ok","success","defclog"],initializer:await (async function(){
          return ["=:defclog",{ "color":"green","prefix":"✓  "
     }] 
-})()
+})(),requires:["defclog"]
 });
 await Environment.set_global("in_background",async function(...forms) {
     return ["=:new","=:Promise",["=:fn",["=:resolve","=:reject"],["=:progn",["=:resolve",true],].concat(forms)]]
@@ -2773,7 +2774,7 @@ await Environment.set_global("show",async function(thing) {
             return thing
         }
     } ()
-},{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"]
+},{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"]
 });
 await Environment.set_global("export_symbols",async function(...args) {
     let acc;
@@ -2843,7 +2844,7 @@ await Environment.set_global("export_symbols",async function(...args) {
     })();
     return (acc).push("}")
 },{ "eval_when":{ "compile_time":true
-},"name":"export_symbols","macro":true,"fn_args":"(\"&\" args)"
+},"name":"export_symbols","macro":true,"fn_args":"(\"&\" args)","requires":["length","is_array?","push","is_string?","starts_with?"]
 });
 await Environment.set_global("register_feature",async function(feature) {
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(feature,(await Environment.get_global("*env_config*.features")))))){
@@ -2854,7 +2855,7 @@ await Environment.set_global("register_feature",async function(feature) {
     } else {
         return false
     }
-},{ "name":"register_feature","fn_args":"(feature)","description":"Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment.","tags":["environment","modules","libraries","namespaces"],"usage":["feature:string"]
+},{ "name":"register_feature","fn_args":"(feature)","description":"Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment.","tags":["environment","modules","libraries","namespaces"],"usage":["feature:string"],"requires":["not","contains?","*env_config*","push"]
 });
 await Environment.set_global("object_methods",async function(obj) {
     let properties;
@@ -2889,7 +2890,7 @@ await Environment.set_global("object_methods",async function(obj) {
             })
         } 
     })()
-},{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"]
+},{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"]
 });
 await Environment.set_global("uniq",async function(values,handle_complex_types) {
     let s;
@@ -2913,7 +2914,7 @@ await Environment.set_global("uniq",async function(values,handle_complex_types) 
             return await (await Environment.get_global("to_array"))(s)
         }
     }
-},{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"]
+},{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"],"requires":["map","to_array"]
 });
 await Environment.set_global("time_in_millis",async function() {
     return ["=:Date.now"]
@@ -2926,7 +2927,7 @@ await Environment.set_global("defns",async function(name,options) {
     } else {
         return await (await Environment.get_global("create_namespace"))(name,options)
     }
-},{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"]
+},{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"],"requires":["is_string?","contains?","namespaces","create_namespace"]
 });
 await Environment.set_global("use_ns",async function(name) {
     return ["=:set_namespace",["=:desym",name]]
@@ -2944,7 +2945,7 @@ await Environment.set_global("bind_and_call",async function(target_object,this_o
         throw new Error("unable to bind target_object");
         
     }
-},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"]
+},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["bind"]
 });
 await Environment.set_global("document",new Object());
 await Environment.set_global("save_locally",async function(fname,data,content_type) {
@@ -2990,7 +2991,7 @@ await Environment.set_global("save_locally",async function(fname,data,content_ty
     } else {
         return false
     }
-},{ "name":"save_locally","fn_args":"(fname data content_type)","description":["=:+","Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", ","triggers a browser download of the provided data with the filename.  Depending ","on the browser configuration, the data will be saved to the configured ","user download directory, or prompt the user for a save location. "],"usage":["filename:string","data:*","content_type:string"],"tags":["save","download","browser"]
+},{ "name":"save_locally","fn_args":"(fname data content_type)","description":["=:+","Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", ","triggers a browser download of the provided data with the filename.  Depending ","on the browser configuration, the data will be saved to the configured ","user download directory, or prompt the user for a save location. "],"usage":["filename:string","data:*","content_type:string"],"tags":["save","download","browser"],"requires":["document"]
 });
 await (await Environment.get_global("undefine"))("document");
 await Environment.set_global("fetch_text",async function(url) {
@@ -3092,7 +3093,7 @@ await Environment.set_global("import",async function(...args) {
         }
     } ()
 },{ "eval_when":{ "compile_time":true
-},"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"]
+},"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"],"requires":["last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"]
 });
 await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
@@ -3102,7 +3103,7 @@ await Environment.set_global("system_date_format",{
 await Environment.set_global("system_date_formatter",new Intl.DateTimeFormat([],(await Environment.get_global("system_date_format"))),{
     initializer:await (async function(){
          return ["=:new","=:Intl.DateTimeFormat",[],(await Environment.get_global("system_date_format"))] 
-    })(),tags:["time","date","system"],description:"The instantiation of the system_date_format.  See system_date_format for additional information."
+    })(),tags:["time","date","system"],description:"The instantiation of the system_date_format.  See system_date_format for additional information.",requires:["system_date_format"]
 });
 await Environment.set_global("tzoffset",async function() {
     return (60* await (async function() {
@@ -3136,7 +3137,7 @@ await Environment.set_global("date_components",async function(date_value,date_fo
     } else {
         return null
     }
-},{ "name":"date_components","fn_args":"(date_value date_formatter)","usage":["date_value:Date","date_formatter:DateTimeFormat?"],"description":"Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","time","object","component"]
+},{ "name":"date_components","fn_args":"(date_value date_formatter)","usage":["date_value:Date","date_formatter:DateTimeFormat?"],"description":"Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","time","object","component"],"requires":["is_date?","to_object","map","bind_and_call","system_date_formatter"]
 });
 await Environment.set_global("formatted_date",async function(dval,date_formatter) {
     let comps;
@@ -3152,7 +3153,7 @@ await Environment.set_global("formatted_date",async function(dval,date_formatter
     } else {
         return null
     }
-},{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"]
+},{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"],"requires":["date_components","join","values"]
 });
 await Environment.set_global("*LANGUAGE*",new Object());
 await Environment.set_global("dtext",async function(default_text) {
@@ -3162,7 +3163,7 @@ await Environment.set_global("dtext",async function(default_text) {
              return(__targ__228)[default_text]
         } 
     })()|| default_text)
-},{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"]
+},{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"]
 });
 await Environment.set_global("nth",async function(idx,collection) {
     return await async function(){
@@ -3178,7 +3179,7 @@ await Environment.set_global("nth",async function(idx,collection) {
             return collection[idx]
         }
     } ()
-},{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"]
+},{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"]
 });
 await Environment.set_global("use_symbols",async function(namespace,symbol_list,target_namespace) {
     let acc;
@@ -3280,7 +3281,7 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"]
+},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","assert","is_array?","push","current_namespace"]
 });
 await Environment.set_global("use_unique_symbols",async function(namespace) {
     if (check_true ((namespace instanceof String || typeof namespace==='string'))){
@@ -3296,7 +3297,7 @@ await Environment.set_global("use_unique_symbols",async function(namespace) {
         throw new EvalError("provided namespace must be a string");
         
     }
-},{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"]
+},{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","length"]
 });
 return true
 }

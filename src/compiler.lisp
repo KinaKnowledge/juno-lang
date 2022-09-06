@@ -627,7 +627,7 @@
                                                 (not is_literal?)
                                                 ref
                                                 symname 
-                                                (get_lisp_ctx symname)))
+                                                (get_lisp_ctx ctx symname)))
                                   
                                   ;; ok - how are going to represent it's value?
                                   (`val (cond is_literal?
@@ -767,7 +767,7 @@
        ;; used to get or find a lisp global in the environment...
        ;; or an "external" reference, such as a globalThis thing.
        
-       (`get_lisp_ctx (fn (name)
+       (`get_lisp_ctx (fn (ctx name)
                           (if (not (is_string? name))
                               (throw Error "Compiler Error: get_lisp_ctx passed a non string identifier")
                               (let
@@ -784,9 +784,14 @@
 							    global_ref)))))
                                 
                                 (when (and (not (== NOT_FOUND_THING ref_type))
-                                           (not (contains? ref_name standard_types))
+                                           (not (contains? ref_name standard_types)))
                                     (-> referenced_global_symbols
-                                              `add ref_name)))
+                                        `add ref_name)
+                                    (aif (get_ctx ctx `__GLOBALS__)
+                                         (-> it `add ref_name))
+                                    ;(-> (get_ctx ctx `__GLOBALS__)
+                                     ;   `add ref_name)
+                                    )
                                 (when (verbosity root_ctx)
 				  (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
                                 (cond 
@@ -1350,7 +1355,7 @@
                                     local_details)
                                ["typeof" " " (compile tokens.1 ctx)]
                                (and tokens.1.ref
-                                    (get_lisp_ctx tokens.1.name))
+                                    (get_lisp_ctx ctx tokens.1.name))
                                ["typeof" " " (compile tokens.1 ctx)]
                                tokens.1.ref                                    ;; defer any not found errors
                                ["(" "typeof" " " "(" "function" "() { let __tval=" (compile_lisp_scoped_reference tokens.1.name ctx true) "; if (__tval === ReferenceError) return undefined; else return __tval; }" ")()" ")" ]
@@ -2746,7 +2751,7 @@
                                  ((`target_location (cond 
                                                       (get_ctx ctx tokens.1.name)
                                                       "local"
-                                                      (get_lisp_ctx tokens.1.name)
+                                                      (get_lisp_ctx ctx tokens.1.name)
                                                       "global"))
                                   (`target tokens.1.name)                                  
                                   (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
@@ -3211,6 +3216,8 @@
              (let
                  ((`target tokens.1.name)
                   (`wrap_as_function? nil)
+                  (`ctx (new_ctx ctx))
+                  (`global_dependencies nil)
                   (`preamble (calling_preamble ctx))
                   (`acc nil)
                   (`clog (if opts.quiet_mode
@@ -3219,23 +3226,40 @@
                   (`metavalue nil)
                   (`assignment_value nil))
                (declare (string preamble.0))
-               (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly                      
+               (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly
+
+               (set_ctx ctx `__GLOBALS__ (new Set))  ;; reset our globals scope so we capture any dependencies for this global
+               
                ;; setup the reference in the globals as an assumed function type
                (set_prop root_ctx.defined_lisp_globals
                               target
                               AsyncFunction)
+               
+               (= assignment_value
+                  (do 
+                    (compile_wrapper_fn tokens.2 ctx)))
+               
+               (= global_dependencies (to_array (get_ctx ctx `__GLOBALS__)))
+               (debug)
+               (when (> global_dependencies.length 0)                 
+                 (cond
+                   (is_object? tokens.3.val.val.1) ; (resolve_path [ `val `val 1 ] tokens.3))
+                   (set_prop tokens.3.val.val.1
+                             `requires
+                             global_dependencies)
+                   (and (is_array? tokens.3.val)
+                        (== tokens.3.type "objlit"))
+                   (do
+                     (= global_dependencies (tokenize { `requires: global_dependencies } ctx))
+                     (push tokens.3.val
+                         global_dependencies.val.0))))
+               
                (when tokens.3                 
                  (= metavalue
                     (if (is_complex? tokens.3)
                         (compile_wrapper_fn tokens.3 ctx)
                         (compile tokens.3 ctx))))
-               (= assignment_value
-                  (do 
-                   (compile_wrapper_fn tokens.2 ctx)))
-
                
-               ;(= wrap_as_function? (check_needs_wrap assignment_value))
-
                (cond 
                    (and (is_object? assignment_value.0)
                         assignment_value.0.ctype)
@@ -3951,7 +3975,7 @@
                              (let
                                  ((`rtype (get_ctx ctx name)))
                                (if (== undefined rtype)
-                                   (sub_type (get_lisp_ctx name))
+                                   (sub_type (get_lisp_ctx ctx name))
                                    (sub_type rtype)))))
               
        (`compile_scoped_reference
@@ -3970,13 +3994,13 @@
                                 "literal"			
 				(get_ctx_val ctx tokens.0.name)
                                 "local"
-                                (get_lisp_ctx tokens.0.name)
+                                (get_lisp_ctx ctx tokens.0.name)
                                 "lisp"))                  
                   (`token nil))
                (declare (string preamble.0 preamble.1 preamble.2))  
                (cond 
                  (== call_type "lisp")
-                 (= ref_type (get_lisp_ctx tokens.0.name))
+                 (= ref_type (get_lisp_ctx ctx tokens.0.name))
                  (== call_type "local")
                  (= ref_type (get_ctx_val ctx tokens.0.name))
                  else
@@ -4107,7 +4131,7 @@
        (`compile_lisp_scoped_reference
          (fn (refname ctx defer_not_found)
              (let
-                 ((`refval (get_lisp_ctx refname))
+                 ((`refval (get_lisp_ctx ctx refname))
                   (`reftype (sub_type refval))
                   (`declarations nil)                 
                   (`preamble (calling_preamble ctx))
@@ -4139,9 +4163,7 @@
                           (not (== refval undefined)))
                           ;(not (== refval "__!NOT_FOUND!__")))
                  (= refval "text"))  
-                
-                ;(when (verbosity ctx) 
-                 ;     (console.log "compile_lisp_scoped_reference: " refname reftype refval))
+               
                     
                (cond
                  (contains? basename.0 standard_types)   ;; Certain standard types are automatically available everywhere and are not specific to the lisp environment
@@ -4151,8 +4173,7 @@
                  refname ;; it's been placed in source, so don't get the global, use the inlined reference
                  
                  (not (== refval undefined))
-                 ;(contains? basename.0 (keys Environment.context.scope))    
-                      ;(not (== refval "__!NOT_FOUND!__")))
+                
                  (do
                    (= has_lisp_globals true)                                     
                    [{ `ctype: (if (and (not (is_function? refval)) (is_object? refval)) "object" refval) } "(" preamble.0 " " env_ref "get_global" "(\"" refname  "\")" ")"])
@@ -4162,8 +4183,7 @@
                  defer_not_found
                  [ "(" env_ref "get_global" "(\"" refname  "\", ReferenceError)" ")"]
                  else
-                 (do
-                  ;(log "compile_lisp_scoped_reference: ERROR: unknown reference: " refname)
+                 (do                 
                   (throw ReferenceError (+ "unknown lisp reference: " refname)))))))
               
        
@@ -4406,7 +4426,7 @@
                                (== Function (get_ctx ctx tokens.0.name))
                                (== AsyncFunction (get_ctx ctx tokens.0.name))
                                (== "function" (typeof (prop root_ctx.defined_lisp_globals tokens.0.name)))
-                               (is_function? (get_lisp_ctx tokens.0.name))))
+                               (is_function? (get_lisp_ctx ctx tokens.0.name))))
                       (do
                        (= op_token (first tokens))
                        (= operator (prop op_token `name))
@@ -4716,7 +4736,7 @@
                           (contains? tokens.name standard_types)
                           tokens.name
                           ;; check global scope
-                          (not (== undefined (get_lisp_ctx tokens.name)))
+                          (not (== undefined (get_lisp_ctx ctx tokens.name)))
                           (do
 			   (when (verbosity ctx)
 			     (comp_log "compile: singleton: found global: " tokens.name))
@@ -4920,7 +4940,10 @@
                completion_records: []
                is_top: true
 	      })         
-
+    (set_ctx root_ctx
+             `__GLOBALS__
+             (new Set))
+    
     (set_ctx root_ctx
               `__SOURCE_NAME__
               source_name)
@@ -5051,5 +5074,6 @@
                 target_namespace))
     
     (when opts.error_report
-          (opts.error_report { `errors: errors `warnings: warnings}))                         
+      (opts.error_report { `errors: errors `warnings: warnings}))
+
     output))))

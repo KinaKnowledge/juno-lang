@@ -939,14 +939,17 @@
 
 
 (defun map_range (n from_range to_range)
-            (+ to_range.0
-               (* (/ (- n from_range.0)
-                     (- from_range.1 from_range.0))
-                  (- to_range.1 to_range.0)))
-        { `usage: ["n:number" "from_range:array" "to_range:array"]
-          `tags:  ["range" "scale" "conversion"]
-          `description: (+ "Given an initial number n, and two numeric ranges, maps n from the first range " 
-                           "to the second range, returning the value of n as scaled into the second range. ") })
+  (let
+      ()
+    (declare (number to_range.0 to_range.1 from_range.0 from_range.1))
+    (+ to_range.0
+       (* (/ (- n from_range.0)
+             (- from_range.1 from_range.0))
+          (- to_range.1 to_range.0))))
+  { `usage: ["n:number" "from_range:array" "to_range:array"]
+   `tags:  ["range" "scale" "conversion"]
+   `description: (+ "Given an initial number n, and two numeric ranges, maps n from the first range " 
+                    "to the second range, returning the value of n as scaled into the second range. ") })
 
 
 

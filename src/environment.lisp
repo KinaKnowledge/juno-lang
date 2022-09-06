@@ -1435,6 +1435,7 @@
                                           {}))
                                 (compiled nil)
                                 (error_data nil)
+                                (requires nil)
                                 (result nil))
 			     ;;(debug)
                              ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
