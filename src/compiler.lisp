@@ -220,7 +220,7 @@
        ;; inlined to the declaring symbol (since one cannot
        ;; assume that there is a defined environment yet).
                                                 
-       (`referenced_global_symbols {})
+       (`referenced_global_symbols (new Set))
 
        ;; A compilation lexical context is established where we
        ;; can store state about declared varables, compilation states,
@@ -785,9 +785,8 @@
                                 
                                 (when (and (not (== NOT_FOUND_THING ref_type))
                                            (not (contains? ref_name standard_types))
-                                    (set_prop referenced_global_symbols
-                                              ref_name
-                                              ref_type)))
+                                    (-> referenced_global_symbols
+                                              `add ref_name)))
                                 (when (verbosity root_ctx)
 				  (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
                                 (cond 
@@ -896,10 +895,9 @@
 			      (defvar ser nil)
 			      (try
 			       (= ser (JSON.stringify obj))
-			       (catch Error (e)
+			       (catch TypeError (e)
 				      (do
-				       (console.warn "compiler: cannot serialize: ", obj)
-				       (console.error e)
+				       (console.warn "compiler: cannot tokenize: ", obj, e)
 				       (= ser ""))))
 				       
                               (= _path (or _path []))                             
@@ -5041,10 +5039,10 @@
                (do                 
                 [ { `ctype: "FAIL" }  errors])
                (if (is_object? (first assembly))
-                   [(+ { `has_lisp_globals: has_lisp_globals }
+                   [(+ { `has_lisp_globals: has_lisp_globals `requires: (to_array referenced_global_symbols) }
                        (take assembly))
                    (assemble_output assembly)]
-                   [{`has_lisp_globals: has_lisp_globals } (assemble_output assembly)])))))    
+                   [{`has_lisp_globals: has_lisp_globals `requires: (to_array referenced_global_symbols) } (assemble_output assembly)])))))    
     
     (when (and (is_object? (first output))
                target_namespace)

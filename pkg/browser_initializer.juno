@@ -7,6 +7,12 @@
 (defglobal juno_container nil)
 (defglobal repl_editor nil)
 (defglobal *scratch* ";; *scratch* buffer\n\n")
+
+;; $controls is the list of global controls such as editors and views
+;; putting $ as a prefix indicates to the environment that it is not
+;; to be saved as part of the image.  It must be rebuilt on initialization
+;; since it contains live stateful objects.
+
 (defglobal $controls nil)
 
 (defun make_menu (for_element menu_items)
@@ -42,26 +48,29 @@
                                (when item
                                  (item.1 e))
                                (-> view `remove))))
+    (setTimeout
+     (fn ()
+       (progn
+        (attach_event_listener view
+                               `mouseleave
+                               (function (e)
+                                         (progn
+                                          (when disappear_timer
+                                            (clearTimeout disappear_timer))
+                                          (= disappear_timer (setTimeout (fn ()
+                                                                           (progn
+                                                                            (-> view `remove)
+                                                                            (= disappear_timer nil)))
+                                                                         500)))))
+        (attach_event_listener view
+                               `mouseenter
+                               (function (e)
+                                         (when disappear_timer
+                                           (clearTimeout disappear_timer)
+                                           (= disappear_timer nil))))))
+     500)
 
-    (attach_event_listener view
-                           `mouseleave
-                           (function (e)
-                                     (progn
-                                      (when disappear_timer
-                                        (clearTimeout disappear_timer))
-                                      (= disappear_timer (setTimeout (fn ()
-                                                                       (progn
-                                                                        (-> view `remove)
-                                                                        (= disappear_timer nil)))
-                                                                     500)))))
-    (attach_event_listener view
-                           `mouseenter
-                           (function (e)
-                                     (when disappear_timer
-                                       (clearTimeout disappear_timer)
-                                       (= disappear_timer nil))))
-
-    
+                   
                                       
                                       
     
@@ -390,7 +399,7 @@
                                                       `deltaX: 0
                                                       })
                                       (set_prop e.dataTransfer
-                                                `dropEffect "move")
+                                                `dropEffect "none")
                                       (set_style [["border-right" "solid 3px #F0F0F0"]] left_container)
                                       (set_style [["opacity" 0 ]] center_divider))))
     (attach_event_listener center_divider
@@ -461,7 +470,7 @@
     
     (setq view
           (make_menu main_menu_button
-                     [["Save Image" (fn (e) (save_image)) ]
+                     [["Save Environment" (fn (e) (save_image)) ]
                       ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
                       ["Style CSS" (fn (e) (notify "View Site CSS"))]
                       ]))))   
@@ -540,8 +549,8 @@
                                                                
     (console.log "user/*initializer is running." )
    
-    (defglobal main_menu_button (button { `class: "pure-button" `style: "margin-top: -5px" }
-                                             (span { `style: "margin-top: -2px; font-weight: bold;" } "λ")))
+    (defglobal main_menu_button (li  { `class: "juno-menu-header" }
+                                             (span { `class: "juno-menu-item" `style: "" } "File")))
 
     (defglobal resource_loader_button (file_picker_button "" load_files))    
     (set_style [["position" "absolute"]
@@ -556,9 +565,11 @@
     (defglobal $controls [])
       
     (setq header (-> document `querySelector "header"))
-    
-    (-> header `appendChild main_menu_button)
+
     (-> header `appendChild (span { `class: "juno-header" } "Seedling" ))
+    (-> header `appendChild (ul { `class: "pure-menu-list" `style: "margin-left: 10px;" }
+                                main_menu_button))
+    
     ;(-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
 
     (attach_event_listener juno_container `click

@@ -132,7 +132,7 @@
                          (= resize_observer (new ResizeObserver perform_resize))
                          (-> resize_observer `observe juno_container.parentElement)
                          (evaluator (html/div { `style: "display: flex padding: 5px" }                
-                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Browser REPL")
+                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                          "Version: " Environment.build_version   )) true)
                          (evaluator (html/div "Namespace: " (current_namespace)) true)))))))

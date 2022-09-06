@@ -1129,18 +1129,26 @@
               
          (check_external_env_default (if (== namespace "core") true false))
          (*namespace* namespace)
-         (pending_ns_loads {})
+	 ;; handle dependency loads between namespaces
+         (pending_ns_loads {})  ;; object to store dependencies by namespace as they are rehydrated 
          (pend_load (fn (from_namespace target_namespace symbol initializer)
                       (progn                       
                       (when (eq nil (prop pending_ns_loads from_namespace))
                         (set_prop pending_ns_loads from_namespace []))                      
-                      (push (prop pending_ns_loads from_namespace)
+                      (push (prop pending_ns_loads from_namespace) 
                             { `symbol: symbol
                               `source_ns: from_namespace
                               `target_ns: target_namespace
                               `initializer: [(quote quote) initializer]
                             }
-                            ))))
+                            )))
+		    {
+		     `description: (+ "When used as an initializer wrapper via the use_symbols macro, the wrapped "
+                                      "initializer will not be loaded until the from_namespace is loaded to ensure "
+                                      "that the wrapped initializer won't fail due to not yet loaded dependencies.")
+                     `usage: ["from_namespace:string" "target_namespace:string" "symbol:string" "initializer:array"]
+                     `tags: [ `symbol `definitions `namespace `scope `dependency `dependencies `require ]
+		    })
          (load_pends (fn (from_namespace)
                        (when (prop pending_ns_loads from_namespace)
                          (defvar acc [])

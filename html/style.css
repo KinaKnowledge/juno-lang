@@ -1294,7 +1294,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 }
 
 .pure-menu-heading {
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
     color: #565d64;
 }
 
@@ -1323,7 +1323,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 .pure-menu-active > .pure-menu-link,
 .pure-menu-link:hover,
 .pure-menu-link:focus {
-    background-color: #eee;
+    background-color: #dadada;
 }
 
 .pure-menu-selected > .pure-menu-link,
@@ -1487,10 +1487,26 @@ span.juno-needs-save {
   box-shadow: 1px 1px 4px 0px #00000082;
 }
 
+li.juno-menu-header {
+  cursor: default;
+  line-height: 1.8em;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: 4px;
+}
+
+li.juno-menu-header:hover {
+  background: #dadada;
+}
+
+li.juno-menu-header:active {
+  background: #dadada;
+}
+
 .juno-header {
   color: #026783;
   padding: 4px;
-  margin-left: 5px;
+  margin-left: 10px;
   margin-right: 10px;
   font-weight: bold;
   display: inline-block;
@@ -1499,11 +1515,11 @@ span.juno-needs-save {
 
 @keyframes slide-in {
     0% {
-        margin-left:-6px;
+        margin-top:-6px;
         opacity: 0
     }
     100% {
-        margin-left:-0px;
+        margin-top:-0px;
         opacity: 1
     }
 }
