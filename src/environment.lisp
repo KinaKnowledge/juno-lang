@@ -1155,8 +1155,8 @@
                          (setq acc
                                (for_each (`load_instruction (prop pending_ns_loads from_namespace))
                                          `(use_symbols ,#load_instruction.source_ns [ ,#load_instruction.symbol ] ,#load_instruction.target_ns)))
-                                            
-                         (console.log "load_pends: " acc)
+                         (debug)
+                         (console.log "load_pends: " from_namespace "->" acc)
                          (eval acc)
                          true)))
          (symbols (fn (opts)
@@ -2360,7 +2360,7 @@
        (for_each (child children)
                  (progn                                    
                   (-> child `evaluate_local
-                      (+ "(progn (console.log \"child running initialization..\") (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")))))
+                      (+ "(progn (console.log \"child running initialization..\" *namespace*) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")))))
                                     
      
      Environment)))

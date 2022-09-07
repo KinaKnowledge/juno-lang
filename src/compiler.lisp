@@ -3226,6 +3226,13 @@
                   (`metavalue nil)
                   (`assignment_value nil))
                (declare (string preamble.0))
+               
+               (cond
+                 (eq nil tokens.1)
+                 (throw SyntaxError "set global directive missing assignment target and assignment value")                 
+                 (eq nil tokens.2)
+                 (throw SyntaxError "set global directive missing assignment value"))
+               
                (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly
 
                (set_ctx ctx `__GLOBALS__ (new Set))  ;; reset our globals scope so we capture any dependencies for this global
@@ -3243,6 +3250,8 @@
                (debug)
                (when (> global_dependencies.length 0)                 
                  (cond
+                   (eq nil tokens.3)
+                   (push tokens (tokenize { `requires: global_dependencies } ctx))
                    (is_object? tokens.3.val.val.1) ; (resolve_path [ `val `val 1 ] tokens.3))
                    (set_prop tokens.3.val.val.1
                              `requires

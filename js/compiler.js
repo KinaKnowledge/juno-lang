@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-07 08:05:50
-// Version: 2022.09.07.08.05
-export const DLISP_ENV_VERSION='2022.09.07.08.05';
+// Build Time: 2022-09-07 09:05:03
+// Version: 2022.09.07.09.05
+export const DLISP_ENV_VERSION='2022.09.07.09.05';
 
 
 
@@ -5637,6 +5637,15 @@ export async function init_compiler(Environment) {
                 metavalue=null;
                 assignment_value=null;
                 ;
+                await async function(){
+                    if (check_true ((null==(tokens && tokens["1"])))) {
+                        throw new SyntaxError("set global directive missing assignment target and assignment value");
+                        
+                    } else if (check_true ((null==(tokens && tokens["2"])))) {
+                        throw new SyntaxError("set global directive missing assignment value");
+                        
+                    }
+                } ();
                 has_lisp_globals=true;
                 await set_ctx(ctx,"__GLOBALS__",new Set());
                 await async function(){
@@ -5656,8 +5665,12 @@ export async function init_compiler(Environment) {
                 if (check_true (((global_dependencies && global_dependencies.length)>0))){
                     {
                         await async function(){
-                            if (check_true (((tokens && tokens["3"] && tokens["3"]["val"] && tokens["3"]["val"]["val"] && tokens["3"]["val"]["val"]["1"]) instanceof Object))) {
-                                return await async function(){
+                            if (check_true ((null==(tokens && tokens["3"])))) {
+                                return (tokens).push(await tokenize({
+                                    requires:global_dependencies
+                                },ctx))
+                            } else if (check_true (((tokens && tokens["3"] && tokens["3"]["val"] && tokens["3"]["val"]["val"] && tokens["3"]["val"]["val"]["1"]) instanceof Object))) {
+                                await async function(){
                                     let __target_obj__375=(tokens && tokens["3"] && tokens["3"]["val"] && tokens["3"]["val"]["val"] && tokens["3"]["val"]["val"]["1"]);
                                     __target_obj__375["requires"]=global_dependencies;
                                     return __target_obj__375;
