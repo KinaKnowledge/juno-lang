@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-07 07:25:50
-// Version: 2022.09.07.07.25
-export const DLISP_ENV_VERSION='2022.09.07.07.25';
+// Build Time: 2022-09-07 08:05:50
+// Version: 2022.09.07.08.05
+export const DLISP_ENV_VERSION='2022.09.07.08.05';
 
 
 
@@ -3263,7 +3263,7 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
                         }
                     })()) 
                 })()]]]],["=:quotem",["require_ns",nspace]],["eval_when",await (async function(){
-                     return (decs&& decs["eval_when"]) 
+                     return ((decs&& decs["eval_when"])|| new Object()) 
                 })()]]]] 
             })())
         };

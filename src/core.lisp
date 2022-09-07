@@ -2358,7 +2358,7 @@ such as things that connect or use environmental resources.
                           
                            (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))]
 				      `[ `require_ns  ,#nspace ]
-                                       [ `eval_when ,#(and decs (prop decs `eval_when)) ]]                       
+                                       [ `eval_when ,#(or (and decs (prop decs `eval_when)) {}) ]]                       
                                  )))))
     acc)
   {

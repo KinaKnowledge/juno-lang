@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-07 07:25:50
-// Version: 2022.09.07.07.25
-export const DLISP_ENV_VERSION='2022.09.07.07.25';
+// Build Time: 2022-09-07 08:05:50
+// Version: 2022.09.07.08.05
+export const DLISP_ENV_VERSION='2022.09.07.08.05';
 
 
 
@@ -7679,6 +7679,7 @@ export async function init_compiler(Environment) {
                                     (acc).push(":");
                                     await set_ctx(ctx,"__LAMBDA_STEP__",-1);
                                     stmt=await compile_wrapper_fn((kvpair && kvpair["val"] && kvpair["val"]["1"]),ctx);
+                                    await (await Environment.get_global("assert"))(stmt,"compile: obj literal value returned invalid/undefined value.");
                                     (acc).push(stmt);
                                     if (check_true ((idx<total_length))){
                                         {

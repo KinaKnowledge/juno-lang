@@ -4343,7 +4343,8 @@
                            (set_ctx ctx
                                     `__LAMBDA_STEP__
                                     -1)
-                           (= stmt (compile_wrapper_fn kvpair.val.1 ctx))                           
+                           (= stmt (compile_wrapper_fn kvpair.val.1 ctx))
+                           (assert stmt "compile: obj literal value returned invalid/undefined value.")
                            (push acc stmt)                                        
                            (when (< idx total_length)
                              (push acc ","))))

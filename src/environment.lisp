@@ -1957,15 +1957,16 @@
                                       (progn
                                        (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
                                                    imp_source.initializer))) ))))
-                     (debug)
+                     
                      (set_prop childset.1
                                1
                                (-> childenv `eval childset.1.1))
 	             (for_each (symset childset.1.1)
                                (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point
-                                 (set_path [ childset.0 `definitions symset.0 ] children
-                                           (prop imported_defs symset.0))
+                                 (when (prop imported_defs symset.0)
+                                   (set_path [ childset.0 `definitions symset.0 ] children
+                                             (prop imported_defs symset.0)))
                                  ;(console.log childset.0 ": " symset.0 symset.1)                          
 			         (set_path [ childset.0 `context `scope symset.0 ] children					  
 				           symset.1)))))))
