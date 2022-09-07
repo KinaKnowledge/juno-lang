@@ -3247,7 +3247,7 @@
                     (compile_wrapper_fn tokens.2 ctx)))
                
                (= global_dependencies (to_array (get_ctx ctx `__GLOBALS__)))
-               (debug)
+              
                (when (> global_dependencies.length 0)                 
                  (cond
                    (eq nil tokens.3)
