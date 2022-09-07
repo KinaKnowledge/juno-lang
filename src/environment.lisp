@@ -1428,7 +1428,11 @@
                  `description: "The environment logging function used by the environment."
                  `usage: ["arg0:*" "argN:*"]
                  })
-         
+
+       ;; evaluate_local facilitates the evaluation cycle for the specific
+       ;; environment (namespace): compilation, binding, and then calling
+       ;; the bound function.
+       
          (evaluate_local (fn (expression ctx opts)
                            (let
                                ((opts (or opts
@@ -1942,7 +1946,8 @@
          
          (for_each (childset (pairs included_globals.children))
 	           (do                     
-                     (defvar childenv (prop children childset.0))
+                     (defvar childenv (prop children childset.0))                     
+                     (defvar imported_defs childset.1.0)
                      (when (is_object? (prop included_globals `imports))
                        (=  imps (prop included_globals `imports))     
                        (when imps
@@ -1953,13 +1958,14 @@
                                        (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
                                                    imp_source.initializer))) ))))
                      (debug)
-                     (set_prop childset
+                     (set_prop childset.1
                                1
-                               (-> childenv `eval childset.1))
-	             (for_each (symset childset.1)
-			       (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
+                               (-> childenv `eval childset.1.1))
+	             (for_each (symset childset.1.1)
+                               (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point
-                                 
+                                 (set_path [ childset.0 `definitions symset.0 ] children
+                                           (prop imported_defs symset.0))
                                  ;(console.log childset.0 ": " symset.0 symset.1)                          
 			         (set_path [ childset.0 `context `scope symset.0 ] children					  
 				           symset.1)))))))
@@ -2067,7 +2073,7 @@
 	   (= exports (export_symbol_set (if options.do_not_include
                                            { do_not_include: options.do_not_include })))
            
-	  
+	   
 	   (= my_children
 	      (to_object
                (reduce (child (pairs children))
@@ -2077,12 +2083,9 @@
                                            `compile
                                            (-> child.1 `export_symbol_set { `no_compiler: true })
                                            { `throw_on_error: true  }))                        
-                          [child.0  `(javascript ,#child_env) ])))))
+                          [child.0  [ child.1.definitions `(javascript ,#child_env) ]])))))
            
-                                        ;[(quote let)
-                                        ;  [[(quote Environment) [(quote prop) (quote children) child.0]]]
-                                        ;  [(quote javascript) child_env.1]]])))))
-	   
+                                      
 	   
            ;; now embed our compiled existing context into the source tree...			    
            (set_path target_insertion_path src
