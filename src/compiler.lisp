@@ -4433,8 +4433,8 @@
                            tokens.0.ref
                            (not (== (get_ctx ctx tokens.0.name) UnknownType))
                            (or (prop op_lookup tokens.0.name)                               
-                               (== Function (get_ctx ctx tokens.0.name))
-                               (== AsyncFunction (get_ctx ctx tokens.0.name))
+                               (== Function (get_ctx_val ctx tokens.0.name))
+                               (== AsyncFunction (get_ctx_val ctx tokens.0.name))
                                (== "function" (typeof (prop root_ctx.defined_lisp_globals tokens.0.name)))
                                (is_function? (get_lisp_ctx ctx tokens.0.name))))
                       (do

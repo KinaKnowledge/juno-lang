@@ -1525,8 +1525,8 @@
                   (declare (fn callable))
                   (callable 123))))
       (-> testcall `toString)"
-     []
-     "async function(callable) {\\n    ;\\n    return await (callable)(123)\\n}"
+     []     
+     "async function(callable) {\\n    ;\\n    return await callable(123)\\n}"
      "Optimization by using declare - no ambiguity check" 
     ]
     ["(defglobal `testcall 

@@ -491,10 +491,19 @@
 (defmacro destructuring_bind (bind_vars expression `& forms)  
       (let
           ((binding_vars bind_vars)
-           (paths (destructure_list binding_vars))
-           (bound_expression expression)
+           (preamble [])
            (allocations [])
+           (expr_result_var (+ "=:" "_expr_" (random_int 100000)))
+           (paths (destructure_list binding_vars))           
+           (bound_expression (if (and (is_array? expression)
+                                      (starts_with? "=:"  expression.0))
+                               (do
+                                 (push allocations
+                                       `[,#expr_result_var ,#expression])
+                                 expr_result_var)
+                               expression))                                            
            (acc [(quote let)]))
+        
 	(assert (and (is_array? bind_vars)
 		     (is_value? expression)
 		     (is_value? forms))
@@ -503,10 +512,10 @@
              (do 
                  (push allocations 
                     [ (resolve_path (prop paths idx) binding_vars) (cond 
-                                                                      (is_object? expression) 
-                                                                      (resolve_path (prop paths idx) expression)
+                                                                      (is_object? bound_expression) 
+                                                                      (resolve_path (prop paths idx) bound_expression)
                                                                       else
-                                                                      (join "." (conj [ expression ] (prop paths idx)))) ])))
+                                                                      (join "." (conj [ bound_expression ] (prop paths idx)))) ])))
           (push acc
                 allocations)
           (= acc (conj acc
@@ -2384,6 +2393,86 @@ such as things that connect or use environmental resources.
    `usage: ["namespace:string"]
    `tags: [ `namespace `binding `import `use `symbols ]
    })
+
+(defun decomp_symbol (quoted_sym)
+  (let
+      ((comps (split_by "/" quoted_sym)))
+    (if (== comps.length 1)
+	[comps.0 (first (each (meta_for_symbol quoted_sym true) `namespace)) false]
+	[comps.1 comps.0 true])))
+
+
+(defun sort_dependencies ()
+  (let
+      ((ordered [])
+       (ns nil)
+       (symname nil)
+       (ns_marker (function (ns)
+			    (+ "*NS:" ns)))
+       (symbol_marker (function (ns symbol_name)
+			    (+ "" ns ":" symbol_name)))
+       (splice_before (fn (target_name value_to_insert)			  
+			    (let
+				((idx (index_of target_name ordered))
+				 (value_idx (index_of value_to_insert ordered)))
+			      (cond
+			       (and (> value_idx -1)   ;; value is already there
+				    (== value_idx idx)) ;; value and target are at the same index (same thing)
+			       true                    ;; do nothing
+			       
+			       (and (> value_idx -1)   ;; value is already there
+				    (< value_idx idx)) ;; and value is before target 
+			       true                    ;; don't do anything
+			       
+			       (and (> idx -1)         ;; target is found
+				    (== value_idx -1)) ;; dependency value isn't found
+			       (-> ordered `splice idx 0 value_to_insert)  ;; splice dependency before target
+
+			       (and (== idx -1)        ;; target isn't found
+				    (> value_idx -1))  ;; value is already there
+			       (push ordered target_name) ;; just add the target at the end
+			                                
+
+			       (== idx -1)             ;; target isn't found and we know value wouldn't be there because above 
+			       (progn
+				 (push ordered          ;; insert the value depended on
+				       value_to_insert)
+				 (push ordered
+				       target_name))   ;; then the symbol depending on it
+			       
+			       (and (> idx -1)         ;; both the target and
+				    (> value_idx -1)   ;; the value are found
+				    (< idx value_idx)) ;; but the target is before the value
+			       (progn				 
+				 (-> ordered `splice value_idx 1) ;; remove the value which is lower down the list
+				 (-> ordered `splice idx 0 value_to_insert)) ;; splice it in before the target.. move it up
+			       else
+			       (console.log "fall through: target: " target_name "@" idx "  " value_to_insert "@" value_idx)))))
+       (current_pos nil))
+    (for_each (name (conj [ "core" ] ;; core always first 
+			  (reduce (name (namespaces))
+			    (unless (== name "core")
+			      name))))
+      (progn
+        (= ns (-> Environment `get_namespace_handle name))  ;; get the namespace handle       
+	;; loop through the definitions and build the dependency
+        (for_each (`pset (pairs ns.definitions))
+	    (destructuring_bind (symname symdef)
+		pset			     
+		(cond
+		 symdef.requires
+		 (for_each (req symdef.requires)
+		     (destructuring_bind (req_sym req_ns explicit?)
+			(decomp_symbol req)
+			(console.log symname "->" req_sym "->" req_ns (if explicit? "*" ""))
+			(splice_before (symbol_marker name symname) (symbol_marker req_ns req_sym))))
+		 else
+		 (progn
+		   (when (== (index_of (symbol_marker name symname) ordered) -1)
+		     (push ordered
+			   (symbol_marker name symname)))))))))
+		 
+    ordered))
 
 
 true

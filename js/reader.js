@@ -1,7 +1,7 @@
 // Source: reader.lisp  
-// Build Time: 2022-09-07 09:05:03
-// Version: 2022.09.07.09.05
-export const DLISP_ENV_VERSION='2022.09.07.09.05';
+// Build Time: 2022-09-08 06:58:24
+// Version: 2022.09.08.06.58
+export const DLISP_ENV_VERSION='2022.09.08.06.58';
 
 
 
@@ -682,4 +682,6 @@ export async function initializer(Environment) {
             }
         }
     } ()
+},{
+    requires:["not","is_string?","sub_type","length","__VERBOSITY__","split_by","join","slice","add","is_array?","starts_with?","blank?","is_number?","contains?","ends_with?","chop","log","push","last","first","pop","prepend"]
 })} 
