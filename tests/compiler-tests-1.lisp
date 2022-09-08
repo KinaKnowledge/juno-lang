@@ -2381,5 +2381,8 @@
   []
   3
   "Return value from try block"]
-  
+  ["(progn (defun tglobmark () \   (let \       ((is_fa? (fn (v) \                  (== v 1)))) \     (is_fa? 1))) (blank? (prop (describe `tglobmark) `requires)))"
+  []
+  true
+  "ensure symbols with invalid js are not marked as global dependencies by the compiler"]
 ])
