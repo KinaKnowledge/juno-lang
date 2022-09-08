@@ -2366,7 +2366,8 @@ such as things that connect or use environmental resources.
                            ,#(+ "=:" nspace "/" (deref sym))
                           
                            (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))]
-				      `[ `require_ns  ,#nspace ]
+				       `[ `require_ns  ,#nspace ]
+                                       `[ `requires [,#(+ "" nspace "/" (deref sym)) ]]
                                        [ `eval_when ,#(or (and decs (prop decs `eval_when)) {}) ]]                       
                                  )))))
     acc)
@@ -2398,7 +2399,7 @@ such as things that connect or use environmental resources.
   (let
       ((comps (split_by "/" quoted_sym)))
     (if (== comps.length 1)
-	[comps.0 (first (each (meta_for_symbol quoted_sym true) `namespace)) false]
+	[comps.0 (first (each (describe quoted_sym true) `namespace)) false]
 	[comps.1 comps.0 true])))
 
 
@@ -2410,7 +2411,7 @@ such as things that connect or use environmental resources.
        (ns_marker (function (ns)
 			    (+ "*NS:" ns)))
        (symbol_marker (function (ns symbol_name)
-			    (+ "" ns ":" symbol_name)))
+			    (+ "" ns "/" symbol_name)))
        (splice_before (fn (target_name value_to_insert)			  
 			    (let
 				((idx (index_of target_name ordered))
@@ -2462,17 +2463,26 @@ such as things that connect or use environmental resources.
 		(cond
 		 symdef.requires
 		 (for_each (req symdef.requires)
-		     (destructuring_bind (req_sym req_ns explicit?)
+		     (destructuring_bind (req_sym req_ns explicit)
 			(decomp_symbol req)
-			(console.log symname "->" req_sym "->" req_ns (if explicit? "*" ""))
-			(splice_before (symbol_marker name symname) (symbol_marker req_ns req_sym))))
+			(when req_ns                          
+			  (splice_before (symbol_marker name symname) (symbol_marker req_ns req_sym)))))
 		 else
 		 (progn
 		   (when (== (index_of (symbol_marker name symname) ordered) -1)
 		     (push ordered
 			   (symbol_marker name symname)))))))))
-		 
-    ordered))
+    
+    { namespaces: (let
+                      ((`acc []))
+                    (reduce (sym ordered)
+                            (destructuring_bind (sym nspace)
+                                (decomp_symbol sym)
+                                (unless (contains? nspace acc)
+                                   (push acc nspace)
+                                   nspace))))
+      symbols: ordered }))
+
 
 
 true

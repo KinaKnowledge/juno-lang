@@ -35,6 +35,7 @@
 (defun core/*system_initializer* ()
   (let
       ((pkg (-> Environment `evaluate "core/html_package")))
+    (console.log "system initializer: initializing packaged html_package")
     (-> Environment `evaluate pkg)
     (console.log "initializing browser_repl_package")
     (eval (reader (clone browser_repl_package)))

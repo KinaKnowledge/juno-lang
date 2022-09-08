@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-08 06:58:24
-// Version: 2022.09.08.06.58
-export const DLISP_ENV_VERSION='2022.09.08.06.58';
+// Build Time: 2022-09-08 15:07:14
+// Version: 2022.09.08.15.07
+export const DLISP_ENV_VERSION='2022.09.08.15.07';
 
 
 
@@ -3281,7 +3281,17 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
                             return mval
                         }
                     })()) 
-                })()]]]],["=:quotem",["require_ns",nspace]],["eval_when",await (async function(){
+                })()]]]],["=:quotem",["require_ns",nspace]],["=:quotem",["requires",[await (async function(){
+                     return (""+ nspace+ "/"+ await (async function(){
+                        let mval;
+                        mval=sym;
+                        if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
+                            return await mval["substr"].call(mval,2)
+                        } else {
+                            return mval
+                        }
+                    })()) 
+                })()]]],["eval_when",await (async function(){
                      return ((decs&& decs["eval_when"])|| new Object()) 
                 })()]]]] 
             })())
@@ -3327,13 +3337,13 @@ await Environment.set_global("decomp_symbol",async function(quoted_sym) {
              if (__array_op_rval__234 instanceof Function){
                 return await __array_op_rval__234(await (await Environment.get_global("first"))(await (async function(){
                      return await (await Environment.get_global("each"))(await (async function(){
-                         return await (await Environment.get_global("meta_for_symbol"))(quoted_sym,true) 
+                         return await (await Environment.get_global("describe"))(quoted_sym,true) 
                     })(),"namespace") 
                 })()),false) 
             } else {
                 return [__array_op_rval__234,await (await Environment.get_global("first"))(await (async function(){
                      return await (await Environment.get_global("each"))(await (async function(){
-                         return await (await Environment.get_global("meta_for_symbol"))(quoted_sym,true) 
+                         return await (await Environment.get_global("describe"))(quoted_sym,true) 
                     })(),"namespace") 
                 })()),false]
             }
@@ -3348,7 +3358,7 @@ await Environment.set_global("decomp_symbol",async function(quoted_sym) {
             }
         })()
     }
-},{ "name":"decomp_symbol","fn_args":"(quoted_sym)","requires":["split_by","first","each","meta_for_symbol"]
+},{ "name":"decomp_symbol","fn_args":"(quoted_sym)","requires":["split_by","first","each","describe"]
 });
 await Environment.set_global("sort_dependencies",async function() {
     let ordered;
@@ -3365,7 +3375,7 @@ await Environment.set_global("sort_dependencies",async function() {
         return ("*NS:"+ ns)
     };
     symbol_marker=function(ns,symbol_name) {
-        return (""+ ns+ ":"+ symbol_name)
+        return (""+ ns+ "/"+ symbol_name)
     };
     splice_before=async function(target_name,value_to_insert) {
         let idx;
@@ -3416,22 +3426,21 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__247=async function(req) {
                                             {
-                                                let _expr_40493;
+                                                let _expr_26031;
                                                 let req_sym;
                                                 let req_ns;
-                                                let explicit_ques_;
-                                                _expr_40493=await (await Environment.get_global("decomp_symbol"))(req);
-                                                req_sym=(_expr_40493 && _expr_40493["0"]);
-                                                req_ns=(_expr_40493 && _expr_40493["1"]);
-                                                explicit_ques_=(_expr_40493 && _expr_40493["2"]);
-                                                await console.log(symname,"->",req_sym,"->",req_ns,await (async function(){
-                                                    if (check_true (explicit_ques_)){
-                                                        return "*"
-                                                    } else {
-                                                        return ""
+                                                let explicit;
+                                                _expr_26031=await (async function(){
+                                                     return await (await Environment.get_global("decomp_symbol"))(req) 
+                                                })();
+                                                req_sym=(_expr_26031 && _expr_26031["0"]);
+                                                req_ns=(_expr_26031 && _expr_26031["1"]);
+                                                explicit=(_expr_26031 && _expr_26031["2"]);
+                                                if (check_true (req_ns)){
+                                                    {
+                                                        return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
                                                     }
-                                                })());
-                                                return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
+                                                }
                                             }
                                         };
                                         let __array__248=[],__elements__246=(symdef && symdef["requires"]);
@@ -3518,8 +3527,56 @@ await Environment.set_global("sort_dependencies",async function() {
         }return __array__239;
          
     })();
-    return ordered
-},{ "name":"sort_dependencies","fn_args":"()","requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces"]
+    return {
+        namespaces:await (async function(){
+            let acc;
+            acc=[];
+            {
+                let __collector;
+                let __result;
+                let __action;
+                __collector=[];
+                __result=null;
+                __action=async function(sym) {
+                    let _expr_98100;
+                    let nspace;
+                    _expr_98100=await (async function(){
+                         return await (await Environment.get_global("decomp_symbol"))(sym) 
+                    })();
+                    sym=(_expr_98100 && _expr_98100["0"]);
+                    nspace=(_expr_98100 && _expr_98100["1"]);
+                    if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
+                        {
+                            (acc).push(nspace);
+                            return nspace
+                        }
+                    }
+                };
+                ;
+                await (async function() {
+                    let __for_body__255=async function(__item) {
+                        __result=await __action(__item);
+                        if (check_true (__result)){
+                            return (__collector).push(__result)
+                        }
+                    };
+                    let __array__256=[],__elements__254=ordered;
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__253 in __elements__254) {
+                        __array__256.push(await __for_body__255(__elements__254[__iter__253]));
+                        if(__BREAK__FLAG__) {
+                             __array__256.pop();
+                            break;
+                            
+                        }
+                    }return __array__256;
+                     
+                })();
+                return __collector
+            }
+        })(),symbols:ordered
+    }
+},{ "name":"sort_dependencies","fn_args":"()","requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces","contains?"]
 });
 return true
 }

@@ -1154,8 +1154,7 @@
                          (defvar acc [])
                          (setq acc
                                (for_each (`load_instruction (prop pending_ns_loads from_namespace))
-                                         `(use_symbols ,#load_instruction.source_ns [ ,#load_instruction.symbol ] ,#load_instruction.target_ns)))
-                         (debug)
+                                         `(use_symbols ,#load_instruction.source_ns [ ,#load_instruction.symbol ] ,#load_instruction.target_ns)))                         
                          (console.log "load_pends: " from_namespace "->" acc)
                          (eval acc)
                          true)))
@@ -1852,6 +1851,8 @@
      ;; is then used to rehydrate the values on restart
      
      (defvar included_globals nil)
+     (defvar imps nil)
+     (defvar rehydrated_children false)
      
      (when (and included_globals
 		(== namespace "core"))
@@ -1883,7 +1884,7 @@
        ;; bind any static imports for the core namespace
        ;; that may be needed as dependencies
 
-       (defvar imps nil)
+       
        
        (when (is_object? (prop included_globals `imports))         
          (= imps (prop included_globals `imports))         
@@ -1931,45 +1932,18 @@
 	 (set_compiler (prop Environment.global_ctx.scope `compiler)))
 
        ;; next for any child namespaces (environments), create them..
-      
+       
        (when (is_object? (prop included_globals `children))
+         (= rehydrated_children true)
          (for_each (childset (pairs included_globals.children))
 	           (do	       
 	             (create_namespace childset.0
 				       (if (prop included_globals.children_declarations childset.0)
 				         (prop included_globals.children_declarations childset.0)
 				         {})
-                                       true)))                  
-
-         ;; once the namespaces are created, set any static imports they have
-         ;; and evaluate the child 
-         
-         (for_each (childset (pairs included_globals.children))
-	           (do                     
-                     (defvar childenv (prop children childset.0))                     
-                     (defvar imported_defs childset.1.0)
-                     (when (is_object? (prop included_globals `imports))
-                       (=  imps (prop included_globals `imports))     
-                       (when imps
-                         (for_each (imp_source (values imps))
-                                   (progn               
-                                    (if (prop children imp_source.namespace)
-                                      (progn
-                                       (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
-                                                   imp_source.initializer))) ))))
-                     
-                     (set_prop childset.1
-                               1
-                               (-> childenv `eval childset.1.1))
-	             (for_each (symset childset.1.1)
-                               (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
-                                 ;; the child env is already compiled at this point
-                                 (when (prop imported_defs symset.0)
-                                   (set_path [ childset.0 `definitions symset.0 ] children
-                                             (prop imported_defs symset.0)))
-                                 ;(console.log childset.0 ": " symset.0 symset.1)                          
-			         (set_path [ childset.0 `context `scope symset.0 ] children					  
-				           symset.1)))))))
+                                       true))))                  
+       )
+       
 
      ;; clone_to_new: an earlier experiment in working with environments...
      ;; may not be required but keeping it for now until analysis can be done.
@@ -2042,6 +2016,8 @@
               (child_env nil)
               (want_buffer (or options.want_buffer false))
               (comp_buffer nil)
+              (sorted_dependencies (sort_dependencies))
+              (child_export_order nil)
 	      (preserve_imports (if (and options
 					 (== options.preserve_imports false))
 					false
@@ -2073,11 +2049,14 @@
 	   (env_log namespace "preserve_imports: " preserve_imports)
 	   (= exports (export_symbol_set (if options.do_not_include
                                            { do_not_include: options.do_not_include })))
+           (= child_export_order (reduce (cname sorted_dependencies.namespaces)
+                                         (unless (== cname "core")
+                                             [cname (prop children cname)])))
+	   (console.log "save_env: child_export_order: " child_export_order)
            
-	   
 	   (= my_children
 	      (to_object
-               (reduce (child (pairs children))
+               (reduce (child child_export_order)
                        (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
                          (progn
                           (= child_env (-> child.1
@@ -2116,6 +2095,7 @@
 					     {}) ]
                             [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
 			    [ `children_declarations `(fn () ,#(clone children_declarations)) ]
+                            [ `child_load_order (each child_export_order `0) ]
                             [ `children    my_children ]])))
 
            
@@ -2349,7 +2329,41 @@
         ;; call the system initializer
        (when sys_init
          (eval sys_init))
-     
+
+       ;; once the namespaces are created, set any static imports they have
+       ;; and evaluate the child
+       (when (and rehydrated_children
+                  (is_object? (prop included_globals `children)))
+         (console.log "env: child load order: " included_globals.child_load_order)
+         (for_each (childname (or included_globals.child_load_order []))
+	           (when (prop included_globals.children childname)
+                     (console.log "env: loading child: " childname)                     
+                     (defvar childset [ childname (prop included_globals.children childname) ])
+                     (defvar childenv (prop children childset.0))                     
+                     (defvar imported_defs childset.1.0)
+                     (when (is_object? (prop included_globals `imports))
+                       (=  imps (prop included_globals `imports))     
+                       (when imps
+                         (for_each (imp_source (values imps))
+                                   (progn               
+                                    (if (prop children imp_source.namespace)
+                                      (progn
+                                       (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
+                                                   imp_source.initializer))) ))))
+                     
+                     (set_prop childset.1
+                               1
+                               (-> childenv `eval childset.1.1))
+	             (for_each (symset childset.1.1)
+                               (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
+                                 ;; the child env is already compiled at this point
+                                 (when (prop imported_defs symset.0)
+                                   (set_path [ childset.0 `definitions symset.0 ] children
+                                             (prop imported_defs symset.0)))
+                                 ;(console.log childset.0 ": " symset.0 symset.1)                          
+			         (set_path [ childset.0 `context `scope symset.0 ] children					  
+				           symset.1))))))
+       
      ;; call the user initializer     
        (when init 
          (eval init))
