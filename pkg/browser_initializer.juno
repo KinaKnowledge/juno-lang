@@ -69,11 +69,6 @@
                                            (clearTimeout disappear_timer)
                                            (= disappear_timer nil))))))
      500)
-
-                   
-                                      
-                                      
-    
     (-> (get_by_id "body") `appendChild view) 
     view))
 
@@ -245,7 +240,7 @@
        (perform_resize (fn ()
                          (when view.parentElement
                           ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
-                          (html/set_style [["width" (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
+                          (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
                                           view)
                           (-> editor `resize)
@@ -362,8 +357,9 @@
                   left_container
                   center_divider
                   right_container))
-       (left_content content_a)      
+       (left_content content_a)       
        (drag_status nil)
+       (is_firefox? (contains? "Firefox" navigator.userAgent))
        (body_element (-> document `querySelector "body"))
        (right_content content_b)
        (split_size_left "50%")
@@ -381,6 +377,7 @@
                                          ["height" (+ "" new_height "px")]] left_container)
                              (set_style [["width" (+ "" (- new_width center 4) "px")]
                                          ["height" (+ "" new_height "px")]] right_container)
+                             (= split_size_left center)
                              (console.log "split_view: performed resize" center)))))
        (initial_style [["display" "inline-block"]
                        [ "width" split_size_left]
@@ -393,35 +390,34 @@
                            `dragstart
                            (function (e)
                                      (progn
-                                      ;(-> e `preventDefault)
+                                     
                                       (= drag_status {
                                                       `start: left_container.offsetWidth
-                                                      `deltaX: 0
+                                                      `deltaX: 0                                                     
                                                       })
-                                      (set_prop e.dataTransfer
-                                                `dropEffect "none")
+                                      (console.log "dragstart" (clone drag_status) e)
+                                     ; (set_prop e.dataTransfer
+                                      ;          `dropEffect "none")
                                       (set_style [["border-right" "solid 3px #F0F0F0"]] left_container)
                                       (set_style [["opacity" 0 ]] center_divider))))
-    (attach_event_listener center_divider
-                           `drag
-                           (function (e)
-                                     (progn
-                                      (-> e `preventDefault)                                    
-                                       (set_prop drag_status
-                                                 `deltaX
-                                                 (+ e.offsetX drag_status.deltaX)
-                                                 `pct
-                                                 (Math.max 5 (Math.min 95  (* 100 (/ (+ drag_status.start drag_status.deltaX) view.offsetWidth)))))                                       
-                                       (set_style [["width" (+ "" (- 100 drag_status.pct)
-                                                               "%") ]] right_container)
-                                       (set_style [["width" (+ "" drag_status.pct  "%") ]] left_container)
-                                       (= split_size_left (+ "" drag_status.pct "%"))
-                                       (set_style [["left" (+ "" left_container.offsetWidth "px") ]] center_divider))))
-    
+
     (attach_event_listener view
                            `dragover
                            (function (e)
-                                     (-> e `preventDefault)))
+                              (progn                                
+                                  (-> e `preventDefault)                                    
+                                  (set_prop drag_status
+                                            `deltaX                                                  
+                                            (- e.x drag_status.start)
+                                            `pct
+                                            (Math.max 5 (Math.min 95  (* 100 (/ (+ drag_status.start drag_status.deltaX) view.offsetWidth)))))                                  
+                                  (set_style [["width" (+ "" (- 100 drag_status.pct)
+                                                          "%") ]] right_container)
+                                  (set_style [["width" (+ "" drag_status.pct  "%") ]] left_container)
+                                  (= split_size_left center_divider.offsetLeft)
+                                  (set_style [["left" (+ "" left_container.offsetWidth "px") ]] center_divider))))
+                                                                                 
+
     (attach_event_listener view
                            `drop
                            (function (e)
@@ -624,8 +620,12 @@
       (setq initial_split
             (split_view_vertical $controls.0
                                  repl))
-      (-> (get_by_id "body") `appendChild initial_split.view)    
+      (-> (get_by_id "body") `appendChild initial_split.view)      
       (-> initial_split `initialize))
+    (when (blank? (prop *env_config*.export `save_prefix))
+      (set_prop *env_config*.export
+                `save_prefix
+                "seedling"))
   (notify (+ "Hello " *namespace* ))
   true))
 

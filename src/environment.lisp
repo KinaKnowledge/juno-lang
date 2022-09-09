@@ -2052,7 +2052,7 @@
            (= child_export_order (reduce (cname sorted_dependencies.namespaces)
                                          (unless (== cname "core")
                                              [cname (prop children cname)])))
-	   (console.log "save_env: child_export_order: " child_export_order)
+	   (console.log "save_env: child_export_order: " (each child_export_order `0))
            
 	   (= my_children
 	      (to_object
@@ -2334,10 +2334,10 @@
        ;; and evaluate the child
        (when (and rehydrated_children
                   (is_object? (prop included_globals `children)))
-         (console.log "env: child load order: " included_globals.child_load_order)
+         ;(console.log "env: child load order: " included_globals.child_load_order)
          (for_each (childname (or included_globals.child_load_order []))
 	           (when (prop included_globals.children childname)
-                     (console.log "env: loading child: " childname)                     
+                     ;(console.log "env: loading child: " childname)                     
                      (defvar childset [ childname (prop included_globals.children childname) ])
                      (defvar childenv (prop children childset.0))                     
                      (defvar imported_defs childset.1.0)

@@ -208,9 +208,10 @@
                           `outerHTML)))               
      (setTimeout (fn ()
                    (do
-                     (save_locally (or options.save_as
-                                      (+ "juno_image-" file_version_tag ".html"))
-                                   (+ "<!DOCTYPE html><html>\n"
+                     (save_locally (or options.save_as                                       
+                                       (+ (or (prop *env_config*.export `save_prefix) "juno_image")
+                                          "-" file_version_tag ".html"))
+                                   (+ "<!DOCTYPE html>\n<html>\n"
                                       scaffold_1
                                       scaffold_2
                                       "</html>")
