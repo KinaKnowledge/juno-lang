@@ -12,7 +12,7 @@
 ;; putting $ as a prefix indicates to the environment that it is not
 ;; to be saved as part of the image.  It must be rebuilt on initialization
 ;; since it contains live stateful objects.
-
+(console.log "browser_initializer running")
 (defglobal $controls nil)
 
 (defun make_menu (for_element menu_items)
@@ -681,7 +681,142 @@
                                    })))
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
     edit_control))
+
+(defun line_reader (options)
+  (let
+      ((entry_area (html/textarea { `style: "font-family: monospace;  height: calc(100% - 20px); width: calc(100% - 10px);" } ))
+       (result nil)
+       (output_container options.output_container)
+       (resize_observer nil)
+       (handle_text_input_events (fn (e)
+                                   (let
+                                       ((lisp_source nil))
+                                   
+                                     (= lisp_source (prop entry_area `value))
+                                     (when (and (== e.key "Enter")
+                                                e.shiftKey)
+                                         (html/handle_event e)
+                                       (console.log "lisp_source: -> " lisp_source)
+                                       (options.evaluator lisp_source)
+                                       (setTimeout (fn () (set_prop entry_area `value "")) 200)
+                                       )))))
+    (html/attach_event_listener entry_area
+                           `keydown
+                           handle_text_input_events)
+    entry_area))
+
+
+;(defun result_view ()
+;  (let
+ ;     ((output_container (html/div {   `style: "font-size: 0.9em; height: 100%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+  ;     (add_result (fn (result command_text)
+   ;                  
+    ;   (interface {}))
+   ; (set_prop interface
+;              view output_container
+ ;             add_result add_result)
+  ;  interface))
+
+(defun browser_repl ()
+  (let
+      ((output_container (html/div {   `style: "font-size: 0.9em; height: 50%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (resize_observer nil)                                                                                            
+       (current_env Environment)
+       (error_state nil)
+       (initialized false)
+       (evaluator (fn (lisp_text no_eval)
+                    (let
+                        ((result nil))
+                      (setq error_state nil)
+                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      
+                      (try
+                        (= result (if no_eval
+                                    lisp_text
+                                    (-> current_env `evaluate lisp_text)))
+                        (catch Error (ex)
+                          (do
+                            (= error_state true)
+                            (= result ex))))
+                      (console.log "<-" result)
+                      (when (not no_eval)                        
+                        (-> output_container
+                            `prepend
+                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                                      (html/code { `style: "font-style: italic; color: darkblue;" }
+                                                 lisp_text))))
+                      (-> output_container
+                          `prepend
+                          (html/div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                                    (cond
+                                      (is_element? result)
+                                      result
+                                      (is_number? result)
+                                      (html/code { `style: " color: green;" }
+                                                 result)
+                                      (or (== true result)
+                                          (== false result))
+                                      (html/code { `style: " color: orange;" }
+                                                 result)
+                                      (is_function? result)
+                                      (html/code { `style: " color: darkblue;" } "Function: "
+                                                 (if result.name result.name "anonymous"))
+                                      
+                                      (and (is_array? result)
+                                           (instanceof result.0 Error))
+                                      (html/pre { `style: " color: darkred;" } "ERROR: "
+                                                (subtype result.0)
+                                                "\n"
+                                                result.0.message)
+                                      (or error_state
+                                          (instanceof result Error))
+                                      (html/pre { `style: " color: darkred;" } "ERROR: "
+                                                (subtype result)
+                                                "\n"
+                                                result.message)
+                                      (and (is_array? result)
+                                           result.0.error)
+                                      (html/pre { `style: " color: darkred;" }                                                 
+                                                (JSON.stringify result nil 3 ))
+                                           
+                                      else
+                                      (html/pre { `style: "" } (JSON.stringify result nil 3 )))))
+                      (set_prop output_container
+                                `scrollTop
+                                output_container.offsetHeight)
+                      result)))
+       (reader (line_reader { `output_container: output_container `evaluator: evaluator}))
+       (input_container (html/div {  `style: "height: calc(50% - 15px); overflow: hidden; " }
+                                  reader))
+       (sview (split_view_horizontal
+                                 output_container
+                                 input_container))
+       (juno_container sview.view)
+       
+       (initialize (fn ()
+                     (progn
+                      (if initialized
+                        (evaluator (div { `style: "display: flex padding: 5px" } "WARNING: REPL already initialized") true)
+                        (progn
+                         (= initialized true)                                                 
+                         (evaluator (html/div { `style: "display: flex padding: 5px" }                
+                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
+                                              (html/span { `style: "display: inline-block; margin-left: 10px;" }
+                                                         "Version: " Environment.build_version   )) true)
+                         (evaluator (html/div "Namespace: " (current_namespace)) true)))))))
     
+    
+    
+    {
+     `view: juno_container
+     `input_container: input_container
+     `initialize: initialize
+     `output_container: output_container
+     `log: (fn (val)
+             (evaluator val true))
+     `evaluate: (fn (lisp_text)
+                  (evaluator lisp_text))
+     }))
+
 
 
 
@@ -689,8 +824,9 @@
   (let
       ((header nil)       
        (scripts (-> (page_header) `querySelectorAll "script[id]"))        
-       (embeds  nil)
-       (initial_split nil))
+       (embeds  nil)       
+       (initial_split nil)
+       (repl_split nil))
                                                                
     (console.log "user/*initializer is running." )
    
@@ -706,8 +842,13 @@
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
 
-    (defglobal juno_container (get_by_id "juno_container"))
+    (defglobal repl (browser_repl))
     (defglobal $controls [])
+    
+    
+    (defglobal juno_container
+      (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
+    
       
     (setq header (-> document `querySelector "header"))
 
@@ -732,9 +873,11 @@
 			      (fn (e)
 				(show_main_menu)))
 
+    (-> (get_by_id "body") `appendChild juno_container)
+    ;(console.log "repl is built")
     ;; make the repl more sophisticated
-    (when (and (is_symbol? `$ace_editor)
-               repl)
+    (when (is_symbol? `$ace_editor)
+      (console.log "building input editor")
       (defglobal repl_editor (ace.edit repl.input_container)
          {
           `serialize_with_image: false
@@ -760,19 +903,23 @@
                                    })
       (-> repl_editor.session `setUseWorker true)
       (-> repl_editor `setShowFoldWidgets true))
-
+    
     (push $controls
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
     
-    (when (is_symbol? `repl)
-      (-> repl.view `remove)      
-      (setq initial_split
-            (split_view_vertical $controls.0
-                                 repl))
-      (-> (get_by_id "body") `appendChild initial_split.view)
-      (console.log "*initializer: calling initial_split: initializer")
-      (debug)
-      (-> initial_split `initialize))
+    
+    ;(-> repl.view `remove)
+    (setq initial_split
+          (split_view_vertical $controls.0
+                               repl))
+
+    (-> juno_container
+        `append initial_split.view)
+      
+      
+    (console.log "*initializer: calling initial_split: initializer")
+    (debug)
+    (-> initial_split `initialize)
     (when (blank? (prop *env_config*.export `save_prefix))
       (set_prop *env_config*.export
                 `save_prefix

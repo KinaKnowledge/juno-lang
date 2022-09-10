@@ -19,34 +19,14 @@
            (range scripts.length)))))
 
 
-(defun line_reader (options)
-  (let
-      ((entry_area (html/textarea { `style: "font-family: monospace;  height: calc(100% - 20px); width: calc(100% - 10px);" } ))
-       (result nil)
-       (output_container options.output_container)
-       (handle_text_input_events (fn (e)
-                                   (let
-                                       ((lisp_source nil))
-                                   
-                                     (= lisp_source (prop entry_area `value))
-                                     (when (and (== e.key "Enter")
-                                                e.shiftKey)
-                                         (html/handle_event e)
-                                       (console.log "lisp_source: -> " lisp_source)
-                                       (options.evaluator lisp_source)
-                                       (setTimeout (fn () (set_prop entry_area `value "")) 200)
-                                       )))))
-    (html/attach_event_listener entry_area
-                           `keydown
-                           handle_text_input_events)
-    entry_area))
+
 
 
 
 (defun browser_repl ()
   (let
       ((body_element (-> document `querySelector "body"))
-       (output_container (html/div { `id: "output-container"  `style: "font-size: 0.9em; height: 80%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (output_container (html/div { `id: "output-container"  `style: "font-size: 0.9em; height: 80%; overflow: scroll;  width: 100%; " } ))
        (resize_observer nil)                                                      
                                         ;(result nil)
        (current_env Environment)
@@ -68,12 +48,12 @@
                       (console.log "<-" result)
                       (when (not no_eval)                        
                         (-> output_container
-                            `prepend
+                            `append
                             (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                       (html/code { `style: "font-style: italic; color: darkblue;" }
                                                  lisp_text))))
                       (-> output_container
-                          `prepend
+                          `append
                           (html/div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                     (cond
                                       (is_element? result)
@@ -112,10 +92,10 @@
                                 `scrollTop
                                 output_container.offsetHeight)
                       result)))
-       (reader (line_reader { `output_container: output_container `evaluator: evaluator}))
-       (input_container (html/div { `id: "input-container" `style: "height: calc(20% - 15px); overflow: hidden; " }
-                                  reader))
-       (juno_container (html/div { `id: "juno_container" `style: "height: inherit; max-height: 100%; overflow: hidden;" }
+       
+       (input_container (html/div {  `style: "height: calc(20% - 15px); overflow: hidden; " }
+                                  ""))
+       (juno_container (html/div { `id: "discard_container" `style: "height: inherit; max-height: 100%; overflow: hidden;" }
                                  output_container
                                  input_container))
        (perform_resize (fn ()
@@ -221,6 +201,18 @@
                      ))
                  100)
    true))
+
+(defun core/*system_initializer* ()
+  (let
+      ((pkg (-> Environment `evaluate "core/html_package")))
+    (console.log "system initializer: initializing packaged html_package")
+    (-> Environment `evaluate pkg)
+    
+    ;(eval (reader (clone browser_repl_package)))
+    (undefine `browser_repl_package)
+    (undefine `rlog)
+    (set_prop globalThis `env Environment) ;; establish a global handle (not necessary but handy for development)
+    (console.log "system initializer Complete")))
 
 (defglobal `repl (core/browser_repl))
 (defun rlog (val)
