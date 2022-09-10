@@ -258,11 +258,14 @@
                                     `exec: (function (editor)
                                                      (let
                                                          ((val nil)
-                                                          (copytext (-> editor `getCopyText)))
+                                                          (copytext (if options.repl_mode
+                                                                      (-> editor `getValue)
+                                                                      (-> editor `getCopyText))))
                                                        (if (blank? copytext)
-                                                         (notify (dtext "Please highlight text to evaluate"))
+                                                         (if (not options.repl_mode)
+                                                           (notify (dtext "Please highlight text to evaluate")))
                                                          (try
-                                                           (options.evaluator val)
+                                                           (options.evaluator copytext)
                                                            (catch Error (e)
                                                              (progn
                                                               (notify (+ (dtext "Unhandled error") ": " e.message ))
@@ -329,6 +332,10 @@
        {
         `view: view
         `editor: editor
+        `set: (fn (text)
+                (-> editor `setValue text))
+        `get: (fn (text)
+                (-> editor `getValue))
         `options: options
         `initialize: (fn ()
                        (when view.parentElement
@@ -337,278 +344,7 @@
                          (initialize_editor)
                          ))
         })))
-
-
-(defun split_view_vertical (content_a content_b options)
-  (let
-      ((center_width 7)
-       (right_margin 5)
-       (center_divider (div { `class: "juno-vertical-dragger"
-                              `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
-       (left_container (div { `class: "juno-view-container" }
-                            (if content_a.view
-                              content_a.view
-                              content_a)))
-       (right_container (div { `class: "juno-view-container" }
-                            (if content_b.view
-                              content_b.view
-                              content_b)))
-       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: col-resize" }))
-       (view (div { `class: "juno-vertical-split-container" `style: "height: calc(100% - 5px); width: 100%;" }
-                  left_container
-                  center_divider
-                  right_container
-                  view_overlay
-                 ))
-       (drag_status nil)       
-       (resize_observer nil)
-       (center_pos nil)
-       (initialized false)
-       (init_timer nil)
-       (perform_resize (fn ()
-                         (when view.parentElement
-                           (let
-                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
-                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                             
-                             (set_style [[ "width" (+ "" new_width "px") ]
-                                         [ "height" (+ "" new_height "px") ]]
-                                        view)
-                             ;; get the center position - set it to the midpoint if we are just initializing
-                             (when (== center_pos nil)
-                               (= center_pos (/ view.offsetWidth 2)))
-                             (when (> center_pos (- new_width 20))
-                               (= center_pos (Math.max 20 (- new_width 20))))
-                             (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
-                                        left_container)
-                             (set_style [["width" (+ "" center_width "px") ]] center_divider)
-                             (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]                                                                            
-                                        right_container)
-                             ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
-                             ))))
-       (init_drag (fn (e)
-                    (when (== drag_status nil)
-                      (= drag_status 1)
-                      (set_style [["width" "100%"]
-                                  ["height" "100%"]] view_overlay)
-                      ;; since our overlay covers the center_divider add a class to indicate activity
-                      ;; on the center divider
-                      (add_class "juno-active-hover" center_divider))))
-       
-       (complete_drag (fn (e)
-                        (progn
-                         (set_style [["width" "0%"]
-                                     ["height" "0%"]] view_overlay)
-                         (remove_class "juno-active-hover" center_divider)
-                         (= drag_status nil)                         
-                         (perform_resize))))
-       (perform_drag (fn (e)
-                       (progn
-                        (-> e `preventDefault)
-                        (when drag_status                          
-                          (if (== e.buttons 0)
-                            (complete_drag)
-                            (progn
-                             (= center_pos (Math.max 20 (Math.min e.offsetX (- view.offsetWidth 20))))))
-                          (perform_resize)))))
-                                                                           
-       (initialize (fn ()
-                     (progn
-                      (when init_timer
-                        (clearInterval init_timer)
-                        (= init_timer nil))
-                      (console.log "split_view_vertical: initialize called: " initialized)
-                      (when (not initialized)                       
-                        (= initialized true)
-                        (-> resize_observer `observe view.parentElement)
-                        (perform_resize)
-                        (console.log "split_view_vertical initialized:" initialized)
-                        (when content_a.initialize
-                          (-> content_a `initialize))
-                        (when content_b.initialize
-                          (-> content_b `initialize)))))))
-
-    ;; set up the events
-    (attach_event_listener view_overlay
-                           `mousemove
-                           (fn (e)
-                             (progn
-                              (handle_event e)
-                              (when drag_status
-                                (perform_drag e)))))
-                             
-    (attach_event_listener view_overlay
-                           `mouseup
-                           (fn (e)
-                             (progn
-                              (handle_event e)                              
-                              (complete_drag))))
-
-    (attach_event_listener center_divider
-                           `mouseup
-                           (fn (e)
-                             (progn
-                              (handle_event e)                              
-                              (complete_drag))))
-    (attach_event_listener center_divider
-                           `mousedown
-                           (fn (e)
-                             (progn                              
-                              (handle_event e)                              
-                              (init_drag e))))
-    (= resize_observer (new ResizeObserver perform_resize))
-    (console.log "split_view_vertical: ready: initialized: " initialized)
-    (when true ;options.auto_initialize
-      (= init_timer (setInterval (fn (e)
-                                   (progn
-                                    (when view.parentElement
-                                      (clearInterval init_timer)
-                                      (= init_timer nil)
-                                      (initialize))))
-                                 250)))                                 
-    {
-     view: view
-     initialize: initialize
-     }))
-                             
-
-(defun split_view_horizontal (content_a content_b options)
-  (let
-      ((center_height 7)
-       (bottom_margin 5)
-       (center_divider (div { `class: "juno-horizontal-dragger"
-                              `style: (+ "cursor: row-resize; width: 100%; height: " center_height "px") }))
-       (top_container (div { `class: "juno-view-container" }
-                            (if content_a.view
-                              content_a.view
-                              content_a)))
-       (bottom_container (div { `class: "juno-view-container" }
-                            (if content_b.view
-                              content_b.view
-                              content_b)))
-       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: row-resize" }))
-       (view (div { `class: "juno-horizontal-split-container" `style: "height: calc(100% - 5px); width: 100%;margin: 0px; padding: 0px;" }
-                  top_container
-                  center_divider
-                  bottom_container
-                  view_overlay
-                 ))
-       (drag_status nil)
-       (initialized false)
-       (resize_observer nil)
-       (center_pos nil)
-       (initialized false)
-       (init_timer nil)
-       (perform_resize (fn ()
-                         (when view.parentElement
-                           (let
-                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
-                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                             
-                             (set_style [[ "width" (+ "" new_width "px") ]
-                                         [ "height" (+ "" new_height "px") ]]
-                                        view)
-                             ;; get the center position - set it to the midpoint if we are just initializing
-                             (when (== center_pos nil)
-                               (= center_pos (/ view.offsetHeight 2)))
-                             (when (> center_pos (- new_height 40))
-                               (= center_pos (Math.max 20 (- new_height 40))))
-                             (set_style [["height" (+ "" center_pos  "px") ]]
-                                        top_container)
-                             (set_style [["height" (+ "" center_height "px") ]] center_divider)
-                             (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]                                         
-                                        bottom_container)
-                             ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
-                             ))))
-       (init_drag (fn (e)
-                    (when (== drag_status nil)
-                      (= drag_status 1)
-                      (set_style [["width" "100%"]
-                                  ["height" "100%"]] view_overlay)
-                      ;; since our overlay covers the center_divider add a class to indicate activity
-                      ;; on the center divider
-                      (add_class "juno-active-hover" center_divider))))
-       
-       (complete_drag (fn (e)
-                        (progn
-                         (set_style [["width" "0%"]
-                                     ["height" "0%"]] view_overlay)
-                         (remove_class "juno-active-hover" center_divider)
-                         (= drag_status nil)
-                         (console.log "adjustment complete")
-                         (perform_resize))))
-       (perform_drag (fn (e)
-                       (progn
-                        (-> e `preventDefault)
-                        (when drag_status
-                          ;(console.log "view_overlay: center_pos: " center_pos "offsetY: " e.offsetY "movementX: " e.movementY)
-                          (if (== e.buttons 0)
-                            (complete_drag)
-                            (progn
-                             (= center_pos (Math.max 20 (Math.min (- e.offsetY center_height 3) (- view.offsetHeight 40))))))
-                          (perform_resize)))))
-                                                                           
-       (initialize (fn ()
-                     (progn
-                      (when init_timer
-                        (clearInterval init_timer)
-                        (= init_timer nil))
-                      (when (not initialized)
-                        (= initialized true)
-                        (-> resize_observer `observe view.parentElement)
-                        (perform_resize)
-                        (console.log "split_view_horizontal initialized: " initialized)
-                        (when content_a.initialize
-                          (-> content_a `initialize))
-                        (when content_b.initialize
-                          (-> content_b `initialize)))))))
-
-    ;; set up the events
-    (attach_event_listener view_overlay
-                           `mousemove
-                           (fn (e)
-                             (progn
-                              (handle_event e)
-                              (when drag_status
-                                (perform_drag e)))))
-                             
-    (attach_event_listener view_overlay
-                           `mouseup
-                           (fn (e)
-                             (progn
-                              (handle_event e)                              
-                              (complete_drag))))
-
-    (attach_event_listener center_divider
-                           `mouseup
-                           (fn (e)
-                             (progn
-                              (handle_event e)                              
-                              (complete_drag))))
-    (attach_event_listener center_divider
-                           `mousedown
-                           (fn (e)
-                             (progn                              
-                              (handle_event e)                              
-                              (init_drag e))))
-    (= resize_observer (new ResizeObserver perform_resize))
-    (console.log "split_view_horizontal: ready: initialized: " initialized)
-    (when true ;options.auto_initialize
-      (= init_timer (setInterval (fn (e)
-                                   (progn
-                                    (when view.parentElement
-                                      (clearInterval init_timer)
-                                      (= init_timer nil)
-                                      (initialize))))
-                                 250)))                                 
-    {
-     view: view
-     initialize: initialize
-     }))
-
-
-                  
-
+               
 (defun show_main_menu ()
   (let
       ((view nil))
@@ -654,7 +390,6 @@
                                       " "
                                       title)
                                    e)))))))
-                                                                        
                      
        (edit_control (make_editor (if (is_string? init_value)
                                     init_value
@@ -682,68 +417,18 @@
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
     edit_control))
 
-(defun line_reader (options)
+
+(defun log_view (options)
   (let
-      ((entry_area (html/textarea { `style: "font-family: monospace;  height: calc(100% - 20px); width: calc(100% - 10px);" } ))
-       (result nil)
-       (output_container options.output_container)
-       (resize_observer nil)
-       (handle_text_input_events (fn (e)
-                                   (let
-                                       ((lisp_source nil))
-                                   
-                                     (= lisp_source (prop entry_area `value))
-                                     (when (and (== e.key "Enter")
-                                                e.shiftKey)
-                                         (html/handle_event e)
-                                       (console.log "lisp_source: -> " lisp_source)
-                                       (options.evaluator lisp_source)
-                                       (setTimeout (fn () (set_prop entry_area `value "")) 200)
-                                       )))))
-    (html/attach_event_listener entry_area
-                           `keydown
-                           handle_text_input_events)
-    entry_area))
-
-
-;(defun result_view ()
-;  (let
- ;     ((output_container (html/div {   `style: "font-size: 0.9em; height: 100%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
-  ;     (add_result (fn (result command_text)
-   ;                  
-    ;   (interface {}))
-   ; (set_prop interface
-;              view output_container
- ;             add_result add_result)
-  ;  interface))
-
-(defun browser_repl ()
-  (let
-      ((output_container (html/div {   `style: "font-size: 0.9em; height: 50%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
-       (resize_observer nil)                                                                                            
-       (current_env Environment)
-       (error_state nil)
-       (initialized false)
-       (evaluator (fn (lisp_text no_eval)
-                    (let
-                        ((result nil))
-                      (setq error_state nil)
-                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      
-                      (try
-                        (= result (if no_eval
-                                    lisp_text
-                                    (-> current_env `evaluate lisp_text)))
-                        (catch Error (ex)
-                          (do
-                            (= error_state true)
-                            (= result ex))))
-                      (console.log "<-" result)
-                      (when (not no_eval)                        
+      ((output_container (html/div {   `style: "font-size: 0.9em; height: 100%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (add_result (fn (result command_text error_state)
+                     (progn
+                      (when (not (eq nil command_text))
                         (-> output_container
                             `prepend
                             (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                       (html/code { `style: "font-style: italic; color: darkblue;" }
-                                                 lisp_text))))
+                                                 command_text))))
                       (-> output_container
                           `prepend
                           (html/div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
@@ -780,16 +465,62 @@
                                            
                                       else
                                       (html/pre { `style: "" } (JSON.stringify result nil 3 )))))
+                      (when (> output_container.children.length (or options.max_entries 100))
+                        (-> (last output_container.children)
+                            `remove))
                       (set_prop output_container
                                 `scrollTop
                                 output_container.offsetHeight)
-                      result)))
-       (reader (line_reader { `output_container: output_container `evaluator: evaluator}))
-       (input_container (html/div {  `style: "height: calc(50% - 15px); overflow: hidden; " }
-                                  reader))
+                      result)))                                                               
+       (interf {}))
+    (set_prop interf
+              `view output_container
+              `append add_result
+              `options options)
+    interf))
+
+(defun browser_repl ()
+  (let
+      ((output_control (log_view))
+       (resize_observer nil)                                                                                            
+       (current_env Environment)
+       (error_state nil)
+       (initialized false)
+       (evaluator (fn (lisp_text no_eval)
+                    (let
+                        ((result nil))
+                      (setq error_state nil)
+                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      
+                      (try
+                        (= result (if no_eval
+                                    lisp_text
+                                    (-> current_env `evaluate lisp_text)))
+                        (catch Error (ex)
+                          (do
+                            (= error_state true)
+                            (= result ex))))
+                      (console.log "<-" result)
+                      (-> output_control `append result lisp_text error_state)
+                      (if (not error_state)
+                        (-> input_container `set "")))))
+                             
+       (input_container (make_editor 
+                                   ""                                  
+                                  {
+                                   type: "juno"                                                                                                                             
+                                   on_change: (function (editor val)
+                                                        (progn
+                                                         true))
+                                   repl_mode: true
+                                   evaluator: evaluator
+                                                 
+                                   }))
+       
        (sview (split_view_horizontal
-                                 output_container
-                                 input_container))
+                                 output_control
+                                 input_container
+                                 { `ratio: 0.7 } ))  ;; 80/20 top-bottom
+       
        (juno_container sview.view)
        
        (initialize (fn ()
@@ -798,21 +529,18 @@
                         (evaluator (div { `style: "display: flex padding: 5px" } "WARNING: REPL already initialized") true)
                         (progn
                          (= initialized true)                                                 
-                         (evaluator (html/div { `style: "display: flex padding: 5px" }                
+                         (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
-                                                         "Version: " Environment.build_version   )) true)
-                         (evaluator (html/div "Namespace: " (current_namespace)) true)))))))
-    
-    
-    
+                                                         "Version: " Environment.build_version   )))
+                         (-> output_control `append (html/div "Namespace: " (current_namespace)))))))))
     {
      `view: juno_container
      `input_container: input_container
      `initialize: initialize
-     `output_container: output_container
+     `output_container: output_control.view
      `log: (fn (val)
-             (evaluator val true))
+             (-> output_control `append val))
      `evaluate: (fn (lisp_text)
                   (evaluator lisp_text))
      }))
@@ -876,33 +604,7 @@
     (-> (get_by_id "body") `appendChild juno_container)
     ;(console.log "repl is built")
     ;; make the repl more sophisticated
-    (when (is_symbol? `$ace_editor)
-      (console.log "building input editor")
-      (defglobal repl_editor (ace.edit repl.input_container)
-         {
-          `serialize_with_image: false
-          })
-      (-> repl_editor.commands `addCommand
-          {
-           `name: "execute"
-           `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
-           `exec: (function (editor)
-                            (let
-                                ((val (-> editor `getValue)))
-                              (-> repl `evaluate val)
-                              (-> editor `setValue "", -1)))
-                                 
-           })
-      (-> repl_editor.session `setUseSoftTabs true)
-      (-> repl_editor.session `setMode "ace/mode/juno")
-            
-      (-> repl_editor `setOptions {
-                                   `enableBasicAutocompletion: true
-                                   `enableLiveAutocompletion: true
-                                   `showFoldWidgets: true
-                                   })
-      (-> repl_editor.session `setUseWorker true)
-      (-> repl_editor `setShowFoldWidgets true))
+    
     
     (push $controls
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))

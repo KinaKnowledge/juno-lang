@@ -444,7 +444,289 @@
                (-> reader `readAsBinaryString file)
                (== read_as "dataURL")
                (-> reader `readAsDataURL file))))))
-                   
+
+(defun split_view_vertical (content_a content_b options)
+  (let
+      ((center_width 7)
+       (right_margin 5)
+       (center_divider (div { `class: "juno-vertical-dragger"
+                              `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
+       (left_container (div { `class: "juno-view-container" }
+                            (if content_a.view
+                              content_a.view
+                              content_a)))
+       (right_container (div { `class: "juno-view-container" }
+                            (if content_b.view
+                              content_b.view
+                              content_b)))
+       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: col-resize" }))
+       (view (div { `class: "juno-vertical-split-container" `style: "height: calc(100% - 5px); width: 100%;" }
+                  left_container
+                  center_divider
+                  right_container
+                  view_overlay
+                 ))
+       (drag_status nil)       
+       (resize_observer nil)
+       (center_pos nil)
+       (initialized false)
+       (init_timer nil)
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view)
+                             ;; get the center position - set it to the midpoint if we are just initializing
+                             (when (== center_pos nil)
+                               (cond
+                                 (and options.ratio
+                                      (is_number? options.ratio))
+                                 (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
+                                 options.ratio
+                                 (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
+                                 else
+                                 (= center_pos (/ view.offsetWidth 2))))
+                             (when (> center_pos (- new_width 20))
+                               (= center_pos (Math.max 20 (- new_width 20))))
+                             (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
+                                        left_container)
+                             (set_style [["width" (+ "" center_width "px") ]] center_divider)
+                             (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]                                                                            
+                                        right_container)
+                             ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
+                             ))))
+       (init_drag (fn (e)
+                    (when (== drag_status nil)
+                      (= drag_status 1)
+                      (set_style [["width" "100%"]
+                                  ["height" "100%"]] view_overlay)
+                      ;; since our overlay covers the center_divider add a class to indicate activity
+                      ;; on the center divider
+                      (add_class "juno-active-hover" center_divider))))
+       
+       (complete_drag (fn (e)
+                        (progn
+                         (set_style [["width" "0%"]
+                                     ["height" "0%"]] view_overlay)
+                         (remove_class "juno-active-hover" center_divider)
+                         (= drag_status nil)                         
+                         (perform_resize))))
+       (perform_drag (fn (e)
+                       (progn
+                        (-> e `preventDefault)
+                        (when drag_status                          
+                          (if (== e.buttons 0)
+                            (complete_drag)
+                            (progn
+                             (= center_pos (Math.max 20 (Math.min e.offsetX (- view.offsetWidth 20))))))
+                          (perform_resize)))))
+                                                                           
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (console.log "split_view_vertical: initialize called: " initialized)
+                      (when (not initialized)                       
+                        (= initialized true)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "split_view_vertical initialized:" initialized)
+                        (when content_a.initialize
+                          (-> content_a `initialize))
+                        (when content_b.initialize
+                          (-> content_b `initialize)))))))
+
+    ;; set up the events
+    (attach_event_listener view_overlay
+                           `mousemove
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (when drag_status
+                                (perform_drag e)))))
+                             
+    (attach_event_listener view_overlay
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+
+    (attach_event_listener center_divider
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+    (attach_event_listener center_divider
+                           `mousedown
+                           (fn (e)
+                             (progn                              
+                              (handle_event e)                              
+                              (init_drag e))))
+    (= resize_observer (new ResizeObserver perform_resize))
+    (console.log "split_view_vertical: ready: initialized: " initialized)
+    (when true ;options.auto_initialize
+      (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250)))                                 
+    {
+     view: view
+     initialize: initialize
+     }))
+                             
+
+(defun split_view_horizontal (content_a content_b options)
+  (let
+      ((center_height 7)
+       (bottom_margin 5)
+       (center_divider (div { `class: "juno-horizontal-dragger"
+                              `style: (+ "cursor: row-resize; width: 100%; height: " center_height "px") }))
+       (top_container (div { `class: "juno-view-container" }
+                            (if content_a.view
+                              content_a.view
+                              content_a)))
+       (bottom_container (div { `class: "juno-view-container" }
+                            (if content_b.view
+                              content_b.view
+                              content_b)))
+       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: row-resize" }))
+       (view (div { `class: "juno-horizontal-split-container" `style: "height: calc(100% - 5px); width: 100%;margin: 0px; padding: 0px;" }
+                  top_container
+                  center_divider
+                  bottom_container
+                  view_overlay
+                 ))
+       (drag_status nil)
+       (initialized false)
+       (resize_observer nil)
+       (center_pos nil)
+       (initialized false)
+       (init_timer nil)
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view)
+                             ;; get the center position - set it to the midpoint if we are just initializing
+                             (when (== center_pos nil)
+                               (cond
+                                 (and options.ratio
+                                      (is_number? options.ratio))
+                                 (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight))
+                                 options.ratio
+                                 (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
+                                 else
+                                 (= center_pos (/ view.offsetHeight 2))))  ;; default is 50% 0.5
+                             (when (> center_pos (- new_height 40))
+                               (= center_pos (Math.max 20 (- new_height 40))))
+                             (set_style [["height" (+ "" center_pos  "px") ]]
+                                        top_container)
+                             (set_style [["height" (+ "" center_height "px") ]] center_divider)
+                             (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]                                         
+                                        bottom_container)
+                             ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
+                             ))))
+       (init_drag (fn (e)
+                    (when (== drag_status nil)
+                      (= drag_status 1)
+                      (set_style [["width" "100%"]
+                                  ["height" "100%"]] view_overlay)
+                      ;; since our overlay covers the center_divider add a class to indicate activity
+                      ;; on the center divider
+                      (add_class "juno-active-hover" center_divider))))
+       
+       (complete_drag (fn (e)
+                        (progn
+                         (set_style [["width" "0%"]
+                                     ["height" "0%"]] view_overlay)
+                         (remove_class "juno-active-hover" center_divider)
+                         (= drag_status nil)
+                         (console.log "adjustment complete")
+                         (perform_resize))))
+       (perform_drag (fn (e)
+                       (progn
+                        (-> e `preventDefault)
+                        (when drag_status
+                          ;(console.log "view_overlay: center_pos: " center_pos "offsetY: " e.offsetY "movementX: " e.movementY)
+                          (if (== e.buttons 0)
+                            (complete_drag)
+                            (progn
+                             (= center_pos (Math.max 20 (Math.min (- e.offsetY center_height 3) (- view.offsetHeight 40))))))
+                          (perform_resize)))))
+                                                                           
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (when (not initialized)
+                        (= initialized true)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "split_view_horizontal initialized: " initialized)
+                        (when content_a.initialize
+                          (-> content_a `initialize))
+                        (when content_b.initialize
+                          (-> content_b `initialize)))))))
+
+    ;; set up the events
+    (attach_event_listener view_overlay
+                           `mousemove
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (when drag_status
+                                (perform_drag e)))))
+                             
+    (attach_event_listener view_overlay
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+
+    (attach_event_listener center_divider
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+    (attach_event_listener center_divider
+                           `mousedown
+                           (fn (e)
+                             (progn                              
+                              (handle_event e)                              
+                              (init_drag e))))
+    (= resize_observer (new ResizeObserver perform_resize))
+    (console.log "split_view_horizontal: ready: initialized: " initialized)
+    (when true ;options.auto_initialize
+      (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250)))                                 
+    {
+     view: view
+     initialize: initialize
+     }))
+
+
 (defun tabs (tab_list)
   (let
       ((view nil)       
