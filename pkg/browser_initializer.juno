@@ -233,15 +233,15 @@
        (intf {})
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
-       (editor_div (div { `style: "height: calc(100% - 15px); width: 100%;" }))
+       (editor_div (div { `style: "height: calc(100% - 20px); width: 100%; overflow: hidden;" }))
        (view (div { `style: "overflow: hidden; height: calc(100% - 5px); display: inline-block; width: inherit;" }                  
                   controls
-                  editor_div))
+                  editor_div))      
        (perform_resize (fn ()
                          (when view.parentElement
                           ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
-                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
+                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
                                           view)
                           (-> editor `resize)
                           )))
@@ -307,15 +307,12 @@
                                (-> editor.session `setMode "ace/mode/javascript")
                                (== options.type "css")
                                (-> editor.session `setMode "ace/mode/css"))
-                             (console.log "editor initialized: content: " (subtype content) content)
-                             
-                             
+                             (console.log "editor initialized: content: " (subtype content) content)                                                          
                              (-> editor `setValue content -1)
-
+                             
                              (when options.on_change
                                (-> editor `on `change (function (val)
-                                                                (options.on_change editor val))))
-                             
+                                                                (options.on_change editor val))))                             
                              (-> editor `resize true)                             
                              (set_prop intf `editor editor)                             
                              ))))
@@ -344,120 +341,272 @@
 
 (defun split_view_vertical (content_a content_b options)
   (let
-      ((center_divider (div { `draggable: true`class: "juno-vertical-dragger" } ""))
-       (left_container (div { `class: "juno-view-container" `style: "border-right: solid 3px transparent" }
-                           (if content_a.view
-                             content_a.view
-                             content_a)))
+      ((center_width 7)
+       (right_margin 5)
+       (center_divider (div { `class: "juno-vertical-dragger"
+                              `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
+       (left_container (div { `class: "juno-view-container" }
+                            (if content_a.view
+                              content_a.view
+                              content_a)))
        (right_container (div { `class: "juno-view-container" }
-                           (if content_b.view
-                             content_b.view
-                             content_b)))
-       (view (div { `class: "juno-vertical-split-container"  `style: "height: calc(100% - 5px); width: 100%;" } 
+                            (if content_b.view
+                              content_b.view
+                              content_b)))
+       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: col-resize" }))
+       (view (div { `class: "juno-vertical-split-container" `style: "height: calc(100% - 5px); width: 100%;" }
                   left_container
                   center_divider
-                  right_container))
-       (left_content content_a)       
-       (drag_status nil)
-       (is_firefox? (contains? "Firefox" navigator.userAgent))
-       (body_element (-> document `querySelector "body"))
-       (right_content content_b)
-       (split_size_left "50%")
+                  right_container
+                  view_overlay
+                 ))
+       (drag_status nil)       
        (resize_observer nil)
+       (center_pos nil)
+       (initialized false)
+       (init_timer nil)
        (perform_resize (fn ()
                          (when view.parentElement
                            (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
-                                (new_width (- (prop view.parentElement `offsetWidth) 2))
-                                (center center_divider.offsetLeft))
-                             (set_style [["width" (+ "" new_width "px")]
-                                         ["height" (+ "" new_height "px")]]
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
                                         view)
-                             (set_style [["width" (+ "" center "px")]
-                                         ["height" (+ "" new_height "px")]] left_container)
-                             (set_style [["width" (+ "" (- new_width center 4) "px")]
-                                         ["height" (+ "" new_height "px")]] right_container)
-                             (= split_size_left center)
-                             (console.log "split_view: performed resize" center)))))
-       (initial_style [["display" "inline-block"]
-                       [ "width" split_size_left]
-                       [ "height" "100%"]]))
-    (set_style initial_style left_content)
-    (set_style initial_style right_content)
-    
+                             ;; get the center position - set it to the midpoint if we are just initializing
+                             (when (== center_pos nil)
+                               (= center_pos (/ view.offsetWidth 2)))
+                             (when (> center_pos (- new_width 20))
+                               (= center_pos (Math.max 20 (- new_width 20))))
+                             (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
+                                        left_container)
+                             (set_style [["width" (+ "" center_width "px") ]] center_divider)
+                             (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]                                                                            
+                                        right_container)
+                             ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
+                             ))))
+       (init_drag (fn (e)
+                    (when (== drag_status nil)
+                      (= drag_status 1)
+                      (set_style [["width" "100%"]
+                                  ["height" "100%"]] view_overlay)
+                      ;; since our overlay covers the center_divider add a class to indicate activity
+                      ;; on the center divider
+                      (add_class "juno-active-hover" center_divider))))
+       
+       (complete_drag (fn (e)
+                        (progn
+                         (set_style [["width" "0%"]
+                                     ["height" "0%"]] view_overlay)
+                         (remove_class "juno-active-hover" center_divider)
+                         (= drag_status nil)                         
+                         (perform_resize))))
+       (perform_drag (fn (e)
+                       (progn
+                        (-> e `preventDefault)
+                        (when drag_status                          
+                          (if (== e.buttons 0)
+                            (complete_drag)
+                            (progn
+                             (= center_pos (Math.max 20 (Math.min e.offsetX (- view.offsetWidth 20))))))
+                          (perform_resize)))))
+                                                                           
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (console.log "split_view_vertical: initialize called: " initialized)
+                      (when (not initialized)                       
+                        (= initialized true)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "split_view_vertical initialized:" initialized)
+                        (when content_a.initialize
+                          (-> content_a `initialize))
+                        (when content_b.initialize
+                          (-> content_b `initialize)))))))
+
+    ;; set up the events
+    (attach_event_listener view_overlay
+                           `mousemove
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (when drag_status
+                                (perform_drag e)))))
+                             
+    (attach_event_listener view_overlay
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+
+    (attach_event_listener center_divider
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+    (attach_event_listener center_divider
+                           `mousedown
+                           (fn (e)
+                             (progn                              
+                              (handle_event e)                              
+                              (init_drag e))))
     (= resize_observer (new ResizeObserver perform_resize))
-    (attach_event_listener center_divider
-                           `dragstart
-                           (function (e)
-                                     (progn
-                                     
-                                      (= drag_status {
-                                                      `start: left_container.offsetWidth
-                                                      `deltaX: 0                                                     
-                                                      })
-                                      (console.log "dragstart" (clone drag_status) e)
-                                     ; (set_prop e.dataTransfer
-                                      ;          `dropEffect "none")
-                                      (set_style [["border-right" "solid 3px #F0F0F0"]] left_container)
-                                      (set_style [["opacity" 0 ]] center_divider))))
-
-    (attach_event_listener view
-                           `dragover
-                           (function (e)
-                              (progn                                
-                                  (-> e `preventDefault)                                    
-                                  (set_prop drag_status
-                                            `deltaX                                                  
-                                            (- e.x drag_status.start)
-                                            `pct
-                                            (Math.max 5 (Math.min 95  (* 100 (/ (+ drag_status.start drag_status.deltaX) view.offsetWidth)))))                                  
-                                  (set_style [["width" (+ "" (- 100 drag_status.pct)
-                                                          "%") ]] right_container)
-                                  (set_style [["width" (+ "" drag_status.pct  "%") ]] left_container)
-                                  (= split_size_left center_divider.offsetLeft)
-                                  (set_style [["left" (+ "" left_container.offsetWidth "px") ]] center_divider))))
-                                                                                 
-
-    (attach_event_listener view
-                           `drop
-                           (function (e)
-                                     (progn
-                                      (-> e `preventDefault)
-                                      (console.log "view.drop: " e)
-                                      (set_style [["border-right" "solid 3px transparent"]] left_container)
-                                      (set_style [["opacity" 1]] center_divider))))
-                                      
-                                     
-    (attach_event_listener center_divider
-                           `dragend
-                           (function (e)
-                                     (progn                                      
-                                      (-> e `preventDefault)                                      
-                                      (console.log "center_divider: drag end: " e.offsetX ))))
+    (console.log "split_view_vertical: ready: initialized: " initialized)
+    (when true ;options.auto_initialize
+      (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250)))                                 
     {
-     `view: view
-     `initialize: (fn ()
-                    (progn
-                     (console.log "split_view_vertical: initializing" center_divider.offsetLeft)                     
-                     (-> resize_observer `observe view.parentElement)
-                     (set_style [[ "left" (+ "" left_container.offsetWidth "px") ]] center_divider)
-                     (= split_size_left (+ "" center_divider.offsetLeft "px"))
-                     
-                     ;; and cascade..
-                     (when left_content.initialize
-                       (-> left_content `initialize))
-                     (when right_content.initialize
-                       (-> right_content `initialize))))
-                     
-     `set_left_pane_content: (fn (content)
-                               (when (or (is_element? content)
-                                         (is_element? content.view))
-                                 (-> left_content `replaceWith
-                                     content)
-                                 (setq left_content
-                                       content)))
+     view: view
+     initialize: initialize
      }))
-    
+                             
+
+(defun split_view_horizontal (content_a content_b options)
+  (let
+      ((center_height 7)
+       (bottom_margin 5)
+       (center_divider (div { `class: "juno-horizontal-dragger"
+                              `style: (+ "cursor: row-resize; width: 100%; height: " center_height "px") }))
+       (top_container (div { `class: "juno-view-container" }
+                            (if content_a.view
+                              content_a.view
+                              content_a)))
+       (bottom_container (div { `class: "juno-view-container" }
+                            (if content_b.view
+                              content_b.view
+                              content_b)))
+       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: row-resize" }))
+       (view (div { `class: "juno-horizontal-split-container" `style: "height: calc(100% - 5px); width: 100%;margin: 0px; padding: 0px;" }
+                  top_container
+                  center_divider
+                  bottom_container
+                  view_overlay
+                 ))
+       (drag_status nil)
+       (initialized false)
+       (resize_observer nil)
+       (center_pos nil)
+       (initialized false)
+       (init_timer nil)
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view)
+                             ;; get the center position - set it to the midpoint if we are just initializing
+                             (when (== center_pos nil)
+                               (= center_pos (/ view.offsetHeight 2)))
+                             (when (> center_pos (- new_height 40))
+                               (= center_pos (Math.max 20 (- new_height 40))))
+                             (set_style [["height" (+ "" center_pos  "px") ]]
+                                        top_container)
+                             (set_style [["height" (+ "" center_height "px") ]] center_divider)
+                             (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]                                         
+                                        bottom_container)
+                             ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
+                             ))))
+       (init_drag (fn (e)
+                    (when (== drag_status nil)
+                      (= drag_status 1)
+                      (set_style [["width" "100%"]
+                                  ["height" "100%"]] view_overlay)
+                      ;; since our overlay covers the center_divider add a class to indicate activity
+                      ;; on the center divider
+                      (add_class "juno-active-hover" center_divider))))
+       
+       (complete_drag (fn (e)
+                        (progn
+                         (set_style [["width" "0%"]
+                                     ["height" "0%"]] view_overlay)
+                         (remove_class "juno-active-hover" center_divider)
+                         (= drag_status nil)
+                         (console.log "adjustment complete")
+                         (perform_resize))))
+       (perform_drag (fn (e)
+                       (progn
+                        (-> e `preventDefault)
+                        (when drag_status
+                          ;(console.log "view_overlay: center_pos: " center_pos "offsetY: " e.offsetY "movementX: " e.movementY)
+                          (if (== e.buttons 0)
+                            (complete_drag)
+                            (progn
+                             (= center_pos (Math.max 20 (Math.min (- e.offsetY center_height 3) (- view.offsetHeight 40))))))
+                          (perform_resize)))))
+                                                                           
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (when (not initialized)
+                        (= initialized true)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "split_view_horizontal initialized: " initialized)
+                        (when content_a.initialize
+                          (-> content_a `initialize))
+                        (when content_b.initialize
+                          (-> content_b `initialize)))))))
+
+    ;; set up the events
+    (attach_event_listener view_overlay
+                           `mousemove
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (when drag_status
+                                (perform_drag e)))))
+                             
+    (attach_event_listener view_overlay
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+
+    (attach_event_listener center_divider
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+    (attach_event_listener center_divider
+                           `mousedown
+                           (fn (e)
+                             (progn                              
+                              (handle_event e)                              
+                              (init_drag e))))
+    (= resize_observer (new ResizeObserver perform_resize))
+    (console.log "split_view_horizontal: ready: initialized: " initialized)
+    (when true ;options.auto_initialize
+      (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250)))                                 
+    {
+     view: view
+     initialize: initialize
+     }))
+
+
                   
 
 (defun show_main_menu ()
@@ -620,7 +769,9 @@
       (setq initial_split
             (split_view_vertical $controls.0
                                  repl))
-      (-> (get_by_id "body") `appendChild initial_split.view)      
+      (-> (get_by_id "body") `appendChild initial_split.view)
+      (console.log "*initializer: calling initial_split: initializer")
+      (debug)
       (-> initial_split `initialize))
     (when (blank? (prop *env_config*.export `save_prefix))
       (set_prop *env_config*.export
