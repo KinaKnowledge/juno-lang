@@ -570,7 +570,7 @@
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
 
-    (defglobal repl (browser_repl))
+    (defglobal $repl (browser_repl))
     (defglobal $controls [])
     
     
@@ -613,7 +613,7 @@
     ;(-> repl.view `remove)
     (setq initial_split
           (split_view_vertical $controls.0
-                               repl))
+                               $repl))
 
     (-> juno_container
         `append initial_split.view)
