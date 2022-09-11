@@ -2311,7 +2311,7 @@ such as things that connect or use environmental resources.
 
 (defglobal *LANGUAGE* {})
 
-(defun dtext (default_text)
+(defun_sync dtext (default_text)
   (or
    (prop *LANGUAGE* default_text)
    default_text)
