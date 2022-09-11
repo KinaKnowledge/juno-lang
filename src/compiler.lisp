@@ -1450,6 +1450,11 @@
                                     (throw ReferenceError (+ "assignment to undeclared symbol: " target)))
                                   (if (> comps.length 1)
                                     (throw SyntaxError (+ "invalid assignment to an object property, use set_prop instead: " target)))
+                                  (when (and (== tokens.2.type "arr")
+                                             (== tokens.2.val.0.type "special")
+                                             (== tokens.2.val.0.name "defvar"))
+                                    (throw SyntaxError "cannot assign result of the allocation operator defvar"))
+                                  
                                   (unset_ambiguous ctx target)
                                   
                                   (set_prop ctx
@@ -1625,7 +1630,7 @@
                              (set_prop ctx
                                        `block_id
                                        block_id)
-
+                             
                              (assert completion_scope "block called with no completion scope")
                              (assert (is_object? completion_scope) "block called with an invalid completion scope")
                              (if completion_scope.root_block_id
@@ -1642,6 +1647,11 @@
                                           `__IN_SUB_BLOCK__
                                           false)))
                              
+                             (when block_options.no_scope_boundary
+                               (set_prop ctx
+                                         `no_scope_boundary
+                                         true))
+                                         
                              (when (== (get_ctx_val ctx `__LAMBDA_STEP__) -1)
                                    (= lambda_block true)
                                    (setf_ctx ctx `__LAMBDA_STEP__
@@ -1710,7 +1720,10 @@
 
                                       ;; now assess the statement 
                                       ;; pull the statement type record, which should be the first record of the stmt array 
-                                      (assert (not (== stmt undefined)) "compile_block: returned stmt is undefined")
+                                      (when (== stmt undefined)
+                                        (if is_error
+                                          (= stmt [ { `ctype: Error } "ERROR_STATE" ])
+                                          (throw EvalError "compile_block: returned stmt is undefined")))
                                                                             
                                       ;; add the statement to the statement block list
                                       
@@ -1755,7 +1768,11 @@
                                  (`assignment_value nil))                              
                               
                               ;(console.log "defvar: target: " (is_complex? tokens.2) target (clone ctx) "tokens: " tokens)
-                                                                                                    
+                              (when (< tokens.length 2)
+                                (throw SyntaxError (+ "defvar requires 2 arguments, received " (- tokens.length 1))))
+                              (when (and ctx.final_block_statement
+                                         (not ctx.no_scope_boundary))
+                                (throw SyntaxError "defvar has no effect at end of block scope"))
                               (= assignment_value
                                  (do 
                                   (compile_wrapper_fn tokens.2 ctx)))
