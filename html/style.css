@@ -1497,8 +1497,8 @@ span.juno-evaluator {
   font-family: var(--main-mono-space);
   margin-left: 10px;
   margin-right: 10px;
-  border-left: inset 1px #FFFFFF;
-  border-right: inset 1px #FFFFFF;
+  color: #404040;
+  font-size: 0.9em;
 }
 
 span.juno-namespace {

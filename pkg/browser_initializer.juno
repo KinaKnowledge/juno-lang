@@ -475,14 +475,18 @@
                                                            (-> options.on_change editor val))))
                                    evaluator: evaluator                                   
                                    }))
-       (set_evaluator (fn (e)
+       (set_evaluator_control (fn (control)
+                                (if control.evaluate
+                                  (progn
+                                   (-> edit_control `set_evaluator control.evaluate)
+                                   (if control.name
+                                     (set_prop evaluator_span
+                                               `innerText
+                                               (+ "⭢ " control.name)))))))
+       (select_my_evaluator (fn ()
                         (aif (select_evaluator)
                              (progn
-                              (-> edit_control `set_evaluator it.evaluate)
-                              (if it.name
-                                (set_prop evaluator_span
-                                          `innerText
-                                          it.name))
+                              (set_evaluator_control it)
                               (notify (+ (dtext "Evaluator set to ") it.name)))))))
                             
     
@@ -496,13 +500,16 @@
                                                            [(when path_to_value
                                                               [(+ (dtext "Save to") " " (last path_to_value))
                                                                (fn (e) (-> edit_control `save))])
-                                                            [(dtext "Set Evaluator")
-                                                             set_evaluator]]
+                                                            [(dtext "Select Evaluator")
+                                                             select_my_evaluator]]
                                                            ))))
                               
                               
                                           
                                             
+    (set_prop edit_control
+              `set_evaluator_control
+              set_evaluator_control)
     edit_control))
 
 
@@ -575,7 +582,7 @@
                              (-> output_container `replaceChildren)))
     (set_prop interf
               `view view
-              `append add_result
+              `append add_result              
               `clear (fn ()
                        (-> output_container `clear))
               `options options)
@@ -714,6 +721,7 @@
     
     (push $controls
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
+
     
     
     ;(-> repl.view `remove)
@@ -728,6 +736,8 @@
     (console.log "*initializer: calling initial_split: initializer")
     (debug)
     (-> initial_split `initialize)
+    (-> (last $controls)
+        `set_evaluator_control $repl)
     (when (blank? (prop *env_config*.export `save_prefix))
       (set_prop *env_config*.export
                 `save_prefix
