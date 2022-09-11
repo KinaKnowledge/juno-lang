@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-11 06:59:05
-// Version: 2022.09.11.06.59
-export const DLISP_ENV_VERSION='2022.09.11.06.59';
+// Build Time: 2022-09-11 10:10:53
+// Version: 2022.09.11.10.10
+export const DLISP_ENV_VERSION='2022.09.11.10.10';
 
 
 
@@ -3175,15 +3175,17 @@ await Environment.set_global("formatted_date",async function(dval,date_formatter
 },{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"],"requires":["date_components","join","values"]
 });
 await Environment.set_global("*LANGUAGE*",new Object());
-await Environment.set_global("dtext",async function(default_text) {
-    return (await (async function(){
-        let __targ__228=(await Environment.get_global("*LANGUAGE*"));
-        if (__targ__228){
-             return(__targ__228)[default_text]
-        } 
-    })()|| default_text)
-},{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"]
-});
+{
+     Environment.set_global("dtext",function(default_text) {
+        return ( ( function(){
+            let __targ__228=( Environment.get_global("*LANGUAGE*"));
+            if (__targ__228){
+                 return(__targ__228)[default_text]
+            } 
+        })()|| default_text)
+    },{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"]
+})
+};
 await Environment.set_global("nth",async function(idx,collection) {
     return await async function(){
         if (check_true ((idx instanceof Array))) {
@@ -3426,16 +3428,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__247=async function(req) {
                                             {
-                                                let _expr_76459;
+                                                let _expr_62589;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_76459=await (async function(){
+                                                _expr_62589=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_76459 && _expr_76459["0"]);
-                                                req_ns=(_expr_76459 && _expr_76459["1"]);
-                                                explicit=(_expr_76459 && _expr_76459["2"]);
+                                                req_sym=(_expr_62589 && _expr_62589["0"]);
+                                                req_ns=(_expr_62589 && _expr_62589["1"]);
+                                                explicit=(_expr_62589 && _expr_62589["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3538,13 +3540,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_60453;
+                    let _expr_10245;
                     let nspace;
-                    _expr_60453=await (async function(){
+                    _expr_10245=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_60453 && _expr_60453["0"]);
-                    nspace=(_expr_60453 && _expr_60453["1"]);
+                    sym=(_expr_10245 && _expr_10245["0"]);
+                    nspace=(_expr_10245 && _expr_10245["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

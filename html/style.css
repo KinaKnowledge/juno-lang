@@ -1411,7 +1411,7 @@ striping:
   margin: 0px;
   padding: 0px;
   position: relative;
-  display: inline-block;
+  display: inline-block;  
   height: calc(100% - 5px);
 }
 
@@ -1420,7 +1420,7 @@ striping:
   margin: 0px;
   padding: 0px;
   position: relative;
-  display: block;
+  display: block;  
   height: calc(100% - 5px);
 }
 
@@ -1489,6 +1489,16 @@ striping:
   padding-left: 10px;
   padding-right: 10px;
   font-weight: bold;
+}
+
+span.juno-evaluator {
+  padding-left: 10px;
+  padding-right: 10px;
+  font-family: var(--main-mono-space);
+  margin-left: 10px;
+  margin-right: 10px;
+  border-left: inset 1px #FFFFFF;
+  border-right: inset 1px #FFFFFF;
 }
 
 span.juno-namespace {

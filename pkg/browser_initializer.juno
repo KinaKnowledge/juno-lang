@@ -15,7 +15,7 @@
 (console.log "browser_initializer running")
 (defglobal $controls nil)
 
-(defun make_menu (for_element menu_items)
+(defun make_menu (for_element menu_items options)
   (let
       ((menu_items menu_items)
        (for_element for_element)
@@ -25,18 +25,21 @@
     (aif (get_by_id "cmenu")
          (-> it `remove))
     (setq view
-          (div { `id: `cmenu `class: "juno-menu"  }
+          (div { `id: `cmenu `class: "juno-menu" `style: "z-index: 30" }
                (div {  `class: "pure-menu pure-menu-horizontal"  }               
                     (ul { `class: "pure-menu-list" }                 
                         (map (fn (item idx)                     
-                               (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0)))
+                               (if item
+                                 (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0))
+                                 []))
                              (or menu_items []))))))
-    (when for_element
-      (setq pos
-            (-> for_element `getBoundingClientRect))
-      (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
-                  ["left" (+ "" (Math.max pos.left 0) "px") ]] view))
-    
+       
+      (when for_element
+        (setq pos
+              (-> for_element `getBoundingClientRect))
+        (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
+                    ["left" (+ "" (Math.max pos.left 0) "px") ]] view)
+        (console.log "make_menu: found element at: " pos))
     (attach_event_listener view
                            `click
                            (fn (e)
@@ -59,6 +62,7 @@
                                             (clearTimeout disappear_timer))
                                           (= disappear_timer (setTimeout (fn ()
                                                                            (progn
+                                                                            (console.log "removed view")
                                                                             (-> view `remove)
                                                                             (= disappear_timer nil)))
                                                                          500)))))
@@ -68,14 +72,21 @@
                                          (when disappear_timer
                                            (clearTimeout disappear_timer)
                                            (= disappear_timer nil))))))
-     500)
-    (-> (get_by_id "body") `appendChild view) 
-    view))
+     500) ;; delay a little before adding the timeout so we don't accidentally hover over it 
+    (if options.do_not_attach
+      view
+      (progn
+       (debug)
+       (-> (get_by_id "body") `appendChild view)
+       (console.log "appended view" view)
+       view))))
 
-(defun request_user_input (prompt type)
+(defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
                  (let
-                     ((user_input  (input { `type: (or type "text") }))
+                     ((user_input (if options.input
+                                    options.input
+                                    (input { `type: (or type "text") })))
                       (ok_button (button { `class: "pure-button-primary" `style: "float:right" } "OK"))
                       (cancel_button (button  "Cancel"))
                       (dwin (dialog prompt                                    
@@ -246,11 +257,8 @@
                           (-> editor `resize)
                           )))
        (editor nil)
-       (initialize_editor (fn ()
-                            (progn
-                             (setq editor
-                                   (ace.edit editor_div))
-                             (when options.evaluator
+       (set_evaluator (fn ()
+                        (when options.evaluator
                                (-> editor.commands `addCommand
                                    {
                                     `name: "execute"
@@ -270,7 +278,12 @@
                                                              (progn
                                                               (notify (+ (dtext "Unhandled error") ": " e.message ))
                                                               (console.error e)))))))
-                                    }))
+                                    }))))
+       (initialize_editor (fn ()
+                            (progn
+                             (setq editor
+                                   (ace.edit editor_div))
+                             (set_evaluator)
                              (when options.on_save
                                (-> editor.commands `addCommand
                                    {
@@ -318,8 +331,7 @@
                                                                 (options.on_change editor val))))                             
                              (-> editor `resize true)                             
                              (set_prop intf `editor editor)                             
-                             ))))
-       
+                             ))))       
     
     (if (not (is_symbol? `$ace_editor))
       (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
@@ -336,6 +348,16 @@
                 (-> editor `setValue text))
         `get: (fn (text)
                 (-> editor `getValue))
+        `set_evaluator: (fn (new_evaluator)
+                          (when (is_function? new_evaluator)
+                            (set_prop options
+                                      `evaluator
+                                      new_evaluator)
+                            (set_evaluator)))
+        `get_evaluator: (fn ()
+                          options.evaluator)
+        `save: (function ()
+                         (options.on_save (-> editor `getValue)))                 
         `options: options
         `initialize: (fn ()
                        (when view.parentElement
@@ -345,7 +367,7 @@
                          ))
         })))
                
-(defun show_main_menu ()
+(defun show_file_menu ()
   (let
       ((view nil))
     
@@ -357,22 +379,61 @@
                       ]))))   
     
 
+(defun select_evaluator ()
+  (let
+      ((idx -1)
+       (dups (new Set))
+       (new_name nil)
+       (selected_idx nil)
+       (available (reduce (control $controls)
+                          (when control.evaluate
+                            (if (-> dups `has (or control.name "Untitled"))
+                              (progn
+                               (= new_name (+ (or control.name "Untitled")
+                                             "-" idx))
+                               (-> dups `add new_name)
+                               [ (inc idx) new_name
+                                 control ])
+                              (progn
+                               (-> dups `add control.name)
+                               [ (inc idx) control.name control ])))))
+       (selection_box (select { }
+                              (map (fn (v)
+                                     (option { `value: v.0 } v.1))
+                                     (or available [])))))
+    (= selected_idx
+       (request_user_input (dtext "Select an available evaluator")
+                           nil
+                           { input: selection_box }))
+    (when selected_idx
+        (prop (prop available selected_idx) 2))))
+  
+
 (defun buffer_editor (title namespace path_to_value mode options)
   (let
       ((nseval (if (not (blank? namespace))
                  (-> Environment `get_namespace_handle namespace)
                  Environment))
        (title_span (span { `class: "juno-title" } title))
-       (buffer_commands_button (button { `title: "Buffer Commands" } "▸"))
+       (evaluator (cond (and (is_object? options.evaluator)
+                             (is_function? options.evaluator.evaluate))
+                        options.evaluator.evaluate
+                        (is_function? options.evaluator)
+                        options.evaluator))
+                                                
+       (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
+       (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
        (is_dirty? false)
        (command_bar (or options.command_bar
                         (div { `class: "juno-buffer-bar" }
                              buffer_commands_button
                              title_span                                                             
                              (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace)
+                             evaluator_span
                              (if options.read_only
                                (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
                                ())
+                             
                              (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))))      
        (init_value (resolve_path path_to_value nseval.global_ctx.scope))
        (on_save (fn (value)
@@ -412,26 +473,61 @@
                                                            (add_class "juno-needs-save" title_span))
                                                          (when options.on_change
                                                            (-> options.on_change editor val))))
-                                    evaluator: options.evaluator
-                                   })))
+                                   evaluator: evaluator                                   
+                                   }))
+       (set_evaluator (fn (e)
+                        (aif (select_evaluator)
+                             (progn
+                              (-> edit_control `set_evaluator it.evaluate)
+                              (if it.name
+                                (set_prop evaluator_span
+                                          `innerText
+                                          it.name))
+                              (notify (+ (dtext "Evaluator set to ") it.name)))))))
+                            
+    
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
+    (attach_event_listener buffer_commands_button
+                           `click
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (make_menu buffer_commands_button
+                                                           [(when path_to_value
+                                                              [(+ (dtext "Save to") " " (last path_to_value))
+                                                               (fn (e) (-> edit_control `save))])
+                                                            [(dtext "Set Evaluator")
+                                                             set_evaluator]]
+                                                           ))))
+                              
+                              
+                                          
+                                            
     edit_control))
 
 
 (defun log_view (options)
   (let
-      ((output_container (html/div {   `style: "font-size: 0.9em; height: 100%; overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (clear_button (button (dtext "Clear")))
+       (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
+       (control_status (div {  `class: "juno-buffer-bar" }
+                            title_span
+                            clear_button))
+       (view (div { `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
+                  control_status
+                  output_container))
        (add_result (fn (result command_text error_state)
                      (progn
                       (when (not (eq nil command_text))
                         (-> output_container
                             `prepend
-                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
-                                      (html/code { `style: "font-style: italic; color: darkblue;" }
+                            (div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                                      (code { `style: "font-style: italic; color: darkblue;" }
                                                  command_text))))
                       (-> output_container
                           `prepend
-                          (html/div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                          (div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                     (cond
                                       (is_element? result)
                                       result
@@ -473,15 +569,22 @@
                                 output_container.offsetHeight)
                       result)))                                                               
        (interf {}))
+    (attach_event_listener clear_button
+                           `click
+                           (fn ()
+                             (-> output_container `replaceChildren)))
     (set_prop interf
-              `view output_container
+              `view view
               `append add_result
+              `clear (fn ()
+                       (-> output_container `clear))
               `options options)
     interf))
 
-(defun browser_repl ()
+(defun browser_repl (options)
   (let
-      ((output_control (log_view))
+      ((name options.name)
+       (output_control (log_view { `title: name }))
        (resize_observer nil)                                                                                            
        (current_env Environment)
        (error_state nil)
@@ -536,6 +639,8 @@
                          (-> output_control `append (html/div "Namespace: " (current_namespace)))))))))
     {
      `view: juno_container
+     `options: options
+     `name: name
      `input_container: input_container
      `initialize: initialize
      `output_container: output_control.view
@@ -570,9 +675,10 @@
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
 
-    (defglobal $repl (browser_repl))
+    (defglobal $repl (browser_repl { `name: "Global REPL" }))
     (defglobal $controls [])
-    
+    (push $controls
+          $repl)
     
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
@@ -599,7 +705,7 @@
     (attach_event_listener main_menu_button
 			      `click
 			      (fn (e)
-				(show_main_menu)))
+				(show_file_menu)))
 
     (-> (get_by_id "body") `appendChild juno_container)
     ;(console.log "repl is built")
@@ -612,7 +718,7 @@
     
     ;(-> repl.view `remove)
     (setq initial_split
-          (split_view_vertical $controls.0
+          (split_view_vertical (last $controls)
                                $repl))
 
     (-> juno_container
