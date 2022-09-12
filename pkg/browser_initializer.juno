@@ -7,7 +7,18 @@
 (defglobal juno_container nil)
 (defglobal repl_editor nil)
 (defglobal *scratch* ";; *scratch* buffer\n\n")
+(defglobal *key_bindings* {
+                           repl:{}
+                           buffer_editor:{}
+                           })
 
+
+(set_prop *key_bindings*.repl          
+          `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
+          `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
+                              
+          
+  
 ;; $controls is the list of global controls such as editors and views
 ;; putting $ as a prefix indicates to the environment that it is not
 ;; to be saved as part of the image.  It must be rebuilt on initialization
@@ -75,8 +86,7 @@
      500) ;; delay a little before adding the timeout so we don't accidentally hover over it 
     (if options.do_not_attach
       view
-      (progn
-       (debug)
+      (progn       
        (-> (get_by_id "body") `appendChild view)
        (console.log "appended view" view)
        view))))
@@ -588,6 +598,9 @@
               `options options)
     interf))
 
+
+   
+
 (defun browser_repl (options)
   (let
       ((name options.name)
@@ -596,6 +609,44 @@
        (current_env Environment)
        (error_state nil)
        (initialized false)
+       (intf nil)
+       (history (if (is_array? options.history)
+                  options.history
+                  []))
+       (push_history (fn (lisp_text)
+                       (progn
+                        (push history
+                              lisp_text)
+                        (= history_idx (- history.length 1))
+                        (when (> history.length (or options.max_history_size
+                                                    50))
+                          (take history)))))
+       (history_idx 0) 
+       (history_prior_entry (fn ()
+                              (progn
+                               (dec history_idx)                               
+                               (when (< history_idx 0)
+                                 (= history_idx (- history.length 1)))
+                               (-> input_container `set (prop history history_idx)))))
+       (history_next_entry (fn ()
+                              (progn
+                               (inc history_idx)                               
+                               (when (>= history_idx history.length)
+                                 (= history_idx 0))
+                               (-> input_container `set (prop history history_idx)))))
+       (clear_output (fn ()
+                       (-> output_control `clear)))
+       (repl_key_bindings (function ()
+                                    (map (function (kb)
+                                             (destructuring_bind (command_name bindings)
+                                                 kb
+                                                {
+                                                 `name: command_name
+                                                 `bindKey: bindings
+                                                 `exec: (function (editor)
+                                                                  (-> intf command_name editor))
+                                                 }))                                                      
+                                         (or (pairs *key_bindings*.repl) []))))
        (evaluator (fn (lisp_text no_eval)
                     (let
                         ((result nil))
@@ -622,10 +673,13 @@
                                                         (progn
                                                          true))
                                    repl_mode: true
-                                   evaluator: evaluator
-                                                 
+                                   evaluator: (fn (lisp_text no_eval)
+                                                (progn
+                                                 (push_history lisp_text)
+                                                 (evaluator lisp_text no_eval)))                                                 
+                                   commands: (repl_key_bindings)
                                    }))
-       
+
        (sview (split_view_horizontal
                                  output_control
                                  input_container
@@ -644,18 +698,22 @@
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                          "Version: " Environment.build_version   )))
                          (-> output_control `append (html/div "Namespace: " (current_namespace)))))))))
-    {
-     `view: juno_container
-     `options: options
-     `name: name
-     `input_container: input_container
-     `initialize: initialize
-     `output_container: output_control.view
-     `log: (fn (val)
-             (-> output_control `append val))
-     `evaluate: (fn (lisp_text)
-                  (evaluator lisp_text))
-     }))
+    (= intf {
+             `view: juno_container
+             `options: options
+             `name: name
+             `input_container: input_container
+             `history_next_entry: history_next_entry
+             `history_prior_entry: history_prior_entry
+             `clear_output: clear_output
+             `initialize: initialize
+             `output_container: output_control.view
+             `log: (fn (val)
+                     (-> output_control `append val))
+             `evaluate: (fn (lisp_text no_eval)
+                          (evaluator lisp_text no_eval))
+             })
+    intf))
 
 
 
@@ -682,7 +740,10 @@
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
 
-    (defglobal $repl (browser_repl { `name: "Global REPL" }))
+    (unless (is_symbol? `*global_repl_history*)
+            (defglobal *global_repl_history* []))
+    
+    (defglobal $repl (browser_repl { `name: "Global REPL" `history: *global_repl_history* }))
     (defglobal $controls [])
     (push $controls
           $repl)
@@ -690,14 +751,14 @@
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
     
-      
+     
     (setq header (-> document `querySelector "header"))
 
     (-> header `appendChild (span { `class: "juno-header" } "Seedling" ))
     (-> header `appendChild (ul { `class: "pure-menu-list" `style: "margin-left: 10px;" }
                                 main_menu_button))
     
-    ;(-> header `appendChild (img { `style: "margin-left: 5px;margin-right: 10px;margin-top: 5px; " src: core/juno_logo height: "15" }))
+   
 
     (attach_event_listener juno_container `click
                            (fn (e)
@@ -715,24 +776,18 @@
 				(show_file_menu)))
 
     (-> (get_by_id "body") `appendChild juno_container)
-    ;(console.log "repl is built")
-    ;; make the repl more sophisticated
-    
     
     (push $controls
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
-
-    
-    
-    ;(-> repl.view `remove)
+        
+ 
     (setq initial_split
           (split_view_vertical (last $controls)
                                $repl))
 
     (-> juno_container
         `append initial_split.view)
-      
-      
+            
     (console.log "*initializer: calling initial_split: initializer")
     (debug)
     (-> initial_split `initialize)
