@@ -1388,29 +1388,35 @@
                                      (`assignment_value nil)
                                      (`assignment_type nil)
                                      (`wrap_as_function? nil)
-                                     (`preamble (calling_preamble ctx))                                     
-                                     (`target (sanitize_js_ref_name 
-                                              (cond
-                                                token.ref                                                
-                                                token.name
-                                                else
-                                                (throw SyntaxError (+ "assignment: invalid target: " token.name)))))
-                                     (`comps (split_by "." target))
-                                     (`target_details (get_declaration_details ctx (first comps)))
-                                     (`target_location_compile_time (cond
-                                                                      target_details.is_argument
-                                                                      "local"
-                                                                      target_details.declared_global
-                                                                      "global"
-                                                                      target_details
-                                                                      "local"
-                                                                      else
-                                                                      nil)))
-                                  (declare (string preamble.0))
-                                  
+                                     (`preamble (calling_preamble ctx))
+                                     (`comps [])
+                                     (`sanitized (if (and token.ref
+                                                          token.name)
+                                                   (sanitize_js_ref_name token.name)
+                                                   (throw SyntaxError (+ "assignment: missing assignment symbol"))))
+                                     (`target_details (cond
+                                                        (get_ctx ctx sanitized)
+                                                        "local"
+                                                        (get_lisp_ctx ctx token.name)
+                                                        "global"
+                                                        else
+                                                        (progn
+                                                         (aif (get_declaration_details ctx token.name)
+                                                              (cond
+                                                                it.is_argument
+                                                                "local"
+                                                                it.declared_global
+                                                                "global"
+                                                                it
+                                                                "local")))))                                     
+                                     (`target (if (== target_details "local")
+                                                sanitized
+                                                token.name)))
+                                  (declare (string preamble.0))                                  
+                                  (= comps (split_by "." target))
                                   (compiler_syntax_validation `compile_assignment tokens errors ctx expanded_tree)
                                   (if (== undefined target_details)
-                                    (throw ReferenceError (+ "assignment to undeclared symbol: " target)))
+                                    (throw ReferenceError (+ "assignment to undeclared symbol: " token.name)))
                                   (if (> comps.length 1)
                                     (throw SyntaxError (+ "invalid assignment to an object property, use set_prop instead: " target)))
                                   (when (and (== tokens.2.type "arr")
@@ -1434,7 +1440,7 @@
                                          (set_ambiguous ctx target)
                                          (= assignment_type
                                             UnknownType)))
-                                  (if (== target_location_compile_time "local")
+                                  (if (== target_details "local")
                                       (do
                                        (set_ctx ctx
                                                 target
@@ -1449,7 +1455,7 @@
                                   (set_prop ctx
                                             `in_assignment false)
                                   
-                                  (if (== target_location_compile_time "local")
+                                  (if (== target_details "local")
                                       (set_ctx ctx
                                                target
                                                assignment_type))
@@ -1780,8 +1786,7 @@
        
        (`get_declaration_details (fn (ctx symname _levels_up)
                                    (progn
-                                    (when false ;(eq nil _levels_up)
-                                      (= symname (first (split_by "." symname))))
+                                    
                                     (cond 
                                        (and (prop ctx.scope symname)
                                             (prop ctx `lambda_scope))
