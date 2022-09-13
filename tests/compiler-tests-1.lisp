@@ -2385,4 +2385,9 @@
   []
   true
   "ensure symbols with invalid js are not marked as global dependencies by the compiler"]
+  ["(or (> 5 2) (throw Error \"invalid logic\"))"
+  []
+  true
+  "throw within compiled infix operations"]
+  
 ])

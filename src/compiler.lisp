@@ -539,46 +539,9 @@
                                     else
                                     (> (length (scan_str invalid_js_ref_chars_regex symname)) 0))))
 
-       ;; Ensure that allowed lisp symbols are transformed into allowed Javascript representations       
-       (`sanitize_js_ref_name (fn (symname)
-                                  (cond 
-                                    (not (is_string? symname))
-                                    symname
-                                    else
-                                    (let
-                                        ((`text_chars (split_by "" symname))
-                                         (`acc []))
-                                      
-                                      
-                                      (for_each (`t text_chars)
-                                                (cond (== t "+")
-                                                      (push acc "_plus_")
-                                                      (== t "?")
-                                                      (push acc "_ques_")
-                                                      (== t "-")
-                                                      (push acc "_")
-                                                      (== t "&")
-                                                      (push acc "_amper_")
-                                                      (== t "^")
-                                                      (push acc "_carot_")
-                                                      (== t "#")
-                                                      (push acc "_hash_")
-                                                      (== t "!")
-                                                      (push acc "_exclaim_")
-                                                      (== t "*")
-                                                      (push acc "_star_")
-                                                      (== t "~")
-                                                      (push acc "_tilde_")
-                                                      (== t "~")
-                                                      (push acc "_percent_")
-                                                      (== t "|")
-                                                      (push acc "_pipe_")
-                                                      (contains? t "(){}")
-                                                      (throw SyntaxError (+ "Invalid character in symbol: " symname))
-                                                      else
-                                                      (push acc t)))
-                                      (join "" acc)))))
-                                    
+       ;; Ensure that allowed lisp symbols are transformed into allowed Javascript representations
+       (`sanitize_js_ref_name sanitize_js_ref_name)
+                                           
        ;; find_in_context - returns the contextual details about where and what
        ;; a symbol or reference refers to, or the literal value itself.
        
@@ -2187,6 +2150,9 @@
                                       (set_ctx ctx
                                                `__COMPLETION_SCOPE__
                                                completion_scope)
+                                      (set_ctx ctx
+                                               `__COMP_INFIX_OPS__
+                                               nil)
                                       completion_scope)))
        (`compile_fn (fn (tokens ctx fn_opts)
                         (let
@@ -2567,8 +2533,10 @@
                                                                           
                                       (= acc [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
                                     (and (is_object? tokens)
-                                         (== tokens.val.0.name "if")
-                                         (== tokens.val.0.type "special"))
+                                         (== tokens.val.0.type "special")
+                                         (or (== tokens.val.0.name "if")                                            
+                                             (and (== tokens.val.0.name "throw")
+                                                  (get_ctx ctx "__COMP_INFIX_OPS__"))))
                                     (do 
                                       (= ctx (new_ctx ctx))
                                       (set_new_completion_scope ctx)                                    
@@ -2765,12 +2733,18 @@
        
        (`compile_val_mod (fn (tokens ctx)
                              (let
-                                 ((`target_location (cond 
+                                 ((`target (or tokens.1.name
+                                               (progn
+                                                (throw SyntaxError
+                                                      (+ tokens.0.name
+                                                         " requires at least one argument indicating the symbol which value is to be modified")))))
+                                  (`target_location (cond 
                                                       (get_ctx ctx tokens.1.name)
                                                       "local"
                                                       (get_lisp_ctx ctx tokens.1.name)
                                                       "global"))
-                                  (`target tokens.1.name)                                  
+                                  (`comps (split_by "." target))
+                                  (`target_details (get_declaration_details ctx (first comps)))
                                   (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
                                   (`operation (if in_infix
                                                   (cond
@@ -2779,7 +2753,7 @@
                                                     (== tokens.0.name "dec")
                                                     "-"
                                                     else
-                                                    (throw (+ "Invalid value modification operator: " tokens.0.name)))
+                                                    (throw SyntaxError (+ "Invalid value modification operator: " tokens.0.name)))
                                                   (cond
                                                          
                                                     (and (== target_location "local")
@@ -2796,7 +2770,10 @@
                                   (`how_much (or (and tokens.2
                                                       (compile tokens.2 ctx)) 
                                                  1)))
+                               (debug)
                                
+                               (if (== undefined target_details)
+                                 (throw ReferenceError (+ "unknown symbol: " comps.0)))
                                (cond 
                                   (== target_location "global")
                                   (do
@@ -4279,11 +4256,11 @@
                     "try": compile_try
                     "throw": compile_throw
                     "let": compile_let
-                     "defvar": compile_defvar
-                     "defconst": (fn (tokens ctx)
-                                   (if (get_ctx ctx `__LOCAL_SCOPE__)
-                                     (compile_defvar tokens ctx { `constant: true })
-                                     (compile_set_global tokens ctx { `constant: true })))
+                    "defvar": compile_defvar
+                    "defconst": (fn (tokens ctx)
+                                  (if (get_ctx ctx `__LOCAL_SCOPE__)
+                                    (compile_defvar tokens ctx { `constant: true })
+                                    (compile_set_global tokens ctx { `constant: true })))
                     "while": compile_while
                     "for_each": compile_for_each
                     "if": compile_if
@@ -4291,8 +4268,8 @@
                     "fn": compile_fn  
                     "lambda": compile_fn
                     "function*": (fn (tokens ctx)
-                                     (compile_fn tokens ctx { `generator: true }))
-                    "defglobal": compile_set_global
+                                   (compile_fn tokens ctx { `generator: true }))
+                    "defglobal": compile_set_global                    
                     "list": compile_list
                     "function": (fn (tokens ctx)
                                     (compile_fn tokens ctx { `synchronous: true }))
