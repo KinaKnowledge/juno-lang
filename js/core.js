@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-13 09:13:24
-// Version: 2022.09.13.09.13
-export const DLISP_ENV_VERSION='2022.09.13.09.13';
+// Build Time: 2022-09-13 10:15:57
+// Version: 2022.09.13.10.15
+export const DLISP_ENV_VERSION='2022.09.13.10.15';
 
 
 
@@ -2741,9 +2741,9 @@ await Environment.set_global("defvalue",async function(sym,value,meta) {
 },"name":"defvalue","macro":true,"fn_args":"(sym value meta)","description":["=:+","If the provided symbol is already defined as an accessible ","global value from the current namespace it will return the ","defined value, otherwise it will define the global in the ","current (implicit) namespace or the explicitly referenced ","namespace.  Returns the newly defined value or previously ","defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"]
 });
 await Environment.set_global("defparameter",async function(sym,value,meta) {
-    return ["=:defglobal",sym,value,meta]
+    return ["=:use_quoted_initializer",["=:defglobal",sym,value,meta]]
 },{ "eval_when":{ "compile_time":true
-},"name":"defparameter","macro":true,"fn_args":"(sym value meta)","description":["=:+","Defines a global via defglobal (synonym).  If the symbol is ","already defined, it will be overwritten.  To set a symbol in ","an explicit namespace, provide a fully qualified symbol name ","in the form of namspace/symname as the symbol to be defined. ","Returns the defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"]
+},"name":"defparameter","macro":true,"fn_args":"(sym value meta)","description":["=:+","Defines a global that is always reset to the provided value, ","when called or when the image is reloaded, ensuring that the ","initial value is always set to a specific value.  If the value ","is already defined, it will be overwritten.  To set a symbol in ","an explicit namespace, provide a fully qualified symbol name ","in the form of namspace/symname as the symbol to be defined. ","Returns the defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"]
 });
 await Environment.set_global("get_function_args",async function(f) {
     let r;
@@ -3502,16 +3502,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__251=async function(req) {
                                             {
-                                                let _expr_71669;
+                                                let _expr_18430;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_71669=await (async function(){
+                                                _expr_18430=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_71669 && _expr_71669["0"]);
-                                                req_ns=(_expr_71669 && _expr_71669["1"]);
-                                                explicit=(_expr_71669 && _expr_71669["2"]);
+                                                req_sym=(_expr_18430 && _expr_18430["0"]);
+                                                req_ns=(_expr_18430 && _expr_18430["1"]);
+                                                explicit=(_expr_18430 && _expr_18430["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3614,13 +3614,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_72826;
+                    let _expr_83627;
                     let nspace;
-                    _expr_72826=await (async function(){
+                    _expr_83627=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_72826 && _expr_72826["0"]);
-                    nspace=(_expr_72826 && _expr_72826["1"]);
+                    sym=(_expr_83627 && _expr_83627["0"]);
+                    nspace=(_expr_83627 && _expr_83627["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

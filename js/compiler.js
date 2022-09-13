@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-13 09:13:24
-// Version: 2022.09.13.09.13
-export const DLISP_ENV_VERSION='2022.09.13.09.13';
+// Build Time: 2022-09-13 10:15:57
+// Version: 2022.09.13.10.15
+export const DLISP_ENV_VERSION='2022.09.13.10.15';
 
 
 
@@ -2403,10 +2403,10 @@ export async function init_compiler(Environment) {
                 let assignment_type;
                 let wrap_as_function_ques_;
                 let preamble;
-                let target;
                 let comps;
+                let sanitized;
                 let target_details;
-                let target_location_compile_time;
+                let target;
                 acc=[];
                 assignment_operator=await (async function(){
                     let __targ__94=await first(tokens);
@@ -2419,35 +2419,56 @@ export async function init_compiler(Environment) {
                 assignment_type=null;
                 wrap_as_function_ques_=null;
                 preamble=await calling_preamble(ctx);
-                target=await sanitize_js_ref_name(await (async function(){
+                comps=[];
+                sanitized=await (async function(){
+                    if (check_true (((token && token["ref"])&& (token && token["name"])))){
+                        return await sanitize_js_ref_name((token && token["name"]))
+                    } else {
+                        throw new SyntaxError(("assignment: missing assignment symbol"));
+                        
+                    }
+                })();
+                target_details=await (async function(){
                      return await async function(){
-                        if (check_true ((token && token["ref"]))) {
-                            return (token && token["name"])
-                        } else {
-                            throw new SyntaxError(("assignment: invalid target: "+ (token && token["name"])));
-                            
-                        }
-                    } () 
-                })());
-                comps=(target).split(".");
-                target_details=await get_declaration_details(ctx,await first(comps));
-                target_location_compile_time=await (async function(){
-                     return await async function(){
-                        if (check_true ((target_details && target_details["is_argument"]))) {
+                        if (check_true (await get_ctx(ctx,sanitized))) {
                             return "local"
-                        } else if (check_true ((target_details && target_details["declared_global"]))) {
+                        } else if (check_true (await get_lisp_ctx(ctx,(token && token["name"])))) {
                             return "global"
-                        } else if (check_true (target_details)) {
-                            return "local"
                         } else {
-                            return null
+                            {
+                                {
+                                    let it;
+                                    it=await get_declaration_details(ctx,(token && token["name"]));
+                                    if (check_true (it)){
+                                        return await async function(){
+                                            if (check_true ((it && it["is_argument"]))) {
+                                                return "local"
+                                            } else if (check_true ((it && it["declared_global"]))) {
+                                                return "global"
+                                            } else if (check_true (it)) {
+                                                return "local"
+                                            }
+                                        } ()
+                                    } else {
+                                        return 
+                                    }
+                                }
+                            }
                         }
                     } () 
                 })();
+                target=await (async function(){
+                    if (check_true ((target_details==="local"))){
+                        return sanitized
+                    } else {
+                        return (token && token["name"])
+                    }
+                })();
                 ;
+                comps=(target).split(".");
                 await (await Environment.get_global("compiler_syntax_validation"))("compile_assignment",tokens,errors,ctx,expanded_tree);
                 if (check_true ((undefined===target_details))){
-                    throw new ReferenceError(("assignment to undeclared symbol: "+ target));
+                    throw new ReferenceError(("assignment to undeclared symbol: "+ (token && token["name"])));
                     
                 };
                 if (check_true (((comps && comps.length)>1))){
@@ -2477,7 +2498,7 @@ export async function init_compiler(Environment) {
                         assignment_type=UnknownType
                     }
                 };
-                if (check_true ((target_location_compile_time==="local"))){
+                if (check_true ((target_details==="local"))){
                     {
                         await set_ctx(ctx,target,assignment_type);
                         (acc).push(target);
@@ -2513,7 +2534,7 @@ export async function init_compiler(Environment) {
                     return ctx;
                     
                 }();
-                if (check_true ((target_location_compile_time==="local"))){
+                if (check_true ((target_details==="local"))){
                     await set_ctx(ctx,target,assignment_type)
                 };
                 return acc
@@ -2954,11 +2975,6 @@ export async function init_compiler(Environment) {
                 }
             };
             get_declaration_details=async function(ctx,symname,_levels_up) {
-                if (check_true (false)){
-                    {
-                        symname=await first((symname).split("."))
-                    }
-                };
                 return await async function(){
                     if (check_true ((await (async function(){
                         let __targ__116=(ctx && ctx["scope"]);

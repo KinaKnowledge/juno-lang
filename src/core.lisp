@@ -1919,10 +1919,13 @@ such as things that connect or use environmental resources.
     })
    
 (defmacro defparameter (sym value meta)
-    `(defglobal ,#sym ,#value ,#meta)
+    `(use_quoted_initializer 
+         (defglobal ,#sym ,#value ,#meta))
     {
-        `description: (+ "Defines a global via defglobal (synonym).  If the symbol is "
-                         "already defined, it will be overwritten.  To set a symbol in "
+        `description: (+ "Defines a global that is always reset to the provided value, "
+                         "when called or when the image is reloaded, ensuring that the "
+                         "initial value is always set to a specific value.  If the value "
+                         "is already defined, it will be overwritten.  To set a symbol in "
                          "an explicit namespace, provide a fully qualified symbol name "
                          "in the form of namspace/symname as the symbol to be defined. "
                          "Returns the defined value.")
