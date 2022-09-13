@@ -654,8 +654,7 @@
                          (set_style [["width" "0%"]
                                      ["height" "0%"]] view_overlay)
                          (remove_class "juno-active-hover" center_divider)
-                         (= drag_status nil)
-                         (console.log "adjustment complete")
+                         (= drag_status nil)                         
                          (perform_resize))))
        (perform_drag (fn (e)
                        (progn

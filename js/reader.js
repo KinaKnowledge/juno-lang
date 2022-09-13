@@ -1,7 +1,7 @@
 // Source: reader.lisp  
-// Build Time: 2022-09-11 10:10:53
-// Version: 2022.09.11.10.10
-export const DLISP_ENV_VERSION='2022.09.11.10.10';
+// Build Time: 2022-09-13 09:13:24
+// Version: 2022.09.13.09.13
+export const DLISP_ENV_VERSION='2022.09.13.09.13';
 
 
 
@@ -143,7 +143,7 @@ export async function initializer(Environment) {
                                     return (idx<block_length)
                                 };
                                 let __body_ref__4=async function() {
-                                    (idx=idx+1);
+                                    idx+=1;
                                     key=block[idx];
                                     if (check_true (((key instanceof Array)&& ((key && key.length)===2)&& ((key && key["0"])==="=:quotem")&& ((key && key["1"]) instanceof String || typeof (key && key["1"])==='string')))){
                                         {
@@ -158,7 +158,7 @@ export async function initializer(Environment) {
                                             return await error("missing object key",("blank or nil key: "+ block[idx]))
                                         } else if (check_true (await (await Environment.get_global("is_number?"))(key))) {
                                             {
-                                                (idx=idx+1);
+                                                idx+=1;
                                                 return await async function(){
                                                     obj[key]=block[idx];
                                                     return obj;
@@ -179,13 +179,13 @@ export async function initializer(Environment) {
                                             }
                                         } else {
                                             {
-                                                (idx=idx+1);
+                                                idx+=1;
                                                 if (check_true (await (await Environment.get_global("ends_with?"))(":",key))){
                                                     key=await (await Environment.get_global("chop"))(key)
                                                 } else {
                                                     {
                                                         if (check_true ((block[idx]===":"))){
-                                                            (idx=idx+1)
+                                                            idx+=1
                                                         } else {
                                                             await error("missing colon",("expected colon for: "+ key))
                                                         }

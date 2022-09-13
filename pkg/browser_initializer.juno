@@ -526,10 +526,15 @@
 (defun log_view (options)
   (let
       ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
-       (clear_button (button (dtext "Clear")))
+       (clear_button (button (dtext "Clear Entries")))
        (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
+       (namespace_span (if options.namespace
+                         (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } options.namespace)))
        (control_status (div {  `class: "juno-buffer-bar" }
                             title_span
+                            (if namespace_span
+                              namespace_span
+                              [])
                             clear_button))
        (view (div { `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                   control_status
@@ -539,12 +544,15 @@
                       (when (not (eq nil command_text))
                         (-> output_container
                             `prepend
-                            (div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                            (div { style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
                                       (code { `style: "font-style: italic; color: darkblue;" }
                                                  command_text))))
                       (-> output_container
                           `prepend
-                          (div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                          (div { `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; "
+                                            (if (eq nil command_text)
+                                              "border-top: 1px solid #00000008; padding: 5px;"
+                                              "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
                                     (cond
                                       (is_element? result)
                                       result
@@ -604,7 +612,7 @@
 (defun browser_repl (options)
   (let
       ((name options.name)
-       (output_control (log_view { `title: name }))
+       (output_control (log_view { `title: name `namespace: *namespace* }))
        (resize_observer nil)                                                                                            
        (current_env Environment)
        (error_state nil)
@@ -616,7 +624,7 @@
        (push_history (fn (lisp_text)
                        (progn
                         (push history
-                              lisp_text)
+                                lisp_text)
                         (= history_idx (- history.length 1))
                         (when (> history.length (or options.max_history_size
                                                     50))
@@ -624,10 +632,10 @@
        (history_idx 0) 
        (history_prior_entry (fn ()
                               (progn
+                               (-> input_container `set (prop history history_idx))
                                (dec history_idx)                               
                                (when (< history_idx 0)
-                                 (= history_idx (- history.length 1)))
-                               (-> input_container `set (prop history history_idx)))))
+                                 (= history_idx (- history.length 1))))))
        (history_next_entry (fn ()
                               (progn
                                (inc history_idx)                               
@@ -696,8 +704,7 @@
                          (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
-                                                         "Version: " Environment.build_version   )))
-                         (-> output_control `append (html/div "Namespace: " (current_namespace)))))))))
+                                                         "Version: " Environment.build_version   )))))))))
     (= intf {
              `view: juno_container
              `options: options
@@ -709,7 +716,7 @@
              `initialize: initialize
              `output_container: output_control.view
              `log: (fn (val)
-                     (-> output_control `append val))
+                     (-> output_control `append val nil))
              `evaluate: (fn (lisp_text no_eval)
                           (evaluator lisp_text no_eval))
              })
@@ -750,7 +757,13 @@
     
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
-    
+
+    (defun core/rlog (`& vals)
+      (progn
+       (for_each (`v (or vals []))
+          (-> $repl `log v))
+       nil))
+      
      
     (setq header (-> document `querySelector "header"))
 

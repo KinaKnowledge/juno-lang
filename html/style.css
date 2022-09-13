@@ -4,7 +4,7 @@
 /* Variables */
 
 :root {
-  --main-bg-color: #F8F6F6;
+  --main-bg-color: #f3f2f1;
   --main-mono-space: ui-monospace,
     "Cascadia Mono", "Segoe UI Mono",    
     "Roboto Mono",
@@ -12,6 +12,8 @@
     Menlo, Monaco, Consolas,
     monospace;
 }
+
+
 
 
 /*!

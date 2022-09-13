@@ -146,7 +146,11 @@
                               })          
           })
           
-     
+     (if (== "undefined" (typeof Element))
+         (set_prop globalThis
+                 `Element
+                 (function () false)))
+       
      (defvar id  (get_next_environment_id))
 
      ;; if we have a namespace other than core we should
@@ -1141,7 +1145,8 @@
                               `target_ns: target_namespace
                               `initializer: [(quote quote) initializer]
                             }
-                            )))
+                            )
+                      initializer))
 		    {
 		     `description: (+ "When used as an initializer wrapper via the use_symbols macro, the wrapped "
                                       "initializer will not be loaded until the from_namespace is loaded to ensure "
@@ -1941,8 +1946,7 @@
 				       (if (prop included_globals.children_declarations childset.0)
 				         (prop included_globals.children_declarations childset.0)
 				         {})
-                                       true))))                  
-       )
+                                       true)))))
        
 
      ;; clone_to_new: an earlier experiment in working with environments...
@@ -1988,7 +1992,10 @@
                      [ symset.0 [(quote quotel) (prop Environment.global_ctx.scope "*env_skeleton*") ]]
 
                      (resolve_path [ symset.0 `initializer ] Environment.definitions)                     
-                     [symset.0 (resolve_path [ symset.0 `initializer ] Environment.definitions)]
+                     (do                       
+                       [symset.0
+                         [(quote quotel) "placeholder"]])
+                         ;[(quote quotel) (resolve_path [ symset.0 `initializer ] Environment.definitions)]])
                     
                      (== nil symset.1)
                      [symset.0 (quote nil)]
@@ -2007,7 +2014,7 @@
               (my_children nil)                               
               (env_constructor nil)
               (dcomps (date_components (new Date)))
-              (options (or options {}))
+              (options (or options {}))              
               (version_tag (if (not (blank? opts.version_tag))
                              opts.version_tag
                              (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
@@ -2061,12 +2068,14 @@
                          (progn
                           (= child_env (-> child.1
                                            `compile
-                                           (-> child.1 `export_symbol_set { `no_compiler: true })
-                                           { `throw_on_error: true  }))                        
-                          [child.0  [ child.1.definitions `(javascript ,#child_env) ]])))))
+                                           (-> child.1 `export_symbol_set { `no_compiler: true })                                           
+                                           { `throw_on_error: true  }))
+                          ;(= child_env (-> child.1
+                           ;                `export_symbol_set { `no_compiler: true }))
+                          [child.0  [ [(quote quotel) child.1.definitions] `(javascript ,#child_env) ]])))))
            
                                       
-	   
+	  
            ;; now embed our compiled existing context into the source tree...			    
            (set_path target_insertion_path src
 		     `(fn ()
@@ -2159,10 +2168,7 @@
              src))))
                            
 
-     (if (== "undefined" (typeof Element))
-       (set_prop globalThis
-                 `Element
-                 (function () false)))
+   
 
      
           
@@ -2326,7 +2332,19 @@
      
     
      (when (== namespace "core")
-        ;; call the system initializer
+
+       (debug)
+       (for_each (symname (keys Environment.definitions))
+          (progn
+           (aif (and (not (and included_globals
+                               (prop included_globals.imports symname)))
+                     (resolve_path [ symname `initializer ] Environment.definitions))                
+                (progn                 
+                 (set_prop Environment.global_ctx.scope
+                           symname
+                           (eval_struct it))))))
+       ;; call the system initializer
+
        (when sys_init
          (eval sys_init))
 
@@ -2360,9 +2378,15 @@
                                  (when (prop imported_defs symset.0)
                                    (set_path [ childset.0 `definitions symset.0 ] children
                                              (prop imported_defs symset.0)))
-                                 ;(console.log childset.0 ": " symset.0 symset.1)                          
-			         (set_path [ childset.0 `context `scope symset.0 ] children					  
-				           symset.1))))))
+                                 ;; if we have an initializer for the symbol in the definition, we need to eval it and place
+                                 ;; the result scope that contains the symbol                                 
+                                 (aif (resolve_path [ childset.0 `definitions symset.0 `initializer ] children)
+                                      (progn
+                                       
+                                       (set_path [ childset.0 `context `scope symset.0 ] children
+                                                 (-> childenv `eval it)))                                                   
+			              (set_path [ childset.0 `context `scope symset.0 ] children					  
+				                symset.1)))))))
        
      ;; call the user initializer     
        (when init 
