@@ -212,10 +212,11 @@
   
 (defun macroexpand (quoted_form)
     (let
-       ((macro_name (-> quoted_form.0 `substr 2))
-        (macro_func (-> Environment `get_global macro_name))
-        (expansion (if (and (is_function? macro_func)
-                            (resolve_path [ macro_name `eval_when `compile_time ] Environment.definitions))
+        ((macro_name (-> quoted_form.0 `substr 2))
+         (working_env (-> Environment `get_namespace_handle (current_namespace)))
+         (macro_func (-> working_env `get_global macro_name))
+         (expansion (if (and (is_function? macro_func)
+                            (resolve_path [ macro_name `eval_when `compile_time ] working_env.definitions))
                        (apply macro_func (-> quoted_form `slice 1))
                        quoted_form)))
     expansion)
@@ -1095,13 +1096,13 @@
 				  (and (is_array? meta)
 				       (is_object? (resolve_path [ 3 1 ] form)))
 				  (do
-				   (set_path [ 3 1 `initializer ] form [(quote quote) form.2 ])				   
+				   (set_path [ 3 1 `initializer ] form [(quote quotel) form.2 ])				   
 				   form)
 				  (is_object? meta)
 				  (do
 				   (do
 				      (set_prop form.3					   
-						`initializer [(quote quote) form.2 ])				      
+						`initializer [(quote quotel) form.2 ])				      
 				      form))
 				  else
 				  (do
@@ -1846,7 +1847,45 @@ such as things that connect or use environmental resources.
       `usage: ["values:*"]
       `tags: ["nil" "truthy" "logic" "or" "undefined"]
   })
-            
+
+
+(defun_sync sanitize_js_ref_name (symname)
+          (cond 
+            (not (is_string? symname))
+            symname
+            else
+            (let
+                ((`text_chars (split_by "" symname))
+                 (`acc []))
+              
+              (for_each (`t text_chars)
+                        (cond (== t "+")
+                              (push acc "_plus_")
+                              (== t "?")
+                              (push acc "_ques_")
+                              (== t "-")
+                              (push acc "_")
+                              (== t "&")
+                              (push acc "_amper_")
+                              (== t "^")
+                              (push acc "_carot_")
+                              (== t "#")
+                              (push acc "_hash_")
+                              (== t "!")
+                              (push acc "_exclaim_")
+                              (== t "*")
+                              (push acc "_star_")
+                              (== t "~")
+                              (push acc "_tilde_")
+                              (== t "~")
+                              (push acc "_percent_")
+                              (== t "|")
+                              (push acc "_pipe_")
+                              (contains? t "(){}")
+                              (throw SyntaxError (+ "Invalid character in symbol: " symname))
+                              else
+                              (push acc t)))
+              (join "" acc))))
        
 (defmacro is_symbol? (symbol_to_find)
   `(not (or (== (typeof ,#symbol_to_find) "undefined")
@@ -1861,6 +1900,35 @@ such as things that connect or use environmental resources.
    })
 
 
+(defmacro defvalue (sym value meta)
+  `(let
+      ((unquoted_sym (desym ,#sym))
+       (details (describe unquoted_sym)))
+     (if details
+       (-> Environment `get_global (+ details.namespace "/" unquoted_sym))
+       (defglobal ,#sym ,#value ,#meta)))
+   {
+      `description: (+ "If the provided symbol is already defined as an accessible "
+                       "global value from the current namespace it will return the "
+                       "defined value, otherwise it will define the global in the "
+                       "current (implicit) namespace or the explicitly referenced " 
+                       "namespace.  Returns the newly defined value or previously "
+                       "defined value.")
+      `usage: ["sym:symbol|string" "value:*" "meta:?object"]
+      `tags: ["allocation" "reference" "symbol" "value" "set" "reference" "global"]
+    })
+   
+(defmacro defparameter (sym value meta)
+    `(defglobal ,#sym ,#value ,#meta)
+    {
+        `description: (+ "Defines a global via defglobal (synonym).  If the symbol is "
+                         "already defined, it will be overwritten.  To set a symbol in "
+                         "an explicit namespace, provide a fully qualified symbol name "
+                         "in the form of namspace/symname as the symbol to be defined. "
+                         "Returns the defined value.")
+        `usage: ["sym:symbol|string" "value:*" "meta:?object"]
+        `tags: ["allocation" "reference" "symbol" "value" "set" "reference" "global"]
+        })
 
 (defun get_function_args (f)
     (let
@@ -2365,7 +2433,7 @@ such as things that connect or use environmental resources.
                 (push acc `(defglobal ,#(deref sym)
                            ,#(+ "=:" nspace "/" (deref sym))
                           
-                           (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) (quote ,#(+ "=:" nspace "/" (deref sym))))]
+                           (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) ,#(+ "=:" nspace "/" (deref sym)))]
 				       `[ `require_ns  ,#nspace ]
                                        `[ `requires [,#(+ "" nspace "/" (deref sym)) ]]
                                        [ `eval_when ,#(or (and decs (prop decs `eval_when)) {}) ]]                       
