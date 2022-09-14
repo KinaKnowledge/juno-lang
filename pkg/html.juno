@@ -445,6 +445,22 @@
                (== read_as "dataURL")
                (-> reader `readAsDataURL file))))))
 
+
+
+(defun control_tree (content_list)
+  (cond
+    (is_array? content_list)    
+    (reduce (c content_list)
+            (control_tree c))               
+    content_list.view
+    (progn
+     (if content_list.controls
+       [ content_list (control_tree (-> content_list `controls)) ]
+       content_list))
+    (is_element? content_list)
+    { view: content_list }))
+                    
+
 (defun split_view_vertical (content_a content_b options)
   (let
       ((center_width 7)
@@ -582,6 +598,7 @@
     {
      view: view
      initialize: initialize
+     controls: (fn () [ content_a content_b ])
      }))
                              
 
@@ -723,6 +740,7 @@
     {
      view: view
      initialize: initialize
+     controls: (fn () [ content_a content_b ])
      }))
 
 

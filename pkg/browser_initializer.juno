@@ -12,6 +12,9 @@
                            buffer_editor:{}
                            })
 
+;; the controls at the top level of the view
+(defglobal $root_controls [])
+
 
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
@@ -19,12 +22,9 @@
                               
           
   
-;; $controls is the list of global controls such as editors and views
-;; putting $ as a prefix indicates to the environment that it is not
-;; to be saved as part of the image.  It must be rebuilt on initialization
-;; since it contains live stateful objects.
+
 (console.log "browser_initializer running")
-(defglobal $controls nil)
+
 
 (defun make_menu (for_element menu_items options)
   (let
@@ -395,7 +395,7 @@
        (dups (new Set))
        (new_name nil)
        (selected_idx nil)
-       (available (reduce (control $controls)
+       (available (reduce (control (flatten (control_tree $root_controls)))
                           (when control.evaluate
                             (if (-> dups `has (or control.name "Untitled"))
                               (progn
@@ -525,17 +525,15 @@
 
 (defun log_view (options)
   (let
-      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
-       (clear_button (button (dtext "Clear Entries")))
-       (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
-       (namespace_span (if options.namespace
-                         (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } options.namespace)))
+      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))       
+       (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))       
        (control_status (div {  `class: "juno-buffer-bar" }
-                            title_span
-                            (if namespace_span
-                              namespace_span
-                              [])
-                            clear_button))
+                            (cond (is_array? options.controls)
+                                  options.controls
+                                  options.title
+                                  title_span
+                                  else
+                                  [])))
        (view (div { `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                   control_status
                   output_container))
@@ -594,15 +592,12 @@
                                 output_container.offsetHeight)
                       result)))                                                               
        (interf {}))
-    (attach_event_listener clear_button
-                           `click
-                           (fn ()
-                             (-> output_container `replaceChildren)))
+    
     (set_prop interf
               `view view
               `append add_result              
               `clear (fn ()
-                       (-> output_container `clear))
+                       (-> output_container `replaceChildren))
               `options options)
     interf))
 
@@ -612,12 +607,16 @@
 (defun browser_repl (options)
   (let
       ((name options.name)
-       (output_control (log_view { `title: name `namespace: *namespace* }))
-       (resize_observer nil)                                                                                            
+       
+       (resize_observer nil)
+       (namespace_span  (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
+       (commands_button (button { `title: "REPL Commands" } "⋯"))
+       (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
        (current_env Environment)
        (error_state nil)
        (initialized false)
        (intf nil)
+       (output_control (log_view { `controls: [ commands_button title_span namespace_span ]  }))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -631,19 +630,24 @@
                           (take history)))))
        (history_idx 0) 
        (history_prior_entry (fn ()
-                              (progn
+                              (when (> history.length 0)
                                (-> input_container `set (prop history history_idx))
                                (dec history_idx)                               
                                (when (< history_idx 0)
                                  (= history_idx (- history.length 1))))))
        (history_next_entry (fn ()
-                              (progn
+                              (when (> history.length 0)
                                (inc history_idx)                               
                                (when (>= history_idx history.length)
                                  (= history_idx 0))
                                (-> input_container `set (prop history history_idx)))))
        (clear_output (fn ()
                        (-> output_control `clear)))
+       (clear_history (fn ()
+                        (progn
+                         (= history [])
+                         (= history_idx 0))))
+       
        (repl_key_bindings (function ()
                                     (map (function (kb)
                                              (destructuring_bind (command_name bindings)
@@ -659,7 +663,7 @@
                     (let
                         ((result nil))
                       (setq error_state nil)
-                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      
+                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                    
                       (try
                         (= result (if no_eval
                                     lisp_text
@@ -669,6 +673,9 @@
                             (= error_state true)
                             (= result ex))))
                       (console.log "<-" result)
+                      (set_prop namespace_span
+                                `innerText
+                                (current_namespace))                     
                       (-> output_control `append result lisp_text error_state)
                       (if (not error_state)
                         (-> input_container `set "")))))
@@ -705,6 +712,19 @@
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                          "Version: " Environment.build_version   )))))))))
+    (attach_event_listener commands_button
+                           `click
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (make_menu commands_button
+                                         [["Clear Output Log"
+                                           (function ()
+                                                     (clear_output))]
+                                          ["Clear REPL History"
+                                           (function ()
+                                                     (clear_history))]]
+                                                           ))))
     (= intf {
              `view: juno_container
              `options: options
@@ -714,6 +734,7 @@
              `history_prior_entry: history_prior_entry
              `clear_output: clear_output
              `initialize: initialize
+             `controls: (fn () [ input_container output_control])
              `output_container: output_control.view
              `log: (fn (val)
                      (-> output_control `append val nil))
@@ -723,7 +744,80 @@
     intf))
 
 
+(defun control_container (content options)
+  (let
+      ((contained_content nil)
+       (view (div { `class: "juno-view-container" } ))
+       (resize_observer nil)
+       (init_timer nil)
+       (initialized false)
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 0))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view)))))
+       (set_content (fn (new_content)
+                      (let
+                          ((new_view nil))
+                        (= new_view
+                           (cond
+                             new_content.view
+                             new_content.view
 
+                             (is_element? new_content)
+                             new_content
+                             
+                             else
+                             (progn
+                              (if new_content 
+                                (div { } (as_lisp new_content))
+                                (div { `class: "juno-empty-content" } "Set Content")))))
+                        (-> view `replaceChildren new_view)
+                        (if (not new_content.view)
+                          (= contained_content
+                             {
+                              `view: view
+                              })
+                          (= contained_content new_content))
+                        (perform_resize)
+                        (when new_content.initialize
+                          (-> new_content `initialize))  ;; initialize if not already
+                        view)))
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (when (not initialized)
+                        (= initialized true))
+                      (when view.parentElement
+                        (-> resize_observer `observe view.parentElement)
+                        (when (is_function? contained_content.initialize)
+                          (-> contained_content `initialize))))))
+                      
+                        
+       (intf (new Object)))
+    
+    (set_content content)
+    (= resize_observer (new ResizeObserver perform_resize))
+    (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250))
+    
+    (set_prop intf
+              `view view              
+              `initialize initialize              
+              `set_content set_content
+              `controls (fn () contained_content))))
+                             
 
 (defun user/*initializer* ()
   (let
@@ -731,10 +825,12 @@
        (scripts (-> (page_header) `querySelectorAll "script[id]"))        
        (embeds  nil)       
        (initial_split nil)
+       (scratch_editor nil)
+       (page_frame nil)
        (repl_split nil))
                                                                
     (console.log "user/*initializer is running." )
-   
+    
     (defglobal main_menu_button (li  { `class: "juno-menu-header" }
                                              (span { `class: "juno-menu-item" `style: "" } "File")))
 
@@ -751,9 +847,8 @@
             (defglobal *global_repl_history* []))
     
     (defglobal $repl (browser_repl { `name: "Global REPL" `history: *global_repl_history* }))
-    (defglobal $controls [])
-    (push $controls
-          $repl)
+    (defvalue $root_controls [])
+    
     
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
@@ -790,21 +885,26 @@
 
     (-> (get_by_id "body") `appendChild juno_container)
     
-    (push $controls
+    (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
-        
- 
-    (setq initial_split
-          (split_view_vertical (last $controls)
-                               $repl))
+
+    
+    (setq page_frame
+         (control_container nil))
 
     (-> juno_container
-        `append initial_split.view)
-            
-    (console.log "*initializer: calling initial_split: initializer")
-    (debug)
-    (-> initial_split `initialize)
-    (-> (last $controls)
+        `append page_frame.view)
+
+    (-> page_frame `initialize)
+    
+    (-> page_frame `set_content
+        (split_view_vertical scratch_editor
+                             $repl))
+    
+    
+    (push $root_controls page_frame)
+    
+    (-> scratch_editor
         `set_evaluator_control $repl)
     (when (blank? (prop *env_config*.export `save_prefix))
       (set_prop *env_config*.export

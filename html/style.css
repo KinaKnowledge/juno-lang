@@ -4,13 +4,16 @@
 /* Variables */
 
 :root {
-  --main-bg-color: #f3f2f1;
+  --main-bg-color: #FBFAF8;
+  --main-accent-color: #0000000A;
+  --main-accent-line: #00000010;
   --main-mono-space: ui-monospace,
     "Cascadia Mono", "Segoe UI Mono",    
     "Roboto Mono",
     "Ubuntu Mono",
     Menlo, Monaco, Consolas,
     monospace;
+ 
 }
 
 
@@ -50,7 +53,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--main-bg-color, #F8F6F6);
+  background: var(--main-bg-color, #FCFAFA);
 }
 
 /**
@@ -1178,8 +1181,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
     list-style: none;
     margin: 0;
     padding: 0;
-    font-size: 0.9em;
-    background: #F8F6F6;
+    font-size: 0.9em;    
 }
 
 .pure-menu-item {
@@ -1406,7 +1408,22 @@ striping:
 /* ----- Specific Juno Styles ----- */
 
 
+.juno-view-container {
+  display: inline-block;
+  width: inherit;
+  height: inherit;
+  overflow: scroll;
+}
 
+.juno-empty-content {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  border: 10px dotted var(--main-accent-color);
+  text-align: middle;
+  font-size: 3.0em;
+  line-height: 3.0em;
+}
 
 .juno-vertical-split-container {
   overflow: hidden;
@@ -1426,12 +1443,7 @@ striping:
   height: calc(100% - 5px);
 }
 
-.juno-view-container {
-  display: inline-block;
-  width: inherit;
-  height: inherit;
-  overflow: scroll;
-}
+
 
 .juno-vertical-dragger { 
   width: 7px;
@@ -1442,7 +1454,7 @@ striping:
 }
 
 .juno-vertical-dragger:hover { 
-  background: #00000010;
+  background: var(--main-accent-line);
 }
 
 .juno-horizontal-dragger {
@@ -1463,12 +1475,13 @@ striping:
 
 .juno-buffer-bar {  
   font-size: 0.9em;
-  background: #00000010;
+  background: var(--main-accent-color);
   width: 100%;
   cursor: default;
   white-space: nowrap;
   padding-top: 2px;
   padding-bottom: 2px;
+  border-bottom: 1px solid var(--main-accent-line);
 }
 
 .juno-buffer-bar button {
@@ -1520,7 +1533,8 @@ span.juno-needs-save {
   position: absolute;
   z-index: 20;
   animation: slide-in 0.2s ease-out;
-  box-shadow: 1px 1px 4px 0px #00000082;
+  box-shadow: 2px 3px 8px 0px #00000069;
+  background: var(--main-bg-color);
 }
 
 li.juno-menu-header {
