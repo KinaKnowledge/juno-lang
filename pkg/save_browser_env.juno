@@ -125,7 +125,7 @@
                                 )
                    (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_editor)
-                   (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
+                   (html/script { `id: "ace_editor_lang_tools" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_lang_tools)
                    (html/script { `id: "ace_juno_mode" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_juno_mode)
