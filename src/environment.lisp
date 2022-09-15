@@ -2332,8 +2332,7 @@
      
     
      (when (== namespace "core")
-
-       (debug)
+       
        (for_each (symname (keys Environment.definitions))
           (progn
            (aif (and (not (and included_globals
@@ -2396,9 +2395,11 @@
        ;; if there were any children in the export, so do these now
 
        (for_each (child children)
-                 (progn                                    
+                 (progn                  
                   (-> child `evaluate_local
-                      (+ "(progn (console.log \"child running initialization..\" *namespace*) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")))))
+                      (+ "(progn (debug) (console.log \"child running initialization..\" *namespace*) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")
+		      nil
+		      { log_errors: true }))))
                                     
      
      Environment)))

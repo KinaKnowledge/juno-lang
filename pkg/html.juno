@@ -189,7 +189,8 @@
   (do
     (defvar `effected [])
     (= elems (flatten elems))
-    (when (not (eq nil elems))
+    (when (and (not (eq nil elems))
+               (> elems.length 0))
       (= elems (if (or (instanceof elems.0 NodeList)
                        (instanceof elems.0 HTMLCollection)
                        (is_array? elems.0))
@@ -211,7 +212,8 @@
   (do
     (defvar `effected [])
     (= elems (flatten elems))
-    (when (not (eq nil elems))
+    (when (and (not (eq nil elems))
+               (> elems.length 0))
       (= elems (if (or (instanceof elems.0 NodeList)
                        (instanceof elems.0 HTMLCollection)
                        (is_array? elems.0))
@@ -326,7 +328,11 @@
    (-> e `preventDefault)
    (-> e `stopPropagation)))
 
+(defmacro focus_to (elem)
+    `(aif ,#elem (-> it `focus)))
 
+(defmacro blur_to (elem)
+    `(aif ,#elem (-> it `blur)))
 
 (defun file_picker_button (button_text on_selection)
   (let
@@ -465,6 +471,7 @@
   (let
       ((center_width 7)
        (right_margin 5)
+       (options (or options {}))
        (center_divider (div { `class: "juno-vertical-dragger"
                               `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
        (left_container (div { `class: "juno-view-container" }
@@ -511,8 +518,11 @@
                              (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
                                         left_container)
                              (set_style [["width" (+ "" center_width "px") ]] center_divider)
-                             (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]                                                                            
+                             (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]
                                         right_container)
+                             (set_prop options
+                                       `ratio
+                                       (/ center_pos view.offsetWidth))
                              ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
                              ))))
        (init_drag (fn (e)
@@ -540,7 +550,7 @@
                             (progn
                              (= center_pos (Math.max 20 (Math.min e.offsetX (- view.offsetWidth 20))))))
                           (perform_resize)))))
-                                                                           
+       (intf {})                                                                    
        (initialize (fn ()
                      (progn
                       (when init_timer
@@ -555,7 +565,31 @@
                         (when content_a.initialize
                           (-> content_a `initialize))
                         (when content_b.initialize
-                          (-> content_b `initialize)))))))
+                          (-> content_b `initialize))))))
+       (set_content (fn (position new_content)
+                      (if (and position new_content
+                               (or (== position 0) (== position 1)))
+                        (let
+                            ((target_container (if (== position 0)
+                                                 left_container
+                                                 right_container)))
+                          (if (== position 0)
+                            (= content_a new_content)
+                            (= content_b new_content))
+                          (cond
+                            new_content.view ;; we have been given a control
+                            (progn                             
+                             (-> target_container `replaceChildren new_content.view)
+                             (when new_content.initialize
+                               (-> new_content `initialize)))
+                            (is_element? new_content)                                                         
+                            (-> target_container `replaceChildren new_content)
+                            else
+                            (-> target_container `replaceChildren (pre
+                                                                   (JSON.stringify new_content nil 4))))
+                          (perform_resize)
+                          true)
+                        (throw "set_content: invalid or missing arguments")))))
 
     ;; set up the events
     (attach_event_listener view_overlay
@@ -585,6 +619,9 @@
                              (progn                              
                               (handle_event e)                              
                               (init_drag e))))
+
+   
+
     (= resize_observer (new ResizeObserver perform_resize))
     (console.log "split_view_vertical: ready: initialized: " initialized)
     (when true ;options.auto_initialize
@@ -595,17 +632,23 @@
                                       (= init_timer nil)
                                       (initialize))))
                                  250)))                                 
-    {
-     view: view
-     initialize: initialize
-     controls: (fn () [ content_a content_b ])
-     }))
+    (set_prop intf
+     `view view
+     `initialize initialize
+     `set_content set_content
+     `options options
+     `type `split_view_vertical
+     `controls (fn () [ content_a content_b ])
+     `toJSON (function ()
+                       `(split_view_vertical ,#content_a ,#content_b ,#options)))
+    intf))
                              
 
 (defun split_view_horizontal (content_a content_b options)
   (let
       ((center_height 7)
        (bottom_margin 5)
+       (options (or options {}))
        (center_divider (div { `class: "juno-horizontal-dragger"
                               `style: (+ "cursor: row-resize; width: 100%; height: " center_height "px") }))
        (top_container (div { `class: "juno-view-container" }
@@ -655,6 +698,9 @@
                              (set_style [["height" (+ "" center_height "px") ]] center_divider)
                              (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]                                         
                                         bottom_container)
+                             (set_prop options
+                                       `ratio
+                                       (/ center_pos view.offsetHeight))
                              ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
                              ))))
        (init_drag (fn (e)
@@ -683,7 +729,7 @@
                             (progn
                              (= center_pos (Math.max 20 (Math.min (- e.offsetY center_height 3) (- view.offsetHeight 40))))))
                           (perform_resize)))))
-                                                                           
+       (intf {})
        (initialize (fn ()
                      (progn
                       (when init_timer
@@ -697,8 +743,33 @@
                         (when content_a.initialize
                           (-> content_a `initialize))
                         (when content_b.initialize
-                          (-> content_b `initialize)))))))
-
+                          (-> content_b `initialize))))))
+       (set_content (fn (position new_content)
+                      (if (and position new_content
+                               (or (== position 0) (== position 1)))
+                        (let
+                            ((target_container (if (== position 0)
+                                                 top_container
+                                                 bottom_container)))
+                          (if (== position 0)
+                            (= content_a new_content)
+                            (= content_b new_content))
+                          (cond
+                            new_content.view ;; we have been given a control
+                            (progn                             
+                             (-> target_container `replaceChildren new_content.view)
+                             (when new_content.initialize
+                               (-> new_content `initialize)))
+                            (is_element? new_content)                                                         
+                            (-> target_container `replaceChildren new_content)
+                            else
+                            (-> target_container `replaceChildren (pre
+                                                                   (JSON.stringify new_content nil 4))))
+                          (perform_resize)
+                          true)
+                        (throw "set_content: invalid or missing arguments")))))
+                          
+                                                        
     ;; set up the events
     (attach_event_listener view_overlay
                            `mousemove
@@ -727,6 +798,7 @@
                              (progn                              
                               (handle_event e)                              
                               (init_drag e))))
+  
     (= resize_observer (new ResizeObserver perform_resize))
     (console.log "split_view_horizontal: ready: initialized: " initialized)
     (when true ;options.auto_initialize
@@ -737,11 +809,18 @@
                                       (= init_timer nil)
                                       (initialize))))
                                  250)))                                 
-    {
-     view: view
-     initialize: initialize
-     controls: (fn () [ content_a content_b ])
-     }))
+    (set_prop intf
+     `view view
+     `initialize initialize
+     `options options
+     `type `split_view_horizontal
+     `controls (fn () [ content_a content_b ])
+     `toJSON (function ()
+                       `(split_view_horizontal  ,#content_a ,#content_b ,#options))
+     `set_content (fn (position new_content)
+                        (set_content position new_content)))
+     
+    intf))
 
 
 (defun tabs (tab_list)

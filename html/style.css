@@ -5,6 +5,7 @@
 
 :root {
   --main-bg-color: #FBFAF8;
+  --control-focused: #84a0bf3b;
   --main-accent-color: #0000000A;
   --main-accent-line: #00000010;
   --main-mono-space: ui-monospace,
@@ -1521,8 +1522,8 @@ span.juno-namespace {
   color: #976464;
 }
 
-span.juno-focused {
-  background: #FFFFFFA0;
+div.juno-focused {
+  background: var(--control-focused)
 }
 
 span.juno-needs-save {

@@ -12,19 +12,87 @@
                            buffer_editor:{}
                            })
 
+(defparameter *main_menu_elem*
+  (ul { `class: "pure-menu-list" `style: "margin-left: 10px" } ))
+
+(defvalue *main_menu* [])
+(defvalue *serialized_controls* [])
+
 ;; the controls at the top level of the view
 (defglobal $root_controls [])
 
+;; the global pointer to the control which has focus
+;; nil if there are no focus points or values.
+
+(defparameter *last_focus* nil)
 
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
                               
-          
-  
+
+(defun generate_id (prefix)
+  (if (is_string? prefix)
+    (+ "" prefix "-" (time_in_millis) "-" (random_int 9999999))
+    (+ "control-" (time_in_millis) "-" (random_int 9999999))))
 
 (console.log "browser_initializer running")
 
+(defun current_controls ()
+  (flatten (control_tree $root_controls)))
+
+(defun get_control_by_id (id)
+  (let
+      ((controls (current_controls))
+       (ctrl nil))
+    (for_each (`control controls)
+              (when (== id (and control.options control.options.id))
+                (= ctrl control)
+                (break)))
+    ctrl))
+
+(defun process_focus_chain (e originator_container)
+  (progn
+   (handle_event e)
+   (console.log "process_focus_chain: " e originator_container)
+   (when e.path
+     (let
+         ((target_control nil)
+          (controls (reduce (c (current_controls))                        
+                        (when c.on_focus                          
+                          c)))
+          (focused_list (query_all ".juno-focused")))
+
+       ;; remove any focus class markers
+       (when (> focused_list.length 0)
+         (= focused_list (map (fn (v) v) focused_list))       
+         (apply remove_class "juno-focused" focused_list))
+       
+       (for_each (elem e.path)
+          (progn
+           (for_each (control controls)
+                     (when (== elem control.view)
+                       (= target_control control)
+                       (break)))
+           (when target_control
+             (break))))
+       
+       (for_each (control controls)
+                 (when (and (or (eq nil target_control)
+                                (not (== target_control control)))
+                            (is_function? control.on_blur))
+                   (-> control `on_blur)))
+                                                  
+       (if target_control
+         (progn
+          (-> target_control `on_focus e)
+          (setq *last_focus* target_control)
+          (console.log "-> found target_control: " target_control))
+         (progn
+          (setq *last_focus* nil)
+          (console.log "lost all control focus")
+          (notify "lost all control focus")))))))
+  
 
 (defun make_menu (for_element menu_items options)
   (let
@@ -90,6 +158,8 @@
        (-> (get_by_id "body") `appendChild view)
        (console.log "appended view" view)
        view))))
+
+
 
 (defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
@@ -248,10 +318,11 @@
 (defun make_editor (content options)
   (let
       ((options (or options {
-                             `type: "juno"
+                             `type: "juno"                             
                              }))
        (resize_observer nil)
        (intf {})
+       (id (or options.id (generate_id id)))
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
        (editor_div (div { `style: "height: calc(100% - 20px); width: 100%; overflow: hidden;" }))
@@ -341,7 +412,7 @@
                                                                 (options.on_change editor val))))                             
                              (-> editor `resize true)                             
                              (set_prop intf `editor editor)                             
-                             ))))       
+                             ))))
     
     (if (not (is_symbol? `$ace_editor))
       (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
@@ -358,6 +429,7 @@
                 (-> editor `setValue text))
         `get: (fn (text)
                 (-> editor `getValue))
+        `type: `make_editor
         `set_evaluator: (fn (new_evaluator)
                           (when (is_function? new_evaluator)
                             (set_prop options
@@ -369,11 +441,14 @@
         `save: (function ()
                          (options.on_save (-> editor `getValue)))                 
         `options: options
+        `toJSON: (function ()
+                           `(make_editor ,#(-> editor `getValue) ,#options))
         `initialize: (fn ()
                        (when view.parentElement
                          (console.log "editor: performing initialization")
                          (-> resize_observer `observe view.parentElement)
-                         (initialize_editor)
+                         (initialize_editor)                        
+                             
                          ))
         })))
                
@@ -425,6 +500,8 @@
                  (-> Environment `get_namespace_handle namespace)
                  Environment))
        (title_span (span { `class: "juno-title" } title))
+       (options (or options {}))
+       (id (or options.id (generate_id "buffer_editor")))
        (evaluator (cond (and (is_object? options.evaluator)
                              (is_function? options.evaluator.evaluate))
                         options.evaluator.evaluate
@@ -434,6 +511,7 @@
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
        (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
        (is_dirty? false)
+       
        (command_bar (or options.command_bar
                         (div { `class: "juno-buffer-bar" }
                              buffer_commands_button
@@ -461,19 +539,18 @@
                                       " "
                                       title)
                                    e)))))))
-                     
+       (on_focus (fn ()
+                   (progn
+                    (console.log "focused editor.")                    
+                    (setq *last_focus* edit_control)
+                    (add_class "juno-focused" command_bar))))
+       
        (edit_control (make_editor (if (is_string? init_value)
                                     init_value
                                     "")                                  
                                   {
                                    type: mode
-                                   command_bar: command_bar
-                                   on_focus: (fn ()
-                                               (progn
-                                                (console.log "focused editor.")
-                                                (add_class "juno-focused" title_span)))
-                                   on_blur: (fn ()
-                                              (remove_class "juno-focused" title_span))
+                                   command_bar: command_bar                                                                     
                                    on_save: on_save
                                    read_only: options.read_only
                                    on_change: (function (editor val)
@@ -489,6 +566,9 @@
                                 (if control.evaluate
                                   (progn
                                    (-> edit_control `set_evaluator control.evaluate)
+                                   (set_prop options
+                                             `evaluator_id
+                                             control.options.id)
                                    (if control.name
                                      (set_prop evaluator_span
                                                `innerText
@@ -516,16 +596,37 @@
                               
                               
                                           
-                                            
+    (set_prop options
+              `id
+              id)
+    (set_prop edit_control
+              `sub_initializer
+              edit_control.initialize)
     (set_prop edit_control
               `set_evaluator_control
-              set_evaluator_control)
+              set_evaluator_control
+              `on_focus
+              on_focus
+              `options
+              options
+              `type
+              `buffer_editor
+              `initialize (fn ()
+                            (when edit_control.view.parentElement                              
+                              (-> edit_control `sub_initializer)
+                              (console.log "buffer_editor: sub initialized: setting evaluator if I have it: " options)
+                               (set_evaluator_control (get_control_by_id options.evaluator_id))))
+                                       
+                              
+              `toJSON (function ()
+                                 `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
     edit_control))
 
 
 (defun log_view (options)
   (let
-      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))       
+      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+       (options (or options {}))
        (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))       
        (control_status (div {  `class: "juno-buffer-bar" }
                             (cond (is_array? options.controls)
@@ -534,9 +635,10 @@
                                   title_span
                                   else
                                   [])))
-       (view (div { `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
+       (view (div { `tabindex: 0 `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                   control_status
-                  output_container))
+                  output_container))       
+       (id (or options.id (generate_id "log_view")))
        (add_result (fn (result command_text error_state)
                      (progn
                       (when (not (eq nil command_text))
@@ -592,13 +694,19 @@
                                 output_container.offsetHeight)
                       result)))                                                               
        (interf {}))
-    
+    (set_prop options
+              `id
+              id)
     (set_prop interf
               `view view
-              `append add_result              
+              `append add_result
+              `control_bar control_status
+              `type `log_view
               `clear (fn ()
                        (-> output_container `replaceChildren))
-              `options options)
+              `options options
+              `toJSON (function ()
+                                `(log_view ,#options)))
     interf))
 
 
@@ -606,16 +714,17 @@
 
 (defun browser_repl (options)
   (let
-      ((name options.name)
-       
+      ((options (or options {}))
+       (name options.name)       
        (resize_observer nil)
        (namespace_span  (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
        (commands_button (button { `title: "REPL Commands" } "⋯"))
        (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
        (current_env Environment)
        (error_state nil)
-       (initialized false)
+       (initialized false)       
        (intf nil)
+       (id (or options.id (generate_id "repl")))
        (output_control (log_view { `controls: [ commands_button title_span namespace_span ]  }))
        (history (if (is_array? options.history)
                   options.history
@@ -687,7 +796,7 @@
                                    on_change: (function (editor val)
                                                         (progn
                                                          true))
-                                   repl_mode: true
+                                   repl_mode: true                                                                              
                                    evaluator: (fn (lisp_text no_eval)
                                                 (progn
                                                  (push_history lisp_text)
@@ -698,16 +807,24 @@
        (sview (split_view_horizontal
                                  output_control
                                  input_container
-                                 { `ratio: 0.7 } ))  ;; 80/20 top-bottom
+                                 { `ratio: (or options.ratio 0.7) } ))  ;; 80/20 top-bottom
        
-       (juno_container sview.view)
-       
+       (view sview.view)
+       (on_focus (fn ()
+                   (progn
+                    (-> input_container.editor `focus) ;; bring focus to the repl
+                    (add_class "juno-focused" output_control.control_bar )))) ;; we know that is the command bar
+       (on_blur (fn ()
+                  (progn
+                   (console.log "repl blur"))))
+                    
        (initialize (fn ()
                      (progn
                       (if initialized
                         (evaluator (div { `style: "display: flex padding: 5px" } "WARNING: REPL already initialized") true)
                         (progn
-                         (= initialized true)                                                 
+                         (= initialized true)
+                         (console.log "repl initializing")
                          (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
@@ -724,9 +841,16 @@
                                           ["Clear REPL History"
                                            (function ()
                                                      (clear_history))]]
-                                                           ))))
+                                         ))))
+
+    (set_prop options
+              `id
+              id)
+    ;(attach_event_listener view
+     ;                      `focusin
+      ;                     process_focus_chain)                         
     (= intf {
-             `view: juno_container
+             `view: view
              `options: options
              `name: name
              `input_container: input_container
@@ -734,6 +858,11 @@
              `history_prior_entry: history_prior_entry
              `clear_output: clear_output
              `initialize: initialize
+             `type: "browser_repl"
+             `on_focus: on_focus
+             `on_blur: on_blur
+             `toJSON: (function ()
+                                `(browser_repl ,#(or options { `ratio: sview.options.ratio } )))
              `controls: (fn () [ input_container output_control])
              `output_container: output_control.view
              `log: (fn (val)
@@ -760,7 +889,7 @@
                              (set_style [[ "width" (+ "" new_width "px") ]
                                          [ "height" (+ "" new_height "px") ]]
                                         view)))))
-       (set_content (fn (new_content)
+       (set_content (fn (position new_content) ;; position is discarded but it is essentially 0 since this is a single unit container
                       (let
                           ((new_view nil))
                         (= new_view
@@ -796,28 +925,72 @@
                         (= initialized true))
                       (when view.parentElement
                         (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "control_container: initializing with: " content)
+                        (when content
+                          (set_content 0 content))
                         (when (is_function? contained_content.initialize)
                           (-> contained_content `initialize))))))
                       
                         
        (intf (new Object)))
     
-    (set_content content)
+    
     (= resize_observer (new ResizeObserver perform_resize))
+    
     (= init_timer (setInterval (fn (e)
                                    (progn
                                     (when view.parentElement
                                       (clearInterval init_timer)
                                       (= init_timer nil)
                                       (initialize))))
-                                 250))
+                               250))
+    
     
     (set_prop intf
               `view view              
               `initialize initialize              
               `set_content set_content
-              `controls (fn () contained_content))))
-                             
+              `controls (fn () contained_content)
+              `toJSON (function ()
+                                 `(control_container ,#contained_content ,#options))
+              `type `control_container
+              `options options)))
+
+(defun add_menu_to_main (menu_title menu_items)
+  (if (and (is_string? menu_title)
+           (is_array? menu_items))
+    (let
+        ((existing_place (index_of menu_title (each *main_menu* `0)))
+         (gheader *main_menu_elem*)
+         (menu_header_elem (li  { `menu_item: menu_title `class: "juno-menu-header" }
+                                             (span { `class: "juno-menu-item" `style: "" } menu_title)))
+         (existing_menu_header nil))
+      (if (== existing_place -1)
+        (progn
+         (push *main_menu* [menu_title menu_items])
+         (-> gheader `appendChild menu_header_elem)
+         (= existing_place (- (length *main_menu*) 1)))  ;; get the index 
+        (progn         
+         (-> *main_menu* `splice existing_place 1 [ menu_title menu_items])
+         (= existing_menu_header (prop gheader.children (+ existing_place 1))) ;; move past the title span
+         (if existing_menu_header
+           (-> existing_menu_header `replaceWith menu_header_elem)
+           (-> gheader `appendChild menu_header_elem))))
+      (console.log "add_menu_to_main: " existing_place menu_title menu_items)
+      (attach_event_listener menu_header_elem
+                             `click
+                             (fn (e)
+                               (make_menu e.srcElement
+                                          (prop (prop *main_menu* existing_place) 1))))
+      true)))
+
+(defun save_control_image ()
+  (progn
+   (= *serialized_controls*
+     (for_each (root_control $root_controls)
+               (JSON.stringify root_control)))
+   (save_image)))
 
 (defun user/*initializer* ()
   (let
@@ -831,8 +1004,8 @@
                                                                
     (console.log "user/*initializer is running." )
     
-    (defglobal main_menu_button (li  { `class: "juno-menu-header" }
-                                             (span { `class: "juno-menu-item" `style: "" } "File")))
+    ;(defglobal main_menu_button (li  { `class: "juno-menu-header" }
+     ;                                        (span { `class: "juno-menu-item" `style: "" } "File")))
 
     (defglobal resource_loader_button (file_picker_button "" load_files))    
     (set_style [["position" "absolute"]
@@ -846,25 +1019,23 @@
     (unless (is_symbol? `*global_repl_history*)
             (defglobal *global_repl_history* []))
     
-    (defglobal $repl (browser_repl { `name: "Global REPL" `history: *global_repl_history* }))
+    
     (defvalue $root_controls [])
     
     
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
 
-    (defun core/rlog (`& vals)
-      (progn
-       (for_each (`v (or vals []))
-          (-> $repl `log v))
-       nil))
+    
       
      
     (setq header (-> document `querySelector "header"))
 
-    (-> header `appendChild (span { `class: "juno-header" } "Seedling" ))
-    (-> header `appendChild (ul { `class: "pure-menu-list" `style: "margin-left: 10px;" }
-                                main_menu_button))
+    (-> header `appendChild (span { `class: "juno-header" } "Seedling" ))    
+    (-> header `appendChild *main_menu_elem*)
+    
+    ;(-> header `appendChild (ul { `class: "pure-menu-list" `style: "margin-left: 10px;" }
+     ;                           main_menu_button))
     
    
 
@@ -873,43 +1044,72 @@
                              (progn
                               (defvar menu (get_by_id `cmenu))
                               (when menu (-> menu `remove)))))
+
+    (if (< *main_menu*.length 1)
+      (add_menu_to_main (dtext "File")
+                        [["Save Environment" (fn (e) (save_control_image)) ]
+                         ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
+                         ["Style CSS" (fn (e) (notify "View Site CSS"))]
+                         ])
+      (for_each (`menu_set (or *main_menu* []))
+          (add_menu_to_main menu_set.0 menu_set.1)))
+      
     
     (set_prop *env_config*.export
 	      `save_path
 	      nil)
         
-    (attach_event_listener main_menu_button
-			      `click
-			      (fn (e)
-				(show_file_menu)))
-
-    (-> (get_by_id "body") `appendChild juno_container)
     
-    (= scratch_editor
+    (attach_event_listener juno_container
+                           `focusin
+                           (fn (e)
+                             (process_focus_chain e)))
+    (-> (get_by_id "body") `appendChild juno_container)
+
+    ;; initialize or rehydrate the controls
+    (if (== (length *serialized_controls*) 0)
+      (progn       
+       (console.log "initializing control surface")
+       (defglobal $repl (browser_repl { `name: "Global REPL" `history: *global_repl_history* }))
+       (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
-    
-    (setq page_frame
-         (control_container nil))
+       
+       (setq page_frame
+             (control_container nil))
 
-    (-> juno_container
-        `append page_frame.view)
+       (-> juno_container
+           `append page_frame.view)
 
-    (-> page_frame `initialize)
+       (-> page_frame `initialize)
+       
+       (-> page_frame `set_content 0
+           (split_view_vertical scratch_editor
+                                $repl))
+       
+       (push $root_controls page_frame)
+       
+       (-> scratch_editor
+           `set_evaluator_control $repl)
+       (when (blank? (prop *env_config*.export `save_prefix))
+         (set_prop *env_config*.export
+                   `save_prefix
+                   "seedling")))
+      (progn
+       (setq page_frame
+             (eval_struct (JSON.parse *serialized_controls*)))
+       (push $root_controls page_frame)
+       (-> juno_container
+           `append page_frame.view)       
+       (-> page_frame `initialize)))
+       
+
+    (defun core/rlog (`& vals)
+      (progn
+       (for_each (`v (or vals []))
+          (-> $repl `log v))
+       nil))
     
-    (-> page_frame `set_content
-        (split_view_vertical scratch_editor
-                             $repl))
-    
-    
-    (push $root_controls page_frame)
-    
-    (-> scratch_editor
-        `set_evaluator_control $repl)
-    (when (blank? (prop *env_config*.export `save_prefix))
-      (set_prop *env_config*.export
-                `save_prefix
-                "seedling"))
   (notify (+ "Hello " *namespace* ))
   true))
 

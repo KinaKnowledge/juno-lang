@@ -44,6 +44,7 @@
                         (catch Error (ex)
                           (do
                             (= error_state true)
+                            (console.error ex)
                             (= result ex))))
                       (console.log "<-" result)
                       (when (not no_eval)                        
