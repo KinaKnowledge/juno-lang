@@ -2984,7 +2984,7 @@
                                               
                                               (if (is_form? token)
                                                   (do
-                                                   (for_each (`t [ "let" " " preceding_arg_ref "="  (compile_wrapper_fn token.val ctx) ";" ])
+                                                   (for_each (`t [ "let" " " preceding_arg_ref "="  (compile_wrapper_fn token ctx) ";" ])
                                                              (push acc t)))
                                                   (= preceding_arg_ref (compile_wrapper_fn token ctx)))
                                                (push acc

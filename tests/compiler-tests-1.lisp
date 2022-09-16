@@ -352,6 +352,11 @@
     15 
     "apply with multiple args"
     ]
+    [ "(apply Array { `my_object: true } \"Hello\" [ 1 2 3 ])"
+    []
+    `[ "Hello", { my_object: true }, 1, 2, 3 ]
+    "apply correctly uses object as argument"
+     ]
     [ "(fn ()
            (apply last [[ 1 2 3 4 ]]))"
     []
