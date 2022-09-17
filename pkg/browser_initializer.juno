@@ -29,11 +29,15 @@
 ;; nil if there are no focus points or values.
 
 (defparameter *last_focus* nil)
+(defparameter *app_menu_control* nil)
 
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
                               
+
+(defun *help_menu_function* ()
+  [["No Help Installed" (fn () false) ]])
 
 (defun generate_id (prefix)
   (if (is_string? prefix)
@@ -54,6 +58,8 @@
                 (= ctrl control)
                 (break)))
     ctrl))
+
+
 
 (defun set_focus_to (target_control _controls)
   (let
@@ -78,11 +84,22 @@
                                 (not (== target_control control)))
                             (is_function? control.on_blur))
                    (-> control `on_blur)))
-                                                  
+    (when (not (== *last_focus* target_control))
+      (when (and *last_focus*
+                 (prop *last_focus* `menu_items))
+        (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
+                                                "Control"))))
+      
     (if target_control
       (progn
-       (-> target_control `on_focus)
+              
+       (-> target_control `on_focus)              
        (setq *last_focus* target_control)
+       (when target_control.menu_items
+         (-> *app_menu_control* `add_menu [ (or target_control.name
+                                                "Control")
+                                           target_control.menu_items ]))
+             
        (console.log "-> found target_control: " target_control))
       (progn
        (setq *last_focus* nil)
@@ -477,17 +494,7 @@
                          ))
         })))
                
-(defun show_file_menu ()
-  (let
-      ((view nil))
-    
-    (setq view
-          (make_menu main_menu_button
-                     [["Save Environment" (fn (e) (save_image)) ]
-                      ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
-                      ["Style CSS" (fn (e) (notify "View Site CSS"))]
-                      ]))))   
-    
+
 
 (defun select_evaluator ()
   (let
@@ -633,7 +640,8 @@
               `set_evaluator_control  set_evaluator_control
               `on_focus on_focus
               `options options
-              `name title             
+              `name title
+              `menu_items menu_items
               `type `buffer_editor
               `initialize (fn ()
                             (when edit_control.view.parentElement                              
@@ -678,8 +686,20 @@
                                               "border-top: 1px solid #00000008; padding: 5px;"
                                               "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
                                     (cond
+                                      (== nil result)
+                                      (html/code { `style: " color: #B0B0B0;" }
+                                                 "nil")
+                                      (== undefined result)
+                                      (html/code { `style: " color: #B0B0B0;" }
+                                                 "undefined")
+                                      (is_string? result)
+                                      (html/code { `style: " color: blue;" }
+                                                 (pre (JSON.stringify result)))
                                       (is_element? result)
-                                      result
+                                      (let
+                                          ((inserter (div {})))
+                                        (-> inserter `insertAdjacentHTML `afterbegin result.outerHTML) ;; show the result statically otherwise DOM theft will occur
+                                        inserter) 
                                       (is_number? result)
                                       (html/code { `style: " color: green;" }
                                                  result)
@@ -688,9 +708,16 @@
                                       (html/code { `style: " color: orange;" }
                                                  result)
                                       (is_function? result)
-                                      (html/code { `style: " color: darkblue;" } "Function: "
-                                                 (if result.name result.name "anonymous"))
-                                      
+                                      (details { `style: " color: darkblue;" }
+                                               (summary (code { `style: "margin-left: 5px" }
+                                                               (cond
+                                                                 (== (subtype result) "AsyncFunction")
+                                                                 "AsyncFunction: "
+                                                                 else
+                                                                 "Function: ")
+                                                               (if result.name result.name "unnamed")))
+                                               (pre { `style: "margin-left: 15px" }
+                                                    (-> result `toString)))
                                       (and (is_array? result)
                                            (instanceof result.0 Error))
                                       (html/pre { `style: " color: darkred;" } "ERROR: "
@@ -985,6 +1012,8 @@
               `view view              
               `initialize initialize              
               `set_content set_content
+              `name options.name
+              `menu_items options.menu_items
               `controls (fn () contained_content)
               `toJSON (function ()
                                  `(control_container ,#contained_content ,#options))
@@ -1135,6 +1164,7 @@
        (menu_trees (or menu_trees []))
        (compute_top_levels (fn ()
                              (each menu_trees `0)))
+       (help_idx nil)
        (add_menu (fn (menu)
                    (let
                        ((existing_idx (index_of menu.0 top_levels)))
@@ -1156,7 +1186,12 @@
                        (let
                            ((new_view nil)
                             (header_elem nil))
-                         (= top_levels (compute_top_levels))                         
+                         (= top_levels (compute_top_levels))
+                         (unless options.disable_help
+                                 (push top_levels
+                                       "Help")
+                                 (= help_idx (- (length top_levels) 1)))
+                         
                          (= new_view
                             (ul { `id: id `class: "pure-menu-list" `style: "margin-left: 10px" }
                                 (if (> top_levels.length 0)
@@ -1170,21 +1205,33 @@
                                                 (fn (e)
                                                   (let
                                                       ((idx (-> e.srcElement `getAttribute `idx))
-                                                       (pos (-> e.srcElement `getBoundingClientRect))
+                                                       (pos (if (== e.srcElement.tagName "SPAN")
+                                                              (-> e.srcElement.parentElement `getBoundingClientRect)
+                                                              (-> e.srcElement `getBoundingClientRect)))
+                                                       (help_menu_function nil)
                                                        (mview nil)
                                                        (menu nil))
                                                     (aif (get_by_id "cmenu")
                                                          (-> it `remove))
                                                     (when idx
-                                                      (console.log "app_menu: clicked: " idx (prop menu_trees (parseInt idx)))
-                                                      (aif (resolve_path [ (parseInt idx) 1 ] menu_trees)
+                                                      
+                                                      (if (== (parseInt idx) help_idx)
+                                                        (= help_menu_function *help_menu_function*)
+                                                        (= help_menu_function nil))
+                                                      (console.log "app_menu: clicked: " idx "help_idx: " help_idx (prop menu_trees (parseInt idx)))
+                                                      (aif (or help_menu_function
+                                                               (resolve_path [ (parseInt idx) 1 ] menu_trees))
                                                            (progn
-                                                            (if (is_function? it)
+                                                            (cond
+                                                              help_menu_function
+                                                              (= menu (menu_tree (it)))
+                                                              (is_function? it)
                                                               ;; if the underlying menu is a function, call the function to get..
                                                               ;; up to the minute menu contents
                                                               (= menu (menu_tree (it (first (prop menu_trees (parseInt idx))))))
                                                               ;; other wise it is a standard menu, which may not rehydrate well depending
                                                               ;; on how it was created..
+                                                              else
                                                               (= menu (menu_tree it)))
                                                             (= mview (div { `id: `cmenu `class: "juno-menu" `style: "font-size: 0.9em; z-index: 30" }
                                                                    menu.view))
@@ -1213,7 +1260,7 @@
               `type "app_menu"
               `toJSON (function ()
                                 `(app_menu ,#global_menu_path ,#options)))
-    (defparameter *app_menu_control* intf)
+    (setq *app_menu_control* intf)
     intf))
 
 (defun app_header (controls options)
@@ -1254,6 +1301,7 @@
 
 (defun save_control_image ()
   (progn
+   (set_focus_to nil)
    (= *serialized_controls*
      (for_each (root_control $root_controls)
                (JSON.stringify root_control)))
@@ -1322,10 +1370,21 @@
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
        (push *main_menu*
-             [ "File" [["Save Environment" (fn (e) (save_control_image)) ]
-                       ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
-                       ["Style CSS" (fn (e) (notify "View Site CSS"))]
-                       ]])
+             [ "File" (fn ()
+                        [["Save Environment" (fn (e) (save_control_image)) ]
+                         ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
+                         ["Style CSS" (fn (e) (notify "View Site CSS"))]])])
+       (push *main_menu*            
+             ["View" (fn ()
+                       (progn
+                        (reduce (control (current_controls))
+                                (when (and control.on_focus
+                                           control.options.id)
+                                  [(or control.name "Untitled") 
+                                   (fn (e)
+                                     (aif (get_control_by_id control.options.id)
+                                          (set_focus_to it)))]))))])
+             
        
        (push $root_controls
              (app_header [(app_menu [ `*main_menu* ])]
