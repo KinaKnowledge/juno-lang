@@ -1181,8 +1181,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 .pure-menu-list {
     list-style: none;
     margin: 0;
-    padding: 0;
-    font-size: 0.9em;    
+    padding: 0;    
 }
 
 .pure-menu-item {
@@ -1444,7 +1443,9 @@ striping:
   height: calc(100% - 5px);
 }
 
-
+li.juno-main-menu-header {
+  display: inline-block;
+}
 
 .juno-vertical-dragger { 
   width: 7px;
@@ -1490,14 +1491,15 @@ striping:
   margin-right: 5px;
   padding-left: 5px;
   padding-right: 5px;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 0px;
   font-weight: bold;
-  background: #00000019;
+  /* background: #00000019; */
 }
 
 .juno-buffer-bar button:hover {
   background: #00000030;
+  border: 1px inset #ffffff;
 }
 
 .juno-title {
@@ -1544,6 +1546,18 @@ li.juno-menu-header {
   padding-left: 10px;
   padding-right: 10px;
   border-radius: 4px;
+}
+
+li.juno-main-menu-header {
+  font-size: 0.9em;
+}
+
+span.juno-menu-text {
+  
+}
+
+span.juno-menu-submenu {
+  float: right;
 }
 
 li.juno-menu-header:hover {

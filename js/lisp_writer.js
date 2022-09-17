@@ -69,9 +69,8 @@ export function lisp_writer(obj,depth,max_depth) {
   if (typeof obj==='number') return obj;
   if (typeof obj==='function') {
     //if (depth === 0) console.log("lisp_writer: <- [ function ]",obj.toString());
-    if (obj.name) { return obj.name }
-    
-    return "lambda";
+    //if (obj.name) { return obj.name }    
+    return "(javascript "+JSON.stringify(obj.toString())+")";
   } // technically this shouldn't be a JSON object but this is a convenience for us..
   if (obj instanceof Array) {
     if (obj.length > 0 && obj[0] instanceof String && obj[0].startsWith("=:")) {

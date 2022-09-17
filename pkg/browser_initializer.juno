@@ -11,6 +11,10 @@
                            repl:{}
                            buffer_editor:{}
                            })
+;; needs to be in a root control not a special element
+;; and attach itself to the header by it's nature
+;; the main menu control scope will have toJSON
+;; and so be part of the rehydration process
 
 (defparameter *main_menu_elem*
   (ul { `class: "pure-menu-list" `style: "margin-left: 10px" } ))
@@ -51,6 +55,40 @@
                 (break)))
     ctrl))
 
+(defun set_focus_to (target_control _controls)
+  (let
+      ((focused_list (query_all ".juno-focused"))
+       (controls (or _controls
+                     (reduce (c (current_controls))                        
+                        (when c.on_focus                          
+                          c)))))
+    
+    (for_each (control controls)
+                 (when (and (or (eq nil target_control)
+                                (not (== target_control control)))
+                            (is_function? control.on_blur))
+                   (-> control `on_blur)))
+    
+    ;; remove any focus class markers
+    (when (> focused_list.length 0)
+      (= focused_list (map (fn (v) v) focused_list))       
+      (apply remove_class "juno-focused" focused_list))
+    (for_each (control controls)
+                 (when (and (or (eq nil target_control)
+                                (not (== target_control control)))
+                            (is_function? control.on_blur))
+                   (-> control `on_blur)))
+                                                  
+    (if target_control
+      (progn
+       (-> target_control `on_focus)
+       (setq *last_focus* target_control)
+       (console.log "-> found target_control: " target_control))
+      (progn
+       (setq *last_focus* nil)
+       (console.log "lost all control focus")
+       (notify "lost all control focus")))))
+
 (defun process_focus_chain (e originator_container)
   (progn
    (handle_event e)
@@ -63,11 +101,7 @@
                           c)))
           (focused_list (query_all ".juno-focused")))
 
-       ;; remove any focus class markers
-       (when (> focused_list.length 0)
-         (= focused_list (map (fn (v) v) focused_list))       
-         (apply remove_class "juno-focused" focused_list))
-       
+      
        (for_each (elem e.path)
           (progn
            (for_each (control controls)
@@ -77,29 +111,18 @@
            (when target_control
              (break))))
        
-       (for_each (control controls)
-                 (when (and (or (eq nil target_control)
-                                (not (== target_control control)))
-                            (is_function? control.on_blur))
-                   (-> control `on_blur)))
-                                                  
-       (if target_control
-         (progn
-          (-> target_control `on_focus e)
-          (setq *last_focus* target_control)
-          (console.log "-> found target_control: " target_control))
-         (progn
-          (setq *last_focus* nil)
-          (console.log "lost all control focus")
-          (notify "lost all control focus")))))))
-  
+       (set_focus_to target_control controls)))))
+
+
+    
 
 (defun make_menu (for_element menu_items options)
   (let
       ((menu_items menu_items)
        (for_element for_element)
        (pos nil)
-       (disappear_timer nil)
+       (disappear_timer nil)       
+                                        
        (view nil))
     (aif (get_by_id "cmenu")
          (-> it `remove))
@@ -112,17 +135,19 @@
                                  (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0))
                                  []))
                              (or menu_items []))))))
-       
-      (when for_element
-        (setq pos
-              (-> for_element `getBoundingClientRect))
-        (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
-                    ["left" (+ "" (Math.max pos.left 0) "px") ]] view)
-        (console.log "make_menu: found element at: " pos))
+
+    (when for_element
+      (setq pos
+            (-> for_element `getBoundingClientRect))
+      (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
+                  ["left" (+ "" (Math.max pos.left 0) "px") ]] view)
+      (console.log "make_menu: found element at: " pos))
+    
     (attach_event_listener view
                            `click
                            (fn (e)
                              (progn
+                              (handle_event e)
                               (defvar idx (-> e.srcElement `getAttribute `idx))
                               (defvar item (prop menu_items idx))
                              
@@ -562,6 +587,12 @@
                                                            (-> options.on_change editor val))))
                                    evaluator: evaluator                                   
                                    }))
+       (menu_items (fn ()
+                     [(when path_to_value
+                        [(+ (dtext "Save to") " " (last path_to_value))
+                         (fn (e) (-> edit_control `save))])
+                      [(dtext "Select Evaluator")
+                       select_my_evaluator]]))
        (set_evaluator_control (fn (control)
                                 (if control.evaluate
                                   (progn
@@ -572,7 +603,7 @@
                                    (if control.name
                                      (set_prop evaluator_span
                                                `innerText
-                                               (+ "⭢ " control.name)))))))
+                                               (+ "⭢ " control.name)))))))       
        (select_my_evaluator (fn ()
                         (aif (select_evaluator)
                              (progn
@@ -587,11 +618,7 @@
                              (progn
                               (handle_event e)
                               (make_menu buffer_commands_button
-                                                           [(when path_to_value
-                                                              [(+ (dtext "Save to") " " (last path_to_value))
-                                                               (fn (e) (-> edit_control `save))])
-                                                            [(dtext "Select Evaluator")
-                                                             select_my_evaluator]]
+                                                           (menu_items)
                                                            ))))
                               
                               
@@ -603,14 +630,11 @@
               `sub_initializer
               edit_control.initialize)
     (set_prop edit_control
-              `set_evaluator_control
-              set_evaluator_control
-              `on_focus
-              on_focus
-              `options
-              options
-              `type
-              `buffer_editor
+              `set_evaluator_control  set_evaluator_control
+              `on_focus on_focus
+              `options options
+              `name title             
+              `type `buffer_editor
               `initialize (fn ()
                             (when edit_control.view.parentElement                              
                               (-> edit_control `sub_initializer)
@@ -812,12 +836,18 @@
        (view sview.view)
        (on_focus (fn ()
                    (progn
-                    (-> input_container.editor `focus) ;; bring focus to the repl
+                    ;(-> input_container.editor `focus) ;; bring focus to the repl
                     (add_class "juno-focused" output_control.control_bar )))) ;; we know that is the command bar
        (on_blur (fn ()
                   (progn
                    (console.log "repl blur"))))
-                    
+       (menu_items (fn ()
+                     [[(dtext "Clear Output Log")
+                       (function ()
+                                 (clear_output))]
+                      [(dtext "Clear REPL History")
+                       (function ()
+                                 (clear_history))]]))
        (initialize (fn ()
                      (progn
                       (if initialized
@@ -835,12 +865,7 @@
                              (progn
                               (handle_event e)
                               (make_menu commands_button
-                                         [["Clear Output Log"
-                                           (function ()
-                                                     (clear_output))]
-                                          ["Clear REPL History"
-                                           (function ()
-                                                     (clear_history))]]
+                                         (menu_items)
                                          ))))
 
     (set_prop options
@@ -852,13 +877,14 @@
     (= intf {
              `view: view
              `options: options
-             `name: name
+             `name: name             
              `input_container: input_container
              `history_next_entry: history_next_entry
              `history_prior_entry: history_prior_entry
              `clear_output: clear_output
              `initialize: initialize
              `type: "browser_repl"
+             `menu_items: menu_items                           
              `on_focus: on_focus
              `on_blur: on_blur
              `toJSON: (function ()
@@ -878,6 +904,9 @@
       ((contained_content nil)
        (view (div { `class: "juno-view-container" } ))
        (resize_observer nil)
+       (options (or options {}))
+       (name (or options.name nil))
+       (id (or options.id (generate_id "container")))       
        (init_timer nil)
        (initialized false)
        (perform_resize (fn ()
@@ -935,6 +964,11 @@
                         
        (intf (new Object)))
     
+    (set_prop options
+              `name
+              name
+              `id
+              id)
     
     (= resize_observer (new ResizeObserver perform_resize))
     
@@ -957,33 +991,266 @@
               `type `control_container
               `options options)))
 
-(defun add_menu_to_main (menu_title menu_items)
-  (if (and (is_string? menu_title)
-           (is_array? menu_items))
-    (let
-        ((existing_place (index_of menu_title (each *main_menu* `0)))
-         (gheader *main_menu_elem*)
-         (menu_header_elem (li  { `menu_item: menu_title `class: "juno-menu-header" }
-                                             (span { `class: "juno-menu-item" `style: "" } menu_title)))
-         (existing_menu_header nil))
-      (if (== existing_place -1)
-        (progn
-         (push *main_menu* [menu_title menu_items])
-         (-> gheader `appendChild menu_header_elem)
-         (= existing_place (- (length *main_menu*) 1)))  ;; get the index 
-        (progn         
-         (-> *main_menu* `splice existing_place 1 [ menu_title menu_items])
-         (= existing_menu_header (prop gheader.children (+ existing_place 1))) ;; move past the title span
-         (if existing_menu_header
-           (-> existing_menu_header `replaceWith menu_header_elem)
-           (-> gheader `appendChild menu_header_elem))))
-      (console.log "add_menu_to_main: " existing_place menu_title menu_items)
-      (attach_event_listener menu_header_elem
-                             `click
-                             (fn (e)
-                               (make_menu e.srcElement
-                                          (prop (prop *main_menu* existing_place) 1))))
-      true)))
+(defun menu_tree (items options _path)
+  (let
+      ((options (either options { `flat_index: 0 }))
+       (path (either _path []))
+       (disappear_timer nil)
+       (id (either options.id "cmenu"))       
+       (menu_element (fn (idx text `& args)
+                       (let
+                           ((view (li {  `class: "pure-list-item"                                         
+                                         `style: (if (> args.length 0)
+                                                    "position: relative;"
+                                                    "")
+                                        }
+                                      (a { 
+                                          `idx: idx
+                                          `path: (join "~" (conj path idx))
+                                          `href: "#"
+                                          `class: "pure-menu-link" 
+                                          `style: "min-width: 150px;"
+                                          }
+                                         (if (== args.length 0)
+                                           (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                                           [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                                            (span { `class: "juno-menu-submenu" } ">")]))
+                                      args))
+                            (timer nil))
+                         (if (== args.length 0)
+                           view                           
+                           (progn
+                            (attach_event_listener view
+                                                   `mouseenter
+                                                   (fn (e)
+                                                       (do
+                                                         (when timer
+                                                           (clearTimeout timer))
+                                                         (= timer
+                                                            (setTimeout (fn ()
+                                                                          (set_style [["display" "inline-block" ]
+                                                                                      ["position" "absolute"]
+                                                                                      ["top" "0px"]
+                                                                                      ["left" (+ "" e.srcElement.offsetWidth "px") ]]
+                                                                                     view.children.1))
+                                                                        150)))))
+                            (attach_event_listener view
+                                                   `mouseleave
+                                                   (fn (e)
+                                                     (do
+                                                       (when timer
+                                                         (clearTimeout timer))
+                                                       (= timer
+                                                          (setTimeout (fn ()                                                         
+                                                                        (set_style [["display" "none"]] view.children.1))
+                                                                      150)))))
+                                                       
+                            view)))))
+       (view nil))
+    
+    (= view
+       (ul (+ {}
+              { `class: "pure-menu-list"                               
+                `style: (+ (if (> path.length 0)
+                             "display: none;"
+                             "display: inline-block;")
+                           "position: relative;")  }
+              (if (== path.length 0)
+                { `id: id }
+                {}))
+                     
+           (map (fn (item idx)
+                  (let
+                      ((text (if (is_function? item.0)
+                               (item.0)
+                               item.0)))
+                    (set_prop options
+                              `flat_index
+                              (+ 1 options.flat_index))                     
+                    (cond
+                      (is_array? item.1)
+                      (menu_element options.flat_index text (menu_tree item.1 options (conj path [ idx 1])))
+                      (and (== text "--") (eq nil item.1))
+                      (hr { `class: "LightHR" })
+                      (is_function? item.1)
+                      (menu_element idx text)
+                      else
+                      [])))
+                items)))
+    (if (> path.length 0)      
+       view
+      (progn
+       (attach_event_listener view
+                              `click
+                              (fn (e)
+                                (let
+                                    ((path (-> e.srcElement `getAttribute "path"))
+                                     (idx (-> e.srcElement `getAttribute "idx"))
+                                     (target (if path
+                                               (resolve_path (split_by "~" path) items))))
+                                  (handle_event e)
+                                  (console.log "clicked: " path e target )
+                                  (-> view `remove)
+                                  (sleep 0.01) ;; disconnect and move to back of the event loop for the call
+                                  (when (and target
+                                             (is_function? target.1))
+                                    (target.1 e target.2))
+                                  )))
+       (setTimeout (fn ()
+                     (progn
+                      (attach_event_listener view
+                                             `mouseleave
+                                             (function (e)
+                                                       (progn
+                                                        (when disappear_timer
+                                                          (clearTimeout disappear_timer))
+                                                        (= disappear_timer (setTimeout (fn ()
+                                                                                         (progn
+                                                                                          
+                                                                                          (-> view `remove)
+                                                                                          (= disappear_timer nil)))
+                                                                                       500)))))
+                      (attach_event_listener view
+                                             `mouseenter
+                                             (function (e)
+                                                       (when disappear_timer
+                                                         (clearTimeout disappear_timer)
+                                                         (= disappear_timer nil))))))
+                   500) ;; delay a little before adding the timeout so we don't accidentally hover over it 
+       {
+        `view: view
+        `toJSON: (function ()
+                           `(menu_tree ,#items ,#options))
+        `type: "menu_tree"
+        }))))
+
+(defun app_menu(global_menu_path options)
+  (let
+      ((view nil)
+       (options (either options {}))
+       (top_levels [])
+       (menu_trees (resolve_path global_menu_path Environment.global_ctx.scope))
+       (id (or options.id (generate_id "app_menu")))
+       (intf {})
+       (menu_trees (or menu_trees []))
+       (compute_top_levels (fn ()
+                             (each menu_trees `0)))
+       (add_menu (fn (menu)
+                   (let
+                       ((existing_idx (index_of menu.0 top_levels)))
+                     (if (== existing_idx -1)
+                       (push menu_trees
+                             menu)
+                       (-> menu_trees `splice existing_idx 1 menu))
+                     (set_path global_menu_path Environment.context.scope menu_trees)
+                     (build_view))))
+       (remove_menu (fn (menu_text)
+                      (let
+                          ((existing_idx (index_of menu_text top_levels)))
+                        (when (> existing_idx -1)
+                          (-> (prop view.children existing_idx)
+                              `remove)
+                          (-> menu_trees `splice existing_idx 1))
+                        (set_path global_menu_path Environment.context.scope menu_trees))))                        
+       (build_view (fn ()
+                       (let
+                           ((new_view nil)
+                            (header_elem nil))
+                         (= top_levels (compute_top_levels))                         
+                         (= new_view
+                            (ul { `id: id `class: "pure-menu-list" `style: "margin-left: 10px" }
+                                (if (> top_levels.length 0)
+                                  (map (fn (top_level idx)
+                                         (li { `idx: idx  `class: "juno-menu-header juno-main-menu-header" }
+                                             (span { `idx: idx `class: "juno-menu-item" } (dtext top_level))))
+                                       top_levels)
+                                  [])))
+                         (attach_event_listener new_view
+                                                `click
+                                                (fn (e)
+                                                  (let
+                                                      ((idx (-> e.srcElement `getAttribute `idx))
+                                                       (pos (-> e.srcElement `getBoundingClientRect))
+                                                       (mview nil)
+                                                       (menu nil))
+                                                    (aif (get_by_id "cmenu")
+                                                         (-> it `remove))
+                                                    (when idx
+                                                      (console.log "app_menu: clicked: " idx (prop menu_trees (parseInt idx)))
+                                                      (aif (resolve_path [ (parseInt idx) 1 ] menu_trees)
+                                                           (progn
+                                                            (if (is_function? it)
+                                                              ;; if the underlying menu is a function, call the function to get..
+                                                              ;; up to the minute menu contents
+                                                              (= menu (menu_tree (it (first (prop menu_trees (parseInt idx))))))
+                                                              ;; other wise it is a standard menu, which may not rehydrate well depending
+                                                              ;; on how it was created..
+                                                              (= menu (menu_tree it)))
+                                                            (= mview (div { `id: `cmenu `class: "juno-menu" `style: "font-size: 0.9em; z-index: 30" }
+                                                                   menu.view))
+                                                            (set_style [["position" "absolute"]
+                                                                        ["left" (+ "" (Math.max 0 pos.left 0) "px")]
+                                                                        ["top" (+ "" (Math.max 0 pos.bottom ) "px") ]]
+                                                                       mview)                                                                
+                                                            (-> (get_by_id "body") `appendChild
+                                                                   mview))
+                                                           (notify "Unable to find menu resource"))))))
+                                                                        
+                         (if view.parentElement
+                           (-> view `replaceWith new_view))
+                         (= view new_view)
+                         view))))
+    
+    
+    (build_view)
+    (set_prop options
+              `id
+              id)
+    (set_prop intf
+              `view view
+              `add_menu add_menu
+              `remove_menu remove_menu
+              `type "app_menu"
+              `toJSON (function ()
+                                `(app_menu ,#global_menu_path ,#options)))
+    (defparameter *app_menu_control* intf)
+    intf))
+
+(defun app_header (controls options)
+  (let
+      ((existing_header (-> document `querySelector "header"))
+       (intf nil))
+    (when (eq existing_header nil)
+      (-> (first (get_by_tag "body"))
+          `prepend
+          (= existing_header (header { `id: "page-header" class: "juno-page-header" }))))
+    (when options.app_title
+      (-> existing_header `appendChild (span { `class: "juno-header" } options.app_title)))
+    (for_each (`elem controls)
+              (progn
+               (cond
+                 elem.view
+                 (-> existing_header `appendChild elem.view)
+                 (is_element? elem)
+                 (-> existing_header `appendChild elem)
+                 else
+                 (create_dom_element "span" elem))))
+    (set_prop options
+              `id
+              (or options.id "app-header"))
+   
+    (= intf
+       {     
+        `options: options
+        `controls: controls
+        `type: "app_header"
+        `toJSON: (function ()
+                           `(app_header ,#controls ,#options))
+        })
+    
+    intf))
+      
+
 
 (defun save_control_image ()
   (progn
@@ -995,11 +1262,10 @@
 (defun user/*initializer* ()
   (let
       ((header nil)       
-       (scripts (-> (page_header) `querySelectorAll "script[id]"))        
-       (embeds  nil)       
-       (initial_split nil)
+       (scripts (-> (page_header) `querySelectorAll "script[id]"))                     
        (scratch_editor nil)
        (page_frame nil)
+       (control nil)
        (repl_split nil))
                                                                
     (console.log "user/*initializer is running." )
@@ -1022,22 +1288,11 @@
     
     (defvalue $root_controls [])
     
-    
+    ;; the root container which controls are added to..
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
 
     
-      
-     
-    (setq header (-> document `querySelector "header"))
-
-    (-> header `appendChild (span { `class: "juno-header" } "Seedling" ))    
-    (-> header `appendChild *main_menu_elem*)
-    
-    ;(-> header `appendChild (ul { `class: "pure-menu-list" `style: "margin-left: 10px;" }
-     ;                           main_menu_button))
-    
-   
 
     (attach_event_listener juno_container `click
                            (fn (e)
@@ -1045,15 +1300,6 @@
                               (defvar menu (get_by_id `cmenu))
                               (when menu (-> menu `remove)))))
 
-    (if (< *main_menu*.length 1)
-      (add_menu_to_main (dtext "File")
-                        [["Save Environment" (fn (e) (save_control_image)) ]
-                         ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
-                         ["Style CSS" (fn (e) (notify "View Site CSS"))]
-                         ])
-      (for_each (`menu_set (or *main_menu* []))
-          (add_menu_to_main menu_set.0 menu_set.1)))
-      
     
     (set_prop *env_config*.export
 	      `save_path
@@ -1064,6 +1310,7 @@
                            `focusin
                            (fn (e)
                              (process_focus_chain e)))
+
     (-> (get_by_id "body") `appendChild juno_container)
 
     ;; initialize or rehydrate the controls
@@ -1074,8 +1321,16 @@
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
+       (push *main_menu*
+             [ "File" [["Save Environment" (fn (e) (save_control_image)) ]
+                       ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
+                       ["Style CSS" (fn (e) (notify "View Site CSS"))]
+                       ]])
        
-       (setq page_frame
+       (push $root_controls
+             (app_header [(app_menu [ `*main_menu* ])]
+                         { `app_title: "Seedling" }))
+       (setq page_frame ;; or surface which can be named in the upper right or middle
              (control_container nil))
 
        (-> juno_container
@@ -1094,14 +1349,21 @@
        (when (blank? (prop *env_config*.export `save_prefix))
          (set_prop *env_config*.export
                    `save_prefix
-                   "seedling")))
-      (progn
-       (setq page_frame
-             (eval_struct (JSON.parse *serialized_controls*)))
-       (push $root_controls page_frame)
+                   "seedling"))
        (-> juno_container
            `append page_frame.view)       
-       (-> page_frame `initialize)))
+       (-> page_frame `initialize))
+      (progn
+       (for_each (`serialized_control *serialized_controls*)
+          (progn
+           (= control (eval_struct (JSON.parse serialized_control)))
+           (when control.view
+             (-> juno_container
+                 `append control.view))           
+           (push $root_controls
+                 control)
+           (when control.initialize
+             (-> control `initialize))))))
        
 
     (defun core/rlog (`& vals)

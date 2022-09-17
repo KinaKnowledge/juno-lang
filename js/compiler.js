@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-15 11:34:23
-// Version: 2022.09.15.11.34
-export const DLISP_ENV_VERSION='2022.09.15.11.34';
+// Build Time: 2022-09-16 15:09:08
+// Version: 2022.09.16.15.09
+export const DLISP_ENV_VERSION='2022.09.16.15.09';
 
 
 
@@ -338,15 +338,13 @@ export async function init_compiler(Environment) {
                         let __target_arg__7=[].concat(await conj([style],args));
                         if(!__target_arg__7 instanceof Array){
                             throw new TypeError("Invalid final argument to apply - an array is required")
-                        }let __pre_arg__8=await (async function(){
-                             return ("%c"+ await (async function(){
-                                if (check_true ((opts && opts["prefix"]))){
-                                    return (opts && opts["prefix"])
-                                } else {
-                                    return (args).shift()
-                                }
-                            })()) 
-                        })();
+                        }let __pre_arg__8=("%c"+ await (async function(){
+                            if (check_true ((opts && opts["prefix"]))){
+                                return (opts && opts["prefix"])
+                            } else {
+                                return (args).shift()
+                            }
+                        })());
                         __target_arg__7.unshift(__pre_arg__8);
                         return (console.log).apply(this,__target_arg__7)
                     })()
@@ -4988,7 +4986,7 @@ export async function init_compiler(Environment) {
                                             let __for_body__294=async function(t) {
                                                 return (acc).push(t)
                                             };
-                                            let __array__295=[],__elements__293=["let"," ",preceding_arg_ref,"=",await compile_wrapper_fn((token && token["val"]),ctx),";"];
+                                            let __array__295=[],__elements__293=["let"," ",preceding_arg_ref,"=",await compile_wrapper_fn(token,ctx),";"];
                                             let __BREAK__FLAG__=false;
                                             for(let __iter__292 in __elements__293) {
                                                 __array__295.push(await __for_body__294(__elements__293[__iter__292]));

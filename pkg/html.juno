@@ -89,6 +89,13 @@
 ;; first create the base constructor function which will be called
 ;; with the tag to create
 
+(defun_sync append_children (parent children)
+  (do
+    (for_each (child (or children []))
+              (if (is_array? child)
+                (append_children parent child)
+                (-> parent `appendChild child)))
+    parent))
 
 (defun_sync create_dom_element (element_name `& args)
   (let
@@ -103,7 +110,7 @@
                     [])
                   (or args
                       [])))
-       (append_children (fn (parent children)
+       (append_children_old (fn (parent children)
                           (do
                             (for_each (child children)
                                       (if (is_array? child)
@@ -515,11 +522,17 @@
                                  (= center_pos (/ view.offsetWidth 2))))
                              (when (> center_pos (- new_width 20))
                                (= center_pos (Math.max 20 (- new_width 20))))
+                             
+                             (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                                        (is_number? options.ratio))
+                               (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth)))
+                             
                              (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
                                         left_container)
                              (set_style [["width" (+ "" center_width "px") ]] center_divider)
                              (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]
                                         right_container)
+                             
                              (set_prop options
                                        `ratio
                                        (/ center_pos view.offsetWidth))
@@ -693,6 +706,11 @@
                                  (= center_pos (/ view.offsetHeight 2))))  ;; default is 50% 0.5
                              (when (> center_pos (- new_height 40))
                                (= center_pos (Math.max 20 (- new_height 40))))
+
+                             (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                                        (is_number? options.ratio))
+                               (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
+                             
                              (set_style [["height" (+ "" center_pos  "px") ]]
                                         top_container)
                              (set_style [["height" (+ "" center_height "px") ]] center_divider)
