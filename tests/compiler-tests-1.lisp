@@ -1435,7 +1435,7 @@
     "Block in non-operator position of array"]
     ["[(do (if true true false)) 1 2 (fn (v) (+ 1 v)) [ (if true true false) ] (do { `abc: { `def: 100 }}) ]"
     []
-    `(true 1 2 lambda (true) {"abc":{"def":100}})
+    `(true 1 2 (javascript "async function(v) {\\n    return (1+ v)\\n}") (true) {"abc":{"def":100}})
     "Blocks, lambdas and embedded objects and array in array"]
     ["{
         `name:(do
