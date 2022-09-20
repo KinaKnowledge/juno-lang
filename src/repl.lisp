@@ -87,6 +87,8 @@
 		      (reader (join "\n" (add lines l)) { `verbose: false } ) ;; this will throw an exception if we cannot read all lines correctly
                       (catch LispSyntaxError (e)
 		        (progn
+		         (when opts.simple
+			   (throw e))
                          (= clean_input false)
                          (= last_exception (JSON.parse e.message))
                          (defglobal *last_exception* last_exception)

@@ -1388,6 +1388,50 @@ such as things that connect or use environmental resources.
    `tags: ["replace" "find" "change" "edit" "string" "array" "object"]
    })
 
+
+
+(defun env_encode_string_orig (text)
+  (let
+      ((te (new TextEncoder))
+       (enc (-> te `encode text))
+       (decl [])
+       (de (new TextDecoder))
+       (bl nil))
+   (for_each (`b enc)
+     (progn
+       (if (and bl 
+                (== b 92)
+                (== bl 92))
+           (progn     
+             (push decl 92)
+             (push decl 92)
+             (push decl 92)
+             (= bl nil))
+           (progn
+             (push decl b)
+             (= bl b)))))
+   (-> de `decode (new Uint8Array decl))))
+
+(defun env_encode_string (text)
+  (let
+      ((te (new TextEncoder))
+       (enc (-> te `encode text))
+       (decl [])
+       (de (new TextDecoder))
+       (bl nil))
+   (for_each (`b enc)
+     (progn
+       (if (== b 92)           
+           (progn     
+             (push decl 92)
+             (push decl 92)
+             (push decl 92)
+	     (push decl 92))            
+           (progn
+             (push decl b)))))             
+      (-> de `decode (new Uint8Array decl))))
+  
+
 (defun cl_encode_string (text)
   (if (is_string? text)
       (let

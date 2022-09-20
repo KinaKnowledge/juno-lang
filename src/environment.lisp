@@ -2001,6 +2001,10 @@
                      [symset.0 (quote nil)]
                      (== undefined symset.1)
                      [symset.0 (quote undefined)]
+		     (is_string? symset.1)
+                     (progn
+;                      (console.log "symset: " symset.0 (env_encode_string symset.1))
+		      [symset.0 (env_encode_string symset.1)])
                      else
                      [symset.0 symset.1])))))
 
@@ -2196,7 +2200,7 @@
 
     
        
-     ;; inline functions for more efficient compiled code...
+     ;; inline functions for more efficient comxpiled code...
      ;; instead of calling functions these serve to inline inside
      ;; of the produced javascript tree
      ;; add your own with the inline option:
@@ -2351,10 +2355,10 @@
        ;; and evaluate the child
        (when (and rehydrated_children
                   (is_object? (prop included_globals `children)))
-         ;(console.log "env: child load order: " included_globals.child_load_order)
+         (console.log "env: child load order: " included_globals.child_load_order)
          (for_each (childname (or included_globals.child_load_order []))
 	           (when (prop included_globals.children childname)
-                     ;(console.log "env: loading child: " childname)                     
+                     (console.log "env: loading child: " childname)                     
                      (defvar childset [ childname (prop included_globals.children childname) ])
                      (defvar childenv (prop children childset.0))                     
                      (defvar imported_defs childset.1.0)
@@ -2370,7 +2374,7 @@
                      
                      (set_prop childset.1
                                1
-                               (-> childenv `eval childset.1.1))
+                               (-> childenv `eval childset.1.1 { `throw_on_error: true }))
 	             (for_each (symset childset.1.1)
                                (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point

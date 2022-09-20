@@ -271,6 +271,7 @@
 			      (push acc
 				    _prefix_op))
 			    (= depth _depth)
+			    
 			    (while (and (not stop)
 					(< idx len))
 			      (do 
@@ -284,7 +285,7 @@
                                   (= column_number 0))
 				
 				(when debugmode
-				  (console.log _depth "C->" c next_c mode escape_mode (clone acc) (clone word_acc) handler_stack.length))
+				  (console.log _depth "  " c " " next_c " " mode "" escape_mode " " (as_lisp acc) (as_lisp word_acc) handler_stack.length))
 				
 				;; read until the end or are stopped via debugger
 				;; we have a few special cases that facilitate the transformation
@@ -561,7 +562,9 @@
 	
 	
 	(when debugmode
-	  (console.log "read->" in_buffer ))
+	  (console.log "read->" in_buffer )
+	  (console.log "D  CHAR NC " " M" "ESC" "ACC" "WORDACC" "HS"))
+	
 	(= output_structure (read_block 0))
 	(when debugmode
 	  (console.log "read<-" (clone output_structure)))

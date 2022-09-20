@@ -3449,7 +3449,7 @@
                            (mode 0)
                            (in_concat false)
                            (in_lambda? false )) ;(get_ctx ctx "__IN_LAMBDA__")))
-                        
+                        ;(console.log "quote_tree: " lisp_tree)
                         (cond                          
                           (is_array? lisp_tree)
                           (do
@@ -3537,8 +3537,12 @@
                                   "}"))
                           (is_string? lisp_tree)
                           (push acc (JSON.stringify lisp_tree))
-                          else
-                          (push acc lisp_tree))
+			  (is_nil? lisp_tree)
+			  (push acc (JSON.stringify nil))
+			  (== undefined lisp_tree)
+			  (push acc (JSON.stringify undefined))
+                          else			  			   
+                          (push acc (JSON.stringify lisp_tree)))
                         acc)))
                                     
        (`quotem_log (if opts.quiet_mode

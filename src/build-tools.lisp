@@ -264,7 +264,7 @@
 
     ;; reload the reader as this is compiled directly into the environment itself
     
-    (load (source_path "reader.lisp"))
+    (console.log (load (source_path "reader.lisp")))
     (success "reloaded reader")
 
     ;; compile the various core sources

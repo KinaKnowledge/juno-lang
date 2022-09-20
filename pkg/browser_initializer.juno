@@ -11,13 +11,9 @@
                            repl:{}
                            buffer_editor:{}
                            })
-;; needs to be in a root control not a special element
-;; and attach itself to the header by it's nature
-;; the main menu control scope will have toJSON
-;; and so be part of the rehydration process
 
-(defparameter *main_menu_elem*
-  (ul { `class: "pure-menu-list" `style: "margin-left: 10px" } ))
+
+
 
 (defvalue *main_menu* [])
 (defvalue *serialized_controls* [])
@@ -34,7 +30,74 @@
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
-                              
+
+(create_css_entry "td.juno-obj-to-dom-key"
+                  [["vertical-align" "top"]
+                   ["color" "#881280"]
+                   ["text-align" "right"]
+                   ["font-weight" "bold"]
+                   ["padding-right" "5px"]])
+
+(create_css_entry "span.juno-value"
+                  [["display" "inline-block"]])
+   
+(create_css_entry "li.juno-array-item"
+                  [["list-style" "decimal"]])   
+  
+  
+
+(defun_sync value_to_dom (val)
+    (let 
+        ((classes "juno-value juno-type-"))
+        (declare (function array_to_dom obj_to_dom)
+                 (global array_to_dom obj_to_dom))
+    (cond 
+          (is_array? val)
+          (array_to_dom val)
+          (is_object? val)
+          (obj_to_dom val)
+          (is_string? val)
+          (if (starts_with? "=:")
+              (span { `class: (+ classes "symbol") } val)
+              (span { `class: (+ classes "string") } val))
+          else
+          (span { `class: (+ classes (lowercase (sub_type val))) } val))))              
+
+(defun_sync array_to_dom (arr)
+    (let
+        ((total_len arr.length)
+         (idx -1)
+         (segment_size 10)
+         (new_row_elem [])
+         (row_elem []))
+      (assert (is_array? arr))
+      (details { `class: "juno-type-array" }
+         (summary  "Array [" total_len "] ")
+         (ol { `start: 0 `class: "juno-type-array" } 
+             (progn 
+                (for_each (val arr)
+                    (progn
+                        (inc idx)
+                        (li { `class: "juno-array-item" } 
+                            (value_to_dom val)))))))))
+           
+
+
+      
+(defun_sync obj_to_dom (obj)
+    (table
+        (body
+           (for_each (keyval (pairs obj))
+             (destructuring_bind (key value)
+                keyval
+                (tr 
+                    (td { `class: "juno-obj-to-dom-key" } key)
+                    (td { `class: "juno-obj-to-dom-value" } 
+                        (value_to_dom value))))))))
+
+
+
+
 
 (defun *help_menu_function* ()
   [["No Help Installed" (fn () false) ]])
@@ -58,7 +121,6 @@
                 (= ctrl control)
                 (break)))
     ctrl))
-
 
 
 (defun set_focus_to (target_control _controls)
@@ -655,6 +717,8 @@
     edit_control))
 
 
+
+
 (defun log_view (options)
   (let
       ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
@@ -915,7 +979,11 @@
              `on_focus: on_focus
              `on_blur: on_blur
              `toJSON: (function ()
-                                `(browser_repl ,#(or options { `ratio: sview.options.ratio } )))
+                                (progn
+                                 (set_prop options
+                                           `history
+                                           [(quote quotel) history])
+                                `(browser_repl ,#(or options { `ratio: sview.options.ratio } ))))
              `controls: (fn () [ input_container output_control])
              `output_container: output_control.view
              `log: (fn (val)
@@ -1026,55 +1094,56 @@
        (path (either _path []))
        (disappear_timer nil)
        (id (either options.id "cmenu"))       
-       (menu_element (fn (idx text `& args)
-                       (let
-                           ((view (li {  `class: "pure-list-item"                                         
-                                         `style: (if (> args.length 0)
-                                                    "position: relative;"
-                                                    "")
-                                        }
-                                      (a { 
-                                          `idx: idx
-                                          `path: (join "~" (conj path idx))
-                                          `href: "#"
-                                          `class: "pure-menu-link" 
-                                          `style: "min-width: 150px;"
-                                          }
-                                         (if (== args.length 0)
-                                           (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
-                                           [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
-                                            (span { `class: "juno-menu-submenu" } ">")]))
-                                      args))
-                            (timer nil))
-                         (if (== args.length 0)
-                           view                           
-                           (progn
-                            (attach_event_listener view
-                                                   `mouseenter
-                                                   (fn (e)
-                                                       (do
-                                                         (when timer
-                                                           (clearTimeout timer))
-                                                         (= timer
-                                                            (setTimeout (fn ()
-                                                                          (set_style [["display" "inline-block" ]
-                                                                                      ["position" "absolute"]
-                                                                                      ["top" "0px"]
-                                                                                      ["left" (+ "" e.srcElement.offsetWidth "px") ]]
-                                                                                     view.children.1))
-                                                                        150)))))
-                            (attach_event_listener view
-                                                   `mouseleave
-                                                   (fn (e)
-                                                     (do
-                                                       (when timer
-                                                         (clearTimeout timer))
-                                                       (= timer
-                                                          (setTimeout (fn ()                                                         
-                                                                        (set_style [["display" "none"]] view.children.1))
-                                                                      150)))))
-                                                       
-                            view)))))
+       (menu_element
+        (fn (idx text `& args)
+          (let
+              ((view (li {  `class: "pure-list-item"                                         
+                          `style: (if (> args.length 0)
+                                    "position: relative;"
+                                    "")
+                          }
+                         (a { 
+                             `idx: idx
+                             `path: (join "~" (conj path idx))
+                             `href: "#"
+                             `class: "pure-menu-link" 
+                             `style: "min-width: 150px;"
+                             }
+                            (if (== args.length 0)
+                              (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                              [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                               (span { `class: "juno-menu-submenu" } ">")]))
+                         args))
+               (timer nil))
+            (if (== args.length 0)
+              view                           
+              (progn
+               (attach_event_listener view
+                                      `mouseenter
+                                      (fn (e)
+                                        (do
+                                          (when timer
+                                            (clearTimeout timer))
+                                          (= timer
+                                             (setTimeout (fn ()
+                                                           (set_style [["display" "inline-block" ]
+                                                                       ["position" "absolute"]
+                                                                       ["top" "0px"]
+                                                                       ["left" (+ "" e.srcElement.offsetWidth "px") ]]
+                                                                      view.children.1))
+                                                         150)))))
+               (attach_event_listener view
+                                      `mouseleave
+                                      (fn (e)
+                                        (do
+                                          (when timer
+                                            (clearTimeout timer))
+                                          (= timer
+                                             (setTimeout (fn ()                                                         
+                                                           (set_style [["display" "none"]] view.children.1))
+                                                         150)))))
+               
+               view)))))
        (view nil))
     
     (= view
@@ -1299,13 +1368,30 @@
       
 
 
+(defun serialize_controls (controls)
+  (cond
+    (is_array? controls)
+    (map serialize_controls controls)
+    (and (is_object? controls)
+         controls.as_json)
+    (-> controls `as_json)
+    (is_object? controls)
+    (to_object (map (fn (v)
+                      [v.0 (serialize_controls v.1)])
+                    controls))
+    else
+    controls))
+    
+
 (defun save_control_image ()
   (progn
    (set_focus_to nil)
    (= *serialized_controls*
-     (for_each (root_control $root_controls)
-               (JSON.stringify root_control)))
+      [(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
+   (console.log "*serialized_controls*: " *serialized_controls*)
    (save_image)))
+
+
 
 (defun user/*initializer* ()
   (let
@@ -1329,11 +1415,7 @@
                 ["height" "1px"]] resource_loader_button)
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
-
-    (unless (is_symbol? `*global_repl_history*)
-            (defglobal *global_repl_history* []))
-    
-    
+       
     (defvalue $root_controls [])
     
     ;; the root container which controls are added to..
@@ -1341,19 +1423,16 @@
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
 
     
-
     (attach_event_listener juno_container `click
                            (fn (e)
                              (progn
                               (defvar menu (get_by_id `cmenu))
                               (when menu (-> menu `remove)))))
-
     
     (set_prop *env_config*.export
 	      `save_path
 	      nil)
-        
-    
+            
     (attach_event_listener juno_container
                            `focusin
                            (fn (e)
@@ -1365,7 +1444,7 @@
     (if (== (length *serialized_controls*) 0)
       (progn       
        (console.log "initializing control surface")
-       (defglobal $repl (browser_repl { `name: "Global REPL" `history: *global_repl_history* }))
+       (defglobal $repl (browser_repl { `name: "Global REPL"  }))
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
@@ -1413,9 +1492,11 @@
            `append page_frame.view)       
        (-> page_frame `initialize))
       (progn
+       ;(= *serialized_controls* (eval *serialized_controls*))
+       (console.log "serialized controls: " *serialized_controls*)
        (for_each (`serialized_control *serialized_controls*)
           (progn
-           (= control (eval_struct (JSON.parse serialized_control)))
+           (= control (eval serialized_control))
            (when control.view
              (-> juno_container
                  `append control.view))           

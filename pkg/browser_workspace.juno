@@ -146,6 +146,7 @@
        ((js_resource (save_env { `want_buffer: true
                                 `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
         (scripts (-> (page_header) `querySelectorAll "script[id]"))
+        (styles (-> (page_header) `querySelectorAll "style[id]"))
         (log (if (is_function? options.log)
                options.log
                console.log))
@@ -159,6 +160,16 @@
                                       (-> deduper `add (-> (prop scripts idx) `getAttribute `id))
                                       (push acc (prop scripts idx))))
                                   (range scripts.length))
+                             acc))
+        (additional_styles (let
+                               ((acc [])
+                                (deduper (new Set)))
+                             (map (fn (idx)
+                                    (when (and (not (== (-> (prop styles idx) `getAttribute `id) "juno-css"))
+                                               (not (-> deduper `has (-> (prop styles idx) `getAttribute `id))))                                      
+                                      (-> deduper `add (-> (prop styles idx) `getAttribute `id))
+                                      (push acc (prop styles idx))))
+                                  (range styles.length))
                              acc))
         (total_export_script_count (+ (length additional_embeds) 1)) ;; add one for juno-core
         (script_ids (for_each (embedded additional_embeds)
@@ -175,8 +186,11 @@
                                              js_resource
                                              "\n\n"                               
                                              ;; boot_up
-                                             "\n\n"
-                                             )
+                                             "\n\n")
+                                (for_each (stl (or additional_styles []))
+                                          (html/style { `id: (-> stl `getAttribute `id) } 
+                                                      (prop stl `innerHTML)))
+                                                                           
                                 (for_each (scr (or additional_embeds []))
                                           (html/script { `id: (-> scr `getAttribute `id) `type: (-> scr `getAttribute `type) `charset: (-> scr `getAttribute `charset) }
                                                        (prop scr `innerHTML))))

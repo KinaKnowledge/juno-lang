@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-16 15:09:08
-// Version: 2022.09.16.15.09
-export const DLISP_ENV_VERSION='2022.09.16.15.09';
+// Build Time: 2022-09-20 10:45:21
+// Version: 2022.09.20.10.45
+export const DLISP_ENV_VERSION='2022.09.20.10.45';
 
 
 
@@ -221,18 +221,18 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__224=async function() {
+         let __test_condition__232=async function() {
             return current_obj
         };
-        let __body_ref__225=async function() {
+        let __body_ref__233=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__224()) {
-            await __body_ref__225();
+        while(await __test_condition__232()) {
+            await __body_ref__233();
              if(__BREAK__FLAG__) {
                  break;
                 
@@ -6008,8 +6008,14 @@ export async function init_compiler(Environment) {
                         }
                     } else if (check_true ((lisp_tree instanceof String || typeof lisp_tree==='string'))) {
                         (acc).push(await JSON.stringify(lisp_tree))
+                    } else if (check_true (await (async function(){
+                         return await is_nil_ques_(lisp_tree) 
+                    })())) {
+                        (acc).push(await JSON.stringify(null))
+                    } else if (check_true ((undefined===lisp_tree))) {
+                        (acc).push(await JSON.stringify(undefined))
                     } else {
-                        (acc).push(lisp_tree)
+                        (acc).push(await JSON.stringify(lisp_tree))
                     }
                 } ();
                 return acc

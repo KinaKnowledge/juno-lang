@@ -83,8 +83,8 @@
    ; `initializer: (quote  (-> document.createElement `bind document))
     ;})
 
-(defun create_element (element_name)
-  (-> document.createElement element_name))
+(defun_sync create_element (element_name)
+  (-> document `createElement element_name))
 
 ;; first create the base constructor function which will be called
 ;; with the tag to create
@@ -280,8 +280,8 @@
 
 (defun remove_css_entry (entry_name)
   (do
-    (if (get_by_id (+ "class_" entry_name))
-      (-> (get_by_id (+ "class_" entry_name)) `remove)))
+    (aif (get_by_id (to_key (+ "juno-css-" entry_name)))
+      (-> it `remove)))
   {
    `usage:["entry_name:string"]
    `description:"If a class has been created by create_css_entry, use this function to remove the class from the document."
@@ -290,26 +290,30 @@
 
 (defun create_css_entry (entry_name css_attribute_list)
   (let
-      ((style (create_element "style"))
-       (css_attributes (map (fn (v)
-                              (+ v.0 ": " v.1))
-                            css_attribute_list))
+      ((css_attributes (reduce (attrib_set (or css_attribute_list []))
+                               (destructuring_bind (attrib val)
+                                                   attrib_set
+                                                   (when (and (not (blank? attrib))
+                                                              (not (blank? val)))
+                                                     (+ "" attrib ": " val)))))
+       
+       
        (head_elem (-> document `querySelector "head"))
        (new_style nil))
-    
+
     (when head_elem
       (remove_css_entry entry_name)
       (-> head_elem `appendChild
           (= new_style
-             (style { `id: (+ "class_" entry_name ) `type: "text/css" }
+             (style { `id: (to_key (+ "juno-css-" entry_name )) `type: "text/css" }
                     (+ "" entry_name "{\n  " (join ";\n" css_attributes) " }")))))
     new_style)
   { `usage: ["entry_name:string" "css_attribute_list:array"]
-   `description: " Given a name for the class and a list of formatted css attributes
-                         create and load the CSS object into the DOM.<br> Example: <br><code>
-                          (create_css_entry 'FilteredSelect:focus-within'
-                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>
-                           </code> "
+   `description: (+ " Given a name for the class and a list of formatted css attributes "
+                    "create and load the CSS object into the DOM.<br> Example: <br><code> "
+                    "(create_css_entry 'FilteredSelect:focus-within' "
+                    "                  [[`box-shadow '0px 0px 10px 0px rgba(0,0,0,0.75)']])<br>"
+                    " </code>")
    `tags: ["html" "css" "ui"]
    } )
 
@@ -325,7 +329,7 @@
   { `usage: ["entry_name:string" "css_attribute_list:array"]
    `description: (+ "Given a name for the class and a list of formatted css attributes returns a formatted string in CSS syntax.<br> Example: <br><code>"
                     "(create_css_entry 'FilteredSelect:focus-within'
-                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75);']])<br>"
+                                    [['box-shadow' '0px 0px 10px 0px rgba(0,0,0,0.75)']])<br>"
                     "</code>")
    `tags: ["html" "css" "ui" "convert"]
    } )

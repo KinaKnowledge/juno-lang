@@ -1,7 +1,7 @@
 // Source: reader.lisp  
-// Build Time: 2022-09-16 15:09:08
-// Version: 2022.09.16.15.09
-export const DLISP_ENV_VERSION='2022.09.16.15.09';
+// Build Time: 2022-09-20 10:45:21
+// Version: 2022.09.20.10.45
+export const DLISP_ENV_VERSION='2022.09.20.10.45';
 
 
 
@@ -363,11 +363,7 @@ export async function initializer(Environment) {
                             };
                             if (check_true (debugmode)){
                                 {
-                                    await console.log(_depth,"C->",c,next_c,mode,escape_mode,await (async function(){
-                                         return await clone(acc) 
-                                    })(),await (async function(){
-                                         return await clone(word_acc) 
-                                    })(),(handler_stack && handler_stack.length))
+                                    await console.log(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(handler_stack && handler_stack.length))
                                 }
                             };
                             await async function(){
@@ -651,7 +647,8 @@ export async function initializer(Environment) {
                 };
                 if (check_true (debugmode)){
                     {
-                        await console.log("read->",in_buffer)
+                        await console.log("read->",in_buffer);
+                        await console.log("D  CHAR NC "," M","ESC","ACC","WORDACC","HS")
                     }
                 };
                 output_structure=await read_block(0);
@@ -683,5 +680,5 @@ export async function initializer(Environment) {
         }
     } ()
 },{
-    requires:["not","is_string?","sub_type","length","__VERBOSITY__","split_by","join","slice","add","is_array?","starts_with?","blank?","is_number?","contains?","ends_with?","chop","log","push","last","first","pop","prepend"]
+    requires:["not","is_string?","sub_type","length","__VERBOSITY__","split_by","join","slice","add","is_array?","starts_with?","blank?","is_number?","contains?","ends_with?","chop","log","push","as_lisp","last","first","pop","prepend"]
 })} 
