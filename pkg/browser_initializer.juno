@@ -46,6 +46,8 @@
   
   
 
+;; *scratch* buffer
+
 (defun_sync value_to_dom (val)
     (let 
         ((classes "juno-value juno-type-"))
@@ -54,14 +56,24 @@
     (cond 
           (is_array? val)
           (array_to_dom val)
-          (is_object? val)
-          (obj_to_dom val)
           (is_string? val)
           (if (starts_with? "=:")
               (span { `class: (+ classes "symbol") } val)
               (span { `class: (+ classes "string") } val))
+          (instanceof val Error)
+          (details (summary { `class: (+ classes "error") } (span { `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
+             (progn
+                 (defvar tmp (pre { `class: (+ classes "error") }))
+                 (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
+                 tmp))
+          (is_function? val)
+          (details (summary { `class: (+ classes "function") } (span { `class: (+ classes "function") `style: "margin-left: 5px; font-style: italic;" } (sub_type val) ))
+                   (pre { `class: (+ classes "function") } (-> val `toString)))
+          (is_object? val)
+          (obj_to_dom val)
+          
           else
-          (span { `class: (+ classes (lowercase (sub_type val))) } val))))              
+          (span { `class: (+ classes (lowercase (sub_type val))) } val))))
 
 (defun_sync array_to_dom (arr)
     (let
@@ -439,8 +451,7 @@
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
                                           view)
-                          (-> editor `resize)
-                          )))
+                          (-> editor `resize))))
        (editor nil)
        (set_evaluator (fn ()
                         (when options.evaluator
@@ -745,62 +756,11 @@
                                                  command_text))))
                       (-> output_container
                           `prepend
-                          (div { `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; "
+                          (div { `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
                                             (if (eq nil command_text)
                                               "border-top: 1px solid #00000008; padding: 5px;"
                                               "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
-                                    (cond
-                                      (== nil result)
-                                      (html/code { `style: " color: #B0B0B0;" }
-                                                 "nil")
-                                      (== undefined result)
-                                      (html/code { `style: " color: #B0B0B0;" }
-                                                 "undefined")
-                                      (is_string? result)
-                                      (html/code { `style: " color: blue;" }
-                                                 (pre (JSON.stringify result)))
-                                      (is_element? result)
-                                      (let
-                                          ((inserter (div {})))
-                                        (-> inserter `insertAdjacentHTML `afterbegin result.outerHTML) ;; show the result statically otherwise DOM theft will occur
-                                        inserter) 
-                                      (is_number? result)
-                                      (html/code { `style: " color: green;" }
-                                                 result)
-                                      (or (== true result)
-                                          (== false result))
-                                      (html/code { `style: " color: orange;" }
-                                                 result)
-                                      (is_function? result)
-                                      (details { `style: " color: darkblue;" }
-                                               (summary (code { `style: "margin-left: 5px" }
-                                                               (cond
-                                                                 (== (subtype result) "AsyncFunction")
-                                                                 "AsyncFunction: "
-                                                                 else
-                                                                 "Function: ")
-                                                               (if result.name result.name "unnamed")))
-                                               (pre { `style: "margin-left: 15px" }
-                                                    (-> result `toString)))
-                                      (and (is_array? result)
-                                           (instanceof result.0 Error))
-                                      (html/pre { `style: " color: darkred;" } "ERROR: "
-                                                (subtype result.0)
-                                                "\n"
-                                                result.0.message)
-                                      (or error_state
-                                          (instanceof result Error))
-                                      (html/pre { `style: " color: darkred;" } "ERROR: "
-                                                (subtype result)
-                                                "\n"
-                                                result.message)
-                                      (and (is_array? result)
-                                           result.0.error)
-                                      (html/pre { `style: " color: darkred;" }                                                 
-                                                (JSON.stringify result nil 3 ))
-                                           
-                                      else
-                                      (html/pre { `style: "" } (JSON.stringify result nil 3 )))))
+                                    (value_to_dom result)))
                       (when (> output_container.children.length (or options.max_entries 100))
                         (-> (last output_container.children)
                             `remove))

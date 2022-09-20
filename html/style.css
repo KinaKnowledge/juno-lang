@@ -8,7 +8,12 @@
   --control-focused: #84a0bf3b;
   --main-accent-color: #0000000A;
   --main-accent-line: #00000010;
-  --main-mono-space: ui-monospace,
+  --type-number-color: green;
+  --type-boolean-color: orange;
+  --type-string-color: darkblue;
+  --type-function-color: #3f5b71;
+  --type-error-color: darkred;
+  --main-mono-space: ui-monospace,		     
     "Cascadia Mono", "Segoe UI Mono",    
     "Roboto Mono",
     "Ubuntu Mono",
@@ -1578,6 +1583,56 @@ li.juno-menu-header:active {
   display: inline-block;
   cursor: default;
 }
+
+td.juno-obj-to-dom-key {
+    vertical-align: top;
+    color: #881280;
+    text-align: right;
+    font-weight: bold;
+    padding-right: 5px;
+}
+
+span.juno-value {
+  display: inline-block;
+}
+
+.juno-type-number {
+  color: var(--type-number-color)
+}
+
+.juno-type-boolean {
+  color: var(--type-boolean-color)
+}
+
+.juno-type-string {
+  color: var(--type-string-color)
+}
+
+summary.juno-type-function {
+  color: var(--type-function-color);
+  
+}
+
+.juno-type-function {
+  color: var(--type-function-color);
+}
+
+.juno-type-error {
+  color: var(--type-error-color);
+}
+
+li.juno-array-item {
+    list-style: decimal;
+}
+
+li.juno-array-item::marker {
+    color: #881280;
+    content: counter(list-item) ":  ";    
+    font-family: var(--main-mono-space);
+}
+
+
+
 
 @keyframes slide-in {
     0% {
