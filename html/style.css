@@ -12,7 +12,11 @@
   --type-boolean-color: orange;
   --type-string-color: darkblue;
   --type-function-color: #3f5b71;
+  --type-null-color: #a35e5e;
+  --type-undefined-color: #9d9d9d;
+  --type-symbol-color: #ff4f4f
   --type-error-color: darkred;
+  --main-app-font:  FreeSans, Arimo, "Droid Sans", Helvetica, Arial, sans-serif;
   --main-mono-space: ui-monospace,		     
     "Cascadia Mono", "Segoe UI Mono",    
     "Roboto Mono",
@@ -401,7 +405,7 @@ template {
  */
 
 html {
-  font-family: FreeSans, Arimo, "Droid Sans", Helvetica, Arial, sans-serif;
+  font-family: var(--main-app-font);
 }
 
 /**
@@ -1621,6 +1625,21 @@ summary.juno-type-function {
   color: var(--type-error-color);
 }
 
+.juno-type-symbol {
+  color: #ff4f4f;
+  background: #ffffff;
+  box-shadow: 0 0 4px 1px #a0a0a042;
+}
+
+.juno-type-null {
+  color: var(--type-null-color);
+  font-style: italic;
+}
+
+.juno-type-undefined {
+  color: var(--type-undefined-color);
+}
+
 li.juno-array-item {
     list-style: decimal;
 }
@@ -1629,6 +1648,17 @@ li.juno-array-item::marker {
     color: #881280;
     content: counter(list-item) ":  ";    
     font-family: var(--main-mono-space);
+}
+
+ol.juno-type-array {
+  border: 2px dashed transparent;
+  border-radius: 2px;
+}
+
+ol.juno-type-array:hover {
+  background: #ffffff10;
+  box-shadow: 0 0 4px 1px #a0a0a042;
+  border-color: #ffffff;
 }
 
 

@@ -38,15 +38,12 @@
                    ["font-weight" "bold"]
                    ["padding-right" "5px"]])
 
-(create_css_entry "span.juno-value"
-                  [["display" "inline-block"]])
+;;(create_css_entry "span.juno-value"
+ ;;                 [["display" "inline-block"]])
    
-(create_css_entry "li.juno-array-item"
-                  [["list-style" "decimal"]])   
-  
-  
-
-;; *scratch* buffer
+;;(create_css_entry "li.juno-array-item"
+;;                  [["list-style" "decimal"]])   
+ 
 
 (defun_sync value_to_dom (val)
     (let 
@@ -56,24 +53,29 @@
     (cond 
           (is_array? val)
           (array_to_dom val)
+          (is_element? val)
+          (progn
+                 (defvar tmp (div { `style: "font-family: var(--main-app-font)" }))
+                 (set_prop tmp `innerHTML
+                           val.outerHTML)
+                 tmp)
           (is_string? val)
-          (if (starts_with? "=:")
-              (span { `class: (+ classes "symbol") } val)
-              (span { `class: (+ classes "string") } val))
+          (if (starts_with? "=:" val)
+              (span { `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
+              (span { `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
           (instanceof val Error)
           (details (summary { `class: (+ classes "error") } (span { `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
              (progn
-                 (defvar tmp (pre { `class: (+ classes "error") }))
+                 (defvar tmp (pre { `tabindex: 0 `class: (+ classes "error") }))
                  (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
                  tmp))
           (is_function? val)
-          (details (summary { `class: (+ classes "function") } (span { `class: (+ classes "function") `style: "margin-left: 5px; font-style: italic;" } (sub_type val) ))
-                   (pre { `class: (+ classes "function") } (-> val `toString)))
+          (details (summary { `tabindex: 0`class: (+ classes "function") } (span { `class: (+ classes "function") `style: "margin-left: 5px; font-style: italic;" } (sub_type val) ))
+                   (pre `tabindex: 0 { `class: (+ classes "function") } (-> val `toString)))
           (is_object? val)
-          (obj_to_dom val)
-          
+          (obj_to_dom val)          
           else
-          (span { `class: (+ classes (lowercase (sub_type val))) } val))))
+          (span { `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))
 
 (defun_sync array_to_dom (arr)
     (let
@@ -84,7 +86,7 @@
          (row_elem []))
       (assert (is_array? arr))
       (details { `class: "juno-type-array" }
-         (summary  "Array [" total_len "] ")
+         (summary { `tabindex: 0 }  "Array [" total_len "] ")
          (ol { `start: 0 `class: "juno-type-array" } 
              (progn 
                 (for_each (val arr)
@@ -97,15 +99,17 @@
 
       
 (defun_sync obj_to_dom (obj)
-    (table
-        (body
-           (for_each (keyval (pairs obj))
-             (destructuring_bind (key value)
-                keyval
-                (tr 
-                    (td { `class: "juno-obj-to-dom-key" } key)
-                    (td { `class: "juno-obj-to-dom-value" } 
-                        (value_to_dom value))))))))
+  (details { `class: "juno-obj-to-dom" }
+           (summary { `class: "juno-obj-to-dom" } obj.constructor.name)
+           (table
+            (body
+             (for_each (keyval (pairs obj))
+                       (destructuring_bind (key value)
+                                           keyval
+                                           (tr 
+                                            (td {  `class: "juno-obj-to-dom-key" } key)
+                                            (td { `class: "juno-obj-to-dom-value" } 
+                                                (value_to_dom value)))))))))
 
 
 
@@ -759,8 +763,8 @@
                           (div { `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
                                             (if (eq nil command_text)
                                               "border-top: 1px solid #00000008; padding: 5px;"
-                                              "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
-                                    (value_to_dom result)))
+                                              "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) } 
+                               (value_to_dom result)))
                       (when (> output_container.children.length (or options.max_entries 100))
                         (-> (last output_container.children)
                             `remove))
@@ -851,10 +855,11 @@
                       (try
                         (= result (if no_eval
                                     lisp_text
-                                    (-> current_env `evaluate lisp_text)))
+                                    (-> current_env `evaluate lisp_text {} { `throw_on_error: true })))
                         (catch Error (ex)
                           (do
                             (= error_state true)
+                            (notify "Error state")
                             (= result ex))))
                       (console.log "<-" result)
                       (set_prop namespace_span
