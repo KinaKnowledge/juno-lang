@@ -45,14 +45,18 @@
 ;;                  [["list-style" "decimal"]])   
  
 
-(defun_sync value_to_dom (val)
+(defun_sync value_to_dom (val options _path)
     (let 
-        ((classes "juno-value juno-type-"))
+        ((classes "juno-value juno-type-")
+         (options (or options {}))
+         (_path (or _path [] ))         
+         (lpath (function () (join "~" _path))))
         (declare (function array_to_dom obj_to_dom)
                  (global array_to_dom obj_to_dom))
-    (cond 
+     
+     (cond 
           (is_array? val)
-          (array_to_dom val)
+          (array_to_dom val options _path)
           (is_element? val)
           (progn
                  (defvar tmp (div { `style: "font-family: var(--main-app-font)" }))
@@ -61,46 +65,68 @@
                  tmp)
           (is_string? val)
           (if (starts_with? "=:" val)
-              (span { `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
-              (span { `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
+              (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
+              (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
           (instanceof val Error)
-          (details (summary { `class: (+ classes "error") } (span { `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
+          (details (summary { `class: (+ classes "error") } 
+                            (span { `tabindex: 0 `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
              (progn
                  (defvar tmp (pre { `tabindex: 0 `class: (+ classes "error") }))
                  (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
                  tmp))
           (is_function? val)
-          (details (summary { `tabindex: 0`class: (+ classes "function") } (span { `class: (+ classes "function") `style: "margin-left: 5px; font-style: italic;" } (sub_type val) ))
-                   (pre `tabindex: 0 { `class: (+ classes "function") } (-> val `toString)))
+          (details (summary { `tabindex: 0 `lpath: (lpath) `class: (+ classes "function") }
+                            (span { `lpath: (lpath)
+                                    `class: (+ classes "function")
+                                    `style: "margin-left: 5px; font-style: italic;" }
+                                  (aif (fn_signature val)
+                                       (if (== it.type "class")
+                                         (+ "class " it.name)                                            
+                                         (+ (if (== it.type "async")
+                                              "(fn ("                                            
+                                              "(function (")
+                                            (join " " it.args)
+                                            "))")))))
+                    (pre  { `lpath: (lpath)  `tabindex: 0 `class: (+ classes "function") } (-> val `toString)))
           (is_object? val)
-          (obj_to_dom val)          
+          (obj_to_dom val options _path)          
           else
-          (span { `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))
+          (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))
 
-(defun_sync array_to_dom (arr)
+(defun_sync array_to_dom (arr options _path)
     (let
         ((total_len arr.length)
+         (_path (or _path []))
+         (lpath (function () (join "~" _path)))
+         (options (or options {}))
          (idx -1)
          (segment_size 10)
          (new_row_elem [])
          (row_elem []))
       (assert (is_array? arr))
-      (details { `class: "juno-type-array" }
-         (summary { `tabindex: 0 }  "Array [" total_len "] ")
-         (ol { `start: 0 `class: "juno-type-array" } 
+      (details (+ { `class: "juno-type-array" }
+                  (if (== _path.length 0)
+                  { `open: true }
+                  {}))
+         (summary { `lpath: (lpath)  `tabindex: 0 }  "Array [" total_len "] ")
+         (ol { `lpath: (lpath) `start: 0 `class: "juno-type-array" } 
              (progn 
                 (for_each (val arr)
                     (progn
                         (inc idx)
                         (li { `class: "juno-array-item" } 
-                            (value_to_dom val)))))))))
+                            (value_to_dom val options (conj _path [idx]))))))))))
            
-
-
-      
-(defun_sync obj_to_dom (obj)
-  (details { `class: "juno-obj-to-dom" }
-           (summary { `class: "juno-obj-to-dom" } obj.constructor.name)
+(defun_sync obj_to_dom (obj options _path)
+  (let
+      ((options (or options {}))
+       (_path (or _path []))
+       (lpath (function () (join "~" _path))))
+    (details (+ {  `class: "juno-obj-to-dom" }
+                (if (== _path.length 0)
+                  { `open: true }
+                  {}))
+           (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
            (table
             (body
              (for_each (keyval (pairs obj))
@@ -109,10 +135,27 @@
                                            (tr 
                                             (td {  `class: "juno-obj-to-dom-key" } key)
                                             (td { `class: "juno-obj-to-dom-value" } 
-                                                (value_to_dom value)))))))))
+                                                (value_to_dom value options (conj _path [ key ] )))))))))))
 
 
-
+(defun copy_text_to_clipboard (text)
+        (if text
+           (let ((temp (textarea { `style: "position: absolute; top: -100px; left: -200px;"  } )))
+               (-> (get_by_id "body") `append temp)
+               (set_prop temp
+                         `value
+                         text)
+               (-> temp `select)
+               (-> temp `setSelectionRange 0 999999)
+               (-> document `execCommand "copy")
+               (-> temp `remove)
+               true
+            )
+            false)
+        { `usage: ["text:string"]
+          `description:"Copies the provided textual argument to the system clipboard.  It cannot copy more complex types due to security limitations of browser sandboxed code."
+          `tags: ["env" "copy" "clipboard" "ui"]
+        } )
 
 
 (defun *help_menu_function* ()
@@ -176,9 +219,9 @@
        (when target_control.menu_items
          (-> *app_menu_control* `add_menu [ (or target_control.name
                                                 "Control")
-                                           target_control.menu_items ]))
+                                           target_control.menu_items ])))
              
-       (console.log "-> found target_control: " target_control))
+       
       (progn
        (setq *last_focus* nil)
        (console.log "lost all control focus")
@@ -186,8 +229,7 @@
 
 (defun process_focus_chain (e originator_container)
   (progn
-   (handle_event e)
-   (console.log "process_focus_chain: " e originator_container)
+   (handle_event e)   
    (when e.path
      (let
          ((target_control nil)
@@ -453,7 +495,7 @@
                          (when view.parentElement
                           ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
-                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
+                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 15) "px")]]
                                           view)
                           (-> editor `resize))))
        (editor nil)
@@ -736,9 +778,9 @@
 
 (defun log_view (options)
   (let
-      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; display: flex; flex-direction: column-reverse; width: 100%; vertical-align:bottom; " } ))
+      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; width: 100%; vertical-align:bottom; " } ))       
        (options (or options {}))
-       (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))       
+       (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
        (control_status (div {  `class: "juno-buffer-bar" }
                             (cond (is_array? options.controls)
                                   options.controls
@@ -754,24 +796,32 @@
                      (progn
                       (when (not (eq nil command_text))
                         (-> output_container
-                            `prepend
-                            (div { style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
-                                      (code { `style: "font-style: italic; color: darkblue;" }
-                                                 command_text))))
+                            `append
+                            (if (> command_text.length 100)
+                              (details {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                                       (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
+                                       (pre { `tabindex: 0 `class: "juno-code-value" }
+                                             command_text))
+                              (div {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                                   (code { `tabindex: 0 `class: "juno-code-value" }
+                                             command_text)))))
                       (-> output_container
-                          `prepend
-                          (div { `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
+                          `append
+                          (div {  `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
                                             (if (eq nil command_text)
                                               "border-top: 1px solid #00000008; padding: 5px;"
                                               "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) } 
                                (value_to_dom result)))
                       (when (> output_container.children.length (or options.max_entries 100))
                         (-> (last output_container.children)
-                            `remove))
+                            `remove))                      
                       (set_prop output_container
                                 `scrollTop
-                                output_container.offsetHeight)
-                      result)))                                                               
+                                1000000)
+                      (set_prop view
+                                `scrollTop
+                                0)
+                      result)))
        (interf {}))
     (set_prop options
               `id
@@ -780,6 +830,7 @@
               `view view
               `append add_result
               `control_bar control_status
+              `output_container output_container
               `type `log_view
               `clear (fn ()
                        (-> output_container `replaceChildren))
@@ -796,15 +847,16 @@
       ((options (or options {}))
        (name options.name)       
        (resize_observer nil)
-       (namespace_span  (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
+       (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
        (commands_button (button { `title: "REPL Commands" } "⋯"))
        (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
+       (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
        (error_state nil)
        (initialized false)       
        (intf nil)
        (id (or options.id (generate_id "repl")))
-       (output_control (log_view { `controls: [ commands_button title_span namespace_span ]  }))
+       (output_control (log_view { `controls: [ commands_button title_span namespace_span path_span ]  }))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -890,6 +942,7 @@
                                  { `ratio: (or options.ratio 0.7) } ))  ;; 80/20 top-bottom
        
        (view sview.view)
+       (non_whitespace_regex (new RegExp "\\\\s"))
        (on_focus (fn ()
                    (progn
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
@@ -915,6 +968,33 @@
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                          "Version: " Environment.build_version   )))))))))
+
+    (attach_event_listener output_control.output_container
+                           `focusin
+                           (function (e)
+                             (progn
+                              (handle_event e)
+                              (console.log "output-control: focus: " (-> e.srcElement `getAttribute "lpath") e.srcElement)
+                              (aif (-> e.srcElement `getAttribute "lpath")
+                                   (progn
+                                    (set_prop path_span
+                                             `innerText
+                                             (+ "[ " (join " "
+                                                           (for_each (v (split_by "~" it))
+                                                                     (cond (> (length (scan_str non_whitespace_regex v)) 0)
+                                                                           (+ "\"" v "\"")
+                                                                           (isNaN (new Number v))
+                                                                           (+ "`" v)
+                                                                           else
+                                                                           v)))
+                                                           " ]"))
+                                    (console.log "setting path span:: " it))
+                                   (progn
+                                    (console.log "clearing path span")
+                                    (set_prop path_span
+                                             `innerText
+                                             ""))))))
+    
     (attach_event_listener commands_button
                            `click
                            (fn (e)
@@ -924,12 +1004,17 @@
                                          (menu_items)
                                          ))))
 
+    (attach_event_listener path_span
+                           `click
+                           (fn (e)
+                             (progn
+                              (copy_text_to_clipboard path_span.innerText)
+                              (notify (+ (dtext "Copied") " " path_span.innerText)))))
+    
     (set_prop options
               `id
               id)
-    ;(attach_event_listener view
-     ;                      `focusin
-      ;                     process_focus_chain)                         
+                   
     (= intf {
              `view: view
              `options: options
@@ -1409,7 +1494,7 @@
     (if (== (length *serialized_controls*) 0)
       (progn       
        (console.log "initializing control surface")
-       (defglobal $repl (browser_repl { `name: "Global REPL"  }))
+       (defglobal $repl (browser_repl { `name: "Juno REPL" }))
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 

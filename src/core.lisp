@@ -740,7 +740,7 @@
    `tags: ["reference" "JSON" "binding" "symbol" ] 
    }) 
     
-(defun scan_str (regex search_string)
+(defun_sync scan_str (regex search_string)
      (let
         ((`result      nil)
          (`last_result nil)
@@ -760,9 +760,8 @@
                (do 
                    (= last_result result)
                    (push totals (to_object
-                                (map (fn (v)
-                                     [v (prop result v)])
-                                 (keys result)))))))
+                                (for_each (v (keys result)) 
+                                     [v (prop result v)]))))))
             (throw (new ReferenceError (+ "scan_str: invalid RegExp provided: " regex))))
          totals)
         {`description: (+ "Using a provided regex and a search string, performs a regex " 
@@ -771,7 +770,6 @@
                           "text, index, and any capture groups.")
          `usage:["regex:RegExp" "text:string"]
          `tags:["regex" "string" "match" "exec" "array"] })
-     
      
 (defun remove_prop (obj key)
       (when (not (== undefined (prop obj key)))
@@ -1390,27 +1388,7 @@ such as things that connect or use environmental resources.
 
 
 
-(defun env_encode_string_orig (text)
-  (let
-      ((te (new TextEncoder))
-       (enc (-> te `encode text))
-       (decl [])
-       (de (new TextDecoder))
-       (bl nil))
-   (for_each (`b enc)
-     (progn
-       (if (and bl 
-                (== b 92)
-                (== bl 92))
-           (progn     
-             (push decl 92)
-             (push decl 92)
-             (push decl 92)
-             (= bl nil))
-           (progn
-             (push decl b)
-             (= bl b)))))
-   (-> de `decode (new Uint8Array decl))))
+
 
 (defun env_encode_string (text)
   (let
@@ -1444,8 +1422,45 @@ such as things that connect or use environmental resources.
            (`snq (split_by (String.fromCharCode 39) step1)))
           ;(join (+ (String.fromCharCode 92) (String.fromCharCode 39)) snq))
          step1)
-      text))
+    text))
 
+(defun_sync fn_signature (f)
+    (if (is_function? f)
+        (let
+            ((sig (trim (first (split_by "{" (-> f `toString)))))
+             (comps (split_by " " sig))
+             (ftype (sub_type f))
+             (is_class? (== comps.0 "class"))
+             (args (if is_class?
+                       []
+                       (split_by "," (second (split_by "(" (chop (last comps)))))))
+             (class_name (if is_class?
+                             f.name
+                             nil)))
+                       
+        { 
+          `type: (cond 
+                     (== comps.0 "async")
+                     "async"
+                     (== comps.0 "class")
+                     "class"
+                     else
+                     "sync")
+          `name: (if f.name
+                     f.name
+                     nil)
+          `args: args
+          })
+            
+      (throw TypeError "non-function supplied to fn_signature"))
+    {
+      `description: (+ "For a given function as an argument, returns an object with a " 
+                       "type key containing the function type (async, sync) and an args "
+                       "key with an array for the arguments")
+      `usage: ["f:function"]
+      `tags: ["function" "signature" "arity" "inspect"]
+    })
+ 
 (defun path_to_js_syntax (comps)
     (if (is_array? comps)
         (if (> comps.length 1)
@@ -1481,7 +1496,8 @@ such as things that connect or use environmental resources.
            true
            false))
   {
-   `description: "Returns true if the first character of the provided string is an uppercase value in the range [A-Z]. "
+  `description: "Returns true if the first character of the provided string is an uppercase value in the range [A-Z]. "
+   `usage: ["str_val:string"]
    `tags: ["string" "case" "uppercase" "capitalized"]
    })
        

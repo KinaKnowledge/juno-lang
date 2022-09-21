@@ -14,9 +14,12 @@
   --type-function-color: #3f5b71;
   --type-null-color: #a35e5e;
   --type-undefined-color: #9d9d9d;
-  --type-symbol-color: #ff4f4f
+  --type-symbol-color: #ff4f4f;
   --type-error-color: darkred;
-  --main-app-font:  FreeSans, Arimo, "Droid Sans", Helvetica, Arial, sans-serif;
+  --type-path-color: #88127D;
+  --type-code-color: darkblue;
+  --value-focus-color: #0168ff;
+  --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
   --main-mono-space: ui-monospace,		     
     "Cascadia Mono", "Segoe UI Mono",    
     "Roboto Mono",
@@ -1519,6 +1522,19 @@ li.juno-main-menu-header {
   font-weight: bold;
 }
 
+.juno-path {
+  color: var(--type-path-color);
+  padding-left: 10px;
+  padding-right: 10px;
+  font-family: var(--main-mono-space);
+}
+
+.juno-path:hover {
+  background: #FFFFFF40;
+  box-shadow: 0 0 4px 1px #a0a0a042;
+ 
+}
+
 span.juno-evaluator {
   padding-left: 10px;
   padding-right: 10px;
@@ -1590,14 +1606,46 @@ li.juno-menu-header:active {
 
 td.juno-obj-to-dom-key {
     vertical-align: top;
-    color: #881280;
+    color: var(--type-path-color);
     text-align: right;
     font-weight: bold;
     padding-right: 5px;
 }
 
+span.juno-code-value {  
+  color: var(--type-code-color);
+  text-overflow: ellipsis;
+}
+
+summary.juno-code-value {
+  white-space: nowrap;
+  text-overflow: ellipsi;
+  font-family: var(--main-mono-space);
+}
+
+.juno-code-value {
+  color: var(--type-code-color);
+  font-style: italic;
+}
+
+.juno-code-value:focus {
+  outline: var(--value-focus-color) auto 1px;
+}
+
 span.juno-value {
   display: inline-block;
+}
+
+.juno-value:focus {
+  outline: var(--value-focus-color) auto 1px;
+}
+
+.juno-type-array summary:focus {
+  outline: var(--value-focus-color) auto 1px;
+}
+
+.juno-obj-to-dom summary:focus {
+  outline: var(--value-focus-color) auto 1px;
 }
 
 .juno-type-number {
@@ -1645,7 +1693,7 @@ li.juno-array-item {
 }
 
 li.juno-array-item::marker {
-    color: #881280;
+    color: var(--type-path-color);
     content: counter(list-item) ":  ";    
     font-family: var(--main-mono-space);
 }
