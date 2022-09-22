@@ -59,10 +59,17 @@
           (array_to_dom val options _path)
           (is_element? val)
           (progn
-                 (defvar tmp (div { `style: "font-family: var(--main-app-font)" }))
+           (defvar tmp (div { `tabindex: 0 `style: "font-family: var(--main-app-font)" }))
+           
                  (set_prop tmp `innerHTML
                            val.outerHTML)
-                 tmp)
+                 (if (== val.offsetHeight 0)
+                     tmp
+                     (details
+                      (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
+                               tmp)))
+          (is_regex? val)
+          (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
           (is_string? val)
           (if (starts_with? "=:" val)
               (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
@@ -120,23 +127,32 @@
 (defun_sync obj_to_dom (obj options _path)
   (let
       ((options (or options {}))
+       (classes "juno-value juno-type-")
        (_path (or _path []))
        (lpath (function () (join "~" _path))))
-    (details (+ {  `class: "juno-obj-to-dom" }
-                (if (== _path.length 0)
-                  { `open: true }
-                  {}))
-           (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
-           (table
-            (body
-             (for_each (keyval (pairs obj))
-                       (destructuring_bind (key value)
-                                           keyval
-                                           (tr 
-                                            (td {  `class: "juno-obj-to-dom-key" } key)
-                                            (td { `class: "juno-obj-to-dom-value" } 
-                                                (value_to_dom value options (conj _path [ key ] )))))))))))
-
+    (when (or (eq nil options.visited)
+              (< _path.length 2))
+           (set_prop options
+                     `visited (new Set)))
+    
+    (if (-> options.visited `has obj)
+        (span { `lpath: (lpath) `tabindex: 0 } "[CIRCULAR]")
+        (progn
+          (-> options.visited `add obj)    
+          (details (+ {  `class: "juno-obj-to-dom" }
+                        (if (== _path.length 0)
+                          { `open: true }
+                          {}))
+                   (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
+                   (table
+                    (body
+                     (for_each (keyval (pairs obj))
+                               (destructuring_bind (key value)
+                                                   keyval
+                                                   (tr 
+                                                    (td {  `class: "juno-obj-to-dom-key" } key)
+                                                    (td { `class: "juno-obj-to-dom-value" } 
+                                                        (value_to_dom value options (conj _path [ key ] )))))))))))))
 
 (defun copy_text_to_clipboard (text)
         (if text
@@ -161,10 +177,6 @@
 (defun *help_menu_function* ()
   [["No Help Installed" (fn () false) ]])
 
-(defun generate_id (prefix)
-  (if (is_string? prefix)
-    (+ "" prefix "-" (time_in_millis) "-" (random_int 9999999))
-    (+ "control-" (time_in_millis) "-" (random_int 9999999))))
 
 (console.log "browser_initializer running")
 
@@ -180,6 +192,7 @@
                 (= ctrl control)
                 (break)))
     ctrl))
+
 
 
 (defun set_focus_to (target_control _controls)
@@ -487,15 +500,15 @@
        (id (or options.id (generate_id id)))
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
-       (editor_div (div { `style: "height: calc(100% - 20px); width: 100%; overflow: hidden;" }))
-       (view (div { `style: "overflow: hidden; height: calc(100% - 5px); display: inline-block; width: inherit;" }                  
+       (editor_div (div { `style: "height: calc(100% - 23px); width: 100%; overflow: hidden;" }))
+       (view (div { `control_id: id `style: "overflow: hidden; height: calc(100% - 10px); display: inline-block; width: inherit;" }                 
                   controls
-                  editor_div))      
+                  editor_div))     
        (perform_resize (fn ()
                          (when view.parentElement
                           ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
-                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 15) "px")]]
+                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
                                           view)
                           (-> editor `resize))))
        (editor nil)
@@ -602,6 +615,7 @@
         `save: (function ()
                          (options.on_save (-> editor `getValue)))                 
         `options: options
+        `name: (or options.name "Untitled Buffer")
         `toJSON: (function ()
                            `(make_editor ,#(-> editor `getValue) ,#options))
         `initialize: (fn ()
@@ -691,8 +705,7 @@
                                       title)
                                    e)))))))
        (on_focus (fn ()
-                   (progn
-                    (console.log "focused editor.")                    
+                   (progn                                     
                     (setq *last_focus* edit_control)
                     (add_class "juno-focused" command_bar))))
        
@@ -702,7 +715,7 @@
                                   {
                                    type: mode
                                    command_bar: command_bar                                                                     
-                                   on_save: on_save
+                                   on_save: on_save                                   
                                    read_only: options.read_only
                                    on_change: (function (editor val)
                                                         (progn
@@ -782,16 +795,17 @@
        (options (or options {}))
        (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
        (control_status (div {  `class: "juno-buffer-bar" }
-                            (cond (is_array? options.controls)
-                                  options.controls
+                            (cond (is_array? options.additional_elements)
+                                  options.additional_elements
                                   options.title
                                   title_span
                                   else
                                   [])))
-       (view (div { `tabindex: 0 `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
+       (id (or options.id (generate_id "log_view")))
+       (view (div { `tabindex: 0 `control_id: id `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                   control_status
                   output_container))       
-       (id (or options.id (generate_id "log_view")))
+       
        (add_result (fn (result command_text error_state)
                      (progn
                       (when (not (eq nil command_text))
@@ -856,7 +870,7 @@
        (initialized false)       
        (intf nil)
        (id (or options.id (generate_id "repl")))
-       (output_control (log_view { `controls: [ commands_button title_span namespace_span path_span ]  }))
+       (output_control (log_view { `additional_elements: [ commands_button title_span namespace_span path_span ] `id: id }))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -928,6 +942,7 @@
                                    on_change: (function (editor val)
                                                         (progn
                                                          true))
+                                   `id: id
                                    repl_mode: true                                                                              
                                    evaluator: (fn (lisp_text no_eval)
                                                 (progn
@@ -939,7 +954,7 @@
        (sview (split_view_horizontal
                                  output_control
                                  input_container
-                                 { `ratio: (or options.ratio 0.7) } ))  ;; 80/20 top-bottom
+                                 { `ratio: (or options.ratio 0.7) `id: id } ))  ;; 80/20 top-bottom
        
        (view sview.view)
        (non_whitespace_regex (new RegExp "\\\\s"))
@@ -949,7 +964,7 @@
                     (add_class "juno-focused" output_control.control_bar )))) ;; we know that is the command bar
        (on_blur (fn ()
                   (progn
-                   (console.log "repl blur"))))
+                   true)))
        (menu_items (fn ()
                      [[(dtext "Clear Output Log")
                        (function ()
@@ -1047,12 +1062,13 @@
 (defun control_container (content options)
   (let
       ((contained_content nil)
-       (view (div { `class: "juno-view-container" } ))
+       
        (resize_observer nil)
        (options (or options {}))
        (name (or options.name nil))
        (id (or options.id (generate_id "container")))       
        (init_timer nil)
+       (view (div { `control_id: id `class: "juno-view-container" } ))
        (initialized false)
        (perform_resize (fn ()
                          (when view.parentElement
@@ -1137,6 +1153,29 @@
                                  `(control_container ,#contained_content ,#options))
               `type `control_container
               `options options)))
+
+(defun empty_selection_control (options)
+    (let
+        ((options (or options {
+                               `name: "Empty Selection" 
+                               }))
+         (id (or options.id (generate_id "empty")))
+         (view (div { `control_id: id `style: "height: 100%; width: 100%; overflow: hidden; margin: 10px; border-radius: 20px; border: 5px dotted #A0A0A0;" }
+                    (div { `style: "font-size: 3.0em; text-align: center; padding: 30%;" } "Empty Selection"))))                           
+        (set_prop options
+                  `id
+                  id)
+       {
+           `view: view
+           `type: "empty_selection_control"
+           `id: id
+           `name: options.name
+           `options: options
+           `toJSON: (function ()
+                      `[empty_selection_control ,#options ])
+       }))
+
+
 
 (defun menu_tree (items options _path)
   (let
@@ -1415,33 +1454,121 @@
         })
     
     intf))
-      
 
+(defun control_for_dom_element (elem)
+    (let
+        ((control_id nil))
+        (assert (is_element? elem) "Invalid element provided")
+        (= control_id (-> elem `getAttribute "control_id"))
+        (aif (and control_id ;; we have a control_id, so get the control
+                  (get_control_by_id control_id))
+             it ;; and return it
+            (cond
+              (eq nil elem.parentElement)
+              nil ;; at top (or cannot go up further) so return nil
+              
+              ;; no control found and we have a parent_element
+              else
+              (control_for_dom_element elem.parentElement)))))
+
+
+
+(defun control_position (control)
+    (let
+       ((parent_view nil)
+        (parent_control_position 0)
+        (parent_control nil))
+    (assert control.view "target_container isn't a control container")
+    (= parent_view control.view.parentElement)
+    (when parent_view
+        (= parent_control (control_for_dom_element parent_view))
+        (when (and parent_control
+                   parent_control.controls)
+           (map (fn (parental_sub_control idx)
+                    (when (== parental_sub_control control)
+                        (= parent_control_position idx)))
+                (-> parent_control `controls))))
+    {
+        `child: control
+        `parent: parent_control
+        `child_position: parent_control_position
+    }))
+
+
+(defun container_view_operation (command target_container new_control new_container_options)
+   (let
+       ((index_in_root nil)
+        (new_container_options (or new_container_options {}))                            
+        (new_container nil))
+     (assert (is_function? target_container.set_content) "target_container isn't a control container")
+     (assert (and (is_object? new_control)
+                  new_control.view) "new control isn't a valid control")
+     (map (fn (c idx)
+             (when (== c target_container)
+                   (= index_in_root idx)))
+        $root_controls)                          
+     (cond
+         (== command "insert_above")
+         (progn
+           (= new_container (split_view_horizontal new_control target_container new_container_options))
+           (if (>= index_in_root 0)
+               (-> $root_controls `splice index_in_root 1 new_container)))
+         (== command "insert_below")
+         (progn
+           (= new_container (split_view_horizontal target_container new_control new_container_options))
+           (if (>= index_in_root 0)
+               (-> $root_controls `splice index_in_root 1 new_container)))
+         (== command "insert_left")
+         (progn
+           (= new_container (split_view_vertical new_control target_container new_container_options))
+           (if (>= index_in_root 0)
+               (-> $root_controls `splice index_in_root 1 new_container)))
+         (== command "insert_below")
+         (progn
+           (= new_container (split_view_vertical target_container new_control new_container_options))
+           (if (>= index_in_root 0)
+               (-> $root_controls `splice index_in_root 1 new_container))))))
+
+(defun generate_control_menu ()
+  (let
+      ((valid_controls (reduce (control (current_controls))
+                          (progn
+                           (when control.set_content
+                             control)))))
+    (for_each (control valid_controls)
+              [(or control.name control.options.id "Untitled")
+               (for_each (operation ["Insert Above" "Insert Below" "Insert Left" "Insert Right"])
+                         [(dtext operation) (fn ()
+                                              (container_view_operation (to_key operation) 
+                                                                        control
+                                                                        (empty_selection_control)))])])))
+                                                    
 
 (defun serialize_controls (controls)
-  (cond
-    (is_array? controls)
-    (map serialize_controls controls)
-    (and (is_object? controls)
-         controls.as_json)
-    (-> controls `as_json)
-    (is_object? controls)
-    (to_object (map (fn (v)
-                      [v.0 (serialize_controls v.1)])
-                    controls))
-    else
-    controls))
+  [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
     
 
 (defun save_control_image ()
   (progn
    (set_focus_to nil)
-   (= *serialized_controls*
-      [(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
+   (= *serialized_controls* (serialize_controls $root_controls))
+      ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
    (console.log "*serialized_controls*: " *serialized_controls*)
    (save_image)))
 
-
+(defun rehydrate_controls (container serialized_controls)
+  (let
+      ((control nil))
+    (for_each (`serialized_control serialized_controls)
+      (progn
+       (= control (eval serialized_control))
+       (when control.view
+         (-> container
+             `append control.view))
+       (push $root_controls
+             control)
+       (when control.initialize
+         (-> control `initialize))))))
 
 (defun user/*initializer* ()
   (let
@@ -1519,7 +1646,9 @@
              (app_header [(app_menu [ `*main_menu* ])]
                          { `app_title: "Seedling" }))
        (setq page_frame ;; or surface which can be named in the upper right or middle
-             (control_container nil))
+             (control_container nil {
+                                     `name: "Default Container"
+                                     }))
 
        (-> juno_container
            `append page_frame.view)
@@ -1541,19 +1670,10 @@
        (-> juno_container
            `append page_frame.view)       
        (-> page_frame `initialize))
-      (progn
-       ;(= *serialized_controls* (eval *serialized_controls*))
+      (progn     
        (console.log "serialized controls: " *serialized_controls*)
-       (for_each (`serialized_control *serialized_controls*)
-          (progn
-           (= control (eval serialized_control))
-           (when control.view
-             (-> juno_container
-                 `append control.view))           
-           (push $root_controls
-                 control)
-           (when control.initialize
-             (-> control `initialize))))))
+       (rehydrate_controls juno_container *serialized_controls*)))
+       
        
 
     (defun core/rlog (`& vals)

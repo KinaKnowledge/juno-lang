@@ -1334,7 +1334,7 @@ such as things that connect or use environmental resources.
            `tags: ["pluck" "element" "only" "list" "object" "property"]
        })
 
-(defun replace (`& args)
+(defun_sync replace (`& args)
     (if (< args.length 3)
         (throw SyntaxError "Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)")
         (try
@@ -1424,35 +1424,59 @@ such as things that connect or use environmental resources.
          step1)
     text))
 
+
+
 (defun_sync fn_signature (f)
     (if (is_function? f)
         (let
-            ((sig (trim (first (split_by "{" (-> f `toString)))))
-             (comps (split_by " " sig))
-             (ftype (sub_type f))
-             (is_class? (== comps.0 "class"))
-             (args (if is_class?
-                       []
-                       (split_by "," (second (split_by "(" (chop (last comps)))))))
-             (class_name (if is_class?
-                             f.name
-                             nil)))
-                       
-        { 
-          `type: (cond 
-                     (== comps.0 "async")
-                     "async"
-                     (== comps.0 "class")
-                     "class"
-                     else
-                     "sync")
-          `name: (if f.name
-                     f.name
-                     nil)
-          `args: args
-          })
-            
-      (throw TypeError "non-function supplied to fn_signature"))
+            ((sig (trim (first (split_by "{" (replace "\n" "" (-> f `toString))))))
+             (arg_text nil)
+             (comps nil)
+             (descriptor nil)
+             (fname nil)
+             (ftype nil)
+             (extends_class nil)
+             (keyword_idx nil)
+             (args nil))
+          (cond
+              (starts_with? "class" sig)
+              (progn
+                  (= ftype "class")
+                  (= descriptor (split_by " " sig))
+                  (= fname (second descriptor))
+                  (if (== (prop descriptor 3) "extends")
+                     (= extends_class (prop descriptor 4)))
+                  {
+                      `name: fname
+                      `type: ftype
+                      `extends: extends_class
+                  })
+              else
+              (progn
+                  (when sig
+                      (= comps (split_by "(" sig))
+                      (= descriptor (split_by " " (or (first comps) "")))
+                      (= arg_text (or (chop (second comps)) "")))
+                  (when (> descriptor.length 0)
+                      (= keyword_idx (index_of "function" descriptor))
+                      (when keyword_idx
+                          (= fname (or (first (-> descriptor `slice (+ keyword_idx 1) (+ keyword_idx 2)))
+                                       "anonymous"))
+                          (= ftype (if (== keyword_idx 0)
+                                       "sync"
+                                       (prop descriptor (- keyword_idx 1))))))
+                  
+                  (if arg_text
+                      (= args (for_each (a (or (split_by "," arg_text) []))
+                                (trim a)))
+                      (= args []))
+                  
+                  { `name: fname
+                    `type: ftype
+                    `args: args
+                    
+                    })))
+    (throw TypeError "non-function supplied to fn_signature"))
     {
       `description: (+ "For a given function as an argument, returns an object with a " 
                        "type key containing the function type (async, sync) and an args "

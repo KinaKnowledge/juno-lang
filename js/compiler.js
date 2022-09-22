@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-21 05:32:19
-// Version: 2022.09.21.05.32
-export const DLISP_ENV_VERSION='2022.09.21.05.32';
+// Build Time: 2022-09-22 12:53:50
+// Version: 2022.09.22.12.53
+export const DLISP_ENV_VERSION='2022.09.22.12.53';
 
 
 
@@ -221,18 +221,18 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__232=async function() {
+         let __test_condition__236=async function() {
             return current_obj
         };
-        let __body_ref__233=async function() {
+        let __body_ref__237=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__232()) {
-            await __body_ref__233();
+        while(await __test_condition__236()) {
+            await __body_ref__237();
              if(__BREAK__FLAG__) {
                  break;
                 
@@ -268,12 +268,8 @@ export async function init_compiler(Environment) {
             let nq;
             let step1;
             let snq;
-            escaped=await (async function(){
-                 return await (await Environment.get_global("replace"))(new RegExp("\n","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"n"),text) 
-            })();
-            escaped=await (async function(){
-                 return await (await Environment.get_global("replace"))(new RegExp("\r","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"r"),escaped) 
-            })();
+            escaped=await (await Environment.get_global("replace"))(new RegExp("\n","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"n"),text);
+            escaped=await (await Environment.get_global("replace"))(new RegExp("\r","g"),await (await Environment.get_global("add"))(await String.fromCharCode(92),"r"),escaped);
             nq=(escaped).split(await String.fromCharCode(34));
             step1=(nq).join(await (await Environment.get_global("add"))(await String.fromCharCode(92),await String.fromCharCode(34)));
             snq=(step1).split(await String.fromCharCode(39));
@@ -1172,13 +1168,9 @@ export async function init_compiler(Environment) {
                     } else if (check_true (((symname instanceof String || typeof symname==='string')&& (await length(symname)>2)&& await starts_with_ques_(await (async function(){
                          return "=:" 
                     })(),symname)))) {
-                        return (await length(await (async function(){
-                             return await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,await symname["substr"].call(symname,2)) 
-                        })())>0)
+                        return (await length(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,await symname["substr"].call(symname,2)))>0)
                     } else {
-                        return (await length(await (async function(){
-                             return await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,symname) 
-                        })())>0)
+                        return (await length(await (await Environment.get_global("scan_str"))(invalid_js_ref_chars_regex,symname))>0)
                     }
                 } ()
             };

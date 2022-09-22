@@ -17,6 +17,7 @@
   --type-symbol-color: #ff4f4f;
   --type-error-color: darkred;
   --type-path-color: #88127D;
+  --type-regexp-color: #fe2f53;
   --type-code-color: darkblue;
   --value-focus-color: #0168ff;
   --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
@@ -1425,7 +1426,7 @@ striping:
   display: inline-block;
   width: inherit;
   height: inherit;
-  overflow: scroll;
+  overflow: hidden;  /* Views need to manage how they present their content */
 }
 
 .juno-empty-content {
@@ -1465,7 +1466,7 @@ li.juno-main-menu-header {
   height: 100%;
   cursor: col-resize;
   display: inline-block;
-  border-left: 1px solid #00000010
+  border-left: 1px solid #00000010;
 }
 
 .juno-vertical-dragger:hover { 
@@ -1660,6 +1661,12 @@ span.juno-value {
   color: var(--type-string-color)
 }
 
+.juno-type-regexp {
+  color: var(--type-regexp-color);
+  font-style: italic;
+}
+
+
 summary.juno-type-function {
   color: var(--type-function-color);
   
@@ -1674,7 +1681,7 @@ summary.juno-type-function {
 }
 
 .juno-type-symbol {
-  color: #ff4f4f;
+  color: var(--type-symbol-color);
   background: #ffffff;
   box-shadow: 0 0 4px 1px #a0a0a042;
 }

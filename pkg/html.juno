@@ -75,6 +75,12 @@
   parent)
 
 
+(defun generate_id (prefix)
+  (if (is_string? prefix)
+    (+ "" prefix "-" (time_in_millis) "-" (random_int 9999999))
+    (+ "control-" (time_in_millis) "-" (random_int 9999999))))
+
+
 ;(defbinding (html/create_element (document.createElement document.createElement)))
 
 ;(defglobal html/create_element (-> document.createElement `bind document)
@@ -109,14 +115,7 @@
                     (rest args)
                     [])
                   (or args
-                      [])))
-       (append_children_old (fn (parent children)
-                          (do
-                            (for_each (child children)
-                                      (if (is_array? child)
-                                        (append_children parent child)
-                                        (-> parent `appendChild child)))
-                            parent)))
+                      [])))       
        (elem (-> document `createElement element_name)))
     
     (when opts
@@ -139,7 +138,10 @@
                   (is_string? child)
                   (-> elem `appendChild (-> document `createTextNode child))
                   else
-                  (-> elem `appendChild (-> document `createTextNode (+ "" child))))))
+                  (try
+                    (-> elem `appendChild (-> document `createTextNode (+ "" child)))
+                    (catch TypeError (e)
+                      (-> elem `appendChild (-> document `createTextNode (+ "ERROR: " (subtype child)))))))))
     elem))
 
 
@@ -483,6 +485,7 @@
       ((center_width 7)
        (right_margin 5)
        (options (or options {}))
+       (id (or options.id (generate_id "split_view_vertical")))
        (center_divider (div { `class: "juno-vertical-dragger"
                               `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
        (left_container (div { `class: "juno-view-container" }
@@ -494,7 +497,7 @@
                               content_b.view
                               content_b)))
        (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: col-resize" }))
-       (view (div { `class: "juno-vertical-split-container" `style: "height: calc(100% - 5px); width: 100%;" }
+       (view (div { `control_id: id  `class: "juno-vertical-split-container" `style: "height: calc(100% - 5px); width: 100%;" }
                   left_container
                   center_divider
                   right_container
@@ -648,7 +651,10 @@
                                       (clearInterval init_timer)
                                       (= init_timer nil)
                                       (initialize))))
-                                 250)))                                 
+                                 250)))
+    (set_prop options
+              `id
+              id)
     (set_prop intf
      `view view
      `initialize initialize
@@ -666,6 +672,7 @@
       ((center_height 7)
        (bottom_margin 5)
        (options (or options {}))
+       (id (or options.id (generate_id "split_view_horizontal")))
        (center_divider (div { `class: "juno-horizontal-dragger"
                               `style: (+ "cursor: row-resize; width: 100%; height: " center_height "px") }))
        (top_container (div { `class: "juno-view-container" }
@@ -677,7 +684,7 @@
                               content_b.view
                               content_b)))
        (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: row-resize" }))
-       (view (div { `class: "juno-horizontal-split-container" `style: "height: calc(100% - 5px); width: 100%;margin: 0px; padding: 0px;" }
+       (view (div { `control_id: id `class: "juno-horizontal-split-container" `style: "height: calc(100% - 5px); width: 100%;margin: 0px; padding: 0px;" }
                   top_container
                   center_divider
                   bottom_container
@@ -830,7 +837,11 @@
                                       (clearInterval init_timer)
                                       (= init_timer nil)
                                       (initialize))))
-                                 250)))                                 
+                                 250)))
+    (set_prop options
+              `id
+              id)
+    
     (set_prop intf
      `view view
      `initialize initialize
