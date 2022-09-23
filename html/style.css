@@ -1420,7 +1420,10 @@ striping:
 
 /* ----- Specific Juno Styles ----- */
 
-
+summary {
+  display: list-item;
+  padding: 1px;
+}
 
 .juno-view-container {
   display: inline-block;
@@ -1595,6 +1598,7 @@ li.juno-menu-header:active {
   background: #dadada;
 }
 
+
 .juno-header {
   color: #026783;
   padding: 4px;
@@ -1611,6 +1615,10 @@ td.juno-obj-to-dom-key {
     text-align: right;
     font-weight: bold;
     padding-right: 5px;
+}
+
+summary.juno-type-view {
+  padding: 1px;
 }
 
 span.juno-code-value {  

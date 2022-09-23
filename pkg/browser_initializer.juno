@@ -14,7 +14,7 @@
 
 
 
-
+(defparameter *non_displayed_controls* {})
 (defvalue *main_menu* [])
 (defvalue *serialized_controls* [])
 
@@ -46,59 +46,55 @@
  
 
 (defun_sync value_to_dom (val options _path)
-    (let 
-        ((classes "juno-value juno-type-")
-         (options (or options {}))
-         (_path (or _path [] ))         
-         (lpath (function () (join "~" _path))))
-        (declare (function array_to_dom obj_to_dom)
-                 (global array_to_dom obj_to_dom))
-     
-     (cond 
-          (is_array? val)
-          (array_to_dom val options _path)
-          (is_element? val)
-          (progn
-           (defvar tmp (div { `tabindex: 0 `style: "font-family: var(--main-app-font)" }))
-           
-                 (set_prop tmp `innerHTML
-                           val.outerHTML)
-                 (if (== val.offsetHeight 0)
-                     tmp
-                     (details
-                      (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
-                               tmp)))
-          (is_regex? val)
-          (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
-          (is_string? val)
-          (if (starts_with? "=:" val)
-              (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
-              (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
-          (instanceof val Error)
-          (details (summary { `class: (+ classes "error") } 
-                            (span { `tabindex: 0 `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
-             (progn
-                 (defvar tmp (pre { `tabindex: 0 `class: (+ classes "error") }))
-                 (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
-                 tmp))
-          (is_function? val)
-          (details (summary { `tabindex: 0 `lpath: (lpath) `class: (+ classes "function") }
-                            (span { `lpath: (lpath)
-                                    `class: (+ classes "function")
-                                    `style: "margin-left: 5px; font-style: italic;" }
-                                  (aif (fn_signature val)
-                                       (if (== it.type "class")
-                                         (+ "class " it.name)                                            
-                                         (+ (if (== it.type "async")
-                                              "(fn ("                                            
-                                              "(function (")
-                                            (join " " it.args)
-                                            "))")))))
-                    (pre  { `lpath: (lpath)  `tabindex: 0 `class: (+ classes "function") } (-> val `toString)))
-          (is_object? val)
-          (obj_to_dom val options _path)          
-          else
-          (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))
+  (let 
+      ((classes "juno-value juno-type-")
+       (options (or options {}))
+       (_path (or _path [] ))         
+       (lpath (function () (join "~" _path))))
+    (declare (function array_to_dom obj_to_dom)
+             (global array_to_dom obj_to_dom))
+    
+    (cond 
+      (is_array? val)
+      (array_to_dom val options _path)
+      (is_element? val)
+      (progn
+       (if (== val.offsetHeight 0)
+         val
+         (details
+          (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
+          (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))))
+      (is_regex? val)
+      (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
+      (is_string? val)
+      (if (starts_with? "=:" val)
+        (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
+        (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
+      (instanceof val Error)
+      (details (summary { `class: (+ classes "error") } 
+                        (span { `tabindex: 0 `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
+               (progn
+                (defvar tmp (pre { `tabindex: 0 `class: (+ classes "error") }))
+                (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
+                tmp))
+      (is_function? val)
+      (details (summary { `tabindex: 0 `lpath: (lpath) `class: (+ classes "function") }
+                        (span { `lpath: (lpath)
+                               `class: (+ classes "function")
+                               `style: "margin-left: 5px; font-style: italic;" }
+                              (aif (fn_signature val)
+                                   (if (== it.type "class")
+                                     (+ "class " it.name)                                            
+                                     (+ (if (== it.type "async")
+                                          "(fn ("                                            
+                                          "(function (")
+                                        (join " " it.args)
+                                        "))")))))
+               (pre  { `lpath: (lpath)  `tabindex: 0 `class: (+ classes "function") } (-> val `toString)))
+      (is_object? val)
+      (obj_to_dom val options _path)          
+      else
+      (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))  
 
 (defun_sync array_to_dom (arr options _path)
     (let
@@ -106,28 +102,65 @@
          (_path (or _path []))
          (lpath (function () (join "~" _path)))
          (options (or options {}))
+         (expanded false)
+         (expansion_mode false)
+         (detail_elem nil)
+         (expansion_elem nil)
          (idx -1)
          (segment_size 10)
          (new_row_elem [])
+         (render_array (function ()
+                           (ol { `lpath: (lpath) `start: 0 `class: "juno-type-array" } 
+                             (progn 
+                                (for_each (val arr)
+                                    (progn
+                                        (inc idx)
+                                        (li { `class: "juno-array-item" } 
+                                            (value_to_dom val options (conj _path [idx])))))))))
          (row_elem []))
       (assert (is_array? arr))
-      (details (+ { `class: "juno-type-array" }
-                  (if (== _path.length 0)
-                  { `open: true }
-                  {}))
-         (summary { `lpath: (lpath)  `tabindex: 0 }  "Array [" total_len "] ")
-         (ol { `lpath: (lpath) `start: 0 `class: "juno-type-array" } 
-             (progn 
-                (for_each (val arr)
-                    (progn
-                        (inc idx)
-                        (li { `class: "juno-array-item" } 
-                            (value_to_dom val options (conj _path [idx]))))))))))
+      (when (or (> _path.length 2)
+                (> arr.length (or options.expansion_length 30)))
+        (= expansion_mode true))
+            
+      (= detail_elem 
+         (details (+ { `class: "juno-type-array" }
+                      (if (and (== _path.length 0)
+                              (not expansion_mode))
+                      { `open: true }
+                      {}))
+                 (summary { `lpath: (lpath)  `tabindex: 0 }  "Array [" total_len "] ")
+                 (if expansion_mode
+                     (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))
+                     (render_array))))
+     (when expansion_mode
+         (attach_event_listener detail_elem
+                                `toggle
+                                (fn (e)
+                                    (unless expanded
+                                     (= expanded true)
+                                     (-> expansion_elem `replaceWith (render_array))
+                                     (= render_array nil)))))
+     detail_elem))
            
 (defun_sync obj_to_dom (obj options _path)
   (let
       ((options (or options {}))
        (classes "juno-value juno-type-")
+       (detail_elem nil)
+       (expanded false)
+       (expansion_elem nil)
+       (expansion_mode false)
+       (render_table (function () 
+                         (table
+                            (body
+                             (for_each (keyval (pairs obj))
+                                       (destructuring_bind (key value)
+                                                           keyval
+                                                           (tr 
+                                                            (td {  `class: "juno-obj-to-dom-key" } key)
+                                                            (td { `class: "juno-obj-to-dom-value" } 
+                                                                (value_to_dom value options (conj _path [ key ] ))))))))))
        (_path (or _path []))
        (lpath (function () (join "~" _path))))
     (when (or (eq nil options.visited)
@@ -139,20 +172,26 @@
         (span { `lpath: (lpath) `tabindex: 0 } "[CIRCULAR]")
         (progn
           (-> options.visited `add obj)    
-          (details (+ {  `class: "juno-obj-to-dom" }
+          (when (> _path.length 2)
+              (= expansion_mode true))
+          (= detail_elem 
+             (details (+ {  `class: "juno-obj-to-dom" }
                         (if (== _path.length 0)
                           { `open: true }
                           {}))
                    (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
-                   (table
-                    (body
-                     (for_each (keyval (pairs obj))
-                               (destructuring_bind (key value)
-                                                   keyval
-                                                   (tr 
-                                                    (td {  `class: "juno-obj-to-dom-key" } key)
-                                                    (td { `class: "juno-obj-to-dom-value" } 
-                                                        (value_to_dom value options (conj _path [ key ] )))))))))))))
+                   (if expansion_mode
+                       (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))
+                       (render_table))))
+          (when expansion_mode
+               (attach_event_listener detail_elem
+                                      `toggle
+                                      (fn (e) 
+                                          (unless expanded
+                                             (= expanded true)
+                                             (-> expansion_elem `replaceWith (render_table))
+                                             (= render_table nil)))))
+          detail_elem))))
 
 (defun copy_text_to_clipboard (text)
         (if text
@@ -193,8 +232,204 @@
                 (break)))
     ctrl))
 
+(defun replace_control (target_control new_control)
+  (let
+      ((tmp (new Object))
+       (replaced_keys (new Set)))
+    (assert (is_object? target_control) "Invalid object provided for old_control")
+    (assert (is_object? new_control) "Invalid object provided for new_control")
+    ;; first transfer the old object contents to the new location
+    (for_each (k (keys target_control))
+              (set_prop tmp
+                        k
+                        (prop target_control k)))
+    
+    ;; now tmp has the target_control scope references
+    ;; replace the target_control with new values
+    (for_each (k (keys new_control))
+              (progn
+               (-> replaced_keys `add k)
+               (set_prop target_control
+                         k
+                         (prop new_control k))))
+    
+    ;; now remove any keys that are not in the set from the target_control
+    (for_each (k (keys target_control))
+              (if (not (-> replaced_keys `has k))
+                (remove_prop target_control k)))
+    
+    ;; the objects should be swapped at this point
+    ;; return tmp as the old control
+    tmp))
+
+(defun control_for_dom_element (elem)
+    (let
+        ((control_id nil))
+        (assert (is_element? elem) "Invalid element provided")
+        (= control_id (-> elem `getAttribute "control_id"))
+        (aif (and control_id ;; we have a control_id, so get the control
+                  (get_control_by_id control_id))
+             it ;; and return it
+            (cond
+              (eq nil elem.parentElement)
+              nil ;; at top (or cannot go up further) so return nil
+              
+              ;; no control found and we have a parent_element
+              else
+              (control_for_dom_element elem.parentElement)))))
 
 
+
+(defun control_position (control)
+    (let
+       ((parent_view nil)
+        (parent_control_position 0)
+        (parent_control nil))
+    (assert control.view "target_container isn't a control container")
+    (= parent_view control.view.parentElement)
+    (when parent_view
+        (= parent_control (control_for_dom_element parent_view))
+        (when (and parent_control
+                   parent_control.controls)
+           (map (fn (parental_sub_control idx)
+                    (when (== parental_sub_control control)
+                        (= parent_control_position idx)))
+                (-> parent_control `controls))))
+    {
+        `child: control
+        `parent: parent_control
+        `child_position: parent_control_position
+    }))
+
+(defun get_container_for_control (control)
+    (let
+        ((existing_container nil)
+         (pos nil)
+         (next_parent nil)
+         ;; controls should be in one of these container types
+         (valid_containers ["split_view_horizontal" "split_view_vertical" "control_container" ]))
+      (assert (and (is_object? control)
+                   control.view)
+              "Invalid control received")
+      (= pos (control_position control))
+      (debug)
+    ;; is the child control (the control passed) a container?
+      (cond 
+        (and pos.child
+           (contains? pos.child.type valid_containers))
+        (= existing_container control)
+        (and pos.parent
+            (contains? pos.parent.type valid_containers))
+        (= existing_container pos.parent)
+        pos.parent
+        (progn
+          (while (and pos.parent
+                      (not existing_container))
+             (progn
+                 (= pos (control_position pos.parent))
+                 (console.log "pos is now: " pos)
+                 (if (and pos.parent
+                          (contains? pos.parent.type valid_containers))
+                     (= existing_container pos.parent))))))
+       
+      existing_container))
+
+;; *scratch* buffer
+
+(defun container_view_operation (command target_control new_control options)
+    (let
+        ((target_root_control (control_for_dom_element target_control.view))
+         (existing_container nil)
+         (position_details   nil)
+         (new_container nil)
+         (old_control nil)
+         (child_index nil)
+         (idx -1)
+         (targeted nil))
+      (assert target_root_control "Unable to find the target control")
+      
+      (= existing_container (get_container_for_control target_root_control))
+      (when (eq nil existing_container)
+          (throw TypeError "Cannot find the container for the control to be added"))
+      (assert (is_function? existing_container.set_content) "target_container cannot set content")
+      
+      (if (== target_root_control existing_container)
+          (= target_root_control target_control))
+      ;; now which position is the child in the container?
+      (for_each (`child (-> existing_container `controls))
+         (progn
+             (inc idx)
+             (when (== child target_root_control)
+                 (= child_index idx)
+                 (break))))
+             
+      
+      (= position_details
+         {
+          `target_root: target_root_control
+          `target_position: child_index
+          `container: existing_container
+          `parent_container: (control_position existing_container)
+                                  
+          })
+      
+      (cond
+          (== command "replace")
+          (progn
+              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (= targeted (replace_control position_details.target_root new_control))
+              (when (prop *non_displayed_controls*
+                          new_control.options.id)
+                    (remove_prop *non_displayed_controls*
+                                 new_control.options.id))
+              (when (and targeted.view
+                         targeted.view.parentElement)
+                     ;; we are mounted so replace it
+                    (-> targeted.view `replaceWith new_control.view)
+                    (-> new_control `initialize))
+              (set_prop *non_displayed_controls*
+                        targeted.options.id
+                        targeted))
+          (== command "add_left")    
+          (progn
+              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (defvar tmpview (div { } "Placeholder"))
+              ;; get it off the dom
+              (-> position_details.target_root.view `replaceWith
+                  tmpview)                    
+              (= new_container (split_view_vertical new_control position_details.target_root options))
+              (-> position_details.container `set_content position_details.target_position new_container))
+          (== command "add_right")
+          (progn
+              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (defvar tmpview (div { } "Placeholder"))
+              ;; get it off the dom
+              (-> position_details.target_root.view `replaceWith
+                  tmpview)                    
+              (= new_container (split_view_vertical position_details.target_root new_control options))
+              (-> position_details.container `set_content position_details.target_position new_container))
+          (== command "add_top")
+          (progn
+              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (defvar tmpview (div { } "Placeholder"))
+              ;; get it off the dom
+              (-> position_details.target_root.view `replaceWith
+                  tmpview)                    
+              (= new_container (split_view_horizontal new_control position_details.target_root  options))
+              (-> position_details.container `set_content position_details.target_position new_container))    
+          (== command "add_bottom")
+          (progn
+              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (defvar tmpview (div { } "Placeholder"))
+              ;; get it off the dom
+              (-> position_details.target_root.view `replaceWith
+                  tmpview)                    
+              (= new_container (split_view_horizontal position_details.target_root new_control options))
+              (-> position_details.container `set_content position_details.target_position new_container)))
+      position_details))
+  
+  
+  
 (defun set_focus_to (target_control _controls)
   (let
       ((focused_list (query_all ".juno-focused"))
@@ -497,6 +732,7 @@
                              }))
        (resize_observer nil)
        (intf {})
+       (initialized false)
        (id (or options.id (generate_id id)))
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
@@ -535,58 +771,62 @@
                                                               (console.error e)))))))
                                     }))))
        (initialize_editor (fn ()
-                            (progn
-                             (setq editor
-                                   (ace.edit editor_div))
-                             (set_evaluator)
-                             (when options.on_save
-                               (-> editor.commands `addCommand
-                                   {
-                                    `name: "save"
-                                    `bindKey: { `win: "Ctrl-s" `mac: "Command-s" }
-                                    `exec: (function (editor)
-                                                     (options.on_save (-> editor `getValue)))
-                                    }))
+                            (when (not initialized)
+                              (setq initialized true)
+                              (setq editor
+                                    (ace.edit editor_div))
+                              (set_evaluator)
+                              (when options.on_save
+                                (-> editor.commands `addCommand
+                                    {
+                                     `name: "save"
+                                     `bindKey: { `win: "Ctrl-s" `mac: "Command-s" }
+                                     `exec: (function (editor)
+                                                      (options.on_save (-> editor `getValue)))
+                                     }))
 
-                             
-                             
-                             (when (is_array? options.commands)
-                               (for_each (command options.commands)
-                                  (do
-                                    (-> editor.commands `addCommand
-                                        command))))
-                                              
-                             (when options.on_focus
-                               (-> editor `on `focus options.on_focus))
-                             (when options.on_blur
-                               (-> editor `on `blur options.on_blur))
-                             (when options.read_only
-                               (-> editor `setReadOnly true))
-                             (-> editor.session `setUseSoftTabs true)
-                             (-> editor `setOptions {
-                                   `enableBasicAutocompletion: true
-                                   `enableLiveAutocompletion: true
-                                   `showFoldWidgets: true
-                                   `fontFamily: "Roboto Mono"                  
-                                   })
-                             (-> editor.session `setUseWorker true)
-                             (-> editor `setShowFoldWidgets true)
-                             (cond
-                               (== options.type "juno")
-                               (-> editor.session `setMode "ace/mode/juno")
-                               (== options.type "javascript")
-                               (-> editor.session `setMode "ace/mode/javascript")
-                               (== options.type "css")
-                               (-> editor.session `setMode "ace/mode/css"))
-                             (console.log "editor initialized: content: " (subtype content) content)                                                          
-                             (-> editor `setValue content -1)
-                             
-                             (when options.on_change
-                               (-> editor `on `change (function (val)
-                                                                (options.on_change editor val))))                             
-                             (-> editor `resize true)                             
-                             (set_prop intf `editor editor)                             
-                             ))))
+                              
+                              
+                              (when (is_array? options.commands)
+                                (for_each (command options.commands)
+                                          (do
+                                            (-> editor.commands `addCommand
+                                                command))))
+                              
+                              (when options.on_focus
+                                (-> editor `on `focus options.on_focus))
+                              (when options.on_blur
+                                (-> editor `on `blur options.on_blur))
+                              (when options.read_only
+                                (-> editor `setReadOnly true))
+                              (-> editor.session `setUseSoftTabs true)
+                              (-> editor `setOptions {
+                                                      `enableBasicAutocompletion: true
+                                                      `enableLiveAutocompletion: true
+                                                      `showFoldWidgets: true
+                                                      `cursorStyle: "wide"
+                                                      `useSoftTabs: true
+                                                      `highlightActiveWord: true
+                                                      `fontFamily: "Roboto Mono"                  
+                                                      })
+                              (-> editor.session `setUseWorker true)
+                              (-> editor `setShowFoldWidgets true)
+                              (cond
+                                (== options.type "juno")
+                                (-> editor.session `setMode "ace/mode/juno")
+                                (== options.type "javascript")
+                                (-> editor.session `setMode "ace/mode/javascript")
+                                (== options.type "css")
+                                (-> editor.session `setMode "ace/mode/css"))
+                              (console.log "editor initialized: content: " (subtype content) content)                                                          
+                              (-> editor `setValue content -1)
+                              
+                              (when options.on_change
+                                (-> editor `on `change (function (val)
+                                                                 (options.on_change editor val))))                             
+                              (-> editor `resize true)                             
+                              (set_prop intf `editor editor)                             
+                              ))))
     
     (if (not (is_symbol? `$ace_editor))
       (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
@@ -1025,6 +1265,13 @@
                              (progn
                               (copy_text_to_clipboard path_span.innerText)
                               (notify (+ (dtext "Copied") " " path_span.innerText)))))
+
+    ;; by changing the split_view type value, we prevent this control from being split or
+    ;; controls being swapped
+    
+    (set_prop sview
+              `type
+              "REPL_split")
     
     (set_prop options
               `id
@@ -1159,17 +1406,38 @@
         ((options (or options {
                                `name: "Empty Selection" 
                                }))
+         (resize_observer nil)
          (id (or options.id (generate_id "empty")))
+         (initialized false)
+         (perform_resize (fn ()
+                           (when view.parentElement
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 30))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 25)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view)))))
+         (initialize (fn ()
+                       (when (and view.parentElement
+                                  (not initialized))
+                         (= initialized true)
+                         (-> resize_observer `observe view.parentElement))))
          (view (div { `control_id: id `style: "height: 100%; width: 100%; overflow: hidden; margin: 10px; border-radius: 20px; border: 5px dotted #A0A0A0;" }
-                    (div { `style: "font-size: 3.0em; text-align: center; padding: 30%;" } "Empty Selection"))))                           
+                    (div { `style: "font-size: 3.0em; text-align: center; width: 100%; padding-top: 15px;" } "Select New Control"))))                        
         (set_prop options
                   `id
                   id)
+        (= resize_observer (new ResizeObserver perform_resize))
+        
+        
        {
            `view: view
            `type: "empty_selection_control"
            `id: id
-           `name: options.name
+           `initialize: initialize
+            `name: options.name
+        
            `options: options
            `toJSON: (function ()
                       `[empty_selection_control ,#options ])
@@ -1455,79 +1723,11 @@
     
     intf))
 
-(defun control_for_dom_element (elem)
-    (let
-        ((control_id nil))
-        (assert (is_element? elem) "Invalid element provided")
-        (= control_id (-> elem `getAttribute "control_id"))
-        (aif (and control_id ;; we have a control_id, so get the control
-                  (get_control_by_id control_id))
-             it ;; and return it
-            (cond
-              (eq nil elem.parentElement)
-              nil ;; at top (or cannot go up further) so return nil
-              
-              ;; no control found and we have a parent_element
-              else
-              (control_for_dom_element elem.parentElement)))))
 
 
 
-(defun control_position (control)
-    (let
-       ((parent_view nil)
-        (parent_control_position 0)
-        (parent_control nil))
-    (assert control.view "target_container isn't a control container")
-    (= parent_view control.view.parentElement)
-    (when parent_view
-        (= parent_control (control_for_dom_element parent_view))
-        (when (and parent_control
-                   parent_control.controls)
-           (map (fn (parental_sub_control idx)
-                    (when (== parental_sub_control control)
-                        (= parent_control_position idx)))
-                (-> parent_control `controls))))
-    {
-        `child: control
-        `parent: parent_control
-        `child_position: parent_control_position
-    }))
 
 
-(defun container_view_operation (command target_container new_control new_container_options)
-   (let
-       ((index_in_root nil)
-        (new_container_options (or new_container_options {}))                            
-        (new_container nil))
-     (assert (is_function? target_container.set_content) "target_container isn't a control container")
-     (assert (and (is_object? new_control)
-                  new_control.view) "new control isn't a valid control")
-     (map (fn (c idx)
-             (when (== c target_container)
-                   (= index_in_root idx)))
-        $root_controls)                          
-     (cond
-         (== command "insert_above")
-         (progn
-           (= new_container (split_view_horizontal new_control target_container new_container_options))
-           (if (>= index_in_root 0)
-               (-> $root_controls `splice index_in_root 1 new_container)))
-         (== command "insert_below")
-         (progn
-           (= new_container (split_view_horizontal target_container new_control new_container_options))
-           (if (>= index_in_root 0)
-               (-> $root_controls `splice index_in_root 1 new_container)))
-         (== command "insert_left")
-         (progn
-           (= new_container (split_view_vertical new_control target_container new_container_options))
-           (if (>= index_in_root 0)
-               (-> $root_controls `splice index_in_root 1 new_container)))
-         (== command "insert_below")
-         (progn
-           (= new_container (split_view_vertical target_container new_control new_container_options))
-           (if (>= index_in_root 0)
-               (-> $root_controls `splice index_in_root 1 new_container))))))
 
 (defun generate_control_menu ()
   (let
@@ -1595,10 +1795,13 @@
        
     (defvalue $root_controls [])
     
+    
     ;; the root container which controls are added to..
     (defglobal juno_container
       (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
 
+    
+    
     
     (attach_event_listener juno_container `click
                            (fn (e)
@@ -1650,6 +1853,8 @@
                                      `name: "Default Container"
                                      }))
 
+       
+       
        (-> juno_container
            `append page_frame.view)
 

@@ -95,6 +95,8 @@
        (embedded_editor (compile
                          `(javascript ,#(read_text_file "js_lib/ace.js"))
                          { `formatted_output: true }))
+       (embedded_editor_search (compile
+                         `(javascript ,#(read_text_file "js_lib/ext-searchbox.js"))))
        (embedded_juno_mode (compile
                             `(javascript ,#(read_text_file "js_lib/mode-juno.js"))
                             { `formatted_output: true }))
@@ -127,6 +129,8 @@
                                 embedded_editor)
                    (html/script { `id: "ace_editor_lang_tools" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_lang_tools)
+                   (html/script { `id: "ace_editor_search_box" `type: "text/javascript" `charset: "utf-8" }
+                                embedded_editor_search)
                    (html/script { `id: "ace_juno_mode" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_juno_mode)
                    (html/script { `id: "ace_js_mode" `type: "text/javascript" `charset: "utf-8" }
