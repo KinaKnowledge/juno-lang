@@ -222,6 +222,13 @@
 (defun current_controls ()
   (flatten (control_tree $root_controls)))
 
+(defun cascade_resize (top_control)
+  (control_tree (or top_control $root_controls)
+                (fn (control)
+                  (if control.resize
+                    (-> control `resize)))))
+    
+
 (defun get_control_by_id (id)
   (let
       ((controls (current_controls))
@@ -341,6 +348,7 @@
         ((target_root_control (control_for_dom_element target_control.view))
          (existing_container nil)
          (position_details   nil)
+         (tmpview nil)
          (new_container nil)
          (old_control nil)
          (child_index nil)
@@ -353,15 +361,19 @@
           (throw TypeError "Cannot find the container for the control to be added"))
       (assert (is_function? existing_container.set_content) "target_container cannot set content")
       
-      (if (== target_root_control existing_container)
-          (= target_root_control target_control))
+      (when (== target_root_control existing_container)
+          (= position_details (control_position existing_container))
+          (= child_index position_details.child_position)
+          (= existing_container position_details.parent))
+
+      (when (eq nil child_index)
       ;; now which position is the child in the container?
-      (for_each (`child (-> existing_container `controls))
-         (progn
-             (inc idx)
-             (when (== child target_root_control)
-                 (= child_index idx)
-                 (break))))
+        (for_each (`child (-> existing_container `controls))
+                  (progn
+                   (inc idx)
+                   (when (== child target_root_control)
+                     (= child_index idx)
+                     (break)))))
              
       
       (= position_details
@@ -393,7 +405,7 @@
           (== command "add_left")    
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
-              (defvar tmpview (div { } "Placeholder"))
+              (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
@@ -402,7 +414,7 @@
           (== command "add_right")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
-              (defvar tmpview (div { } "Placeholder"))
+              (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
@@ -411,7 +423,7 @@
           (== command "add_top")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
-              (defvar tmpview (div { } "Placeholder"))
+              (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
@@ -420,12 +432,18 @@
           (== command "add_bottom")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
-              (defvar tmpview (div { } "Placeholder"))
+              (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
               (= new_container (split_view_horizontal position_details.target_root new_control options))
               (-> position_details.container `set_content position_details.target_position new_container)))
+
+      ;; do a cascade resize since parent elements may have changed
+      (when position_details.container
+        (setTimeout (fn ()
+                      (cascade_resize $root_controls))
+                    20))
       position_details))
   
   
@@ -736,12 +754,19 @@
        (id (or options.id (generate_id id)))
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
        (editor_div (div { `style: "height: calc(100% - 23px); width: 100%; overflow: hidden;" }))
        (view (div { `control_id: id `style: "overflow: hidden; height: calc(100% - 10px); display: inline-block; width: inherit;" }                 
                   controls
                   editor_div))     
        (perform_resize (fn ()
                          (when view.parentElement
+                           (check_observer)
                           ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
@@ -773,6 +798,7 @@
        (initialize_editor (fn ()
                             (when (not initialized)
                               (setq initialized true)
+                              (setq parent_view view.parentElement)
                               (setq editor
                                     (ace.edit editor_div))
                               (set_evaluator)
@@ -1041,11 +1067,34 @@
                                   title_span
                                   else
                                   [])))
+       (resize_observer nil)
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
        (id (or options.id (generate_id "log_view")))
        (view (div { `tabindex: 0 `control_id: id `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                   control_status
-                  output_container))       
-       
+                  output_container))
+       (initialized false)
+       (initialize (fn ()
+                     (when (and view.parentElement
+                                (not initialized))
+                       (= initialized true)
+                       (= parent_view view.parentElement)
+                       (= resize_observer (new ResizeObserver perform_resize))
+                       (-> resize_observer `observe view.parentElement))))
+                       
+       (perform_resize (fn ()
+                         (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view))))
        (add_result (fn (result command_text error_state)
                      (progn
                       (when (not (eq nil command_text))
@@ -1085,6 +1134,8 @@
               `append add_result
               `control_bar control_status
               `output_container output_container
+              `initialize initialize
+              `resize perform_resize
               `type `log_view
               `clear (fn ()
                        (-> output_container `replaceChildren))
@@ -1287,6 +1338,8 @@
              `clear_output: clear_output
              `initialize: initialize
              `type: "browser_repl"
+             `resize: (fn ()
+                       (-> sview `resize))
              `menu_items: menu_items                           
              `on_focus: on_focus
              `on_blur: on_blur
@@ -1317,8 +1370,15 @@
        (init_timer nil)
        (view (div { `control_id: id `class: "juno-view-container" } ))
        (initialized false)
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
        (perform_resize (fn ()
                          (when view.parentElement
+                           (check_observer)
                            (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 0))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
@@ -1361,6 +1421,7 @@
                       (when (not initialized)
                         (= initialized true))
                       (when view.parentElement
+                        (= parent_view view.parentElement)
                         (-> resize_observer `observe view.parentElement)
                         (perform_resize)
                         (console.log "control_container: initializing with: " content)
@@ -1394,6 +1455,7 @@
               `initialize initialize              
               `set_content set_content
               `name options.name
+              `resize: perform_resize
               `menu_items options.menu_items
               `controls (fn () contained_content)
               `toJSON (function ()
@@ -1409,8 +1471,15 @@
          (resize_observer nil)
          (id (or options.id (generate_id "empty")))
          (initialized false)
+         (parent_view nil)
+         (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
          (perform_resize (fn ()
                            (when view.parentElement
+                             (check_observer)
                            (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 30))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 25)))
@@ -1422,6 +1491,7 @@
                        (when (and view.parentElement
                                   (not initialized))
                          (= initialized true)
+                         (= parent_view view.parentElement)
                          (-> resize_observer `observe view.parentElement))))
          (view (div { `control_id: id `style: "height: 100%; width: 100%; overflow: hidden; margin: 10px; border-radius: 20px; border: 5px dotted #A0A0A0;" }
                     (div { `style: "font-size: 3.0em; text-align: center; width: 100%; padding-top: 15px;" } "Select New Control"))))                        
@@ -1437,7 +1507,7 @@
            `id: id
            `initialize: initialize
             `name: options.name
-        
+           `resize: perform_resize
            `options: options
            `toJSON: (function ()
                       `[empty_selection_control ,#options ])

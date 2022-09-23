@@ -466,15 +466,17 @@
 
 
 
-(defun control_tree (content_list)
+(defun control_tree (content_list control_lambda)
   (cond
     (is_array? content_list)    
     (reduce (c content_list)
-            (control_tree c))               
+            (control_tree c control_lambda))               
     content_list.view
     (progn
+     (when control_lambda
+       (control_lambda content_list))
      (if content_list.controls
-       [ content_list (control_tree (-> content_list `controls)) ]
+       [ content_list (control_tree (-> content_list `controls) control_lambda) ]
        content_list))
     (is_element? content_list)
     { view: content_list }))
@@ -502,14 +504,21 @@
                   center_divider
                   right_container
                   view_overlay
-                 ))
+                  ))
+       (parent_view nil)
        (drag_status nil)       
        (resize_observer nil)
        (center_pos nil)
        (initialized false)
        (init_timer nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
        (perform_resize (fn ()
                          (when view.parentElement
+                           (check_observer)
                            (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
@@ -579,6 +588,7 @@
                       (console.log "split_view_vertical: initialize called: " initialized)
                       (when (not initialized)                       
                         (= initialized true)
+                        (= parent_view view.parentElement)
                         (-> resize_observer `observe view.parentElement)
                         (perform_resize)
                         (console.log "split_view_vertical initialized:" initialized)
@@ -649,6 +659,7 @@
                                    (progn
                                     (when view.parentElement
                                       (clearInterval init_timer)
+                                      
                                       (= init_timer nil)
                                       (initialize))))
                                  250)))
@@ -660,6 +671,7 @@
      `initialize initialize
      `set_content set_content
      `options options
+     `resize perform_resize
      `type `split_view_vertical
      `controls (fn () [ content_a content_b ])
      `toJSON (function ()
@@ -696,8 +708,15 @@
        (center_pos nil)
        (initialized false)
        (init_timer nil)
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
        (perform_resize (fn ()
                          (when view.parentElement
+                           (check_observer)
                            (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
@@ -766,6 +785,7 @@
                         (= init_timer nil))
                       (when (not initialized)
                         (= initialized true)
+                        (= parent_view view.parentElement)
                         (-> resize_observer `observe view.parentElement)
                         (perform_resize)
                         (console.log "split_view_horizontal initialized: " initialized)
@@ -846,6 +866,7 @@
      `view view
      `initialize initialize
      `options options
+     `resize perform_resize
      `type `split_view_horizontal
      `controls (fn () [ content_a content_b ])
      `toJSON (function ()
