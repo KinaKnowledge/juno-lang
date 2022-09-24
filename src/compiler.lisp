@@ -2525,9 +2525,14 @@
                                     (do
                                       (= needs_await false)
                                       (= acc (compile tokens ctx)))
-                                    
-                                    (or (is_block? tokens)
-                                        opts.force)
+
+				    opts.force
+				    (do
+				     (= ctx (new_ctx ctx))
+                                     (set_new_completion_scope ctx)
+                                     (= acc (compile_block_to_anon_fn tokens ctx)))
+				     
+                                    (is_block? tokens)                                       
                                     (do
                                      
                                       (= ctx (new_ctx ctx))
