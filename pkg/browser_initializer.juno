@@ -1796,7 +1796,20 @@
 
 
 
-
+(defun gen_layout_menu ()
+    (let
+        ((acc [])
+         (found_control {})
+         (collect_control (fn (control parent)
+                              (when (and control.options.id 
+                                         (not (prop found_control control.options.id)))
+                                 (push acc control)
+                                 (set_prop found_control
+                                           control.options.id
+                                           control)))))
+        (for_each (controls (or $root_controls []))
+           (control_tree controls collect_control))
+        acc))
 
 
 (defun generate_control_menu ()

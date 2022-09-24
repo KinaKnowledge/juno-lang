@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-22 12:53:50
-// Version: 2022.09.22.12.53
-export const DLISP_ENV_VERSION='2022.09.22.12.53';
+// Build Time: 2022-09-24 08:23:59
+// Version: 2022.09.24.08.23
+export const DLISP_ENV_VERSION='2022.09.24.08.23';
 
 
 
@@ -4101,7 +4101,13 @@ export async function init_compiler(Environment) {
                                  return await compile(tokens,ctx) 
                             })()
                         }
-                    } else if (check_true ((await is_block_ques_(tokens)|| (opts && opts["force"])))) {
+                    } else if (check_true ((opts && opts["force"]))) {
+                        {
+                            ctx=await new_ctx(ctx);
+                            await set_new_completion_scope(ctx);
+                            acc=await compile_block_to_anon_fn(tokens,ctx)
+                        }
+                    } else if (check_true (await is_block_ques_(tokens))) {
                         {
                             ctx=await new_ctx(ctx);
                             await set_new_completion_scope(ctx);
