@@ -1539,7 +1539,7 @@
                             (if (== args.length 0)
                               (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
                               [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
-                               (span { `class: "juno-menu-submenu" } ">")]))
+                               (span { `class: "juno-menu-submenu" } "›")]))
                          args))
                (timer nil))
             (if (== args.length 0)
@@ -1557,7 +1557,7 @@
                                                                        ["position" "absolute"]
                                                                        ["top" "0px"]
                                                                        ["left" (+ "" e.srcElement.offsetWidth "px") ]]
-                                                                      view.children.1))
+                                                                      view.children.1))                                                           
                                                          150)))))
                (attach_event_listener view
                                       `mouseleave
@@ -1575,7 +1575,9 @@
     
     (= view
        (ul (+ {}
-              { `class: "pure-menu-list"                               
+              { `class: (if (> path.length 0)
+                             "juno-menu pure-menu-list"
+                             "pure-menu-list")
                 `style: (+ (if (> path.length 0)
                              "display: none;"
                              "display: inline-block;")
@@ -1796,36 +1798,63 @@
 
 
 
-(defun gen_layout_menu ()
+(defun controls_by_parent ()
     (let
         ((acc [])
+         (current { `root: [] })
          (found_control {})
+         (control_identity (fn (control)
+                                 (and control
+                                      (or control.name
+                                          control.options.id
+                                          "Untitled"))))
          (collect_control (fn (control parent)
                               (when (and control.options.id 
                                          (not (prop found_control control.options.id)))
-                                 (push acc control)
+                                 (when (and parent
+                                            (not control.name))
+                                     (cond
+                                         parent.name
+                                         (set_prop control
+                                                   `name
+                                                   (+ "" parent.name "-" control.type))
+                                         parent.type
+                                         (set_prop control
+                                                   `name
+                                                   (+ "" parent.type "-" control.type))))
+                                 (cond
+                                     (and parent
+                                          (not (prop current (control_identity parent))))
+                                     (set_prop current 
+                                               (control_identity parent)
+                                               [ control ])
+                                     (and parent
+                                          (prop current (control_identity parent)))
+                                     (push (prop current (control_identity parent))
+                                               control)
+                                     (eq nil parent)
+                                     (push (prop current `root)
+                                               control))
                                  (set_prop found_control
                                            control.options.id
                                            control)))))
         (for_each (controls (or $root_controls []))
            (control_tree controls collect_control))
-        acc))
+        current))
 
 
-(defun generate_control_menu ()
-  (let
-      ((valid_controls (reduce (control (current_controls))
-                          (progn
-                           (when control.set_content
-                             control)))))
-    (for_each (control valid_controls)
-              [(or control.name control.options.id "Untitled")
-               (for_each (operation ["Insert Above" "Insert Below" "Insert Left" "Insert Right"])
+(defun gen_layout_menu ()
+    (let
+        ((menu_acc []))
+      (for_each (pset (pairs (controls_by_parent)))
+         (destructuring_bind (key val)
+            pset
+          [key (for_each (operation ["Insert Above" "Insert Below" "Insert Left" "Insert Right"])
                          [(dtext operation) (fn ()
                                               (container_view_operation (to_key operation) 
-                                                                        control
-                                                                        (empty_selection_control)))])])))
-                                                    
+                                                                        val
+                                                                        (empty_selection_control)))])]))))
+        
 
 (defun serialize_controls (controls)
   [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
@@ -1916,6 +1945,7 @@
                         [["Save Environment" (fn (e) (save_control_image)) ]
                          ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
                          ["Style CSS" (fn (e) (notify "View Site CSS"))]])])
+       
        (push *main_menu*            
              ["View" (fn ()
                        (progn
@@ -1926,7 +1956,9 @@
                                    (fn (e)
                                      (aif (get_control_by_id control.options.id)
                                           (set_focus_to it)))]))))])
-             
+       (push *main_menu*
+              ["Layout"
+               gen_layout_menu])
        
        (push $root_controls
              (app_header [(app_menu [ `*main_menu* ])]
