@@ -13,6 +13,7 @@
                            })
 
 
+(defvalue *frame_count* -1)
 
 (defparameter *non_displayed_controls* {})
 (defvalue *main_menu* [])
@@ -239,6 +240,17 @@
                 (break)))
     ctrl))
 
+(defun get_control_by_name (name)
+  (let
+      ((controls (current_controls))
+       (ctrl nil))
+    (for_each (`control controls)
+        (progn
+          (when (== name control.name)
+               (= ctrl control)
+               (break))))
+    ctrl))                                                   
+
 (defun replace_control (target_control new_control)
   (let
       ((tmp (new Object))
@@ -319,7 +331,7 @@
                    control.view)
               "Invalid control received")
       (= pos (control_position control))
-      (debug)
+      
     ;; is the child control (the control passed) a container?
       (cond 
         (and pos.child
@@ -384,7 +396,7 @@
           `parent_container: (control_position existing_container)
                                   
           })
-      
+      (console.log "container_view_operation: " command "pos details:" position_details "targeted control: " target_control "options:" options)
       (cond
           (== command "replace")
           (progn
@@ -402,7 +414,7 @@
               (set_prop *non_displayed_controls*
                         targeted.options.id
                         targeted))
-          (== command "add_left")    
+          (== command "insert_left")    
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
@@ -411,7 +423,7 @@
                   tmpview)                    
               (= new_container (split_view_vertical new_control position_details.target_root options))
               (-> position_details.container `set_content position_details.target_position new_container))
-          (== command "add_right")
+          (== command "insert_right")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
@@ -420,7 +432,7 @@
                   tmpview)                    
               (= new_container (split_view_vertical position_details.target_root new_control options))
               (-> position_details.container `set_content position_details.target_position new_container))
-          (== command "add_top")
+          (== command "insert_above")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
@@ -429,7 +441,7 @@
                   tmpview)                    
               (= new_container (split_view_horizontal new_control position_details.target_root  options))
               (-> position_details.container `set_content position_details.target_position new_container))    
-          (== command "add_bottom")
+          (== command "insert_below")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
@@ -437,7 +449,10 @@
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
               (= new_container (split_view_horizontal position_details.target_root new_control options))
-              (-> position_details.container `set_content position_details.target_position new_container)))
+              (-> position_details.container `set_content position_details.target_position new_container))
+
+          else
+          (notify (+ "Unknown command: " command)))
 
       ;; do a cascade resize since parent elements may have changed
       (when position_details.container
@@ -1365,7 +1380,7 @@
        
        (resize_observer nil)
        (options (or options {}))
-       (name (or options.name nil))
+       (name (or options.name (+ "Frame " (inc *frame_count*))))
        (id (or options.id (generate_id "container")))       
        (init_timer nil)
        (view (div { `control_id: id `class: "juno-view-container" } ))
@@ -1636,14 +1651,14 @@
                                                                                           
                                                                                           (-> view `remove)
                                                                                           (= disappear_timer nil)))
-                                                                                       500)))))
+                                                                                       700)))))
                       (attach_event_listener view
                                              `mouseenter
                                              (function (e)
                                                        (when disappear_timer
                                                          (clearTimeout disappear_timer)
                                                          (= disappear_timer nil))))))
-                   500) ;; delay a little before adding the timeout so we don't accidentally hover over it 
+                   700) ;; delay a little before adding the timeout so we don't accidentally hover over it 
        {
         `view: view
         `toJSON: (function ()
@@ -1845,16 +1860,38 @@
 
 (defun gen_layout_menu ()
     (let
-        ((menu_acc []))
-      (for_each (pset (pairs (controls_by_parent)))
-         (destructuring_bind (key val)
+        ((menu_acc [])
+         (root_ctls (new Set)))
+      (reduce (pset (pairs (controls_by_parent)))
+         (destructuring_bind (key controls)
             pset
-          [key (for_each (operation ["Insert Above" "Insert Below" "Insert Left" "Insert Right"])
+            (console.log "key: " key controls )
+            (cond
+                (== key "root")
+                (progn
+                    (for_each (control controls) 
+                       (-> root_ctls `add control.name))
+                    nil)
+                
+                (-> root_ctls `has key)
+                [key (for_each (operation ["Show" "--" "Remove"])
+                         [(dtext operation)
+                           (if (== operation "--")
+                               nil
+                               (fn ()
+                                   (container_view_operation (to_key operation) 
+                                                             (get_control_by_name key)
+                                                             nil)))])]
+                
+                else
+                [key (for_each (operation ["Insert Above" "Insert Below" "Insert Left" "Insert Right"])
                          [(dtext operation) (fn ()
-                                              (container_view_operation (to_key operation) 
-                                                                        val
-                                                                        (empty_selection_control)))])]))))
-        
+                                               (progn
+                                                   (console.log key "operation: " operation controls)
+                                                   (container_view_operation (to_key operation) 
+                                                                        (get_control_by_name key)
+                                                                        (empty_selection_control))))])])))))
+                
 
 (defun serialize_controls (controls)
   [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
@@ -1965,7 +2002,7 @@
                          { `app_title: "Seedling" }))
        (setq page_frame ;; or surface which can be named in the upper right or middle
              (control_container nil {
-                                     `name: "Default Container"
+                                     `name: "Frame 0"
                                      }))
 
        
@@ -1983,10 +2020,12 @@
        
        (-> scratch_editor
            `set_evaluator_control $repl)
+       
        (when (blank? (prop *env_config*.export `save_prefix))
          (set_prop *env_config*.export
                    `save_prefix
                    "seedling"))
+       
        (-> juno_container
            `append page_frame.view)       
        (-> page_frame `initialize))

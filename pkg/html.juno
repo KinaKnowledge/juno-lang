@@ -475,10 +475,11 @@
     (progn
      (when control_lambda
        (control_lambda content_list _parent))
-     (when content_list.controls
-       (= _parent content_list)
+     (= _parent content_list)
+     (if content_list.controls
        [ content_list (control_tree (-> content_list `controls) control_lambda _parent) ]
        content_list))
+     
     (is_element? content_list)
     { view: content_list }))
                     
