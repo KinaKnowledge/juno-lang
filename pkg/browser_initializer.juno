@@ -26,6 +26,7 @@
 ;; nil if there are no focus points or values.
 
 (defparameter *last_focus* nil)
+(defparameter *last_top_frame* nil)
 (defparameter *app_menu_control* nil)
 
 (set_prop *key_bindings*.repl          
@@ -588,6 +589,7 @@
               
        (-> target_control `on_focus)              
        (setq *last_focus* target_control)
+       (setq *last_top_frame* (top_frame target_control))
        (when target_control.menu_items
          (-> *app_menu_control* `add_menu [ (or target_control.name
                                                 "Control")
@@ -2190,6 +2192,20 @@
        (when control.initialize
          (-> control `initialize))))))
 
+(defun new_buffer (options)
+  (let
+      ((target_container (or *last_focus* *last_top_frame*))
+       (symbol_name (or options.path
+                        (request_user_input "Enter Symbol To Edit"))))
+    
+    (when symbol_name
+      (if (eq nil (resolve_path [ symbol_name ] Environment.context))
+        (-> Environment `set_global symbol_name ""))
+      (if (== target_container *last_top_frame*)
+        (container_view_operation "split_right" target_container
+                                  (buffer_editor symbol_name "user" [ symbol_name ] options.type ))
+        (swap_control target_container (buffer_editor symbol_name "user" [ symbol_name ] options.type ))))))
+
 (defun user/*initializer* ()
   (let
       ((header nil)       
@@ -2250,9 +2266,14 @@
 
        (push *main_menu*
              [ "File" (fn ()
-                        [["Save Environment" (fn (e) (save_control_image)) ]
-                         ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]
-                         ["Style CSS" (fn (e) (notify "View Site CSS"))]])])
+                        [["New Editor" [["Juno Lisp" (fn (e) (new_buffer { `type: "juno" }))]
+                                        ["Javascript" (fn (e) (new_buffer { `type: "javascript" })) ]
+                                        ["CSS" (fn (e) (new_buffer { `type: "css" })) ]
+                                        ["Text" (fn (e) (new_buffer { `type: "text" })) ]
+                                        ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
+                         ["Save Environment" (fn (e) (save_control_image)) ]
+                         ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]])])
+                         
        
        (push *main_menu*            
              ["View" gen_view_menu])

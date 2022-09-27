@@ -50,12 +50,12 @@
                       (when (not no_eval)                        
                         (-> output_container
                             `append
-                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                            (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; width: calc(100% - 10px); display: inline-block; " }
                                       (html/code { `style: "font-style: italic; color: darkblue;" }
                                                  lisp_text))))
                       (-> output_container
                           `append
-                          (html/div { `style: "padding: 5px; margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                          (html/div { `style: "padding: 5px; margin-top: 0px; width: calc(100% - 10px); display: inline-block; " }
                                     (cond
                                       (is_element? result)
                                       result
