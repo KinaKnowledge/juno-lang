@@ -2190,29 +2190,19 @@ such as things that connect or use environmental resources.
      `tags: [`object `methods `functions `introspection `keys]
      })
 
-(defun uniq (values handle_complex_types)
+(defun uniq (values)
      (let
-         ((s (new Set)))
-         (if handle_complex_types
-             (do
+         ((s (new Set)))         
+             
                  (map (fn (x)
 			  (-> s `add x))
                       (or values
-			  []))
-                 
-                 (map (fn (x)
-                          (JSON.parse x))
-                          (to_array s)))
-             (do 
-                 (map (fn (x)
-                      (-> s `add x))
-                      (or values
                           []))
-                (to_array s))))
+                (to_array s))
     { `description: (+ "Given a list of values, returns a new list with unique, deduplicated values. "
                        "If the values list contains complex types such as objects or arrays, set the "
                        "handle_complex_types argument to true so they are handled appropriately. ")
-      `usage: ["values:list" "handle_complex_types:boolean"]
+      `usage: ["values:list"]
       `tags: ["list" "dedup" "duplicates" "unique" "values"] })
 
 (defmacro time_in_millis ()

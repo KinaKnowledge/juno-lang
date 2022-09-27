@@ -1379,8 +1379,8 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 }
 
 .pure-table thead {
-    background-color: #e0e0e0;
-    color: #000;
+    background-color: var(--main-accent-color);
+    color: var(--main-color);
     text-align: left;
     vertical-align: bottom;
 }
@@ -1430,12 +1430,6 @@ summary {
   padding: 1px;
 }
 
-hr {
-    border: 0;
-    height: 0;
-    border-top: 1px solid rgba(0,0,0,.1);
-    border-bottom: 1px solid rgba(255,255,255,.3);
-}
 
 .juno-view-container {
   display: inline-block;
@@ -1443,6 +1437,29 @@ hr {
   width: inherit;
   height: inherit;
   overflow: hidden;  /* Views need to manage how they present their content */
+}
+
+hr {
+    border: 0;
+    height: 0;
+    border-top: 1px solid rgba(0,0,0,.1);
+    border-bottom: 1px solid rgba(255,255,255,.3);
+}
+
+.juno-view-container thead {
+  text-align: left;
+  padding: 3px;  
+  background: var(--main-accent-color);
+}
+
+.juno-view-container thead {
+  text-align: left;
+  padding: 3px;  
+  background: var(--main-accent-color);
+}
+
+.juno-view-container td {
+   
 }
 
 .juno-empty-content {
@@ -1511,18 +1528,17 @@ li.juno-main-menu-header {
   border-bottom: 1px solid var(--main-accent-line);
 }
 
-.juno-buffer-bar button {
+.juno-view-container button {
   margin-left: 5px;
   margin-right: 5px;
   padding-left: 5px;
   padding-right: 5px;
   border: 1px solid transparent;
   border-radius: 0px;
-  font-weight: bold;
   /* background: #00000019; */
 }
 
-.juno-buffer-bar button:hover {
+.juno-view-container button:hover {
   background: #00000030;
   border: 1px inset #ffffff;
 }
@@ -1607,14 +1623,16 @@ li.juno-menu-header:active {
 
 
 
-.juno-header {
-  color: #026783;
-  padding: 4px;
-  margin-left: 10px;
+.juno-header {  
+  padding-top: 5px;
+  padding-bottom: 4px;
   margin-right: 10px;
   font-weight: bold;
   display: inline-block;
   cursor: default;
+  color: #546478;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 td.juno-obj-to-dom-key {

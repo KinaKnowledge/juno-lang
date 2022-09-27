@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-27 07:18:10
-// Version: 2022.09.27.07.18
-export const DLISP_ENV_VERSION='2022.09.27.07.18';
+// Build Time: 2022-09-27 07:55:13
+// Version: 2022.09.27.07.55
+export const DLISP_ENV_VERSION='2022.09.27.07.55';
 
 
 
@@ -3126,29 +3126,14 @@ await Environment.set_global("object_methods",async function(obj) {
     })()
 },{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"]
 });
-await Environment.set_global("uniq",async function(values,handle_complex_types) {
+await Environment.set_global("uniq",async function(values) {
     let s;
     s=new Set();
-    if (check_true (handle_complex_types)){
-        {
-            await (await Environment.get_global("map"))(async function(x) {
-                return await s["add"].call(s,x)
-            },(values|| []));
-            return await (await Environment.get_global("map"))(async function(x) {
-                return await JSON.parse(x)
-            },await (async function(){
-                 return await (await Environment.get_global("to_array"))(s) 
-            })())
-        }
-    } else {
-        {
-            await (await Environment.get_global("map"))(async function(x) {
-                return await s["add"].call(s,x)
-            },(values|| []));
-            return await (await Environment.get_global("to_array"))(s)
-        }
-    }
-},{ "name":"uniq","fn_args":"(values handle_complex_types)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list","handle_complex_types:boolean"],"tags":["list","dedup","duplicates","unique","values"],"requires":["map","to_array"]
+    await (await Environment.get_global("map"))(async function(x) {
+        return await s["add"].call(s,x)
+    },(values|| []));
+    return await (await Environment.get_global("to_array"))(s)
+},{ "name":"uniq","fn_args":"(values)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list"],"tags":["list","dedup","duplicates","unique","values"],"requires":["map","to_array"]
 });
 await Environment.set_global("time_in_millis",async function() {
     return ["=:Date.now"]
@@ -3643,16 +3628,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_5690;
+                                                let _expr_14845;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_5690=await (async function(){
+                                                _expr_14845=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_5690 && _expr_5690["0"]);
-                                                req_ns=(_expr_5690 && _expr_5690["1"]);
-                                                explicit=(_expr_5690 && _expr_5690["2"]);
+                                                req_sym=(_expr_14845 && _expr_14845["0"]);
+                                                req_ns=(_expr_14845 && _expr_14845["1"]);
+                                                explicit=(_expr_14845 && _expr_14845["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3755,13 +3740,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_57948;
+                    let _expr_83252;
                     let nspace;
-                    _expr_57948=await (async function(){
+                    _expr_83252=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_57948 && _expr_57948["0"]);
-                    nspace=(_expr_57948 && _expr_57948["1"]);
+                    sym=(_expr_83252 && _expr_83252["0"]);
+                    nspace=(_expr_83252 && _expr_83252["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-27 07:18:10
-// Version: 2022.09.27.07.18
-export const DLISP_ENV_VERSION='2022.09.27.07.18';
+// Build Time: 2022-09-27 07:55:13
+// Version: 2022.09.27.07.55
+export const DLISP_ENV_VERSION='2022.09.27.07.55';
 
 
 
@@ -194,27 +194,12 @@ export async function init_compiler(Environment) {
         let starts_with_ques_=function anonymous(val,text) {
 { if (text instanceof Array) { return text[0]===val } else if (subtype(text)=='String') { return text.startsWith(val) } else { return false }}
 };
-        let uniq=async function(values,handle_complex_types) {    let s;
+        let uniq=async function(values) {    let s;
     s=new Set();
-    if (check_true (handle_complex_types)){
-        {
-            await (await Environment.get_global("map"))(async function(x) {
-                return await s["add"].call(s,x)
-            },(values|| []));
-            return await (await Environment.get_global("map"))(async function(x) {
-                return await JSON.parse(x)
-            },await (async function(){
-                 return await (await Environment.get_global("to_array"))(s) 
-            })())
-        }
-    } else {
-        {
-            await (await Environment.get_global("map"))(async function(x) {
-                return await s["add"].call(s,x)
-            },(values|| []));
-            return await (await Environment.get_global("to_array"))(s)
-        }
-    }
+    await (await Environment.get_global("map"))(async function(x) {
+        return await s["add"].call(s,x)
+    },(values|| []));
+    return await (await Environment.get_global("to_array"))(s)
 };
         let object_methods=async function(obj) {    let properties;
     let current_obj;

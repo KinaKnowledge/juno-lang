@@ -26,7 +26,7 @@
 (defun browser_repl ()
   (let
       ((body_element (-> document `querySelector "body"))
-       (output_container (html/div { `id: "output-container"  `style: "font-size: 0.9em; height: 80%; overflow: scroll;  width: 100%; " } ))
+       (output_container (html/div { `id: "output-container"  } ))
        (resize_observer nil)                                                      
                                         ;(result nil)
        (current_env Environment)

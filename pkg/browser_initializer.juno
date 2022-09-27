@@ -60,11 +60,11 @@
       (array_to_dom val options _path)
       (is_element? val)
       (progn
-       (if (== val.offsetHeight 0)
-         val
+       (if val.parentElement
          (details
           (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
-          (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))))
+          (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))
+         val))
       (is_regex? val)
       (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
       (is_string? val)
@@ -284,18 +284,18 @@
 (defun control_for_dom_element (elem)
     (let
         ((control_id nil))
-        (assert (is_element? elem) "Invalid element provided")
-        (= control_id (-> elem `getAttribute "control_id"))
-        (aif (and control_id ;; we have a control_id, so get the control
-                  (get_control_by_id control_id))
-             it ;; and return it
-            (cond
-              (eq nil elem.parentElement)
-              nil ;; at top (or cannot go up further) so return nil
+       (assert (is_element? elem) "Invalid element provided")
+       (= control_id (-> elem `getAttribute "control_id"))
+       (aif (and control_id ;; we have a control_id, so get the control
+                 (get_control_by_id control_id))
+            it ;; and return it
+           (cond
+             (eq nil elem.parentElement)
+             nil ;; at top (or cannot go up further) so return nil
               
               ;; no control found and we have a parent_element
-              else
-              (control_for_dom_element elem.parentElement)))))
+             else
+             (control_for_dom_element elem.parentElement)))))
 
 
 
@@ -314,6 +314,11 @@
                     (when (== parental_sub_control control)
                         (= parent_control_position idx)))
                 (-> parent_control `controls))))
+    (aif (and (eq parent_control nil)
+              (get_control_by_name "Holding Tank"))
+         (if (-> it `has_control? control)
+           (= parent_control it)))
+      
     {
         `child: control
         `parent: parent_control
@@ -356,6 +361,11 @@
 (defun_sync is_control? (val)
   (and val.type val.view val.toJSON))
 
+(defun_sync is_top_control? (control)
+  (if (is_control? control)
+    (contains? control $root_controls)
+    false))
+
 (defun top_frame (control)
   (let
       ((parent nil))
@@ -365,152 +375,182 @@
        (= parent (control_position parent.parent)))
    parent.child))
 
-(defun container_view_operation (command target_control new_control options)
-    (let
-        ((target_root_control (control_for_dom_element target_control.view))
-         (existing_container nil)
-         (position_details   nil)
-         (tmpview nil)
-         (new_container nil)
-         (old_control nil)
-         (holding_tank (get_control_by_name "Holding Tank"))
-         (child_index nil)
-         (idx -1)
-         (targeted nil))
-      (assert target_root_control "Unable to find the target control")
-      (assert holding_tank "Unable to find the control holding tank")
-      (= existing_container (get_container_for_control target_root_control))
-      (cond
-        (not (== target_root_control holding_tank))
+(defun swap_control (target_control new_control)
+  (let
+      ((tmp (new Object))
+       (position_details_target nil)
+       (position_details_new nil)
+       (holding_tank (get_control_by_name "Holding Tank"))
+       (replaced_keys (new Set)))
+    (assert (is_control? target_control) "Invalid control provided for old_control")
+    (assert (is_control? new_control) "Invalid control provided for new_control")
+    
+    ;; get their position in the tree 
+    (= position_details_target (control_position target_control))
+    (= position_details_new (control_position new_control))
+    
+    (cond        
+        (== position_details_target.parent holding_tank)   ;; target is in the holding tank so take the old control out and replace with new
         (progn
-         (when (eq nil existing_container)
-           (throw TypeError "Cannot find the container for the control to be added"))
-         (assert (is_function? existing_container.set_content) "target_container cannot set content"))
-        (and (eq nil existing_container)
-             (== target_root_control holding_tank))
-        (= existing_container target_root_control))
-                              
-      (when (== target_root_control existing_container)
-          (= position_details (control_position existing_container))
-          (= child_index position_details.child_position)
-          (= existing_container position_details.parent))
+            (-> holding_tank `remove_control position_details_target.child)
+            (-> holding_tank `add_control position_details_new.child)
+            (if position_details_new.parent.set_content ;; add the targeted control to the new_controls old location (if not in holding_tank)
+                (-> position_details_new.parent `set_content position_details_new.child_position position_details_target.child)
+                position_details_target.child))
+        
+        (and position_details_target.parent.set_content
+             position_details_new.parent.set_content)  ;; controls are both in the tree somewhere so swap their positions
+        (progn
+            (-> position_details_target.parent `set_content 
+                                                position_details_target.child_position 
+                                                position_details_new.child)
+            (-> position_details_new.parent `set_content 
+                                             position_details_new.child_position 
+                                             position_details_target.child)
+            target_control)
+        
+        (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
+             (is_function? position_details_target.parent.set_content))
+        (progn
+            (-> holding_tank `remove_control position_details_new.child.options.id)
+            (-> holding_tank `add_control position_details_target.child)
+            (-> position_details_target.parent `set_content 
+                                                position_details_target.child_position 
+                                                position_details_new.child)
+            position_details_new.child)
+        
+        (and (eq nil position_details_new.parent)  ;; this is a new control without a parent
+             position_details_target.parent.set_content)
+        (progn  ;; add to the holding tank the target and put the new in the targets old place..
+            (-> position_details_target.parent `set_content 
+                                                position_details_target.child_position 
+                                                position_details_new.child)
+            (-> holding_tank `add_control position_details_target.child)) 
+            
+        else
+        (progn
+            (notify "Unhandled swap condition - see console")
+            (console.warn "unhandled swap position: target: " position_details_target "new: " position_details_new)
+            nil))))                                
 
-      (when (eq nil child_index)
-      ;; now which position is the child in the container?
-        (for_each (`child (-> existing_container `controls))
-                  (progn
-                   (inc idx)
-                   (when (== child target_root_control)
-                     (= child_index idx)
-                     (break)))))
-             
-      
-      (= position_details
-         {
-          `target_root: target_root_control
-          `target_position: child_index
-          `container: existing_container
-          `parent_container: (control_position existing_container)
-                                  
-          })
-      (console.log "container_view_operation: " command "pos details:" position_details "targeted control: " target_control "options:" options)
-      (cond
+
+
+;; container view operation
+;; given a command performs an operation on the control structure
+
+;; definitions
+;; target_control - the control that is to be impacted with a change 
+;; target_control_container - the container of the target_control
+;; new_control - an optional new control to be inserted into the control tree
+;; options - options for the given command
+
+(defun container_view_operation (command target_control new_control options)
+  (let
+    ((target_control (control_for_dom_element target_control.view)) ;; ensure we have the correct handle to the impaced control since this could be a sub_control given to us
+     (position_details nil) ;; the structure that holds the position details of the operation
+     (holding_tank (get_control_by_name "Holding Tank"))
+     (tmpview nil)
+     (new_container nil)
+     (split_view_parent nil))
+    
+    (assert target_control "Unable to find the target control")
+    (assert holding_tank "Unable to find the holding tank")
+    
+    (= position_details (control_position target_control))
+    (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
+    ;; if the parent structure is nil in position_details, then we are at the root
+    (cond
           (or (== command "hide")
               (== command "destroy"))
           (progn
-              
-              (assert position_details.container.set_content "Cannot find the control to be hidden's root container")
               (cond 
-                (or (== position_details.container.type "split_view_vertical")
-                    (== position_details.container.type "split_view_horizontal"))
+                    ;; the control is not a root control if it has a parent 
+                (or (== position_details.parent.type "split_view_vertical")
+                    (== position_details.parent.type "split_view_horizontal"))
                 (progn
-                    ;; need to go down to a control_container
-                    ;; capture the child to keep displaying 
+                    ;; grab the child control to keep displaying, ie. not the one in the child_position
                     (set_prop position_details
                               `child_to_display
-                              (if (== position_details.target_position 0)
-                                  (second (-> position_details.container `controls))
-                                  (first (-> position_details.container `controls))))
+                              (if (== position_details.child_position 0)
+                                  (second (-> position_details.parent `controls))
+                                  (first (-> position_details.parent `controls))))
                     
-                    ;; set the child to hide in non displayed controls 
-                    (if (and (== command "hide")
-                             (not (== target_control holding_tank)))
-                        (-> holding_tank
-                            `add_control 
-                            target_control))
+                    ;; we need to know the split views parent since we are going to remove the split view
+                    ;; and hoist the remaining child to display into the parent structure in place of the 
+                    ;; split_view - not an even swap because the existing split_view is retired 
                     
-                    ;; elevate the child to keep to the targeted_control container's position in it's parent
-                    
-                    (if position_details.parent_container.parent
-                       (progn
-                          (-> position_details.parent_container.parent `set_content
-                                                                       position_details.parent_container.child_position
-                                                                       position_details.child_to_display))
-                       (notify "Unable to elevate child to parent frame")))))
+                    (= split_view_parent (control_position position_details.parent))
+                    (assert split_view_parent.parent.set_content "Unable to set the content of the split view parent")
+                    (console.log "container_view_operation: split_view_parent: " split_view_parent)
+                    (console.log "container_view_operation: position_details: " position_details)
+                    (when (not options.dry_run)
+                     ;; elevate the child to keep to the targeted_control container's position in it's parent
+                        (-> split_view_parent.parent `set_content split_view_parent.child_position position_details.child_to_display)
                         
-                    
-                    
-          (== command "replace")
+                        ;; set the child to hide in non displayed controls 
+                        (if (and (== command "hide")
+                                 (not (== target_control holding_tank)))
+                            (-> holding_tank
+                                `add_control 
+                                target_control)))
+                    true)
+                (and (== position_details.parent holding_tank)                         
+                     (== command "destroy"))
+                (-> holding_tank `remove_control position_details.child.options.id)
+                else
+                (progn
+                    (notify "Cannot hide a single control - try replacing")
+                    position_details)))
+            
+          (== command "replace")    
           (progn
-              (assert (is_object? new_control) "Invalid control provided for the replacement control")
-              (= targeted (replace_control position_details.target_root new_control))
-              (if (-> holding_tank `has_control? new_control.id)
-                  (-> holding_tank `remove_control new_control.id))
-                            
-              (when (and targeted.view
-                         targeted.view.parentElement)
-                     ;; we are mounted so replace it
-                    (-> targeted.view `replaceWith new_control.view)
-                    (-> new_control `initialize))
-              (-> (get_control_by_name "Holding Tank")
-                            `add_control 
-                            target_control))
-          (== command "insert_left")    
+              (swap_control target_control new_control)
+              true)
+          
+          (== command "split_left")    
           (progn
-              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (assert (is_control? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
-              (-> position_details.target_root.view `replaceWith
-                  tmpview)                    
-              (= new_container (split_view_vertical new_control position_details.target_root (or options { `ratio: 0.3 } )))
-              (-> position_details.container `set_content position_details.target_position new_container))
-          (== command "insert_right")
+              (-> position_details.child.view `replaceWith
+                  tmpview)                                 
+              (= new_container (split_view_vertical new_control position_details.child (or options { `ratio: 0.3 } )))
+              (-> position_details.parent `set_content position_details.child_position new_container)
+              true)
+          (== command "split_right")    
           (progn
-              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (assert (is_control? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
-              (-> position_details.target_root.view `replaceWith
-                  tmpview)                    
-              (= new_container (split_view_vertical position_details.target_root new_control (or options { `ratio: 0.7 } )))
-              (-> position_details.container `set_content position_details.target_position new_container))
-          (== command "insert_above")
+              (-> position_details.child.view `replaceWith
+                  tmpview)                                  
+              (= new_container (split_view_vertical position_details.child new_control  (or options { `ratio: 0.7 } )))
+              (-> position_details.parent `set_content position_details.child_position new_container)
+              true)
+          (== command "split_above")    
           (progn
-              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (assert (is_control? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
-              (-> position_details.target_root.view `replaceWith
-                  tmpview)                    
-              (= new_container (split_view_horizontal new_control position_details.target_root  (or options { `ratio: 0.3 } )))
-              (-> position_details.container `set_content position_details.target_position new_container))    
-          (== command "insert_below")
+              (-> position_details.child.view `replaceWith
+                  tmpview)              
+              (= new_container (split_view_horizontal new_control position_details.child (or options { `ratio: 0.3 } )))
+              (-> position_details.parent `set_content position_details.child_position new_container)
+              true)
+          (== command "split_below")    
           (progn
-              (assert (is_object? new_control) "Invalid control provided for the replacement control")
+              (assert (is_control? new_control) "Invalid control provided for the replacement control")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
-              (-> position_details.target_root.view `replaceWith
-                  tmpview)                    
-              (= new_container (split_view_horizontal position_details.target_root new_control (or options { `ratio: 0.7 } )))
-              (-> position_details.container `set_content position_details.target_position new_container))
-
+              (-> position_details.child.view `replaceWith
+                  tmpview)             
+              (= new_container (split_view_horizontal  position_details.child new_control (or options { `ratio: 0.7 } )))
+              (-> position_details.parent `set_content position_details.child_position new_container)
+              true)
           else
-          (notify (+ "Unknown command: " command)))
-
-      ;; do a cascade resize since parent elements may have changed
-      (when position_details.container
-        (setTimeout (fn ()
-                      (cascade_resize $root_controls))
-                    20))
-      position_details))
+          (progn
+           (notify (+ "container_view_operation: unknown command: " command))
+           position_details))))
   
   
   
@@ -1090,7 +1130,8 @@
                                   {
                                    type: mode
                                    command_bar: command_bar                                                                     
-                                   on_save: on_save                                   
+                                   on_save: on_save
+                                   id: id
                                    read_only: options.read_only
                                    font_size: options.font_size
                                    on_change: (function (editor val)
@@ -1507,17 +1548,19 @@
             
             (resize_observer nil)
             (add_control (fn (control)
-                             (progn
-                                 (assert (and control.type control.id) "Invalid control provided")
+                             (when (not (== control intf))
+                                 (assert (and control.type control.options.id) "Invalid control provided")
                                  (set_prop my_controls
-                                           control.id
+                                           control.options.id
                                            control)
                                  (render_view)
                                  control)))
             (remove_control (fn (id)
                                 (progn
                                   (aif (prop my_controls id)
-                                       (remove_prop my_controls id)
+                                       (progn
+                                        (remove_prop my_controls id)
+                                        (render_view))
                                        (notify "The requested control wasn't found")))))
             (id (or options.id (generate_id "holding_tank")))
             (render_view (fn ()
@@ -1531,9 +1574,19 @@
                                            (tr
                                             (td control.name)
                                             (td control.type)
-                                            (td { `for_control_id: control.id }
-                                                (button "View")                                                
-                                                (button { `style: "float: right" } "Remove")))))))))
+                                            (td { `for_control_id: control.options.id }
+                                                (button (dtext "View"))                                               
+                                                (button { `style: "float: right" } (dtext "Destroy"))))))))))
+            (handle_button_event (fn (elem)
+                                   (aif (and elem.parentElement
+                                            (-> elem.parentElement `getAttribute "for_control_id"))
+                                     (progn
+                                      (cond
+                                        (== elem.innerText (dtext "View"))
+                                        (swap_control intf (get_control_by_id it))
+                                        (== elem.innerText (dtext "Destroy"))
+                                        (container_view_operation "destroy" (get_control_by_id it)))))))
+                                   
             (initialize (fn ()
                           (when (and view.parentElement
                                      (not initialized))
@@ -1570,7 +1623,7 @@
                                        `in_tree
                                        true)
                              (set_style [["display" "block"]] view)
-                             (container_view_operation "insert_right" target_control intf { `ratio: 0.8 }))
+                             (container_view_operation "split_right" target_control intf { `ratio: 0.8 }))
                             current_parent.parent
                             (progn
                               (set_focus_to intf))))))
@@ -1588,7 +1641,12 @@
             (view (div { `tabindex: 0 `control_id: id `style: "display: none; overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                        control_status
                        control_view)))
-         
+
+         (attach_event_listener view
+                                `click
+                                (fn (e)
+                                  (when (== e.srcElement.tagName "BUTTON")
+                                    (handle_button_event e.srcElement))))
          (set_prop options
                    `id id
                    `name name)
@@ -1605,7 +1663,9 @@
               `controls: (fn ()
                            (values my_controls))
               `add_control: add_control
-              `has_control?: (fn (id) (when id (prop my_controls id)))
+              `has_control?: (fn (thing) (if (is_string? thing)
+                                           (prop my_controls thing)
+                                           (prop my_controls thing.options.id)))
               `remove_control: remove_control
               `name: options.name
               `hide: hide
@@ -2040,7 +2100,7 @@
                                                              nil)))])]
                 
                 else
-                [key (for_each (operation ["Insert Above" "Insert Below" "Insert Left" "Insert Right"])
+                [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
                          [(dtext operation) (fn ()
                                                (progn
                                                    (console.log key "operation: " operation controls)
@@ -2049,22 +2109,28 @@
                                                                         (empty_selection_control))))])])))))
 
 (defun gen_view_menu ()
-   (progn
-     (conj 
+  (progn
+   (defvar holding_tank (get_control_by_name "Holding Tank"))                
+   (defvar holding_tank_visible? (if (prop (control_position holding_tank) `parent)
+                                     true
+                                     false))
+   (conj 
         (reduce (control (current_controls))
             (when (and control.on_focus
                        control.options.id)
+              (defvar is_displayed? (not (-> holding_tank `has_control? control)))
               [(or control.name "Untitled") 
-               (reduce (operation ["Focus" "Hide" "--" "Remove and Close"])
+               (reduce (operation ["Focus" "Hide" "--" "Destroy"])
                        (cond
-                         (== control.name "Holding Tank")
+                         (== control.name "Holding Tank")                              
                          (cond
                            (== operation "Focus")
                            [(dtext "Show")
                             (fn (e)
                               (-> (get_control_by_name "Holding Tank")
                                   `show))]
-                           (== operation "Hide")
+                           (and holding_tank_visible?
+                                (== operation "Hide"))
                            [(dtext "Hide")
                             (fn (e)
                               (-> (get_control_by_name "Holding Tank")
@@ -2074,25 +2140,26 @@
                          else
                          [(dtext operation)
                           (cond
-                            (== operation "Focus")
+                            (and is_displayed? (== operation "Focus"))
                             (fn (e)
                               (aif (get_control_by_id control.options.id)
                                    (set_focus_to it)))
                             (== operation "--")
                             nil
-                            (== operation "Hide")
+                            (and is_displayed? (== operation "Hide"))
                             (fn (e)
                               (aif (get_control_by_id control.options.id)
                                    (container_view_operation "hide" it)
                                    (notify (+ "Unable to find control " (or control.name control.options.id)))))
-                            (== operation "Remove and Close")
+                            (== operation "Destroy")
                             (fn (e)
                               (aif (get_control_by_id control.options.id)
                                    (container_view_operation "destroy" it)
                                    (notify (+ "Unable to find control " (or control.name control.options.id))))))]))]))
         [[(dtext "List All Active Controls") 
           (fn ()
-             (notify "Listing all active controls"))  ]])))
+            (progn
+             (rlog (control_tree $root_controls))))  ]])))
                   
                                   
 
