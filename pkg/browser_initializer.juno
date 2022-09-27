@@ -13,9 +13,9 @@
                            })
 
 
-(defvalue *frame_count* -1)
 
-(defparameter *non_displayed_controls* {})
+
+
 (defvalue *main_menu* [])
 (defvalue *serialized_controls* [])
 
@@ -221,7 +221,7 @@
 (console.log "browser_initializer running")
 
 (defun current_controls ()
-  (flatten (control_tree $root_controls)))
+  (uniq (flatten (control_tree $root_controls))))
 
 (defun cascade_resize (top_control)
   (control_tree (or top_control $root_controls)
@@ -353,7 +353,17 @@
        
       existing_container))
 
-;; *scratch* buffer
+(defun_sync is_control? (val)
+  (and val.type val.view val.toJSON))
+
+(defun top_frame (control)
+  (let
+      ((parent nil))
+   (assert (is_control? control) "Invalid control provided")
+   (= parent (control_position control))
+   (while parent.parent
+       (= parent (control_position parent.parent)))
+   parent.child))
 
 (defun container_view_operation (command target_control new_control options)
     (let
@@ -363,16 +373,23 @@
          (tmpview nil)
          (new_container nil)
          (old_control nil)
+         (holding_tank (get_control_by_name "Holding Tank"))
          (child_index nil)
          (idx -1)
          (targeted nil))
       (assert target_root_control "Unable to find the target control")
-      
+      (assert holding_tank "Unable to find the control holding tank")
       (= existing_container (get_container_for_control target_root_control))
-      (when (eq nil existing_container)
-          (throw TypeError "Cannot find the container for the control to be added"))
-      (assert (is_function? existing_container.set_content) "target_container cannot set content")
-      
+      (cond
+        (not (== target_root_control holding_tank))
+        (progn
+         (when (eq nil existing_container)
+           (throw TypeError "Cannot find the container for the control to be added"))
+         (assert (is_function? existing_container.set_content) "target_container cannot set content"))
+        (and (eq nil existing_container)
+             (== target_root_control holding_tank))
+        (= existing_container target_root_control))
+                              
       (when (== target_root_control existing_container)
           (= position_details (control_position existing_container))
           (= child_index position_details.child_position)
@@ -398,22 +415,56 @@
           })
       (console.log "container_view_operation: " command "pos details:" position_details "targeted control: " target_control "options:" options)
       (cond
+          (or (== command "hide")
+              (== command "destroy"))
+          (progn
+              
+              (assert position_details.container.set_content "Cannot find the control to be hidden's root container")
+              (cond 
+                (or (== position_details.container.type "split_view_vertical")
+                    (== position_details.container.type "split_view_horizontal"))
+                (progn
+                    ;; need to go down to a control_container
+                    ;; capture the child to keep displaying 
+                    (set_prop position_details
+                              `child_to_display
+                              (if (== position_details.target_position 0)
+                                  (second (-> position_details.container `controls))
+                                  (first (-> position_details.container `controls))))
+                    
+                    ;; set the child to hide in non displayed controls 
+                    (if (and (== command "hide")
+                             (not (== target_control holding_tank)))
+                        (-> holding_tank
+                            `add_control 
+                            target_control))
+                    
+                    ;; elevate the child to keep to the targeted_control container's position in it's parent
+                    
+                    (if position_details.parent_container.parent
+                       (progn
+                          (-> position_details.parent_container.parent `set_content
+                                                                       position_details.parent_container.child_position
+                                                                       position_details.child_to_display))
+                       (notify "Unable to elevate child to parent frame")))))
+                        
+                    
+                    
           (== command "replace")
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
               (= targeted (replace_control position_details.target_root new_control))
-              (when (prop *non_displayed_controls*
-                          new_control.options.id)
-                    (remove_prop *non_displayed_controls*
-                                 new_control.options.id))
+              (if (-> holding_tank `has_control? new_control.id)
+                  (-> holding_tank `remove_control new_control.id))
+                            
               (when (and targeted.view
                          targeted.view.parentElement)
                      ;; we are mounted so replace it
                     (-> targeted.view `replaceWith new_control.view)
                     (-> new_control `initialize))
-              (set_prop *non_displayed_controls*
-                        targeted.options.id
-                        targeted))
+              (-> (get_control_by_name "Holding Tank")
+                            `add_control 
+                            target_control))
           (== command "insert_left")    
           (progn
               (assert (is_object? new_control) "Invalid control provided for the replacement control")
@@ -421,7 +472,7 @@
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
-              (= new_container (split_view_vertical new_control position_details.target_root options))
+              (= new_container (split_view_vertical new_control position_details.target_root (or options { `ratio: 0.3 } )))
               (-> position_details.container `set_content position_details.target_position new_container))
           (== command "insert_right")
           (progn
@@ -430,7 +481,7 @@
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
-              (= new_container (split_view_vertical position_details.target_root new_control options))
+              (= new_container (split_view_vertical position_details.target_root new_control (or options { `ratio: 0.7 } )))
               (-> position_details.container `set_content position_details.target_position new_container))
           (== command "insert_above")
           (progn
@@ -439,7 +490,7 @@
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
-              (= new_container (split_view_horizontal new_control position_details.target_root  options))
+              (= new_container (split_view_horizontal new_control position_details.target_root  (or options { `ratio: 0.3 } )))
               (-> position_details.container `set_content position_details.target_position new_container))    
           (== command "insert_below")
           (progn
@@ -448,7 +499,7 @@
               ;; get it off the dom
               (-> position_details.target_root.view `replaceWith
                   tmpview)                    
-              (= new_container (split_view_horizontal position_details.target_root new_control options))
+              (= new_container (split_view_horizontal position_details.target_root new_control (or options { `ratio: 0.7 } )))
               (-> position_details.container `set_content position_details.target_position new_container))
 
           else
@@ -507,6 +558,9 @@
        (setq *last_focus* nil)
        (console.log "lost all control focus")
        (notify "lost all control focus")))))
+
+
+    
 
 (defun process_focus_chain (e originator_container)
   (progn
@@ -810,6 +864,21 @@
                                                               (notify (+ (dtext "Unhandled error") ": " e.message ))
                                                               (console.error e)))))))
                                     }))))
+       (font_size (or options.font_size nil))
+       (increase_font_size (function ()
+                                     (when font_size
+                                       (= font_size (Math.min 200 (+ font_size 1)))
+                                       (set_prop options
+                                                 `font_size font_size)
+                                       (console.log "editor: options: " options)
+                                       (-> editor `setFontSize font_size))))
+       (decrease_font_size (function ()
+                                     (when font_size
+                                       (= font_size (Math.max 1 (- font_size 1)))
+                                       (set_prop options
+                                                 `font_size font_size)
+                                       (console.log "editor: options: " options)
+                                       (-> editor `setFontSize font_size))))
        (initialize_editor (fn ()
                             (when (not initialized)
                               (setq initialized true)
@@ -826,8 +895,21 @@
                                                       (options.on_save (-> editor `getValue)))
                                      }))
 
+
                               
+                              (-> editor.commands `addCommand
+                                  {
+                                   `name: "increase_font_size"
+                                   `bindKey: { `win: "Ctrl-Shift-=" `mac: "Ctrl-Shift-=" }
+                                   `exec: increase_font_size })
                               
+                              (-> editor.commands `addCommand
+                                  {
+                                   `name: "decrease_font_size"
+                                   `bindKey: { `win: "Ctrl-Shift--" `mac: "Ctrl-Shift--" }
+                                   `exec: decrease_font_size })
+                              
+                                   
                               (when (is_array? options.commands)
                                 (for_each (command options.commands)
                                           (do
@@ -848,7 +930,8 @@
                                                       `cursorStyle: "wide"
                                                       `useSoftTabs: true
                                                       `highlightActiveWord: true
-                                                      `fontFamily: "Roboto Mono"                  
+                                                      `fontFamily: "Roboto Mono"
+                                                      `fontSize: 14
                                                       })
                               (-> editor.session `setUseWorker true)
                               (-> editor `setShowFoldWidgets true)
@@ -861,6 +944,12 @@
                                 (-> editor.session `setMode "ace/mode/css"))
                               (console.log "editor initialized: content: " (subtype content) content)                                                          
                               (-> editor `setValue content -1)
+                              (if (eq nil font_size)
+                                (= font_size (parseInt (-> editor `getFontSize)))
+                                (-> editor `setFontSize font_size))
+                              (set_prop options
+                                        `font_size
+                                        font_size)
                               
                               (when options.on_change
                                 (-> editor `on `change (function (val)
@@ -894,7 +983,12 @@
         `get_evaluator: (fn ()
                           options.evaluator)
         `save: (function ()
-                         (options.on_save (-> editor `getValue)))                 
+                         (options.on_save (-> editor `getValue)))
+        `increase_font_size: increase_font_size
+        `decrease_font_size: decrease_font_size
+        `menu_items: (function ()
+                       [[(dtext "Increase Font Size") increase_font_size]
+                        [(dtext "Decrease Font Size") decrease_font_size]])
         `options: options
         `name: (or options.name "Untitled Buffer")
         `toJSON: (function ()
@@ -998,6 +1092,7 @@
                                    command_bar: command_bar                                                                     
                                    on_save: on_save                                   
                                    read_only: options.read_only
+                                   font_size: options.font_size
                                    on_change: (function (editor val)
                                                         (progn
                                                          (when (not is_dirty?)
@@ -1008,11 +1103,13 @@
                                    evaluator: evaluator                                   
                                    }))
        (menu_items (fn ()
-                     [(when path_to_value
-                        [(+ (dtext "Save to") " " (last path_to_value))
-                         (fn (e) (-> edit_control `save))])
-                      [(dtext "Select Evaluator")
-                       select_my_evaluator]]))
+                     (conj  
+                      [(when path_to_value
+                         [(+ (dtext "Save to") " " (last path_to_value))
+                          (fn (e) (-> edit_control `save))])
+                       [(dtext "Select Evaluator")
+                        select_my_evaluator]]
+                      (-> edit_control `sub_menu_items))))
        (set_evaluator_control (fn (control)
                                 (if control.evaluate
                                   (progn
@@ -1032,6 +1129,7 @@
                             
     
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
+   
     (attach_event_listener buffer_commands_button
                            `click
                            (fn (e)
@@ -1048,7 +1146,9 @@
               id)
     (set_prop edit_control
               `sub_initializer
-              edit_control.initialize)
+              edit_control.initialize
+              `sub_menu_items
+              edit_control.menu_items)
     (set_prop edit_control
               `set_evaluator_control  set_evaluator_control
               `on_focus on_focus
@@ -1063,7 +1163,7 @@
                                (set_evaluator_control (get_control_by_id options.evaluator_id))))
                                        
                               
-              `toJSON (function ()
+              `toJSON (function ()                                                                 
                                  `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
     edit_control))
 
@@ -1072,7 +1172,7 @@
 
 (defun log_view (options)
   (let
-      ((output_container (div {   `style: "font-size: 0.9em; height: calc(100% - 20px); overflow: scroll; width: 100%; vertical-align:bottom; " } ))       
+      ((output_container (div {   `style: "height: calc(100% - 20px); overflow: scroll; width: 100%; vertical-align:bottom; " } ))       
        (options (or options {}))
        (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
        (control_status (div {  `class: "juno-buffer-bar" }
@@ -1374,115 +1474,163 @@
     intf))
 
 
-(defun control_container (content options)
-  (let
-      ((contained_content nil)
-       
-       (resize_observer nil)
-       (options (or options {}))
-       (name (or options.name (+ "Frame " (inc *frame_count*))))
-       (id (or options.id (generate_id "container")))       
-       (init_timer nil)
-       (view (div { `control_id: id `class: "juno-view-container" } ))
-       (initialized false)
-       (parent_view nil)
-       (check_observer (fn ()
-                         (when (not (== view.parentElement parent_view))
-                           (-> resize_observer `disconnect)
-                           (-> resize_observer `observe view.parentElement)
-                           (= parent_view view.parentElement))))
-       (perform_resize (fn ()
-                         (when view.parentElement
-                           (check_observer)
-                           (let
-                               ((new_height (- (prop view.parentElement `offsetHeight) 0))
-                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                             
-                             (set_style [[ "width" (+ "" new_width "px") ]
-                                         [ "height" (+ "" new_height "px") ]]
-                                        view)))))
-       (set_content (fn (position new_content) ;; position is discarded but it is essentially 0 since this is a single unit container
-                      (let
-                          ((new_view nil))
-                        (= new_view
-                           (cond
-                             new_content.view
-                             new_content.view
-
-                             (is_element? new_content)
-                             new_content
-                             
-                             else
+;; singleton - if it already exists, just return the control
+;; otherwise make it 
+(defun control_holding_tank (initial_controls options)
+  (aif (get_control_by_name "Holding Tank")
+       it
+       (let
+           ((my_controls (if (and initial_controls
+                                  (is_array? initial_controls))
+                           (to_object
+                            (reduce (control initial_controls)
+                                    (when control.options.id 
+                                      [control.options.id control])))
+                           {}))                                                    
+            (options (or options {}))
+            (intf {})
+            (name (or options.name
+                      "Holding Tank"))
+            (initialized false)
+            (title_span (span { `class: "juno-title" } (dtext "Holding Tank")))
+            (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+            (control_status (div {  `class: "juno-buffer-bar" }
+                                 buffer_commands_button
+                                 (cond (is_array? options.additional_elements)
+                                       options.additional_elements
+                                       else
+                                       title_span
+                                       )))
+            (perform_resize (fn ()
+                              (when view.parentElement                                                             
+                                (render_view))))
+            
+            (resize_observer nil)
+            (add_control (fn (control)
                              (progn
-                              (if new_content 
-                                (div { } (as_lisp new_content))
-                                (div { `class: "juno-empty-content" } "Set Content")))))
-                        (-> view `replaceChildren new_view)
-                        (if (not new_content.view)
-                          (= contained_content
-                             {
-                              `view: view
-                              })
-                          (= contained_content new_content))
-                        (perform_resize)
-                        (when new_content.initialize
-                          (-> new_content `initialize))  ;; initialize if not already
-                        view)))
-       (initialize (fn ()
-                     (progn
-                      (when init_timer
-                        (clearInterval init_timer)
-                        (= init_timer nil))
-                      (when (not initialized)
-                        (= initialized true))
-                      (when view.parentElement
-                        (= parent_view view.parentElement)
-                        (-> resize_observer `observe view.parentElement)
-                        (perform_resize)
-                        (console.log "control_container: initializing with: " content)
-                        (when content
-                          (set_content 0 content))
-                        (when (is_function? contained_content.initialize)
-                          (-> contained_content `initialize))))))
-                      
+                                 (assert (and control.type control.id) "Invalid control provided")
+                                 (set_prop my_controls
+                                           control.id
+                                           control)
+                                 (render_view)
+                                 control)))
+            (remove_control (fn (id)
+                                (progn
+                                  (aif (prop my_controls id)
+                                       (remove_prop my_controls id)
+                                       (notify "The requested control wasn't found")))))
+            (id (or options.id (generate_id "holding_tank")))
+            (render_view (fn ()
+                           (-> control_view
+                               `replaceChildren
+                               (table { `style: "width: 100%" }
+                                (thead
+                                 (th "Name") (th "Type") (th "Actions"))
+                                (tbody
+                                 (for_each (control (values my_controls))
+                                           (tr
+                                            (td control.name)
+                                            (td control.type)
+                                            (td { `for_control_id: control.id }
+                                                (button "View")                                                
+                                                (button { `style: "float: right" } "Remove")))))))))
+            (initialize (fn ()
+                          (when (and view.parentElement
+                                     (not initialized))
+                            (= initialized true)
+                            (-> resize_observer `observe view.parentElement)
+                            (console.log "holding_tank: in initialization: " options view.parentElement)
+                            (if options.in_tree
+                              (progn
+                               (console.log "holding_tank: in tree and setting view up to block..and calling render")
+                               (set_style [["display" "block"]] view)
+                               (render_view))
+                              (-> (get_by_id "body")
+                                  `append view)))))
                         
-       (intf (new Object)))
-    
-    (set_prop options
-              `name
-              name
-              `id
-              id)
-    
-    (= resize_observer (new ResizeObserver perform_resize))
-    
-    (= init_timer (setInterval (fn (e)
-                                   (progn
-                                    (when view.parentElement
-                                      (clearInterval init_timer)
-                                      (= init_timer nil)
-                                      (initialize))))
-                               250))
-    
-    
-    (set_prop intf
-              `view view              
-              `initialize initialize              
-              `set_content set_content
-              `name options.name
+            (on_focus (fn ()
+                        (progn
+                         (add_class "juno-focused" control_status ))))
+            (control_view (div { `style: "overflow: scroll; margin: 0px; padding: 0px; height: 100%; width: 100%;" }))
+            (show (fn ()
+                      (let
+                          ((root_control (if *last_focus*
+                                             (top_frame *last_focus*)
+                                             (prop $root_controls 1)))
+                           (current_parent (if view.parentElement
+                                               (control_position (control_for_dom_element view))
+                                               { `child: intf `parent: nil `child_position: 0 }))
+                           (target_control (if root_control.controls
+                                             (first (-> root_control `controls)))))
+                        (console.log "holding_tank: show: " root_control current_parent target_control)
+                          (cond 
+                            (eq current_parent.parent nil)
+                            (progn
+                             (set_prop options
+                                       `in_tree
+                                       true)
+                             (set_style [["display" "block"]] view)
+                             (container_view_operation "insert_right" target_control intf { `ratio: 0.8 }))
+                            current_parent.parent
+                            (progn
+                              (set_focus_to intf))))))
+            (hide (fn ()
+                    (progn
+                     (console.log "holding_tank: hide: " view.parentElement)
+                       (container_view_operation "hide" intf)
+                       (remove_prop options
+                                    `in_tree)
+                       (set_style [["display" "none"]] view)
+                        (-> (get_by_id "body")
+                            `append view))))
+                             
+                          
+            (view (div { `tabindex: 0 `control_id: id `style: "display: none; overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
+                       control_status
+                       control_view)))
+         
+         (set_prop options
+                   `id id
+                   `name name)
+         (= resize_observer (new ResizeObserver perform_resize))        
+         
+         (= intf
+            {
+              `view: view
+              `type: "holding_tank"
+              `id: id
+              `name: options.name 
+              `initialize: initialize
+              `on_focus: on_focus
+              `controls: (fn ()
+                           (values my_controls))
+              `add_control: add_control
+              `has_control?: (fn (id) (when id (prop my_controls id)))
+              `remove_control: remove_control
+              `name: options.name
+              `hide: hide
+              `show: show
               `resize: perform_resize
-              `menu_items options.menu_items
-              `controls (fn () contained_content)
-              `toJSON (function ()
-                                 `(control_container ,#contained_content ,#options))
-              `type `control_container
-              `options options)))
+              `options: options
+              `toJSON: (function ()
+                                 `(control_holding_tank ,#(values my_controls)  ,#options ))
+              })
+          intf)))
 
 (defun empty_selection_control (options)
     (let
         ((options (or options {
                                `name: "Empty Selection" 
                                }))
+         (title_span (span { `class: "juno-title" } (if options.title options.title "Select Control")))
+         (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+         (control_status (div {  `class: "juno-buffer-bar" }
+                              buffer_commands_button
+                              (cond (is_array? options.additional_elements)
+                                  options.additional_elements
+                                  else
+                                  title_span
+                                  )))
          (resize_observer nil)
          (id (or options.id (generate_id "empty")))
          (initialized false)
@@ -1496,8 +1644,8 @@
                            (when view.parentElement
                              (check_observer)
                            (let
-                               ((new_height (- (prop view.parentElement `offsetHeight) 30))
-                                (new_width  (- (prop view.parentElement `offsetWidth) 25)))
+                               ((new_height (- (prop view.parentElement `offsetHeight) 20))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 5)))
                              
                              (set_style [[ "width" (+ "" new_width "px") ]
                                          [ "height" (+ "" new_height "px") ]]
@@ -1508,8 +1656,15 @@
                          (= initialized true)
                          (= parent_view view.parentElement)
                          (-> resize_observer `observe view.parentElement))))
-         (view (div { `control_id: id `style: "height: 100%; width: 100%; overflow: hidden; margin: 10px; border-radius: 20px; border: 5px dotted #A0A0A0;" }
-                    (div { `style: "font-size: 3.0em; text-align: center; width: 100%; padding-top: 15px;" } "Select New Control"))))                        
+         (on_focus (fn ()
+                   (progn
+                    ;(-> input_container.editor `focus) ;; bring focus to the repl
+                    (add_class "juno-focused" control_status ))))
+         (control_view (div { `class: "juno-empty-content" } ""))
+         (view (div { `tabindex: 0 `control_id: id `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
+                  control_status
+                  control_view)))
+                             
         (set_prop options
                   `id
                   id)
@@ -1518,10 +1673,11 @@
         
        {
            `view: view
-           `type: "empty_selection_control"
+           `type: "empty_control"
            `id: id
            `initialize: initialize
-            `name: options.name
+           `on_focus: on_focus
+           `name: options.name
            `resize: perform_resize
            `options: options
            `toJSON: (function ()
@@ -1746,7 +1902,7 @@
                                                               ;; on how it was created..
                                                               else
                                                               (= menu (menu_tree it)))
-                                                            (= mview (div { `id: `cmenu `class: "juno-menu" `style: "font-size: 0.9em; z-index: 30" }
+                                                            (= mview (div { `id: `cmenu `class: "juno-menu" `style: " z-index: 30" }
                                                                    menu.view))
                                                             (set_style [["position" "absolute"]
                                                                         ["left" (+ "" (Math.max 0 pos.left 0) "px")]
@@ -1891,7 +2047,54 @@
                                                    (container_view_operation (to_key operation) 
                                                                         (get_control_by_name key)
                                                                         (empty_selection_control))))])])))))
-                
+
+(defun gen_view_menu ()
+   (progn
+     (conj 
+        (reduce (control (current_controls))
+            (when (and control.on_focus
+                       control.options.id)
+              [(or control.name "Untitled") 
+               (reduce (operation ["Focus" "Hide" "--" "Remove and Close"])
+                       (cond
+                         (== control.name "Holding Tank")
+                         (cond
+                           (== operation "Focus")
+                           [(dtext "Show")
+                            (fn (e)
+                              (-> (get_control_by_name "Holding Tank")
+                                  `show))]
+                           (== operation "Hide")
+                           [(dtext "Hide")
+                            (fn (e)
+                              (-> (get_control_by_name "Holding Tank")
+                                  `hide))]
+                           else
+                           nil)
+                         else
+                         [(dtext operation)
+                          (cond
+                            (== operation "Focus")
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (set_focus_to it)))
+                            (== operation "--")
+                            nil
+                            (== operation "Hide")
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (container_view_operation "hide" it)
+                                   (notify (+ "Unable to find control " (or control.name control.options.id)))))
+                            (== operation "Remove and Close")
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (container_view_operation "destroy" it)
+                                   (notify (+ "Unable to find control " (or control.name control.options.id))))))]))]))
+        [[(dtext "List All Active Controls") 
+          (fn ()
+             (notify "Listing all active controls"))  ]])))
+                  
+                                  
 
 (defun serialize_controls (controls)
   [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
@@ -1911,7 +2114,8 @@
     (for_each (`serialized_control serialized_controls)
       (progn
        (= control (eval serialized_control))
-       (when control.view
+       (when (and control.view
+                  (not control.view.parentElement))
          (-> container
              `append control.view))
        (push $root_controls
@@ -1984,25 +2188,17 @@
                          ["Style CSS" (fn (e) (notify "View Site CSS"))]])])
        
        (push *main_menu*            
-             ["View" (fn ()
-                       (progn
-                        (reduce (control (current_controls))
-                                (when (and control.on_focus
-                                           control.options.id)
-                                  [(or control.name "Untitled") 
-                                   (fn (e)
-                                     (aif (get_control_by_id control.options.id)
-                                          (set_focus_to it)))]))))])
+             ["View" gen_view_menu])
        (push *main_menu*
-              ["Layout"
+             ["Layout"
                gen_layout_menu])
        
        (push $root_controls
              (app_header [(app_menu [ `*main_menu* ])]
                          { `app_title: "Seedling" }))
        (setq page_frame ;; or surface which can be named in the upper right or middle
-             (control_container nil {
-                                     `name: "Frame 0"
+             (control_container nil {                                     
+                                     `root_frame: true
                                      }))
 
        
@@ -2017,6 +2213,9 @@
                                 $repl))
        
        (push $root_controls page_frame)
+       ;; the holding tank contains the controls  that are still needed but not
+       ;; presently displayed 
+       (push $root_controls (control_holding_tank [] {}))
        
        (-> scratch_editor
            `set_evaluator_control $repl)
@@ -2032,8 +2231,13 @@
       (progn     
        (console.log "serialized controls: " *serialized_controls*)
        (rehydrate_controls juno_container *serialized_controls*)))
-       
-       
+     
+    (attach_event_listener juno_container
+                           `keyup
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (console.log "key_up: " e))))
 
     (defun core/rlog (`& vals)
       (progn

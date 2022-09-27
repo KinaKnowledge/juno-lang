@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-24 08:23:59
-// Version: 2022.09.24.08.23
-export const DLISP_ENV_VERSION='2022.09.24.08.23';
+// Build Time: 2022-09-27 07:18:10
+// Version: 2022.09.27.07.18
+export const DLISP_ENV_VERSION='2022.09.27.07.18';
 
 
 
@@ -3132,7 +3132,7 @@ await Environment.set_global("uniq",async function(values,handle_complex_types) 
     if (check_true (handle_complex_types)){
         {
             await (await Environment.get_global("map"))(async function(x) {
-                return await s["add"].call(s,await JSON.stringify(x))
+                return await s["add"].call(s,x)
             },(values|| []));
             return await (await Environment.get_global("map"))(async function(x) {
                 return await JSON.parse(x)
@@ -3643,16 +3643,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_81885;
+                                                let _expr_5690;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_81885=await (async function(){
+                                                _expr_5690=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_81885 && _expr_81885["0"]);
-                                                req_ns=(_expr_81885 && _expr_81885["1"]);
-                                                explicit=(_expr_81885 && _expr_81885["2"]);
+                                                req_sym=(_expr_5690 && _expr_5690["0"]);
+                                                req_ns=(_expr_5690 && _expr_5690["1"]);
+                                                explicit=(_expr_5690 && _expr_5690["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3755,13 +3755,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_30571;
+                    let _expr_57948;
                     let nspace;
-                    _expr_30571=await (async function(){
+                    _expr_57948=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_30571 && _expr_30571["0"]);
-                    nspace=(_expr_30571 && _expr_30571["1"]);
+                    sym=(_expr_57948 && _expr_57948["0"]);
+                    nspace=(_expr_57948 && _expr_57948["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-09-24 08:23:59
-// Version: 2022.09.24.08.23
-export const DLISP_ENV_VERSION='2022.09.24.08.23';
+// Build Time: 2022-09-27 07:18:10
+// Version: 2022.09.27.07.18
+export const DLISP_ENV_VERSION='2022.09.27.07.18';
 
 
 
@@ -199,7 +199,7 @@ export async function init_compiler(Environment) {
     if (check_true (handle_complex_types)){
         {
             await (await Environment.get_global("map"))(async function(x) {
-                return await s["add"].call(s,await JSON.stringify(x))
+                return await s["add"].call(s,x)
             },(values|| []));
             return await (await Environment.get_global("map"))(async function(x) {
                 return await JSON.parse(x)
@@ -4596,8 +4596,6 @@ export async function init_compiler(Environment) {
                 how_much=(((tokens && tokens["2"])&& await (async function(){
                      return await compile((tokens && tokens["2"]),ctx) 
                 })())|| 1);
-                debugger;
-                ;
                 if (check_true ((undefined===target_details))){
                     throw new ReferenceError(("unknown symbol: "+ (comps && comps["0"])));
                     

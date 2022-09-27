@@ -72,7 +72,7 @@
 				nil)))
   (setq no_includes
 	(conj no_includes
-	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file"]))
+	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file" "Deno.readTextFile" "Deno.writeTextFile"]))
   ;; print them out 
   ;(console.log "NOT INCLUDING: ")
 ;  (console.table (sort no_includes))

@@ -483,6 +483,114 @@
     (is_element? content_list)
     { view: content_list }))
                     
+(defvalue *frame_count* -1)
+(defvalue *view_count* -1)
+
+(defun control_container (content options)
+  (let
+      ((contained_content nil)
+       
+       (resize_observer nil)
+       (options (or options {}))
+       (name (or options.name
+                 (and options.root_frame (+ "Frame " (inc *frame_count*)))
+                 (+ "view-" (inc *view_count*))))
+       (id (or options.id (generate_id "container")))       
+       (init_timer nil)
+       (view (div { `control_id: id `class: "juno-view-container" } ))
+       (initialized false)
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (check_observer)
+                           (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 0))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                             
+                             (set_style [[ "width" (+ "" new_width "px") ]
+                                         [ "height" (+ "" new_height "px") ]]
+                                        view)))))
+       (set_content (fn (position new_content) ;; position is discarded but it is essentially 0 since this is a single unit container
+                      (let
+                          ((new_view nil))
+                        (= new_view
+                           (cond
+                             new_content.view
+                             new_content.view
+
+                             (is_element? new_content)
+                             new_content
+                             
+                             else
+                             (progn
+                              (if new_content 
+                                (div { } (as_lisp new_content))
+                                (div { `class: "juno-empty-content" } "Set Content")))))
+                        (-> view `replaceChildren new_view)
+                        (if (not new_content.view)
+                          (= contained_content
+                             {
+                              `view: view
+                              })
+                          (= contained_content new_content))
+                        (perform_resize)
+                        (when new_content.initialize
+                          (-> new_content `initialize))  ;; initialize if not already
+                        view)))
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (when (not initialized)
+                        (= initialized true))
+                      (when view.parentElement
+                        (= parent_view view.parentElement)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "control_container: initializing with: " content)
+                        (when content
+                          (set_content 0 content))
+                        (when (is_function? contained_content.initialize)
+                          (-> contained_content `initialize))))))
+                      
+                        
+       (intf (new Object)))
+    
+    (set_prop options
+              `name
+              name
+              `id
+              id)
+    
+    (= resize_observer (new ResizeObserver perform_resize))
+    
+    (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                               250))
+    
+    
+    (set_prop intf
+              `view view              
+              `initialize initialize              
+              `set_content set_content
+              `name options.name
+              `resize: perform_resize
+              `menu_items options.menu_items
+              `controls (fn () [contained_content])
+              `toJSON (function ()
+                                 `(control_container ,#contained_content ,#options))
+              `type `control_container
+              `options options)))
 
 (defun split_view_vertical (content_a content_b options)
   (let
@@ -666,13 +774,15 @@
                                       (initialize))))
                                  250)))
     (set_prop options
-              `id
-              id)
+              `id id
+              `name (or options.name
+                        (+ "vertical-split-" (inc *view_count*))))
     (set_prop intf
      `view view
      `initialize initialize
      `set_content set_content
      `options options
+     `name options.name
      `resize perform_resize
      `type `split_view_vertical
      `controls (fn () [ content_a content_b ])
@@ -861,13 +971,15 @@
                                       (initialize))))
                                  250)))
     (set_prop options
-              `id
-              id)
+              `id id
+              `name (or options.name
+                        (+ "horizontal-split-" (inc *view_count*))))
     
     (set_prop intf
      `view view
      `initialize initialize
      `options options
+     `name options.name
      `resize perform_resize
      `type `split_view_horizontal
      `controls (fn () [ content_a content_b ])

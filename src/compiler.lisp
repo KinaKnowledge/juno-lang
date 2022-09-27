@@ -2780,7 +2780,7 @@
                                   (`how_much (or (and tokens.2
                                                       (compile tokens.2 ctx)) 
                                                  1)))
-                               (debug)
+                               
                                
                                (if (== undefined target_details)
                                  (throw ReferenceError (+ "unknown symbol: " comps.0)))

@@ -5,9 +5,12 @@
 
 :root {
   --main-bg-color: #FBFAF8;
+  --main-color: #000000;
   --control-focused: #84a0bf3b;
+  --namespace-color: #976464;
   --main-accent-color: #0000000A;
   --main-accent-line: #00000010;
+  --value-modified-color: #016783;
   --type-number-color: green;
   --type-boolean-color: orange;
   --type-string-color: darkblue;
@@ -21,6 +24,7 @@
   --type-code-color: darkblue;
   --value-focus-color: #0168ff;
   --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
+  --main-app-font-size: 14px;
   --main-mono-space: ui-monospace,		     
     "Cascadia Mono", "Segoe UI Mono",    
     "Roboto Mono",
@@ -54,7 +58,7 @@ Copyright (c) Nicolas Gallagher and Jonathan Neal
  */
 
 html {
-  line-height: 1.15; /* 1 */
+  line-height: 1.15; /* 1 */  
   -webkit-text-size-adjust: 100%; /* 2 */
 }
 
@@ -68,6 +72,7 @@ html {
 body {
   margin: 0;
   background: var(--main-bg-color, #FCFAFA);
+  font-size: var(--main-app-font-size);
 }
 
 /**
@@ -1425,8 +1430,16 @@ summary {
   padding: 1px;
 }
 
+hr {
+    border: 0;
+    height: 0;
+    border-top: 1px solid rgba(0,0,0,.1);
+    border-bottom: 1px solid rgba(255,255,255,.3);
+}
+
 .juno-view-container {
   display: inline-block;
+  color: var(--main-color);
   width: inherit;
   height: inherit;
   overflow: hidden;  /* Views need to manage how they present their content */
@@ -1434,12 +1447,8 @@ summary {
 
 .juno-empty-content {
   width: 100%;
-  height: 100%;
-  border-radius: 10px;
-  border: 10px dotted var(--main-accent-color);
+  height: 100%;    
   text-align: middle;
-  font-size: 3.0em;
-  line-height: 3.0em;
 }
 
 .juno-vertical-split-container {
@@ -1469,7 +1478,7 @@ li.juno-main-menu-header {
   height: 100%;
   cursor: col-resize;
   display: inline-block;
-  border-left: 1px solid #00000010;
+  border-left: 1px solid var(--main-accent-line);
 }
 
 .juno-vertical-dragger:hover { 
@@ -1492,8 +1501,7 @@ li.juno-main-menu-header {
   background: #00000010;
 }
 
-.juno-buffer-bar {  
-  font-size: 0.9em;
+.juno-buffer-bar {    
   background: var(--main-accent-color);
   width: 100%;
   cursor: default;
@@ -1520,7 +1528,7 @@ li.juno-main-menu-header {
 }
 
 .juno-title {
-  color: black;
+  color: var(--main-color);
   padding-left: 10px;
   padding-right: 10px;
   font-weight: bold;
@@ -1546,12 +1554,11 @@ span.juno-evaluator {
   margin-left: 10px;
   margin-right: 10px;
   color: #404040;
-  font-size: 0.9em;
 }
 
 span.juno-namespace {
   font-family: var(--main-mono-space);
-  color: #976464;
+  color: var(--namespace-color);
 }
 
 div.juno-focused {
@@ -1559,7 +1566,7 @@ div.juno-focused {
 }
 
 span.juno-needs-save {
-  color: #016783;
+  color: var(--value-modified-color)
 }
 
 .juno-menu {
@@ -1579,7 +1586,7 @@ li.juno-menu-header {
 }
 
 li.juno-main-menu-header {
-  font-size: 0.9em;
+  
 }
 
 span.juno-menu-text {
@@ -1597,6 +1604,7 @@ li.juno-menu-header:hover {
 li.juno-menu-header:active {
   background: #dadada;
 }
+
 
 
 .juno-header {
@@ -1628,7 +1636,7 @@ span.juno-code-value {
 
 summary.juno-code-value {
   white-space: nowrap;
-  text-overflow: ellipsi;
+  text-overflow: ellipsis;
   font-family: var(--main-mono-space);
 }
 

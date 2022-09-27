@@ -2196,9 +2196,9 @@ such as things that connect or use environmental resources.
          (if handle_complex_types
              (do
                  (map (fn (x)
-                      (-> s `add (JSON.stringify x)))
-                  (or values
-                      []))
+			  (-> s `add x))
+                      (or values
+			  []))
                  
                  (map (fn (x)
                           (JSON.parse x))
