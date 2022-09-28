@@ -53,8 +53,8 @@
        (options (or options {}))
        (_path (or _path [] ))         
        (lpath (function () (join "~" _path))))
-    (declare (function array_to_dom obj_to_dom)
-             (global array_to_dom obj_to_dom))
+    (declare (function array_to_dom obj_to_dom function_to_dom)
+             (global array_to_dom obj_to_dom function_to_dom))
     
     (cond 
       (is_array? val)
@@ -80,7 +80,26 @@
                 (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
                 tmp))
       (is_function? val)
-      (details (summary { `tabindex: 0 `lpath: (lpath) `class: (+ classes "function") }
+      (function_to_dom val options _path)
+      (is_object? val)
+      (obj_to_dom val options _path)          
+      else
+      (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))  
+
+(defun_sync function_to_dom (val options _path)
+  (let
+      ((_path (or _path []))
+       (options (or options {}))
+       (detail_elem nil)
+       (expanded false)
+       (expansion_elem nil)
+       (lpath (function () (join "~" _path)))
+       (classes "juno-value juno-type-function")
+       (render_function (function ()
+                                  (pre  { `lpath: (lpath)  `tabindex: 0 `class: classes } (-> val `toString)))))
+    (assert (is_function? val))
+    (= detail_elem
+       (details (summary { `tabindex: 0 `lpath: (lpath) `class: (+ classes "function") }
                         (span { `lpath: (lpath)
                                `class: (+ classes "function")
                                `style: "margin-left: 5px; font-style: italic;" }
@@ -92,11 +111,20 @@
                                           "(function (")
                                         (join " " it.args)
                                         "))")))))
-               (pre  { `lpath: (lpath)  `tabindex: 0 `class: (+ classes "function") } (-> val `toString)))
-      (is_object? val)
-      (obj_to_dom val options _path)          
-      else
-      (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))  
+                (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))))
+    (attach_event_listener detail_elem
+                                `toggle
+                                (fn (e)
+                                    (unless expanded
+                                     (= expanded true)
+                                     (-> expansion_elem `replaceWith (render_function))
+                                     (= render_function nil))))
+    detail_elem))
+    
+                
+       
+       
+       
 
 (defun_sync array_to_dom (arr options _path)
     (let
@@ -171,29 +199,33 @@
                      `visited (new Set)))
     
     (if (-> options.visited `has obj)
-        (span { `lpath: (lpath) `tabindex: 0 } "[CIRCULAR]")
-        (progn
-          (-> options.visited `add obj)    
-          (when (> _path.length 2)
-              (= expansion_mode true))
-          (= detail_elem 
-             (details (+ {  `class: "juno-obj-to-dom" }
-                        (if (== _path.length 0)
-                          { `open: true }
-                          {}))
-                   (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
-                   (if expansion_mode
-                       (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))
-                       (render_table))))
-          (when expansion_mode
-               (attach_event_listener detail_elem
-                                      `toggle
-                                      (fn (e) 
-                                          (unless expanded
-                                             (= expanded true)
-                                             (-> expansion_elem `replaceWith (render_table))
-                                             (= render_table nil)))))
-          detail_elem))))
+        (span { `lpath: (lpath) `tabindex: 0 `class: "juno-value juno-obj-to-dom" } "[CIRCULAR]")
+        (cond
+          (== (length obj) 0)
+          (span { `lpath: (lpath) `tabindex: 0 `class: "juno-value juno-obj-to-dom" } "Object {}")
+          else
+          (progn
+           (-> options.visited `add obj)    
+           (when (> _path.length 2)
+             (= expansion_mode true))
+           (= detail_elem 
+              (details (+ {  `class: "juno-obj-to-dom" }
+                          (if (== _path.length 0)
+                            { `open: true }
+                            {}))
+                       (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
+                       (if expansion_mode
+                         (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))
+                         (render_table))))
+           (when expansion_mode
+             (attach_event_listener detail_elem
+                                    `toggle
+                                    (fn (e) 
+                                      (unless expanded
+                                              (= expanded true)
+                                              (-> expansion_elem `replaceWith (render_table))
+                                              (= render_table nil)))))
+           detail_elem)))))
 
 (defun copy_text_to_clipboard (text)
         (if text
@@ -251,6 +283,11 @@
                (= ctrl control)
                (break))))
     ctrl))                                                   
+
+(defun holding_tank_controls ()
+  (aif (get_control_by_name "Holding Tank")
+       (-> it `controls)
+       []))
 
 (defun replace_control (target_control new_control)
   (let
@@ -370,11 +407,72 @@
 (defun top_frame (control)
   (let
       ((parent nil))
+    (declare (local parent))    ;; parent is a global object - shouldn't need to declare this since it has technically already been shadowed
    (assert (is_control? control) "Invalid control provided")
    (= parent (control_position control))
    (while parent.parent
        (= parent (control_position parent.parent)))
    parent.child))
+
+(defun set_focus_to (target_control _controls)
+  (let
+      ((focused_list (query_all ".juno-focused"))
+       (controls (or _controls
+                     (reduce (c (current_controls))                        
+                        (when c.on_focus                          
+                          c)))))
+    
+    (for_each (control controls)
+                 (when (and (or (eq nil target_control)
+                                (not (== target_control control)))
+                            (is_function? control.on_blur))
+                   (-> control `on_blur)))
+    
+    ;; remove any focus class markers
+    (when (> focused_list.length 0)
+      (= focused_list (map (fn (v) v) focused_list))       
+      (apply remove_class "juno-focused" focused_list))
+    (for_each (control controls)
+                 (when (and (or (eq nil target_control)
+                                (not (== target_control control)))
+                            (is_function? control.on_blur))
+                   (-> control `on_blur)))
+    (when (not (== *last_focus* target_control))
+      (when (and *last_focus*
+                 (prop *last_focus* `menu_items))
+        (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
+                                                "Control"))))
+      
+    (if target_control
+      (progn
+              
+       (-> target_control `on_focus)              
+       (setq *last_focus* target_control)
+       (setq *last_top_frame* (top_frame target_control))
+       (when target_control.menu_items
+         (-> *app_menu_control* `add_menu [ (or target_control.name
+                                                "Control")
+                                           target_control.menu_items ])))
+             
+       
+      (progn
+       (setq *last_focus* nil)
+       (console.log "lost all control focus")
+       (notify "lost all control focus")))))
+
+(defun default_focus ()
+  (let
+      ((found_control nil))
+    (control_tree $root_controls
+                  (fn (control)
+                      (when (and (not found_control)
+                                 (is_function? control.on_focus))
+                        (= found_control control))))
+    (if found_control
+      (progn
+        (set_focus_to found_control)
+        found_control)
+      nil)))
 
 (defun swap_control (target_control new_control)
   (let
@@ -389,15 +487,25 @@
     ;; get their position in the tree 
     (= position_details_target (control_position target_control))
     (= position_details_new (control_position new_control))
-    
+    (debug)
     (cond        
         (== position_details_target.parent holding_tank)   ;; target is in the holding tank so take the old control out and replace with new
         (progn
             (-> holding_tank `remove_control position_details_target.child)
             (-> holding_tank `add_control position_details_new.child)
             (if position_details_new.parent.set_content ;; add the targeted control to the new_controls old location (if not in holding_tank)
-                (-> position_details_new.parent `set_content position_details_new.child_position position_details_target.child)
+              (progn
+               (-> position_details_new.parent `set_content position_details_new.child_position position_details_target.child)
+               (set_focus_to position_details_target.child))
                 position_details_target.child))
+
+        (and (== position_details_target.child holding_tank)   ;; target IS the holding tank so replace the holding tank with the new value and hide the holding tank
+             position_details_target.parent.set_content)
+        (progn
+         (-> holding_tank `remove_control position_details_new.child) ;; ensure the child is removed from the holding tank (if in it)
+         (-> position_details_target.parent `set_content position_details_target.child_position position_details_new.child)         
+         (-> holding_tank `hide)
+         (set_focus_to position_details_new.child))
         
         (and position_details_target.parent.set_content
              position_details_new.parent.set_content)  ;; controls are both in the tree somewhere so swap their positions
@@ -408,6 +516,7 @@
             (-> position_details_new.parent `set_content 
                                              position_details_new.child_position 
                                              position_details_target.child)
+            (set_focus_to position_details_new.child)
             target_control)
         
         (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
@@ -418,6 +527,7 @@
             (-> position_details_target.parent `set_content 
                                                 position_details_target.child_position 
                                                 position_details_new.child)
+            (set_focus_to position_details_new.child)
             position_details_new.child)
         
         (and (eq nil position_details_new.parent)  ;; this is a new control without a parent
@@ -426,7 +536,8 @@
             (-> position_details_target.parent `set_content 
                                                 position_details_target.child_position 
                                                 position_details_new.child)
-            (-> holding_tank `add_control position_details_target.child)) 
+            (-> holding_tank `add_control position_details_target.child)
+            (set_focus_to position_details_new.child))
             
         else
         (progn
@@ -459,6 +570,15 @@
     
     (= position_details (control_position target_control))
     (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
+    (when (and (== position_details.parent nil) ;; top level control
+               (not (== position_details.child holding_tank))
+               (== position_details.child.type "control_container"))
+      (= target_control (first (-> position_details.child `controls)))
+      (= position_details (control_position target_control))
+      (console.log "container_view_operation: shifted down: target_control was a top control: " position_details))
+      
+      
+      
     ;; if the parent structure is nil in position_details, then we are at the root
     (cond
           (or (== command "hide")
@@ -515,7 +635,7 @@
               ;; get it off the dom
               (-> position_details.child.view `replaceWith
                   tmpview)                                 
-              (= new_container (split_view_vertical new_control position_details.child (or options { `ratio: 0.3 } )))
+              (= new_container (split_view_vertical new_control position_details.child (or options { `ratio: 0.3 } )))              
               (-> position_details.parent `set_content position_details.child_position new_container)
               true)
           (== command "split_right")    
@@ -554,55 +674,30 @@
            position_details))))
   
   
-  
-(defun set_focus_to (target_control _controls)
+
+
+
+    
+
+
+
+
+        
+
+(defun show_control (control_to_show)
   (let
-      ((focused_list (query_all ".juno-focused"))
-       (controls (or _controls
-                     (reduce (c (current_controls))                        
-                        (when c.on_focus                          
-                          c)))))
-    
-    (for_each (control controls)
-                 (when (and (or (eq nil target_control)
-                                (not (== target_control control)))
-                            (is_function? control.on_blur))
-                   (-> control `on_blur)))
-    
-    ;; remove any focus class markers
-    (when (> focused_list.length 0)
-      (= focused_list (map (fn (v) v) focused_list))       
-      (apply remove_class "juno-focused" focused_list))
-    (for_each (control controls)
-                 (when (and (or (eq nil target_control)
-                                (not (== target_control control)))
-                            (is_function? control.on_blur))
-                   (-> control `on_blur)))
-    (when (not (== *last_focus* target_control))
-      (when (and *last_focus*
-                 (prop *last_focus* `menu_items))
-        (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
-                                                "Control"))))
-      
+      ((target_control (or *last_focus*
+                           *last_top_frame*
+                           (first (-> *last_top_frame* `controls))
+                           nil)))
     (if target_control
       (progn
-              
-       (-> target_control `on_focus)              
-       (setq *last_focus* target_control)
-       (setq *last_top_frame* (top_frame target_control))
-       (when target_control.menu_items
-         (-> *app_menu_control* `add_menu [ (or target_control.name
-                                                "Control")
-                                           target_control.menu_items ])))
-             
-       
+       (swap_control target_control control_to_show)
+       (set_focus_to control_to_show)
+       true)
       (progn
-       (setq *last_focus* nil)
-       (console.log "lost all control focus")
-       (notify "lost all control focus")))))
-
-
-    
+       (default_focus)
+       false))))
 
 (defun process_focus_chain (e originator_container)
   (progn
@@ -1124,7 +1219,8 @@
        (on_focus (fn ()
                    (progn                                     
                     (setq *last_focus* edit_control)
-                    (add_class "juno-focused" command_bar))))
+                    (add_class "juno-focused" command_bar)
+                    (-> edit_control.editor `focus))))
        
        (edit_control (make_editor (if (is_string? init_value)
                                     init_value
@@ -1424,16 +1520,17 @@
        (initialize (fn ()
                      (progn
                       (if initialized
-                        (evaluator (div { `style: "display: flex padding: 5px" } "WARNING: REPL already initialized") true)
+                        false
                         (progn
                          (= initialized true)
                          (console.log "repl initializing")
                          (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
-                                                         "Version: " Environment.build_version   )))))))))
+                                                         "Version: " Environment.build_version   )))
+                         true))))))
 
-    (attach_event_listener output_control.output_container
+       (attach_event_listener output_control.output_container
                            `focusin
                            (function (e)
                              (progn
@@ -1558,12 +1655,16 @@
                                  (render_view)
                                  control)))
             (remove_control (fn (id)
-                                (progn
-                                  (aif (prop my_controls id)
-                                       (progn
-                                        (remove_prop my_controls id)
-                                        (render_view))
-                                       (notify "The requested control wasn't found")))))
+                              (if (is_object? id)
+                                (aif (prop my_controls id.options.id)
+                                     (progn
+                                      (remove_prop my_controls id.options.id)
+                                      (render_view)))
+                                (aif (prop my_controls id)
+                                     (progn
+                                      (remove_prop my_controls id)
+                                      (render_view))
+                                     (notify "The requested control wasn't found")))))
             (id (or options.id (generate_id "holding_tank")))
             (render_view (fn ()
                            (-> control_view
@@ -2079,6 +2180,7 @@
 (defun gen_layout_menu ()
     (let
         ((menu_acc [])
+         (holding_tank (get_control_by_name "Holding Tank"))
          (root_ctls (new Set)))
       (reduce (pset (pairs (controls_by_parent)))
          (destructuring_bind (key controls)
@@ -2091,15 +2193,25 @@
                        (-> root_ctls `add control.name))
                     nil)
                 
-                (-> root_ctls `has key)
-                [key (for_each (operation ["Show" "--" "Remove"])
+                (and (-> root_ctls `has key)
+                     (not (== (get_control_by_name key) holding_tank)))
+                [key (for_each (operation ["Show" "Hide" "--" "Destroy"])
+                      (progn
+                         (defvar control (get_control_by_name key))        
                          [(dtext operation)
-                           (if (== operation "--")
-                               nil
-                               (fn ()
-                                   (container_view_operation (to_key operation) 
-                                                             (get_control_by_name key)
-                                                             nil)))])]
+                          (cond
+                            (== operation "--")
+                            nil
+                            (or (and (== operation "Show")
+                                     (-> holding_tank `has_control? control))
+                                (and (== operation "Hide")
+                                     (not (-> holding_tank `has_control? control)))
+                                (and (== operation "Destroy")
+                                     (-> holding_tank `has_control? control)))
+                            (fn ()
+                              (container_view_operation (to_key operation) 
+                                                        (get_control_by_name key)
+                                                        nil)))]))]
                 
                 else
                 [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
@@ -2121,8 +2233,9 @@
             (when (and control.on_focus
                        control.options.id)
               (defvar is_displayed? (not (-> holding_tank `has_control? control)))
+              (console.log "is_displayed: " is_displayed? control.name)
               [(or control.name "Untitled") 
-               (reduce (operation ["Focus" "Hide" "--" "Destroy"])
+               (reduce (operation ["Show" "Focus" "Hide" "--" "Destroy"])
                        (cond
                          (== control.name "Holding Tank")                              
                          (cond
@@ -2142,11 +2255,16 @@
                          else
                          [(dtext operation)
                           (cond
+                            (and (not is_displayed?)
+                                 (== operation "Show"))
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (show_control it)))
                             (and is_displayed? (== operation "Focus"))
                             (fn (e)
                               (aif (get_control_by_id control.options.id)
                                    (set_focus_to it)))
-                            (== operation "--")
+                            (and is_displayed? (== operation "--"))
                             nil
                             (and is_displayed? (== operation "Hide"))
                             (fn (e)
@@ -2191,6 +2309,10 @@
              control)
        (when control.initialize
          (-> control `initialize))))))
+       
+   
+    
+    
 
 (defun new_buffer (options)
   (let
@@ -2300,6 +2422,8 @@
            (split_view_vertical scratch_editor
                                 $repl))
        
+       (console.log "initializer: *last_top_frame*: " *last_top_frame*)
+       
        (push $root_controls page_frame)
        ;; the holding tank contains the controls  that are still needed but not
        ;; presently displayed 
@@ -2319,7 +2443,8 @@
       (progn     
        (console.log "serialized controls: " *serialized_controls*)
        (rehydrate_controls juno_container *serialized_controls*)))
-     
+
+    (default_focus)
     (attach_event_listener juno_container
                            `keyup
                            (fn (e)
