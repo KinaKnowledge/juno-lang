@@ -1439,6 +1439,12 @@ summary {
   overflow: hidden;  /* Views need to manage how they present their content */
 }
 
+.juno-view-content {
+  overflow: scroll;
+  height: calc(100% - 25px);
+  width: 100%;
+}
+
 hr {
     border: 0;
     height: 0;

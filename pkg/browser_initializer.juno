@@ -28,6 +28,7 @@
 (defparameter *last_focus* nil)
 (defparameter *last_top_frame* nil)
 (defparameter *app_menu_control* nil)
+(defparameter *log_key_events* false)
 
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
@@ -47,44 +48,49 @@
 ;;                  [["list-style" "decimal"]])   
  
 
+
+      
+
 (defun_sync value_to_dom (val options _path)
   (let 
       ((classes "juno-value juno-type-")
        (options (or options {}))
-       (_path (or _path [] ))         
+       (elem nil)
+       (_path (or _path [] ))
        (lpath (function () (join "~" _path))))
     (declare (function array_to_dom obj_to_dom function_to_dom)
              (global array_to_dom obj_to_dom function_to_dom))
-    
-    (cond 
-      (is_array? val)
-      (array_to_dom val options _path)
-      (is_element? val)
-      (progn
-       (if val.parentElement
-         (details
-          (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
-          (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))
-         val))
-      (is_regex? val)
-      (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
-      (is_string? val)
-      (if (starts_with? "=:" val)
-        (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
-        (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
-      (instanceof val Error)
-      (details (summary { `class: (+ classes "error") } 
-                        (span { `tabindex: 0 `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
-               (progn
-                (defvar tmp (pre { `tabindex: 0 `class: (+ classes "error") }))
-                (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
-                tmp))
-      (is_function? val)
-      (function_to_dom val options _path)
-      (is_object? val)
-      (obj_to_dom val options _path)          
-      else
-      (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val))))  
+    (= elem
+       (cond 
+         (is_array? val)
+         (array_to_dom val options _path)
+         (is_element? val)
+         (progn
+          (if val.parentElement
+            (details
+             (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
+             (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))
+            val))
+         (is_regex? val)
+         (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
+         (is_string? val)
+         (if (starts_with? "=:" val)
+           (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
+           (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
+         (instanceof val Error)
+         (details (summary { `class: (+ classes "error") } 
+                           (span { `tabindex: 0 `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
+                  (progn
+                   (defvar tmp (pre { `tabindex: 0 `class: (+ classes "error") }))
+                   (set_prop tmp `innerHTML (join "\n" (rest (split_by "\n" val.stack))))
+                   tmp))
+         (is_function? val)
+         (function_to_dom val options _path)
+         (is_object? val)
+         (obj_to_dom val options _path)          
+         else
+         (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val)))
+    elem))  
 
 (defun_sync function_to_dom (val options _path)
   (let
@@ -456,9 +462,7 @@
              
        
       (progn
-       (setq *last_focus* nil)
-       (console.log "lost all control focus")
-       (notify "lost all control focus")))))
+       (setq *last_focus* nil)))))
 
 (defun default_focus ()
   (let
@@ -483,10 +487,11 @@
        (replaced_keys (new Set)))
     (assert (is_control? target_control) "Invalid control provided for old_control")
     (assert (is_control? new_control) "Invalid control provided for new_control")
-    
+    (assert (not (== target_control new_control)) "Cannot swap the same control")
     ;; get their position in the tree 
     (= position_details_target (control_position target_control))
     (= position_details_new (control_position new_control))
+    (console.log "swap_control: target: " target_control "new: " new_control)
     (debug)
     (cond        
         (== position_details_target.parent holding_tank)   ;; target is in the holding tank so take the old control out and replace with new
@@ -558,7 +563,8 @@
 
 (defun container_view_operation (command target_control new_control options)
   (let
-    ((target_control (control_for_dom_element target_control.view)) ;; ensure we have the correct handle to the impaced control since this could be a sub_control given to us
+    ((orig_target target_control)
+     (target_control (control_for_dom_element target_control.view)) ;; ensure we have the correct handle to the impaced control since this could be a sub_control given to us
      (position_details nil) ;; the structure that holds the position details of the operation
      (holding_tank (get_control_by_name "Holding Tank"))
      (tmpview nil)
@@ -569,10 +575,12 @@
     (assert holding_tank "Unable to find the holding tank")
     
     (= position_details (control_position target_control))
+    (console.log "container_view_operation: original_target: " orig_target)
+    (console.log "container_view_operation: computed_target: " target_control)
     (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
     (when (and (== position_details.parent nil) ;; top level control
                (not (== position_details.child holding_tank))
-               (== position_details.child.type "control_container"))
+               (is_top_control? position_details.child))
       (= target_control (first (-> position_details.child `controls)))
       (= position_details (control_position target_control))
       (console.log "container_view_operation: shifted down: target_control was a top control: " position_details))
@@ -614,6 +622,7 @@
                             (-> holding_tank
                                 `add_control 
                                 target_control)))
+                    (cascade_resize)
                     true)
                 (and (== position_details.parent holding_tank)                         
                      (== command "destroy"))
@@ -631,42 +640,50 @@
           (== command "split_left")    
           (progn
               (assert (is_control? new_control) "Invalid control provided for the replacement control")
+              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.child.view `replaceWith
                   tmpview)                                 
               (= new_container (split_view_vertical new_control position_details.child (or options { `ratio: 0.3 } )))              
               (-> position_details.parent `set_content position_details.child_position new_container)
+              (cascade_resize)
               true)
           (== command "split_right")    
           (progn
               (assert (is_control? new_control) "Invalid control provided for the replacement control")
+              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.child.view `replaceWith
                   tmpview)                                  
               (= new_container (split_view_vertical position_details.child new_control  (or options { `ratio: 0.7 } )))
               (-> position_details.parent `set_content position_details.child_position new_container)
+              (cascade_resize)
               true)
           (== command "split_above")    
           (progn
               (assert (is_control? new_control) "Invalid control provided for the replacement control")
+              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.child.view `replaceWith
                   tmpview)              
               (= new_container (split_view_horizontal new_control position_details.child (or options { `ratio: 0.3 } )))
               (-> position_details.parent `set_content position_details.child_position new_container)
+              (cascade_resize)
               true)
           (== command "split_below")    
           (progn
               (assert (is_control? new_control) "Invalid control provided for the replacement control")
+              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
               (= tmpview (div { } "Placeholder"))
               ;; get it off the dom
               (-> position_details.child.view `replaceWith
                   tmpview)             
               (= new_container (split_view_horizontal  position_details.child new_control (or options { `ratio: 0.7 } )))
               (-> position_details.parent `set_content position_details.child_position new_container)
+              (cascade_resize)
               true)
           else
           (progn
@@ -678,17 +695,28 @@
 
 
     
-
-
-
-
-        
-
+(defmacro place_control(placement `& control_def)
+   (let
+      ((where_map {
+                   `top: "split_above"
+                   `below: "split_below"
+                   `left: "split_left"
+                   `right: "split_right"
+                   `replace: "replace"  })
+       (where (aif (prop where_map placement)
+                   it
+                   "split_right")))
+       
+  `(let
+      ((target_container  (control_position (top_frame (default_focus)))))
+     (when target_container.child 
+       (= target_container (first (-> target_container.child `controls)))
+       (container_view_operation ,#where target_container
+                                   ,@control_def)))))
+              
 (defun show_control (control_to_show)
   (let
-      ((target_control (or *last_focus*
-                           *last_top_frame*
-                           (first (-> *last_top_frame* `controls))
+      ((target_control (if *last_focus*                          
                            nil)))
     (if target_control
       (progn
@@ -696,7 +724,8 @@
        (set_focus_to control_to_show)
        true)
       (progn
-       (default_focus)
+       (place_control "right" control_to_show)
+       (set_focus_to control_to_show)
        false))))
 
 (defun process_focus_chain (e originator_container)
@@ -947,6 +976,112 @@
            (or (ends_with? file.name ".lisp")
                (ends_with? file.name ".juno"))
            (notify "Loading lisp file"))))))
+
+(defun control_frame (options `& contents)
+  (let
+      ((has_control_bar? (and (> contents.length 1)
+                              (has_class? "juno-buffer-bar" contents.0)))
+       (content (if has_control_bar?
+                     [(first contents)
+                      (div { `class: "juno-view-content" }
+                           (rest contents)) ]
+                     (div { `class: "juno-view-content" }
+                           (rest contents))))
+       (elem (div (+ { tabindex: 0 control_id: (or options.id (generate_id "frame"))
+                      class: (+  "juno-view-container"
+                                  (or options.classes "")) }
+                      (if options.style
+                        { `style: options.style }
+                        {}))
+                   content)))
+    (console.log "control_frame: has_control_bar: " has_control_bar? contents)
+    (when (not has_control_bar?)
+      (set_style [["height" "100%" ]] content))
+    (when (is_array? options.events)
+      (for_each (ev options.events)
+                (destructuring_bind (event_type action)
+                     ev
+                   (console.log "making events: " event_type action)
+                   (attach_event_listener elem event_type action))))
+     elem))
+
+(defun name_control (prefix)
+  (let
+      ((prefix (or prefix "Unnamed"))
+       (name ""))
+    (if (get_control_by_name prefix)
+      (+ prefix " " (inc *view_count*))
+      prefix)))
+
+(defun symbol_browser (options)
+   (let
+       ((self {})
+        (options (or options {}))
+        (id (generate_id "symbol_browser"))
+        (name (name_control (or options.name "Symbol Browser")))
+        (title_span (span { `class: "juno-title" } name))
+        (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+        (control_status (div {  class: "juno-buffer-bar" }
+                                buffer_commands_button
+                                (cond
+                                  (is_array? options.additional_elements)
+                                  options.additional_elements
+                                  else
+                                  title_span)))
+        (symbol_struct (symbols_by_namespace))
+        (handle_click (fn (e)
+                        (when (and e.srcElement
+                                   (-> e.srcElement `getAttribute `lpath))
+                          (console.log "handle_click!")
+                          (let
+                              ((elem e.srcElement)
+                               (path (split_by "~" (-> e.srcElement `getAttribute `lpath))))
+                            ;; first element of the path should be the namespace
+                            (console.log "handle_click: " path " namespace: " (first path) "path: " (rest path) (resolve_path path symbol_struct))                         
+                            ))))
+        (view (control_frame { `id: id  `events: [[ "click" handle_click]] }
+                             control_status
+                             (value_to_dom symbol_struct)))
+        (resize (fn ()
+                  (progn                           
+                   (let
+                       ((new_height (- (prop view.parentElement `offsetHeight) 20))
+                        (new_width  (- (prop view.parentElement `offsetWidth) 5)))
+                     (set_style [[ "width" (+ "" new_width "px") ]
+                                 [ "height" (+ "" new_height "px") ]]
+                                view)
+                     (when options.on_resize
+                       (options.on_resize self))))))
+        (resize_observer (new ResizeObserver resize))
+        (on_focus (fn ()
+                   (progn                  
+                    (add_class "juno-focused" control_status ))))
+        (initialized false)
+        (initialize (fn ()
+                      (when (and view.parentElement
+                                 (not initialized))
+                        (= initialized true)                       
+                        (-> resize_observer `observe view.parentElement))))
+        
+        (to_json (function ()
+                           `[symbol_browser ,#options])))
+     (set_prop options
+               `id id
+               `name name)
+               
+           
+     (set_prop self
+               `view view
+               `options options
+               `name name
+               `type "symbol_browser"              
+               `initialize initialize
+               `resize resize
+               `toJSON to_json
+               `on_focus on_focus)
+     self))
+
+
 
 
 (defun make_editor (content options)
@@ -1642,7 +1777,9 @@
                                        title_span
                                        )))
             (perform_resize (fn ()
-                              (when view.parentElement                                                             
+                              (when view.parentElement
+                                (when (not initialized)
+                                  (initialize))
                                 (render_view))))
             
             (resize_observer nil)
@@ -1683,12 +1820,13 @@
             (handle_button_event (fn (elem)
                                    (aif (and elem.parentElement
                                             (-> elem.parentElement `getAttribute "for_control_id"))
-                                     (progn
-                                      (cond
-                                        (== elem.innerText (dtext "View"))
-                                        (swap_control intf (get_control_by_id it))
-                                        (== elem.innerText (dtext "Destroy"))
-                                        (container_view_operation "destroy" (get_control_by_id it)))))))
+                                        (progn
+                                         (console.log "holding_tank: button_event: " elem.innerText elem)
+                                         (cond
+                                           (== elem.innerText (dtext "View"))
+                                           (swap_control intf (get_control_by_id it))
+                                           (== elem.innerText (dtext "Destroy"))
+                                           (container_view_operation "destroy" (get_control_by_id it)))))))
                                    
             (initialize (fn ()
                           (when (and view.parentElement
@@ -1733,12 +1871,13 @@
             (hide (fn ()
                     (progn
                      (console.log "holding_tank: hide: " view.parentElement)
+                     (if view.parentElement
                        (container_view_operation "hide" intf)
                        (remove_prop options
                                     `in_tree)
                        (set_style [["display" "none"]] view)
                         (-> (get_by_id "body")
-                            `append view))))
+                            `append view)))))
                              
                           
             (view (div { `tabindex: 0 `control_id: id `style: "display: none; overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
@@ -2185,7 +2324,7 @@
       (reduce (pset (pairs (controls_by_parent)))
          (destructuring_bind (key controls)
             pset
-            (console.log "key: " key controls )
+            (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
             (cond
                 (== key "root")
                 (progn
@@ -2194,7 +2333,7 @@
                     nil)
                 
                 (and (-> root_ctls `has key)
-                     (not (== (get_control_by_name key) holding_tank)))
+                     (not (== key "Holding Tank")))
                 [key (for_each (operation ["Show" "Hide" "--" "Destroy"])
                       (progn
                          (defvar control (get_control_by_name key))        
@@ -2213,7 +2352,7 @@
                                                         (get_control_by_name key)
                                                         nil)))]))]
                 
-                else
+                (not (== key "Holding Tank"))
                 [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
                          [(dtext operation) (fn ()
                                                (progn
@@ -2232,7 +2371,8 @@
         (reduce (control (current_controls))
             (when (and control.on_focus
                        control.options.id)
-              (defvar is_displayed? (not (-> holding_tank `has_control? control)))
+              (defvar is_displayed? (and (not (== holding_tank control))
+                                         (not (-> holding_tank `has_control? control))))
               (console.log "is_displayed: " is_displayed? control.name)
               [(or control.name "Untitled") 
                (reduce (operation ["Show" "Focus" "Hide" "--" "Destroy"])
@@ -2310,13 +2450,14 @@
        (when control.initialize
          (-> control `initialize))))))
        
-   
-    
+
+
+
     
 
 (defun new_buffer (options)
   (let
-      ((target_container (or *last_focus* *last_top_frame*))
+      ((target_container (or *last_focus* *last_top_frame* (default_focus)))
        (symbol_name (or options.path
                         (request_user_input "Enter Symbol To Edit"))))
     
@@ -2324,7 +2465,7 @@
       (if (eq nil (resolve_path [ symbol_name ] Environment.context))
         (-> Environment `set_global symbol_name ""))
       (if (== target_container *last_top_frame*)
-        (container_view_operation "split_right" target_container
+        (container_view_operation "split_right" (first (-> target_container `controls))
                                   (buffer_editor symbol_name "user" [ symbol_name ] options.type ))
         (swap_control target_container (buffer_editor symbol_name "user" [ symbol_name ] options.type ))))))
 
@@ -2450,7 +2591,7 @@
                            (fn (e)
                              (progn
                               (handle_event e)
-                              (console.log "key_up: " e))))
+                              (when *log_key_events* (console.log "key_up: " e)))))
 
     (defun core/rlog (`& vals)
       (progn

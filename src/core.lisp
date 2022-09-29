@@ -2628,7 +2628,21 @@ such as things that connect or use environmental resources.
                                    nspace))))
       symbols: ordered }))
 
-
+(defun symbols_by_namespace (options)
+  (let
+      ((ns_handle nil))
+    (to_object
+        (for_each (ns (namespaces))
+           (progn
+               (= ns_handle (-> Environment `get_namespace_handle ns))
+               [ns (sort (if options.filter_by 
+                             (reduce (pset (pairs ns_handle.context.scope))
+                                (destructuring_bind (name val)
+                                   pset
+                                  (if (options.filter_by name val)
+                                       name)))
+                             (keys ns_handle.context.scope))) ])))))
+                  
 
 true
  
