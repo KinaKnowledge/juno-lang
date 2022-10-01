@@ -81,6 +81,12 @@
     (+ "control-" (time_in_millis) "-" (random_int 9999999))))
 
 
+(defmacro getAttribute (elem attrib)  ;; legacy
+  `(-> ,#elem `getAttribute ,#attrib))
+
+(defmacro get_attribute (elem attrib)
+  `(-> ,#elem `getAttribute ,#attrib))
+
 ;(defbinding (html/create_element (document.createElement document.createElement)))
 
 ;(defglobal html/create_element (-> document.createElement `bind document)

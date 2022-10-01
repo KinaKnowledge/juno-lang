@@ -6,6 +6,8 @@
 :root {
   --main-bg-color: #FBFAF8;
   --main-color: #000000;
+  --highlight-bg-color: #DADADA;
+  --highlight-color: #000000;
   --control-focused: #84a0bf3b;
   --namespace-color: #976464;
   --main-accent-color: #0000000A;
@@ -1345,7 +1347,8 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 .pure-menu-active > .pure-menu-link,
 .pure-menu-link:hover,
 .pure-menu-link:focus {
-    background-color: #dadada;
+  background-color: var(--highlight-bg-color);
+  color: var(--highlight-color);
 }
 
 .pure-menu-selected > .pure-menu-link,
@@ -1583,6 +1586,55 @@ span.juno-namespace {
   color: var(--namespace-color);
 }
 
+li.juno-namespace {
+  color: var(--namespace-color);
+  font-weight: bold;  
+}
+
+div.juno-symbol-browser {
+  display: flex;
+  align-content: flex-start;
+  height: 100%;
+  overflow-y: hidden;
+  overflow-x: scroll;
+}
+
+.juno-symbol-browser ol {
+  height: calc(100% - 10px);
+  overflow-y: scroll;
+  overflow-x: hidden; 
+  padding-inline-start: 2px;
+  border-right: 2px inset var(--main-accent-line);
+  max-width: 295px;
+  min-width: 200px;
+}
+
+.juno-list-item {
+  list-style: none;
+  padding: 4px;
+  cursor: default;
+  min-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+}
+
+.juno-list-item:hover {
+  background-color: var(--highlight-bg-color);
+  /* color: var(--highlight-color); */
+}
+
+.juno-highlighted {
+  background-color: var(--highlight-bg-color);
+}
+
+.juno-list-item-has-children > .juno-list-item:after {
+    padding-left: 0.5em;
+    content: "▸";
+    font-size: small;
+}
+
 div.juno-focused {
   background: var(--control-focused)
 }
@@ -1598,6 +1650,7 @@ span.juno-needs-save {
   box-shadow: 2px 3px 8px 0px #00000069;
   background: var(--main-bg-color);
 }
+
 
 li.juno-menu-header {
   cursor: default;
@@ -1620,11 +1673,13 @@ span.juno-menu-submenu {
 }
 
 li.juno-menu-header:hover {
-  background: #dadada;
+  background: var(--highlight-bg-color);
+  color: var(--highlight-color);
 }
 
 li.juno-menu-header:active {
-  background: #dadada;
+  background: var(--highlight-bg-color);
+  color: var(--highlight-color);
 }
 
 
@@ -1715,6 +1770,11 @@ summary.juno-type-function {
 .juno-type-function {
   color: var(--type-function-color);
 }
+
+.juno-type-asyncfunction {
+  color: var(--type-function-color);
+}
+
 
 .juno-type-error {
   color: var(--type-error-color);

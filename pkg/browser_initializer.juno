@@ -1013,6 +1013,7 @@
       (+ prefix " " (inc *view_count*))
       prefix)))
 
+
 (defun symbol_browser (options)
    (let
        ((self {})
@@ -1021,6 +1022,9 @@
         (name (name_control (or options.name "Symbol Browser")))
         (title_span (span { `class: "juno-title" } name))
         (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+        (stack [])
+        (olist_style "padding-block-start: 3px; margin-block-start: 0.2em; padding-inline-start: 2px;")
+        (li_style "")
         (control_status (div {  class: "juno-buffer-bar" }
                                 buffer_commands_button
                                 (cond
@@ -1030,18 +1034,121 @@
                                   title_span)))
         (symbol_struct (symbols_by_namespace))
         (handle_click (fn (e)
-                        (when (and e.srcElement
-                                   (-> e.srcElement `getAttribute `lpath))
-                          (console.log "handle_click!")
-                          (let
-                              ((elem e.srcElement)
-                               (path (split_by "~" (-> e.srcElement `getAttribute `lpath))))
-                            ;; first element of the path should be the namespace
-                            (console.log "handle_click: " path " namespace: " (first path) "path: " (rest path) (resolve_path path symbol_struct))                         
-                            ))))
+                          (when (and e.srcElement 
+                                     (get_attribute e.srcElement "ctype"))
+                              (console.log "handle_click: " e.srcElement)
+                              (let
+                                  ((elem e.srcElement)
+                                   (ctype (get_attribute elem "ctype"))
+                                   (pos (get_attribute elem "pos"))
+                                   (final_pos stack.length))
+                                  (when pos
+                                      (= pos (parseInt pos)))
+                                  (console.log "handle_click: pos: " pos "final_pos:" final_pos ctype elem.innerText stack)
+                                  (remove_class "juno-highlighted" e.srcElement.parentElement.children)
+                                  (add_class "juno-highlighted" e.srcElement)
+                                  (cond
+                                     (== ctype "nspace")
+                                     (progn
+                                         (= stack [])
+                                         (render_view e.srcElement.innerText)
+                                         
+                                         ;; next display the first namespace
+                                         (= stack [ elem.innerText ])
+                                         (render_view))
+                                     (and (== ctype "sym")
+                                          (== pos final_pos))
+                                     (progn
+                                         (push stack elem.innerText)
+                                         (console.log "STACK is now: " stack)
+                                         (render_view))
+                                     (< pos final_pos)
+                                     (progn
+                                         (= stack (-> stack `slice 0 pos))
+                                         (push stack elem.innerText)                                         
+                                         (console.log "mid stack click: stack now: " (as_lisp stack) "view children:" (length cview.children) (range cview.children.length))
+                                         (for_each (child_num (-> (range cview.children.length) `reverse))
+                                            (progn
+                                               (console.log "child_num: " child_num (prop cview.children child_num) (parseInt (get_attribute (prop cview.children child_num) `pos)))
+                                                (when (> (parseInt (get_attribute (prop cview.children child_num) `pos)) (- stack.length 1))
+                                                    (-> (prop cview.children child_num) `remove))))
+                                         (render_view))
+                                         ;(when options.on_select
+                                         ;  (-> options.on_select (first stack) (conj (rest stack) [elem.innerText])))              
+                                         ;(rlog (+ "Clicked: mid stack: " elem.innerText " in namespace: " (first stack) "path: " (join " " (rest stack)))))                                        
+                                     else
+                                     (progn
+                                      (push stack  elem.innerText)                                 
+                                      (render_view)
+                                      ))))))
+                            
+        (cview (div { `style: "" `class: "juno-symbol-browser" }))
+        (has_children? (fn (val)
+                           (and (is_object? val)
+                                (> (length val) 0))))
+        (next_possibles (fn ()
+                            (let
+                               ((path (conj [ "context" "scope" ] (or (rest stack) [])))
+                                (ns (first stack))
+                                (val nil))
+                            (assert ns "No namespace yet - invalid stack")
+                            (= val (resolve_path path (-> Environment `get_namespace_handle ns)))
+                            (console.log "next_possibles: namespace:" ns path "value: " val)
+                            (cond 
+                              (is_function? val)
+                              (value_to_dom val)
+                              (is_object? val)
+                              (progn
+                                (console.log "next_possibles: drawing val: " )
+                               (for_each (symb (sort (pairs (resolve_path path (-> Environment `get_namespace_handle ns)))
+                                                    { `key: [ 0 ] }))
+                                 (li { `ctype: (if (is_object? symb.1) "sym" (lowercase (subtype symb.1)))
+                                       `pos: stack.length
+                                       `title: (subtype symb.1)
+                                       `class: (+ "juno-list-item " (if (has_children? symb.1) "juno-list-item-has-children " "") "juno-type-" (lowercase (subtype symb.1))) 
+                                       `style: li_style } symb.0)))
+                              (is_array? val)
+                              (for_each (symb (sort (resolve_path path (-> Environment `get_namespace_handle ns))))
+                                 (li { `ctype: (if (is_object? symb) "sym" (lowercase (subtype symb)))
+                                       `pos: stack.length
+                                       `title: (subtype symb.1)
+                                       `class: (+ "juno-list-item " (if (has_children? symb) "juno-list-item-has-children " "") "juno-type-" (lowercase (subtype symb)))
+                                      `style: li_style } symb))
+                              options.on_select
+                              (progn
+                               (rlog (+ "clicked: " ns " " (as_lisp (rest stack))))
+                               (-> options.on_select ns (rest stack))
+                                     nil)
+                              else                              
+                              (progn
+                               (rlog (rest stack))
+                               (rlog (+ "clicked: " ns " " (as_lisp (rest stack))))
+                               (value_to_dom val))))))
+
+        (render_view (fn (ns_name)
+                       (progn
+                        (cond
+                          (== stack.length 0) ;; initial state
+                          (-> cview `replaceChildren
+                              (ol { }
+                               (for_each (ns (sort (namespaces)))
+                                         (li { `ctype: "nspace"
+                                              `class: (+ "juno-list-item juno-namespace" (if (== ns ns_name) " juno-highlighted" ""))
+                                              `style: li_style
+                                              } ns))))
+                          else
+                          (progn
+                           (defvar next_elem (next_possibles))
+                           (when next_elem
+                             (-> cview `appendChild
+                                 (ol { `pos: stack.length  }
+                                     next_elem))
+                             (set_prop cview `scrollLeft cview.offsetWidth)))))))
+                                                                                                                               
+                          
         (view (control_frame { `id: id  `events: [[ "click" handle_click]] }
                              control_status
-                             (value_to_dom symbol_struct)))
+                             cview))
         (resize (fn ()
                   (progn                           
                    (let
@@ -1061,15 +1168,16 @@
                       (when (and view.parentElement
                                  (not initialized))
                         (= initialized true)                       
-                        (-> resize_observer `observe view.parentElement))))
+                        (-> resize_observer `observe view.parentElement)
+                        (render_view))))
         
         (to_json (function ()
                            `[symbol_browser ,#options])))
+
+    
      (set_prop options
                `id id
-               `name name)
-               
-           
+               `name name)                
      (set_prop self
                `view view
                `options options
