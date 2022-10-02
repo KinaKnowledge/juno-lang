@@ -7,7 +7,7 @@
 (defglobal juno_container nil)
 (defglobal repl_editor nil)
 (defglobal *scratch* ";; *scratch* buffer\n\n")
-(defglobal *key_bindings* {
+(defvalue *key_bindings* {
                            repl:{}
                            buffer_editor:{}
                            global:{}
@@ -1409,7 +1409,7 @@
                                          (set_prop new_symbol_button
                                                   `innerText (+ (dtext "New Global Value"))))))))
                                             
-                      (new_symbol_button (button { `tabindex: 0 `title: (dtext "New Value At Path") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } (dtext "New")))
+                      (new_symbol_button (button { `tabindex: 0 `title: (dtext "Create New Entry") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } (dtext "New")))
                       (path_span (span { `tabindex: 0 `title: (dtext "Click to copy path")  `class: "juno-path" } ""))
                       (symbol_ctl (symbol_browser { 
                                                    `additional_elements: [(span { `class: "juno-title" } (dtext "Open A Location"))
@@ -2922,8 +2922,8 @@
                  "open_new_buffer" {
                                     `win: "Ctrl-Enter"
                                     `mac: "Ctrl-Enter"
-                                     `description: "New Juno Buffer"
-                                     `eval: `(new_buffer { type: "juno" })
+                                    `description: "New Juno Buffer"
+                                    `exec: (fn () (new_buffer { type: "juno" }))
                                      })
                  
        (-> juno_container
@@ -2959,19 +2959,20 @@
     
     (default_focus)
     ;; setup key bindings
+    (set_prop *key_bindings*
+              `active
+              {})  ;; reset out and copy
     (for_each (desc (values (prop *key_bindings* `global)))
        (progn
         (set_prop *key_bindings*.active
                   desc.mac ;; TODO: Needs to be adjusted for windows (needs dynamic os lookup)
-                  (eval `(fn ()
-                           ,#desc.eval)))))
+                  (prop desc `exec))))
     (attach_event_listener juno_container
                            `keyup
                            (fn (e)
                              (progn
                               (handle_event e)
-                              (defvar kcode (get_key_code e))
-                              (console.log "Kcode is: " kcode)
+                              (defvar kcode (get_key_code e))                             
                               (aif (prop *key_bindings*.active kcode)
                                    (it))                                   
                               (when *log_key_events* (console.log "key_up: " e)))))
