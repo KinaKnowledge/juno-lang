@@ -10,9 +10,9 @@
 (defglobal *key_bindings* {
                            repl:{}
                            buffer_editor:{}
+                           global:{}
+                           active: {}
                            })
-
-
 
 
 
@@ -501,6 +501,7 @@
             (if position_details_new.parent.set_content ;; add the targeted control to the new_controls old location (if not in holding_tank)
               (progn
                (-> position_details_new.parent `set_content position_details_new.child_position position_details_target.child)
+               (cascade_resize)
                (set_focus_to position_details_target.child))
                 position_details_target.child))
 
@@ -510,6 +511,7 @@
          (-> holding_tank `remove_control position_details_new.child) ;; ensure the child is removed from the holding tank (if in it)
          (-> position_details_target.parent `set_content position_details_target.child_position position_details_new.child)         
          (-> holding_tank `hide)
+         (cascade_resize)
          (set_focus_to position_details_new.child))
         
         (and position_details_target.parent.set_content
@@ -522,6 +524,7 @@
                                              position_details_new.child_position 
                                              position_details_target.child)
             (set_focus_to position_details_new.child)
+            (cascade_resize)
             target_control)
         
         (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
@@ -533,6 +536,7 @@
                                                 position_details_target.child_position 
                                                 position_details_new.child)
             (set_focus_to position_details_new.child)
+            (cascade_resize)
             position_details_new.child)
         
         (and (eq nil position_details_new.parent)  ;; this is a new control without a parent
@@ -542,6 +546,7 @@
                                                 position_details_target.child_position 
                                                 position_details_new.child)
             (-> holding_tank `add_control position_details_target.child)
+            (cascade_resize)
             (set_focus_to position_details_new.child))
             
         else
@@ -828,7 +833,17 @@
        (console.log "appended view" view)
        view))))
 
-
+(defun get_key_code (e)
+  (let
+      ((k []))
+    (when e.ctrlKey
+      (push k "Ctrl"))
+    (when e.altKey
+      (push k "Alt"))
+    (when e.metaKey
+      (push k "Meta"))
+    (push k e.key)
+    (join "-" k)))
 
 (defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
@@ -1031,13 +1046,14 @@
         (id (generate_id "symbol_browser"))
         (name (name_control (or options.name "Symbol Browser")))                  
         (title_span (span { `class: "juno-title" } name))
+        (path_span (span { `class: "juno-path" `style: "float: right" } ""))
         (buffer_commands_button (button { `title: "Commands" } "⋯"))
         (stack [ ])
-        (filter_span (span { `style: "margin-left: 8px; margin-right: 8px; font-family: var(--main-mono-space);  color: var(--type-regexp-color);" } ""))
+        (filter_span (span { `style: "margin-left: 8px; margin-right: 8px; font-family: var(--main-mono-space);" } ""))
         (filter_span_container (span { `style: "margin-left: 10px; padding-top: 2px; padding-bottom: 2px; border: 1px solid var(--type-regexp-color);" } 
                                      (span { `style: "padding-left: 10px; padding-right: 10px; background: var(--type-regexp-color); padding-top: 2px; padding-bottom: 2px; color: wheat;" } (+ (dtext "Filter") ":"))
                                      filter_span))
-        (olist_style "padding-block-start: 3px; margin-block-start: 0.2em; padding-inline-start: 2px;")
+        (olist_style "padding-block-start: 3px; margin-block-start: 0.2em; padding-inline-start: 2px; ")
         (li_style "")
         (control_status (div {  class: "juno-buffer-bar" }
                                 buffer_commands_button
@@ -1046,7 +1062,8 @@
                                   options.additional_elements
                                   else
                                   title_span)
-                                filter_span_container))
+                                filter_span_container
+                                path_span))
         (symbol_struct (symbols_by_namespace))
         (element_for_pos (fn (pos want_parent?)
                            (let
@@ -1287,6 +1304,11 @@
         (render_view (fn (ns_name)
                        (progn
                         (console.log "render_view: stack " stack)
+                        (if (> stack.length 1)
+                          (set_prop path_span
+                                    `innerText (+ "[ "(join " " (rest stack )) " ]"))
+                          (set_prop path_span
+                                    `innerText ""))                                    
                         (clear_selector true)
                         (cond
                           (== stack.length 0) ;; initial state
@@ -1377,20 +1399,31 @@
                                    (progn 
                                       (console.log "ns: " selected_ns selected_path)
                                       (= ns selected_ns )
-                                      (= target_path selected_path))))
+                                      (= target_path selected_path)
+                                      (cond
+                                        (blank? ns)
+                                        (set_disabled new_symbol_button)
+                                        (not (blank? ns))
+                                        (progn
+                                         (set_enabled new_symbol_button)
+                                         (set_prop new_symbol_button
+                                                  `innerText (+ (dtext "New Global Value"))))))))
+                                            
+                      (new_symbol_button (button { `tabindex: 0 `title: (dtext "New Value At Path") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } (dtext "New")))
                       (path_span (span { `tabindex: 0 `title: (dtext "Click to copy path")  `class: "juno-path" } ""))
                       (symbol_ctl (symbol_browser { 
-                                                   `additional_elements: [(span { `class: "juno-title" } "Open A Location")
-                                                                          
+                                                   `additional_elements: [(span { `class: "juno-title" } (dtext "Open A Location"))
+                                                                          (span { `title: (dtext "Edit Mode") `class: "juno-mode" } (if type type  ""))
+                                                                          new_symbol_button
                                                                           ] 
                                                     `on_select: set_val }))
-                      (ok_button (button { `class: "pure-button-primary " `style: "min-width: 100px; margin-right: 20px; margin-left: 20px; float:right" } "OK"))
+                      (ok_button (button { `class: "juno-primary" `style: "min-width: 100px; margin-right: 20px; margin-left: 20px; float:right; font-weight: bold;" } "OK"))
                       (cancel_button (button { `style: "margin-left: 20px;" }   "Cancel"))
                       (dwin (dialog { `style: "height: 40%; width: 60%; overflow: hidden; padding: 2px;" }                                                                    
                                     (div { `style: "height: calc(100% - 50px);" }
                                          symbol_ctl.view)
                                     (br)
-                                    (div { `class: "juno-view-container pure-button-group" `role: "group" }
+                                    (div { `class: "juno-button-group pure-button-group" `role: "group" }
                                          cancel_button
                                          ok_button))))
                    (attach_event_listener ok_button
@@ -2790,7 +2823,7 @@
   (let
       ((target_container (or *last_focus*  (default_focus)))
        (symbol_data (or options.path
-                        (symbol_chooser "Select a symbol to edit")))
+                        (symbol_chooser "Select a symbol to edit" options.type)))
        (target_ns symbol_data.namespace)
        (target_env nil))
     (when target_ns
@@ -2885,7 +2918,14 @@
                                      }))
 
        
-       
+       (set_prop *key_bindings*.global
+                 "open_new_buffer" {
+                                    `win: "Ctrl-Enter"
+                                    `mac: "Ctrl-Enter"
+                                     `description: "New Juno Buffer"
+                                     `eval: `(new_buffer { type: "juno" })
+                                     })
+                 
        (-> juno_container
            `append page_frame.view)
 
@@ -2916,13 +2956,24 @@
       (progn     
        (console.log "serialized controls: " *serialized_controls*)
        (rehydrate_controls juno_container *serialized_controls*)))
-
+    
     (default_focus)
+    ;; setup key bindings
+    (for_each (desc (values (prop *key_bindings* `global)))
+       (progn
+        (set_prop *key_bindings*.active
+                  desc.mac ;; TODO: Needs to be adjusted for windows (needs dynamic os lookup)
+                  (eval `(fn ()
+                           ,#desc.eval)))))
     (attach_event_listener juno_container
                            `keyup
                            (fn (e)
                              (progn
                               (handle_event e)
+                              (defvar kcode (get_key_code e))
+                              (console.log "Kcode is: " kcode)
+                              (aif (prop *key_bindings*.active kcode)
+                                   (it))                                   
                               (when *log_key_events* (console.log "key_up: " e)))))
 
     (defun core/rlog (`& vals)

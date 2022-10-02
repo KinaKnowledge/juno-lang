@@ -5,13 +5,15 @@
 
 :root {
   --main-bg-color: #FBFAF8;
-  --main-color: #000000;
+  --main-color: #000000;  
   --highlight-bg-color: #DADADA;
   --highlight-color: #000000;
   --control-focused: #84a0bf3b;
   --namespace-color: #976464;
   --main-accent-color: #0000000A;
   --main-accent-line: #00000010;
+  --main-control-surface-accent-color: #efe5e540;
+  --main-control-button-color: #00000020;
   --value-modified-color: #016783;
   --type-number-color: green;
   --type-boolean-color: orange;
@@ -26,6 +28,9 @@
   --type-regexp-color: #fe2f53;
   --type-code-color: darkblue;
   --value-focus-color: #0168ff;
+  --mode-color: orange;
+  --primary-action-bg-color: #0278e7;
+  --primary-action-color: #FFFFFF;
   --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
   --main-app-font-size: 14px;
   --main-mono-space: ui-monospace,		     
@@ -785,8 +790,8 @@ button:disabled {
 .pure-button-selected,
 a.pure-button-primary,
 a.pure-button-selected {
-    background-color: rgb(0, 120, 231);
-    color: #fff;
+    background: var(--primary-action-bg-color)
+    color: var(--primary-action-color);
 }
 
 /* Button Groups */
@@ -1434,6 +1439,26 @@ summary {
   padding: 1px;
 }
 
+button {
+  margin-left: 5px;
+  margin-right: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border: 1px solid transparent;
+  border-radius: 0px;  
+  background: var(--main-control-button-color);
+}
+
+button .juno-primary {
+  background: var(--primary-action-bg-color);
+  color: var(--primary-action-color);
+}
+
+button:hover {
+  background: #00000030;
+  border: 1px inset #ffffff;
+}
+
 dialog:modal {
   height: 40%;
   width: 60%;
@@ -1557,20 +1582,7 @@ li.juno-main-menu-header {
   border-bottom: 1px solid var(--main-accent-line);
 }
 
-.juno-view-container button {
-  margin-left: 5px;
-  margin-right: 5px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border: 1px solid transparent;
-  border-radius: 0px;
-  /* background: #00000019; */
-}
 
-.juno-view-container button:hover {
-  background: #00000030;
-  border: 1px inset #ffffff;
-}
 
 .juno-title {
   color: var(--main-color);
@@ -1627,6 +1639,7 @@ div.juno-symbol-browser {
   border-right: 2px inset var(--main-accent-line);
   max-width: 295px;
   min-width: 200px;
+  background: var(--main-control-surface-accent-color);
 }
 
 .juno-list-item {
@@ -1785,6 +1798,12 @@ span.juno-value {
   font-style: italic;
 }
 
+.juno-mode {
+  color: var(--mode-color);
+  margin-left: 10px;
+  margin-right: 10px;
+  font-weight: bold;
+}
 
 summary.juno-type-function {
   color: var(--type-function-color);
