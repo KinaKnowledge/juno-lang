@@ -8,7 +8,8 @@
   --main-color: #000000;  
   --highlight-bg-color: #DADADA;
   --highlight-color: #000000;
-  --control-focused: #84a0bf3b;
+  --control-focused: #efe5e540;
+  --control-unfocused-color: darkgray;
   --namespace-color: #976464;
   --main-accent-color: #0000000A;
   --main-accent-line: #00000010;
@@ -28,7 +29,7 @@
   --type-regexp-color: #fe2f53;
   --type-code-color: darkblue;
   --value-focus-color: #0168ff;
-  --mode-color: orange;
+  --mode-color: #0278e7;
   --primary-action-bg-color: #0278e7;
   --primary-action-color: #FFFFFF;
   --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
@@ -1579,16 +1580,17 @@ li.juno-main-menu-header {
   white-space: nowrap;
   padding-top: 2px;
   padding-bottom: 2px;
+  color: var(--control-unfocused-color);
   border-bottom: 1px solid var(--main-accent-line);
 }
 
 
 
 .juno-title {
-  color: var(--main-color);
   padding-left: 10px;
   padding-right: 10px;
   font-weight: bold;
+  
 }
 
 .juno-path {
@@ -1669,7 +1671,8 @@ div.juno-symbol-browser {
 }
 
 div.juno-focused {
-  background: var(--control-focused)
+  background: var(--control-focused);
+  color: var(--main-color);
 }
 
 span.juno-needs-save {
@@ -1801,8 +1804,7 @@ span.juno-value {
 .juno-mode {
   color: var(--mode-color);
   margin-left: 10px;
-  margin-right: 10px;
-  font-weight: bold;
+  margin-right: 10px; 
 }
 
 summary.juno-type-function {

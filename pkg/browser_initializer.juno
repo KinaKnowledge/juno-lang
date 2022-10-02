@@ -47,8 +47,11 @@
 ;;(create_css_entry "li.juno-array-item"
 ;;                  [["list-style" "decimal"]])   
  
-
-
+;; for determining keycodes
+(defun get_operating_platform ()
+    (if (contains? "Macintosh" navigator.userAgent)
+        "mac"
+        "win"))
       
 
 (defun_sync value_to_dom (val options _path)
@@ -833,7 +836,7 @@
        (console.log "appended view" view)
        view))))
 
-(defun get_key_code (e)
+(defun_sync get_key_code (e)
   (let
       ((k []))
     (when e.ctrlKey
@@ -842,6 +845,8 @@
       (push k "Alt"))
     (when e.metaKey
       (push k "Meta"))
+    (when e.shiftKey
+      (push k "Shift"))
     (push k e.key)
     (join "-" k)))
 
@@ -1050,7 +1055,7 @@
         (buffer_commands_button (button { `title: "Commands" } "⋯"))
         (stack [ ])
         (filter_span (span { `style: "margin-left: 8px; margin-right: 8px; font-family: var(--main-mono-space);" } ""))
-        (filter_span_container (span { `style: "margin-left: 10px; padding-top: 2px; padding-bottom: 2px; border: 1px solid var(--type-regexp-color);" } 
+        (filter_span_container (span { `style: "border-radius: 3px; margin-left: 10px; padding-top: 2px; padding-bottom: 2px; border: 1px solid var(--type-regexp-color);" } 
                                      (span { `style: "padding-left: 10px; padding-right: 10px; background: var(--type-regexp-color); padding-top: 2px; padding-bottom: 2px; color: wheat;" } (+ (dtext "Filter") ":"))
                                      filter_span))
         (olist_style "padding-block-start: 3px; margin-block-start: 0.2em; padding-inline-start: 2px; ")
@@ -1426,6 +1431,16 @@
                                     (div { `class: "juno-button-group pure-button-group" `role: "group" }
                                          cancel_button
                                          ok_button))))
+                   (attach_event_listener new_symbol_button
+                                          `click
+                                          (fn (e)
+                                            (progn
+                                             (aif (request_user_input (+ "" (dtext "Enter the name to be created in") " " ns) `text)
+                                                  (progn
+                                                   (-> dwin `remove)
+                                                   (-> (-> Environment `get_namespace_handle ns)
+                                                       `set_global it "")
+                                                   (resolve { `namespace: ns `path: [ it ] }))))))
                    (attach_event_listener ok_button
                                           `click
                                           (fn (e)
@@ -1434,7 +1449,7 @@
                                                   `namespace: ns
                                                   `path: target_path
                                                   })
-                                              (-> dwin `remove))))
+                                              (-> dwin `remove))))                   
                    (attach_event_listener cancel_button
                                           `click
                                           (fn (e)
@@ -2841,6 +2856,7 @@
        (scratch_editor nil)
        (page_frame nil)
        (control nil)
+       (key_mode (get_operating_platform))
        (repl_split nil))
                                                                
     (console.log "user/*initializer is running." )
@@ -2924,6 +2940,12 @@
                                     `mac: "Ctrl-Enter"
                                     `description: "New Juno Buffer"
                                     `exec: (fn () (new_buffer { type: "juno" }))
+                                    }
+                 "save_environment" {
+                                    `win: "Ctrl-Shift-s"
+                                    `mac: "Meta-Shift-s"
+                                    `description: "Saves the current state of the application"
+                                    `exec: (fn () (save_control_image))
                                      })
                  
        (-> juno_container
@@ -2965,16 +2987,18 @@
     (for_each (desc (values (prop *key_bindings* `global)))
        (progn
         (set_prop *key_bindings*.active
-                  desc.mac ;; TODO: Needs to be adjusted for windows (needs dynamic os lookup)
+                  (prop desc key_mode) 
                   (prop desc `exec))))
     (attach_event_listener juno_container
                            `keyup
-                           (fn (e)
-                             (progn
-                              (handle_event e)
-                              (defvar kcode (get_key_code e))                             
+                           (function (e)
+                             (progn                              
+                              (defvar kcode (get_key_code e))
+                              (console.log "kcode is: " kcode)
                               (aif (prop *key_bindings*.active kcode)
-                                   (it))                                   
+                                   (progn
+                                    (handle_event e)
+                                    (it)))    
                               (when *log_key_events* (console.log "key_up: " e)))))
 
     (defun core/rlog (`& vals)
