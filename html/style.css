@@ -21,6 +21,7 @@
   --type-undefined-color: #9d9d9d;
   --type-symbol-color: #ff4f4f;
   --type-error-color: darkred;
+  --type-array-color: #F040C0;
   --type-path-color: #88127D;
   --type-regexp-color: #fe2f53;
   --type-code-color: darkblue;
@@ -1433,6 +1434,25 @@ summary {
   padding: 1px;
 }
 
+dialog:modal {
+  height: 40%;
+  width: 60%;
+  overflow: hidden;
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  max-width: calc((100% - 6px) - 2em);
+  max-height: calc((100% - 6px) - 2em);
+  user-select: text;
+  visibility: visible;  
+  border: 1px solid var(--main-accent-color);
+  background: var(--main-bg-color);
+  box-shadow: 1px 2px 11px 2px #00000033;
+}
+
+.filtered-hidden {
+  display: none;
+}
 
 .juno-view-container {
   display: inline-block;
@@ -1730,6 +1750,10 @@ summary.juno-code-value {
 
 span.juno-value {
   display: inline-block;
+}
+
+.juno-type-array {
+  color: var(--type-array-color);
 }
 
 .juno-value:focus {

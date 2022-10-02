@@ -347,8 +347,8 @@
    (-> e `preventDefault)
    (-> e `stopPropagation)))
 
-(defmacro focus_to (elem)
-    `(aif ,#elem (-> it `focus)))
+(defun focus_to (elem)
+    (aif elem (-> it `focus)))
 
 (defmacro blur_to (elem)
     `(aif ,#elem (-> it `blur)))
