@@ -769,67 +769,171 @@
 
     
 
+
+
+(defun menu_tree (items options _path)
+  (let
+      ((options (either options { `flat_index: 0 }))
+       (path (either _path []))
+       (disappear_timer nil)
+       (id (either options.id "cmenu"))       
+       (menu_element
+        (fn (idx text `& args)
+          (let
+              ((view (li {  `class: "pure-list-item"                                         
+                          `style: (if (> args.length 0)
+                                    "position: relative;"
+                                    "")
+                          }
+                         (a { 
+                             `idx: idx
+                             `path: (join "~" (conj path idx))
+                             `href: "#"
+                             `class: "pure-menu-link" 
+                             `style: "min-width: 150px;"
+                             }
+                            (if (== args.length 0)
+                              (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                              [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                               (span { `class: "juno-menu-submenu" } "›")]))
+                         args))
+               (timer nil))
+            (if (== args.length 0)
+              view                           
+              (progn
+               (attach_event_listener view
+                                      `mouseenter
+                                      (fn (e)
+                                        (do
+                                          (when timer
+                                            (clearTimeout timer))
+                                          (= timer
+                                             (setTimeout (fn ()
+                                                           (set_style [["display" "inline-block" ]
+                                                                       ["position" "absolute"]
+                                                                       ["top" "0px"]
+                                                                       ["left" (+ "" e.srcElement.offsetWidth "px") ]]
+                                                                      view.children.1))                                                           
+                                                         150)))))
+               (attach_event_listener view
+                                      `mouseleave
+                                      (fn (e)
+                                        (do
+                                          (when timer
+                                            (clearTimeout timer))
+                                          (= timer
+                                             (setTimeout (fn ()                                                         
+                                                           (set_style [["display" "none"]] view.children.1))
+                                                         150)))))
+               
+               view)))))
+       (view nil))
+    
+    (= view
+       (ul (+ {}
+              { `class: (if (> path.length 0)
+                             "juno-menu pure-menu-list"
+                             "pure-menu-list")
+                `style: (+ (if (> path.length 0)
+                             "display: none;"
+                             "display: inline-block;")
+                           "position: relative;")  }
+              (if (== path.length 0)
+                { `id: id }
+                {}))
+                     
+           (map (fn (item idx)
+                  (let
+                      ((text (if (is_function? item.0)
+                               (item.0)
+                               item.0)))
+                    (set_prop options
+                              `flat_index
+                              (+ 1 options.flat_index))                     
+                    (cond
+                      (is_array? item.1)
+                      (menu_element options.flat_index text (menu_tree item.1 options (conj path [ idx 1])))
+                      (and (== text "--") (eq nil item.1))
+                      (hr { `class: "LightHR" })
+                      (is_function? item.1)
+                      (menu_element idx text)
+                      else
+                      [])))
+                items)))
+    (if (> path.length 0)      
+       view
+      (progn
+       (attach_event_listener view
+                              `click
+                              (fn (e)
+                                (let
+                                    ((path (-> e.srcElement `getAttribute "path"))
+                                     (idx (-> e.srcElement `getAttribute "idx"))
+                                     (target (if path
+                                               (resolve_path (split_by "~" path) items))))
+                                  (handle_event e)
+                                  (console.log "clicked: " path e target )
+                                  (-> view `remove)
+                                  (sleep 0.01) ;; disconnect and move to back of the event loop for the call
+                                  (when (and target
+                                             (is_function? target.1))
+                                    (target.1 e target.2))
+                                  )))
+       (setTimeout (fn ()
+                     (progn
+                      (attach_event_listener view
+                                             `mouseleave
+                                             (function (e)
+                                                       (progn
+                                                        (when disappear_timer
+                                                          (clearTimeout disappear_timer))
+                                                        (= disappear_timer (setTimeout (fn ()
+                                                                                         (progn
+                                                                                          
+                                                                                          (-> view `remove)
+                                                                                          (= disappear_timer nil)))
+                                                                                       700)))))
+                      (attach_event_listener view
+                                             `mouseenter
+                                             (function (e)
+                                                       (when disappear_timer
+                                                         (clearTimeout disappear_timer)
+                                                         (= disappear_timer nil))))))
+                   700) ;; delay a little before adding the timeout so we don't accidentally hover over it 
+       {
+        `view: view
+        `toJSON: (function ()
+                           `(menu_tree ,#items ,#options))
+        `type: "menu_tree"
+        }))))
+
 (defun make_menu (for_element menu_items options)
   (let
       ((menu_items menu_items)
        (for_element for_element)
        (pos nil)
+       (mtree nil)
        (disappear_timer nil)       
                                         
        (view nil))
     (aif (get_by_id "cmenu")
          (-> it `remove))
+    (setq mtree
+          (menu_tree menu_items options))
     (setq view
-          (div { `id: `cmenu `class: "juno-menu" `style: "z-index: 30" }
-               (div {  `class: "pure-menu pure-menu-horizontal"  }               
-                    (ul { `class: "pure-menu-list" }                 
-                        (map (fn (item idx)                     
-                               (if item
-                                 (li { `idx: idx `class: "pure-list-item" } (a { `idx: idx  `href: "#" `class: "pure-menu-link" } item.0))
-                                 []))
-                             (or menu_items []))))))
-
+          mtree.view)
+    (add_class "juno-menu" view)
     (when for_element
       (setq pos
             (-> for_element `getBoundingClientRect))
       (set_style [["top" (+ "" (Math.max 0 pos.bottom) "px") ]
-                  ["left" (+ "" (Math.max pos.left 0) "px") ]] view)
+                  ["left" (+ "" (Math.max pos.left 0) "px") ]
+                  ["position" "absolute"]
+                  ["z-index" "30"]]
+                  view)
       (console.log "make_menu: found element at: " pos))
     
-    (attach_event_listener view
-                           `click
-                           (fn (e)
-                             (progn
-                              (handle_event e)
-                              (defvar idx (-> e.srcElement `getAttribute `idx))
-                              (defvar item (prop menu_items idx))
-                             
-                              (console.log "clicked item: " idx item item.1)
-                               (when item
-                                 (item.1 e))
-                               (-> view `remove))))
-    (setTimeout
-     (fn ()
-       (progn
-        (attach_event_listener view
-                               `mouseleave
-                               (function (e)
-                                         (progn
-                                          (when disappear_timer
-                                            (clearTimeout disappear_timer))
-                                          (= disappear_timer (setTimeout (fn ()
-                                                                           (progn
-                                                                            (console.log "removed view")
-                                                                            (-> view `remove)
-                                                                            (= disappear_timer nil)))
-                                                                         500)))))
-        (attach_event_listener view
-                               `mouseenter
-                               (function (e)
-                                         (when disappear_timer
-                                           (clearTimeout disappear_timer)
-                                           (= disappear_timer nil))))))
-     500) ;; delay a little before adding the timeout so we don't accidentally hover over it 
+     
     (if options.do_not_attach
       view
       (progn       
@@ -2426,141 +2530,7 @@
 
 
 
-(defun menu_tree (items options _path)
-  (let
-      ((options (either options { `flat_index: 0 }))
-       (path (either _path []))
-       (disappear_timer nil)
-       (id (either options.id "cmenu"))       
-       (menu_element
-        (fn (idx text `& args)
-          (let
-              ((view (li {  `class: "pure-list-item"                                         
-                          `style: (if (> args.length 0)
-                                    "position: relative;"
-                                    "")
-                          }
-                         (a { 
-                             `idx: idx
-                             `path: (join "~" (conj path idx))
-                             `href: "#"
-                             `class: "pure-menu-link" 
-                             `style: "min-width: 150px;"
-                             }
-                            (if (== args.length 0)
-                              (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
-                              [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
-                               (span { `class: "juno-menu-submenu" } "›")]))
-                         args))
-               (timer nil))
-            (if (== args.length 0)
-              view                           
-              (progn
-               (attach_event_listener view
-                                      `mouseenter
-                                      (fn (e)
-                                        (do
-                                          (when timer
-                                            (clearTimeout timer))
-                                          (= timer
-                                             (setTimeout (fn ()
-                                                           (set_style [["display" "inline-block" ]
-                                                                       ["position" "absolute"]
-                                                                       ["top" "0px"]
-                                                                       ["left" (+ "" e.srcElement.offsetWidth "px") ]]
-                                                                      view.children.1))                                                           
-                                                         150)))))
-               (attach_event_listener view
-                                      `mouseleave
-                                      (fn (e)
-                                        (do
-                                          (when timer
-                                            (clearTimeout timer))
-                                          (= timer
-                                             (setTimeout (fn ()                                                         
-                                                           (set_style [["display" "none"]] view.children.1))
-                                                         150)))))
-               
-               view)))))
-       (view nil))
-    
-    (= view
-       (ul (+ {}
-              { `class: (if (> path.length 0)
-                             "juno-menu pure-menu-list"
-                             "pure-menu-list")
-                `style: (+ (if (> path.length 0)
-                             "display: none;"
-                             "display: inline-block;")
-                           "position: relative;")  }
-              (if (== path.length 0)
-                { `id: id }
-                {}))
-                     
-           (map (fn (item idx)
-                  (let
-                      ((text (if (is_function? item.0)
-                               (item.0)
-                               item.0)))
-                    (set_prop options
-                              `flat_index
-                              (+ 1 options.flat_index))                     
-                    (cond
-                      (is_array? item.1)
-                      (menu_element options.flat_index text (menu_tree item.1 options (conj path [ idx 1])))
-                      (and (== text "--") (eq nil item.1))
-                      (hr { `class: "LightHR" })
-                      (is_function? item.1)
-                      (menu_element idx text)
-                      else
-                      [])))
-                items)))
-    (if (> path.length 0)      
-       view
-      (progn
-       (attach_event_listener view
-                              `click
-                              (fn (e)
-                                (let
-                                    ((path (-> e.srcElement `getAttribute "path"))
-                                     (idx (-> e.srcElement `getAttribute "idx"))
-                                     (target (if path
-                                               (resolve_path (split_by "~" path) items))))
-                                  (handle_event e)
-                                  (console.log "clicked: " path e target )
-                                  (-> view `remove)
-                                  (sleep 0.01) ;; disconnect and move to back of the event loop for the call
-                                  (when (and target
-                                             (is_function? target.1))
-                                    (target.1 e target.2))
-                                  )))
-       (setTimeout (fn ()
-                     (progn
-                      (attach_event_listener view
-                                             `mouseleave
-                                             (function (e)
-                                                       (progn
-                                                        (when disappear_timer
-                                                          (clearTimeout disappear_timer))
-                                                        (= disappear_timer (setTimeout (fn ()
-                                                                                         (progn
-                                                                                          
-                                                                                          (-> view `remove)
-                                                                                          (= disappear_timer nil)))
-                                                                                       700)))))
-                      (attach_event_listener view
-                                             `mouseenter
-                                             (function (e)
-                                                       (when disappear_timer
-                                                         (clearTimeout disappear_timer)
-                                                         (= disappear_timer nil))))))
-                   700) ;; delay a little before adding the timeout so we don't accidentally hover over it 
-       {
-        `view: view
-        `toJSON: (function ()
-                           `(menu_tree ,#items ,#options))
-        `type: "menu_tree"
-        }))))
+
 
 (defun app_menu(global_menu_path options)
   (let
