@@ -101,16 +101,17 @@
        (options (or options {}))
        (detail_elem nil)
        (expanded false)
+       (ftype (lowercase (subtype val)))
        (expansion_elem nil)
        (lpath (function () (join "~" _path)))
-       (classes "juno-value juno-type-function")
+       (classes (+"juno-value juno-type-" ftype))
        (render_function (function ()
-                                  (pre  { `lpath: (lpath)  `tabindex: 0 `class: classes } (-> val `toString)))))
+                                  (pre  { `lpath: (lpath)  `tabindex: 0 `class: "juno-value juno-type-code" } (-> val `toString)))))
     (assert (is_function? val))
     (= detail_elem
-       (details (summary { `tabindex: 0 `lpath: (lpath) `class: (+ classes "function") }
+       (details (summary { `tabindex: 0 `lpath: (lpath) `class: classes }
                         (span { `lpath: (lpath)
-                               `class: (+ classes "function")
+                               `class: classes
                                `style: "margin-left: 5px; font-style: italic;" }
                               (aif (fn_signature val)
                                    (if (== it.type "class")
@@ -850,37 +851,67 @@
     (push k e.key)
     (join "-" k)))
 
+
 (defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
                  (let
                      ((user_input (if options.input
                                     options.input
-                                    (input { `type: (or type "text") })))
-                      (ok_button (button { `class: "pure-button-primary" `style: "float:right" } "OK"))
-                      (cancel_button (button  "Cancel"))
-                      (dwin (dialog prompt                                    
+                                    (input { `type: (or type "text") `style: "width: calc(100% - 15px)" })))
+                      (completed false)
+                      (ok_button (button { `class: "juno-primary" `style: "float:right" } "OK"))
+                      (cancel_button (button { `class: "juno-secondary" }  "Cancel"))
+                      (dwin (dialog { `style: "height: min-content; width: min-content;"   }
+                                    (div { `class: "juno-instructions" } prompt)
                                     (br)
                                     user_input
                                     (br)
-                                    (div { `class: "pure-button-group" `role: "group" }
+                                    (div { `class: "pure-button-group juno-control-group" `style: "margin-top: 10px;" `role: "group" }
                                          cancel_button
-                                         ok_button))))
+                                         ok_button)))
+                      (clean_up (fn (val)
+                                    (when (not completed)
+                                        (= completed true)
+                                        (resolve val)
+                                        (-> dwin `remove)))))
                    (attach_event_listener ok_button
                                           `click
                                           (fn (e)
-                                            (do                                              
-                                              (resolve user_input.value)
-                                              (-> dwin `remove))))
+                                            (progn  
+                                              (handle_event e)
+                                              (clean_up user_input.value))))
+                    ;; don't immediately react to keyup so as not to immediately react
+                    ;; in certain scenarios
+                   (setTimeout (fn ()
+                                       (attach_event_listener user_input
+                                          `keyup
+                                          (fn (e)
+                                            (cond 
+                                              (== e.key "Enter")
+                                              (progn
+                                                (handle_event e)
+                                                (clean_up user_input.value)
+                                              )))))
+                                250); 
                    (attach_event_listener cancel_button
                                           `click
                                           (fn (e)
-                                            (do
-                                              (-> dwin `remove)
-                                              (resolve nil))))
+                                            (progn
+                                                (handle_event e)
+                                                (clean_up))))
+                                              
+                   (attach_event_listener dwin
+                                          `close
+                                          (fn (e)
+                                              (clean_up nil)))
+                                              
                    (-> juno_container
                        `appendChild dwin)
                    (when (is_function? dwin.showModal)
-                     (-> dwin `showModal))))))
+                     (-> dwin `showModal)
+                     (focus_to user_input))))))
+                 
+                 
                                            
     
                      
@@ -1256,7 +1287,7 @@
                                                 (when (> (parseInt (get_attribute (prop cview.children child_num) `pos)) (- stack.length 1))
                                                     (-> (prop cview.children child_num) `remove))))
                                          (render_view))                                         
-                                     else
+                                     (== e.srcElement.tagName "LI")
                                      (progn
                                       (push stack  elem.innerText)                                 
                                       (render_view)
@@ -1417,7 +1448,7 @@
                       (new_symbol_button (button { `tabindex: 0 `title: (dtext "Create New Entry") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } (dtext "New")))
                       (path_span (span { `tabindex: 0 `title: (dtext "Click to copy path")  `class: "juno-path" } ""))
                       (symbol_ctl (symbol_browser { 
-                                                   `additional_elements: [(span { `class: "juno-title" } (dtext "Open A Location"))
+                                                   `additional_elements: [(span { `class: "juno-title" `style: "color:var(--main-color)" } (dtext "Open A Location"))
                                                                           (span { `title: (dtext "Edit Mode") `class: "juno-mode" } (if type type  ""))
                                                                           new_symbol_button
                                                                           ] 
@@ -1592,7 +1623,9 @@
                                 (== options.type "javascript")
                                 (-> editor.session `setMode "ace/mode/javascript")
                                 (== options.type "css")
-                                (-> editor.session `setMode "ace/mode/css"))
+                                (-> editor.session `setMode "ace/mode/css")
+                                options.type
+                                (-> editor.session `setMode options.type))
                               (console.log "editor initialized: content: " (subtype content) content)                                                          
                               (-> editor `setValue content -1)
                               (if (eq nil font_size)
@@ -1631,6 +1664,23 @@
                                       `evaluator
                                       new_evaluator)
                             (set_evaluator)))
+        `set_mode: (fn (mode_name)
+                     (progn
+                      (set_prop options
+                                `type
+                                mode_name)                                
+                      (cond
+                        (== options.type "juno")
+                        (-> editor.session `setMode "ace/mode/juno")
+                        (== options.type "javascript")
+                        (-> editor.session `setMode "ace/mode/javascript")
+                        (== options.type "css")
+                        (-> editor.session `setMode "ace/mode/css")
+                        else
+                        (-> editor.session `setMode options.type))
+                      (when options.on_mode_set
+                        (options.on_mode_set mode_name))))
+                        
         `get_evaluator: (fn ()
                           options.evaluator)
         `save: (function ()
@@ -1639,7 +1689,13 @@
         `decrease_font_size: decrease_font_size
         `menu_items: (function ()
                        [[(dtext "Increase Font Size") increase_font_size]
-                        [(dtext "Decrease Font Size") decrease_font_size]])
+                        [(dtext "Decrease Font Size") decrease_font_size]
+                        [(dtext "Set Edit Mode") [["Juno" (fn () (-> intf `set_mode "juno"))]
+                                                  ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
+                                                  ["Text" (fn () (-> intf `set_mode "text"))]
+                                                  ["CSS" (fn () (-> intf `set_mode "css"))]
+                                                  ["JSON" (fn () (-> intf `set_mode "json"))]]]])
+                        
         `options: options
         `name: (or options.name "Untitled Buffer")
         `toJSON: (function ()
@@ -1702,7 +1758,7 @@
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
        (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
        (is_dirty? false)
-       
+       (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
        (command_bar (or options.command_bar
                         (div { `class: "juno-buffer-bar" }
                              buffer_commands_button
@@ -1711,9 +1767,8 @@
                              evaluator_span
                              (if options.read_only
                                (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
-                               ())
-                             
-                             (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))))      
+                               ())                             
+                             mode_span)))      
        (init_value (resolve_path path_to_value nseval.global_ctx.scope))
        (on_save (fn (value)
                   (progn
@@ -1746,6 +1801,10 @@
                                    id: id
                                    read_only: options.read_only
                                    font_size: options.font_size
+                                   on_mode_set: (function (val)
+                                                          (progn
+                                                           (= mode val)
+                                                           (set_prop mode_span `innerText val)))
                                    on_change: (function (editor val)
                                                         (progn
                                                          (when (not is_dirty?)

@@ -19,12 +19,13 @@
   --type-number-color: green;
   --type-boolean-color: orange;
   --type-string-color: darkblue;
-  --type-function-color: #3f5b71;
+  --type-function-color: #2e3eb4;
+  --type-asyncfunction-color: #3f5b71;
   --type-null-color: #a35e5e;
   --type-undefined-color: #9d9d9d;
   --type-symbol-color: #ff4f4f;
   --type-error-color: darkred;
-  --type-array-color: #F040C0;
+  --type-array-color: #535173;
   --type-path-color: #88127D;
   --type-regexp-color: #fe2f53;
   --type-code-color: darkblue;
@@ -1450,14 +1451,35 @@ button {
   background: var(--main-control-button-color);
 }
 
-button .juno-primary {
+button.juno-primary {
   background: var(--primary-action-bg-color);
   color: var(--primary-action-color);
+  min-width: 60px;
+}
+
+button.juno-secondary {  
+  min-width: 60px;
+}
+
+juno-dialog { 
+  min-width: 300px;
 }
 
 button:hover {
   background: #00000030;
   border: 1px inset #ffffff;
+}
+
+input {
+  border: 1px solid var(--main-accent-line);  
+  padding: 3px;
+}
+
+input:focus {
+  border-top: 1px solid var(--main-accent-line);
+  border-left: 1px solid var(--main-accent-line);
+  border-right: 1px solid var(--main-accent-line);
+  border-top: 1px solid var(--value-focus-color);  	      	      
 }
 
 dialog:modal {
@@ -1469,6 +1491,7 @@ dialog:modal {
   bottom: 0px;
   max-width: calc((100% - 6px) - 2em);
   max-height: calc((100% - 6px) - 2em);
+  min-width: 300px;
   user-select: text;
   visibility: visible;  
   border: 1px solid var(--main-accent-color);
@@ -1584,7 +1607,13 @@ li.juno-main-menu-header {
   border-bottom: 1px solid var(--main-accent-line);
 }
 
+.juno-instructions {
+  padding-bottom: 5px;  
+}
 
+.juno-control-group {
+  padding: 5px;
+}
 
 .juno-title {
   padding-left: 10px;
@@ -1673,6 +1702,7 @@ div.juno-symbol-browser {
 div.juno-focused {
   background: var(--control-focused);
   color: var(--main-color);
+  border-bottom: 1px solid var(--main-control-button-color);
 }
 
 span.juno-needs-save {
@@ -1817,7 +1847,7 @@ summary.juno-type-function {
 }
 
 .juno-type-asyncfunction {
-  color: var(--type-function-color);
+  color: var(--type-asyncfunction-color);
 }
 
 
