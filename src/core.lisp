@@ -1094,14 +1094,13 @@
 				  (and (is_array? meta)
 				       (is_object? (resolve_path [ 3 1 ] form)))
 				  (do
-				   (set_path [ 3 1 `initializer ] form [(quote quotel) form.2 ])				   
+				   (set_path [ 3 1 `initializer ] form [(quote quotel) `(try ,#form.2 (catch Error (e) e))])
 				   form)
-				  (is_object? meta)
+				  (is_object? meta)				  
 				  (do
-				   (do
 				      (set_prop form.3					   
-						`initializer [(quote quotel) form.2 ])				      
-				      form))
+						`initializer [(quote quotel) `(try ,#form.2  (catch Error (e) e))])
+				      form)
 				  else
 				  (do
 				      (warn "use_quoted_initializer: cannot quote " (if (is_string? form.2) form.2 form " - cannot find meta form. Check calling syntax."))
@@ -1130,6 +1129,7 @@ such as things that connect or use environmental resources.
     `tags: [`compilation `save_env `export `source `use `compiler `compile ]
 
   })
+	 
 	 
 	   
 
@@ -1761,8 +1761,9 @@ such as things that connect or use environmental resources.
                     `handled true)
                ;(console.error "ERROR: " syntax_error)
                (throw syntax_error)
-               )))
-        (console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree ))
+               ))))
+        ;(console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree )
+        
     validation_results))
 
 
@@ -2003,7 +2004,8 @@ such as things that connect or use environmental resources.
     })
    
 (defmacro defparameter (sym value meta)
-    `(use_quoted_initializer 
+  `(first
+    (use_quoted_initializer 
          (defglobal ,#sym ,#value ,#meta))
     {
         `description: (+ "Defines a global that is always reset to the provided value, "
@@ -2015,7 +2017,7 @@ such as things that connect or use environmental resources.
                          "Returns the defined value.")
         `usage: ["sym:symbol|string" "value:*" "meta:?object"]
         `tags: ["allocation" "reference" "symbol" "value" "set" "reference" "global"]
-        })
+        }))
 
 (defun get_function_args (f)
     (let
@@ -2643,7 +2645,40 @@ such as things that connect or use environmental resources.
                                   (if (options.filter_by name val)
                                        name)))
                              (keys ns_handle.context.scope))) ])))))
-                  
 
+(defun_sync keys* (obj)
+  (if (is_object? obj)
+    (let
+        ((current_obj obj)
+         (prototypes [])
+         (properties (first prototypes)))
+    (while current_obj
+        (do
+            (= properties (new Set))
+            (push prototypes properties)
+            (for_each (item (Object.getOwnPropertyNames current_obj))
+                     (-> properties `add item))
+            (= current_obj (Object.getPrototypeOf current_obj))))
+    (flatten
+        (for_each (s prototypes)
+            (-> (Array.from s) `sort))))
+    
+    (throw TypeError "keys*: invalid object as argument"))
+  {
+   `description: (+ "Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the "
+                    "prototype keys as well.")
+   `usage: ["obj:Object"]
+   `tags: ["object" "array" "keys" "property" "properties" "introspection"]
+   })
+
+(defun_sync pairs* (obj)
+  (if (is_object? obj)
+    (for_each (k (keys* obj))
+      [k (prop obj k)]))
+  {
+      `description: "Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well."
+      `usage: ["obj:Object"]
+      `tags: ["object" "array" "keys" "property" "properties" "introspection" "values"]
+  })
 true
  

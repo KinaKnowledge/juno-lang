@@ -156,11 +156,13 @@ var MatchingParensOutdent = function() {};
         if (!openBracePos || openBracePos.row == row) return 0;
 
         var indent = this.$getIndent(doc.getLine(openBracePos.row));
+        console.log("junomode: autoOutdent: indent: ", indent);
         doc.replace(new Range(row, 0, row, column-1), indent);
     };
 
     this.$getIndent = function(line) {
-        var match = line.match(/^(\s+)/);
+      var match = line.match(/^(\s+)/);
+      console.log("junomode: getIndent: match: ",match,"line: ",line);
         if (match) {
             return match[1];
         }
@@ -191,22 +193,31 @@ oop.inherits(Mode, TextMode);
 (function() {
 
     this.lineCommentStart = ";";
-  this.minorIndentFunctions = ["defun", "defun-sync", "defmacro", "define", "when", "let", "destructuring-bind" ];
-
-    this.$toIndent = function(str) {
-        return str.split('').map(function(ch) {
+    this.minorIndentFunctions = ["defun", "defun-sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce"];
+    this.env = globalThis.env;  /* handle to the Juno environment */
+    
+    this.$toIndent = function(str) {        
+        let rval=str.split('').map(function(ch) {
             if (/\s/.exec(ch)) {
                 return ch;
             } else {
                 return ' ';
             }
-        }).join('');
+        }).join('');      
+      return rval;
     };
 
     this.$calculateIndent = function(line, tab) {
         var baseIndent = this.$getIndent(line);
         var delta = 0;
         var isParen, ch;
+        var currentControl = globalThis.env.get_global("$current_control");
+      var formatHandler = currentControl["options"]["format_handler"];
+      return "";
+      
+      if (formatHandler) {
+        return formatHandler(line,tab,baseIndent);
+      } 
         for (var i = line.length - 1; i >= 0; i--) {
             ch = line[i];
             if (ch === '(') {
@@ -222,17 +233,20 @@ oop.inherits(Mode, TextMode);
                 break;
             }
         }
+           
+      console.log("mode-juno: calculateIndent-> line: ", JSON.stringify(line),"delta: ",delta,"isParen: ",isParen, "baseindent: ", baseIndent, "ibefore: ",i+1);
         if (delta < 0 && isParen) {
             i += 1;
             var iBefore = i;
             var fn = '';
             while (true) {
                 ch = line[i];
-                if (ch === ' ' || ch === '\t') {
+              if ((ch === ' ' || ch === '\t') || ((ch === undefined) && (this.minorIndentFunctions.indexOf(fn) !== -1)))  {
                     if(this.minorIndentFunctions.indexOf(fn) !== -1) {
-                        return this.$toIndent(line.substring(0, iBefore - 1) + tab);
+                        // return this.$toIndent(line.substring(0, iBefore - 5) + tab);
+                      return this.$toIndent(line.substring(0, iBefore) + "  ");		   
                     } else {
-                        return this.$toIndent(line.substring(0, i + 1));
+                      return this.$toIndent(line.substring(0, iBefore) + fn.length+1);
                     }
                 } else if (ch === undefined) {
                     return this.$toIndent(line.substring(0, iBefore - 1) + tab);
@@ -241,9 +255,12 @@ oop.inherits(Mode, TextMode);
                 i++;
             }
         } else if(delta < 0 && !isParen) {
-            return this.$toIndent(line.substring(0, i+1));
+            return this.$toIndent(line.substring(0, i+2));
+	} else if(delta === 1) {
+	    baseIndent = baseIndent.substring(0, baseIndent.length - tab.length);
+            return baseIndent;
         } else if(delta > 0) {
-            baseIndent = baseIndent.substring(0, baseIndent.length - tab.length);
+          baseIndent = baseIndent.substring(0, baseIndent.length - (tab.length + (delta - 1)));
             return baseIndent;
         } else {
             return baseIndent;

@@ -564,7 +564,10 @@
                           (set_content 0 content))
                         (when (is_function? contained_content.initialize)
                           (-> contained_content `initialize))))))
-                      
+       (destroy (fn ()
+                  (progn
+                   (when (is_function? contained_content.destroy)
+                     (-> contained_content `destroy)))))
                         
        (intf (new Object)))
     
@@ -712,6 +715,12 @@
                           (-> content_a `initialize))
                         (when content_b.initialize
                           (-> content_b `initialize))))))
+       (destroy (fn ()
+                  (progn
+                   (when (is_function? content_a.destroy)
+                     (-> content_a `destroy))
+                   (when (is_function? content_b.destroy)
+                     (-> content_b `destroy)))))
        (set_content (fn (position new_content)
                       (if (and position new_content
                                (or (== position 0) (== position 1)))
@@ -788,6 +797,7 @@
      `initialize initialize
      `set_content set_content
      `options options
+     `destroy destroy
      `name options.name
      `resize perform_resize
      `type `split_view_vertical
@@ -911,6 +921,12 @@
                           (-> content_a `initialize))
                         (when content_b.initialize
                           (-> content_b `initialize))))))
+       (destroy (fn ()
+                  (progn
+                   (when (is_function? content_a.destroy)
+                     (-> content_a `destroy))
+                   (when (is_function? content_b.destroy)
+                     (-> content_b `destroy)))))
        (set_content (fn (position new_content)
                       (if (and position new_content
                                (or (== position 0) (== position 1)))
@@ -987,6 +1003,7 @@
      `options options
      `name options.name
      `resize perform_resize
+     `destroy destroy
      `type `split_view_horizontal
      `controls (fn () [ content_a content_b ])
      `toJSON (function ()

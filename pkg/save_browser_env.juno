@@ -69,7 +69,21 @@
   (defvar no_includes (reduce (`sym (core/symbols))
 			      (if (not (contains? sym *core_symbols*))
 				  sym
-				nil)))
+				  nil)))
+  (defglobal included_libs ["ext-searchbox.js" "mode-juno.js" "ext-language_tools.js" "mode-json.js" "mode-javascript.js" "mode-css.js" "mode-css.js"
+                            "theme-juno_light.js" "theme-chrome.js" "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js" "theme-gruvbox.js"
+                            "theme-dracula.js" "theme-katzenmilch.js" "theme-solarized_dark.js" "theme-solarized_light.js"])
+
+  
+  (set_path [ `included_libraries ] *env_config* included_libs)
+  (when (eq nil (prop *env_config* `editor))
+    (set_prop *env_config*
+              `editor
+              {
+               `default_theme: "juno_light"
+               `font_size: 14
+               }))
+  
   (setq no_includes
 	(conj no_includes
 	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file" "Deno.readTextFile" "Deno.writeTextFile"]))
@@ -88,32 +102,19 @@
 
   
   (defglobal env {})
+
   
   (let
       ((js_resource (read_text_file "js/juno_browser.js"))              
        (doctext nil)       
+       (embeds (for_each (embeded_lib included_libs)
+                         [(to_key (replace (new RegExp "-" `g) "_" (first (split_by "." embeded_lib))))
+                          (compile `(javascript ,#(read_text_file (+ "js_lib/" embeded_lib )))
+                                   { `formatted_output: true }) ]))
        (embedded_editor (compile
                          `(javascript ,#(read_text_file "js_lib/ace.js"))
-                         { `formatted_output: true }))
-       (embedded_editor_search (compile
-                         `(javascript ,#(read_text_file "js_lib/ext-searchbox.js"))))
-       (embedded_juno_mode (compile
-                            `(javascript ,#(read_text_file "js_lib/mode-juno.js"))
-                            { `formatted_output: true }))
-       (embedded_lang_tools (compile
-                           `(javascript ,#(read_text_file "js_lib/ext-language_tools.js"))
-                           { `formatted_output: true }))
-       (embedded_json_mode (compile
-                             `(javascript ,#(read_text_file "js_lib/mode-json.js"))
-                            { `formatted_output: true }))
-                            
-       (embedded_js_mode (compile
-                            `(javascript ,#(read_text_file "js_lib/mode-javascript.js"))
-                            { `formatted_output: true }))
-       
-       (embedded_css_mode (compile
-                           `(javascript ,#(read_text_file "js_lib/mode-css.js"))
-                           { `formatted_output: true })))
+                         { `formatted_output: true })))
+    
     (= doctext
        (html/serialize_document
          (html/html 
@@ -127,18 +128,12 @@
                                 )
                    (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_editor)
-                   (html/script { `id: "ace_editor_lang_tools" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_lang_tools)
-                   (html/script { `id: "ace_editor_search_box" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_editor_search)
-                   (html/script { `id: "ace_juno_mode" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_juno_mode)
-                   (html/script { `id: "ace_js_mode" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_js_mode)
-                   (html/script { `id: "ace_json_mode" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_json_mode)
-                   (html/script { `id: "ace_css_mode" `type: "text/javascript" `charset: "utf-8" }
-                                embedded_css_mode))
+                   (for_each (embed_set embeds)
+                             (destructuring_bind (id lib)
+                                 embed_set
+                                 (html/script { `id: id `type: "text/javascript" `charset: "utf-8" }
+                                              lib))))
+                 
                                 
         (html/body { style: "height: 100vh; overflow: hidden;" }
                    (html/header { `id: "page_header"  style: "background: #F3F3F3; height: 28px; display: flex;" }

@@ -19,16 +19,24 @@
 (defvalue *main_menu* [])
 (defvalue *serialized_controls* [])
 
+(defparameter core/$current_control nil)
+
 ;; the controls at the top level of the view
 (defglobal $root_controls [])
 
 ;; the global pointer to the control which has focus
 ;; nil if there are no focus points or values.
-
+(defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
 (defparameter *last_focus* nil)
 (defparameter *last_top_frame* nil)
 (defparameter *app_menu_control* nil)
 (defparameter *log_key_events* false)
+
+(defparameter
+    *editor_themes*
+    (reduce (included_lib (or *env_config*.included_libraries []))
+        (aif (starts_with? "theme" included_lib)
+            (second (split_by "-" (first (split_by "." included_lib)))))))
 
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
@@ -40,6 +48,10 @@
                    ["text-align" "right"]
                    ["font-weight" "bold"]
                    ["padding-right" "5px"]])
+
+(defglobal formatting_rules {
+    minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce"]
+})
 
 ;;(create_css_entry "span.juno-value"
  ;;                 [["display" "inline-block"]])
@@ -191,10 +203,13 @@
        (expanded false)
        (expansion_elem nil)
        (expansion_mode false)
+       (get_pairs (if options.include_prototypes
+                    pairs*
+                    pairs))
        (render_table (function () 
                          (table
                             (body
-                             (for_each (keyval (pairs obj))
+                             (for_each (keyval (get_pairs obj))
                                        (destructuring_bind (key value)
                                                            keyval
                                                            (tr 
@@ -203,6 +218,7 @@
                                                                 (value_to_dom value options (conj _path [ key ] ))))))))))
        (_path (or _path []))
        (lpath (function () (join "~" _path))))
+    (declare (function get_pairs))
     (when (or (eq nil options.visited)
               (< _path.length 2))
            (set_prop options
@@ -458,6 +474,7 @@
               
        (-> target_control `on_focus)              
        (setq *last_focus* target_control)
+       (setq core/$current_control *last_focus*)
        (setq *last_top_frame* (top_frame target_control))
        (when target_control.menu_items
          (-> *app_menu_control* `add_menu [ (or target_control.name
@@ -626,16 +643,23 @@
                         (-> split_view_parent.parent `set_content split_view_parent.child_position position_details.child_to_display)
                         
                         ;; set the child to hide in non displayed controls 
-                        (if (and (== command "hide")
-                                 (not (== target_control holding_tank)))
-                            (-> holding_tank
-                                `add_control 
-                                target_control)))
+                        (cond
+                          (and (== command "hide")
+                               (not (== target_control holding_tank)))
+                          (-> holding_tank
+                              `add_control 
+                              target_control)
+                          (and (== command "destroy")
+                               (is_function? target_control.destroy))
+                          (-> target_control `destroy)))
                     (cascade_resize)
                     true)
                 (and (== position_details.parent holding_tank)                         
                      (== command "destroy"))
-                (-> holding_tank `remove_control position_details.child.options.id)
+                (progn
+                 (-> holding_tank `remove_control position_details.child.options.id)
+                 (if (is_function? position_details.child.destroy)
+                   (-> position_details.child `destroy)))
                 else
                 (progn
                     (notify "Cannot hide a single control - try replacing")
@@ -795,7 +819,7 @@
                             (if (== args.length 0)
                               (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
                               [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
-                               (span { `class: "juno-menu-submenu" } "›")]))
+                               (span { `class: "juno-menu-submenu" } "❯")]))
                          args))
                (timer nil))
             (if (== args.length 0)
@@ -1008,6 +1032,11 @@
                                           `close
                                           (fn (e)
                                               (clean_up nil)))
+                   
+                   (when options.default_value
+                       (set_prop user_input
+                                 `value
+                                 options.default_value))
                                               
                    (-> juno_container
                        `appendChild dwin)
@@ -1016,7 +1045,23 @@
                      (focus_to user_input))))))
                  
                  
-                                           
+(defun handle_save_file (control)
+  (let
+      ((fname (if control
+                (request_user_input (dtext "Please enter a filename to save as:")
+                                    "text"
+                                    {
+                                      `default_value: (or control.options.filename
+                                                          control.options.name)
+                                     }))))
+    (when (and control 
+               (not (blank? fname)) 
+               control.get)
+      (set_prop control.options
+                `filename
+                fname)
+      (save_locally fname (-> control `get)
+                    "application/text"))))                                          
     
                      
 (defun message (text)
@@ -1183,6 +1228,7 @@
    (let
        ((self {})
         (options (or options {}))
+        (show_previews (not options.disable_preview))                                
         (id (generate_id "symbol_browser"))
         (name (name_control (or options.name "Symbol Browser")))                  
         (title_span (span { `class: "juno-title" } name))
@@ -1411,7 +1457,7 @@
                             (= val (resolve_path path (-> Environment `get_namespace_handle ns)))
                             (console.log "next_possibles: namespace:" ns path "value: " val)
                             (when options.on_select
-                                 (options.on_select ns (rest stack)))                
+                              (options.on_select ns (rest stack)))                            
                             (cond 
                               (is_function? val)
                               (pre { `tabindex: 0 `ctype: (subtype val) `style: "background: #FFFFFF; min-width: 200px; overflow: scroll; width: 100%;" }
@@ -1434,9 +1480,22 @@
                                        `class: (+ "juno-list-item " (if (has_children? symb.1) "juno-list-item-has-children " "") "juno-type-" (lowercase (subtype symb.1))) 
                                        `style: li_style } symb.0))
                                                                                    
+                              (is_function? options.render_preview)
+                              (let
+                                  ((elem (options.render_preview)))
+                                (if elem
+                                  (if (get_attribute elem "ctype")
+                                    elem
+                                    (progn
+                                     (-> elem `setAttribute `ctype "val")
+                                     elem))
+                                  (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; background: #FFFFFF; overflow: scroll; width: 100%;" }
+                                       "The render_preview function didn't return an element as expected.  Check call.")))
+                              
                               (is_string? val)
                               (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; background: #FFFFFF; overflow: scroll; width: 100%;" }
                                    val)
+                              
                               else         
                               (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px; background: #FFFFFF; overflow: scroll; width: 100%;" }
                                  (value_to_dom val))))))
@@ -1597,6 +1656,144 @@
                    (when (is_function? dwin.showModal)
                      (-> dwin `showModal))))))
 
+(defun_sync get_line_indentation_delta (line)
+  (let
+     ((delta 0)
+      (indent_spaces 0)
+      (base_indent nil)
+      (idx -1)
+      (openers [])
+      (closers [])
+      (cpos nil)
+      (last_c nil))   
+   (for_each (c (split_by "" line))
+      (progn
+        (inc idx)
+        (cond 
+             (or (== c "(")
+                 (== c "{")
+                 (== c "["))
+             (progn
+                (inc delta)
+                (push openers idx)
+                (= base_indent indent_spaces)
+                (= cpos idx)
+                (= last_c c))
+             (or (== c ")")
+                 (== c "]")
+                 (== c "}"))
+             (progn
+                (dec delta)
+                (push closers idx)
+                (= cpos idx)
+                (= last_c c))
+             (and (== c " ")
+                  (not base_indent))
+             (progn
+                (inc indent_spaces))
+                
+             (not base_indent)
+             (= base_indent indent_spaces))))    
+    { delta: delta
+      final_type: last_c 
+      final_pos: cpos
+      indent: base_indent
+      openers: openers
+      closers: closers
+     }))
+
+
+(defun handle_lisp_format_event (val editor)
+   (when (and (> val.end.row val.start.row)
+              (== val.action "insert"))
+      (console.log "new_line_event: " (-> editor `getCursorPosition))
+      (let
+         ((pos (-> editor `getCursorPosition))
+          (current_row val.start.row)
+          (prior_line (-> editor.session `getLine current_row))
+          (delta (get_line_indentation_delta prior_line))
+          (movement_needed 0)
+          (final delta.final_type)
+          (in_seek (< delta.openers.length delta.closers.length)))
+         
+         (= movement_needed delta.delta)
+         (console.log { `prior_line: prior_line
+              `depth_change: delta.delta
+              `movement_needed: movement_needed
+              `final_type: delta.final_type
+              `final_pos: delta.final_pos
+              `base_indent: delta.indent
+              `rnum: val.start.row 
+              `in_seek: in_seek
+              `openers: delta.openers
+              `closers: delta.closers
+              `change: val
+            })
+         (console.log "movement needed: at start " movement_needed "current_row: " current_row)
+         (cond 
+            (< movement_needed 0)
+            (while (and (< movement_needed 0)
+                        (> current_row 0))
+              (progn
+               (dec current_row)
+               (= prior_line (-> editor.session `getLine current_row))
+               (= delta (get_line_indentation_delta prior_line))
+               (= movement_needed (+ movement_needed delta.delta))
+               (console.log "movement_needed: now: " movement_needed)
+               (console.log { `prior_line: prior_line
+                  `depth_change: delta.delta
+                  `movement_needed: movement_needed
+                  `final_type: delta.final_type
+                  `final_pos: delta.final_pos
+                  `base_indent: delta.indent
+                  `rnum: val.start.row 
+                  `in_seek: in_seek
+                  `openers: delta.openers
+                  `closers: delta.closers
+                  `change: val
+                })))
+               
+            (> movement_needed 0)
+            (progn
+               (defvar remainder (-> prior_line `substr (+ 1 (first delta.openers))))
+               (defvar comps (split_by " " remainder))
+               (defvar symbol_details (describe comps.0))
+               (console.log "remainder: " remainder "symbol_details: " symbol_details)
+               (cond
+                 (or (starts_with? "def" comps.0)
+                     (contains? comps.0 formatting_rules.minor_indent))
+                 (progn
+                   (set_prop delta
+                      `indent
+                      (+ (first delta.openers) 3))
+                   (console.log "+ rule 0"))
+                 (and symbol_details.type 
+                     (contains? "Function" symbol_details.type)
+                     (or (== delta.final_type "(")
+                         (== delta.final_type "[")))
+                 (progn
+                    (set_prop delta
+                              `indent
+                             (+ (last delta.openers) comps.0.length 2))
+                    (console.log "+ rule 1"))
+                 (== delta.final_type "{")
+                 (progn
+                     (console.log "+ rule 2")
+                     (set_prop delta
+                        `indent
+                        (+ (last delta.openers) 2)))
+                 else
+                 (progn
+                    (set_prop delta
+                              `indent
+                              (+ (last delta.openers) 1))
+                    (console.log "+ rule 3")))))
+             
+       (console.log "Final indent amount: " delta.indent) 
+       (-> editor.session `indentRows val.end.row val.end.row (join "" (for_each (c (range delta.indent)) " "))))))
+      
+      
+
 
 (defun make_editor (content options)
   (let
@@ -1606,6 +1803,10 @@
        (resize_observer nil)
        (intf {})
        (initialized false)
+       (config_value (function (key default_value)
+                         (or (prop options key)
+                             (resolve_path [ `editor key ] *env_config*)
+                             default_value)))
        (id (or options.id (generate_id id)))
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
@@ -1650,7 +1851,8 @@
                                                               (notify (+ (dtext "Unhandled error") ": " e.message ))
                                                               (console.error e)))))))
                                     }))))
-       (font_size (or options.font_size nil))
+       
+       (font_size (config_value `font_size 14))
        (increase_font_size (function ()
                                      (when font_size
                                        (= font_size (Math.min 200 (+ font_size 1)))
@@ -1672,6 +1874,7 @@
                               (setq editor
                                     (ace.edit editor_div))
                               (set_evaluator)
+                              (console.log "initialize_editor: options: " options)
                               (when options.on_save
                                 (-> editor.commands `addCommand
                                     {
@@ -1708,6 +1911,8 @@
                                 (-> editor `on `blur options.on_blur))
                               (when options.read_only
                                 (-> editor `setReadOnly true))
+                              (when options.on_click
+                                (-> editor `on `click options.on_click))
                               (-> editor.session `setUseSoftTabs true)
                               (-> editor `setOptions {
                                                       `enableBasicAutocompletion: true
@@ -1717,9 +1922,10 @@
                                                       `useSoftTabs: true
                                                       `highlightActiveWord: true
                                                       `fontFamily: "Roboto Mono"
-                                                      `fontSize: 14
+                                                      `fontSize: font_size
                                                       })
                               (-> editor.session `setUseWorker true)
+                              (-> editor.session `setUseSoftTabs true)
                               (-> editor `setShowFoldWidgets true)
                               (cond
                                 (== options.type "juno")
@@ -1730,6 +1936,12 @@
                                 (-> editor.session `setMode "ace/mode/css")
                                 options.type
                                 (-> editor.session `setMode options.type))
+                              (cond
+                                (is_string? options.theme)
+                                (setTimeout (fn () (-> intf `set_theme options.theme)) 250)
+                                else
+                                (aif (resolve_path [ `editor `default_theme ] *env_config*)
+                                     (setTimeout (fn () (-> intf `set_theme it)) 250)))
                               (console.log "editor initialized: content: " (subtype content) content)                                                          
                               (-> editor `setValue content -1)
                               (if (eq nil font_size)
@@ -1741,7 +1953,10 @@
                               
                               (when options.on_change
                                 (-> editor `on `change (function (val)
-                                                                 (options.on_change editor val))))                             
+                                                                 (progn
+                                                                  (if (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                                                    (handle_lisp_format_event val editor))
+                                                                  (options.on_change editor val)))))
                               (-> editor `resize true)                             
                               (set_prop intf `editor editor)                             
                               ))))
@@ -1762,6 +1977,11 @@
         `get: (fn (text)
                 (-> editor `getValue))
         `type: `make_editor
+        `destroy: (fn ()
+                   (when editor
+                     (-> editor `destroy)
+                     (= editor nil)
+                     (= intf nil)))
         `set_evaluator: (fn (new_evaluator)
                           (when (is_function? new_evaluator)
                             (set_prop options
@@ -1784,11 +2004,18 @@
                         (-> editor.session `setMode options.type))
                       (when options.on_mode_set
                         (options.on_mode_set mode_name))))
-                        
+        `set_theme: (fn (theme_name)
+                      (progn
+                       (-> editor `setTheme (+ "ace/theme/" theme_name))
+                       (set_prop options
+                                 `theme
+                                 theme_name)
+                       (when options.on_theme_set
+                         (options.on_theme_set theme_name))))
         `get_evaluator: (fn ()
                           options.evaluator)
         `save: (function ()
-                         (options.on_save (-> editor `getValue)))
+                         (options.on_save (-> editor `getValue)))        
         `increase_font_size: increase_font_size
         `decrease_font_size: decrease_font_size
         `menu_items: (function ()
@@ -1798,7 +2025,9 @@
                                                   ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
                                                   ["Text" (fn () (-> intf `set_mode "text"))]
                                                   ["CSS" (fn () (-> intf `set_mode "css"))]
-                                                  ["JSON" (fn () (-> intf `set_mode "json"))]]]])
+                                                  ["JSON" (fn () (-> intf `set_mode "json"))]]]
+                        [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
+                                                       [theme  (fn () (-> intf `set_theme theme))])]])
                         
         `options: options
         `name: (or options.name "Untitled Buffer")
@@ -1813,7 +2042,44 @@
                          ))
         })))
                
-
+(defun browse_environment (options)
+   (let
+     ((options (or options {}))
+      (ns nil)
+      (self {})
+      (target_path target_path)      
+      (id (or options.id (generate_id "Environment")))
+      (name (or options.name "Environment" (inc *view_count*)))
+      (set_val (fn (selected_ns selected_path)
+                   (progn 
+                      (console.log "ns: " selected_ns selected_path)
+                      (= ns selected_ns )
+                      (= target_path selected_path)
+                      (cond
+                        (blank? ns)
+                        (set_disabled new_symbol_button)
+                        (not (blank? ns))
+                        (progn
+                         (set_enabled new_symbol_button)
+                         (set_prop new_symbol_button
+                                  `innerText (+ (dtext "New.."))))))))
+                            
+      (new_symbol_button (button { `tabindex: 0 `title: (dtext "Create New Entry") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } (dtext "New")))
+      (edit_value_button (button { `tabindex: 0 `title: (dtext "Edit Value") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } "✎"))
+      (download_as_button (button { `tabindex: 0 `title: (dtext "Export") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } "⤓"))
+      (path_span (span { `tabindex: 0 `title: (dtext "Click to copy path")  `class: "juno-path" } ""))
+      (symbol_ctl (symbol_browser {`id: id 
+                                   `name: name
+                                   `additional_elements: [(span { `class: "juno-title" `style: "color:var(--main-color)" } "Environment" )
+                                                          new_symbol_button
+                                                          edit_value_button
+                                                          download_as_button
+                                                          ] 
+                                   `on_select: set_val })))
+     
+     self))
+    
+      
 
 (defun select_evaluator ()
   (let
@@ -1862,6 +2128,7 @@
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
        (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
        (is_dirty? false)
+       (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
        (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
        (command_bar (or options.command_bar
                         (div { `class: "juno-buffer-bar" }
@@ -1872,8 +2139,10 @@
                              (if options.read_only
                                (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
                                ())                             
-                             mode_span)))      
+                             mode_span
+                             col_pos_span)))      
        (init_value (resolve_path path_to_value nseval.global_ctx.scope))
+       (current_pos nil)
        (on_save (fn (value)
                   (progn
                    (try
@@ -1893,8 +2162,16 @@
                    (progn                                     
                     (setq *last_focus* edit_control)
                     (add_class "juno-focused" command_bar)
-                    (-> edit_control.editor `focus))))
-       
+                    (if edit_control.editor.searchBox.active
+                      (focus_to edit_control.editor.searchBox.activeInput)
+                      (-> edit_control.editor `focus)))))
+       (update_position (function ()
+                          (progn
+                           (= current_pos (-> edit_control.editor `getCursorPosition))
+                           (set_prop col_pos_span
+                                     `innerText
+                                     (+ "[" current_pos.row " " current_pos.column "]"))
+                           (set_prop options `cursor_position current_pos))))
        (edit_control (make_editor (if (is_string? init_value)
                                     init_value
                                     "")                                  
@@ -1903,14 +2180,21 @@
                                    command_bar: command_bar                                                                     
                                    on_save: on_save
                                    id: id
+                                   theme: options.theme
                                    read_only: options.read_only
                                    font_size: options.font_size
+                                   on_click: (function ()
+                                                       (update_position))                                   
+                                   on_theme_set: (function (val)
+                                                           (set_prop options
+                                                                     `theme
+                                                                     val))
                                    on_mode_set: (function (val)
                                                           (progn
                                                            (= mode val)
                                                            (set_prop mode_span `innerText val)))
                                    on_change: (function (editor val)
-                                                        (progn
+                                                        (progn                                                         
                                                          (when (not is_dirty?)
                                                            (= is_dirty? true)
                                                            (add_class "juno-needs-save" title_span))
@@ -1954,7 +2238,11 @@
                               (make_menu buffer_commands_button
                                                            (menu_items)
                                                            ))))
-                              
+
+    (attach_event_listener edit_control.view
+                           `keyup
+                           (function (e)
+                              (update_position)))
                               
                                           
     (set_prop options
@@ -2028,6 +2316,7 @@
                                         view))))
        (add_result (fn (result command_text error_state)
                      (progn
+                      (console.log "log_view: <- " result) 
                       (when (not (eq nil command_text))
                         (-> output_container
                             `append
@@ -2045,9 +2334,9 @@
                                             (if (eq nil command_text)
                                               "border-top: 1px solid #00000008; padding: 5px;"
                                               "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) } 
-                               (value_to_dom result)))
-                      (when (> output_container.children.length (or options.max_entries 100))
-                        (-> (last output_container.children)
+                               (value_to_dom result options.display_options)))
+                      (when (> output_container.children.length (or options.max_entries 10))
+                        (-> (first output_container.children)
                             `remove))                      
                       (set_prop output_container
                                 `scrollTop
@@ -2082,17 +2371,29 @@
   (let
       ((options (or options {}))
        (name options.name)       
-       (resize_observer nil)
+       (resize_observer nil)       
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
        (commands_button (button { `title: "REPL Commands" } "⋯"))
        (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
+       (show_prototype_details_button (button { `title: (dtext "Show Object Prototype Detail") } "P"))
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
        (error_state nil)
        (initialized false)       
        (intf nil)
        (id (or options.id (generate_id "repl")))
-       (output_control (log_view { `additional_elements: [ commands_button title_span namespace_span path_span ] `id: id }))
+       (toggle_prototype_detail (function ()
+                                          (progn                                           
+                                           (set_prop options.display_options
+                                                     `include_prototypes
+                                                     (not options.display_options.include_prototypes))
+                                           (set_prop output_control.options.display_options                                                     
+                                                     `include_prototypes options.display_options.include_prototypes)
+                                           (if options.display_options.include_prototypes
+                                             (add_class "juno-button-on" show_prototype_details_button)
+                                             (remove_class "juno-button-on" show_prototype_details_button)))))
+       (output_control (log_view { `display_options: (or options.display_options {} )
+                                   `additional_elements: [ commands_button title_span show_prototype_details_button namespace_span path_span ] `id: id }))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -2187,13 +2488,20 @@
        (on_blur (fn ()
                   (progn
                    true)))
+       (destroy (fn ()
+                  (-> input_container `destroy)))
        (menu_items (fn ()
                      [[(dtext "Clear Output Log")
                        (function ()
                                  (clear_output))]
                       [(dtext "Clear REPL History")
                        (function ()
-                                 (clear_history))]]))
+                                 (clear_history))]
+                      [(if options.display_options.include_prototypes
+                         (dtext "Hide Object Prototype Detail")
+                         (dtext "Show Object Prototype Detail"))
+                       (function ()
+                                 (toggle_prototype_detail))]]))
        (initialize (fn ()
                      (progn
                       (if initialized
@@ -2201,6 +2509,12 @@
                         (progn
                          (= initialized true)
                          (console.log "repl initializing")
+                         (when (eq nil options.display_options)
+                           (set_prop options
+                                     `display_options
+                                     { `include_prototypes: false }))                           
+                         (if options.display_options.include_prototypes
+                           (add_class "juno-button-on" show_prototype_details_button))
                          (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
@@ -2239,9 +2553,15 @@
                              (progn
                               (handle_event e)
                               (make_menu commands_button
-                                         (menu_items)
-                                         ))))
-
+                                         (menu_items)))))
+    
+    (attach_event_listener show_prototype_details_button
+                           `click
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (toggle_prototype_detail))))
+    
     (attach_event_listener path_span
                            `click
                            (fn (e)
@@ -2267,8 +2587,9 @@
              `input_container: input_container
              `history_next_entry: history_next_entry
              `history_prior_entry: history_prior_entry
-             `clear_output: clear_output
+             `clear_output: clear_output             
              `initialize: initialize
+             `destroy: destroy
              `type: "browser_repl"
              `resize: (fn ()
                        (-> sview `resize))
@@ -2829,7 +3150,8 @@
             (progn
              (rlog (control_tree $root_controls))))  ]])))
                   
-                                  
+
+
 
 (defun serialize_controls (controls)
   [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
@@ -2857,11 +3179,100 @@
              control)
        (when control.initialize
          (-> control `initialize))))))
-       
 
 
 
-    
+(defun_sync to_indent (str)
+    (join "" (for_each (c (range str.length))
+                       " ")))
+
+(defun_sync juno_format_handler_orig (line tab base_indent)
+   (let
+      ((delta 0)
+       (fname "")
+       (is_paren false)
+       (iBefore nil)
+       (rval nil)
+       (ch nil)
+       (pos (or (and line line.length) 0)))
+     
+      (while (and (>= pos 0)
+                  (>= delta 0))
+         (progn
+            (dec pos)
+            (setq ch (prop line pos))
+            (cond
+                (or (== ch "(")
+                    (== ch "[")
+                    (== ch "{"))
+                (progn
+                   (dec delta)
+                   (if (== ch "(")
+                      (= is_paren true)))
+                (or (== ch ")")
+                    (== ch "]")
+                    (== ch "}"))
+                (inc delta))))
+      (console.log "format_handler: delta: " delta "base_indent: " (JSON.stringify base_indent) base_indent.length "is_paren: " is_paren)
+      (cond
+        (and (< delta 0)
+             is_paren)
+        (progn
+           (inc pos)
+           (setq iBefore pos)
+           (setq ch (prop line pos))
+           (while (and (not rval)
+                       (<= pos (+ 1 line.length)))
+             (progn
+              (console.log ch "pos: " pos "fname: " fname (contains? fname (prop formatting_rules `minor_indent)))
+              (cond 
+                 (or (== ch undefined) (== ch " ") (== ch "\\t"))
+                 (cond 
+                    (and (> fname.length 0)
+                         (contains? fname (prop formatting_rules `minor_indent)))
+                    (progn
+                         (= rval (to_indent (+ "" (-> line `substr 0 iBefore) "  ")))
+                         (console.log "rule 0: minor_indent: " fname)
+                         (break))
+                    (> fname.length 0)
+                    (progn
+                       (= rval (to_indent (+ "" (-> line `substr 0 iBefore))))
+                       (console.log "rule 1: fname: " fname)
+                       (break))
+                    else
+                    (progn 
+                       (= rval (to_indent base_indent))
+                       (console.log "rule 2")
+                       (break))))
+              (setq fname (+ fname ch))
+              (inc pos)
+              (setq ch (prop line pos))))
+           (when (eq rval nil)
+               (= rval (to_indent (-> line `substring 0 (- iBefore 1))))
+               (console.log "rule 3")))
+        (< delta 0)
+        (progn 
+           (= rval (to_indent (-> line `substring 0 (+ pos 2))))
+           (console.log "rule 4"))
+        (== delta 1)
+        (progn
+           (= rval (to_indent (-> line `substring 0 (- base_indent.length 1))))
+           (console.log "rule 5"))
+        (> delta 0)
+        (progn
+           (= rval (to_indent (-> line `substring 0 (- base_indent.length (+ tab.length delta )))))
+           (console.log "rule 6"))
+        else
+        (progn
+           (console.log "rule 7")
+           (= rval base_indent)))
+      (console.log "format_handler: rval: " (JSON.stringify rval))
+      (or rval "")))
+
+           
+(defun_sync juno_format_handler (line tab base_indent)
+   "")  ;; we let the control take care of this since it has better visibility to prior lines
+
 
 (defun new_buffer (options)
   (let
@@ -2912,6 +3323,7 @@
     
     
     
+    
     (attach_event_listener juno_container `click
                            (fn (e)
                              (progn
@@ -2944,8 +3356,13 @@
                                         ["CSS" (fn (e) (new_buffer { `type: "css" })) ]
                                         ["Text" (fn (e) (new_buffer { `type: "text" })) ]
                                         ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
+                         (if (and *last_focus*
+                                  (is_function? (prop *last_focus* `get))
+                                  (prop *last_focus* `name))
+                           [(+ "Save " (prop *last_focus* `name) " to File") (fn (e) (handle_save_file *last_focus*))]
+                           [])
                          ["Save Environment" (fn (e) (save_control_image)) ]
-                         ["Load Resource" (fn (e) (-> resource_loader_button `click)) ]])])
+                         ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]])])
                          
        
        (push *main_menu*            
@@ -3023,13 +3440,15 @@
                            (function (e)
                              (progn                              
                               (defvar kcode (get_key_code e))
-                              (console.log "kcode is: " kcode)
+                              ;(console.log "kcode is: " kcode)
                               (aif (prop *key_bindings*.active kcode)
                                    (progn
                                     (handle_event e)
-                                    (it)))    
+                                    (it)))
+                              
                               (when *log_key_events* (console.log "key_up: " e)))))
 
+    
     (defun core/rlog (`& vals)
       (progn
        (for_each (`v (or vals []))

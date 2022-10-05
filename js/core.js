@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-09-29 09:40:47
-// Version: 2022.09.29.09.40
-export const DLISP_ENV_VERSION='2022.09.29.09.40';
+// Build Time: 2022-10-04 13:55:33
+// Version: 2022.10.04.13.55
+export const DLISP_ENV_VERSION='2022.10.04.13.55';
 
 
 
@@ -1328,23 +1328,25 @@ await Environment.set_global("use_quoted_initializer",async function(...forms) {
             if (check_true (((meta instanceof Array)&& (await (await Environment.get_global("resolve_path"))([3,1],form) instanceof Object)))) {
                 {
                     await (await Environment.get_global("set_path"))([3,1,"initializer"],form,await (async function(){
-                         return ["=:quotel",(form && form["2"])] 
+                         return ["=:quotel",await (async function(){
+                             return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
+                        })()] 
                     })());
                     return form
                 }
             } else if (check_true ((meta instanceof Object))) {
                 {
-                    {
-                        await async function(){
-                            let __target_obj__94=(form && form["3"]);
-                            __target_obj__94["initializer"]=await (async function(){
-                                 return ["=:quotel",(form && form["2"])] 
-                            })();
-                            return __target_obj__94;
-                            
-                        }();
-                        return form
-                    }
+                    await async function(){
+                        let __target_obj__94=(form && form["3"]);
+                        __target_obj__94["initializer"]=await (async function(){
+                             return ["=:quotel",await (async function(){
+                                 return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
+                            })()] 
+                        })();
+                        return __target_obj__94;
+                        
+                    }();
+                    return form
                 }
             } else {
                 {
@@ -2461,7 +2463,7 @@ await (async function(){
         })()
     },{
         initializer:await (async function(){
-             return {"compile_let":[[[0,1,"val"],["=:list","=:is_array?"],"let allocation section"],[[0,2],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"let missing block"]],"compile_cond":[[[0],["=:list",["=:fn",["=:v"],["=:==",["=:%",["=:length",["=:rest","=:v"]],2],0]]],"cond: odd number of arguments"]],"compile_assignment":[[[0,1],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"assignment is missing target and values"],[[0,2],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"assignment is missing value"]]} 
+             return ["=:try",{"compile_let":[[[0,1,"val"],["=:list","=:is_array?"],"let allocation section"],[[0,2],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"let missing block"]],"compile_cond":[[[0],["=:list",["=:fn",["=:v"],["=:==",["=:%",["=:length",["=:rest","=:v"]],2],0]]],"cond: odd number of arguments"]],"compile_assignment":[[[0,1],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"assignment is missing target and values"],[[0,2],["=:list",["=:fn",["=:v"],["=:not",["=:==","=:v","=:undefined"]]]],"assignment is missing value"]]},["=:catch","=:Error",["=:e"],"=:e"]] 
         })(),requires:["is_array?","not","length","rest"]
     });
      if (__array_op_rval__197 instanceof Function){
@@ -2566,8 +2568,6 @@ await Environment.set_global("compiler_syntax_validation",async function(validat
                 }
             }
         }
-    } else {
-        await console.log("compiler_syntax_validation: no rules for: ",validator_key," -> tokens: ",tokens,"tree: ",tree)
     };
     return validation_results
 },{ "name":"compiler_syntax_validation","fn_args":"(validator_key tokens errors ctx tree)","requires":["*compiler_syntax_rules*","validate_form_structure","is_array?","chop","is_object?","not","push","getf_ctx","first","compiler_source_chain","rest"]
@@ -2884,9 +2884,10 @@ await Environment.set_global("defvalue",async function(sym,value,meta) {
 },"name":"defvalue","macro":true,"fn_args":"(sym value meta)","description":["=:+","If the provided symbol is already defined as an accessible ","global value from the current namespace it will return the ","defined value, otherwise it will define the global in the ","current (implicit) namespace or the explicitly referenced ","namespace.  Returns the newly defined value or previously ","defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"]
 });
 await Environment.set_global("defparameter",async function(sym,value,meta) {
-    return ["=:use_quoted_initializer",["=:defglobal",sym,value,meta]]
+    return ["=:first",["=:use_quoted_initializer",["=:defglobal",sym,value,meta]],{ "description":["=:+","Defines a global that is always reset to the provided value, ","when called or when the image is reloaded, ensuring that the ","initial value is always set to a specific value.  If the value ","is already defined, it will be overwritten.  To set a symbol in ","an explicit namespace, provide a fully qualified symbol name ","in the form of namspace/symname as the symbol to be defined. ","Returns the defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"]
+}]
 },{ "eval_when":{ "compile_time":true
-},"name":"defparameter","macro":true,"fn_args":"(sym value meta)","description":["=:+","Defines a global that is always reset to the provided value, ","when called or when the image is reloaded, ensuring that the ","initial value is always set to a specific value.  If the value ","is already defined, it will be overwritten.  To set a symbol in ","an explicit namespace, provide a fully qualified symbol name ","in the form of namspace/symname as the symbol to be defined. ","Returns the defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"]
+},"name":"defparameter","macro":true,"fn_args":"(sym value meta)"
 });
 await Environment.set_global("get_function_args",async function(f) {
     let r;
@@ -3628,16 +3629,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_17528;
+                                                let _expr_58040;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_17528=await (async function(){
+                                                _expr_58040=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_17528 && _expr_17528["0"]);
-                                                req_ns=(_expr_17528 && _expr_17528["1"]);
-                                                explicit=(_expr_17528 && _expr_17528["2"]);
+                                                req_sym=(_expr_58040 && _expr_58040["0"]);
+                                                req_ns=(_expr_58040 && _expr_58040["1"]);
+                                                explicit=(_expr_58040 && _expr_58040["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3740,13 +3741,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_92823;
+                    let _expr_42663;
                     let nspace;
-                    _expr_92823=await (async function(){
+                    _expr_42663=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_92823 && _expr_92823["0"]);
-                    nspace=(_expr_92823 && _expr_92823["1"]);
+                    sym=(_expr_42663 && _expr_42663["0"]);
+                    nspace=(_expr_42663 && _expr_42663["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -3911,6 +3912,110 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
     })())
 },{ "name":"symbols_by_namespace","fn_args":"(options)","requires":["to_object","sort","push","pairs","keys","namespaces"]
 });
+{
+     Environment.set_global("keys*",function(obj) {
+        if (check_true ((obj instanceof Object))){
+            {
+                let current_obj;
+                let prototypes;
+                let properties;
+                current_obj=obj;
+                prototypes=[];
+                properties= ( Environment.get_global("first"))(prototypes);
+                 ( function(){
+                     let __test_condition__283=function() {
+                        return current_obj
+                    };
+                    let __body_ref__284=function() {
+                        properties=new Set();
+                        (prototypes).push(properties);
+                         ( function() {
+                            let __for_body__287=function(item) {
+                                return  properties["add"].call(properties,item)
+                            };
+                            let __array__288=[],__elements__286= Object.getOwnPropertyNames(current_obj);
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__285 in __elements__286) {
+                                __array__288.push( __for_body__287(__elements__286[__iter__285]));
+                                if(__BREAK__FLAG__) {
+                                     __array__288.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__288;
+                             
+                        })();
+                        return current_obj= Object.getPrototypeOf(current_obj)
+                    };
+                    let __BREAK__FLAG__=false;
+                    while( __test_condition__283()) {
+                         __body_ref__284();
+                         if(__BREAK__FLAG__) {
+                             break;
+                            
+                        }
+                    } ;
+                    
+                })();
+                return  ( Environment.get_global("flatten"))( ( function() {
+                    let __for_body__291=function(s) {
+                        return  ( function() {
+                            {
+                                 let __call_target__= Array.from(s), __call_method__="sort";
+                                return  __call_target__[__call_method__]()
+                            } 
+                        })()
+                    };
+                    let __array__292=[],__elements__290=prototypes;
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__289 in __elements__290) {
+                        __array__292.push( __for_body__291(__elements__290[__iter__289]));
+                        if(__BREAK__FLAG__) {
+                             __array__292.pop();
+                            break;
+                            
+                        }
+                    }return __array__292;
+                     
+                })())
+            }
+        } else {
+            throw new TypeError("keys*: invalid object as argument");
+            
+        }
+    },{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"]
+})
+};
+{
+     Environment.set_global("pairs*",function(obj) {
+        if (check_true ((obj instanceof Object))){
+            return  ( function() {
+                let __for_body__295=function(k) {
+                    return  ( function(){
+                        let __array_op_rval__297=k;
+                         if (__array_op_rval__297 instanceof Function){
+                            return  __array_op_rval__297(obj[k]) 
+                        } else {
+                            return [__array_op_rval__297,obj[k]]
+                        }
+                    })()
+                };
+                let __array__296=[],__elements__294= ( Environment.get_global("keys*"))(obj);
+                let __BREAK__FLAG__=false;
+                for(let __iter__293 in __elements__294) {
+                    __array__296.push( __for_body__295(__elements__294[__iter__293]));
+                    if(__BREAK__FLAG__) {
+                         __array__296.pop();
+                        break;
+                        
+                    }
+                }return __array__296;
+                 
+            })()
+        }
+    },{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"]
+})
+};
 return true
 }
 }
