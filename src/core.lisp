@@ -704,6 +704,25 @@
       "description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list."
       "usage":[['binding-elem:symbol','values:list'],["form:list"]]
       `tags: [`filter `remove `select `list `array]
+   })
+
+(defmacro reduce_sync ((elem item_list) form)
+    `(let
+        ((__collector [])
+         (__result nil)
+         (__action (function (,@elem)
+                         ,#form)))
+      (declare (function __action))                     
+      (for_each (__item ,#item_list)
+         (do
+             (= __result (__action __item))
+             (if __result
+                 (push __collector __result))))
+      __collector)
+  {
+      "description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list."
+      "usage":[['binding-elem:symbol','values:list'],["form:list"]]
+      `tags: [`filter `remove `select `list `array]
   })
      
 

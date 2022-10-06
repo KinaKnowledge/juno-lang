@@ -1707,18 +1707,13 @@
       openers: openers
       closers: closers
      }))
-
-
       
-
-(defun handle_lisp_format_event (val editor)
-   (when (and (> val.end.row val.start.row)
-              (== val.action "insert"))
-      (console.log "new_line_event: " (-> editor `getCursorPosition))
+(defun_sync format_lisp_line (line_number get_line) 
+   (if (and (> line_number 0)
+            (is_function? get_line))
       (let
-         ((pos (-> editor `getCursorPosition))
-          (current_row val.start.row)
-          (prior_line (-> editor.session `getLine current_row))
+         ((current_row (- line_number 1))
+          (prior_line (get_line current_row))
           (delta (get_line_indentation_delta prior_line))
           (movement_needed 0)
           (final delta.final_type)
@@ -1731,11 +1726,10 @@
               `final_type: delta.final_type
               `final_pos: delta.final_pos
               `base_indent: delta.indent
-              `rnum: val.start.row 
+              `rnum: current_row
               `in_seek: in_seek
               `openers: delta.openers
               `closers: delta.closers
-              `change: val
             })
          (console.log "movement needed: at start " movement_needed "current_row: " current_row)
          (cond 
@@ -1744,7 +1738,7 @@
                         (> current_row 0))
               (progn
                (dec current_row)
-               (= prior_line (-> editor.session `getLine current_row))
+               (= prior_line (get_line current_row))
                (= delta (get_line_indentation_delta prior_line))
                (= movement_needed (+ movement_needed delta.delta))
                (console.log "movement_needed: now: " movement_needed)
@@ -1754,11 +1748,10 @@
                   `final_type: delta.final_type
                   `final_pos: delta.final_pos
                   `base_indent: delta.indent
-                  `rnum: val.start.row 
+                  `rnum: current_row
                   `in_seek: in_seek
                   `openers: delta.openers
                   `closers: delta.closers
-                  `change: val
                 })))
                
             (> movement_needed 0)
@@ -1771,13 +1764,13 @@
                                     true
                                     (first delta.openers)))
                    (remainder (-> prior_line `substr (+ 1 remainder_pos))) ;; move past the opener
-                   (comps (reduce (c (split_by " " remainder))
+                   (comps (reduce_sync (c (split_by " " remainder))
                              (when (not (blank? c))
                                 c)))
                    (symbol_details (if (and (not (contains? "(" comps.0))
                                             (not (contains? "{" comps.0))
                                             (not (contains? "[" comps.0)))
-                                        (describe comps.0)
+                                        (first (meta_for_symbol comps.0 true))
                                         { `type: "-" })))
                   
                  (when (== undefined remainder_pos)
@@ -1828,11 +1821,16 @@
                     (console.log "+ rule 3: default: remainder_pos"))))))
              
        (console.log "Final indent amount: " delta.indent) 
-       (-> editor.session `indentRows val.end.row val.end.row 
-                                          (join "" (for_each (c (range delta.indent)) " "))))))
+       (join "" (for_each (c (range delta.indent)) " ")))))      
 
-      
-      
+(defun handle_lisp_format_event (val editor)
+  (progn    
+    (when (and (== (- val.end.row val.start.row) 1)
+              (== val.action "insert"))     
+       (defvar indent_string (format_lisp_line val.end.row (function (rnum) 
+                                                                     (-> editor.session `getLine rnum))))
+       (when indent_string
+        (-> editor.session `indentRows val.end.row val.end.row indent_string)))))
 
 
 (defun make_editor (content options)
@@ -1990,11 +1988,28 @@
                               (set_prop options
                                         `font_size
                                         font_size)
+
+                              (-> editor.commands `addCommand
+                                  {
+                                   `name: "tab_behavior"
+                                   `bindKey: { `win: "tab" `mac: "tab" }
+                                   `exec: (function (editor)
+                                                    (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                                      (defvar row_number (prop (-> editor `getCursorPosition)
+                                                                               `row))
+                                                      (when row_number
+                                                        (defvar indent_string
+                                                          (format_lisp_line row_number
+                                                                            (function (rnum) 
+                                                                                      (-> editor.session `getLine rnum))))
+                                                        (when indent_string
+                                                          (-> editor.session `outdentRows (new ace.Range row_number 0 row_number 1)) 
+                                                          (-> editor.session `indentRows row_number row_number indent_string))))) })
                               
                               (when options.on_change
                                 (-> editor `on `change (function (val)
                                                                  (progn
-                                                                  (if (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                                                  (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
                                                                     (handle_lisp_format_event val editor))
                                                                   (options.on_change editor val)))))
                               (-> editor `resize true)                             

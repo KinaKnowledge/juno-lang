@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-06 05:28:57
-// Version: 2022.10.06.05.28
-export const DLISP_ENV_VERSION='2022.10.06.05.28';
+// Build Time: 2022-10-06 08:08:04
+// Version: 2022.10.06.08.08
+export const DLISP_ENV_VERSION='2022.10.06.08.08';
 
 
 
@@ -802,6 +802,17 @@ await Environment.set_global("reduce",async function(...args) {
     return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:fn",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
 },{ "eval_when":{ "compile_time":true
 },"name":"reduce","macro":true,"fn_args":"((elem item_list) form)","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"]
+});
+await Environment.set_global("reduce_sync",async function(...args) {
+    let elem;
+    let item_list;
+    let form;
+    elem=(args && args["0"] && args["0"]["0"]);
+    item_list=(args && args["0"] && args["0"]["1"]);
+    form=(args && args["1"]);
+    return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:function",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
+},{ "eval_when":{ "compile_time":true
+},"name":"reduce_sync","macro":true,"fn_args":"((elem item_list) form)","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"]
 });
 await Environment.set_global("is_nil?",async function(value) {
     return (null===value)
@@ -3629,16 +3640,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_99541;
+                                                let _expr_34601;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_99541=await (async function(){
+                                                _expr_34601=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_99541 && _expr_99541["0"]);
-                                                req_ns=(_expr_99541 && _expr_99541["1"]);
-                                                explicit=(_expr_99541 && _expr_99541["2"]);
+                                                req_sym=(_expr_34601 && _expr_34601["0"]);
+                                                req_ns=(_expr_34601 && _expr_34601["1"]);
+                                                explicit=(_expr_34601 && _expr_34601["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3741,13 +3752,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_10520;
+                    let _expr_79678;
                     let nspace;
-                    _expr_10520=await (async function(){
+                    _expr_79678=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_10520 && _expr_10520["0"]);
-                    nspace=(_expr_10520 && _expr_10520["1"]);
+                    sym=(_expr_79678 && _expr_79678["0"]);
+                    nspace=(_expr_79678 && _expr_79678["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

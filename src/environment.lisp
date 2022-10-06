@@ -736,12 +736,12 @@
                     `usage: ["vals:array|object|set"]
                     `tags: [`array `set `object `values `convert ]
                     })
-       
-         (meta_for_symbol (fn (quoted_symbol search_mode)
+	 
+	 (meta_for_symbol (function (quoted_symbol search_mode)
                                (when (is_string? quoted_symbol)
                                  ;; if we have been given a string, get any local data we have in our global context
                                  (defvar local_data (prop Environment.global_ctx.scope quoted_symbol))
-                                 (defvar acc [])
+                                 (defvar acc [])				 
                                  (if search_mode
                                    (do                                    
                                      (when local_data
@@ -752,12 +752,12 @@
                                                 ;; include any symbols we need
                                                 (aif (prop Environment.definitions quoted_symbol)
                                                      it
-                                                     {}))))
+                                                     {}))))				     
                                      (when parent_environment
-                                       (reduce (info (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1))
+                                       (reduce_sync (info (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1))
                                            (push acc info)))
                                      (when (> (length (keys children)) 0)  ;; we don't have a parent, but we have children                                      
-                                       (reduce (`details (reduce (`child_data (pairs children))
+                                       (reduce_sync (`details (reduce_sync (`child_data (pairs children))
                                                                  (when (not (== child_data.0 (current_namespace)))
                                                                    (-> child_data.1 `meta_for_symbol quoted_symbol))))
                                                (push acc details)))
@@ -772,7 +772,7 @@
                                                `name: quoted_symbol }
                                              it)
                                           nil)))))
-                          {
+			  {
                            `description: (+ "Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "
                                             "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "
                                             "is an array, since there can be symbols with the same name in different environments. If no values are found "
@@ -782,6 +782,7 @@
                            `usage: ["quoted_symbol:string" "search_mode:boolean"]
                            `tags: [`describe `meta `help `definition `symbol `metadata ]
                            })
+         
        
        (describe (fn (quoted_symbol search_mode)
                    (progn
@@ -2292,7 +2293,7 @@
      (set_prop Environment
                `eval eval_struct
                `identify subtype
-               `meta_for_symbol meta_for_symbol
+               `meta_for_symbol meta_for_symbol	       
                `set_compiler set_compiler
                `read_lisp reader
                `as_lisp as_lisp
