@@ -49,9 +49,13 @@
                    ["font-weight" "bold"]
                    ["padding-right" "5px"]])
 
-(defglobal formatting_rules {
-    minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce"]
-})
+(defglobal formatting_rules
+  {
+   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce","cond"]
+   keywords: (split_by " " (+ "throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply "
+	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
+                              "dynamic_import quote for_each for_with declare  break -> * + / -"))                             
+   })
 
 ;;(create_css_entry "span.juno-value"
  ;;                 [["display" "inline-block"]])
@@ -1693,7 +1697,9 @@
                 (inc indent_spaces))
                 
              (not base_indent)
-             (= base_indent indent_spaces))))    
+             (= base_indent indent_spaces))))
+    (when (eq undefined base_indent)
+       (= base_indent indent_spaces))
     { delta: delta
       final_type: last_c 
       final_pos: cpos
@@ -1702,6 +1708,8 @@
       closers: closers
      }))
 
+
+      
 
 (defun handle_lisp_format_event (val editor)
    (when (and (> val.end.row val.start.row)
@@ -1755,26 +1763,50 @@
                
             (> movement_needed 0)
             (progn
-               (defvar remainder (-> prior_line `substr (+ 1 (first delta.openers))))
-               (defvar comps (split_by " " remainder))
-               (defvar symbol_details (describe comps.0))
-               (console.log "remainder: " remainder "symbol_details: " symbol_details)
-               (cond
+               (let
+                  ((lisp_line (-> prior_line `substr (first delta.openers)))
+                   (remainder_pos (cond
+                                    (prop delta.openers (- movement_needed 1))
+                                    (prop delta.openers (- movement_needed 1))
+                                    true
+                                    (first delta.openers)))
+                   (remainder (-> prior_line `substr (+ 1 remainder_pos))) ;; move past the opener
+                   (comps (reduce (c (split_by " " remainder))
+                             (when (not (blank? c))
+                                c)))
+                   (symbol_details (if (and (not (contains? "(" comps.0))
+                                            (not (contains? "{" comps.0))
+                                            (not (contains? "[" comps.0)))
+                                        (describe comps.0)
+                                        { `type: "-" })))
+                  
+                 (when (== undefined remainder_pos)
+                   (debug)
+                   (throw EvalError "Invalid remainder_pos: debug point"))
+                     
+                 (console.log "lisp_line: " lisp_line " openers: " (as_lisp delta.openers) "comps: " comps)
+                 (console.log "remainder_pos: " remainder_pos)
+                 (console.log "remainder: " remainder "symbol_details: " symbol_details)
+                 (console.log "is a keyword: " (contains? comps.0 formatting_rules.keywords))
+                 (cond
                  (or (starts_with? "def" comps.0)
                      (contains? comps.0 formatting_rules.minor_indent))
                  (progn
                    (set_prop delta
                       `indent
-                      (+ (first delta.openers) 3))
+                      (+ remainder_pos 3))
                    (console.log "+ rule 0"))
-                 (and symbol_details.type 
-                     (contains? "Function" symbol_details.type)
-                     (or (== delta.final_type "(")
-                         (== delta.final_type "[")))
+                 
+                 
+                 (and (or (and symbol_details.type 
+                               (contains? "Function" symbol_details.type))
+                          (contains? comps.0 formatting_rules.keywords))
+                      (or (== delta.final_type "(")
+                          (== delta.final_type "[")))
                  (progn
                     (set_prop delta
                               `indent
-                             (+ (last delta.openers) comps.0.length 2))
+                             (+ remainder_pos comps.0.length 2))
                     (console.log "+ rule 1"))
                  (== delta.final_type "{")
                  (progn
@@ -1782,15 +1814,23 @@
                      (set_prop delta
                         `indent
                         (+ (last delta.openers) 2)))
+                 (contains? comps.0 built_ins)
+                 (progn
+                    (set_prop delta
+                              `indent
+                              (+ remainder_pos comps.0.length 2))
+                    (console.log "+ rule 4: built_ins: remainder_pos comps"))
                  else
                  (progn
                     (set_prop delta
                               `indent
-                              (+ (last delta.openers) 1))
-                    (console.log "+ rule 3")))))
+                              (+ remainder_pos 1))
+                    (console.log "+ rule 3: default: remainder_pos"))))))
              
        (console.log "Final indent amount: " delta.indent) 
-       (-> editor.session `indentRows val.end.row val.end.row (join "" (for_each (c (range delta.indent)) " "))))))
+       (-> editor.session `indentRows val.end.row val.end.row 
+                                          (join "" (for_each (c (range delta.indent)) " "))))))
+
       
       
 

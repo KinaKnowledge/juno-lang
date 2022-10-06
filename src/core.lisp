@@ -1967,7 +1967,7 @@ such as things that connect or use environmental resources.
                               (== t "|")
                               (push acc "_pipe_")
                               (contains? t "(){}")
-                              (throw SyntaxError (+ "Invalid character in symbol: " symname))
+                              (throw LispSyntaxError (+ "Invalid character in symbol: " symname))
                               else
                               (push acc t)))
               (join "" acc))))

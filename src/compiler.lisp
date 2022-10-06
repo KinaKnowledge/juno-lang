@@ -966,7 +966,26 @@
                              (for_each (`arg args)
                               (do
                                (inc idx)
-                               (= argdetails (find_in_context ctx arg))
+			       (try
+				(= argdetails (find_in_context ctx arg))
+				(catch LispSyntaxError (e)
+				   (progn
+				     (setq is_error {
+					   `error: e.name
+					   `source_name: source_name                                        
+					   `message: e.message
+					   `form: (resolve_path _path expanded_tree)
+					   `parent_forms: (or (and (chop _path)
+								   (resolve_path (chop _path) expanded_tree))
+							      [])
+					   `invalid: true
+					   })
+				     (set_prop e
+					       `details is_error
+					       `handled true)
+				     (console.error is_error)
+				     (debug)
+				     (throw e))))
                                                               
                                (= argvalue argdetails.val)
                                (= argtype argdetails.type)
