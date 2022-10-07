@@ -980,7 +980,7 @@
 
 
 
-(defun range_inc (start end step)
+(defun_sync range_inc (start end step)
         (if end
             (range start (+ end 1) step)
             (range (+ start 1)))

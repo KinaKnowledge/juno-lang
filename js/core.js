@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-06 08:08:04
-// Version: 2022.10.06.08.08
-export const DLISP_ENV_VERSION='2022.10.06.08.08';
+// Build Time: 2022-10-06 09:22:19
+// Version: 2022.10.06.09.22
+export const DLISP_ENV_VERSION='2022.10.06.09.22';
 
 
 
@@ -1162,14 +1162,16 @@ await Environment.set_global("map_range",async function(n,from_range,to_range) {
     return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
 },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "]
 });
-await Environment.set_global("range_inc",async function(start,end,step) {
-    if (check_true (end)){
-        return await (await Environment.get_global("range"))(start,await (await Environment.get_global("add"))(end,1),step)
-    } else {
-        return await (await Environment.get_global("range"))(await (await Environment.get_global("add"))(start,1))
-    }
-},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"]
-});
+{
+     Environment.set_global("range_inc",function(start,end,step) {
+        if (check_true (end)){
+            return  ( Environment.get_global("range"))(start, ( Environment.get_global("add"))(end,1),step)
+        } else {
+            return  ( Environment.get_global("range"))( ( Environment.get_global("add"))(start,1))
+        }
+    },{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"]
+})
+};
  Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
 await Environment.set_global("color_for_number",async function(num,saturation,brightness) {
     let h;
@@ -3640,16 +3642,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_34601;
+                                                let _expr_48398;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_34601=await (async function(){
+                                                _expr_48398=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_34601 && _expr_34601["0"]);
-                                                req_ns=(_expr_34601 && _expr_34601["1"]);
-                                                explicit=(_expr_34601 && _expr_34601["2"]);
+                                                req_sym=(_expr_48398 && _expr_48398["0"]);
+                                                req_ns=(_expr_48398 && _expr_48398["1"]);
+                                                explicit=(_expr_48398 && _expr_48398["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3752,13 +3754,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_79678;
+                    let _expr_7767;
                     let nspace;
-                    _expr_79678=await (async function(){
+                    _expr_7767=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_79678 && _expr_79678["0"]);
-                    nspace=(_expr_79678 && _expr_79678["1"]);
+                    sym=(_expr_7767 && _expr_7767["0"]);
+                    nspace=(_expr_7767 && _expr_7767["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

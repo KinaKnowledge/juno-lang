@@ -51,10 +51,10 @@
 
 (defglobal formatting_rules
   {
-   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce","cond"]
+   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch"]
    keywords: (split_by " " (+ "throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply "
 	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
-                              "dynamic_import quote for_each for_with declare  break -> * + / -"))                             
+                              "dynamic_import quote for_each for_with declare  break -> * + / - and or prop set_prop"))                      
    })
 
 ;;(create_css_entry "span.juno-value"
@@ -1668,30 +1668,36 @@
       (idx -1)
       (openers [])
       (closers [])
+      (code_mode true)
       (cpos nil)
       (last_c nil))   
    (for_each (c (split_by "" line))
       (progn
         (inc idx)
-        (cond 
-             (or (== c "(")
-                 (== c "{")
-                 (== c "["))
-             (progn
+        (cond
+           (== c "\"")
+           (= code_mode (not code_mode))
+           (and code_mode
+               (or (== c "(")
+                   (== c "{")
+                   (== c "[")))
+           (progn
                 (inc delta)
                 (push openers idx)
                 (= base_indent indent_spaces)
                 (= cpos idx)
                 (= last_c c))
+           (and code_mode
              (or (== c ")")
                  (== c "]")
-                 (== c "}"))
+                 (== c "}")))
              (progn
                 (dec delta)
                 (push closers idx)
                 (= cpos idx)
                 (= last_c c))
-             (and (== c " ")
+             (and code_mode
+                  (== c " ")
                   (not base_indent))
              (progn
                 (inc indent_spaces))
@@ -1703,125 +1709,164 @@
     { delta: delta
       final_type: last_c 
       final_pos: cpos
+      line: line
       indent: base_indent
       openers: openers
       closers: closers
      }))
+
+(defun_sync calculate_indent_rule (delta movement_needed)
+   (let
+      ((lisp_line (-> delta.line `substr (first delta.openers)))
+       (remainder_pos (or (prop delta.openers (- movement_needed 1))
+                                      (first delta.openers)
+                                      delta.indent))
+       (remainder (-> delta.line `substr (+ 1 remainder_pos)))
+       (nada "remainder: " remainder "remainder_pos: " remainder_pos)
+       (comps (reduce_sync (c (split_by " " remainder))
+                             (when (not (blank? c))
+                                c)))
+       (nada (console.log "comps: " comps))
+       (symbol_details (if (and (not (contains? "(" comps.0))
+                                            (not (contains? "{" comps.0))
+                                            (not (contains? "[" comps.0)))
+                                        (or (first (meta_for_symbol comps.0 true))
+                                            { `type: "-" })
+                                        { `type: "-" })))
+      (cond
+         (== movement_needed 0)
+         true
+         (or (starts_with? "def" comps.0)
+             (contains? comps.0 formatting_rules.minor_indent))
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos 3))
+            (console.log "+ rule 0: minor indent: add 3 to neutral position"))
       
+                 
+         (and (or (and symbol_details.type
+                       (contains? "Function" symbol_details.type))
+                  (contains? comps.0 formatting_rules.keywords))
+              (contains? delta.final_type ["(" "[" ")" "]"]))
+                            
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos comps.0.length 2))
+            (console.log "+ rule 1: is a function/keyword: indent to first arg of function"))
+                   
+         (== delta.final_type "{")
+         (progn
+            (console.log "+ rule 2: object opener")
+            (set_prop delta
+                      `indent
+                      (+ (last delta.openers) 2)))
+         (contains? comps.0 built_ins)
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos comps.0.length 2))
+            (console.log "+ rule 4: built_ins: remainder_pos + length of built_in"))
+         else
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos 1))
+            (console.log "+ rule 3: default: remainder_pos")))
+      (console.log "calculate_indent_rule: <- delta: " (clone delta))
+      delta))
+
 (defun_sync format_lisp_line (line_number get_line) 
    (if (and (> line_number 0)
             (is_function? get_line))
       (let
          ((current_row (- line_number 1))
-          (prior_line (get_line current_row))
+          (prior_line (progn
+                         (defvar v (get_line current_row))
+                         (while (and (== (trim v) "")
+                                     (> current_row 0))
+                            (progn
+                               (dec current_row)
+                               (= v (get_line current_row))))
+                         (or v "")))
           (delta (get_line_indentation_delta prior_line))
           (movement_needed 0)
+          (orig_movement_needed 0)
+          (comps nil)
           (final delta.final_type)
           (in_seek (< delta.openers.length delta.closers.length)))
-         
+         (console.log "format_lisp_line: start processing line: " line_number)
          (= movement_needed delta.delta)
-         (console.log { `prior_line: prior_line
-              `depth_change: delta.delta
-              `movement_needed: movement_needed
-              `final_type: delta.final_type
-              `final_pos: delta.final_pos
-              `base_indent: delta.indent
-              `rnum: current_row
-              `in_seek: in_seek
-              `openers: delta.openers
-              `closers: delta.closers
-            })
-         (console.log "movement needed: at start " movement_needed "current_row: " current_row)
+         (= orig_movement_needed movement_needed)
+         (console.log "movement needed: at start " movement_needed "current_row: " current_row "delta: " (clone delta))
          (cond 
             (< movement_needed 0)
-            (while (and (< movement_needed 0)
-                        (> current_row 0))
-              (progn
-               (dec current_row)
-               (= prior_line (get_line current_row))
-               (= delta (get_line_indentation_delta prior_line))
-               (= movement_needed (+ movement_needed delta.delta))
-               (console.log "movement_needed: now: " movement_needed)
-               (console.log { `prior_line: prior_line
-                  `depth_change: delta.delta
-                  `movement_needed: movement_needed
-                  `final_type: delta.final_type
-                  `final_pos: delta.final_pos
-                  `base_indent: delta.indent
-                  `rnum: current_row
-                  `in_seek: in_seek
-                  `openers: delta.openers
-                  `closers: delta.closers
-                })))
+            (let
+               ((lisp_line nil)
+                (remainder_pos nil)
+                (remainder nil)
+                (symbol_details nil))
+               (while (and (< movement_needed 0)
+                           (> current_row 0))
+                  (progn
+                     (dec current_row)
+                     (= prior_line (get_line current_row))
+                     (while (and (> current_row 0)
+                                 (== (trim prior_line) ""))
+                        (progn
+                           (dec current_row)
+                           (= prior_line (get_line current_row))))
+                     (= delta (get_line_indentation_delta prior_line))
+                     (= movement_needed (+ movement_needed delta.delta))
+                 
+                     (console.log "movement_needed: now: " movement_needed "openers: " (as_lisp delta.openers)  "base_indent: " delta.indent (JSON.stringify prior_line))
+                     (console.log "movement_needed: comps: " (as_lisp comps) "symbol_details: " symbol_details)
+                     ))
+               (= delta (calculate_indent_rule delta movement_needed))
+               (console.log "movement needed for indent: " delta.indent))
                
             (> movement_needed 0)
             (progn
-               (let
-                  ((lisp_line (-> prior_line `substr (first delta.openers)))
-                   (remainder_pos (cond
-                                    (prop delta.openers (- movement_needed 1))
-                                    (prop delta.openers (- movement_needed 1))
-                                    true
-                                    (first delta.openers)))
-                   (remainder (-> prior_line `substr (+ 1 remainder_pos))) ;; move past the opener
-                   (comps (reduce_sync (c (split_by " " remainder))
-                             (when (not (blank? c))
-                                c)))
-                   (symbol_details (if (and (not (contains? "(" comps.0))
-                                            (not (contains? "{" comps.0))
-                                            (not (contains? "[" comps.0)))
-                                        (first (meta_for_symbol comps.0 true))
-                                        { `type: "-" })))
-                  
-                 (when (== undefined remainder_pos)
-                   (debug)
-                   (throw EvalError "Invalid remainder_pos: debug point"))
-                     
-                 (console.log "lisp_line: " lisp_line " openers: " (as_lisp delta.openers) "comps: " comps)
-                 (console.log "remainder_pos: " remainder_pos)
-                 (console.log "remainder: " remainder "symbol_details: " symbol_details)
-                 (console.log "is a keyword: " (contains? comps.0 formatting_rules.keywords))
-                 (cond
-                 (or (starts_with? "def" comps.0)
-                     (contains? comps.0 formatting_rules.minor_indent))
-                 (progn
-                   (set_prop delta
-                      `indent
-                      (+ remainder_pos 3))
-                   (console.log "+ rule 0"))
-                 
-                 
-                 (and (or (and symbol_details.type 
-                               (contains? "Function" symbol_details.type))
-                          (contains? comps.0 formatting_rules.keywords))
-                      (or (== delta.final_type "(")
-                          (== delta.final_type "[")))
-                 (progn
-                    (set_prop delta
-                              `indent
-                             (+ remainder_pos comps.0.length 2))
-                    (console.log "+ rule 1"))
-                 (== delta.final_type "{")
-                 (progn
-                     (console.log "+ rule 2")
-                     (set_prop delta
-                        `indent
-                        (+ (last delta.openers) 2)))
-                 (contains? comps.0 built_ins)
-                 (progn
-                    (set_prop delta
-                              `indent
-                              (+ remainder_pos comps.0.length 2))
-                    (console.log "+ rule 4: built_ins: remainder_pos comps"))
-                 else
-                 (progn
-                    (set_prop delta
-                              `indent
-                              (+ remainder_pos 1))
-                    (console.log "+ rule 3: default: remainder_pos"))))))
+               (= delta (calculate_indent_rule delta movement_needed))))
              
-       (console.log "Final indent amount: " delta.indent) 
-       (join "" (for_each (c (range delta.indent)) " ")))))      
+       (console.log "For line_number: " line_number "Final indent amount: " delta.indent)
+       (join "" (for_each (c (range delta.indent)) " ")))))
+
+
+  
+(defun_sync indent_editor_line (editor row_number options)
+     (if (is_number? row_number)
+       (let
+           ((line (-> editor.session `getLine row_number))
+            (orig_line (clone line))
+            (indent_string (format_lisp_line row_number
+                                             (or options.get_row
+                                                 (function (rnum) 
+                                                           (-> editor.session `getLine rnum))))))
+         (console.log "indent_row: " row_number "indent_string: " indent_string line)
+         (if indent_string
+           (progn
+           (setq line (+ "" indent_string (trim line)))
+           (console.log "line at " row_number " to be replaced with: " (JSON.stringify line))
+           (if options.apply
+             (progn
+             (-> editor.selection `clearSelection)
+             (-> editor.selection `setSelectionAnchor row_number 0)
+             (-> editor.selection `selectLineEnd)
+             (console.log "indent_editor_line: selected line" (JSON.stringify (clone (-> editor.selection `getRange))))
+             (-> editor.session `remove (-> editor.selection `getRange))
+             (-> editor.selection `setSelectionAnchor row_number 0)
+             (-> editor.selection `selectLineEnd)
+             (console.log "indent_editor_line: selected line" (JSON.stringify (clone (-> editor.selection `getRange))))
+             (-> editor.session `replace (-> editor.selection `getRange) line)
+             (console.log "indent_editor_line: get_line: " (JSON.stringify (-> editor.session `getLine row_number)))
+             (-> editor.selection `clearSelection)
+             true)
+             line))
+           
+         line))
+       (throw EvalError "invalid row_number provided to indent_row")))        
 
 (defun handle_lisp_format_event (val editor)
   (progn    
@@ -1832,7 +1877,38 @@
        (when indent_string
         (-> editor.session `indentRows val.end.row val.end.row indent_string)))))
 
-
+(defun_sync indent_editor_line (editor row_number options)
+  (if (is_number? row_number)
+    (let
+        ((line (-> editor.session `getLine row_number))
+         (orig_line (clone line))
+         (indent_string (format_lisp_line row_number
+                                          (or options.get_row
+                                              (function (rnum) 
+                                                        (-> editor.session `getLine rnum))))))
+      (console.log "indent_row: " row_number "indent_string: " indent_string line)
+      (if indent_string
+        (progn
+         (setq line (+ "" indent_string (trim line)))
+         (console.log "line at " row_number " to be replaced with: " (JSON.stringify line))
+         (if options.apply
+           (progn
+            (-> editor.selection `clearSelection)
+            (-> editor.selection `setSelectionAnchor row_number 0)
+            (-> editor.selection `selectLineEnd)
+            (console.log "indent_editor_line: selected line" (JSON.stringify (clone (-> editor.selection `getRange))))
+            (-> editor.session `remove (-> editor.selection `getRange))
+            (-> editor.selection `setSelectionAnchor row_number 0)
+            (-> editor.selection `selectLineEnd)
+            (console.log "indent_editor_line: selected line" (JSON.stringify (clone (-> editor.selection `getRange))))
+            (-> editor.session `replace (-> editor.selection `getRange) line)
+            (console.log "indent_editor_line: get_line: " (JSON.stringify (-> editor.session `getLine row_number)))
+            (-> editor.selection `clearSelection)
+            true)
+           line))
+        
+        line))
+    (throw EvalError "invalid row_number provided to indent_row")))  
 (defun make_editor (content options)
   (let
       ((options (or options {
@@ -1905,6 +1981,18 @@
                                                  `font_size font_size)
                                        (console.log "editor: options: " options)
                                        (-> editor `setFontSize font_size))))
+       (get_selection (function ()
+                                (-> editor.selection `getRange)))
+       (get_lines (function (from to)
+                            (-> editor.selection `getLines from to)))
+       (is_selected? (function ()
+                               (progn
+                                (defvar rng (get_selection))
+                                (not (and (== rng.start.row rng.end.row)
+                                          (== rng.start.column rng.end.column))))))                                        
+       (indent_row (function (row_number options)
+                     (indent_editor_line editor row_number options)))
+                                  
        (initialize_editor (fn ()
                             (when (not initialized)
                               (setq initialized true)
@@ -1957,6 +2045,7 @@
                                                       `enableLiveAutocompletion: true
                                                       `showFoldWidgets: true
                                                       `cursorStyle: "wide"
+                                                      `firstLineNumber: (or options.first_line_number 0)
                                                       `useSoftTabs: true
                                                       `highlightActiveWord: true
                                                       `fontFamily: "Roboto Mono"
@@ -1995,16 +2084,63 @@
                                    `bindKey: { `win: "tab" `mac: "tab" }
                                    `exec: (function (editor)
                                                     (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
-                                                      (defvar row_number (prop (-> editor `getCursorPosition)
-                                                                               `row))
-                                                      (when row_number
-                                                        (defvar indent_string
-                                                          (format_lisp_line row_number
-                                                                            (function (rnum) 
-                                                                                      (-> editor.session `getLine rnum))))
-                                                        (when indent_string
-                                                          (-> editor.session `outdentRows (new ace.Range row_number 0 row_number 1)) 
-                                                          (-> editor.session `indentRows row_number row_number indent_string))))) })
+                                                      (if (not (is_selected?))
+                                                        (progn
+                                                         (defvar row_number (prop (-> editor `getCursorPosition)
+                                                                                  `row))
+                                                         (console.log "tab: start: single line: " row_number)
+                                                         (indent_row row_number { `apply: true }))
+                                                        (let
+                                                           ((start nil)
+                                                            (end nil))
+                                                         (defvar selected_range (clone (-> editor.selection `getRange)))
+                                                         (= start selected_range.start.row)
+                                                         (= end selected_range.end.row)
+                                                         (console.log "tab: start: selected_range: " (JSON.stringify selected_range))
+                                                         (if (== selected_range.end.column undefined)
+                                                           (debug))
+                                                         (set_prop selected_range.end
+                                                                   `row
+                                                                   (+ 1 selected_range.end.row)
+                                                                   `col 0)
+                                                         (set_prop selected_range.start
+                                                                   `column 0)
+                                                         
+                                                         (console.log "tab: end selection: " (JSON.stringify (get_selection)))
+                                                         
+                                                         (console.log "tab: final range: " (JSON.stringify selected_range))
+                                                        
+                                                         (-> editor.selection `setRange selected_range)
+                                                         (console.log "tab on: range: " (JSON.stringify selected_range))
+                                                         (defvar lines (for_each (row_number (range_inc selected_range.start.row selected_range.end.row))
+                                                                                 (-> editor.session `getLine row_number)))
+                                                         (console.log "tab: lines: pre-change: " (clone lines))
+                                                         (= lines
+                                                           (for_each (row_number (range_inc selected_range.start.row selected_range.end.row))
+                                                                     (progn
+                                                                      (console.log "tab: [start]: [ " selected_range.start.row selected_range.end.row " ] analyzing row: " row_number ": " (JSON.stringify (prop lines (- row_number start))))
+                                                                      (set_prop lines
+                                                                               row_number
+                                                                               (indent_row row_number
+                                                                                           { get_row: (function (rnum)
+                                                                                                        (progn
+                                                                                                           (console.log "get_row: rnum: " rnum " relative: " (- rnum start))
+                                                                                                           (cond
+                                                                                                             (and (>= rnum start)
+                                                                                                                  (< rnum end))
+                                                                                                             (prop lines
+                                                                                                                   (- rnum start))
+                                                                                                             else
+                                                                                                             (-> editor.session `getLine rnum)))) ;; not impacted by the change
+                                                                                  } ))
+                                                                      (prop lines row_number))))
+                                                         (console.log "tab: adjusted lines: " lines)
+                                                         (console.log "tab:     lines joined: " (join "\n" lines))
+                                                         (-> editor.session `replace selected_range (join "\n" lines))
+                                                         (-> editor.selection `setRange selected_range)
+                                                         (console.log "tab: reselected fixed: " (-> editor `getCopyText))
+                                                         )))) })  ;; reselect the originally selected range since we worked with it
+                                                         
                               
                               (when options.on_change
                                 (-> editor `on `change (function (val)
@@ -2031,6 +2167,8 @@
                 (-> editor `setValue text))
         `get: (fn (text)
                 (-> editor `getValue))
+        `get_selection: get_selection
+        `is_selected?: is_selected?
         `type: `make_editor
         `destroy: (fn ()
                    (when editor
@@ -2095,7 +2233,7 @@
                          (initialize_editor)                        
                              
                          ))
-        })))
+        })))    
                
 (defun browse_environment (options)
    (let
