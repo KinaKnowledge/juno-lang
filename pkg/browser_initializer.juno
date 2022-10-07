@@ -1727,7 +1727,8 @@
                              (when (not (blank? c))
                                 c)))
        (nada (console.log "comps: " comps))
-       (symbol_details (if (and (not (contains? "(" comps.0))
+       (symbol_details (if (and (> comps.length 0)
+                                (not (contains? "(" comps.0))
                                             (not (contains? "{" comps.0))
                                             (not (contains? "[" comps.0)))
                                         (or (first (meta_for_symbol comps.0 true))
@@ -1835,38 +1836,6 @@
 
 
   
-(defun_sync indent_editor_line (editor row_number options)
-     (if (is_number? row_number)
-       (let
-           ((line (-> editor.session `getLine row_number))
-            (orig_line (clone line))
-            (indent_string (format_lisp_line row_number
-                                             (or options.get_row
-                                                 (function (rnum) 
-                                                           (-> editor.session `getLine rnum))))))
-         (console.log "indent_row: " row_number "indent_string: " indent_string line)
-         (if indent_string
-           (progn
-           (setq line (+ "" indent_string (trim line)))
-           (console.log "line at " row_number " to be replaced with: " (JSON.stringify line))
-           (if options.apply
-             (progn
-             (-> editor.selection `clearSelection)
-             (-> editor.selection `setSelectionAnchor row_number 0)
-             (-> editor.selection `selectLineEnd)
-             (console.log "indent_editor_line: selected line" (JSON.stringify (clone (-> editor.selection `getRange))))
-             (-> editor.session `remove (-> editor.selection `getRange))
-             (-> editor.selection `setSelectionAnchor row_number 0)
-             (-> editor.selection `selectLineEnd)
-             (console.log "indent_editor_line: selected line" (JSON.stringify (clone (-> editor.selection `getRange))))
-             (-> editor.session `replace (-> editor.selection `getRange) line)
-             (console.log "indent_editor_line: get_line: " (JSON.stringify (-> editor.session `getLine row_number)))
-             (-> editor.selection `clearSelection)
-             true)
-             line))
-           
-         line))
-       (throw EvalError "invalid row_number provided to indent_row")))        
 
 (defun handle_lisp_format_event (val editor)
   (progn    
@@ -1908,7 +1877,51 @@
            line))
         
         line))
-    (throw EvalError "invalid row_number provided to indent_row")))  
+    (throw EvalError "invalid row_number provided to indent_row")))
+
+(defun_sync indent_editor_selection (editor)
+  (let
+      ((start nil)
+       (end nil))
+    (defvar selected_range (clone (-> editor.selection `getRange)))
+    (= start selected_range.start.row)
+    (= end selected_range.end.row)
+    (console.log "tab: start: selected_range: " (JSON.stringify selected_range))
+    (-> editor.selection `clearSelection)
+    (-> editor.selection `setSelectionAnchor start 0)
+    (-> editor.selection `selectTo end 0)
+    (-> editor.selection `selectLineEnd)
+    (console.log "tab: start: fully selected_range: " (-> editor.selection `getRange))                                                   
+    (defvar lines (for_each (row_number (range_inc selected_range.start.row selected_range.end.row))
+                            (-> editor.session `getLine row_number)))
+    (console.log "tab: lines: pre-change: " (clone lines))
+    
+    (for_each (row_number (range_inc selected_range.start.row selected_range.end.row))
+              (progn
+               (console.log "tab: [start]: [ " selected_range.start.row selected_range.end.row " ] analyzing row: " row_number ": " (JSON.stringify (prop lines (- row_number start))))
+               (set_prop lines
+                         (- row_number start)
+                         (indent_editor_line editor row_number
+                                     { get_row: (function (rnum)
+                                                          (progn
+                                                           (console.log "get_row: rnum: " rnum " relative: " (- rnum start))
+                                                           (cond
+                                                             (and (>= rnum start)
+                                                                  (< rnum end))
+                                                             (prop lines
+                                                                   (- rnum start))
+                                                             else
+                                                             (-> editor.session `getLine rnum)))) ;; not impacted by the change
+                                      } ))))
+    
+    (console.log "tab: adjusted lines: " lines)
+    (console.log "tab:     lines joined: " (join "\n" lines))
+    (-> editor.session `replace (-> editor.selection `getRange) (join "\n" lines))
+    (-> editor.selection `selectLineEnd)
+    ;(-> editor.selection `setRange selected_range)
+    (console.log "tab: reselected fixed: " (-> editor `getCopyText))))
+
+
 (defun make_editor (content options)
   (let
       ((options (or options {
@@ -2090,56 +2103,7 @@
                                                                                   `row))
                                                          (console.log "tab: start: single line: " row_number)
                                                          (indent_row row_number { `apply: true }))
-                                                        (let
-                                                           ((start nil)
-                                                            (end nil))
-                                                         (defvar selected_range (clone (-> editor.selection `getRange)))
-                                                         (= start selected_range.start.row)
-                                                         (= end selected_range.end.row)
-                                                         (console.log "tab: start: selected_range: " (JSON.stringify selected_range))
-                                                         (if (== selected_range.end.column undefined)
-                                                           (debug))
-                                                         (set_prop selected_range.end
-                                                                   `row
-                                                                   (+ 1 selected_range.end.row)
-                                                                   `col 0)
-                                                         (set_prop selected_range.start
-                                                                   `column 0)
-                                                         
-                                                         (console.log "tab: end selection: " (JSON.stringify (get_selection)))
-                                                         
-                                                         (console.log "tab: final range: " (JSON.stringify selected_range))
-                                                        
-                                                         (-> editor.selection `setRange selected_range)
-                                                         (console.log "tab on: range: " (JSON.stringify selected_range))
-                                                         (defvar lines (for_each (row_number (range_inc selected_range.start.row selected_range.end.row))
-                                                                                 (-> editor.session `getLine row_number)))
-                                                         (console.log "tab: lines: pre-change: " (clone lines))
-                                                         (= lines
-                                                           (for_each (row_number (range_inc selected_range.start.row selected_range.end.row))
-                                                                     (progn
-                                                                      (console.log "tab: [start]: [ " selected_range.start.row selected_range.end.row " ] analyzing row: " row_number ": " (JSON.stringify (prop lines (- row_number start))))
-                                                                      (set_prop lines
-                                                                               row_number
-                                                                               (indent_row row_number
-                                                                                           { get_row: (function (rnum)
-                                                                                                        (progn
-                                                                                                           (console.log "get_row: rnum: " rnum " relative: " (- rnum start))
-                                                                                                           (cond
-                                                                                                             (and (>= rnum start)
-                                                                                                                  (< rnum end))
-                                                                                                             (prop lines
-                                                                                                                   (- rnum start))
-                                                                                                             else
-                                                                                                             (-> editor.session `getLine rnum)))) ;; not impacted by the change
-                                                                                  } ))
-                                                                      (prop lines row_number))))
-                                                         (console.log "tab: adjusted lines: " lines)
-                                                         (console.log "tab:     lines joined: " (join "\n" lines))
-                                                         (-> editor.session `replace selected_range (join "\n" lines))
-                                                         (-> editor.selection `setRange selected_range)
-                                                         (console.log "tab: reselected fixed: " (-> editor `getCopyText))
-                                                         )))) })  ;; reselect the originally selected range since we worked with it
+                                                        (indent_editor_selection editor)))) })  ;; reselect the originally selected range since we worked with it
                                                          
                               
                               (when options.on_change
