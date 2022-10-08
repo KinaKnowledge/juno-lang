@@ -10,9 +10,15 @@
   --highlight-color: #000000;
   --control-focused: #efe5e540;
   --control-unfocused-color: darkgray;
+  --control-disabled-bg-color: #eaeded;
+  --control-disabled-color: #cad2d3;
+  --control-readonly-color: #777;
+  --button-hover-bg-color: #00000030;
+  --app-header-color: #546478;
   --namespace-color: #976464;
   --main-accent-color: #0000000A;
   --main-accent-line: #00000010;
+  --main-accent-line-hover: #00000020;
   --main-control-surface-accent-color: #efe5e540;
   --main-control-button-color: #00000020;
   --value-modified-color: #016783;
@@ -776,9 +782,9 @@ this the same font stack that Normalize.css sets for the `body`.
     font-family: inherit;
     font-size: 100%;
     padding: 0.5em 1em;
-    color: rgba(0, 0, 0, 0.80);
+    color: var(--main-color);
     border: none rgba(0, 0, 0, 0);
-    background-color: #E6E6E6;
+    background-color: var(--main-control-button-color);
     text-decoration: none;
     border-radius: 2px;
 }
@@ -797,7 +803,7 @@ button:hover {
 .pure-button:active {
     -webkit-box-shadow: 0 0 0 1px rgba(0,0,0, 0.15) inset, 0 0 6px rgba(0,0,0, 0.20) inset;
             box-shadow: 0 0 0 1px rgba(0,0,0, 0.15) inset, 0 0 6px rgba(0,0,0, 0.20) inset;
-    border-color: #000;
+    border-color: var(--main-accent-line);
 }
 
 .pure-button[disabled],
@@ -920,7 +926,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 .pure-form select:focus,
 .pure-form textarea:focus {
     outline: 0;
-    border-color: #129FEA;
+    border-color: var(--value-focus-color);
 }
 
 /*
@@ -929,14 +935,14 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 */
 .pure-form input:not([type]):focus {
     outline: 0;
-    border-color: #129FEA;
+    border-color: var(--value-focus-color);
 }
 
 .pure-form input[type="file"]:focus,
 .pure-form input[type="radio"]:focus,
 .pure-form input[type="checkbox"]:focus {
-    outline: thin solid #129FEA;
-    outline: 1px auto #129FEA;
+  outline: thin solid var(--value-focus-color);
+  outline: 1px auto var(--value-focus-color);
 }
 .pure-form .pure-checkbox,
 .pure-form .pure-radio {
@@ -961,8 +967,8 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 .pure-form select[disabled],
 .pure-form textarea[disabled] {
     cursor: not-allowed;
-    background-color: #eaeded;
-    color: #cad2d3;
+    background-color: var(--control-disabled-color);
+    color: var(--control-disabled-color);
 }
 
 /*
@@ -971,15 +977,15 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 */
 .pure-form input:not([type])[disabled] {
     cursor: not-allowed;
-    background-color: #eaeded;
-    color: #cad2d3;
+    background-color: var(--control-disabled-bg-color);
+    color: var(--control-disabled-color);
 }
 .pure-form input[readonly],
 .pure-form select[readonly],
 .pure-form textarea[readonly] {
-    background-color: #eee; /* menu hover bg color */
-    color: #777; /* menu text color */
-    border-color: #ccc;
+  background-color: var(--control-disabled-bg-color); /* menu hover bg color */
+  color: var(--control-disabled-color); /* menu text color */
+  border-color: #ccc;
 }
 
 .pure-form input:focus:invalid,
@@ -997,7 +1003,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
     /* Normalizes the height; padding is not sufficient. */
     height: 2.25em;
     border: 1px solid #ccc;
-    background-color: white;
+    background-color: var(--main-bg-color);
 }
 .pure-form select[multiple] {
     height: auto;
@@ -1015,7 +1021,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
     width: 100%;
     padding: 0.3em 0;
     margin-bottom: 0.3em;
-    color: #333;
+    color: var(--main-color);
     border-bottom: 1px solid #e5e5e5;
 }
 
@@ -1362,11 +1368,11 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 }
 
 .pure-menu-link {
-  color: #505050;
+  color: var(--main-color);
 }
 
 .pure-menu-children {
-    background-color: #fff;
+  background-color: var(--main-bg-color);
 }
 
 .pure-menu-link,
@@ -1480,6 +1486,7 @@ button {
   border: 1px solid transparent;
   border-radius: 0px;  
   background: var(--main-control-button-color);
+  color: var(--main-color);
 }
 
 button.juno-primary {
@@ -1502,7 +1509,7 @@ juno-dialog {
 }
 
 button:hover {
-  background: #00000030;
+  background: var(--button-hover-bg-color);  
   border: 1px inset #ffffff;
 }
 
@@ -1613,7 +1620,7 @@ li.juno-main-menu-header {
 }
 
 .juno-vertical-dragger:hover { 
-  background: var(--main-accent-line);
+  background: var(--main-accent-line-hover);
 }
 
 .juno-horizontal-dragger {
@@ -1625,7 +1632,7 @@ li.juno-main-menu-header {
 }
 
 .juno-horizontal-dragger:hover {  
-  background: #00000010;
+  background: var(--main-accent-line-hover);
 }
 
 .juno-active-hover {
@@ -1677,7 +1684,7 @@ span.juno-evaluator {
   font-family: var(--main-mono-space);
   margin-left: 10px;
   margin-right: 10px;
-  color: #404040;
+  color: var(--main-color);
 }
 
 span.juno-namespace {
@@ -1751,6 +1758,7 @@ span.juno-needs-save {
   animation: slide-in 0.2s ease-out;
   box-shadow: 2px 3px 8px 0px #00000069;
   background: var(--main-bg-color);
+  border: 1px solid var(--main-control-surface-accent-color);
 }
 
 
@@ -1794,7 +1802,7 @@ li.juno-menu-header:active {
   font-weight: bold;
   display: inline-block;
   cursor: default;
-  color: #546478;
+  color: var(--app-header-color);
   padding-left: 10px;
   padding-right: 10px;
 }

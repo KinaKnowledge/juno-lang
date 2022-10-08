@@ -1874,8 +1874,7 @@
             (console.log "indent_editor_line: get_line: " (JSON.stringify (-> editor.session `getLine row_number)))
             (-> editor.selection `clearSelection)
             true)
-           line))
-        
+           line))        
         line))
     (throw EvalError "invalid row_number provided to indent_row")))
 
@@ -2622,6 +2621,7 @@
                                    on_change: (function (editor val)
                                                         (progn
                                                          true))
+                                   theme: options.theme
                                    `id: id
                                    repl_mode: true                                                                              
                                    evaluator: (fn (lisp_text no_eval)
@@ -2658,7 +2658,12 @@
                          (dtext "Hide Object Prototype Detail")
                          (dtext "Show Object Prototype Detail"))
                        (function ()
-                                 (toggle_prototype_detail))]]))
+                                 (toggle_prototype_detail))]
+                      [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
+                                                            [theme  (fn ()
+                                                                      (progn
+                                                                       (set_prop options `theme theme)
+                                                                       (-> input_container `set_theme theme)))])]]))
        (initialize (fn ()
                      (progn
                       (if initialized
