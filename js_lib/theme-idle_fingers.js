@@ -28,7 +28,8 @@ background: rgb(102, 82, 0)\
 }\
 .ace-idle-fingers .ace_marker-layer .ace_bracket {\
 margin: -1px 0 0 -1px;\
-border: 1px solid #404040\
+border: 1px solid var(--matching-paren-outline-color);\
+color: var(--matching-paren-color);\
 }\
 .ace-idle-fingers .ace_marker-layer .ace_active-line {\
 background: #353637\
