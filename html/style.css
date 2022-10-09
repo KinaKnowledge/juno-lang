@@ -8,6 +8,7 @@
   --main-color: #000000;  
   --highlight-bg-color: #DADADA;
   --highlight-color: #000000;
+  --control-text-input-color-bg: #FFFFFF50;
   --control-focused: #efe5e540;
   --control-unfocused-color: darkgray;
   --control-disabled-bg-color: #eaeded;
@@ -1515,7 +1516,9 @@ button:hover {
 }
 
 input {
-  border: 1px solid var(--main-accent-line);  
+  border: 1px solid var(--main-accent-line);
+  background: var(--control-text-input-color-bg);
+  color: var(--main-color);
   padding: 3px;
 }
 
@@ -1539,6 +1542,7 @@ dialog:modal {
   user-select: text;
   visibility: visible;  
   border: 1px solid var(--main-accent-color);
+  color: var(--main-color);
   background: var(--main-bg-color);
   box-shadow: 1px 2px 11px 2px #00000033;
 }

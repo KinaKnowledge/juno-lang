@@ -3,6 +3,7 @@
     --main-color: #d0d0d0;
     --highlight-bg-color: #ffffff59;
     --highlight-color: #fff4e8;
+    --control-text-input-color-bg: #FFFFFF50;
     --control-focused: #efe5e540;
     --control-unfocused-color: darkgray;
     --control-disabled-bg-color: #eaeded;
@@ -33,7 +34,7 @@
     --type-regexp-color: #fe2f81;
     --type-code-color: #ffe2b7;
     --value-focus-color: #0168ff;
-    --mode-color: #0278e7;
+    --mode-color: #70baff;
     --primary-action-bg-color: #0278e7;
     --primary-action-color: #FFFFFF;
     --main-app-font: -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;

@@ -1752,6 +1752,70 @@
       closers: closers
      }))
 
+(defun find_root_forms_for_buffer (buffer_text)
+   (let
+      ((lines (split_by "\n" buffer_text))
+       (ldat nil)
+       (lnum -1)
+       (running_depth_for_line 0)
+       (new_depth nil)
+       (boundaries nil)
+       (depth_positions [])
+       (current_root_form nil))
+      
+      (for_each (line lines)
+                (progn
+                   (inc lnum)
+                   (= ldat (analyze_text_line line))
+                   
+                   (= boundaries (sort (conj (for_each (o ldat.openers)
+                                                [o 1 (prop line o) ])
+                                             (for_each (c ldat.closers)
+                                                [c -1 (prop line c)]))
+                                       { `key: [ 0 ] }))
+                   (for_each (t boundaries)
+                      (progn
+                         (= running_depth_for_line (+ t.1 running_depth_for_line))
+                         (cond
+                            (and (eq nil current_root_form)
+                                    (== running_depth_for_line 1))
+                            (progn
+                               (= current_root_form {
+                                                      `start_row: lnum
+                                                      `start_col: t.0
+                                                      `end_row: nil
+                                                      `end_col: nil
+                                                      }))
+                            (and current_root_form
+                                 (== running_depth_for_line 0))
+                            (progn
+                               (set_prop current_root_form
+                                  `end_row lnum
+                                  `end_col t.0)
+                               (push depth_positions current_root_form)
+                               (= current_root_form nil)))))))
+      depth_positions))
+
+(defun get_root_form_for_position (buffer_text row column)
+   (let
+      ((root_forms (find_root_forms_for_buffer buffer_text))
+       (target nil))
+      (for_each (form (or root_forms []))
+         (progn
+            (console.log "row: " row "column: " column "form: sr,er,sc,ec:" form.start_row form.end_row form.start_col form.end_col)
+            (when (and (>= row form.start_row)
+                       (<= row form.end_row))
+               (cond 
+                  (or (and (== form.end_row form.start_row)
+                           (>= column form.start_col)
+                           (<= column form.end_col))
+                  
+                      (> (- form.end_row form.start_row) 0))
+                  (progn
+                     (= target form)
+                     (break))))))
+      target))
+
 (defun_sync calculate_indent_rule (delta movement_needed)
    (let
       ((lisp_line (-> delta.line `substr (first delta.openers)))
@@ -2030,6 +2094,16 @@
                                                  `font_size font_size)
                                        (console.log "editor: options: " options)
                                        (-> editor `setFontSize font_size))))
+       (select_to_form_root (fn ()
+                                      (let
+                                          ((cpos (-> editor `getCursorPosition)))
+                                        (console.log "cpos: " cpos (-> editor `getValue))
+                                        (defvar pos (get_root_form_for_position (-> editor `getValue) cpos.row cpos.column))
+                                        (console.log "pos: " pos)
+                                        (when pos
+                                          (-> editor.selection `clearSelection)
+                                          (-> editor.selection `setSelectionAnchor pos.start_row pos.start_col)
+                                          (-> editor.selection `selectTo pos.end_row (+ pos.end_col 1))))))
        (get_selection (function ()
                                 (-> editor.selection `getRange)))
        (get_lines (function (from to)
@@ -2073,7 +2147,14 @@
                                    `bindKey: { `win: "Ctrl-Shift--" `mac: "Ctrl-Shift--" }
                                    `exec: decrease_font_size })
                               
-                                   
+
+                              (-> editor.commands `addCommand
+                                  {
+                                   `name: "select_to_form_root"
+                                   `bindKey: { `win: "Ctrl-Shift-Enter" `mac: "Ctrl-Shift-Enter" }
+                                   `exec: select_to_form_root
+                                   })
+                              
                               (when (is_array? options.commands)
                                 (for_each (command options.commands)
                                           (do
