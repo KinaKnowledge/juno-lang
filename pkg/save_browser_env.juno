@@ -80,9 +80,16 @@
     (set_prop *env_config*
               `editor
               {
-               `default_theme: "juno_light"
-               `font_size: 14
+                default_theme: "juno_light"
+                font_size: 14
                }))
+  
+  (when (eq nil (prop *env_config* `application))
+    (set_prop *env_config*
+              `application
+              { menu_timeout: 2500
+                global_theme: "juno_light"  }))
+  
   
   (setq no_includes
 	(conj no_includes

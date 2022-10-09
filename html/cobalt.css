@@ -1,0 +1,76 @@
+:root {
+    --main-bg-color: #001d36;
+    --main-color: #d0d0d0;
+    --highlight-bg-color: #ffffff59;
+    --highlight-color: #fff4e8;
+    --control-focused: #efe5e540;
+    --control-unfocused-color: darkgray;
+    --control-disabled-bg-color: #eaeded;
+    --control-disabled-color: #cad2d3;
+    --control-readonly-color: #777;
+    --button-hover-bg-color: #00000030;
+    --app-header-color: #b7bbbf;
+    --namespace-color: #976464;
+    --main-accent-color: #ff92724d;
+    --main-accent-line: #c77a0b10;
+    --main-control-surface-accent-color: #efe5e540;
+    --main-control-button-color: #FFFFFF40;
+    --value-modified-color: #4ac0e0;
+    --matching-paren-color: #ffeb00;
+    --matching-paren-outline-color: #b6a800;
+    --type-number-color: green;
+    --type-boolean-color: orange;
+    --type-string-color: darkblue;
+    --type-function-color: #2e3eb4;
+    --type-asyncfunction-color: #3f5b71;
+    --type-null-color: #a35e5e;
+    --type-undefined-color: #9d9d9d;
+    --type-symbol-color: #ff4f4f;
+    --type-error-color: darkred;
+    --type-array-color: #535173;
+    --type-path-color: #88127D;
+    --type-regexp-color: #fe2f53;
+    --type-code-color: darkblue;
+    --value-focus-color: #0168ff;
+    --mode-color: #0278e7;
+    --primary-action-bg-color: #0278e7;
+    --primary-action-color: #FFFFFF;
+    --main-app-font: -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
+    --main-app-font-size: 14px;
+    --main-mono-space: ui-monospace,
+  "Cascadia Mono", "Segoe UI Mono",    
+    "Roboto Mono",
+    "Ubuntu Mono",
+    Menlo, Monaco, Consolas,
+    monospace;
+    --editor-bg-color: #f6f3f1;
+    --editor-text-color: #363636;
+    --editor-gutter-bg-color: #e0e0e0;
+    --editor-gutter-color: #333;
+    --editor-cursor-color: #202020;
+    --editor-selected-bg-color: #4ab1ff3d;
+    --editor-step-bg-color: rgb(198,219,174);
+    --editor-active-line-bg: rgb(255 255 255 / 53%);
+    --editor-active-line-gutter-bg-color: rgb(166 166 166 / 46%);
+    --editor-invisible-color: #BFBFBF;
+    --editor-keyword-color: #670171;
+    --editor-identifier-color: #191919;
+    --editor-constant-color: #CD6839;
+    --editor-numeric-color: #9A5925;
+    --editor-support-color: #104e8b;
+    --editor-function-color: #0274a1;
+    --editor-string-color: #006b1e;
+    --editor-constant-color: #CF6A4C;
+    --editor-variable-color: #009ACD;
+    --editor-comment-color: rgba(148,148,148, 0.91);
+    --editor-storage-color: #A52A2A;
+    --editor-illegal-color: #FD1224;
+    --editor-illegal-bg-color: rgba(255, 6, 0, 0.15);
+    --editor-deprecated-color: #FD1732;
+    --editor-deprecated-bg-color: #EEEAE8;
+    --editor-regex-color: #fe2f53;
+    --editor-regex-bg-color: #FE40AA10;
+    --editor-heading-color: #B8012D;
+    --editor-heading-bg-color: rgba(191,97,51,0.051);
+    --editor-list-color: #8F5B26;
+}

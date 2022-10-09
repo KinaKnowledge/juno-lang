@@ -51,8 +51,10 @@
 
 (defglobal formatting_rules
   {
-   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch"]
-   keywords: (split_by " " (+ "throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply "
+   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
+                  "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
+                  "compile" "set_prop"]
+   keywords: (split_by " " (+ "throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply setq"
 	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
                               "dynamic_import quote for_each for_with declare  break -> * + / - and or prop set_prop"))                      
    })
@@ -920,7 +922,9 @@
                                                                                           
                                                                                           (-> view `remove)
                                                                                           (= disappear_timer nil)))
-                                                                                       700)))))
+                                                                                       (or *env_config*.application.menu_timeout
+                                                                                           options.menu_timeout
+                                                                                           2500))))))
                       (attach_event_listener view
                                              `mouseenter
                                              (function (e)
@@ -1660,7 +1664,7 @@
                    (when (is_function? dwin.showModal)
                      (-> dwin `showModal))))))
 
-(defun_sync get_line_indentation_delta (line)
+(defun_sync analyze_text_line (line)
   (let
      ((delta 0)
       (indent_spaces 0)
@@ -1791,7 +1795,7 @@
                                (dec current_row)
                                (= v (get_line current_row))))
                          (or v "")))
-          (delta (get_line_indentation_delta prior_line))
+          (delta (analyze_text_line prior_line))
           (movement_needed 0)
           (orig_movement_needed 0)
           (comps nil)
@@ -1818,7 +1822,7 @@
                         (progn
                            (dec current_row)
                            (= prior_line (get_line current_row))))
-                     (= delta (get_line_indentation_delta prior_line))
+                     (= delta (analyze_text_line prior_line))
                      (= movement_needed (+ movement_needed delta.delta))
                  
                      (console.log "movement_needed: now: " movement_needed "openers: " (as_lisp delta.openers)  "base_indent: " delta.indent (JSON.stringify prior_line))

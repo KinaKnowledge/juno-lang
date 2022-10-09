@@ -177,7 +177,7 @@
      
      (define_env 
          (MAX_SAFE_INTEGER 9007199254740991)
-         (LispSyntaxError globalThis.LispSyntaxError)
+         (LispSyntaxError globalThis.LispSyntaxError)	 
          (sub_type subtype
                  {
                   `description: "Returns a string the determined actual type of the provided value."
