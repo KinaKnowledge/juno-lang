@@ -279,6 +279,9 @@
         } )
 
 
+
+
+
 (defun *help_menu_function* ()
   [["No Help Installed" (fn () false) ]])
 
@@ -294,6 +297,36 @@
                   (if control.resize
                     (-> control `resize)))))
     
+
+(defun set_global_theme (theme_name options)
+   (if (prop *global_themes* theme_name)
+       (let
+          ((head_elem (-> document `querySelector "head"))
+           (existing (get_by_id "juno-css-theme")))
+          (if existing
+               (-> existing `remove))
+          (-> head_elem `append
+              (style { `id: "juno-css-theme" `type: "text/css" }
+               (prop *global_themes* theme_name)) )
+          (set_path [ `application `global_theme ] *env_config* theme_name)
+          (when (contains? theme_name *editor_themes*)
+             (set_path [ `editor `default_theme ] *env_config* theme_name))
+          ;; unless we are told not to, set any controls to the theme
+          (unless options.suppress_cascade
+              (for_each (control (current_controls))
+                        (when (is_function? control.set_theme)
+                          (-> control `set_theme theme_name))))
+          true)
+       (throw ReferenceError "Invalid theme name provided"))
+   { `description: (+ "Sets the global theme to the named theme.  Global themes "
+                      "values are looked for in *global_themes*.  If a key is found "
+                      "in that object, the theme is installed, and the *env_config* "
+                      "value is updated to reflect this choice.  Additionally, if an "
+                      "editor theme is found with the same name, the default editor "
+                      "theme is set as well.  Editor themes are found in the global "
+                      "*editor_themes*.")
+     `tags: ["themes" "environment" "color" "settings"]
+     `usage: ["theme_name:string"] })
 
 (defun get_control_by_id (id)
   (let
@@ -1468,7 +1501,7 @@
                               (options.on_select ns (rest stack)))                            
                             (cond 
                               (is_function? val)
-                              (pre { `tabindex: 0 `ctype: (subtype val) `style: "background: #FFFFFF; min-width: 200px; overflow: scroll; width: 100%;" }
+                              (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px; overflow: scroll; width: 100%;" }
                                    (value_to_dom val))
                               (is_array? val)                                                           
                               (for_each (symb (resolve_path path (-> Environment `get_namespace_handle ns)))
@@ -1497,15 +1530,15 @@
                                     (progn
                                      (-> elem `setAttribute `ctype "val")
                                      elem))
-                                  (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; background: #FFFFFF; overflow: scroll; width: 100%;" }
+                                  (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; overflow: scroll; width: 100%;" }
                                        "The render_preview function didn't return an element as expected.  Check call.")))
                               
                               (is_string? val)
-                              (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; background: #FFFFFF; overflow: scroll; width: 100%;" }
+                              (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; overflow: scroll; width: 100%;" }
                                    val)
                               
                               else         
-                              (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px; background: #FFFFFF; overflow: scroll; width: 100%;" }
+                              (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px;overflow: scroll; width: 100%;" }
                                  (value_to_dom val))))))
 
         (render_view (fn (ns_name)
@@ -2481,16 +2514,16 @@
                         (-> output_container
                             `append
                             (if (> command_text.length 100)
-                              (details {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                              (details {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px;  width: calc(100% - 10px); display: inline-block; " }
                                        (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
                                        (pre { `tabindex: 0 `class: "juno-code-value" }
                                              command_text))
-                              (div {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; " }
+                              (div {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px;  width: calc(100% - 10px); display: inline-block; " }
                                    (code { `tabindex: 0 `class: "juno-code-value" }
                                              command_text)))))
                       (-> output_container
                           `append
-                          (div {  `style: (+ " margin-top: 0px; background: #F8F6F6; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
+                          (div {  `style: (+ " margin-top: 0px; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
                                             (if (eq nil command_text)
                                               "border-top: 1px solid #00000008; padding: 5px;"
                                               "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) } 
@@ -2762,6 +2795,10 @@
              `menu_items: menu_items                           
              `on_focus: on_focus
              `on_blur: on_blur
+             `set_theme: (fn (theme_name)
+                           (when (contains? theme_name *editor_themes*)
+                             (set_prop options `theme theme_name)
+                             (-> input_container `set_theme theme_name)))
              `toJSON: (function ()
                                 (progn
                                  (set_prop options
@@ -3528,7 +3565,12 @@
                            [(+ "Save " (prop *last_focus* `name) " to File") (fn (e) (handle_save_file *last_focus*))]
                            [])
                          ["Save Environment" (fn (e) (save_control_image)) ]
-                         ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]])])
+                         ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]
+                         (if *global_themes*
+                           ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
+                                                          [theme_name (fn ()
+                                                                        (set_global_theme theme_name))])]
+                           [])])])
                          
        
        (push *main_menu*            

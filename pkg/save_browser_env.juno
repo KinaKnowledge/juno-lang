@@ -17,6 +17,8 @@
 
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
+(defglobal core/*global_themes* { juno_light: (read_text_file "html/juno_light.css")
+                                cobalt: (read_text_file "html/cobalt.css") })
 (defglobal core/browser_initializer ((quote quote) (read_text_file "pkg/browser_initializer.juno")))
 (defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
 

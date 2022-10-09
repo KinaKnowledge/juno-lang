@@ -119,6 +119,7 @@ html {
 body {
   margin: 0;
   background: var(--main-bg-color, #FCFAFA);
+  color: var(--main-color, #000000);
   font-size: var(--main-app-font-size);
 }
 

@@ -28,7 +28,8 @@ background: rgb(127, 111, 19)\
 }\
 .ace-cobalt .ace_marker-layer .ace_bracket {\
 margin: -1px 0 0 -1px;\
-border: 1px solid rgba(255, 255, 255, 0.15)\
+border: 1px solid var(--matching-paren-outline-color);\
+background: var(--matching-paren-color);\
 }\
 .ace-cobalt .ace_marker-layer .ace_active-line {\
 background: rgba(0, 0, 0, 0.35)\

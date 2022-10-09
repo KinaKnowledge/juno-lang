@@ -251,7 +251,7 @@
               (rlog (if (prop globalThis `in_starter)
                       (progn
                        (-> repl `initialize)
-                       (html/div "In starter mode"))
+                       (html/div "In starter mode..building new image.."))
                       (html/div "Ready"))))
             10)
       
