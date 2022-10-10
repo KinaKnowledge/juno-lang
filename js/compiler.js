@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-10-06 09:22:19
-// Version: 2022.10.06.09.22
-export const DLISP_ENV_VERSION='2022.10.06.09.22';
+// Build Time: 2022-10-10 17:02:09
+// Version: 2022.10.10.17.02
+export const DLISP_ENV_VERSION='2022.10.10.17.02';
 
 
 
@@ -1458,6 +1458,8 @@ export async function init_compiler(Environment) {
                                 return ref_type
                             } else {
                                 {
+                                    debugger;
+                                    ;
                                     await (async function(){
                                         let __array_op_rval__45=get_lisp_ctx_log;
                                          if (__array_op_rval__45 instanceof Function){
@@ -4651,7 +4653,15 @@ export async function init_compiler(Environment) {
                 let catches;
                 let compile_catch;
                 acc=[];
-                try_block=(tokens && tokens["1"] && tokens["1"]["val"]);
+                try_block=await (async function(){
+                     return await async function(){
+                        if (check_true (((tokens && tokens["1"])&& (null==(tokens && tokens["1"] && tokens["1"]["val"]))))) {
+                            return (tokens && tokens["1"])
+                        } else if (check_true ((tokens && tokens["1"]))) {
+                            return (tokens && tokens["1"] && tokens["1"]["val"])
+                        }
+                    } () 
+                })();
                 compiled_try_block=null;
                 catch_block=null;
                 idx=-1;
@@ -4695,7 +4705,7 @@ export async function init_compiler(Environment) {
                     return subacc
                 };
                 await async function(){
-                    if (check_true ((null==try_block))) {
+                    if (check_true (((tokens && tokens.length)<2))) {
                         throw new SyntaxError("invalid try form: missing try block");
                         
                     } else if (check_true (((null==catches)|| ((catches && catches.length)<1)))) {

@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-06 09:22:19
-// Version: 2022.10.06.09.22
-export const DLISP_ENV_VERSION='2022.10.06.09.22';
+// Build Time: 2022-10-10 17:02:09
+// Version: 2022.10.10.17.02
+export const DLISP_ENV_VERSION='2022.10.10.17.02';
 
 
 
@@ -9,6 +9,11 @@ export const DLISP_ENV_VERSION='2022.10.06.09.22';
 var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function environment_boot(Environment)  {
 {
+    await Environment.set_global("*formatting_rules*",{
+        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop"],keywords:(("throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply setq"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare  break -> * + / - and or prop set_prop"+ "defparameter"+ "defvalue")).split(" ")
+    },{
+        requires:["split_by"]
+    });
     await Environment.set_global("defmacro",async function(name,arg_list,...body) {
         let macro_name;
         let macro_args;
@@ -3642,16 +3647,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_48398;
+                                                let _expr_38653;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_48398=await (async function(){
+                                                _expr_38653=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_48398 && _expr_48398["0"]);
-                                                req_ns=(_expr_48398 && _expr_48398["1"]);
-                                                explicit=(_expr_48398 && _expr_48398["2"]);
+                                                req_sym=(_expr_38653 && _expr_38653["0"]);
+                                                req_ns=(_expr_38653 && _expr_38653["1"]);
+                                                explicit=(_expr_38653 && _expr_38653["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3754,13 +3759,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_7767;
+                    let _expr_70165;
                     let nspace;
-                    _expr_7767=await (async function(){
+                    _expr_70165=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_7767 && _expr_7767["0"]);
-                    nspace=(_expr_7767 && _expr_7767["1"]);
+                    sym=(_expr_70165 && _expr_70165["0"]);
+                    nspace=(_expr_70165 && _expr_70165["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4027,6 +4032,347 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
             })()
         }
     },{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"]
+})
+};
+{
+     Environment.set_global("analyze_text_line",function(line) {
+        let delta;
+        let indent_spaces;
+        let base_indent;
+        let idx;
+        let openers;
+        let closers;
+        let code_mode;
+        let cpos;
+        let last_c;
+        let last_delim;
+        delta=0;
+        indent_spaces=0;
+        base_indent=null;
+        idx=-1;
+        openers=[];
+        closers=[];
+        code_mode=true;
+        cpos=null;
+        last_c=null;
+        last_delim=null;
+         ( function() {
+            let __for_body__300=function(c) {
+                idx+=1;
+                  (function(){
+                    if (check_true (((c==="\"")&& ((null==last_c)|| (last_c&&  ( Environment.get_global("not"))((92=== last_c["charCodeAt"]()))))))) {
+                        return code_mode= ( Environment.get_global("not"))(code_mode)
+                    } else if (check_true ((code_mode&& (c===";")))) {
+                        {
+                            __BREAK__FLAG__=true;
+                            return
+                        }
+                    } else if (check_true ((code_mode&& ((c==="(")|| (c==="{")|| (c==="["))))) {
+                        {
+                            delta+=1;
+                            (openers).push(idx);
+                            base_indent=indent_spaces;
+                            cpos=idx;
+                            last_delim=c
+                        }
+                    } else if (check_true ((code_mode&& ((c===")")|| (c==="]")|| (c==="}"))))) {
+                        {
+                            delta-=1;
+                            (closers).push(idx);
+                            cpos=idx;
+                            last_delim=c
+                        }
+                    } else if (check_true ((code_mode&& (c===" ")&&  ( Environment.get_global("not"))(base_indent)))) {
+                        {
+                            indent_spaces+=1
+                        }
+                    } else if (check_true ( ( Environment.get_global("not"))(base_indent))) {
+                        base_indent=indent_spaces
+                    }
+                } )();
+                return last_c=c
+            };
+            let __array__301=[],__elements__299=(line).split("");
+            let __BREAK__FLAG__=false;
+            for(let __iter__298 in __elements__299) {
+                __array__301.push( __for_body__300(__elements__299[__iter__298]));
+                if(__BREAK__FLAG__) {
+                     __array__301.pop();
+                    break;
+                    
+                }
+            }return __array__301;
+             
+        })();
+        if (check_true ((undefined==base_indent))){
+            {
+                base_indent=indent_spaces
+            }
+        };
+        return {
+            delta:delta,final_type:last_delim,final_pos:cpos,line:line,indent:base_indent,openers:openers,closers:closers
+        }
+    },{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"]
+})
+};
+{
+     Environment.set_global("calculate_indent_rule",function(delta,movement_needed) {
+        let lisp_line;
+        let remainder_pos;
+        let remainder;
+        let comps;
+        let symbol_details;
+        lisp_line= (delta && delta["line"])["substr"].call((delta && delta["line"]), ( Environment.get_global("first"))((delta && delta["openers"])));
+        remainder_pos=( ( function(){
+            let __targ__302=(delta && delta["openers"]);
+            if (__targ__302){
+                 return(__targ__302)[(movement_needed- 1)]
+            } 
+        })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]));
+        remainder= (delta && delta["line"])["substr"].call((delta && delta["line"]),(1+ remainder_pos));
+        comps= ( function(){
+            let __collector;
+            let __result;
+            let __action;
+            __collector=[];
+            __result=null;
+            __action=function(c) {
+                if (check_true ( ( Environment.get_global("not"))( ( Environment.get_global("blank?"))(c)))){
+                    {
+                        return c
+                    }
+                }
+            };
+            ;
+             ( function() {
+                let __for_body__305=function(__item) {
+                    __result= __action(__item);
+                    if (check_true (__result)){
+                        return (__collector).push(__result)
+                    }
+                };
+                let __array__306=[],__elements__304=(remainder).split(" ");
+                let __BREAK__FLAG__=false;
+                for(let __iter__303 in __elements__304) {
+                    __array__306.push( __for_body__305(__elements__304[__iter__303]));
+                    if(__BREAK__FLAG__) {
+                         __array__306.pop();
+                        break;
+                        
+                    }
+                }return __array__306;
+                 
+            })();
+            return __collector
+        })();
+        symbol_details= ( function(){
+            if (check_true ((((comps && comps.length)>0)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("(",(comps && comps["0"])))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("{",(comps && comps["0"])))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("[",(comps && comps["0"])))))){
+                return ( ( Environment.get_global("first"))( ( Environment.get_global("meta_for_symbol"))((comps && comps["0"]),true))|| {
+                    type:"-"
+                })
+            } else {
+                return {
+                    type:"-"
+                }
+            }
+        })();
+          (function(){
+            if (check_true ((movement_needed===0))) {
+                return true
+            } else if (check_true (( ( Environment.get_global("starts_with?"))("def",(comps && comps["0"]))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.minor_indent")))))) {
+                {
+                      (function(){
+                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,3);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((((symbol_details && symbol_details["type"])&&  ( Environment.get_global("contains?"))("Function",(symbol_details && symbol_details["type"])))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.keywords"))))&&  ( Environment.get_global("contains?"))((delta && delta["final_type"]),["(","[",")","]"])))) {
+                {
+                      (function(){
+                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,(comps && comps["0"] && comps["0"]["length"]),2);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((delta && delta["final_type"])==="{"))) {
+                {
+                      (function(){
+                        delta["indent"]= ( Environment.get_global("add"))( ( Environment.get_global("last"))((delta && delta["openers"])),2);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true ( ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("built_ins"))))) {
+                {
+                      (function(){
+                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,(comps && comps["0"] && comps["0"]["length"]),2);
+                        return delta;
+                        
+                    })()
+                }
+            } else {
+                {
+                      (function(){
+                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,1);
+                        return delta;
+                        
+                    })()
+                }
+            }
+        } )();
+        return delta
+    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","add","last","built_ins"]
+})
+};
+{
+     Environment.set_global("format_lisp_line",function(line_number,get_line) {
+        if (check_true (((line_number>0)&& get_line instanceof Function))){
+            {
+                let current_row;
+                let prior_line;
+                let delta;
+                let movement_needed;
+                let orig_movement_needed;
+                let comps;
+                let final;
+                let in_seek;
+                current_row=(line_number- 1);
+                prior_line= ( function(){
+                    let v= ( function(){
+                        let __array_op_rval__312=get_line;
+                         if (__array_op_rval__312 instanceof Function){
+                            return  __array_op_rval__312(current_row) 
+                        } else {
+                            return [__array_op_rval__312,current_row]
+                        }
+                    })();
+                    ;
+                     ( function(){
+                         let __test_condition__313=function() {
+                            return (((v).trim()==="")&& (current_row>0))
+                        };
+                        let __body_ref__314=function() {
+                            current_row-=1;
+                            return v= ( function(){
+                                let __array_op_rval__315=get_line;
+                                 if (__array_op_rval__315 instanceof Function){
+                                    return  __array_op_rval__315(current_row) 
+                                } else {
+                                    return [__array_op_rval__315,current_row]
+                                }
+                            })()
+                        };
+                        let __BREAK__FLAG__=false;
+                        while( __test_condition__313()) {
+                             __body_ref__314();
+                             if(__BREAK__FLAG__) {
+                                 break;
+                                
+                            }
+                        } ;
+                        
+                    })();
+                    return (v|| "")
+                })();
+                delta= ( Environment.get_global("analyze_text_line"))(prior_line);
+                movement_needed=0;
+                orig_movement_needed=0;
+                comps=null;
+                final=(delta && delta["final_type"]);
+                in_seek=((delta && delta["openers"] && delta["openers"]["length"])<(delta && delta["closers"] && delta["closers"]["length"]));
+                movement_needed=(delta && delta["delta"]);
+                orig_movement_needed=movement_needed;
+                  (function(){
+                    if (check_true ((movement_needed<0))) {
+                        {
+                            let lisp_line;
+                            let remainder_pos;
+                            let remainder;
+                            let symbol_details;
+                            lisp_line=null;
+                            remainder_pos=null;
+                            remainder=null;
+                            symbol_details=null;
+                             ( function(){
+                                 let __test_condition__316=function() {
+                                    return ((movement_needed<0)&& (current_row>0))
+                                };
+                                let __body_ref__317=function() {
+                                    current_row-=1;
+                                    prior_line= ( function(){
+                                        let __array_op_rval__318=get_line;
+                                         if (__array_op_rval__318 instanceof Function){
+                                            return  __array_op_rval__318(current_row) 
+                                        } else {
+                                            return [__array_op_rval__318,current_row]
+                                        }
+                                    })();
+                                     ( function(){
+                                         let __test_condition__319=function() {
+                                            return ((current_row>0)&& ((prior_line).trim()===""))
+                                        };
+                                        let __body_ref__320=function() {
+                                            current_row-=1;
+                                            return prior_line= ( function(){
+                                                let __array_op_rval__321=get_line;
+                                                 if (__array_op_rval__321 instanceof Function){
+                                                    return  __array_op_rval__321(current_row) 
+                                                } else {
+                                                    return [__array_op_rval__321,current_row]
+                                                }
+                                            })()
+                                        };
+                                        let __BREAK__FLAG__=false;
+                                        while( __test_condition__319()) {
+                                             __body_ref__320();
+                                             if(__BREAK__FLAG__) {
+                                                 break;
+                                                
+                                            }
+                                        } ;
+                                        
+                                    })();
+                                    delta= ( Environment.get_global("analyze_text_line"))(prior_line);
+                                    return movement_needed=(movement_needed+ (delta && delta["delta"]))
+                                };
+                                let __BREAK__FLAG__=false;
+                                while( __test_condition__316()) {
+                                     __body_ref__317();
+                                     if(__BREAK__FLAG__) {
+                                         break;
+                                        
+                                    }
+                                } ;
+                                
+                            })();
+                            return delta= ( Environment.get_global("calculate_indent_rule"))(delta,movement_needed)
+                        }
+                    } else if (check_true ((movement_needed>0))) {
+                        {
+                            return delta= ( Environment.get_global("calculate_indent_rule"))(delta,movement_needed)
+                        }
+                    }
+                } )();
+                return ( ( function() {
+                    let __for_body__324=function(c) {
+                        return " "
+                    };
+                    let __array__325=[],__elements__323= ( Environment.get_global("range"))((delta && delta["indent"]));
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__322 in __elements__323) {
+                        __array__325.push( __for_body__324(__elements__323[__iter__322]));
+                        if(__BREAK__FLAG__) {
+                             __array__325.pop();
+                            break;
+                            
+                        }
+                    }return __array__325;
+                     
+                })()).join("")
+            }
+        }
+    },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. "],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
 })
 };
 return true

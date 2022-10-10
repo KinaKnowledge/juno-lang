@@ -40,6 +40,7 @@ background-color: var(--editor-active-line-gutter-bg-color);\
 }\
 .ace-juno_light .ace_marker-layer .ace_selected-word {\
 border: 1px solid var(--editor-selected-bg-color);\
+background: var(--editor-selected-bg-color);\
 }\
 .ace-juno_light .ace_invisible {\
 color: var(--editor-invisible-color)\

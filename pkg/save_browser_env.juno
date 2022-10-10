@@ -73,7 +73,7 @@
 			      (if (not (contains? sym *core_symbols*))
 				  sym
 				  nil)))
-  (defglobal included_libs ["ext-searchbox.js" "mode-juno.js" "ext-language_tools.js" "mode-json.js" "mode-javascript.js" "mode-css.js" "mode-css.js"
+  (defglobal included_libs ["ext-searchbox.js" "ext-split.js" "mode-juno.js" "ext-language_tools.js" "mode-json.js" "mode-javascript.js" "mode-css.js" "mode-css.js"
                             "theme-juno_light.js" "theme-chrome.js" "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js" "theme-gruvbox.js"
                             "theme-dracula.js" "theme-katzenmilch.js" "theme-solarized_dark.js" "theme-solarized_light.js"])
 
@@ -91,7 +91,9 @@
     (set_prop *env_config*
               `application
               { menu_timeout: 2500
-                global_theme: "juno_light"  }))
+                global_theme: "juno_light"
+                max_log_lines: 100
+               }))
   
   
   (setq no_includes

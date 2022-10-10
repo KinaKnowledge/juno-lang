@@ -796,6 +796,7 @@
 				  
                                   else
                                   (do
+				   (debug)
                                    (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)                                  
                                    undefined)                                  
                                    )))))
@@ -2829,7 +2830,12 @@
         (fn (tokens ctx)
           (let
               ((acc [])
-               (try_block tokens.1.val)
+               (try_block (cond
+			   (and tokens.1
+				(eq nil tokens.1.val))
+			   tokens.1
+			   tokens.1			   
+			   tokens.1.val))
                (compiled_try_block nil)
                (catch_block nil)
                (idx -1)
@@ -2863,7 +2869,7 @@
                                   subacc))))                                                                                                      
             ;; check syntax
             (cond
-              (eq nil try_block)
+              (< tokens.length 2)
               (throw SyntaxError "invalid try form: missing try block")
               (or (eq nil catches)
                   (< catches.length 1))

@@ -38,7 +38,8 @@ background: #353637\
 background-color: #353637\
 }\
 .ace-idle-fingers .ace_marker-layer .ace_selected-word {\
-border: 1px solid rgba(90, 100, 126, 0.88)\
+border: 1px solid rgba(90, 100, 126, 0.88);\
+background: var(--editor-selected-bg-color)\
 }\
 .ace-idle-fingers .ace_invisible {\
 color: #404040\

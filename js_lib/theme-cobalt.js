@@ -38,7 +38,8 @@ background: rgba(0, 0, 0, 0.35)\
 background-color: rgba(0, 0, 0, 0.35)\
 }\
 .ace-cobalt .ace_marker-layer .ace_selected-word {\
-border: 1px solid rgba(179, 101, 57, 0.75)\
+border: 1px solid rgba(179, 101, 57, 0.75);\
+background: var(--editor-selected-bg-color)\
 }\
 .ace-cobalt .ace_invisible {\
 color: rgba(255, 255, 255, 0.15)\

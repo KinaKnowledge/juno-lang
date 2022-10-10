@@ -1496,11 +1496,32 @@
                                        (console.error "Compilation Error: " error_data))
                                      (= compiled [ { `error: true } nil  ])))))
                                                        
-                             (cond
+                             (cond			       
                                (eq nil compiled)
                                ;; we got nothing back - for now note it and return nil
                                ;; if we had an error it should of been reported
                                nil
+			       (== compiled.0.ctype "FAIL")
+			       (progn
+				 (when opts.error_report
+				   (opts.error_report compiled.1))				 
+				 (cond
+				  (instanceof compiled.1 Error)
+				  (throw compiled.1)
+				  (instanceof compiled.1.0 Error)
+				  (throw compiled.1.0)
+				  
+				  (and (is_object? compiled.1.0)
+				       (== compiled.1.0.error "SyntaxError"))
+				  (progn
+				    (defvar new_error (new SyntaxError compiled.1.0.message))
+				    (set_prop new_error
+					      `from compiled.1.0)
+				    (throw new_error))
+				  else
+				  compiled.1))
+				   
+				     
                                (and compiled.0.namespace
                                     (not (== compiled.0.namespace namespace))
                                     parent_environment)
@@ -2343,10 +2364,14 @@
            (aif (and (not (and included_globals
                                (prop included_globals.imports symname)))
                      (resolve_path [ symname `initializer ] Environment.definitions))                
-                (progn                 
-                 (set_prop Environment.global_ctx.scope
-                           symname
-                           (eval_struct it))))))
+                (progn
+		  (try
+                   (set_prop Environment.global_ctx.scope
+                             symname
+                             (eval_struct it {} { `throw_on_error: true } ))
+		   (catch Error (e)
+			  (progn
+			    (console.error "core environment cannot initialize: " symname "error:" e))))))))
        ;; call the system initializer
 
        (when sys_init
@@ -2372,25 +2397,30 @@
                                       (progn
                                        (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
                                                    imp_source.initializer))) ))))
-                     
-                     (set_prop childset.1
-                               1
-                               (-> childenv `eval childset.1.1 { `throw_on_error: true }))
-	             (for_each (symset childset.1.1)
-                               (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
-                                 ;; the child env is already compiled at this point
-                                 (when (prop imported_defs symset.0)
-                                   (set_path [ childset.0 `definitions symset.0 ] children
-                                             (prop imported_defs symset.0)))
-                                 ;; if we have an initializer for the symbol in the definition, we need to eval it and place
-                                 ;; the result scope that contains the symbol                                 
-                                 (aif (resolve_path [ childset.0 `definitions symset.0 `initializer ] children)
-                                      (progn
-                                       
-                                       (set_path [ childset.0 `context `scope symset.0 ] children
-                                                 (-> childenv `eval it)))                                                   
-			              (set_path [ childset.0 `context `scope symset.0 ] children					  
-				                symset.1)))))))
+                     (try
+		      (progn 
+			(set_prop childset.1
+				  1
+				  (-> childenv `eval childset.1.1 { `throw_on_error: true }))
+			(for_each (symset childset.1.1)
+				  (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
+                                    ;; the child env is already compiled at this point
+                                    (when (prop imported_defs symset.0)
+                                      (set_path [ childset.0 `definitions symset.0 ] children
+						(prop imported_defs symset.0)))
+                                    ;; if we have an initializer for the symbol in the definition, we need to eval it and place
+                                    ;; the result scope that contains the symbol                                 
+                                    (aif (resolve_path [ childset.0 `definitions symset.0 `initializer ] children)
+					 (progn
+					   (try
+					    (set_path [ childset.0 `context `scope symset.0 ] children
+                                                      (-> childenv `eval it ))
+					    (catch Error (e)
+						   (console.error "env: unable to evaluate: symbol: " symset.0 e))))
+					 (set_path [ childset.0 `context `scope symset.0 ] children					  
+				                   symset.1)))))
+		      (catch Error (e)
+			     (console.error "env: unable to load symbol: " (clone childset)))))))
        
      ;; call the user initializer     
        (when init 

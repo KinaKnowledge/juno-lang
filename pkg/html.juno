@@ -104,9 +104,15 @@
 (defun_sync append_children (parent children)
   (do
     (for_each (child (or children []))
-              (if (is_array? child)
+              (cond
+                (is_array? child)
                 (append_children parent child)
-                (-> parent `appendChild child)))
+                (is_element? child)
+                (-> parent `appendChild child)                               
+                child.view
+                (-> parent `appendChild child.view)
+                else
+                (-> parent `appendChild (-> document `createTextNode (+ "" child)))))
     parent))
 
 (defun_sync create_dom_element (element_name `& args)

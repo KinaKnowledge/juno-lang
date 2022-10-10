@@ -22,7 +22,20 @@
 ;; into the tree at the point of the original calling form.
 
 ;; When this function is called, it will have the values assigned to the
-;; values in the let.  
+;; values in the let.
+
+(defglobal *formatting_rules*
+  {
+   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
+                  "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
+                  "compile" "set_prop"]
+   keywords: (split_by " " (+ "throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply setq"
+	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
+                              "dynamic_import quote for_each for_with declare  break -> * + / - and or prop set_prop"
+                              "defparameter" "defvalue"))                      
+   })
+
+
 
 (defglobal defmacro
     (fn (name arg_list `& body)
@@ -2698,6 +2711,210 @@ such as things that connect or use environmental resources.
       `description: "Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well."
       `usage: ["obj:Object"]
       `tags: ["object" "array" "keys" "property" "properties" "introspection" "values"]
-  })
+   })
+
+(defun_sync analyze_text_line (line)
+  (let
+     ((delta 0)
+      (indent_spaces 0)
+      (base_indent nil)
+      (idx -1)
+      (openers [])
+      (closers [])
+      (code_mode true)      
+      (cpos nil)
+      (last_c nil)
+      (last_delim nil))   
+   (for_each (c (split_by "" line))
+      (progn
+        (inc idx)
+        (cond
+          (and (== c "\"")               
+               (or (eq nil last_c)
+                   (and last_c
+                        (not (== 92 (-> last_c `charCodeAt))))))
+          (= code_mode (not code_mode))
+          
+          (and code_mode
+               (== c ";"))
+          (progn
+           (break))
+          
+          (and code_mode
+               (or (== c "(")
+                   (== c "{")
+                   (== c "[")))
+           (progn
+                (inc delta)
+                (push openers idx)
+                (= base_indent indent_spaces)
+                (= cpos idx)
+                (= last_delim c))
+           (and code_mode
+             (or (== c ")")
+                 (== c "]")
+                 (== c "}")))
+           (progn
+              (dec delta)
+              (push closers idx)
+              (= cpos idx)
+              (= last_delim c))
+           (and code_mode
+                (== c " ")
+                (not base_indent))
+           (progn
+              (inc indent_spaces))
+           
+           (not base_indent)
+           (= base_indent indent_spaces))
+           (= last_c c)))
+      (when (eq undefined base_indent)
+         (= base_indent indent_spaces))
+      { delta: delta
+        final_type: last_delim
+        final_pos: cpos
+        line: line
+        indent: base_indent
+        openers: openers
+        closers: closers
+        })
+  { description: (+ "Given a line of text, analyzes the text for form/block openers, identified as "
+                    "(,{,[ and their corresponding closers, which correspod to ),},].  It then returns "
+                    "an object containing the following: <br><br>"
+                    "{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>"
+                    "  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>"
+                    "  final_pos: int - the position of the final delimiter, <br>",
+                    "  line: string - the line of text analyzed, <br>",
+                    "  indent: int - the indentation space count found in the line, <br>",
+                    "  openers: array - an array of integers representing all column positions of found openers in the line.<br>"
+                    "  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>"
+                    "The function does not count opening and closing tokens if they appear in a string.")
+    tags: [ `text `tokens `form `block `formatting `indentation ]
+   usage: ["line:string"] })
+
+(defun_sync calculate_indent_rule (delta movement_needed)
+   (let
+      ((lisp_line (-> delta.line `substr (first delta.openers)))
+       (remainder_pos (or (prop delta.openers (- movement_needed 1))
+                                      (first delta.openers)
+                                      delta.indent))
+       (remainder (-> delta.line `substr (+ 1 remainder_pos)))
+       (comps (reduce_sync (c (split_by " " remainder))
+                             (when (not (blank? c))
+                                c)))
+       (symbol_details (if (and (> comps.length 0)
+                                (not (contains? "(" comps.0))
+                                            (not (contains? "{" comps.0))
+                                            (not (contains? "[" comps.0)))
+                                        (or (first (meta_for_symbol comps.0 true))
+                                            { `type: "-" })
+                                        { `type: "-" })))
+      (cond
+         (== movement_needed 0)
+         true
+         
+         (or (starts_with? "def" comps.0)
+             (contains? comps.0 *formatting_rules*.minor_indent))
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos 3)))
+            
+         (and (or (and symbol_details.type
+                       (contains? "Function" symbol_details.type))
+                  (contains? comps.0 *formatting_rules*.keywords))
+              (contains? delta.final_type ["(" "[" ")" "]"]))
+                            
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos comps.0.length 2)))
+            
+         (== delta.final_type "{")
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ (last delta.openers) 2)))
+         
+         (contains? comps.0 built_ins)
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos comps.0.length 2)))
+         else
+         (progn
+            (set_prop delta
+                      `indent
+                      (+ remainder_pos 1))))
+      delta)
+   {
+       `description: (+ "Given a delta object as returned from analyze_text_line, and an integer representing the "
+                        "the amount of tree depth to change, calculates the line indentation required for the "
+                        "given delta object, and creates an indent property in the delta object containing "
+                        "the given amount of spaces to prepend to the line.  References the *formatting_rules* "
+                        "object as needed to determine minor indentation from standard indentation, as well as "
+                        "which symbols are identified as keywords.  Returns the provided delta object with the "
+                        "indent key added.")
+       `tags: ["indentation" "text" "formatting"]
+       `usage: ["delta:object" "movement_needed:int"]
+   })
+
+(defun_sync format_lisp_line (line_number get_line) 
+   (if (and (> line_number 0)
+            (is_function? get_line))
+      (let
+         ((current_row (- line_number 1))
+          (prior_line (progn
+                         (defvar v (get_line current_row))
+                         (while (and (== (trim v) "")
+                                     (> current_row 0))
+                            (progn
+                               (dec current_row)
+                               (= v (get_line current_row))))
+                         (or v "")))
+          (delta (analyze_text_line prior_line))
+          (movement_needed 0)
+          (orig_movement_needed 0)
+          (comps nil)
+          (final delta.final_type)
+          (in_seek (< delta.openers.length delta.closers.length)))
+         (= movement_needed delta.delta)
+         (= orig_movement_needed movement_needed)
+         (cond 
+            (< movement_needed 0)
+            (let
+               ((lisp_line nil)
+                (remainder_pos nil)
+                (remainder nil)
+                (symbol_details nil))
+               (while (and (< movement_needed 0)
+                           (> current_row 0))
+                  (progn
+                     (dec current_row)
+                     (= prior_line (get_line current_row))
+                     (while (and (> current_row 0)
+                                 (== (trim prior_line) ""))
+                        (progn
+                           (dec current_row)
+                           (= prior_line (get_line current_row))))
+                     (= delta (analyze_text_line prior_line))
+                     (= movement_needed (+ movement_needed delta.delta))))
+               (= delta (calculate_indent_rule delta movement_needed)))
+            (> movement_needed 0)
+            (progn
+               (= delta (calculate_indent_rule delta movement_needed))))
+       (join "" (for_each (c (range delta.indent)) " "))))
+   {
+     `description: (+ "Given a line number and an accessor function (synchronous), returns a"
+                      "a text string representing the computed indentation for the provided "
+                      "line number. The get_line function to be provided will be called with "
+                      "a single integer argument representing a requested line number from "
+                      "the text buffer being analyzed.  The provided get_line function should "
+                      "return a string representing the line of text from the buffer containing "
+                      "the requested line. ")
+     `tags: [ `formatting `indentation `text `indent ]
+     `usage: ["line_number:integer" "get_line:function"]
+   })
+                                                                              
 true
  
