@@ -15,6 +15,7 @@
   --control-disabled-color: #cad2d3;
   --control-readonly-color: #777;
   --button-hover-bg-color: #00000030;
+  --identification-bg-color: #01678338;
   --app-header-color: #546478;
   --namespace-color: #976464;
   --main-accent-color: #0000000A;
@@ -1507,6 +1508,10 @@ button.juno-button-on {
   color: white;
 }
 
+button.juno-command-button {
+  
+}
+
 juno-dialog { 
   min-width: 300px;
 }
@@ -1942,7 +1947,9 @@ ol.juno-type-array:hover {
   border-color: #ffffff;
 }
 
-
+.identification {
+  background: var(--identification-bg-color) !important;
+}
 
 
 @keyframes slide-in {

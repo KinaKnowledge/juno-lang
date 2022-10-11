@@ -2420,7 +2420,7 @@
 					 (set_path [ childset.0 `context `scope symset.0 ] children					  
 				                   symset.1)))))
 		      (catch Error (e)
-			     (console.error "env: unable to load symbol: " (clone childset)))))))
+			     (console.error "env: unable to load child: " (clone childset)))))))
        
      ;; call the user initializer     
        (when init 

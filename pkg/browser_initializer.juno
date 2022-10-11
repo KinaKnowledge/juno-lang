@@ -282,8 +282,19 @@
 
 (console.log "browser_initializer running")
 
-(defun current_controls ()
-  (uniq (flatten (control_tree $root_controls))))
+(defun current_controls (no_subcontrols)
+  (let
+     ((ctls (uniq (flatten (control_tree $root_controls))))
+      (ids nil))
+     (if no_subcontrols
+         (progn
+            (= ids (new Set))
+            (reduce (ctl ctls)
+               (progn
+                  (unless (-> ids `has ctl.options.id)
+                          (-> ids `add ctl.options.id)
+                          ctl))))
+         ctls)))
 
 (defun cascade_resize (top_control)
   (control_tree (or top_control $root_controls)
@@ -343,6 +354,37 @@
                (break))))
     ctrl))                                                   
 
+(defun render_control_tree (controls)
+   (let
+      ((cell_style "border: 1px dashed var(--main-accent-line-hover);")
+       (sub_style "border-right: 1px dashed var(--main-accent-line-hover); border-bottom: 1px dashed var(--main-accent-line-hover);border-top: 1px dashed var(--main-accent-line-hover);")
+       (parent_style "border-left: 1px dashed var(--main-accent-line-hover); border-bottom: 1px dashed var(--main-accent-line-hover);border-top: 1px dashed var(--main-accent-line-hover);"))
+      (table { `style: "vertical-align: top; margin: 5px;" }
+        (cond
+           (is_array? controls)
+           (for_each (ctl controls)
+              (tr { `style: (+ "vertical-align: top;" cell_style) }
+               (if (is_function? ctl.controls)
+                   [ (td { `control_id: ctl.options.id 
+                            style: (+ ""
+                                      parent_style
+                                      (if (== ctl *last_focus*)
+                                          "font-weight: bold; background: var(--control-focused);"
+                                          ""))
+                            } (or ctl.name (+ "/" ctl.type)))
+                    (td { `style: sub_style } (render_control_tree (-> ctl `controls)))]
+                   (td { `control_id: ctl.options.id `colspan: 2 
+                         `style: (+ "" cell_style (if (== ctl *last_focus*) "font-weight: bold; background: var(--control-focused);" "")) } 
+                         (or ctl.name (+ "/" ctl.type))))))
+           (is_object? controls)
+           (tr { `style: "" }
+            (if (is_function? controls.controls)
+                [(td { `style: (if (== controls *last_focus*) "font-weight: bold; background: var(--control-focused);" "") } controls.name)
+                 (td { `control_id: controls.options.id `style: cell_style } (render_control_tree (-> controls `controls)))]
+                (td { `control_id: controls.options.id `colspan: 2 
+                      `style: (+ "" cell_style (if (== controls *last_focus*) "font-weight: bold; background: var(--control-focused);" "")) }  
+                      (or controls.name (+ "/" controls.type)))))))))
+
 (defun holding_tank_controls ()
   (aif (get_control_by_name "Holding Tank")
        (-> it `controls)
@@ -377,6 +419,8 @@
     ;; the objects should be swapped at this point
     ;; return tmp as the old control
     tmp))
+
+
 
 (defun control_for_dom_element (elem)
     (let
@@ -473,6 +517,22 @@
        (= parent (control_position parent.parent)))
    parent.child))
 
+(defun parents_for_control (control)
+   (if (is_control? control)
+       (progn
+          (defvar parent (control_for_dom_element control.view.parentElement))
+          (if (is_top_control? parent)
+              [parent]
+              (reduce (ctl (flatten [parent (parents_for_control parent)]))
+                 ctl)))
+       [nil])
+  {
+   `description: "Given a control, returns an array containing the parent chain, with the last being the top control."
+   `usage: ["control:object"]
+   `tags: [ `control `controls `position `heirarchy ]
+   })
+
+
 (defun set_focus_to (target_control _controls)
   (let
       ((focused_list (query_all ".juno-focused"))
@@ -533,6 +593,11 @@
         found_control)
       nil)))
 
+(defun commands_button (id)
+  (button { `control_id: id
+            `class: "juno-command-button"
+            `title: (dtext "Commands") } "⋯"))
+
 (defun swap_control (target_control new_control)
   (let
       ((tmp (new Object))
@@ -582,9 +647,24 @@
             (cascade_resize)
             target_control)
         
+        (and (== position_details_new.child holding_tank)
+             (is_function? position_details_target.parent.set_content))
+        (progn
+         (-> holding_tank `add_control position_details_target.child)
+         (set_prop holding_tank.options
+                   `in_tree
+                   true) ;; otherwise the holding tank, if not initialized, will not mount correctly and place itself somewhere in the dom after initialization
+         (-> position_details_target.parent `set_content position_details_target.child_position
+             position_details_new.child)
+         (-> holding_tank `show)
+         (cascade_resize)
+         (set_focus_to position_details_new.child)
+         target_control)
+         
         (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
              (is_function? position_details_target.parent.set_content))
         (progn
+            (debug)
             (-> holding_tank `remove_control position_details_new.child.options.id)
             (-> holding_tank `add_control position_details_target.child)
             (-> position_details_target.parent `set_content 
@@ -612,6 +692,7 @@
 
 
 
+
 ;; container view operation
 ;; given a command performs an operation on the control structure
 
@@ -622,145 +703,153 @@
 ;; options - options for the given command
 
 (defun container_view_operation (command target_control new_control options)
-  (let
-    ((orig_target target_control)
-     (target_control (control_for_dom_element target_control.view)) ;; ensure we have the correct handle to the impaced control since this could be a sub_control given to us
-     (position_details nil) ;; the structure that holds the position details of the operation
-     (holding_tank (get_control_by_name "Holding Tank"))
-     (tmpview nil)
-     (new_container nil)
-     (split_view_parent nil))
-    
-    (assert target_control "Unable to find the target control")
-    (assert holding_tank "Unable to find the holding tank")
-    
-    (= position_details (control_position target_control))
-    (console.log "container_view_operation: original_target: " orig_target)
-    (console.log "container_view_operation: computed_target: " target_control)
-    (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
-    (when (and (== position_details.parent nil) ;; top level control
-               (not (== position_details.child holding_tank))
-               (is_top_control? position_details.child))
-      (= target_control (first (-> position_details.child `controls)))
+   (let
+      ((orig_target target_control)
+       (target_control (control_for_dom_element target_control.view)) ;; ensure we have the correct handle to the impaced control since this could be a sub_control given to us
+       (position_details nil) ;; the structure that holds the position details of the operation
+       (holding_tank (get_control_by_name "Holding Tank"))
+       (tmpview nil)
+       (confirmed true)
+       (new_container nil)
+       (split_view_parent nil))
+      
+      (assert target_control "Unable to find the target control")
+      (assert holding_tank "Unable to find the holding tank")
+      
       (= position_details (control_position target_control))
-      (console.log "container_view_operation: shifted down: target_control was a top control: " position_details))
+      (console.log "container_view_operation: original_target: " orig_target)
+      (console.log "container_view_operation: computed_target: " target_control)
+      (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
+      (when (and (== position_details.parent nil) ;; top level control
+                 (not (== position_details.child holding_tank))
+                 (is_top_control? position_details.child))
+         (= target_control (first (-> position_details.child `controls)))
+         (= position_details (control_position target_control))
+         (console.log "container_view_operation: shifted down: target_control was a top control: " position_details))
       
+      (if (and (== command "destroy")
+               (is_function? target_control.on_destroy))
+          (= confirmed (-> target_control `on_destroy)))
       
-      
-    ;; if the parent structure is nil in position_details, then we are at the root
-    (cond
-          (or (== command "hide")
-              (== command "destroy"))
+      (if confirmed
+          ;; if the parent structure is nil in position_details, then we are at the root
+          (cond
+             (or (== command "hide")
+                 (== command "destroy"))
+             (progn
+                (cond
+                   ;; the control is not a root control if it has a parent
+                   (or (== position_details.parent.type "split_view_vertical")
+                       (== position_details.parent.type "split_view_horizontal"))
+                   (progn
+                      ;; grab the child control to keep displaying, ie. not the one in the child_position
+                      (set_prop position_details
+                         `child_to_display
+                         (if (== position_details.child_position 0)
+                             (second (-> position_details.parent `controls))
+                             (first (-> position_details.parent `controls))))
+                      
+                      ;; we need to know the split views parent since we are going to remove the split view
+                      ;; and hoist the remaining child to display into the parent structure in place of the
+                      ;; split_view - not an even swap because the existing split_view is retired
+                      
+                      (= split_view_parent (control_position position_details.parent))
+                      (assert split_view_parent.parent.set_content "Unable to set the content of the split view parent")
+                      (console.log "container_view_operation: split_view_parent: " split_view_parent)
+                      (console.log "container_view_operation: position_details: " position_details)
+                      (when (not options.dry_run)
+                         ;; elevate the child to keep to the targeted_control container's position in it's parent
+                         (-> split_view_parent.parent `set_content split_view_parent.child_position position_details.child_to_display)
+                         
+                         ;; set the child to hide in non displayed controls
+                         (cond
+                            (and (== command "hide")
+                                 (not (== target_control holding_tank)))
+                            (-> holding_tank
+                                `add_control
+                                target_control)
+                            (and (== command "destroy")
+                                 (is_function? target_control.destroy))
+                            (-> target_control `destroy)))
+                      (cascade_resize)
+                      (default_focus)
+                      true)
+                   (and (== position_details.parent holding_tank)
+                        (== command "destroy"))
+                   (progn
+                      (-> holding_tank `remove_control position_details.child.options.id)
+                      (if (is_function? position_details.child.destroy)
+                        (-> position_details.child `destroy))
+                      (default_focus))
+                   else
+                   (progn
+                      (notify "Cannot hide a single control - try replacing")
+                      position_details)))
+             
+             (== command "replace")
+             (progn
+                (swap_control target_control new_control)
+                true)
+             
+             (== command "split_left")
+             (progn
+                (assert (is_control? new_control) "Invalid control provided for the replacement control")
+                (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
+                (= tmpview (div { } "Placeholder"))
+                ;; get it off the dom
+                (-> position_details.child.view `replaceWith
+                    tmpview)
+                (= new_container (split_view_vertical new_control position_details.child (or options { `ratio: 0.3 } )))
+                (-> holding_tank `remove_control new_control)
+                (-> position_details.parent `set_content position_details.child_position new_container)
+                (cascade_resize)
+                true)
+             (== command "split_right")
+             (progn
+                (assert (is_control? new_control) "Invalid control provided for the replacement control")
+                (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
+                (= tmpview (div { } "Placeholder"))
+                ;; get it off the dom
+                (-> position_details.child.view `replaceWith
+                    tmpview)
+                (= new_container (split_view_vertical position_details.child new_control  (or options { `ratio: 0.7 } )))
+                (-> holding_tank `remove_control new_control)
+                (-> position_details.parent `set_content position_details.child_position new_container)
+                
+                (cascade_resize)
+                true)
+             (== command "split_above")
+             (progn
+                (assert (is_control? new_control) "Invalid control provided for the replacement control")
+                (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
+                (= tmpview (div { } "Placeholder"))
+                ;; get it off the dom
+                (-> position_details.child.view `replaceWith
+                    tmpview)
+                (= new_container (split_view_horizontal new_control position_details.child (or options { `ratio: 0.3 } )))
+                (-> holding_tank `remove_control new_control)
+                (-> position_details.parent `set_content position_details.child_position new_container)
+                (cascade_resize)
+                true)
+             (== command "split_below")
+             (progn
+                (assert (is_control? new_control) "Invalid control provided for the replacement control")
+                (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
+                (= tmpview (div { } "Placeholder"))
+                ;; get it off the dom
+                (-> position_details.child.view `replaceWith
+                    tmpview)
+                (= new_container (split_view_horizontal  position_details.child new_control (or options { `ratio: 0.7 } )))
+                (-> holding_tank `remove_control new_control)
+                (-> position_details.parent `set_content position_details.child_position new_container)
+                (cascade_resize)
+                true)
+             else
+             (progn
+                (notify (+ "container_view_operation: unknown command: " command))
+                position_details))
           (progn
-              (cond 
-                    ;; the control is not a root control if it has a parent 
-                (or (== position_details.parent.type "split_view_vertical")
-                    (== position_details.parent.type "split_view_horizontal"))
-                (progn
-                    ;; grab the child control to keep displaying, ie. not the one in the child_position
-                    (set_prop position_details
-                              `child_to_display
-                              (if (== position_details.child_position 0)
-                                  (second (-> position_details.parent `controls))
-                                  (first (-> position_details.parent `controls))))
-                    
-                    ;; we need to know the split views parent since we are going to remove the split view
-                    ;; and hoist the remaining child to display into the parent structure in place of the 
-                    ;; split_view - not an even swap because the existing split_view is retired 
-                    
-                    (= split_view_parent (control_position position_details.parent))
-                    (assert split_view_parent.parent.set_content "Unable to set the content of the split view parent")
-                    (console.log "container_view_operation: split_view_parent: " split_view_parent)
-                    (console.log "container_view_operation: position_details: " position_details)
-                    (when (not options.dry_run)
-                     ;; elevate the child to keep to the targeted_control container's position in it's parent
-                        (-> split_view_parent.parent `set_content split_view_parent.child_position position_details.child_to_display)
-                        
-                        ;; set the child to hide in non displayed controls 
-                        (cond
-                          (and (== command "hide")
-                               (not (== target_control holding_tank)))
-                          (-> holding_tank
-                              `add_control 
-                              target_control)
-                          (and (== command "destroy")
-                               (is_function? target_control.destroy))
-                          (-> target_control `destroy)))
-                    (cascade_resize)
-                    true)
-                (and (== position_details.parent holding_tank)                         
-                     (== command "destroy"))
-                (progn
-                 (-> holding_tank `remove_control position_details.child.options.id)
-                 (if (is_function? position_details.child.destroy)
-                   (-> position_details.child `destroy)))
-                else
-                (progn
-                    (notify "Cannot hide a single control - try replacing")
-                    position_details)))
-            
-          (== command "replace")    
-          (progn
-              (swap_control target_control new_control)
-              true)
-          
-          (== command "split_left")    
-          (progn
-              (assert (is_control? new_control) "Invalid control provided for the replacement control")
-              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
-              (= tmpview (div { } "Placeholder"))
-              ;; get it off the dom
-              (-> position_details.child.view `replaceWith
-                  tmpview)                                 
-              (= new_container (split_view_vertical new_control position_details.child (or options { `ratio: 0.3 } )))
-              (-> holding_tank `remove_control new_control)
-              (-> position_details.parent `set_content position_details.child_position new_container)
-              (cascade_resize)
-              true)
-          (== command "split_right")    
-          (progn
-              (assert (is_control? new_control) "Invalid control provided for the replacement control")
-              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
-              (= tmpview (div { } "Placeholder"))
-              ;; get it off the dom
-              (-> position_details.child.view `replaceWith
-                  tmpview)                                  
-              (= new_container (split_view_vertical position_details.child new_control  (or options { `ratio: 0.7 } )))
-              (-> holding_tank `remove_control new_control)
-              (-> position_details.parent `set_content position_details.child_position new_container)
-              
-              (cascade_resize)
-              true)
-          (== command "split_above")    
-          (progn
-              (assert (is_control? new_control) "Invalid control provided for the replacement control")
-              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
-              (= tmpview (div { } "Placeholder"))
-              ;; get it off the dom
-              (-> position_details.child.view `replaceWith
-                  tmpview)              
-              (= new_container (split_view_horizontal new_control position_details.child (or options { `ratio: 0.3 } )))
-              (-> holding_tank `remove_control new_control)
-              (-> position_details.parent `set_content position_details.child_position new_container)
-              (cascade_resize)
-              true)
-          (== command "split_below")    
-          (progn
-              (assert (is_control? new_control) "Invalid control provided for the replacement control")
-              (assert (not (== position_details.parent holding_tank)) "Cannot split the holding tank")
-              (= tmpview (div { } "Placeholder"))
-              ;; get it off the dom
-              (-> position_details.child.view `replaceWith
-                  tmpview)             
-              (= new_container (split_view_horizontal  position_details.child new_control (or options { `ratio: 0.7 } )))
-              (-> holding_tank `remove_control new_control)
-              (-> position_details.parent `set_content position_details.child_position new_container)
-              (cascade_resize)
-              true)
-          else
-          (progn
-           (notify (+ "container_view_operation: unknown command: " command))
-           position_details))))
+             false))))
   
   
 
@@ -788,18 +877,88 @@
               
 (defun show_control (control_to_show)
   (let
-      ((target_control (if *last_focus*
+      ((control_to_show (cond 
+                          (and (is_string? control_to_show)
+                               (get_control_by_name control_to_show))
+                          (get_control_by_name control_to_show)
+                          (and (is_string? control_to_show)
+                               (get_control_by_id control_to_show))
+                          (get_control_by_id control_to_show)
+                          (is_control? control_to_show)
+                          control_to_show))
+       (target_control (if *last_focus*
                          *last_focus*
                            nil)))
-    (if target_control
-      (progn
-       (swap_control target_control control_to_show)
-       (set_focus_to control_to_show)
-       true)
-      (progn
-       (place_control "right" control_to_show)
-       (set_focus_to control_to_show)
-       false))))
+    (cond 
+       (and target_control control_to_show)
+       (progn
+          (swap_control target_control control_to_show)
+          (set_focus_to control_to_show)
+          true)
+       control_to_show
+       (progn
+          (place_control "right" control_to_show)
+          (set_focus_to control_to_show)
+          true)
+       else
+       (progn 
+          (notify (dtext "The requested control to display wasn't found."))
+          false)))
+  {
+    `description: (+ "Provided a control name, id or the control object itself, "
+                     "will display the control, adjusting the layout as needed. "
+                     "By default the control referenced by *last_focus* is swapped with the new one, "
+                     "but if that isn't possible, the view is split and the new control is placed to "
+                     "the right.<br>"
+                     "Returns true if successful, otherwise a notification is "
+                     "delivered that the control is not found, and false is "
+                     "returned.")
+    `tags: ["controls" "control" "display" "hiding" "holding_tank" "ui"]
+    `usage: ["target:string|object"]
+    })
+
+
+
+(defun hide_control (target destroy?)
+   (let
+      ((control (cond 
+                   (and (is_string? target)
+                        (get_control_by_name target))
+                   (get_control_by_name target)
+                   (and (is_string? target)
+                        (get_control_by_id target))
+                   (get_control_by_id target)
+                   (is_control? target)
+                   target)))
+      (if control
+          (progn
+             (container_view_operation (if destroy? "destroy" "hide") control nil)
+             true)
+          (progn
+             (notify "Control not found")
+             false)))
+   {
+       `description: (+ "Provided a control name, id or the control object itself, "
+                        "will hide the control, adjusting the layout as needed. "
+                        "Returns true if successful, otherwise a notification is "
+                        "delivered that the control is not found, and false is "
+                        "returned.  If destroy? is true, the control is removed from "
+                        "the tree and destroyed.")
+       `tags: ["controls" "control" "display" "hiding" "holding_tank" "ui"]
+       `usage: ["target:string|object" "destroy?:?boolean"]
+   })
+
+(defun destroy_control (target)
+  (hide_control target true)
+  {
+   `description: (+ "Provided a control name, id or the control object itself, "
+                    "will hide the control, adjusting the layout as needed. "
+                    "Returns true if successful, otherwise a notification is "
+                    "delivered that the control is not found, and false is "
+                    "returned. ")
+   `tags: ["controls" "control" "display" "destroy" "remove" "holding_tank" "ui"]
+   `usage: ["target:string|object"]
+   })
 
 (defun process_focus_chain (e originator_container)
   (progn
@@ -1269,7 +1428,7 @@
         (name (name_control (or options.name "Symbol Browser")))                  
         (title_span (span { `class: "juno-title" } name))
         (path_span (span { `class: "juno-path" `style: "float: right" } ""))
-        (buffer_commands_button (button { `title: "Commands" } "⋯"))
+        (buffer_commands_button (commands_button id))
         (stack [ ])
         (filter_span (span { `style: "margin-left: 8px; margin-right: 8px; font-family: var(--main-mono-space);" } ""))
         (filter_span_container (span { `style: "border-radius: 3px; margin-left: 10px; padding-top: 2px; padding-bottom: 2px; border: 1px solid var(--type-regexp-color);" } 
@@ -1766,9 +1925,121 @@
    })
 
 
+(defun floating_div (contents options)
+   (let
+      ((close_button (button { `title: (dtext "Close") } "X"))
+       (move_state nil)
+       (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
+       (dims nil)
+       (max_dims {
+                  `width: 0
+                  `height: 0
+                  })
+       (body_element nil)
+       (control_bar (div { `class: "juno-buffer-bar" style: "cursor: grab;" }
+                 close_button
+                 "Control Structure"))
+       (end_drag (fn (e)
+                    (progn
+                       (= move_state nil)
+                       (-> full_block `remove))))
+       (handle_drag (fn (e)
+                      (when (and move_state
+                                 (== e.buttons 1))
+                        (set_style [["top" ( + "" (Math.max 0 (Math.min (- max_dims.height 30) (+ dims.top (- e.pageY move_state.my)))) "px") ]
+                                    ["left" (+ "" (Math.max 0 (Math.min (- max_dims.width 30) (+ dims.left (- e.pageX move_state.mx)))) "px") ]]
+                                   frame))))
+                                   
+       (frame (div { `style: "cursor: default; user-select: none; box-shadow: 1px 1px 6px 2px #00000080; background: var(--main-bg-color); position: absolute;z-index: 10; left: 10px; top: 10px; min-width: 300px; "}
+               (control_frame {}
+                control_bar
+                (cond
+                   (and (is_object? contents)
+                        contents.view)
+                   contents.view
+                   (is_element? contents)
+                   contents
+                   else
+                   (value_to_dom contents))))))
+      (attach_event_listener close_button
+                             `click
+                             (fn (v)
+                                (progn
+                                   (when options.on_close
+                                      (options.on_close))
+                                   (-> frame `remove))))
+      (attach_event_listener control_bar
+                             `mousedown
+                             (fn (e)
+                                (progn
+                                 (= dims (-> frame `getBoundingClientRect))
+                                 (= body_element (get_by_id "body"))
+                                 (= max_dims {
+                                              `width: (prop body_element `offsetWidth)
+                                              `height: (prop body_element `offsetHeight) })                                 
+                                 (-> body_element `appendChild full_block)
+                                   (= move_state {
+                                                   mx: e.pageX
+                                                   my: e.pageY
+                                                   fx: dims.right
+                                                   fy: dims.top
+                                                   }))))
+      (attach_event_listener full_block
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mousemove
+                             handle_drag)
+      (attach_event_listener full_block
+                             `mousemove
+                             handle_drag)
+      (-> (get_by_id "body") `appendChild frame)
+      true))
 
-
-
+(defun monitor_control_tree ()
+   (let
+      ((view nil)
+       (update_timer nil))
+     (if (get_by_id `control_tree_monitor)
+       (notify "Control Tree Already Showing")
+       (progn
+        (= view (div { `id: `control_tree_monitor }
+                     (render_control_tree $root_controls)))
+        (attach_event_listener view
+                               `click
+                               (fn (e)
+                                 (let
+                                     ((id (-> e.srcElement `getAttribute "control_id"))
+                                      (body_element (get_by_id "body"))
+                                      (dims nil)
+                                      (highlighter nil)
+                                      (control (if id (get_control_by_id id))))
+                                   (when control
+                                     (when control.view
+                                       (= dims (-> control.view `getBoundingClientRect))
+                                       (console.log "control dims: " control.name dims)
+                                       (-> body_element `appendChild
+                                           (= highlighter (div { `id: "highlighter" `class: "identification" `style: (+ "z-index: 7; position: absolute; top: " dims.top "px; left: " dims.left "px; width: " (- dims.width 5) "px; height: " (- dims.height 5) "px; border: 3px dashed red;") }
+                                                           "")))
+                                       (setTimeout (fn ()
+                                                     (do 
+                                                        (aif (get_by_id "highlighter")
+                                                             (-> it `remove))
+                                                        (-> highlighter `remove)))
+                                                   1000))))))
+                                   
+        (= update_timer (setInterval (fn ()
+                                     (progn                                        
+                                        (-> view `replaceChildren (render_control_tree $root_controls))))
+                                     1000))
+        (floating_div view
+                      { `on_close: (fn ()
+                                     (progn
+                                      (clearInterval update_timer)))
+                       })))))
 
   
 
@@ -1929,7 +2200,8 @@
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
                                           view)
-                          (-> editor `resize))))
+                          (when editor
+                            (-> editor `resize)))))
        (editor nil)
        (set_evaluator (fn ()
                         (when options.evaluator
@@ -2133,7 +2405,7 @@
                 (-> editor `getValue))
         `get_selection: get_selection
         `is_selected?: is_selected?        
-        `type: `make_editor
+        `type: `make_editor        
         `destroy: (fn ()
                    (when editor
                      (-> editor `destroy)
@@ -2284,7 +2556,7 @@
                         options.evaluator))
                                                 
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
-       (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+       (buffer_commands_button (commands_button id))
        (is_dirty? false)
        (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
        (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
@@ -2391,14 +2663,14 @@
     
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
    
-    (attach_event_listener buffer_commands_button
-                           `click
-                           (fn (e)
-                             (progn
-                              (handle_event e)
-                              (make_menu buffer_commands_button
-                                                           (menu_items)
-                                                           ))))
+   ; (attach_event_listener buffer_commands_button
+    ;                       `click
+     ;                      (fn (e)
+      ;                       (progn
+       ;                       (handle_event e)
+        ;                      (make_menu buffer_commands_button
+         ;                                                  (menu_items)
+          ;                                                 ))))
 
     (attach_event_listener edit_control.view
                            `keyup
@@ -2417,6 +2689,13 @@
     (set_prop edit_control
               `set_evaluator_control  set_evaluator_control
               `on_focus on_focus
+              `on_destroy (fn ()                           
+                            (if (and is_dirty?
+                                     (request_user_input (+ "" title ": " (dtext "The value of this editor hasn't been stored. Really remove?"))
+                                                         "text"
+                                                         { input: (input { `type: "hidden" `value: "remove" }) }))
+                              true
+                              false))                                                                                                                                                     
               `options options
               `name title
               `menu_items menu_items
@@ -2595,17 +2874,17 @@
   (let
       ((options (or options {}))
        (name options.name)       
-       (resize_observer nil)       
+       (resize_observer nil)
+       (id (or options.id (generate_id "repl")))
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
-       (commands_button (button { `title: "REPL Commands" } "⋯"))
+       (control_button (commands_button id));  { `title: "REPL Commands" } "⋯"))
        (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
        (show_prototype_details_button (button { `title: (dtext "Show Object Prototype Detail") } "P"))
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
        (error_state nil)
        (initialized false)       
-       (intf nil)
-       (id (or options.id (generate_id "repl")))
+       (intf nil)       
        (toggle_prototype_detail (function ()
                                           (progn                                           
                                            (set_prop options.display_options
@@ -2617,7 +2896,7 @@
                                              (add_class "juno-button-on" show_prototype_details_button)
                                              (remove_class "juno-button-on" show_prototype_details_button)))))
        (output_control (log_view { `display_options: (or options.display_options {} )
-                                   `additional_elements: [ commands_button title_span show_prototype_details_button namespace_span path_span ] `id: id }))
+                                   `additional_elements: [ control_button title_span show_prototype_details_button namespace_span path_span ] `id: id }))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -2778,13 +3057,13 @@
                                              `innerText
                                              ""))))))
     
-    (attach_event_listener commands_button
-                           `click
-                           (fn (e)
-                             (progn
-                              (handle_event e)
-                              (make_menu commands_button
-                                         (menu_items)))))
+   ; (attach_event_listener control_button
+    ;                       `click
+     ;                      (fn (e)
+      ;                       (progn
+       ;                       (handle_event e)
+        ;                      (make_menu commands_button
+         ;                                (menu_items)))))
     
     (attach_event_listener show_prototype_details_button
                            `click
@@ -2826,7 +3105,7 @@
                        (-> sview `resize))
              `menu_items: menu_items                           
              `on_focus: on_focus
-             `on_blur: on_blur
+             `on_blur: on_blur           
              `set_theme: (fn (theme_name)
                            (when (contains? theme_name *editor_themes*)
                              (set_prop options `theme theme_name)
@@ -2838,6 +3117,7 @@
                                            [(quote quotel) history])
                                 `(browser_repl ,#(or options { `ratio: sview.options.ratio } ))))
              `controls: (fn () [ input_container output_control])
+             
              `output_container: output_control.view
              `log: (fn (val)
                      (-> output_control `log_message val))
@@ -2865,8 +3145,9 @@
             (name (or options.name
                       "Holding Tank"))
             (initialized false)
+            (id (or options.id (generate_id "holding_tank")))
             (title_span (span { `class: "juno-title" } (dtext "Holding Tank")))
-            (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+            (buffer_commands_button (commands_button id))
             (control_status (div {  `class: "juno-buffer-bar" }
                                  buffer_commands_button
                                  (cond (is_array? options.additional_elements)
@@ -2900,7 +3181,7 @@
                                       (remove_prop my_controls id)
                                       (render_view))
                                      (notify "The requested control wasn't found")))))
-            (id (or options.id (generate_id "holding_tank")))
+            
             (render_view (fn ()
                            (-> control_view
                                `replaceChildren
@@ -2932,7 +3213,7 @@
                             (= initialized true)
                             (-> resize_observer `observe view.parentElement)
                             (console.log "holding_tank: in initialization: " options view.parentElement)
-                            (if options.in_tree
+                            (if options.in_tree                                
                               (progn
                                (console.log "holding_tank: in tree and setting view up to block..and calling render")
                                (set_style [["display" "block"]] view)
@@ -2954,7 +3235,8 @@
                                                { `child: intf `parent: nil `child_position: 0 }))
                            (target_control (if root_control.controls
                                              (first (-> root_control `controls)))))
-                        (console.log "holding_tank: show: " root_control current_parent target_control)
+                        (console.log "holding_tank: show: " root_control "current_parent: " current_parent "target_control: " target_control)
+                        (console.log "holding_tank: do I have a parent_element: " (parents_for_control intf))
                           (cond 
                             (eq current_parent.parent nil)
                             (progn
@@ -2965,7 +3247,11 @@
                              (container_view_operation "split_right" target_control intf { `ratio: 0.8 }))
                             current_parent.parent
                             (progn
-                              (set_focus_to intf))))))
+                             (set_style [["display" "block"]] view)
+                             (set_prop options
+                                       `in_tree
+                                       true)
+                             (set_focus_to intf))))))
             (hide (fn ()
                     (progn
                      (console.log "holding_tank: hide: " view.parentElement)
@@ -3022,8 +3308,9 @@
         ((options (or options {
                                `name: "Empty Selection" 
                                }))
+         (id (or options.id (generate_id "empty")))
          (title_span (span { `class: "juno-title" } (if options.title options.title "Select Control")))
-         (buffer_commands_button (button { `title: "Buffer Commands" } "⋯"))
+         (buffer_commands_button (commands_button id))
          (control_status (div {  `class: "juno-buffer-bar" }
                               buffer_commands_button
                               (cond (is_array? options.additional_elements)
@@ -3031,8 +3318,7 @@
                                   else
                                   title_span
                                   )))
-         (resize_observer nil)
-         (id (or options.id (generate_id "empty")))
+         (resize_observer nil)         
          (initialized false)
          (parent_view nil)
          (check_observer (fn ()
@@ -3085,7 +3371,38 @@
        }))
 
 
+(defun handle_app_click_event (e)
+  (let
+      ((elem e.srcElement)
+       (elem_type e.srcElement.tagName)       
+       (control_id (get_attribute elem "control_id"))
+       (control (if control_id
+                  (get_control_by_id control_id)))
+       (parents (each (parents_for_control control) `name)))
+    (cond
+      (and (has_class? "juno-command-button" elem)
+           (== elem_type "BUTTON")           
+           control)
+      ;; a command button was clicked show the menu for the control
+      (let
+          ((control_menu (conj (if (is_function? control.menu_items)
+                                 (-> control `menu_items)
+                                 [[]])
+                               [[(dtext "Swap") (reduce (other_control (current_controls true))
+                                                         (unless (or (== other_control control)
+                                                                     (eq nil other_control.name)
+                                                                     (contains? other_control.name parents))
+                                                                 [other_control.name (fn () (swap_control control other_control)) ]))]
+                                [(dtext "Hide") (fn ()
+                                                  (hide_control control))]
+                                ["--" nil]
+                                [(dtext "Destroy") (fn ()
+                                                     (destroy_control control))]])))
+        (make_menu elem control_menu)))))
 
+      
+                                                 
+      
 
 
 (defun app_menu(global_menu_path options)
@@ -3111,12 +3428,13 @@
                      (build_view))))
        (remove_menu (fn (menu_text)
                       (let
-                          ((existing_idx (index_of menu_text top_levels)))
-                        (when (> existing_idx -1)
+                          ((existing_idx (index_of menu_text top_levels)))                           
+                        (when (and (> existing_idx -1)
+                                   (prop view.children existing_idx))
                           (-> (prop view.children existing_idx)
                               `remove)
                           (-> menu_trees `splice existing_idx 1))
-                        (set_path global_menu_path Environment.context.scope menu_trees))))                        
+                        (set_path global_menu_path Environment.context.scope menu_trees))))
        (build_view (fn ()
                        (let
                            ((new_view nil)
@@ -3281,49 +3599,60 @@
 
 
 (defun gen_layout_menu ()
-    (let
-        ((menu_acc [])
-         (holding_tank (get_control_by_name "Holding Tank"))
-         (root_ctls (new Set)))
+   (let
+      ((menu_acc [])
+       (idx 0)
+       (holding_tank (get_control_by_name "Holding Tank"))
+       (root_ctls (new Set)))
       (reduce (pset (pairs (controls_by_parent)))
          (destructuring_bind (key controls)
             pset
             (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
             (cond
-                (== key "root")
-                (progn
-                    (for_each (control controls) 
-                       (-> root_ctls `add control.name))
-                    nil)
-                
-                (and (-> root_ctls `has key)
-                     (not (== key "Holding Tank")))
-                [key (for_each (operation ["Show" "Hide" "--" "Destroy"])
-                      (progn
-                         (defvar control (get_control_by_name key))        
-                         [(dtext operation)
-                          (cond
-                            (== operation "--")
-                            nil
-                            (or (and (== operation "Show")
-                                     (-> holding_tank `has_control? control))
-                                (and (== operation "Hide")
-                                     (not (-> holding_tank `has_control? control)))
-                                (and (== operation "Destroy")
-                                     (-> holding_tank `has_control? control)))
-                            (fn ()
-                              (container_view_operation (to_key operation) 
-                                                        (get_control_by_name key)
-                                                        nil)))]))]
-                
-                (not (== key "Holding Tank"))
-                [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
-                         [(dtext operation) (fn ()
-                                               (progn
-                                                   (console.log key "operation: " operation controls)
-                                                   (container_view_operation (to_key operation) 
-                                                                        (get_control_by_name key)
-                                                                        (empty_selection_control))))])])))))
+               (== key "root")
+               (progn
+                  (for_each (control controls)
+                     (-> root_ctls `add control.name))
+                  nil)
+               
+               (and (-> root_ctls `has key)
+                    (not (== key "Holding Tank")))
+               [key (for_each (operation ["Split Right" "Split Bottom" "Show" "Hide"])
+                       (progn
+                          (defvar control (get_control_by_name key))
+                          [(dtext operation)
+                           (cond
+                              (and (> idx 1)
+                                   (== operation "--"))
+                              nil
+                              (== operation "Split Right")
+                              (fn ()
+                                (place_control "right" (symbol_browser)))
+                              (== operation "Split Bottom")
+                              (fn ()
+                                (place_control "below" (symbol_browser)))
+                              (or (and (== operation "Show")
+                                       (-> holding_tank `has_control? control))
+                                  (and (== operation "Hide")
+                                       (not (-> holding_tank `has_control? control)))
+                                  (and (== operation "Destroy")
+                                       (-> holding_tank `has_control? control)))
+                              (progn
+                                 (when (-> holding_tank `has_control? control)
+                                    (inc idx))
+                                 (fn ()
+                                    (container_view_operation (to_key operation)
+                                     (get_control_by_name key)
+                                     nil))))]))]
+               
+               (not (== key "Holding Tank"))
+               [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
+                       [(dtext operation) (fn ()
+                               (progn
+                                  (console.log key "operation: " operation controls)
+                                  (container_view_operation (to_key operation)
+                                   (get_control_by_name key)
+                                   (empty_selection_control))))])])))))
 
 (defun gen_view_menu ()
   (progn
@@ -3380,10 +3709,10 @@
                               (aif (get_control_by_id control.options.id)
                                    (container_view_operation "destroy" it)
                                    (notify (+ "Unable to find control " (or control.name control.options.id))))))]))]))
-        [[(dtext "List All Active Controls") 
+        [[(dtext "Monitor Control Tree") 
           (fn ()
             (progn
-             (rlog (control_tree $root_controls))))  ]])))
+             (monitor_control_tree)))  ]])))
                   
 
 
@@ -3428,18 +3757,49 @@
 
 (defun new_buffer (options)
   (let
-      ((target_container (or *last_focus*  (default_focus)))
-       (symbol_data (or options.path
+      ((options (cond
+                   (is_array? options)
+                   { `path: options `type: "juno"}
+                   (is_object? options)
+                   options
+                   (is_string? options)
+                   { `path: [ options ] `type: "juno" }
+                   else
+                   { `type: "juno" }))
+       (target_container (or *last_focus*  (default_focus)))
+       (symbol_data (if options.path
+                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
                         (symbol_chooser "Select a symbol to edit" options.type)))
        (target_ns symbol_data.namespace)
        (target_env nil))
+      (console.log "new_buffer: for: " options target_ns symbol_data)
+      
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+    (when (and target_env (not (resolve_path symbol_data.path target_env.global_ctx.scope)))
+       (console.log "new_buffer: target symbol doesn't exist: creating it")
+       (set_path symbol_data.path target_env.global_ctx.scope ""))
     (when symbol_data.path
       (if (is_top_control? target_container)
         (container_view_operation "split_right" (first (-> target_container `controls))
                                   (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type ))
-        (swap_control target_container (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type ))))))
+        (swap_control target_container (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type )))))
+  {
+      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
+                       "split the view to the right for the new editor.  If no options are provided, the user "
+                       "will be prompted for a symbol to edit.  Options can be: <br>"
+                       "string: is considered a symbol name and the function will open or create the " 
+                       "specified symbol in the current namespace global context.<br>"
+                       "array: is considered a path to access, and if the path is present will open the path.  If not, "
+                       "will attempt to create the final value in the path as a string for editing.<br>"
+                       "object: if an object, the object can contain:<br>"
+                       "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
+                       "it will create it.<br>"
+                       "  namespace: string: the namespace to use for accessing the provided path.<br>"
+                       "  type: the mode to open the editor in. The default mode is Juno.<br>")
+      `tags: ["editor" "edit" "buffer" "control"]
+      `usage: ["options:object?"]
+  })
 
 (defun set_key_binding (scope name desc)
   (let
@@ -3604,6 +3964,12 @@
         (set_prop *key_bindings*.active
                   (prop desc key_mode) 
                   (prop desc `exec))))
+
+     (attach_event_listener juno_container
+                           `click
+                           (fn (e)
+                             (handle_app_click_event e)))
+    
     (attach_event_listener juno_container
                            `keyup
                            (function (e)
