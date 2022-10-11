@@ -518,7 +518,8 @@
    parent.child))
 
 (defun parents_for_control (control)
-   (if (is_control? control)
+  (if (and (is_control? control)
+           control.view.parentElement)
        (progn
           (defvar parent (control_for_dom_element control.view.parentElement))
           (if (is_top_control? parent)
