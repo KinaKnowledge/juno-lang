@@ -24,15 +24,21 @@
 ;; the controls at the top level of the view
 (defparameter core/$root_controls [])
 
+(console.log "browser_initializer running")
+
 ;; the global pointer to the control which has focus
 ;; nil if there are no focus points or values.
-(defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
+
 
 
 (defparameter *last_focus* nil)
 (defparameter *last_top_frame* nil)
 (defparameter *app_menu_control* nil)
 (defparameter *log_key_events* false)
+
+(defparameter *whitespace_regexp* (new RegExp "\\\\s" `g))
+
+(defparameter TokenIterator (function () true)) ;; filled in by the first editor
 
 (defparameter
     *editor_themes*
@@ -253,6 +259,9 @@
                                               (= render_table nil)))))
            detail_elem)))))
 
+
+
+
 (defun copy_text_to_clipboard (text)
         (if text
            (let ((temp (textarea { `style: "position: absolute; top: -100px; left: -200px;"  } )))
@@ -274,13 +283,82 @@
 
 
 
-
+(defun_sync dispatch_event(event_obj)
+  (console.log "dispatch_event: " event_obj))
 
 (defun *help_menu_function* ()
   [["No Help Installed" (fn () false) ]])
 
 
-(console.log "browser_initializer running")
+
+
+(defun_sync decorative_usage (symbol)
+  (let
+      ((val (if true
+                (cond
+                   (starts_with? "(" symbol)
+                   (-> symbol `substr 1)
+                   (starts_with? "[" symbol)
+                   (-> symbol `substr 1)
+                   else
+                   symbol)
+                symbol))
+       (description (first (or (meta_for_symbol (trim val) true) [])))
+       (view nil)
+       (rval nil))
+    (= rval 
+     (cond
+        (is_array? description.usage)
+        (div { `style: "display: inline-block"} 
+         (flatten [(span { `style: "font-weight: bold" } val)
+                   (for_each (arg description.usage)
+                      (destructuring_bind (arg_name arg_type arg_needed)
+                         (split_by ":" arg)
+                         (span { `class: (+ "juno-type-" (lowercase (or arg_type ""))
+                                            " juno-arg-name") `title: arg_type
+                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name)))]))
+                            
+        else
+        nil))
+    (console.log "decorative_usage: ->" val "<-" rval (is_array? description.usage) description.usage)
+    rval))
+
+
+(defun_sync find_last_paren(editor)
+   (try
+      (let
+         ((pos  (-> editor `getCursorPosition))
+          (stream (indirect_new TokenIterator editor.session pos.row pos.column))
+          (done false)
+          (start nil)
+          (token nil))
+         (console.log "STREAM: " stream (-> stream `getCurrentToken))
+         (while (and (not done)
+                     (not start))
+            (progn
+               (= token (-> stream `getCurrentToken))
+               (if (eq token nil)
+                   (progn
+                      (= done true)
+                      (break))
+                   (if (and (== token.type "keyword")
+                            (or (== token.value.0 "(")
+                                (== token.value.0 "[")))
+                       (progn
+                          (= start { row: (-> stream `getCurrentTokenRow)
+                                    column: (-> stream `getCurrentTokenColumn) })
+                          (= done true)
+                          (break))))
+               (= token (-> stream `stepBackward))))
+         (when start
+            (-> editor.session `getBracketRange start)))
+      (catch Error (e)
+         (progn
+            (console.error e)
+            nil))))
+
+;(defun_sync find_last_paren(editor)
+ ; nil)
 
 (defun current_controls (no_subcontrols)
   (let
@@ -359,7 +437,7 @@
       ((cell_style "border: 1px dashed var(--main-accent-line-hover);")
        (sub_style "border-right: 1px dashed var(--main-accent-line-hover); border-bottom: 1px dashed var(--main-accent-line-hover);border-top: 1px dashed var(--main-accent-line-hover);")
        (parent_style "border-left: 1px dashed var(--main-accent-line-hover); border-bottom: 1px dashed var(--main-accent-line-hover);border-top: 1px dashed var(--main-accent-line-hover);"))
-      (table { `style: "vertical-align: top; margin: 5px;" }
+      (table { `style: "vertical-align: top; margin: 5px; box-shadow: 1px 1px 4px 1px #00000060;" }
         (cond
            (is_array? controls)
            (for_each (ctl controls)
@@ -731,7 +809,7 @@
       (if (and (== command "destroy")
                (is_function? target_control.on_destroy))
           (= confirmed (-> target_control `on_destroy)))
-      
+      (console.log "container_view_operation: confirmed: " confirmed)
       (if confirmed
           ;; if the parent structure is nil in position_details, then we are at the root
           (cond
@@ -1261,10 +1339,10 @@
     
                      
 (defun message (text)
-  (rlog (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text)))
+  (log (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text)))
 
 (defun error_message (text)
-  (rlog (div { `style: "border-left: 5px solid red; padding: 5px;" } text)))
+  (log (div { `style: "border-left: 5px solid red; padding: 5px;" } text)))
 
 (defun log_error (message error_instance)
   (progn
@@ -1312,7 +1390,7 @@
             (notify "Entry Cancelled")))
       else
       (progn
-       (rlog "Unable to read the file")
+       (log "Unable to read the file")
        (console.error fdata)))))
 
 (defun embed_js_orig (name js_text) 
@@ -1363,7 +1441,7 @@
             (notify "Entry Cancelled")))
       else
       (progn
-       (rlog "Unable to read the file")
+       (log "Unable to read the file")
        (console.error fdata)))))
 
 (defun load_files (files)
@@ -1939,11 +2017,11 @@
        (body_element nil)
        (control_bar (div { `class: "juno-buffer-bar" style: "cursor: grab;" }
                  close_button
-                 "Control Structure"))
+                 (or options.title "")))
        (end_drag (fn (e)
                     (progn
                        (= move_state nil)
-                       (-> full_block `remove))))
+                       (-> full_block `remove))))       
        (handle_drag (fn (e)
                       (when (and move_state
                                  (== e.buttons 1))
@@ -1951,7 +2029,7 @@
                                     ["left" (+ "" (Math.max 0 (Math.min (- max_dims.width 30) (+ dims.left (- e.pageX move_state.mx)))) "px") ]]
                                    frame))))
                                    
-       (frame (div { `style: "cursor: default; user-select: none; box-shadow: 1px 1px 6px 2px #00000080; background: var(--main-bg-color); position: absolute;z-index: 10; left: 10px; top: 10px; min-width: 300px; "}
+       (frame (div { `style: "cursor: default; user-select: none; box-shadow: 1px 1px 6px 2px #00000080; background: var(--main-bg-color); position: absolute;z-index: 10; left: 70%; top: 10px; min-width: 300px; "}
                (control_frame {}
                 control_bar
                 (cond
@@ -2002,11 +2080,17 @@
 
 (defun monitor_control_tree ()
    (let
-      ((view nil)
-       (update_timer nil))
+       ((view nil)
+        (title_span (span { } "Control Structure"))       
+        (update_timer nil))
      (if (get_by_id `control_tree_monitor)
        (notify "Control Tree Already Showing")
        (progn
+        (setTimeout (fn ()
+                      (set_prop title_span
+                                `innerText
+                                (dtext "Click to highlight a control")))
+                    4000)
         (= view (div { `id: `control_tree_monitor }
                      (render_control_tree $root_controls)))
         (attach_event_listener view
@@ -2037,7 +2121,8 @@
                                         (-> view `replaceChildren (render_control_tree $root_controls))))
                                      1000))
         (floating_div view
-                      { `on_close: (fn ()
+                      {  `title: title_span
+                         `on_close: (fn ()
                                      (progn
                                       (clearInterval update_timer)))
                        })))))
@@ -2199,7 +2284,7 @@
                            (check_observer)
                           ;(console.log "editor: main resize: " (prop view.parentElement `offsetWidth) (prop view.parentElement `offsetHeight))
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
-                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 10) "px")]]
+                                           ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
                                           view)
                           (when editor
                             (-> editor `resize)))))
@@ -2255,13 +2340,25 @@
                                (progn
                                 (defvar rng (get_selection))
                                 (not (and (== rng.start.row rng.end.row)
-                                          (== rng.start.column rng.end.column))))))                                        
+                                          (== rng.start.column rng.end.column))))))
+       (last_bracket_match nil)
+       (active_lisp_operator nil)
+       (find_active_lisp_operator (function ()
+                                            (progn
+                                             (defvar new_op nil)
+                                             (defvar rnge (or (-> editor.session `getBracketRange (-> editor `getCursorPosition))
+                                                              (find_last_paren editor)))
+                                             (when rnge                                        
+                                               (= last_bracket_match rnge)
+                                               (= new_op (first (split_by *whitespace_regexp* (-> editor.session `getTextRange last_bracket_match))))
+                                               (when (not (== new_op active_lisp_operator))
+                                                 (= active_lisp_operator new_op)                                                 
+                                                 (when options.on_new_lisp_operator
+                                                   (options.on_new_lisp_operator active_lisp_operator)))))))
+       
        (indent_row (function (row_number options)
                      (indent_editor_line editor row_number options)))
-       (split_manager nil)
-       (split_ex  nil)
-       
-                                 
+                            
        (initialize_editor (fn ()
                             (when (not initialized)
                               (setq initialized true)
@@ -2363,7 +2460,7 @@
                               (set_prop options
                                         `font_size
                                         font_size)
-
+                              (defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
                               (-> editor.commands `addCommand
                                   {
                                    `name: "tab_behavior"
@@ -2383,7 +2480,8 @@
                                 (-> editor `on `change (function (val)
                                                                  (progn
                                                                   (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
-                                                                    (handle_lisp_format_event val editor))
+                                                                     (handle_lisp_format_event val editor)
+                                                                     (find_active_lisp_operator))
                                                                   (options.on_change editor val)))))
                               (-> editor `resize true)                             
                               (set_prop intf `editor editor)                             
@@ -2459,7 +2557,8 @@
                                                   ["JSON" (fn () (-> intf `set_mode "json"))]]]
                         [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                                        [theme  (fn () (-> intf `set_theme theme))])]])
-                        
+        `get_active_lisp_operator: (fn ()
+                                     (find_active_lisp_operator))
         `options: options
         `name: (or options.name "Untitled Buffer")
         `toJSON: (function ()
@@ -2471,44 +2570,9 @@
                          (initialize_editor)                        
                              
                          ))
-        })))    
+        })))
                
-(defun browse_environment (options)
-   (let
-     ((options (or options {}))
-      (ns nil)
-      (self {})
-      (target_path target_path)      
-      (id (or options.id (generate_id "Environment")))
-      (name (or options.name "Environment" (inc *view_count*)))
-      (set_val (fn (selected_ns selected_path)
-                   (progn 
-                      (console.log "ns: " selected_ns selected_path)
-                      (= ns selected_ns )
-                      (= target_path selected_path)
-                      (cond
-                        (blank? ns)
-                        (set_disabled new_symbol_button)
-                        (not (blank? ns))
-                        (progn
-                         (set_enabled new_symbol_button)
-                         (set_prop new_symbol_button
-                                  `innerText (+ (dtext "New.."))))))))
-                            
-      (new_symbol_button (button { `tabindex: 0 `title: (dtext "Create New Entry") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } (dtext "New")))
-      (edit_value_button (button { `tabindex: 0 `title: (dtext "Edit Value") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } "✎"))
-      (download_as_button (button { `tabindex: 0 `title: (dtext "Export") `style: "margin-left: 8px; margin-right: 8px;  font-weight: bold; background: var(--highlight-bg-color);" } "⤓"))
-      (path_span (span { `tabindex: 0 `title: (dtext "Click to copy path")  `class: "juno-path" } ""))
-      (symbol_ctl (symbol_browser {`id: id 
-                                   `name: name
-                                   `additional_elements: [(span { `class: "juno-title" `style: "color:var(--main-color)" } "Environment" )
-                                                          new_symbol_button
-                                                          edit_value_button
-                                                          download_as_button
-                                                          ] 
-                                   `on_select: set_val })))
-     
-     self))
+
     
       
 
@@ -2542,12 +2606,14 @@
         (prop (prop available selected_idx) 2))))
   
 
+
 (defun buffer_editor (title namespace path_to_value mode options)
   (let
       ((nseval (if (not (blank? namespace))
                  (-> Environment `get_namespace_handle namespace)
                  Environment))
        (title_span (span { `class: "juno-title" } title))
+       (help_context_elem (div { `class: "juno-help-context" } ""))
        (options (or options {}))
        (id (or options.id (generate_id "buffer_editor")))
        (evaluator (cond (and (is_object? options.evaluator)
@@ -2569,7 +2635,8 @@
                              evaluator_span
                              (if options.read_only
                                (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
-                               ())                             
+                               ())
+                             help_context_elem
                              mode_span
                              col_pos_span)))      
        (init_value (resolve_path path_to_value nseval.global_ctx.scope))
@@ -2604,8 +2671,10 @@
                            (= current_pos (-> edit_control.editor `getCursorPosition))
                            (set_prop col_pos_span
                                      `innerText
-                                     (+ "[" current_pos.row " " current_pos.column "]"))
-                           (set_prop options `cursor_position current_pos))))
+                                     (+ "[" current_pos.row " " current_pos.column "]"))                           
+                           (set_prop options `cursor_position current_pos)
+                           ;; check for new lisp operator
+                           (-> edit_control `get_active_lisp_operator))))       
        (edit_control (make_editor (if (is_string? init_value)
                                     init_value
                                     "")                                  
@@ -2627,6 +2696,16 @@
                                                           (progn
                                                            (= mode val)
                                                            (set_prop mode_span `innerText val)))
+                                   
+                                   on_new_lisp_operator: (function (val)
+                                                            (progn
+                                                             (console.log "on_new_lisp_operator: " val)
+                                                             (defvar usage (decorative_usage val))
+                                                             (when usage
+                                                               (-> help_context_elem
+                                                                         `replaceChildren usage))
+                                                             (dispatch_event { `command: "display_usage" `args: [val] })))
+                                   
                                    on_change: (function (editor val)
                                                         (progn                                                         
                                                          (when (not is_dirty?)
@@ -2654,7 +2733,7 @@
                                    (if control.name
                                      (set_prop evaluator_span
                                                `innerText
-                                               (+ "⭢ " control.name)))))))       
+                                               (+ "⭢ " control.name)))))))
        (select_my_evaluator (fn ()
                         (aif (select_evaluator)
                              (progn
@@ -2664,15 +2743,6 @@
     
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
    
-   ; (attach_event_listener buffer_commands_button
-    ;                       `click
-     ;                      (fn (e)
-      ;                       (progn
-       ;                       (handle_event e)
-        ;                      (make_menu buffer_commands_button
-         ;                                                  (menu_items)
-          ;                                                 ))))
-
     (attach_event_listener edit_control.view
                            `keyup
                            (function (e)
@@ -2691,12 +2761,13 @@
               `set_evaluator_control  set_evaluator_control
               `on_focus on_focus
               `on_destroy (fn ()                           
-                            (if (and is_dirty?
-                                     (request_user_input (+ "" title ": " (dtext "The value of this editor hasn't been stored. Really remove?"))
-                                                         "text"
-                                                         { input: (input { `type: "hidden" `value: "remove" }) }))
-                              true
-                              false))                                                                                                                                                     
+                            (cond
+                              (not is_dirty?)
+                              true 
+                              is_dirty?
+                              (request_user_input (+ "" title ": " (dtext "The value of this editor hasn't been stored. Really remove?"))
+                                                  "text"
+                                                  { input: (input { `type: "hidden" `value: "remove" }) })))                                                                                                                                                     
               `options options
               `name title
               `menu_items menu_items
@@ -2711,7 +2782,6 @@
               `toJSON (function ()                                                                 
                                  `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
     edit_control))
-
 
 
 
@@ -2972,7 +3042,10 @@
                                    theme: options.theme
                                    id: id
                                    clone_with_editor_id: options.clone_with_editor_id
-                                   repl_mode: true                                                                              
+                                   repl_mode: true
+                                   on_new_lisp_operator: (function (val)
+                                                            (progn                                                               
+                                                               (dispatch_event { `command: "display_usage" `args: [val] })))
                                    evaluator: (fn (lisp_text no_eval)
                                                 (progn
                                                  (push_history lisp_text)
@@ -3814,6 +3887,30 @@
                (prop desc key_mode) 
                (prop desc `exec)))))
 
+;; build a more sophisticated keyword_mapper
+(defun_sync keyword_mapper (token)
+   (progn
+      (defvar details nil)
+      (defvar rval
+         (cond
+            (contains? token *formatting_rules*.keywords)
+            "keyword"
+            (progn
+               (setq details
+                     (first (meta_for_symbol token true)))
+               details.type)
+            (lowercase details.type)
+            else
+            "identifier"))
+      (console.log "user/keyword_mapper: " rval)
+      rval))
+
+;; and redirect the core/keyword_mapper
+
+(use_quoted_initializer
+ (defun_sync core/keyword_mapper (token)
+   (user/keyword_mapper token)))
+
 (defun user/*initializer* ()
   (let
       ((header nil)       
@@ -3987,8 +4084,9 @@
     
     
     
-  (notify (+ "Hello " *namespace* ))
-  true))
+    (notify (+ "Hello " *namespace* ))
+    true))
+
 
 
 

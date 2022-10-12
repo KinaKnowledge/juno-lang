@@ -67,6 +67,7 @@
   --editor-numeric-color: #9A5925;
   --editor-support-color: #104e8b;
   --editor-function-color: #0274a1;
+  --editor-asyncfunction-color: #3f5b71;
   --editor-string-color: #006b1e;
   --editor-constant-color: #CF6A4C;
   --editor-variable-color: #009ACD;
@@ -1951,6 +1952,20 @@ ol.juno-type-array:hover {
   background: var(--identification-bg-color) !important;
 }
 
+div.juno-help-context {
+    white-space: nowrap;
+    border: 1px solid var(--main-accent-line-hover);
+    text-overflow: ellipsis;
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-family: var(--main-mono-space);
+}
+
+.juno-arg-name {
+  padding-left: 3px;
+  padding-right: 3px;
+}
 
 @keyframes slide-in {
     0% {

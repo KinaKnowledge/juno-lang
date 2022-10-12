@@ -2740,15 +2740,23 @@
                                        (push acc arg))
                                    (push_as_arg_list acc args)
                                    (push acc ")"))
-                               (and (eq nil type_details.value)
-                                    (not (eq nil root_type_details.value)))
-                               (do
-                                   (for_each (`arg ["(" preamble.0 " " env_ref "get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
+                           (and (eq nil type_details.value)
+                                (not (eq nil root_type_details.value)))
+                           (do
+                            (for_each (`arg ["(" preamble.0 " " env_ref "get_global" "(" "\"" "indirect_new" "\"" ")" ")" "(" target_type ])
+                                      (push acc arg))
+                            (when (> args.length 0)
+                              (push acc ",")
+                              (push_as_arg_list acc args))
+                            (push acc ")"))
+			   else
+			   (do
+			    (for_each (`arg ["new" " "  tokens.1.name  "(" ])
                                        (push acc arg))
-                                   (when (> args.length 0)
-                                       (push acc ",")
-                                       (push_as_arg_list acc args))
-                                   (push acc ")")))
+                             (push_as_arg_list acc args)
+                             (push acc ")")))
+			    
+			   
                                
                            (= target_return_type
                                (or (get_ctx_val ctx target_type)

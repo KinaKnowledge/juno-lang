@@ -170,6 +170,9 @@
                 bound_fn
                 {
                  `initializer: `((quote quote) (-> create_element `bind create_dom_element ,#tagname))
+                 `description: (+ "The function " tagname " creates a DOM element of type " tagname " and returns the constructed object.")
+                 `usage: [ "options:?object" "elem:*" "elemN:*" ]
+                 `tags: ["html" "ui" "DOM" "tags" "element" "node"]
                  })))
 
 

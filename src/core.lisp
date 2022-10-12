@@ -29,10 +29,11 @@
    minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
                   "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
                   "compile" "set_prop" "unless" ]
-   keywords: (split_by " " (+ "throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply setq"
+   keywords: (split_by " " (+ "defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "
+                              "cond apply setq defun_sync map while reduce &"
 	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
-                              "dynamic_import quote for_each for_with declare  break -> * + / - and or prop set_prop"
-                              "defparameter" "defvalue"))                      
+                              "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "
+                              "defparameter defvalue"))                      
    })
 
 
@@ -2915,6 +2916,11 @@ such as things that connect or use environmental resources.
      `tags: [ `formatting `indentation `text `indent ]
      `usage: ["line_number:integer" "get_line:function"]
    })
-                                                                              
+
+(defun_sync keyword_mapper (token)
+  (if (contains? token *formatting_rules*.keywords)
+    "keyword"
+    "identifier"))
+
 true
  

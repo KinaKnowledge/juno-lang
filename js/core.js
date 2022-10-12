@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-11 13:00:25
-// Version: 2022.10.11.13.00
-export const DLISP_ENV_VERSION='2022.10.11.13.00';
+// Build Time: 2022-10-12 12:22:38
+// Version: 2022.10.12.12.22
+export const DLISP_ENV_VERSION='2022.10.12.12.22';
 
 
 
@@ -10,7 +10,7 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function environment_boot(Environment)  {
 {
     await Environment.set_global("*formatting_rules*",{
-        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop","unless"],keywords:(("throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply setq"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare  break -> * + / - and or prop set_prop"+ "defparameter"+ "defvalue")).split(" ")
+        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop","unless"],keywords:(("defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "+ "cond apply setq defun_sync map while reduce &"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "+ "defparameter defvalue")).split(" ")
     },{
         requires:["split_by"]
     });
@@ -3647,16 +3647,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_45034;
+                                                let _expr_4303;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_45034=await (async function(){
+                                                _expr_4303=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_45034 && _expr_45034["0"]);
-                                                req_ns=(_expr_45034 && _expr_45034["1"]);
-                                                explicit=(_expr_45034 && _expr_45034["2"]);
+                                                req_sym=(_expr_4303 && _expr_4303["0"]);
+                                                req_ns=(_expr_4303 && _expr_4303["1"]);
+                                                explicit=(_expr_4303 && _expr_4303["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3759,13 +3759,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_36830;
+                    let _expr_82426;
                     let nspace;
-                    _expr_36830=await (async function(){
+                    _expr_82426=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_36830 && _expr_36830["0"]);
-                    nspace=(_expr_36830 && _expr_36830["1"]);
+                    sym=(_expr_82426 && _expr_82426["0"]);
+                    nspace=(_expr_82426 && _expr_82426["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4373,6 +4373,16 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
             }
         }
     },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. "],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
+})
+};
+{
+     Environment.set_global("keyword_mapper",function(token) {
+        if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){
+            return "keyword"
+        } else {
+            return "identifier"
+        }
+    },{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"]
 })
 };
 return true

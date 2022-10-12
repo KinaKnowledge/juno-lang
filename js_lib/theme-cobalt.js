@@ -68,8 +68,11 @@ color: #EB939A\
 background-color: #FF9D00;\
 border-color: #FFFFFF\
 }\
-.ace-cobalt .ace_support.ace_function {\
-color: #FFB054\
+.ace-cobalt .ace_function {\
+color: #e0ebff\
+}\
+.ace-cobalt .ace_asyncfunction {\
+color: #ffecae\
 }\
 .ace-cobalt .ace_storage {\
 color: #FFEE80\

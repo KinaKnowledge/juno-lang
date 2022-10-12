@@ -7,7 +7,7 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
 
 var JunoHighlightRules = function() {
-
+  console.log("JunoHighlightrules: called..");
   var builtinFunctions = ('MAX_SAFE_INTEGER LispSyntaxError sub_type __VERBOSITY__ int float values '+
 			  'pairs keys take prepend first last length conj reverse map bind to_object '+
 			  'to_array slice rest second third chop chomp not push pop list flatten '+
@@ -47,12 +47,20 @@ var JunoHighlightRules = function() {
 
     var buildinConstants = ("true false nil");
 
-    var keywordMapper = this.createKeywordMapper({
+    var keywordMapperInternal = this.createKeywordMapper({
         "keyword": keywords,
         "constant.language": buildinConstants,
         "support.function": builtinFunctions
     }, "identifier", false, " ");
 
+ 
+  var keywordMapper = function(e) {
+    //let rval=keywordMapperInternal(e);
+    var $keywordMapper = globalThis.env.get_global("keyword_mapper",null);
+    if ($keywordMapper) {
+      return $keywordMapper(e);
+    } else return "identifier"; // just default to an identifier if the keywordMapper isn't available
+  }
     this.$rules = {
         "start" : [
             {
@@ -79,10 +87,7 @@ var JunoHighlightRules = function() {
             }, {
                     token : "keyword", // anonymous fn syntactic sugar
                     regex : '[\\%]'
-            }, {
-                    token : "keyword", // deref reader macro
-                    regex : '[@]'
-            }, {
+            },  {
                 token : "constant.numeric", // hex
                 regex : "0[xX][0-9a-fA-F]+\\b"
             }, {
@@ -207,64 +212,15 @@ oop.inherits(Mode, TextMode);
       return rval;
     };
 
+    // Indentation is handled externally in the Lisp 
     this.$calculateIndent = function(line, tab) {
-        var baseIndent = this.$getIndent(line);
-        var delta = 0;
-        var isParen, ch;
-        var currentControl = globalThis.env.get_global("$current_control");
-      var formatHandler = currentControl["options"]["format_handler"];
+      //var baseIndent = this.$getIndent(line);
+      //var delta = 0;
+      //var isParen, ch;
+      //var currentControl = globalThis.env.get_global("$current_control");
+      //var formatHandler = currentControl["options"]["format_handler"];
       return "";
       
-      if (formatHandler) {
-        return formatHandler(line,tab,baseIndent);
-      } 
-        for (var i = line.length - 1; i >= 0; i--) {
-            ch = line[i];
-            if (ch === '(') {
-                delta--;
-                isParen = true;
-            } else if (ch === '(' || ch === '[' || ch === '{') {
-                delta--;
-                isParen = false;
-            } else if (ch === ')' || ch === ']' || ch === '}') {
-                delta++;
-            }
-            if (delta < 0) {
-                break;
-            }
-        }
-           
-      console.log("mode-juno: calculateIndent-> line: ", JSON.stringify(line),"delta: ",delta,"isParen: ",isParen, "baseindent: ", baseIndent, "ibefore: ",i+1);
-        if (delta < 0 && isParen) {
-            i += 1;
-            var iBefore = i;
-            var fn = '';
-            while (true) {
-                ch = line[i];
-              if ((ch === ' ' || ch === '\t') || ((ch === undefined) && (this.minorIndentFunctions.indexOf(fn) !== -1)))  {
-                    if(this.minorIndentFunctions.indexOf(fn) !== -1) {
-                        // return this.$toIndent(line.substring(0, iBefore - 5) + tab);
-                      return this.$toIndent(line.substring(0, iBefore) + "  ");		   
-                    } else {
-                      return this.$toIndent(line.substring(0, iBefore) + fn.length+1);
-                    }
-                } else if (ch === undefined) {
-                    return this.$toIndent(line.substring(0, iBefore - 1) + tab);
-                }
-                fn += line[i];
-                i++;
-            }
-        } else if(delta < 0 && !isParen) {
-            return this.$toIndent(line.substring(0, i+2));
-	} else if(delta === 1) {
-	    baseIndent = baseIndent.substring(0, baseIndent.length - tab.length);
-            return baseIndent;
-        } else if(delta > 0) {
-          baseIndent = baseIndent.substring(0, baseIndent.length - (tab.length + (delta - 1)));
-            return baseIndent;
-        } else {
-            return baseIndent;
-        }
     };
 
     this.getNextLineIndent = function(state, line, tab) {

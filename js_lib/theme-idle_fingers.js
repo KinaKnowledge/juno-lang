@@ -63,8 +63,11 @@ background-color: #FF0000\
 background-color: #CC7833;\
 border-color: #FFFFFF\
 }\
-.ace-idle-fingers .ace_support.ace_function {\
-color: #B83426\
+.ace-idle-fingers .ace_function {\
+color: #e3b5b5\
+}\
+.ace-idle-fingers .ace_asyncfunction {\
+color: #e6e7bb\
 }\
 .ace-idle-fingers .ace_variable.ace_parameter {\
 font-style: italic\
