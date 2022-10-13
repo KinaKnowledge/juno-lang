@@ -324,15 +324,15 @@
     rval))
 
 
-(defun_sync find_last_paren(editor)
+
+(defun_sync find_last_paren(editor pos)
    (try
       (let
-         ((pos  (-> editor `getCursorPosition))
+         ((pos  (or pos (-> editor `getCursorPosition)))
           (stream (indirect_new TokenIterator editor.session pos.row pos.column))
           (done false)
           (start nil)
-          (token nil))
-         (console.log "STREAM: " stream (-> stream `getCurrentToken))
+          (token nil))         
          (while (and (not done)
                      (not start))
             (progn
@@ -357,8 +357,7 @@
             (console.error e)
             nil))))
 
-;(defun_sync find_last_paren(editor)
- ; nil)
+
 
 (defun current_controls (no_subcontrols)
   (let
@@ -1485,7 +1484,25 @@
                      ev
                    (console.log "making events: " event_type action)
                    (attach_event_listener elem event_type action))))
-     elem))
+    elem)
+  {
+   `description: (+ "Creates and returns an element representing the external frame "
+                    "of a control. The passed contents can contain a buffer bar as a "
+                    "first element, which will be identified as such by having a "
+                    "juno-buffer-bar class assigned to it. <br>"
+                    "The passed contents (excluding the buffer bar) are wrapped in a"
+                    "juno-view-content div, and the whole contents, including the optional "
+                    "buffer bar element are wrapped in a juno-view-container div.<br><br>"
+                    "The options are as follows: <br><br>"
+                    "id:string:The assigned id for the control.<br>"
+                    "style:string:A string containing css styling attributes that are assigned "
+                    "to the juno-view-container div (the encompassing element).<br><br>"
+                    "events:array:An array of array values in the form of pairs in the "
+                    "form of [event_type:string action:fn] which are attached to the "
+                    "juno-view-container element.")
+   `usage: ["options:object" "elements:Elements"]
+   `tags: ["ui" "controls" "control" "frame" "DOM" "Node" "element" ]
+   })
 
 (defun name_control (prefix)
   (let
@@ -2235,6 +2252,28 @@
        tags: ["editor" "selection" "form" "lisp" "editing"]
    })
 
+(defun select_to_current_form (editor pos)
+  (if editor
+    (let
+        ((cpos (or pos (-> editor `getCursorPosition)))
+         (rng nil))        
+      (when cpos
+        (= rng (find_last_paren editor cpos))
+        (when rng
+          (-> editor.selection `clearSelection)
+          (-> editor.selection `setRange rng)))
+      rng)
+    nil)
+  {
+   description: (+ "Given an editor and an optional position { row column }, if possible, "
+                   "selects the innermost current form (expression) in the editor and "
+                   "returns the range.")
+   usage: ["editor:object" "pos:?object"]
+   tags: ["editor" "selection" "form" "lisp" "editing" ]
+   })
+          
+           
+           
 
 (defun clone_edit_session (session)
    (let
@@ -2331,7 +2370,8 @@
                            (progn
                             (select_to_root_form editor)
                             nil)))
-                                    
+       (select_current_form (fn ()
+                              (select_to_current_form editor)))
        (get_selection (function ()
                                 (-> editor.selection `getRange)))
        (get_lines (function (from to)
@@ -2342,15 +2382,16 @@
                                 (not (and (== rng.start.row rng.end.row)
                                           (== rng.start.column rng.end.column))))))
        (last_bracket_match nil)
-       (active_lisp_operator nil)
+       (active_lisp_operator nil) ;; the last active lisp operator        
        (find_active_lisp_operator (function ()
                                             (progn
                                              (defvar new_op nil)
                                              (defvar rnge (or (-> editor.session `getBracketRange (-> editor `getCursorPosition))
-                                                              (find_last_paren editor)))
+                                                              (find_last_paren editor)))                                             
                                              (when rnge                                        
                                                (= last_bracket_match rnge)
                                                (= new_op (first (split_by *whitespace_regexp* (-> editor.session `getTextRange last_bracket_match))))
+                                               
                                                (when (not (== new_op active_lisp_operator))
                                                  (= active_lisp_operator new_op)                                                 
                                                  (when options.on_new_lisp_operator
@@ -2358,7 +2399,7 @@
        
        (indent_row (function (row_number options)
                      (indent_editor_line editor row_number options)))
-                            
+       
        (initialize_editor (fn ()
                             (when (not initialized)
                               (setq initialized true)
@@ -2405,7 +2446,13 @@
                                    `bindKey: { `win: "Ctrl-Shift-Enter" `mac: "Ctrl-Shift-Enter" }
                                    `exec: select_form_root
                                    })
-                              
+
+                              (-> editor.commands `addCommand
+                                  {
+                                   `name: "select_current_form"
+                                   `bindKey: { `win: "Ctrl-Enter" `mac: "Ctrl-Enter" }
+                                   `exec: select_current_form
+                                   })
                               
                               
                               (when (is_array? options.commands)
@@ -2569,8 +2616,7 @@
                          (-> resize_observer `observe view.parentElement)
                          (initialize_editor)                        
                              
-                         ))
-        })))
+                         )) })))
                
 
     
@@ -2660,12 +2706,13 @@
                    (progn                                     
                     (setq *last_focus* edit_control)
                     (add_class "juno-focused" command_bar)
-                    (if edit_control.editor.searchBox.active
-                      (focus_to edit_control.editor.searchBox.activeInput)
-                      (try
-                        (-> edit_control.editor `focus)
-                        (catch Error (e)
-                          (console.error "ERROR: in_focus: " e)))))))
+                    ;(if edit_control.editor.searchBox.active
+                      ;(focus_to edit_control.editor.searchBox.activeInput)
+                     ; (try
+                      ;  (-> edit_control.editor `focus)
+                       ; (catch Error (e)
+                        ;  (console.error "ERROR: in_focus: " e))))
+                    )))
        (update_position (function ()
                           (progn
                            (= current_pos (-> edit_control.editor `getCursorPosition))
@@ -3445,6 +3492,138 @@
        }))
 
 
+(defmacro defcontrol (name control_args allocations control_options)
+   (let
+      ((declared_allocations (each allocations first))
+       (required_allocations [(quote render)])
+       (user_allocations allocations)
+       (meta { `description: (or control_options.description "No description")
+               `tags: (or control_options.tags [`control `ui `DOM ])
+               `usage: (if (is_array? control_options.usage)
+                           (conj control_options.usage
+                                 [ "options:object" ])
+                           nil) })
+       (args (progn
+                (cond
+                   (is_array? control_args)
+                   (conj control_args [ (quote options) ])
+                   else
+                   (throw SyntaxError "defcontrol: missing/malformed control arguments - check syntax"))))
+       (control_options (if (is_object? control_options)
+                            control_options
+                            {}))
+       (control_bar? (if control_options.buffer_bar
+                        true))
+       (acc []))
+      
+      (assert name "control name is required: check syntax for defcontrol")
+      (console.log "defcontrol: "  name "args is: " args "control options: " control_options "required_allocations: " required_allocations declared_allocations 
+       (length (reduce (d declared_allocations)
+                  (contains? d required_allocations))) 
+       (length required_allocations))
+      (if (< (length (reduce (d declared_allocations)
+                        (contains? d required_allocations)))
+             (length required_allocations))
+          (throw SyntaxError "missing required declarations: must have render"))
+      `(defun ,#name ,#args
+          (let
+             ((self {})
+              (options (or options {}))
+              (`name (name_control (or options.name ,#(desym_ref name))))
+              (id (generate_id ,#name))
+              (initialized false)
+              (title_span (span { `class: "juno-title" } name))
+              (command_button (commands_button id))
+              (control_status (if ,#control_bar?
+                                  (div { `class: "juno-buffer-bar" }
+                                   command_button
+                                   (cond 
+                                      (is_array? options.additional_elements)
+                                      options.additional_elements
+                                      else
+                                      title_span))
+                                  nil))
+                                                 
+              (cview (div { } "uninitialized.."))
+              (resize (fn ()
+                         (progn
+                            (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 20))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 5)))
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)
+                               (when options.on_resize
+                                  (options.on_resize self))
+                               ,#(if control_options.render_on_resize
+                                     `(do_render)
+                                     true)
+                               true))))
+              ,@user_allocations
+              (do_render (fn ()
+                            (-> cview `replaceChildren (render))))
+              (resize_observer (new ResizeObserver resize))
+              (view (control_frame (to_object
+                                       [[`id id]
+                                        [`events ,#control_options.events ]])
+                     (if ,#control_bar?
+                         control_status
+                         [])
+                                cview))
+              (_on_focus (fn ()
+                           (progn
+                              (fn ()
+                                 (progn
+                                    ,#(if control_bar?
+                                       `(add_class "juno-focused" control_status)
+                                       `[])
+                                    ,#(if (contains? (quote on_focus) declared_allocations)
+                                          `(on_focus self)))))))
+              (_to_json (function ()
+                           (progn
+                              ,#(if (contains? (quote to_json) declared_allocations)
+                                    `(to_json)
+                                    `[(quote ,#name) ,@control_args options]))))
+              (initialize (function ()
+                             (progn
+                                (when (and view.parentElement
+                                           (not initialized))
+                                   (= initialized true)
+                                   (-> resize_observer `observe view.parentElement)
+                                   ,#(if (contains? (quote `on_initialize) declared_allocations)
+                                         `(on_initialize self)
+                                         true)
+                                   (do_render))))))
+             (set_prop options
+                `id id
+                `name name)
+             ,@(when (is_array? control_options.expose)
+                  (for_each (method_set control_options.expose)
+                     (destructuring_bind (method_name method_reference)
+                        method_set
+                     `(set_prop self
+                         ,#method_name ,#method_reference))))
+             ,#(if (contains? (quote menu_items) declared_allocations)
+                   `(set_prop self
+                       `menu_items menu_items)
+                   [])
+             ;; finally set the required self options
+             (set_prop self
+                `options options
+                `name name
+                `type ,#(desym_ref name)
+                `view view
+                `initialize initialize
+                `toJSON _to_json
+                `on_focus _on_focus)
+             ;; and return the self
+             self)
+          ,#meta))
+   {
+       `description: (+ "The macro defcontrol creates a function in the current namespace that ")
+       `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
+   })
+
 (defun handle_app_click_event (e)
   (let
       ((elem e.srcElement)
@@ -3901,8 +4080,7 @@
                details.type)
             (lowercase details.type)
             else
-            "identifier"))
-      (console.log "user/keyword_mapper: " rval)
+            "identifier"))      
       rval))
 
 ;; and redirect the core/keyword_mapper
@@ -4009,8 +4187,8 @@
        
        (set_prop *key_bindings*.global
                  "open_new_buffer" {
-                                    `win: "Ctrl-Enter"
-                                    `mac: "Ctrl-Enter"
+                                    `win: "Meta-Enter"
+                                    `mac: "Meta-Enter"
                                     `description: "New Juno Buffer"
                                     `exec: (fn () (new_buffer { type: "juno" }))
                                     }

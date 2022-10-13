@@ -614,7 +614,7 @@
   (let
       ((center_width 7)
        (right_margin 5)
-       (options (or options {}))
+       (options (or options { }))
        (id (or options.id (generate_id "split_view_vertical")))
        (center_divider (div { `class: "juno-vertical-dragger"
                               `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
@@ -638,7 +638,16 @@
        (resize_observer nil)
        (center_pos nil)
        (initialized false)
-       (init_timer nil)
+       (init_timer nil)       
+       (lock_ratio (function (state)
+                             (when (not drag_status)
+                              (if state
+                                (set_prop options
+                                          `ratio_locked
+                                          true)
+                                (set_prop options
+                                          `ratio_locked
+                                          false)))))                                              
        (check_observer (fn ()
                          (when (not (== view.parentElement parent_view))
                            (-> resize_observer `disconnect)
@@ -698,7 +707,8 @@
                                         ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
                                )))))
        (init_drag (fn (e)
-                    (when (== drag_status nil)
+                    (when (and (not options.ratio_locked)
+                               (== drag_status nil))
                       (= drag_status 1)
                       (set_style [["width" "100%"]
                                   ["height" "100%"]] view_overlay)
@@ -815,6 +825,7 @@
                                       (initialize))))
                                  250)))
     (set_prop options
+              `ratio_locked (or options.ratio_locked false)
               `id id
               `name (or options.name
                         (+ "vertical-split-" (inc *view_count*))))
@@ -822,6 +833,7 @@
      `view view
      `initialize initialize
      `set_content set_content
+     `lock_ratio lock_ratio
      `options options
      `destroy destroy
      `name options.name
@@ -862,6 +874,15 @@
        (center_pos nil)
        (initialized false)
        (init_timer nil)
+       (lock_ratio (function (state)
+                             (when (not drag_status)
+                              (if state
+                                (set_prop options
+                                          `ratio_locked
+                                          true)
+                                (set_prop options
+                                          `ratio_locked
+                                          false)))))           
        (parent_view nil)
        (check_observer (fn ()
                          (when (not (== view.parentElement parent_view))
@@ -920,7 +941,8 @@
                                         ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
                                )))))
        (init_drag (fn (e)
-                    (when (== drag_status nil)
+                    (when (and (not options.ratio_locked)
+                               (== drag_status nil))
                       (= drag_status 1)
                       (set_style [["width" "100%"]
                                   ["height" "100%"]] view_overlay)
@@ -1033,6 +1055,7 @@
                                       (initialize))))
                                  250)))
     (set_prop options
+              `ratio_locked (or options.ratio_locked false)
               `id id
               `name (or options.name
                         (+ "horizontal-split-" (inc *view_count*))))
@@ -1048,6 +1071,7 @@
      `controls (fn () [ content_a content_b ])
      `toJSON (function ()
                        `(split_view_horizontal  ,#content_a ,#content_b ,#options))
+     `lock_ratio lock_ratio
      `set_content (fn (position new_content)
                         (set_content position new_content)))
      

@@ -1579,6 +1579,10 @@ hr {
     border-bottom: 1px solid rgba(255,255,255,.3);
 }
 
+.juno-monospace {
+  font-family: var(--main-mono-space);
+}
+
 .juno-view-container thead {
   text-align: left;
   padding: 3px;  
@@ -1963,8 +1967,8 @@ div.juno-help-context {
 }
 
 .juno-arg-name {
-  padding-left: 3px;
-  padding-right: 3px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 @keyframes slide-in {
