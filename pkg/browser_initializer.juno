@@ -3624,6 +3624,24 @@
        `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
    })
 
+(defcontrol line_display ()
+   ((menu_items (fn ()
+                   [["Test" (fn ()
+                               (notify "Notify Test Menu"))]]))
+    (current_value (or "Not Set"))
+    (set (fn (val)
+            (progn
+               (= current_value val)
+               (do_render))))
+    (render (fn ()
+               (div { `class: "juno-mono-space" `style: "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" }
+                current_value))))
+   {
+       `buffer_bar: false
+       `expose: [[`set set]]
+       `usage: []
+   })
+
 (defun handle_app_click_event (e)
   (let
       ((elem e.srcElement)

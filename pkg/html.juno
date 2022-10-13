@@ -638,16 +638,19 @@
        (resize_observer nil)
        (center_pos nil)
        (initialized false)
+       (min_size (or options.min_size 20))
        (init_timer nil)       
        (lock_ratio (function (state)
                              (when (not drag_status)
                               (if state
-                                (set_prop options
+                                (progn
+                                 (set_prop options
                                           `ratio_locked
                                           true)
+                                 (= lock_ratio options.ratio))
                                 (set_prop options
                                           `ratio_locked
-                                          false)))))                                              
+                                          false)))))
        (check_observer (fn ()
                          (when (not (== view.parentElement parent_view))
                            (-> resize_observer `disconnect)
@@ -687,23 +690,23 @@
                                            0.5)
                                  (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
                                  (console.log "split_view_horizontal: center_pos now:" center_pos))
-                               
-                               (when (> center_pos (- new_width 20))
-                                 (= center_pos (Math.max 20 (- new_width 20))))
-                               
+                                                                                             
                                (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
                                           (is_number? options.ratio))
                                  (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth)))
+
+                               (when (> center_pos (- new_width 20 min_size))
+                                 (= center_pos (Math.max (+ 20 min_size) (- new_width 20 min_size))))
                                
                                (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
                                           left_container)
                                (set_style [["width" (+ "" center_width "px") ]] center_divider)
                                (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]
                                           right_container)
-                               
-                               (set_prop options
-                                         `ratio
-                                         (/ center_pos view.offsetWidth))
+                               (when (not options.ratio_locked)
+                                 (set_prop options
+                                           `ratio
+                                           (/ center_pos view.offsetWidth)))
                                         ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
                                )))))
        (init_drag (fn (e)
@@ -834,6 +837,11 @@
      `initialize initialize
      `set_content set_content
      `lock_ratio lock_ratio
+     `set_min_panel_size (fn (val)
+                             (when (is_number? val)
+                               (set_prop options `min_size val)
+                               (= min_size val)
+                               (perform_resize)))
      `options options
      `destroy destroy
      `name options.name
@@ -874,12 +882,16 @@
        (center_pos nil)
        (initialized false)
        (init_timer nil)
+       (locked_ratio nil)
+       (min_size (or options.min_panel_size 20))
        (lock_ratio (function (state)
                              (when (not drag_status)
                               (if state
-                                (set_prop options
+                                (progn
+                                 (set_prop options
                                           `ratio_locked
                                           true)
+                                 (= lock_ratio options.ratio))
                                 (set_prop options
                                           `ratio_locked
                                           false)))))           
@@ -923,21 +935,24 @@
                                  (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight))
                                  (console.log "split_view_horizontal: center_pos now:" center_pos))
                                
-                               (when (> center_pos (- new_height 40))
-                                 (= center_pos (Math.max 20 (- new_height 40))))
-
-                               (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                             
+                               (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio 
                                           (is_number? options.ratio))
                                  (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
-                               
+
+                               (if (> options.lower_panel_max_size 10)
+                                 (= center_pos (- new_height 20 options.lower_panel_max_size))
+                                 (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_height 20 min_size)))))
+                                                                                              
                                (set_style [["height" (+ "" center_pos  "px") ]]
                                           top_container)
                                (set_style [["height" (+ "" center_height "px") ]] center_divider)
-                               (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]                                         
+                               (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]
                                           bottom_container)
-                               (set_prop options
-                                         `ratio
-                                         (/ center_pos view.offsetHeight))
+                               (when (not options.ratio_locked)
+                                 (set_prop options
+                                           `ratio
+                                           (/ center_pos view.offsetHeight)))
                                         ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
                                )))))
        (init_drag (fn (e)
@@ -1066,6 +1081,15 @@
      `options options
      `name options.name
      `resize perform_resize
+     `set_min_panel_size (fn (val)
+                             (when (is_number? val)
+                               (set_prop options `min_size val)
+                               (= min_size val)
+                               (perform_resize)))
+     `set_lower_panel_max_size (fn (val)
+                                 (when (is_number? val)                                   
+                                   (set_prop options `lower_panel_max_size val)                                  
+                                   (perform_resize)))
      `destroy destroy
      `type `split_view_horizontal
      `controls (fn () [ content_a content_b ])
@@ -1076,6 +1100,7 @@
                         (set_content position new_content)))
      
     intf))
+
 
 
 (defun tabs (tab_list)
