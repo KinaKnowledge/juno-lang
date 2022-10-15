@@ -1986,6 +1986,12 @@ div.juno-help-context {
   margin-left: 2px;  
 }
 
+.opacity-0 {
+  opacity: 0;
+}
+
+
+
 @keyframes slide-in {
     0% {
         margin-top:-6px;

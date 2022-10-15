@@ -382,7 +382,7 @@
         (let
             ((type (or type "info"))
              (timer nil)
-             (view (div { `style: (+ "z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; color: var(--hightlight-color); background: var(--highlight-bg-color); border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
+             (view (div { `style: (+ "z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; color: var(--highlight-color); background: var(--main-control-surface-accent-color); border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
                                      (cond
                                          (== type "error")
                                          "border-left: 5px solid var(--type-error-color);"
@@ -396,14 +396,14 @@
                       `appendChild (div { `id: "lower_right_corner" `style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )))
             
             (-> (get_by_id "lower_right_corner") `appendChild view)
-            (-> view `animate [{ `background: "#FFFFFF"  `easing: `ease-in }
-                               { `background: "#FFF18830"  `opacity: 1    `easing: `ease-out  `offset: 0.1 }
-                               { `background: "#FFFFFF" `opacity: 1 `easing: `ease-out } ] 
+            (-> view `animate [{  `easing: `ease-in }
+                               { `opacity: 1    `easing: `ease-out  `offset: 0.1 }
+                               { `opacity: 1 `easing: `ease-out } ] 
                            { `duration: 3000 })
             
             (= timer (setTimeout (fn ()
                                    (do 
-                                     (-> view `animate [{ `opacity: 0  `easing: `ease-in } ] { `duration: 250 })
+                                     (-> view `animate [{ `opacity: 0  `easing: `ease-in } ] { `duration: 260 })
                                      (setTimeout (fn () (do
                                                           (-> view `remove)
                                                           (= timer nil)

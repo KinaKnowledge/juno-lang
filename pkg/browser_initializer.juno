@@ -24,6 +24,8 @@
 ;; the controls at the top level of the view
 (defparameter core/$root_controls [])
 
+(defparameter core/*system_repl* nil)
+
 (console.log "browser_initializer running")
 
 ;; the global pointer to the control which has focus
@@ -586,7 +588,7 @@
       existing_container))
 
 (defun_sync is_control? (val)
-  (and val.type val.view val.toJSON))
+  (and (is_object? val) val.type val.view val.toJSON))
 
 (defun_sync is_top_control? (control)
   (if (is_control? control)
@@ -2318,6 +2320,14 @@
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
        (parent_view nil)
+       (display_context_message (function (value)
+                                          (cond
+                                            (is_element? value)
+                                            (-> help_context_elem
+                                                `replaceChildren value)
+                                            else
+                                            (-> help_context_elem
+                                                `replaceChildren (span (+ "" value))))))
        (check_observer (fn ()
                          (when (not (== view.parentElement parent_view))
                            (-> resize_observer `disconnect)
@@ -2327,7 +2337,7 @@
        (context_bar (div { `class: "juno-context-bar" } 
                          help_context_elem))
        (offset_depth 46)
-       (editor_div (div { `style: (+ "height: calc(100% - " offset_depth  "px); width: 100%; overflow: hidden;") }))
+       (editor_div (div { `class: "opacity-0" `style: (+ "height: calc(100% - " offset_depth  "px); width: 100%; overflow: hidden;font-family:var(--main-mono-space);") }))
        
        (view (div { `control_id: id `style: "overflow: hidden; height: calc(100% - 10px); display: inline-block; width: inherit;" }                 
                   controls
@@ -2345,7 +2355,7 @@
                             (-> editor `resize)))))
        (editor nil)
        (set_evaluator (fn ()
-                        (when options.evaluator
+                        (when options.evaluator                          
                                (-> editor.commands `addCommand
                                    {
                                     `name: "execute"
@@ -2358,7 +2368,7 @@
                                                                       (-> editor `getCopyText))))
                                                        (if (blank? copytext)
                                                          (if (not options.repl_mode)
-                                                           (notify (dtext "Please highlight text to evaluate")))
+                                                           (display_context_message (dtext "Please highlight text to evaluate")))
                                                          (try
                                                            (options.evaluator copytext)
                                                            (catch Error (e)
@@ -2444,6 +2454,13 @@
                                     (= new_session (clone_edit_session editor_to_clone.session))
                                     (-> editor `setSession new_session))))
                               
+                              (unless options.evaluator                                      
+                                      (when *system_repl*
+                                        (display_context_message (+ "Evaluator for this buffer is " (prop *system_repl* `name)))
+                                        (set_prop options
+                                                  `evaluator
+                                                  (prop *system_repl* `evaluate))))
+                                                
                               (set_evaluator)
                               
                               (console.log "initialize_editor: options: " options)
@@ -2506,9 +2523,7 @@
                                                       `cursorStyle: "wide"
                                                       `firstLineNumber: (or options.first_line_number 0)
                                                       `useSoftTabs: true
-                                                      `highlightActiveWord: true
-                                                      `fontFamily: "Roboto Mono"
-                                                      `fontSize: font_size
+                                                      `highlightActiveWord: true                                                      
                                                       })
                               (-> editor.session `setUseWorker true)
                               (-> editor.session `setUseSoftTabs true)
@@ -2524,10 +2539,15 @@
                                 (-> editor.session `setMode options.type))
                               (cond
                                 (is_string? options.theme)
-                                (setTimeout (fn () (-> intf `set_theme options.theme)) 250)
+                                (setTimeout (fn () (progn
+                                                    (-> intf `set_theme options.theme)
+                                                    (remove_class "opacity-0" editor_div))) 50)
                                 else
                                 (aif (resolve_path [ `editor `default_theme ] *env_config*)
-                                     (setTimeout (fn () (-> intf `set_theme it)) 50)))
+                                     (setTimeout (fn ()
+                                                   (progn
+                                                    (-> intf `set_theme it)
+                                                    (remove_class "opacity-0" editor_div))) 50)))
                               (console.log "editor initialized: content: " (subtype content) content)                                                          
                               (-> editor `setValue content -1)
                               (if (eq nil font_size)
@@ -2618,14 +2638,7 @@
                                  theme_name)
                        (when options.on_theme_set
                          (options.on_theme_set theme_name))))
-        `display_context_message: (function (value)
-                                           (cond
-                                             (is_element? value)
-                                             (-> help_context_elem
-                                                 `replaceChildren value)
-                                             else
-                                             (-> help_context_elem
-                                                 `replaceChildren (span (+ "" value)))))
+        `display_context_message: display_context_message
         `get_evaluator: (fn ()
                           options.evaluator)
         `save: (function ()
@@ -2699,11 +2712,14 @@
        (title_span (span { `class: "juno-title" } title))
        (options (or options {}))
        (id (or options.id (generate_id "buffer_editor")))
-       (evaluator (cond (and (is_object? options.evaluator)
-                             (is_function? options.evaluator.evaluate))
-                        options.evaluator.evaluate
-                        (is_function? options.evaluator)
-                        options.evaluator))
+       (evaluator (cond
+                    (and (is_object? options.evaluator)
+                         (is_function? options.evaluator.evaluate))
+                    options.evaluator.evaluate
+                    (is_function? options.evaluator)
+                    options.evaluator
+                    *system_repl*
+                    *system_repl*))
                                                 
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
        (buffer_commands_button (commands_button id))
@@ -2804,7 +2820,7 @@
                                    (-> edit_control `set_evaluator control.evaluate)
                                    (set_prop options
                                              `evaluator_id
-                                             control.options.id)
+                                             control.options.id)                                   
                                    (if control.name
                                      (set_prop evaluator_span
                                                `innerText
@@ -2851,7 +2867,11 @@
                             (when edit_control.view.parentElement                              
                               (-> edit_control `sub_initializer)
                               (console.log "buffer_editor: sub initialized: setting evaluator if I have it: " options)
-                               (set_evaluator_control (get_control_by_id options.evaluator_id))))
+                              (cond
+                                options.evaluator_id
+                                (set_evaluator_control (get_control_by_id options.evaluator_id))
+                                *system_repl*
+                                (set_evaluator_control *system_repl*))))
                                        
                               
               `toJSON (function ()                                                                 
@@ -2896,7 +2916,7 @@
                      (when (and view.parentElement
                                 (not initialized))
                        (= initialized true)
-                       (= parent_view view.parentElement)
+                       (= parent_view view.parentElement)                                   
                        (= resize_observer (new ResizeObserver perform_resize))
                        (-> resize_observer `observe view.parentElement))))
                        
@@ -3005,7 +3025,7 @@
               `output_container output_container
               `initialize initialize
               `resize perform_resize
-              `type `log_view
+              `type `log_view              
               `clear (fn ()
                        (-> output_container `replaceChildren))
               `options options
@@ -3178,6 +3198,11 @@
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                          "Version: " Environment.build_version   )))
+                         ;; become the system_repl if none is yet defined
+                         (when (eq nil *system_repl*)
+                           (= *system_repl* intf)
+                           (-> input_container `display_context_message (+ "This control (" intf.name ") is now the *system_repl*")))
+                         
                          true))))))
 
        (attach_event_listener output_control.output_container
@@ -4010,20 +4035,48 @@
             (progn
              (monitor_control_tree)))  ]])))
                   
-
+(defun all_global_controls (namespace)
+   (let
+      ((env_handle (if namespace 
+                       (-> Environment `get_namespace_handle namespace)
+                       nil)))
+      (if namespace
+          (reduce (pset (pairs env_handle.context.scope))
+             (destructuring_bind (symbol_name symbol_value)
+                pset
+                (if (is_control? symbol_value)
+                    symbol_name)))
+          (flatten (for_each (namespace (namespaces))
+                      (for_each (ctl (all_global_controls namespace))
+                         (+ namespace "/" ctl))))))
+   {
+     `description: (+ "Returns all controls in the global context.  If provided " 
+                      "with a namespace, it will return only the controls for "
+                      "that namespace, otherwise it will return all controls "
+                      "in every namespace in a fully qualified form.")
+     `usage: ["namespace:?string"]
+     `tags: [`controls `ui `global]
+     })
 
 
 (defun serialize_controls (controls)
   [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
-    
+
+
 
 (defun save_control_image ()
   (progn
+   
    (set_focus_to nil)
+   (defvar system_repl *system_repl*)
+   (= *system_repl* nil)
+   
    (= *serialized_controls* (serialize_controls $root_controls))
       ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
    (console.log "*serialized_controls*: " *serialized_controls*)
-   (save_image)))
+   
+   (save_image)
+   (= *system_repl* system_repl)))
 
 (defun rehydrate_controls (container serialized_controls)
   (let
