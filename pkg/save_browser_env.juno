@@ -83,7 +83,7 @@
     (set_prop *env_config*
               `editor
               {
-                default_theme: "juno_light"
+                default_theme: "cobalt"
                 font_size: 14
                }))
   
@@ -91,7 +91,7 @@
     (set_prop *env_config*
               `application
               { menu_timeout: 2500
-                global_theme: "juno_light"
+                global_theme: "idle_fingers"
                 max_log_lines: 100
                }))
   

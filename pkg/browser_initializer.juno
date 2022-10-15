@@ -320,7 +320,7 @@
                             
         else
         nil))
-    (console.log "decorative_usage: ->" val "<-" rval (is_array? description.usage) description.usage)
+    ;(console.log "decorative_usage: ->" val "<-" rval (is_array? description.usage) description.usage)
     rval))
 
 
@@ -391,7 +391,8 @@
               (style { `id: "juno-css-theme" `type: "text/css" }
                (prop *global_themes* theme_name)) )
           (set_path [ `application `global_theme ] *env_config* theme_name)
-          (when (contains? theme_name *editor_themes*)
+          (when (and (not options.suppress_set_sub_theme)
+                     (contains? theme_name *editor_themes*))
              (set_path [ `editor `default_theme ] *env_config* theme_name))
           ;; unless we are told not to, set any controls to the theme
           (unless options.suppress_cascade
@@ -406,9 +407,17 @@
                       "value is updated to reflect this choice.  Additionally, if an "
                       "editor theme is found with the same name, the default editor "
                       "theme is set as well.  Editor themes are found in the global "
-                      "*editor_themes*.")
+                      "*editor_themes*. <br><br>"
+                      "Options are as follows:<br>"
+                      "suppress_set_sub_theme:boolean:false:If true, individual control "
+                      "themes such as the editor theme setting will not be set as part "
+                      "the global theme and will retain their existing settings and "
+                      "defaults.<br>"
+                      "suppress_cascade:boolean:false:If this value is true, the application "
+                      "theme will change, but controls will not be told about it and will "
+                      "retain their current settings as they are instantiated with.")
      `tags: ["themes" "environment" "color" "settings"]
-     `usage: ["theme_name:string"] })
+     `usage: ["theme_name:string" "options:object"] })
 
 (defun get_control_by_id (id)
   (let
@@ -2518,7 +2527,7 @@
                                 (setTimeout (fn () (-> intf `set_theme options.theme)) 250)
                                 else
                                 (aif (resolve_path [ `editor `default_theme ] *env_config*)
-                                     (setTimeout (fn () (-> intf `set_theme it)) 250)))
+                                     (setTimeout (fn () (-> intf `set_theme it)) 50)))
                               (console.log "editor initialized: content: " (subtype content) content)                                                          
                               (-> editor `setValue content -1)
                               (if (eq nil font_size)
@@ -2608,7 +2617,15 @@
                                  `theme
                                  theme_name)
                        (when options.on_theme_set
-                         (options.on_theme_set theme_name))))        
+                         (options.on_theme_set theme_name))))
+        `display_context_message: (function (value)
+                                           (cond
+                                             (is_element? value)
+                                             (-> help_context_elem
+                                                 `replaceChildren value)
+                                             else
+                                             (-> help_context_elem
+                                                 `replaceChildren (span (+ "" value)))))
         `get_evaluator: (fn ()
                           options.evaluator)
         `save: (function ()
@@ -4171,6 +4188,8 @@
     (if (== (length *serialized_controls*) 0)
       (progn       
        (console.log "initializing control surface")
+       ;; take in the global default theme, but don't impact the setting for the sub themes
+       (set_global_theme *env_config*.application.global_theme { `suppress_set_sub_theme: true `suppress_cascade: true })
        (defglobal $repl (browser_repl { `name: "Juno REPL" }))
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))

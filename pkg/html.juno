@@ -382,14 +382,14 @@
         (let
             ((type (or type "info"))
              (timer nil)
-             (view (div { `style: (+ "z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; background: #FFFFFF; border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
+             (view (div { `style: (+ "z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; color: var(--hightlight-color); background: var(--highlight-bg-color); border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
                                      (cond
                                          (== type "error")
-                                         "border-left: 5px solid #bf0a0a;"
+                                         "border-left: 5px solid var(--type-error-color);"
                                          (== type "success")
-                                         "border-left: 5px solid #95dc95;"
+                                         "border-left: 5px solid var(--success-color);"
                                          else
-                                         "border-left: 5px solid #5489da;")) }
+                                         "border-left: 5px solid var(--primary-action-bg-color);")) }
                          (or text "-"))))
             (when (eq nil (get_by_id "lower_right_corner"))
                   (-> (get_by_id "body")
