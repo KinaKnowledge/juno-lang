@@ -1957,18 +1957,32 @@ ol.juno-type-array:hover {
 }
 
 div.juno-help-context {
-    white-space: nowrap;
-    border: 1px solid var(--main-accent-line-hover);
-    text-overflow: ellipsis;
-    display: inline-block;
-    padding-left: 10px;
-    padding-right: 10px;
-    font-family: var(--main-mono-space);
+  white-space: nowrap;
+  font-size: 1.1em;
+  text-overflow: ellipsis;
+  display: inline-block;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-family: var(--main-mono-space);
+}
+
+
+
+.juno-context-bar {
+  padding: 3px;
+  min-height: 26px;;
+}
+
+.juno-operator-name {
+  padding-left: 4px;
+  padding-right: 4px;
+  
 }
 
 .juno-arg-name {
   padding-left: 5px;
   padding-right: 5px;
+  margin-left: 2px;  
 }
 
 @keyframes slide-in {

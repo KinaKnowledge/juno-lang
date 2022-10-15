@@ -695,8 +695,10 @@
                                           (is_number? options.ratio))
                                  (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth)))
 
-                               (when (> center_pos (- new_width 20 min_size))
-                                 (= center_pos (Math.max (+ 20 min_size) (- new_width 20 min_size))))
+                               
+                               (if (> options.right_panel_max_size 10)
+                                 (= center_pos (- new_width 20 options.right_panel_max_size))
+                                 (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_width 20 min_size)))))
                                
                                (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
                                           left_container)
@@ -842,6 +844,10 @@
                                (set_prop options `min_size val)
                                (= min_size val)
                                (perform_resize)))
+     `set_right_panel_max_size (fn (val)
+                                 (when (is_number? val)                                   
+                                   (set_prop options `right_panel_max_size val)                                  
+                                   (perform_resize)))
      `options options
      `destroy destroy
      `name options.name
@@ -870,7 +876,7 @@
                               content_b.view
                               content_b)))
        (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: row-resize" }))
-       (view (div { `control_id: id `class: "juno-horizontal-split-container" `style: "height: calc(100% - 5px); width: 100%;margin: 0px; padding: 0px;" }
+       (view (div { `control_id: id `class: "juno-horizontal-split-container" `style: "height: calc(100% - 0px); width: 100%;margin: 0px; padding: 0px;" }
                   top_container
                   center_divider
                   bottom_container
@@ -909,7 +915,7 @@
                               (console.log "split_view_horizontal: cannot get parent height is NAN: " view.parentElement)
                               (setTimeout perform_resize 1000))
                              (let
-                                 ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                 ((new_height (- (prop view.parentElement `offsetHeight) 0))
                                   (new_width  (- (prop view.parentElement `offsetWidth) 0)))
                                
                                (set_style [[ "width" (+ "" new_width "px") ]

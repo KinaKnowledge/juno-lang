@@ -310,7 +310,7 @@
      (cond
         (is_array? description.usage)
         (div { `style: "display: inline-block"} 
-         (flatten [(span { `style: "font-weight: bold" } val)
+         (flatten [(span { `class: "juno-operator-name" } val)
                    (for_each (arg description.usage)
                       (destructuring_bind (arg_name arg_type arg_needed)
                          (split_by ":" arg)
@@ -2314,10 +2314,16 @@
                            (-> resize_observer `disconnect)
                            (-> resize_observer `observe view.parentElement)
                            (= parent_view view.parentElement))))
-       (editor_div (div { `style: "height: calc(100% - 23px); width: 100%; overflow: hidden;" }))
+       (help_context_elem (div { `class: "juno-help-context" } ""))
+       (context_bar (div { `class: "juno-context-bar" } 
+                         help_context_elem))
+       (offset_depth 46)
+       (editor_div (div { `style: (+ "height: calc(100% - " offset_depth  "px); width: 100%; overflow: hidden;") }))
+       
        (view (div { `control_id: id `style: "overflow: hidden; height: calc(100% - 10px); display: inline-block; width: inherit;" }                 
                   controls
-                  editor_div))     
+                  editor_div
+                  context_bar))     
        (perform_resize (fn ()
                          (when view.parentElement
                            (check_observer)
@@ -2325,6 +2331,7 @@
                           (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
                                            ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
                                           view)
+                          (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 controls.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]] editor_div)
                           (when editor
                             (-> editor `resize)))))
        (editor nil)
@@ -2384,18 +2391,31 @@
        (last_bracket_match nil)
        (active_lisp_operator nil) ;; the last active lisp operator        
        (find_active_lisp_operator (function ()
-                                            (progn
-                                             (defvar new_op nil)
-                                             (defvar rnge (or (-> editor.session `getBracketRange (-> editor `getCursorPosition))
-                                                              (find_last_paren editor)))                                             
-                                             (when rnge                                        
-                                               (= last_bracket_match rnge)
-                                               (= new_op (first (split_by *whitespace_regexp* (-> editor.session `getTextRange last_bracket_match))))
-                                               
-                                               (when (not (== new_op active_lisp_operator))
-                                                 (= active_lisp_operator new_op)                                                 
-                                                 (when options.on_new_lisp_operator
-                                                   (options.on_new_lisp_operator active_lisp_operator)))))))
+                                            (let
+                                               ((new_op nil)
+                                                (rnge (or (-> editor.session `getBracketRange (-> editor `getCursorPosition))
+                                                              (find_last_paren editor)))
+                                                (usage nil))
+                                             (if rnge
+                                               (progn
+                                                (= last_bracket_match rnge)
+                                                (= new_op (first (split_by *whitespace_regexp* (-> editor.session `getTextRange last_bracket_match))))
+                                                
+                                                (when (not (== new_op active_lisp_operator))
+                                                  (= active_lisp_operator new_op)
+                                                  (= usage (decorative_usage active_lisp_operator))
+                                                  (when usage
+                                                     (-> help_context_elem
+                                                         `replaceChildren usage))
+                                                  (dispatch_event { `command: "display_usage" `args: [active_lisp_operator] })
+                                                  (when options.on_new_lisp_operator
+                                                    (options.on_new_lisp_operator active_lisp_operator))))
+                                               (progn
+                                                (= active_lisp_operator nil)
+                                                (-> help_context_elem
+                                                    `replaceChildren)
+                                                (when options.on_new_lisp_operator
+                                                  (options.on_new_lisp_operator nil)))))))
        
        (indent_row (function (row_number options)
                      (indent_editor_line editor row_number options)))
@@ -2539,6 +2559,7 @@
     
     (when (is_element? options.command_bar)
       (-> controls `prepend options.command_bar))
+    (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 controls.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]] editor_div )
     
     (= resize_observer (new ResizeObserver perform_resize))
     (= intf
@@ -2659,7 +2680,6 @@
                  (-> Environment `get_namespace_handle namespace)
                  Environment))
        (title_span (span { `class: "juno-title" } title))
-       (help_context_elem (div { `class: "juno-help-context" } ""))
        (options (or options {}))
        (id (or options.id (generate_id "buffer_editor")))
        (evaluator (cond (and (is_object? options.evaluator)
@@ -2670,6 +2690,8 @@
                                                 
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
        (buffer_commands_button (commands_button id))
+       (nav_back_button (button { `title: (dtext "back") } "<"))
+       (nav_forward_button (button { `title: (dtext "forward") } ">"))
        (is_dirty? false)
        (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
        (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
@@ -2682,9 +2704,8 @@
                              (if options.read_only
                                (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
                                ())
-                             help_context_elem
                              mode_span
-                             col_pos_span)))      
+                             col_pos_span)))
        (init_value (resolve_path path_to_value nseval.global_ctx.scope))
        (current_pos nil)
        (on_save (fn (value)
@@ -2743,16 +2764,6 @@
                                                           (progn
                                                            (= mode val)
                                                            (set_prop mode_span `innerText val)))
-                                   
-                                   on_new_lisp_operator: (function (val)
-                                                            (progn
-                                                             (console.log "on_new_lisp_operator: " val)
-                                                             (defvar usage (decorative_usage val))
-                                                             (when usage
-                                                               (-> help_context_elem
-                                                                         `replaceChildren usage))
-                                                             (dispatch_event { `command: "display_usage" `args: [val] })))
-                                   
                                    on_change: (function (editor val)
                                                         (progn                                                         
                                                          (when (not is_dirty?)
@@ -3177,15 +3188,7 @@
                                     (set_prop path_span
                                              `innerText
                                              ""))))))
-    
-   ; (attach_event_listener control_button
-    ;                       `click
-     ;                      (fn (e)
-      ;                       (progn
-       ;                       (handle_event e)
-        ;                      (make_menu commands_button
-         ;                                (menu_items)))))
-    
+     
     (attach_event_listener show_prototype_details_button
                            `click
                            (fn (e)
@@ -3417,6 +3420,7 @@
               `name: options.name
               `hide: hide
               `show: show
+             
               `resize: perform_resize
               `options: options
               `toJSON: (function ()
@@ -3513,18 +3517,14 @@
                             control_options
                             {}))
        (control_bar? (if control_options.buffer_bar
-                        true))
-       (acc []))
-      
-      (assert name "control name is required: check syntax for defcontrol")
-      (console.log "defcontrol: "  name "args is: " args "control options: " control_options "required_allocations: " required_allocations declared_allocations 
-       (length (reduce (d declared_allocations)
-                  (contains? d required_allocations))) 
-       (length required_allocations))
-      (if (< (length (reduce (d declared_allocations)
-                        (contains? d required_allocations)))
-             (length required_allocations))
-          (throw SyntaxError "missing required declarations: must have render"))
+                        true)))            
+       (assert name "control name is required: check syntax for defcontrol")
+       
+       (if (< (length (reduce (d declared_allocations)
+                         (contains? d required_allocations)))
+              (length required_allocations))
+           (throw SyntaxError "missing required declarations: must have render"))
+  ;; ok, now create the form to be returned..
       `(defun ,#name ,#args
           (let
              ((self {})
@@ -3579,6 +3579,12 @@
                                        `[])
                                     ,#(if (contains? (quote on_focus) declared_allocations)
                                           `(on_focus self)))))))
+              (_on_destroy (fn ()
+                           (progn
+                              (fn ()
+                                 (progn
+                                    ,#(if (contains? (quote on_destroy) declared_allocations)
+                                          `(on_destroy self)))))))
               (_to_json (function ()
                            (progn
                               ,#(if (contains? (quote to_json) declared_allocations)
@@ -3613,8 +3619,10 @@
                 `name name
                 `type ,#(desym_ref name)
                 `view view
+                `resize resize                
                 `initialize initialize
                 `toJSON _to_json
+                `on_destroy _on_destroy
                 `on_focus _on_focus)
              ;; and return the self
              self)
