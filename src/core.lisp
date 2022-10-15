@@ -28,9 +28,9 @@
   {
    minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
                   "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
-                  "compile" "set_prop" "unless" ]
+                  "compile" "set_prop" "unless" "for_with" "no_await" ]
    keywords: (split_by " " (+ "defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "
-                              "cond apply setq defun_sync map while reduce &"
+                              "cond apply setq defun_sync map while reduce no_await &"
 	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
                               "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "
                               "defparameter defvalue"))                      
@@ -700,7 +700,21 @@
      `usage: ["name:string:required" "lambda_list:array:required" "body:array:required" "meta:object"]
      `tags: ["function" "lambda" "define" "environment"]     
      })
-  
+
+
+(defmacro no_await (form)
+   `(progn
+       (defvar __SYNCF__ true)
+       ,#form)
+  {
+   `description: (+ "For the provided form in an asynchronous context, forces the compiler flag "
+                    "to treat the form as synchronous, thus avoiding an await call.  The return "
+                    "value may be impacted and result in a promise being returned "
+                    "as opposed to a resolved promise value.")
+   `usage: ["no_await:array"]
+   `tags: ["compiler" "synchronous" "await" "promise"]
+   })
+
 (defmacro reduce ((elem item_list) form)
     `(let
         ((__collector [])

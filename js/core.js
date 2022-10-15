@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-12 12:22:38
-// Version: 2022.10.12.12.22
-export const DLISP_ENV_VERSION='2022.10.12.12.22';
+// Build Time: 2022-10-15 09:36:16
+// Version: 2022.10.15.09.36
+export const DLISP_ENV_VERSION='2022.10.15.09.36';
 
 
 
@@ -10,7 +10,7 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function environment_boot(Environment)  {
 {
     await Environment.set_global("*formatting_rules*",{
-        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop","unless"],keywords:(("defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "+ "cond apply setq defun_sync map while reduce &"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "+ "defparameter defvalue")).split(" ")
+        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop","unless","for_with"],keywords:(("defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "+ "cond apply setq defun_sync map while reduce &"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "+ "defparameter defvalue")).split(" ")
     },{
         requires:["split_by"]
     });
@@ -796,6 +796,11 @@ await Environment.set_global("defun",async function(name,lambda_list,body,meta) 
     }
 },{ "eval_when":{ "compile_time":true
 },"name":"defun","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"],"requires":["or_args","length","flatten","destructure_list","add","unquotify","as_lisp"]
+});
+await Environment.set_global("no_await",async function(form) {
+    return ["=:progn",["=:defvar","=:__SYNCF__",true],form]
+},{ "eval_when":{ "compile_time":true
+},"name":"no_await","macro":true,"fn_args":"(form)","description":["=:+","For the provided form in an asynchronous context, forces the compiler flag ","to treat the form as synchronous, thus avoiding an await call.  The return ","value may be impacted and result in a promise being returned ","as opposed to a resolved promise value."],"usage":["no_await:array"],"tags":["compiler","synchronous","await","promise"]
 });
 await Environment.set_global("reduce",async function(...args) {
     let elem;
@@ -3647,16 +3652,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_4303;
+                                                let _expr_5672;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_4303=await (async function(){
+                                                _expr_5672=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_4303 && _expr_4303["0"]);
-                                                req_ns=(_expr_4303 && _expr_4303["1"]);
-                                                explicit=(_expr_4303 && _expr_4303["2"]);
+                                                req_sym=(_expr_5672 && _expr_5672["0"]);
+                                                req_ns=(_expr_5672 && _expr_5672["1"]);
+                                                explicit=(_expr_5672 && _expr_5672["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3759,13 +3764,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_82426;
+                    let _expr_79017;
                     let nspace;
-                    _expr_82426=await (async function(){
+                    _expr_79017=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_82426 && _expr_82426["0"]);
-                    nspace=(_expr_82426 && _expr_82426["1"]);
+                    sym=(_expr_79017 && _expr_79017["0"]);
+                    nspace=(_expr_79017 && _expr_79017["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

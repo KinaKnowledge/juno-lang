@@ -1,0 +1,85 @@
+;; Services and utilities for handling server requests
+
+;; the create_http_server sets up the initial listener on the specified port
+;; requires Deno
+
+(defun create_http_server (port_number options)
+   (-> Deno `listen (+ {}
+                     { port: port_number }
+                     (or options {})))
+   {
+       description: (+ "Creates an http server on the specificied port number.  See Deno.listen for other options.")
+       usage: ["port_number:number" "options:object"]
+       tags: ["server" "http" "network" "io"]
+    })
+
+(defun serve_using_handler (server handler)
+   (let
+      ((state { `run_server: true `request_count: 0 })
+       (control_function (fn (command)
+                            (cond
+                               (== command "stop")
+                               (progn
+                                  (set_prop state `run_server false)
+                                  state)
+                               (== command "status")
+                               state
+                               else
+                               nil))))
+      (new Promise
+           (fn (resolve)
+              (progn
+                 (resolve control_function)
+                 (try
+                    (for_with (connection server)
+                       (no_await
+                          (try
+                             (handler connection state)
+                             (catch Error (e)
+                                (progn
+                                   (console.error "Inner catch: " e)
+                                   nil)))))
+                    (catch Error (e)
+                       (if (== state.run_server false)
+                           true ;; expected
+                           (throw e))))))))) ;; otherwise this is a real error to deal with
+                       
+                       
+
+
+
+(defun default_handler (connection state)
+   (if (and connection (is_object? state))
+       (let
+          ((http_connection (-> Deno `serveHttp connection))
+           (url nil)
+           (file nil)
+           (filepath nil)
+           (not_found_response nil)
+           (readable_stream nil)
+           (response nil))
+          (for_with (request_event http_connection)
+             (if state.run_server
+                 (progn
+                    (= url (new URL request_event.request.url))
+               
+                    (set_prop state
+                       `request_count (+ 1 state.request_count))
+                    (= filepath (decodeURIComponent url.pathname))
+                    (console.log "request: " request_event.request.method "filepath: " filepath)
+                    (try
+                       (progn
+                          (= file (-> Deno `open (+ "." filepath) { read: true }))
+                          (= readable_stream file.readable)
+                          (= response (new Response readable_stream))
+                          (-> request_event `respondWith response))
+                       (catch Error (e)
+                          (progn
+                             (= not_found_response (new Response "404 Not Found" { status: 404 }))
+                             (-> request_event `respondWith not_found_response)))))
+                 (-> request_event `respondWith nil))))))
+
+               
+  
+       
+   
