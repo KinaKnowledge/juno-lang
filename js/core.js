@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-15 09:36:16
-// Version: 2022.10.15.09.36
-export const DLISP_ENV_VERSION='2022.10.15.09.36';
+// Build Time: 2022-10-15 11:32:42
+// Version: 2022.10.15.11.32
+export const DLISP_ENV_VERSION='2022.10.15.11.32';
 
 
 
@@ -10,7 +10,7 @@ var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_wri
 export async function environment_boot(Environment)  {
 {
     await Environment.set_global("*formatting_rules*",{
-        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop","unless","for_with"],keywords:(("defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "+ "cond apply setq defun_sync map while reduce &"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "+ "defparameter defvalue")).split(" ")
+        minor_indent:["defun","defun_sync","defmacro","define","when","let","destructuring_bind","while","for_each","fn","lambda","function","progn","do","reduce","cond","try","catch","macroexpand","compile","set_prop","unless","for_with","no_await"],keywords:(("defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "+ "cond apply setq defun_sync map while reduce no_await &"+ "defglobal do fn if let new function progn javascript catch evaluate eval call import "+ "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "+ "defparameter defvalue")).split(" ")
     },{
         requires:["split_by"]
     });
@@ -3652,16 +3652,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_5672;
+                                                let _expr_31154;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_5672=await (async function(){
+                                                _expr_31154=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_5672 && _expr_5672["0"]);
-                                                req_ns=(_expr_5672 && _expr_5672["1"]);
-                                                explicit=(_expr_5672 && _expr_5672["2"]);
+                                                req_sym=(_expr_31154 && _expr_31154["0"]);
+                                                req_ns=(_expr_31154 && _expr_31154["1"]);
+                                                explicit=(_expr_31154 && _expr_31154["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3764,13 +3764,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_79017;
+                    let _expr_12565;
                     let nspace;
-                    _expr_79017=await (async function(){
+                    _expr_12565=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_79017 && _expr_79017["0"]);
-                    nspace=(_expr_79017 && _expr_79017["1"]);
+                    sym=(_expr_12565 && _expr_12565["0"]);
+                    nspace=(_expr_12565 && _expr_12565["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

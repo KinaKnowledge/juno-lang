@@ -3,6 +3,101 @@
 ;; the create_http_server sets up the initial listener on the specified port
 ;; requires Deno
 
+
+(import "pkg/base-io.lisp")
+
+(when (contains? "http" (namespaces))
+  (delete_namespace `http))
+(create_namespace `http)
+
+
+(declare (namespace `http))
+
+
+;; A list of routes to be checked
+;; they are of the form [regex_match route_handler_function]
+
+(defvalue *http_routes*
+   [])
+
+(defun add_http_route (method path_specifier route_handler)
+   (if (and (is_string? method)
+            (is_string? path_specifier)
+            (is_function? route_handler))
+       (let
+          ((path_regex (new RegExp (+ "^" (uppercase method) " " path_specifier)))
+           (exists? (reduce (existing_path_set *http_routes*) 
+                       (destructuring_bind (existing_path route_handler)
+                          existing_path_set
+                          (when (== (-> path_regex `toString) (-> existing_path `toString))
+                             existing_path)))))
+          ;; if it exists, return an explanation why it wasn't added
+          (if (> (length exists?) 0)
+              {
+                  added: false
+                  matched: exists?
+              }
+              (progn
+                 (push *http_routes* [path_regex route_handler])
+                 {
+                     added: true
+                     path_regex: path_regex
+                     handler: route_handler
+                 }))))
+   {
+     usage:["method:string" "path_specifier:string" "route_handler:function"]
+     description: (+ "Adds a new route handler function to *http_routes* for " 
+                     "the given method and route.  If successful returns an "
+                     "object containing the created path_regex, the passed "
+                     "handler function and an added key set to true.  If "
+                     "the function fails, returns an objec with a matched "
+                     "key and containing what route matched the given route and "
+                     "an added key set to false.")
+     tags: [`http `io `server `network `routes]
+   })
+ 
+(defun remove_http_route (method path_specifier)
+   (if (and (is_string? method)
+            (is_string? path_specifier))
+       (let
+          ((path_regex (new RegExp (+ "^" (uppercase method) " " path_specifier)))
+           (matched_idx nil)
+           (removed_route nil))
+            
+          (map (fn (existing_path_set idx)
+                  (destructuring_bind (existing_path route_handler)
+                     existing_path_set
+                     (when (== (-> path_regex `toString) (-> existing_path `toString))
+                        (= matched_idx idx))))
+               *http_routes*)
+          (if matched_idx
+              (progn
+                 (= removed_route (prop *http_routes* matched_idx))
+                 (-> *http_routes* `splice matched_idx 1)
+                 { removed: true
+                   path_regex: removed_route.0
+                   handler: removed_route.1 })
+              {
+                  removed: false
+                  reason: "Not Found"
+                  path_regex: path_regex
+              })))
+   {
+     description: (+ "Removes the handler function for the given method and path.  "
+                     "If successful, the function eturns an object with a removed " 
+                     "flag set to true, the path regex of the removed route and the "
+                     "the handler for the function.  If not successful, the removed "
+                     "flag is set to false, a reason flag (currently only 'Not Found' "
+                     "and the path regex that was used to find the target route in "
+                     "the handler table.")
+     usage: ["method:string" "path_specifier:string"]
+     tags: ["routes" "http" "io" "server" "network"]
+     })
+          
+          
+
+
+ 
 (defun create_http_server (port_number options)
    (-> Deno `listen (+ {}
                      { port: port_number }
@@ -10,22 +105,26 @@
    {
        description: (+ "Creates an http server on the specificied port number.  See Deno.listen for other options.")
        usage: ["port_number:number" "options:object"]
-       tags: ["server" "http" "network" "io"]
+       tags: ["server" "http" "network" "io" "handler"]
     })
 
-(defun serve_using_handler (server handler)
+(defun serve_using_handler (server handler options)
    (let
-      ((state { `run_server: true `request_count: 0 })
+      ((state (+ { `run_server: true `request_count: 0 }
+                 (if (is_object? options)
+                     options
+                     {})))
        (control_function (fn (command)
                             (cond
                                (== command "stop")
                                (progn
                                   (set_prop state `run_server false)
+                                  (-> server `close)
                                   state)
                                (== command "status")
-                               state
+                               (clone state)
                                else
-                               nil))))
+                               (clone state)))))
       (new Promise
            (fn (resolve)
               (progn
@@ -37,16 +136,182 @@
                              (handler connection state)
                              (catch Error (e)
                                 (progn
-                                   (console.error "Inner catch: " e)
-                                   nil)))))
+                                   (if options.on_error
+                                      (options.on_error server connection state)
+                                      nil))))))
                     (catch Error (e)
                        (if (== state.run_server false)
                            true ;; expected
-                           (throw e))))))))) ;; otherwise this is a real error to deal with
-                       
+                           (throw e)))))))) ;; otherwise this is a real error to deal with
+   {
+       description: (+ "Given a Listener object, a handler function (see default_handler) "
+                       "and an optional options object, sets up service controller for "
+                       "the provided handler.  A control_function is returned, which can "
+                       "be used to command the state of the service handler.  The control "
+                       "function takes a single command string:<br>"
+                       "stop:string - stops the listener and turns off the server. "
+                       "status - returns a status object representing the state of the "
+                       "operation of the service.  If the status function is "
+                       "called without an argument, the current state is returned. <br><br>"
+                       "The serve_using_handler function returns a control function immediately " 
+                       "but the service will be running using the handler in a yield loop "
+                       "for new requests.  Options: <br>"
+                       "on_response:function - A function called with the request_event and " 
+                       "response_object for logging purposes: (on_response request_event response_event). <br>"
+                       "on_error:function: A function called when an error is encountered that ")
+       usage: ["server:Listener" "handler:function" "options:object"]
+       tags: ["server" "http" "network" "io"]
+   })
+                
                        
 
+;; needs to be a macro probably and a reusable template
+;; makes a shared scope of route handler functions like defcontrol
+;; but also regex_handler
+;; but routes need to be added on the fly, so the route and functions should
+;; be in an self similar to a control, probably in the state object passed to 
+;; the constructed function
 
+;; returns a stream of the file to be written out 
+
+
+(defmacro file_spooler (base_directory)
+   `(fn (request_parameters request_event)
+       (let
+          ((filepath request_parameters.path)
+           (file nil)
+           (readable_stream nil))
+          (try
+             (progn
+                (= file (-> Deno `open (+ ,#base_directory "/" filepath) { read: true }))
+                (= readable_stream file.readable)
+                (new Response readable_stream))
+             (catch Error (e)
+                (progn
+                   (new Response "404 Not Found" { status: 404 }))))))
+   {
+       `description: (+ "Creates an HTTP file streamer bound to the provided base_directory. The "
+                        "macro returns a function that can be used as a route handler.  To do so, "
+                        "add the returned function with a request method and service path to "
+                        "*http_routes*.  Use the add_http_route function to do so.")
+       `usage: ["base_directory:string"]
+       `tags: ["http" "route_handler" "file" "spool"]
+   })
+                
+
+(defun find_matching_route (method pathname)
+   (if (and (is_string? method)
+            (is_string? pathname))
+       (let
+          ((match_target (+ (uppercase method) " " pathname))
+           (matched_regex nil)
+           (matched nil))
+          (for_each (path_set *http_routes*)
+             (destructuring_bind (candidate_regex route_handler)
+                path_set
+                (= matched_regex (scan_str candidate_regex match_target))
+                (when (> (length matched_regex) 0)
+                   (= matched { `pathname: pathname 
+                                `method: method
+                                `handler: route_handler
+                                `matched_handler_path: matched_regex
+                                `matched_regex: candidate_regex })
+                   (break))))
+          matched)
+       nil)
+   { 
+     description: (+ "Searches the existing HTTP routes for the given method and "
+                     "pathname and returns a matched object with the following fields:<br>"
+                     "pathname:string - The pathname provided and matched<br>"
+                     "method:string - The HTTP method verb provided such as GET or POST<br>"
+                     "handler:function - The handler function to be used for the method "
+                     "and path combo.<br>"
+                     "matched_handler_path:object - The RegExp match object returned via " 
+                     "the RegExp matched function.<br>"
+                     "matched_regex:RegExp - The matching regexp function.")
+     usage: ["method:string" "pathname:string"]
+     tags: ["server" "http" "routes" "network"]
+     })
+ 
+
+(defun arguments_for_url (url)
+   (if (instanceof url URL)
+       (let
+          ((vals {}))
+          (-> (prop url `searchParams) `forEach (fn (v i) (set_prop vals i v)))
+          vals)
+       (throw TypeError "arguments_for_url requires a URL type object"))
+   {
+     `description: "For a given URL object, returns an object with the arguments as key value pairs."
+     `usage: ["url:URL"]
+     `tags: ["http" "uri" "url" "parameters" "params"]
+     })
+
+(defun get_parameters_for_match (match_obj url)
+   (let
+      ((matched_handler_path (prop (first match_obj.matched_handler_path) `0))
+       (path_comps (split_by " " matched_handler_path))
+       (method (first path_comps))
+       (service_path (second path_comps))
+       (remaining_path (or (-> match_obj.pathname `substr (length service_path)) ""))
+       (argset (arguments_for_url url)))
+      {
+          path: remaining_path
+          service_path: service_path
+          arguments: argset
+          method: method
+      })
+   {
+       `description: (+ "For a given matched object from the function find_matching_route, "
+                        "returns an object containing the service_path, which is the first "
+                        "matched path in the http_routes table, the remaining path as the "
+                        "path key, which can be used by the route_handler_function, the "
+                        "arguments if any from the URL, and the method.  This function "
+                        "normalizes the request where possible for route handler logic.")
+       `usage: ["match_obj:object" "url:URL"]
+       `tags: ["http" "url" "parameters" "params"]
+   })
+      
+
+(defun http_request_router (request_event state)
+   (let
+      ((url (new URL request_event.request.url))
+       (method request_event.request.method)
+       (filepath (decodeURIComponent url.pathname))
+       (matched_handler nil)
+       (parameters nil)
+       (service_path nil)
+       (response nil))
+      (= matched_handler (find_matching_route method filepath))
+      (if matched_handler
+         (progn
+            (try
+               (progn
+                  (= parameters (get_parameters_for_match matched_handler url))
+                  (= response (-> matched_handler `handler parameters request_event))
+                  (if (not (instanceof response Response))
+                      (throw TypeError "Invalid Response object from handler")))
+               (catch Error (e)
+                  (progn
+                     (console.error "http_request_router: error on handler call: " e)
+                     (= response (new Response "500 Internal Server Error" { status: 500 })))))
+            (set_prop response
+               `service_parameters
+               parameters)
+            response)
+         (new Response "404 Not Found" { status: 404 })))
+   {
+     `description: (+ "For a given HTTP request_event, references *http_routes* to find a matching "
+                      "service handler for a given request method and path, and then if a match "
+                      "is found, the route_handler function specified for the route in *http_routes* "
+                      "is called with the parameters object returned by get_parameters_for_match and "
+                      "the request_event.  The route_handler_function is expected to return a type "
+                      "Response object, which will be sent back to the client. ")
+     `usage: ["request_event:RequestEvent"]
+     `tags: ["http" "url" "parameters" "params"]
+     })
+                      
+ 
 
 (defun default_handler (connection state)
    (if (and connection (is_object? state))
@@ -55,31 +320,103 @@
            (url nil)
            (file nil)
            (filepath nil)
+           (method nil)
+           (dirname nil)
            (not_found_response nil)
-           (readable_stream nil)
+           (handler nil)
            (response nil))
           (for_with (request_event http_connection)
              (if state.run_server
                  (progn
-                    (= url (new URL request_event.request.url))
-               
                     (set_prop state
                        `request_count (+ 1 state.request_count))
-                    (= filepath (decodeURIComponent url.pathname))
-                    (console.log "request: " request_event.request.method "filepath: " filepath)
-                    (try
-                       (progn
-                          (= file (-> Deno `open (+ "." filepath) { read: true }))
-                          (= readable_stream file.readable)
-                          (= response (new Response readable_stream))
-                          (-> request_event `respondWith response))
-                       (catch Error (e)
-                          (progn
-                             (= not_found_response (new Response "404 Not Found" { status: 404 }))
-                             (-> request_event `respondWith not_found_response)))))
-                 (-> request_event `respondWith nil))))))
-
+                    (= response (http_request_router request_event state))
+                    (when state.on_response
+                       (-> state `on_response request_event response))
+                    (-> request_event `respondWith response))
+                 (-> http_connection `close)))))
+   {
+     `description: (+ "The default handler object is called with a connection and a state " 
+                      "object and manages the response to the request_event provided by " 
+                      "the http_connection.  While the state object run_server key is "
+                      "set to true, it will continue to serve requests for a given connection. "
+                      "Once state.run_server is set to a non true value, the http connection "
+                      "will be closed and further requests will not complete. <br><br>"
+                      "Example: <br>"
+                      "<code>"
+                      ";; set up the server..\n"
+                      "(defglobal server (create_http_server 56342))\n" 
+                      "(defglobal ctl (serve_using_handler server default_handler))\n"
+                      ";; ctl is a function where the status can be managed.\n"
+                      "</code>"
+                      "See also serve_using_handler for more details on the returned "
+                      "control function.")
+     `usage: ["connection:Listener"]
+     })
+                 
                
-  
-       
-   
+
+;; Add a simple file service
+
+(defparameter *http_file_server*
+   {
+       `log: []
+       `log_length: 50
+       `base_directory: nil
+   })
+
+
+
+(defun http_file_server (port base_directory options)
+   (if (and (is_number? port)
+            (is_string? base_directory))
+       (let
+          ((service_route (add_http_route "GET" (or options.service_path "/files") (file_spooler base_directory)))
+           (server nil)
+           (ctl nil)
+           (on_response (fn (request_event response)
+                           (progn
+                              (push *http_file_server*.log
+                                    {
+                                      `request_time: (time_in_millis)
+                                      `request_url: request_event.request.url
+                                      `response_code: response.status
+                                      `file_sent: response.service_parameters.path
+                                      })
+                              (when (> (length *http_file_server*.log)
+                                       *http_file_server*.log_length)
+                                 (take *http_file_server*.log))
+                              true))))
+          (if (eq options nil)
+              (= options {}))
+          (if (not options.on_response)
+              (set_prop options
+                 `on_response
+                 on_response))
+              
+          (if service_route.added
+              (progn
+                 (= server (create_http_server port options))
+                 (set_prop *http_file_server* 
+                    `control
+                    (serve_using_handler server default_handler options)
+                    `service_path (or options.service_path "/files")
+                    `base_directory base_directory)
+                 (console.log "*http_file_server*.controller established as the control function.")
+                 *http_file_server*)
+              (progn
+                 (console.error "Cannot add the service route: " service_route ", server not started."))))
+       (throw TypeError "http_file_server requires port and base_directory"))
+   {
+       `usage: ["port:number" "base_directory:string" "options:?object"]
+       `description: (+ "Simple file server that adds a route under /files to *http_routes* "
+                        "for GET requests.  Provide a base directory to act as the root "
+                        "directory for the service.  Options is an object that contains<br>"
+                        "service_path:string - The path that the service will run under, by "
+                        "default that is /files, but this can be overwritten.<br><br>"
+                        "All other options are passed on to the serve_using_handler function "
+                        "to be consumed there.")
+       `tags: ["http" "file" "server" "web" "io"]
+   })
+
+     
