@@ -46,8 +46,8 @@
     (console.log "system initializer Complete")))
 
 
-  
-
+ ;; import the http client package into the image..
+(import "pkg/http_client.juno")
 
 (defglobal core/*env_template* (btoa (read_text_file  "./src/environment.lisp")))
 
@@ -104,10 +104,11 @@
 ;  (console.table (sort no_includes))
 
   ;; save the image 
+
   
   (core/save_env { save_as: "js/juno_browser.js"		   
 		   preserve_imports: false
-                   features: [ "compiler" "repl" "core-ext" "html" "build-tools" "browser" ]
+                   features: [ "compiler" "repl" "core-ext" "html" "build-tools" "browser" "http_client" ]
 		   do_not_include: no_includes })
   
   (console.log "building standalone starter.html file..")

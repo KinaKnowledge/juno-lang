@@ -1971,7 +1971,8 @@ div.juno-help-context {
 
 .juno-context-bar {
   padding: 3px;
-  min-height: 26px;;
+  min-height: 26px;
+  background: var(--main-control-surface-accent-color);
 }
 
 .juno-operator-name {

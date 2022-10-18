@@ -6,9 +6,8 @@
 
 (import "pkg/base-io.lisp")
 
-(when (contains? "http" (namespaces))
-  (delete_namespace `http))
-(create_namespace `http)
+(when (not (contains? "http" (namespaces)))
+  (create_namespace `http))
 
 
 (declare (namespace `http))
@@ -20,6 +19,28 @@
 (defvalue *http_routes*
    [])
 
+
+;; for debugging purposes..will be removed
+(defglobal $request nil)
+(defglobal $response nil)
+
+
+;; various accessors to the reques_eventt object
+
+(defun get_content_type (request)
+   (-> request.headers `get "content-type"))
+
+(defun get_user_agent (request_event)
+   (-> request_event.request.headers `get "user-agent"))
+
+(defun get_method (request_event)
+   request_event.request.method)
+
+(defun json_response (obj)
+   (new Blob [(JSON.stringify obj)]
+        { `type: "application/json" }))
+
+
 (defun add_http_route (method path_specifier route_handler)
    (if (and (is_string? method)
             (is_string? path_specifier)
@@ -27,7 +48,7 @@
        (let
           ((path_regex (new RegExp (+ "^" (uppercase method) " " path_specifier)))
            (exists? (reduce (existing_path_set *http_routes*) 
-                       (destructuring_bind (existing_path route_handler)
+                       (destructuring_bind (existing_path existing_route_handler)
                           existing_path_set
                           (when (== (-> path_regex `toString) (-> existing_path `toString))
                              existing_path)))))
@@ -165,16 +186,6 @@
                 
                        
 
-;; needs to be a macro probably and a reusable template
-;; makes a shared scope of route handler functions like defcontrol
-;; but also regex_handler
-;; but routes need to be added on the fly, so the route and functions should
-;; be in an self similar to a control, probably in the state object passed to 
-;; the constructed function
-
-;; returns a stream of the file to be written out 
-
-
 (defmacro file_spooler (base_directory)
    `(fn (request_parameters request_event)
        (let
@@ -247,7 +258,59 @@
      `tags: ["http" "uri" "url" "parameters" "params"]
      })
 
-(defun get_parameters_for_match (match_obj url)
+(defun post_body(request_event)
+   (let
+      ((read_buffer (new Uint8Array 8192))
+       (total_buffer [])
+       (result nil)
+       (decoder (new TextDecoder "utf-8"))
+       (total_bytes_read 0)
+       (read_op nil)
+       (rdr nil))
+     (cond
+       (== (get_content_type request_event.request) "application/json")
+       (progn
+        (= rdr (-> request_event.request.body `getReader))
+        (= read_op (-> rdr `read read_buffer))
+        (while (not read_op.done)
+          (progn
+           (inc total_bytes_read read_op.value.length)
+           (console.log "..read bytes: " read_op.value.length "total: " total_bytes_read (-> decoder `decode read_op.value))
+           (push total_buffer
+                 (-> decoder `decode read_op.value))
+           (= read_op (-> rdr `read read_buffer))))
+        (= result (join "" total_buffer)))
+       
+       (== (get_content_type request_event.request)  "application/x-www-form-urlencoded")
+       (= result (-> request_event.request `formData)))
+          
+     (cond
+         (== (get_content_type request_event.request) "application/json")
+         (JSON.parse result)
+         (== (get_content_type request_event.request)  "application/x-www-form-urlencoded") 
+         (progn          
+          (defvar data {})
+          (defvar iter (-> result `keys))
+          (defvar k nil)
+          (= k (-> iter `next))
+          (console.log "k is: " k)
+          (while (not k.done)
+            (progn
+             (set_prop data
+                       k.value
+                       (-> result `get k.value))
+             (console.log "in form: " k.value "is file? " (instanceof (-> result `get k.value) File) "Value: " (-> result `get k.value))
+             (= k (-> iter `next))))
+          (console.log "form_data is now: " data)
+          data)
+          
+         else
+         (progn
+          (console.log "post_body: result: " result)
+          result))))
+          
+
+(defun get_parameters_for_match (match_obj request_event url)
    (let
       ((matched_handler_path (prop (first match_obj.matched_handler_path) `0))
        (path_comps (split_by " " matched_handler_path))
@@ -259,6 +322,9 @@
           path: remaining_path
           service_path: service_path
           arguments: argset
+          parameters: (if (== method "POST")
+                           (post_body request_event)
+                           {})
           method: method
       })
    {
@@ -268,10 +334,19 @@
                         "path key, which can be used by the route_handler_function, the "
                         "arguments if any from the URL, and the method.  This function "
                         "normalizes the request where possible for route handler logic.")
-       `usage: ["match_obj:object" "url:URL"]
+       `usage: ["match_obj:object" "request_event:RequestEvent" "url:URL"]
        `tags: ["http" "url" "parameters" "params"]
    })
       
+
+
+(defun gen_appropriate_response (request_event error_data)
+   (cond
+      (== (get_content_type request_event.request) "application/json")
+      (json_response { `rval: "FAIL" `message: error_data })
+      else
+      error_data))
+     
 
 (defun http_request_router (request_event state)
    (let
@@ -282,19 +357,21 @@
        (parameters nil)
        (service_path nil)
        (response nil))
-      (= matched_handler (find_matching_route method filepath))
+     (= matched_handler (find_matching_route method filepath))
+     (= $request request_event)
       (if matched_handler
          (progn
             (try
-               (progn
-                  (= parameters (get_parameters_for_match matched_handler url))
+              (progn               
+                  (= parameters (get_parameters_for_match matched_handler request_event url))
+                  (console.log "http_request_router: parameters: " parameters)
                   (= response (-> matched_handler `handler parameters request_event))
                   (if (not (instanceof response Response))
                       (throw TypeError "Invalid Response object from handler")))
                (catch Error (e)
                   (progn
                      (console.error "http_request_router: error on handler call: " e)
-                     (= response (new Response "500 Internal Server Error" { status: 500 })))))
+                     (= response (gen_appropriate_response request_event e.message)))))
             (set_prop response
                `service_parameters
                parameters)
@@ -312,6 +389,8 @@
      })
                       
  
+     
+    
 
 (defun default_handler (connection state)
    (if (and connection (is_object? state))
@@ -327,13 +406,23 @@
            (response nil))
           (for_with (request_event http_connection)
              (if state.run_server
-                 (progn
-                    (set_prop state
-                       `request_count (+ 1 state.request_count))
-                    (= response (http_request_router request_event state))
-                    (when state.on_response
-                       (-> state `on_response request_event response))
-                    (-> request_event `respondWith response))
+                 (try
+                    (progn
+                       (set_prop state
+                          `request_count (+ 1 state.request_count))
+                       (try 
+                          (= response (http_request_router request_event state))
+                          (catch Error (e)
+                             (progn
+                                (console.error "default_handler: error in handler: " e)
+                                (-> request_event `respondWith (new Response (gen_appropriate_response "Internal Server Error") { status: 500 })))))
+                       (when state.on_response
+                          (-> state `on_response request_event response))
+                       (-> request_event `respondWith response))
+                    (catch Error (e)
+                       (progn
+                          (console.error "default handler: error on response completion: " e))))
+                          
                  (-> http_connection `close)))))
    {
      `description: (+ "The default handler object is called with a connection and a state " 
@@ -376,6 +465,8 @@
            (ctl nil)
            (on_response (fn (request_event response)
                            (progn
+                              (console.log "request_event: " request_event)
+                              (console.log "response: " response.headers)
                               (push *http_file_server*.log
                                     {
                                       `request_time: (time_in_millis)
@@ -419,4 +510,73 @@
        `tags: ["http" "file" "server" "web" "io"]
    })
 
-     
+(defparameter *env_bank*
+   {
+       `log: []
+       `log_length: 50
+       `base_directory: nil
+   })
+
+(defun echo_params (parameters request_event)
+   (progn
+      (console.log "set_global_value: parameters: " parameters)
+      (console.log "set_global_value: request_event: " request_event)
+      (new Response (new Blob [(JSON.stringify { "rval":"OK" "parameters": parameters })]
+                         { `type: "application/json" })
+           {
+             `status: 200
+            })))
+
+(defun save_file_handler (parameters request_event)
+  (progn   
+   (new Response (new Blob [(JSON.stringify { "rval":"OK" "parameters": parameters })]
+                      { `type: "application/json" })
+        {
+         `status: 200
+         })))
+
+(defun env_bank (port base_directory options)
+   (let
+      ((server nil)
+       (on_response (fn (request_event response)
+                           (progn
+                              (console.log "response:" response.status response.headers response)
+                              (= $request request_event)
+                              (= $response response)
+                              (push *env_bank*.log
+                                    {
+                                      `request_time: (time_in_millis)
+                                      `request_url: request_event.request.url
+                                      `request_method: response.service_parameters.method
+                                      `response_code: response.status
+                                      `file_sent: response.service_parameters.path
+                                      })
+                              (when (> (length *env_bank*.log)
+                                       *env_bank*.log_length)
+                                 (take *env_bank*.log))
+                              true))))
+      (add_http_route "GET" "/env" (file_spooler base_directory))
+      (add_http_route "POST" "/echo_params"
+                      echo_params)
+      (add_http_route "POST" "/save_file"
+                      save_file_handler)
+      (if (eq nil options)
+          (= options {}))
+      (set_prop options
+         `on_response
+         on_response)
+      (= server (create_http_server port options))
+      (set_prop *env_bank*
+         `control (serve_using_handler server default_handler options)
+         `service_path "/env"
+         `base_directory base_directory)))
+      
+
+(register_feature "http_server")
+(import "pkg/http_client.juno")
+
+true
+
+                 
+
+    
