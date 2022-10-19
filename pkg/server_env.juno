@@ -5,6 +5,7 @@
 
 
 (import "pkg/base-io.lisp")
+;(import (conversion) "https://deno.land/std@0.160.0/streams/conversion.ts")
 
 (when (not (contains? "http" (namespaces)))
   (create_namespace `http))
@@ -258,56 +259,56 @@
      `tags: ["http" "uri" "url" "parameters" "params"]
      })
 
+(defun process_multipart_form (form_data)
+  (let
+      ((iter (-> form_data `keys))
+       (entry_key nil)      
+       (data {}))
+    (= entry_key (-> iter `next))
+    
+    (while (not entry_key.done)
+      (progn      
+       (set_prop data
+                 entry_key.value
+                 (-> form_data `get entry_key.value))                   
+       (= entry_key (-> iter `next))))    
+    data))
+    
+    
+
 (defun post_body(request_event)
    (let
-      ((read_buffer (new Uint8Array 8192))
-       (total_buffer [])
+      ((read_buffer (new Uint8Array 8192))       
        (result nil)
-       (decoder (new TextDecoder "utf-8"))
-       (total_bytes_read 0)
+       (comps nil)
+       (content_type nil)
+       (multipart nil)      
        (read_op nil)
        (rdr nil))
+     (= comps (split_by ";" (or (get_content_type request_event.request) "")))
+     (= content_type (first comps))
+     (when (and (> comps.length 1)
+                (starts_with? "boundary=" (trim comps.1)))
+       (= multipart {
+                     `boundary: (second (split_by "=" comps.1))
+                     `content: []
+                     }))
      (cond
-       (== (get_content_type request_event.request) "application/json")
-       (progn
-        (= rdr (-> request_event.request.body `getReader))
-        (= read_op (-> rdr `read read_buffer))
-        (while (not read_op.done)
-          (progn
-           (inc total_bytes_read read_op.value.length)
-           (console.log "..read bytes: " read_op.value.length "total: " total_bytes_read (-> decoder `decode read_op.value))
-           (push total_buffer
-                 (-> decoder `decode read_op.value))
-           (= read_op (-> rdr `read read_buffer))))
-        (= result (join "" total_buffer)))
+       (== content_type "application/json")             
+       (= result (-> request_event.request `json))
+
+       (== content_type "multipart/form-data")
+       (progn                         
+        (= result (process_multipart_form (-> request_event.request `formData)  multipart)))
        
-       (== (get_content_type request_event.request)  "application/x-www-form-urlencoded")
-       (= result (-> request_event.request `formData)))
-          
-     (cond
-         (== (get_content_type request_event.request) "application/json")
-         (JSON.parse result)
-         (== (get_content_type request_event.request)  "application/x-www-form-urlencoded") 
-         (progn          
-          (defvar data {})
-          (defvar iter (-> result `keys))
-          (defvar k nil)
-          (= k (-> iter `next))
-          (console.log "k is: " k)
-          (while (not k.done)
-            (progn
-             (set_prop data
-                       k.value
-                       (-> result `get k.value))
-             (console.log "in form: " k.value "is file? " (instanceof (-> result `get k.value) File) "Value: " (-> result `get k.value))
-             (= k (-> iter `next))))
-          (console.log "form_data is now: " data)
-          data)
-          
-         else
-         (progn
-          (console.log "post_body: result: " result)
-          result))))
+       (starts_with? "text/" content_type)
+       (= result (-> request_event.request `text))
+       
+       else 
+       (progn        
+        (= result (new Uint8Array (-> request_event.request `arrayBuffer)))))
+       ;(= result (-> request_event.request `formData)))
+      result))
           
 
 (defun get_parameters_for_match (match_obj request_event url)
@@ -364,7 +365,7 @@
             (try
               (progn               
                   (= parameters (get_parameters_for_match matched_handler request_event url))
-                  (console.log "http_request_router: parameters: " parameters)
+                  ;(console.log "http_request_router: parameters: " parameters)
                   (= response (-> matched_handler `handler parameters request_event))
                   (if (not (instanceof response Response))
                       (throw TypeError "Invalid Response object from handler")))
@@ -527,20 +528,41 @@
              `status: 200
             })))
 
-(defun save_file_handler (parameters request_event)
-  (progn   
-   (new Response (new Blob [(JSON.stringify { "rval":"OK" "parameters": parameters })]
-                      { `type: "application/json" })
-        {
-         `status: 200
-         })))
+(defun save_file_handler (base_directory)
+  (fn (parameters request_event)
+    (let
+        ((buffer nil)
+         (bytes_written 0)
+         (outfile nil)
+         (results []))    
+      (when (is_object? parameters.parameters)        
+        (for_each (pset (pairs parameters.parameters))
+                  (destructuring_bind (name value)
+                                      pset                                      
+                                      (if (starts_with? "file" name)
+                                        (progn
+                                         (= buffer (new Uint8Array (-> value `arrayBuffer)))
+                                         (= outfile (-> Deno `open (+ base_directory "/" value.name) { create: true write: true }))
+                                         (while (< bytes_written buffer.length)
+                                           (inc bytes_written
+                                                (-> outfile `write (-> buffer `subarray bytes_written))))                                         
+                                         (push results
+                                               { filename: value.name 
+                                                length: bytes_written }))))))
+      
+        
+      (new Response (new Blob [(JSON.stringify { "rval":"OK" "results": results })]
+                         { `type: "application/json" })
+           {
+            `status: 200
+            }))))
 
 (defun env_bank (port base_directory options)
    (let
       ((server nil)
        (on_response (fn (request_event response)
                            (progn
-                              (console.log "response:" response.status response.headers response)
+                              ;(console.log "response:" response.status response.headers response)
                               (= $request request_event)
                               (= $response response)
                               (push *env_bank*.log
@@ -559,7 +581,7 @@
       (add_http_route "POST" "/echo_params"
                       echo_params)
       (add_http_route "POST" "/save_file"
-                      save_file_handler)
+                      (save_file_handler base_directory))
       (if (eq nil options)
           (= options {}))
       (set_prop options
