@@ -295,13 +295,13 @@
        tags: ["key" "binding" "global" "sequence"]
     })
 
-(defun_sync to_ace_keybinding (keybinding_object fx_to_call)
-   { name: keybinding_object.name
+(defun_sync to_ace_keybinding (name keybinding_object fx_to_call)
+   { name: name
      bindKey: { win: keybinding_object.win mac: keybinding_object.mac }
      exec: fx_to_call }
    {
        description: "Given a Juno keybinding object and a function, returns a keybinding object in a format that can be used with the Ace Editor."
-       usage: ["keybinding_object:object" "fx_to_call:function"]
+       usage: ["name:string" "keybinding_object:object" "fx_to_call:function"]
        tags: ["key" "binding" "Ace" "editor" "command"]
    })
 
@@ -2403,6 +2403,7 @@
                            (-> resize_observer `disconnect)
                            (-> resize_observer `observe view.parentElement)
                            (= parent_view view.parentElement))))
+       
        (help_context_elem (div { `class: "juno-help-context" } ""))
        (context_bar (div { `class: "juno-context-bar" } 
                          help_context_elem))
@@ -2428,11 +2429,10 @@
        (set_evaluator (fn ()
                         (when options.evaluator  
                            (aif (get_keybinding "editor" "evaluate_selection")
-                                (-> editor.commands `addCommand
-                                    (to_ace_keybinding it evaluate_selection))
+                                (bind_key "evaluate_selection" evaluate_selection)
                                 (-> editor.commands `addCommand
                                     {
-                                      `name: "execute"
+                                      `name: "evaluate_selection"
                                       `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
                                       `exec: evaluate_selection
                                       })))))
@@ -2463,7 +2463,7 @@
                                                                     (progn
                                                                        (defvar chopped (as_lisp val))
                                                                        (if (> chopped.length 200)
-                                                                           (= chopped (+ (-> chopped 0 200) "...")))
+                                                                           (= chopped (+ (-> chopped `substr 0 200) "...")))
                                                                        (display_context_message (+ "<- " chopped)))))
                                                    100))
                                                (function (e)
@@ -2545,6 +2545,42 @@
        (indent_row (function (row_number options)
                      (indent_editor_line editor row_number options)))
        
+       (indent_current_row (function (editor)
+                              (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                 (if (not (is_selected?))
+                                     (progn
+                                        (defvar row_number (prop (-> editor `getCursorPosition)
+                                                                 `row))
+                                        (console.log "tab: start: single line: " row_number)
+                                        (indent_row row_number { `apply: true }))
+                                     (indent_editor_selection editor)))))
+
+       (bind_key (fn (key_command func)
+                           (aif (get_keybinding "editor" key_command)
+                                (progn
+                                 (console.log "binding command: " key_command it (to_ace_keybinding key_command it func))
+                                 (-> editor.commands `addCommand
+                                     (to_ace_keybinding key_command it func))))))
+       
+       (build_key_bindings (fn (editor)
+                             (progn
+                              (console.log "building_key_bindings")
+                              
+                              (when options.on_save
+                                   (bind_key "on_save" (function (editor)
+                                                                 (options.on_save (-> editor `getValue)))))
+                              (bind_key "increase_font_size" increase_font_size)
+                              (bind_key "decrease_font_size" decrease_font_size)
+                              (bind_key "select_form_root" select_form_root)
+                              (bind_key "select_current_form" select_form_root)
+                              (bind_key "indent_current_row" indent_current_row)
+                              (bind_key "evaluate_selection" evaluate_selection)
+                              
+                              (when (is_array? options.commands)
+                                (for_each (command options.commands)
+                                          (do
+                                            (bind_key command command.exec)))))))
+                              
        (initialize_editor (fn ()
                             (when (not initialized)
                               (setq initialized true)
@@ -2567,51 +2603,9 @@
                                                   `evaluator
                                                   (prop *system_repl* `evaluate))))
                                                 
+                              (console.log "initialize_editor: options: " options)
                               (set_evaluator)
                               
-                              (console.log "initialize_editor: options: " options)
-                              (when options.on_save
-                                (-> editor.commands `addCommand
-                                    {
-                                     `name: "save"
-                                     `bindKey: { `win: "Ctrl-s" `mac: "Command-s" }
-                                     `exec: (function (editor)
-                                                      (options.on_save (-> editor `getValue)))
-                                     }))
-                              
-                              (-> editor.commands `addCommand
-                                  {
-                                   `name: "increase_font_size"
-                                   `bindKey: { `win: "Ctrl-Shift-=" `mac: "Ctrl-Shift-=" }
-                                   `exec: increase_font_size })
-                              
-                              (-> editor.commands `addCommand
-                                  {
-                                   `name: "decrease_font_size"
-                                   `bindKey: { `win: "Ctrl-Shift--" `mac: "Ctrl-Shift--" }
-                                   `exec: decrease_font_size })
-                              
-
-                              (-> editor.commands `addCommand
-                                  {
-                                   `name: "select_form_root"
-                                   `bindKey: { `win: "Ctrl-Shift-Enter" `mac: "Ctrl-Shift-Enter" }
-                                   `exec: select_form_root
-                                   })
-
-                              (-> editor.commands `addCommand
-                                  {
-                                   `name: "select_current_form"
-                                   `bindKey: { `win: "Ctrl-Enter" `mac: "Ctrl-Enter" }
-                                   `exec: select_current_form
-                                   })
-                              
-                              
-                              (when (is_array? options.commands)
-                                (for_each (command options.commands)
-                                          (do
-                                            (-> editor.commands `addCommand
-                                                command))))
                               
                               (when options.on_focus
                                 (-> editor `on `focus options.on_focus))
@@ -2654,7 +2648,8 @@
                                                    (progn
                                                     (-> intf `set_theme it)
                                                     (remove_class "opacity-0" editor_div))) 50)))
-                              (console.log "editor initialized: content: " (subtype content) content)                                                          
+                              (build_key_bindings editor)       
+                              (console.log "editor initialized: content: " (subtype content) content)
                               (-> editor `setValue content -1)
                               (if (eq nil font_size)
                                 (= font_size (parseInt (-> editor `getFontSize)))
@@ -2663,20 +2658,8 @@
                                         `font_size
                                         font_size)
                               (defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
-                              (-> editor.commands `addCommand
-                                  {
-                                   `name: "tab_behavior"
-                                   `bindKey: { `win: "tab" `mac: "tab" }
-                                   `exec: (function (editor)
-                                                    (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
-                                                      (if (not (is_selected?))
-                                                        (progn
-                                                         (defvar row_number (prop (-> editor `getCursorPosition)
-                                                                                  `row))
-                                                         (console.log "tab: start: single line: " row_number)
-                                                         (indent_row row_number { `apply: true }))
-                                                        (indent_editor_selection editor)))) })  ;; reselect the originally selected range since we worked with it
-                                                         
+                              
+                                        
                               
                               (when options.on_change
                                 (-> editor `on `change (function (val)
@@ -4408,14 +4391,51 @@
                                       description: "Saves the current state of the application"
                                       exec: (fn () (save_control_image))
                                      })
+       ;; the execs are nil because the editor will use the key of the object to assign the correct
+       ;; internal function
        
        (set_prop *key_bindings*.editor
-                 "evaluate_selection" {
-                                      win: "Shift-Enter"
-                                      mac: "Shift-Enter"
-                                      description: "Evaluate the current selected text"
-                                      exec: nil
-                                      })
+                 "evaluate_selection" { win: "Shift-Enter"
+                                        mac: "Shift-Enter"
+                                        description: "Evaluate the current selected text"
+                                        exec: nil
+                                       }
+                 "on_save" {  description: "On Save Event"
+                              win: "Ctrl-s"
+                              mac: "Command-s"
+                              exec: nil
+                            }
+                 "increase_font_size" {
+                                       description: "Increase the font size of the current editor"
+                                       win: "Ctrl-Shift-="
+                                       mac: "Ctrl-Shift-="
+                                       exec: nil
+                                       }
+                 "decrease_font_size" {
+                                       description: "Decrease the font size of the current editor"
+                                       win: "Ctrl-Shift--"
+                                       mac: "Ctrl-Shift--"
+                                       exec: nil
+                                       }
+                 "select_form_root" {
+                                     description: "select_form_root"
+                                     win: "Ctrl-Shift-Enter"
+                                     mac: "Ctrl-Shift-Enter" 
+                                     exec: nil }
+                 "select_current_form" {
+                                        description: "select_current_form"
+                                        win: "Ctrl-Enter"
+                                        mac: "Ctrl-Enter" 
+                                        }
+                 "indent_current_row" {
+                                       description: "Indent the row at the cursor position"
+                                       win: "tab"
+                                       mac: "tab"
+                                       exec: nil
+                                       })
+                 
+       
+       
                  
        (-> juno_container
            `append page_frame.view)
