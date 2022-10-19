@@ -9,7 +9,7 @@
 (defglobal *scratch* ";; *scratch* buffer\n\n")
 (defvalue *key_bindings* {
                            repl:{}
-                           buffer_editor:{}
+                           editor:{}
                            global:{}
                            active: {}
                            })
@@ -31,7 +31,7 @@
 ;; the global pointer to the control which has focus
 ;; nil if there are no focus points or values.
 
-
+(defparameter core/is_served? (not (blank? (resolve_path [ `location `hostname ] window))))
 
 (defparameter *last_focus* nil)
 (defparameter *last_top_frame* nil)
@@ -284,6 +284,26 @@
         } )
 
 
+(defun_sync get_keybinding (category command)
+   (aif (resolve_path [category command] *key_bindings*)
+        it
+        nil)
+   {
+       description: (+ "Given a category, such as `editor or `global and a command name, "
+                        "returns the object with the defined key binding data or nil")
+       usage: ["category:string" "command:string"]
+       tags: ["key" "binding" "global" "sequence"]
+    })
+
+(defun_sync to_ace_keybinding (keybinding_object fx_to_call)
+   { name: keybinding_object.name
+     bindKey: { win: keybinding_object.win mac: keybinding_object.mac }
+     exec: fx_to_call }
+   {
+       description: "Given a Juno keybinding object and a function, returns a keybinding object in a format that can be used with the Ace Editor."
+       usage: ["keybinding_object:object" "fx_to_call:function"]
+       tags: ["key" "binding" "Ace" "editor" "command"]
+   })
 
 (defun_sync dispatch_event(event_obj)
   (console.log "dispatch_event: " event_obj))
@@ -292,7 +312,20 @@
   [["No Help Installed" (fn () false) ]])
 
 
-
+(defun log (`& args)
+   (progn
+      (apply console.log args)
+      (aif (-> Environment `get_global "*system_repl*" nil)
+           (progn
+              (-> it `log (apply div { `style: "display: flex;" } 
+                           (for_each (val args)
+                              (div { `style: "padding-right: 10px" } (value_to_dom val)))))))
+      nil)
+   {
+       `description: "Logs arguments to the console and the current *system_repl* output.  Returns nil."
+       `usage: ["arg0:*" "argN:*"]
+       `tags: ["log" "console" "values" "display"]
+   })
 
 (defun_sync decorative_usage (symbol)
   (let
@@ -318,7 +351,7 @@
                          (split_by ":" arg)
                          (span { `class: (+ "juno-type-" (lowercase (or arg_type ""))
                                             " juno-arg-name") `title: arg_type
-                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name)))]))
+                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name ":" arg_type)))]))
                             
         else
         nil))
@@ -1329,23 +1362,60 @@
                      (focus_to user_input))))))
                  
                  
-(defun handle_save_file (control)
+(defun handle_save_file (control options)
   (let
-      ((fname (if control
+      ((fname (when control                
                 (request_user_input (dtext "Please enter a filename to save as:")
                                     "text"
                                     {
                                       `default_value: (or control.options.filename
                                                           control.options.name)
-                                     }))))
+                                     })))
+       (rval nil))
+      
     (when (and control 
                (not (blank? fname)) 
                control.get)
       (set_prop control.options
                 `filename
                 fname)
-      (save_locally fname (-> control `get)
-                    "application/text"))))                                          
+      (cond
+        options.remote
+        (try
+           (progn
+              (= rval (http/send_files "/save_file" (http/data_to_file fname (-> control `get))))
+              (if (and rval 
+                       (== rval.rval "OK"))
+                  (progn
+                 ;; check the results
+                    (= rval rval.results)
+                    (when (and (== rval.length 1)
+                               (== rval.filename fname))
+                    (if control.display_context_message
+                        (-> control `display_context_message (+ (dtext "Saved to") " " rval.filename)))
+                    (dispatch_event { `command: "save_complete" `args: [ control rval.filename ] })
+                    rval))
+                  (progn
+                     (if control.display_context_message
+                         (-> control `display_context_message (+ (dtext "ERROR") ":" (dtext "Cannot Save File") " " rval.message)))
+                     (dispatch_event { `command: "save_error" `args: [ control rval ] }))))
+           (catch Error (e)
+              (progn
+                 (if control.display_context_message
+                     (-> control `display_context_message (+ (dtext "ERROR") ":" (dtext "Cannot Save File") " " e.message)))
+                 (dispatch_event {  `command: "save_error" `error: "true" `args: [ control e] }))))
+        else
+        (save_locally fname (-> control `get)
+                      "application/text"))))
+  {
+   `usage: ["control:object" "options:?object"]
+   `description: (+ "Given a control and an optional options object, will call the control's"
+                    "`get method for the data value.  The user will be prompted for a filename "
+                    "with the default value being either the control.options.filename or "
+                    "control.options.name (in that order). The result of the save operation "
+                    "is returned.")
+   `tags: ["save" "file" "control"]
+   })
     
                      
 (defun message (text)
@@ -2354,28 +2424,64 @@
                           (when editor
                             (-> editor `resize)))))
        (editor nil)
+       
        (set_evaluator (fn ()
-                        (when options.evaluator                          
-                               (-> editor.commands `addCommand
-                                   {
-                                    `name: "execute"
-                                    `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
-                                    `exec: (function (editor)
-                                                     (let
-                                                         ((val nil)
-                                                          (copytext (if options.repl_mode
-                                                                      (-> editor `getValue)
-                                                                      (-> editor `getCopyText))))
-                                                       (if (blank? copytext)
-                                                         (if (not options.repl_mode)
-                                                           (display_context_message (dtext "Please highlight text to evaluate")))
-                                                         (try
-                                                           (options.evaluator copytext)
-                                                           (catch Error (e)
-                                                             (progn
-                                                              (notify (+ (dtext "Unhandled error") ": " e.message ))
-                                                              (console.error e)))))))
-                                    }))))
+                        (when options.evaluator  
+                           (aif (get_keybinding "editor" "evaluate_selection")
+                                (-> editor.commands `addCommand
+                                    (to_ace_keybinding it evaluate_selection))
+                                (-> editor.commands `addCommand
+                                    {
+                                      `name: "execute"
+                                      `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
+                                      `exec: evaluate_selection
+                                      })))))
+       
+       (evaluate_selection (function (editor)
+                              (let
+                                 ((rval nil)
+                                  (copytext (if options.repl_mode
+                                                (-> editor `getValue)
+                                                (-> editor `getCopyText))))
+                                 (if (blank? copytext)
+                                     (if (not options.repl_mode)
+                                         (display_context_message (dtext "Please highlight text to evaluate")))
+                                     (try
+                                        (progn
+                                           (= rval (options.evaluator copytext))
+                                           (-> rval `then 
+                                               (function (val)
+                                                  (setTimeout (fn ()
+                                                                 (cond
+                                                                    (instanceof val Error)
+                                                                    (display_context_message (+ (subtype val)
+                                                                                                (if val.message (+ ":" val.message)
+                                                                                                    "")))
+                                                                    (is_function? val)
+                                                                    (display_context_message (+ "<- " (subtype val)))
+                                                                    else
+                                                                    (progn
+                                                                       (defvar chopped (as_lisp val))
+                                                                       (if (> chopped.length 200)
+                                                                           (= chopped (+ (-> chopped 0 200) "...")))
+                                                                       (display_context_message (+ "<- " chopped)))))
+                                                   100))
+                                               (function (e)
+                                                  (progn
+                                                     (notify "Failure on evaluation")
+                                                     (setTimeout (fn ()
+                                                                    (cond
+                                                                       (instanceof e Error)
+                                                                       (display_context_message (+ (subtype e)
+                                                                                                   (if e.message (+ ":" e.message)
+                                                                                                       "")))
+                                                                       else
+                                                                       (display_context_message "Evaluation Failure")))
+                                                      100)))))
+                                        (catch Error (e)
+                                           (progn
+                                              (notify (+ (dtext "Unhandled error") ": " e.message ))
+                                              (console.error e))))))))
        
        (font_size (config_value `font_size 14))
        (increase_font_size (function ()
@@ -3125,7 +3231,8 @@
                                 (current_namespace))                     
                       (-> output_control `append result lisp_text error_state)
                       (if (not error_state)
-                        (-> input_container `set "")))))
+                        (-> input_container `set ""))
+                      result)))
                              
        (input_container (make_editor 
                                    ""                                  
@@ -3918,123 +4025,6 @@
            (control_tree controls collect_control))
         current))
 
-
-(defun gen_layout_menu ()
-   (let
-      ((menu_acc [])
-       (idx 0)
-       (holding_tank (get_control_by_name "Holding Tank"))
-       (root_ctls (new Set)))
-      (reduce (pset (pairs (controls_by_parent)))
-         (destructuring_bind (key controls)
-            pset
-            (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
-            (cond
-               (== key "root")
-               (progn
-                  (for_each (control controls)
-                     (-> root_ctls `add control.name))
-                  nil)
-               
-               (and (-> root_ctls `has key)
-                    (not (== key "Holding Tank")))
-               [key (for_each (operation ["Split Right" "Split Bottom" "Show" "Hide"])
-                       (progn
-                          (defvar control (get_control_by_name key))
-                          [(dtext operation)
-                           (cond
-                              (and (> idx 1)
-                                   (== operation "--"))
-                              nil
-                              (== operation "Split Right")
-                              (fn ()
-                                (place_control "right" (symbol_browser)))
-                              (== operation "Split Bottom")
-                              (fn ()
-                                (place_control "below" (symbol_browser)))
-                              (or (and (== operation "Show")
-                                       (-> holding_tank `has_control? control))
-                                  (and (== operation "Hide")
-                                       (not (-> holding_tank `has_control? control)))
-                                  (and (== operation "Destroy")
-                                       (-> holding_tank `has_control? control)))
-                              (progn
-                                 (when (-> holding_tank `has_control? control)
-                                    (inc idx))
-                                 (fn ()
-                                    (container_view_operation (to_key operation)
-                                     (get_control_by_name key)
-                                     nil))))]))]
-               
-               (not (== key "Holding Tank"))
-               [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
-                       [(dtext operation) (fn ()
-                               (progn
-                                  (console.log key "operation: " operation controls)
-                                  (container_view_operation (to_key operation)
-                                   (get_control_by_name key)
-                                   (empty_selection_control))))])])))))
-
-(defun gen_view_menu ()
-  (progn
-   (defvar holding_tank (get_control_by_name "Holding Tank"))                
-   (defvar holding_tank_visible? (if (prop (control_position holding_tank) `parent)
-                                     true
-                                     false))
-   (conj 
-        (reduce (control (current_controls))
-            (when (and control.on_focus
-                       control.options.id)
-              (defvar is_displayed? (and (not (== holding_tank control))
-                                         (not (-> holding_tank `has_control? control))))
-              (console.log "is_displayed: " is_displayed? control.name)
-              [(or control.name "Untitled") 
-               (reduce (operation ["Show" "Focus" "Hide" "--" "Destroy"])
-                       (cond
-                         (== control.name "Holding Tank")                              
-                         (cond
-                           (== operation "Focus")
-                           [(dtext "Show")
-                            (fn (e)
-                              (-> (get_control_by_name "Holding Tank")
-                                  `show))]
-                           (and holding_tank_visible?
-                                (== operation "Hide"))
-                           [(dtext "Hide")
-                            (fn (e)
-                              (-> (get_control_by_name "Holding Tank")
-                                  `hide))]
-                           else
-                           nil)
-                         else
-                         [(dtext operation)
-                          (cond
-                            (and (not is_displayed?)
-                                 (== operation "Show"))
-                            (fn (e)
-                              (aif (get_control_by_id control.options.id)
-                                   (show_control it)))
-                            (and is_displayed? (== operation "Focus"))
-                            (fn (e)
-                              (aif (get_control_by_id control.options.id)
-                                   (set_focus_to it)))
-                            (and is_displayed? (== operation "--"))
-                            nil
-                            (and is_displayed? (== operation "Hide"))
-                            (fn (e)
-                              (aif (get_control_by_id control.options.id)
-                                   (container_view_operation "hide" it)
-                                   (notify (+ "Unable to find control " (or control.name control.options.id)))))
-                            (== operation "Destroy")
-                            (fn (e)
-                              (aif (get_control_by_id control.options.id)
-                                   (container_view_operation "destroy" it)
-                                   (notify (+ "Unable to find control " (or control.name control.options.id))))))]))]))
-        [[(dtext "Monitor Control Tree") 
-          (fn ()
-            (progn
-             (monitor_control_tree)))  ]])))
-                  
 (defun all_global_controls (namespace)
    (let
       ((env_handle (if namespace 
@@ -4185,6 +4175,147 @@
  (defun_sync core/keyword_mapper (token)
    (user/keyword_mapper token)))
 
+(defun gen_file_menu ()
+   [["New Editor" [["Juno Lisp" (fn (e) (new_buffer { `type: "juno" }))]
+                   ["Javascript" (fn (e) (new_buffer { `type: "javascript" })) ]
+                   ["CSS" (fn (e) (new_buffer { `type: "css" })) ]
+                   ["Text" (fn (e) (new_buffer { `type: "text" })) ]
+                   ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
+    (if (and *last_focus*
+             (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text
+             (prop *last_focus* `name))  ;; and a name to identify it
+        [(+ (dtext "Save" " " (prop *last_focus* `name) "..."))
+          [(if is_served?
+               [(dtext "to server file") (fn (e) (handle_save_file *last_focus* { `remote: true }))]
+               [])
+           [(dtext "as local file") (fn (e) (handle_save_file *last_focus*))]]]
+        [])
+    ["Save Environment" (fn (e) (save_control_image)) ]
+    ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]
+    (if *global_themes*
+        ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
+                               [theme_name (fn ()
+                                              (set_global_theme theme_name))])]
+        [])])
+
+(defun gen_layout_menu ()
+   (let
+      ((menu_acc [])
+       (idx 0)
+       (holding_tank (get_control_by_name "Holding Tank"))
+       (root_ctls (new Set)))
+      (reduce (pset (pairs (controls_by_parent)))
+         (destructuring_bind (key controls)
+            pset
+            (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
+            (cond
+               (== key "root")
+               (progn
+                  (for_each (control controls)
+                     (-> root_ctls `add control.name))
+                  nil)
+               
+               (and (-> root_ctls `has key)
+                    (not (== key "Holding Tank")))
+               [key (for_each (operation ["Split Right" "Split Bottom" "Show" "Hide"])
+                       (progn
+                          (defvar control (get_control_by_name key))
+                          [(dtext operation)
+                           (cond
+                              (and (> idx 1)
+                                   (== operation "--"))
+                              nil
+                              (== operation "Split Right")
+                              (fn ()
+                                (place_control "right" (symbol_browser)))
+                              (== operation "Split Bottom")
+                              (fn ()
+                                (place_control "below" (symbol_browser)))
+                              (or (and (== operation "Show")
+                                       (-> holding_tank `has_control? control))
+                                  (and (== operation "Hide")
+                                       (not (-> holding_tank `has_control? control)))
+                                  (and (== operation "Destroy")
+                                       (-> holding_tank `has_control? control)))
+                              (progn
+                                 (when (-> holding_tank `has_control? control)
+                                    (inc idx))
+                                 (fn ()
+                                    (container_view_operation (to_key operation)
+                                     (get_control_by_name key)
+                                     nil))))]))]
+               
+               (not (== key "Holding Tank"))
+               [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
+                       [(dtext operation) (fn ()
+                               (progn
+                                  (console.log key "operation: " operation controls)
+                                  (container_view_operation (to_key operation)
+                                   (get_control_by_name key)
+                                   (empty_selection_control))))])])))))
+
+(defun gen_view_menu ()
+  (progn
+   (defvar holding_tank (get_control_by_name "Holding Tank"))                
+   (defvar holding_tank_visible? (if (prop (control_position holding_tank) `parent)
+                                     true
+                                     false))
+   (conj 
+        (reduce (control (current_controls))
+            (when (and control.on_focus
+                       control.options.id)
+              (defvar is_displayed? (and (not (== holding_tank control))
+                                         (not (-> holding_tank `has_control? control))))
+              (console.log "is_displayed: " is_displayed? control.name)
+              [(or control.name "Untitled") 
+               (reduce (operation ["Show" "Focus" "Hide" "--" "Destroy"])
+                       (cond
+                         (== control.name "Holding Tank")                              
+                         (cond
+                           (== operation "Focus")
+                           [(dtext "Show")
+                            (fn (e)
+                              (-> (get_control_by_name "Holding Tank")
+                                  `show))]
+                           (and holding_tank_visible?
+                                (== operation "Hide"))
+                           [(dtext "Hide")
+                            (fn (e)
+                              (-> (get_control_by_name "Holding Tank")
+                                  `hide))]
+                           else
+                           nil)
+                         else
+                         [(dtext operation)
+                          (cond
+                            (and (not is_displayed?)
+                                 (== operation "Show"))
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (show_control it)))
+                            (and is_displayed? (== operation "Focus"))
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (set_focus_to it)))
+                            (and is_displayed? (== operation "--"))
+                            nil
+                            (and is_displayed? (== operation "Hide"))
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (container_view_operation "hide" it)
+                                   (notify (+ "Unable to find control " (or control.name control.options.id)))))
+                            (== operation "Destroy")
+                            (fn (e)
+                              (aif (get_control_by_id control.options.id)
+                                   (container_view_operation "destroy" it)
+                                   (notify (+ "Unable to find control " (or control.name control.options.id))))))]))]))
+        [[(dtext "Monitor Control Tree") 
+          (fn ()
+            (progn
+             (monitor_control_tree)))  ]])))
+
+
+
 (defun user/*initializer* ()
   (let
       ((header nil)       
@@ -4248,24 +4379,7 @@
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
        (push *main_menu*
-             [ "File" (fn ()
-                        [["New Editor" [["Juno Lisp" (fn (e) (new_buffer { `type: "juno" }))]
-                                        ["Javascript" (fn (e) (new_buffer { `type: "javascript" })) ]
-                                        ["CSS" (fn (e) (new_buffer { `type: "css" })) ]
-                                        ["Text" (fn (e) (new_buffer { `type: "text" })) ]
-                                        ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
-                         (if (and *last_focus*
-                                  (is_function? (prop *last_focus* `get))
-                                  (prop *last_focus* `name))
-                           [(+ "Save " (prop *last_focus* `name) " to File") (fn (e) (handle_save_file *last_focus*))]
-                           [])
-                         ["Save Environment" (fn (e) (save_control_image)) ]
-                         ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]
-                         (if *global_themes*
-                           ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
-                                                          [theme_name (fn ()
-                                                                        (set_global_theme theme_name))])]
-                           [])])])
+             [ "File" gen_file_menu])
                          
        
        (push *main_menu*            
@@ -4284,18 +4398,24 @@
 
        
        (set_prop *key_bindings*.global
-                 "open_new_buffer" {
-                                    `win: "Meta-Enter"
-                                    `mac: "Meta-Enter"
-                                    `description: "New Juno Buffer"
-                                    `exec: (fn () (new_buffer { type: "juno" }))
+                 "open_new_buffer" { win: "Meta-Enter"
+                                     mac: "Meta-Enter"
+                                     description: "New Juno Buffer"
+                                     exec: (fn () (new_buffer { type: "juno" }))
                                     }
-                 "save_environment" {
-                                    `win: "Ctrl-Shift-s"
-                                    `mac: "Meta-Shift-s"
-                                    `description: "Saves the current state of the application"
-                                    `exec: (fn () (save_control_image))
+                 "save_environment" { win: "Ctrl-Shift-s"
+                                      mac: "Meta-Shift-s"
+                                      description: "Saves the current state of the application"
+                                      exec: (fn () (save_control_image))
                                      })
+       
+       (set_prop *key_bindings*.editor
+                 "evaluate_selection" {
+                                      win: "Shift-Enter"
+                                      mac: "Shift-Enter"
+                                      description: "Evaluate the current selected text"
+                                      exec: nil
+                                      })
                  
        (-> juno_container
            `append page_frame.view)

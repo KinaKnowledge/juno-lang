@@ -533,8 +533,10 @@
     (let
         ((buffer nil)
          (bytes_written 0)
+         (path parameters.path)
          (outfile nil)
-         (results []))    
+         (results []))
+      (console.log "save_file: path is: " path)
       (when (is_object? parameters.parameters)        
         (for_each (pset (pairs parameters.parameters))
                   (destructuring_bind (name value)
@@ -542,13 +544,13 @@
                                       (if (starts_with? "file" name)
                                         (progn
                                          (= buffer (new Uint8Array (-> value `arrayBuffer)))
-                                         (= outfile (-> Deno `open (+ base_directory "/" value.name) { create: true write: true }))
+                                         (= outfile (-> Deno `open (+ base_directory (or path "") "/" value.name) { create: true write: true }))
                                          (while (< bytes_written buffer.length)
                                            (inc bytes_written
                                                 (-> outfile `write (-> buffer `subarray bytes_written))))                                         
                                          (push results
-                                               { filename: value.name 
-                                                length: bytes_written }))))))
+                                               { filename: (+ path "/" value.name)
+                                                 length: bytes_written }))))))
       
         
       (new Response (new Blob [(JSON.stringify { "rval":"OK" "results": results })]
@@ -577,11 +579,12 @@
                                        *env_bank*.log_length)
                                  (take *env_bank*.log))
                               true))))
-      (add_http_route "GET" "/env" (file_spooler base_directory))
-      (add_http_route "POST" "/echo_params"
-                      echo_params)
-      (add_http_route "POST" "/save_file"
-                      (save_file_handler base_directory))
+     (add_http_route "GET" "/env" (file_spooler (+ base_directory "/environments")))
+     (add_http_route "GET" "/files" (file_spooler (+ base_directory "/environments")))
+     (add_http_route "POST" "/echo_params"
+                     echo_params)
+     (add_http_route "POST" "/save_file"
+                     (save_file_handler base_directory))
       (if (eq nil options)
           (= options {}))
       (set_prop options
