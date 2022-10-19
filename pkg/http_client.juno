@@ -1,0 +1,235 @@
+;; Juno HTTP client library
+;; (c) 2022 Kina, LLC
+
+;; Creates or augments the http namespace with
+;; client data or functions
+
+(when (not (contains? "http" (namespaces)))  
+  (create_namespace `http { `serialize_with_image: true }))
+
+(declare (namespace `http))
+
+
+(defun_sync is_Response? (value)
+   (instanceof value Response)
+   {
+     `description: "Returns true if the value provided is a Response object, otherwise false."
+     `usage: ["value:object"]
+     `tags: ["request" "response" "fetch" "http"]
+     })
+
+
+      
+(defun_sync get_content_type (obj)
+  (-> obj.headers `get "content-type")
+  {
+     `description: "For the given response object attempts to return the content-type value"
+     `usage: ["response:Response"]
+     `tags: ["response" "content" "mime" "fetch" "http"]
+   })
+  
+
+
+
+(defun send_http (method url data headers)
+   (if (and (is_string? method)
+            (is_string? url))
+       (let
+          ((headers (+ { Content-Type: "application/json" }
+                     (if (is_object? headers)
+                         headers
+                         {})))
+           (response (fetch url { method: method
+                                  mode: `cors
+                                  cache: `no-cache
+                                  credentials: `same-origin
+                                  headers: headers
+                                  redirect: "follow"
+                                  referrerPolicy: "no-referrer"
+                                  body: (if (== headers.Content-Type "application/json")
+                                         (JSON.stringify data)
+                                         data)
+                                  })))
+          response)
+       (throw SyntaxError "send_http requires a method string and a url string"))
+   {
+     `description: (+ "Given a method, a url and optional headers, the send_http "
+                      "function invokes the underlying fetch function and returns "
+                      "the response object.  Optional headers can be provided as "
+                      "an object which will be included in the request.  The "
+                      "data argument will be stringified using JSON.stringify.")
+     `usage: ["method:string" "url:string" "data:*" "headers:object"]
+     `tags: ["fetch" "http" "request" "response" "io" "send" "post" "get"]
+     })
+
+(defun response_handler (response options)
+   (if (== response.status 200)
+       (cond
+          options.raw_response
+          response
+          (== (get_content_type response) "application/json")
+          (-> response `json)
+          (starts_with? (get_content_type response) "text/")
+          (-> response `text)
+          else
+          (-> response `blob))
+       response)
+   {
+     `description: (+ "This function takes a response object and based on the provided options "
+                      "will either return the body of the response if the HTTP response is 200 OK "
+                      "or if either options.raw_response is set to true or a non 200 response "
+                      "is returned, will directly return the response.  Used by the functions "
+                      "post and get.")
+     `usage: ["response:Response" "options:object"]
+     `tags: ["response" "mime" "http"]
+     })
+
+(defun post (url data options)
+   (let
+      ((response nil))
+      (= response (send_http "POST" url data options.headers))
+      (response_handler response options))
+   {
+     `description: ( + "Given a url string, a data object and an optional options "
+                      "object, performs a POST to the provided URL, and returns "
+                      "the value of the response body if a 200 OK is received. "
+                      "The response body is parsed as JSON if the content-type "
+                      "returned is application/json, text if the content-type "
+                      "returned starts with text.  Otherwise a blob representing "
+                      "the body is returned.  If the option for raw_response is "
+                      "true, the received Response is returned directly with "
+                      "no prior processing.  Other options are passed on to "
+                      "send_http for use in that function.")
+     `usage: ["url:string" "data:*" "options:object"]
+     `tags: ["fetch" "post" "http" "response" "request" "io" "send"]
+     })
+
+(defun put (url data options)
+   (let
+      ((response nil))
+      (= response (send_http "PUT" url data options.headers))
+      (response_handler response options))
+   {
+     `description: ( + "Given a url string, a data object and an optional options "
+                      "object, performs a PUT to the provided URL, and returns "
+                      "the value of the response body if a 200 OK is received. "
+                      "The response body is parsed as JSON if the content-type "
+                      "returned is application/json, text if the content-type "
+                      "returned starts with text.  Otherwise a blob representing "
+                      "the body is returned.  If the option for raw_response is "
+                      "true, the received Response is returned directly with "
+                      "no prior processing.  Other options are passed on to "
+                      "send_http for use in that function.")
+     `usage: ["url:string" "data:*" "options:object"]
+     `tags: ["fetch" "post" "http" "response" "request" "io" "send"]
+     })
+
+(defun get_from (url options)
+   (let
+      ((response nil)
+       (options (or options {}))
+       (headers (+ { Content-Type: "application/json" }
+                   (if (is_object? headers)
+                     headers
+                     {}))))
+      (= response (fetch url (+ { method: "GET"
+                                  mode: `cors
+                                  cache: `no-cache
+                                  credentials: `same-origin
+                                  redirect: "follow"
+                                  referrerPolicy: "no-referrer"
+                                  }
+                                  (if (is_object? options)
+                                      options
+                                      {}))))
+      
+      (response_handler response options))
+   {
+     `description: ( + "Given a url string, and an optional options object "
+                      "performs a POST to the provided URL, and returns "
+                      "the value of the response body if a 200 OK is received. "
+                      "The response body is parsed as JSON if the content-type "
+                      "returned is application/json, text if the content-type "
+                      "returned starts with text.  Otherwise a blob representing "
+                      "the body is returned.  If the option for raw_response is "
+                      "true, the received Response is returned directly with "
+                      "no prior processing.  Other options are passed on to "
+                      "the fetch function as the options argument.")
+     `usage: ["url:string" "data:*" "options:object"]
+     `tags: ["fetch" "post" "http" "response" "request" "io" "send"]
+     })
+
+(defun send_files (url file_object options)
+   (let
+      ((options (if (is_object? options)
+                     options
+                     {}))                 
+       (files (if (is_array? file_object) ;; be able to transmit multiple if necessary
+                  file_object
+                  [file_object]))
+       (idx 0)
+       (form_data (new FormData))
+       (response nil))
+            
+      (for_each (file files)
+         (progn
+            (-> form_data `append (+ "file" idx) file file.name)
+            (inc idx)))                  
+      (= response  (fetch url { method: "POST"
+                                mode: `cors
+                                cache: `no-cache
+                                credentials: `same-origin
+                                redirect: "follow"
+                                referrerPolicy: "no-referrer"
+                                body: form_data
+                                  }))
+      (response_handler response options))
+   {
+     `usage: ["url:string" "file_object:object|array" "options:?object"]
+     `description: (+ "Posts a file or files to the location specified by the url and returns "
+                      "either the results of the posting operation if all a 200 OK is received "
+                      "or will return an unprocessed response object if a non 200 status "
+                      "code is returned, or if raw_response is set to true in the options.")
+     `tags: ["http" "fetch" "file" "files" "io" "send" "post"]
+     })
+
+
+(defun data_to_file (name data content_type last_modified)
+   (if data
+       (let
+          ((ctype (cond
+                     (and (eq content_type nil)
+                          (is_string? data))
+                     "text/plain"
+                     (and (not (is_object? data))
+                          (eq content_type nil))
+                     "text/plain"
+                     (is_string? content_type)
+                     content_type
+                     (is_object? data)
+                     "application/json"
+                     else
+                     (throw TypeError "data_to_file: Invalid content_type argument - must be string")))
+           (enc_data (cond
+                        (starts_with? "text" ctype)
+                        [data]
+                        (== "application/json" ctype)
+                        [(JSON.stringify data)]
+                        else
+                        [(new Blob [data])])))
+          (new File enc_data (or name "unnamed")
+               (+ {}
+                { `type: ctype }
+                (if (is_number? last_modified)
+                    { `last_modified: last_modified }
+                    {}))))
+       (throw TypeError "data_to_file: nil or undefined value provided"))
+   {
+     `usage: ["name:string" "data:*" "content_type:?string" "last_modified:?number"]
+     `description: "For the given arguments returns a File object representing the provided data."
+     `tags: [`file `convert `text `io]
+     })
+
+(register_feature "http_client")
+(load_pends "http")
+true
