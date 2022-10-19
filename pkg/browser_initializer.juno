@@ -2397,7 +2397,7 @@
                                                 `replaceChildren value)
                                             else
                                             (-> help_context_elem
-                                                `replaceChildren (span (+ "" value))))))
+                                                `replaceChildren (span { `style: "display: inline-block; text-overflow: ellipsis; width: 100%; overflow: hidden" } (+ "" value))))))
        (check_observer (fn ()
                          (when (not (== view.parentElement parent_view))
                            (-> resize_observer `disconnect)

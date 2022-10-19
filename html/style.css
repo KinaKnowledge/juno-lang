@@ -1962,6 +1962,7 @@ div.juno-help-context {
   font-size: 1.1em;
   text-overflow: ellipsis;
   display: inline-block;
+  width: calc(100% - 30px);
   padding-left: 10px;
   padding-right: 10px;
   font-family: var(--main-mono-space);

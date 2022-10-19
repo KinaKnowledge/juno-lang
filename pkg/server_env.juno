@@ -580,7 +580,8 @@
                                  (take *env_bank*.log))
                               true))))
      (add_http_route "GET" "/env" (file_spooler (+ base_directory "/environments")))
-     (add_http_route "GET" "/files" (file_spooler (+ base_directory "/environments")))
+     (add_http_route "GET" "/files" (file_spooler base_directory))
+     
      (add_http_route "POST" "/echo_params"
                      echo_params)
      (add_http_route "POST" "/save_file"
