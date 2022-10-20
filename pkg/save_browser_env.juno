@@ -154,10 +154,9 @@
                    (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                    ))))
    
-    (write_text_file "html/starter.html"
+    (write_text_file "environments/starter.html"
                      doctext)
     true))
-
 
 ;; Notes and examples: to load p5:
 ;; (defglobal p5 (html/script { `src: "./p5.min.js" }))
