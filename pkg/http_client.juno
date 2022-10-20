@@ -124,7 +124,7 @@
      `tags: ["fetch" "post" "http" "response" "request" "io" "send"]
      })
 
-(defun get_from (url options)
+(defun get (url options)
    (let
       ((response nil)
        (options (or options {}))
@@ -146,7 +146,7 @@
       (response_handler response options))
    {
      `description: ( + "Given a url string, and an optional options object "
-                      "performs a POST to the provided URL, and returns "
+                      "performs a GET to the provided URL, and returns "
                       "the value of the response body if a 200 OK is received. "
                       "The response body is parsed as JSON if the content-type "
                       "returned is application/json, text if the content-type "

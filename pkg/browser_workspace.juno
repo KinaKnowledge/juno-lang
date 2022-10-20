@@ -7,6 +7,9 @@
 (declare (namespace core))
 (console.log "browser_workspace: running")
 
+(defparameter core/is_served? (not (blank? (resolve_path [ `location `hostname ] window))))
+(console.log "browser_workspace: online? is_served: " is_served?)
+
 
 (defun core/*initializer* ()
   (let
@@ -19,9 +22,18 @@
            (range scripts.length)))))
 
 
-
-
-
+(defun $set_global_theme (theme_name options)
+   (if (prop *global_themes* theme_name)
+       (let
+          ((head_elem (-> document `querySelector "head"))
+           (existing (html/get_by_id "juno-css-theme")))
+          (if existing
+               (-> existing `remove))
+          (-> head_elem `append
+              (html/style { `id: "juno-css-theme" `type: "text/css" }
+               (prop *global_themes* theme_name)) )          
+          true)
+       (throw ReferenceError "Invalid theme name provided")))
 
 (defun browser_repl ()
   (let
@@ -51,7 +63,7 @@
                         (-> output_container
                             `append
                             (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; width: calc(100% - 10px); display: inline-block; " }
-                                      (html/code { `style: "font-style: italic; color: darkblue;" }
+                                      (html/code { `style: "font-style: italic;" }
                                                  lisp_text))))
                       (-> output_container
                           `append
@@ -67,24 +79,24 @@
                                       (html/code { `style: " color: orange;" }
                                                  result)
                                       (is_function? result)
-                                      (html/code { `style: " color: darkblue;" } "Function: "
+                                      (html/code { `style: " color: var(--type-function-color);" } "Function: "
                                                  (if result.name result.name "anonymous"))
                                       
                                       (and (is_array? result)
                                            (instanceof result.0 Error))
-                                      (html/pre { `style: " color: darkred;" } "ERROR: "
+                                      (html/pre { `style: " color: var(--type-array-color);" } "ERROR: "
                                                 (subtype result.0)
                                                 "\n"
                                                 result.0.message)
                                       (or error_state
                                           (instanceof result Error))
-                                      (html/pre { `style: " color: darkred;" } "ERROR: "
+                                      (html/pre { `style: " color: var(--type-error-color);" } "ERROR: "
                                                 (subtype result)
                                                 "\n"
                                                 result.message)
                                       (and (is_array? result)
                                            result.0.error)
-                                      (html/pre { `style: " color: darkred;" }                                                 
+                                      (html/pre { `style: " color: var(--type-error-color);" }                                                 
                                                 (JSON.stringify result nil 3 ))
                                            
                                       else
@@ -113,9 +125,9 @@
                          (= resize_observer (new ResizeObserver perform_resize))
                          (-> resize_observer `observe juno_container.parentElement)
                          (evaluator (html/div { `style: "display: flex padding: 5px" }                
-                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
+                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno Environment Builder")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
-                                                         "Version: " Environment.build_version   )) true)
+                                                         "Environment Version: " Environment.build_version   )) true)                         
                          (evaluator (html/div "Namespace: " (current_namespace)) true)))))))
     
     
@@ -150,7 +162,7 @@
         (log (if (is_function? options.log)
                options.log
                console.log))
-                         
+        (save_environment nil)
         (additional_embeds (let
                                ((acc [])
                                 (deduper (new Set)))
@@ -204,22 +216,34 @@
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))
+
+     (declare (function http/send_files http/data_to_file)
+              (global http/send_files http/data_to_file))
      
      (log "save_image exporting: " script_ids)
+     (log "namespaces: " (namespaces) (sort (http/symbols)))
+     ;(try
+      ; (log "http: " http/send_files)
+       ;(catch Error (e)
+        ; (console.error "Issue on accessing http: " e)))
+     
+     (if (and is_served? (contains? "http_client" *env_config*.features))
+       (progn
+        (console.log "we are online and we have http client software")
+        (= save_environment (fn (fname content content_type)
+                              (console.log "result from http/send_files: "  (http/send_files "/save_file" (http/data_to_file (+ "environments/" (or (prop *env_config*.export `save_prefix) "a1") ".html") content content_type))))))
+       (= save_environment save_locally))
      
      (setTimeout (fn ()
                    (do
-                     (save_locally (or options.save_as                                       
-                                       (+ (or (prop *env_config*.export `save_prefix) "juno_image")
-                                          "-" file_version_tag ".html"))
-                                   (+ "<!DOCTYPE html>\n<html>\n"
-                                      scaffold_1
-                                      scaffold_2
-                                      "</html>")
-                                   "text/html" )
-                     ;(-> (first (html/query_all "body"))
-                                        ;`prepend storage)
-                     ))
+                     (save_environment (or options.save_as                                       
+                                           (+ (or (prop *env_config*.export `save_prefix) "juno_image")
+                                              "-" file_version_tag ".html"))
+                                       (+ "<!DOCTYPE html>\n<html>\n"
+                                          scaffold_1
+                                          scaffold_2
+                                          "</html>")
+                                       "text/html" )))
                  100)
      true))
 
@@ -245,7 +269,11 @@
     `appendChild (prop repl
                        `view))
 
+(defglobal $current_theme (-> (prop (new URL window.location) `searchParams) `get "theme"))
+(console.log "$current_theme: " $current_theme)
 
+(when (not (blank? $current_theme))
+  ($set_global_theme $current_theme))
 
 (setTimeout (fn ()
               (rlog (if (prop globalThis `in_starter)

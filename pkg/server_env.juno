@@ -536,7 +536,7 @@
          (path parameters.path)
          (outfile nil)
          (results []))
-      (console.log "save_file: path is: " path)
+      
       (when (is_object? parameters.parameters)        
         (for_each (pset (pairs parameters.parameters))
                   (destructuring_bind (name value)
@@ -580,8 +580,7 @@
                                  (take *env_bank*.log))
                               true))))
      (add_http_route "GET" "/env" (file_spooler (+ base_directory "/environments")))
-     (add_http_route "GET" "/files" (file_spooler base_directory))
-     
+     (add_http_route "GET" "/files" (file_spooler base_directory))     
      (add_http_route "POST" "/echo_params"
                      echo_params)
      (add_http_route "POST" "/save_file"

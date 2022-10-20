@@ -774,7 +774,16 @@
   {
    `description: "Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description."
    })
- 
+
+
+(defun_sync is_error? (val)
+   (instanceof val Error)
+   {
+       `description: "Returns true if the passed value is a instance of an Error type, otherwise returns false."
+       `usage: ["val:*"]
+       `tags: ["Error" "types" "predicate" "type" "instanceof" ]
+   })
+
 (defmacro is_reference? (val)
   `(and (is_string? ,#val)
        (> (length ,#val) 2)
@@ -784,7 +793,7 @@
                     "Note that this function doesn't check if the provided value is a defined symbol, but only if it has been "
                     "described in the JSON structure as a bounding string.")
    `usage: ["val:string"]
-   `tags: ["reference" "JSON" "binding" "symbol" ] 
+   `tags: ["reference" "JSON" "binding" "symbol" "predicate" ] 
    }) 
     
 (defun_sync scan_str (regex search_string)

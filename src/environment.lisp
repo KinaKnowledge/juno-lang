@@ -2009,7 +2009,6 @@
                      (and options options.do_not_include
                           (contains? symset.0 options.do_not_include))
                      nil
-
                      (== symset.0 "*env_skeleton*")
                      [ symset.0 [(quote quotel) (prop Environment.global_ctx.scope "*env_skeleton*") ]]
 
@@ -2017,7 +2016,7 @@
                      (do                       
                        [symset.0
                          [(quote quotel) "placeholder"]])
-                         ;[(quote quotel) (resolve_path [ symset.0 `initializer ] Environment.definitions)]])
+                         
                     
                      (== nil symset.1)
                      [symset.0 (quote nil)]
@@ -2094,7 +2093,8 @@
                          (progn
                           (= child_env (-> child.1
                                            `compile
-                                           (-> child.1 `export_symbol_set { `no_compiler: true })                                           
+                                           (-> child.1 `export_symbol_set (+ {} ;(if options.do_not_include { do_not_include: options.do_not_include } {})
+									     { `no_compiler: true }))
                                            { `throw_on_error: true  }))
                           ;(= child_env (-> child.1
                            ;                `export_symbol_set { `no_compiler: true }))
@@ -2106,7 +2106,13 @@
            (set_path target_insertion_path src
 		     `(fn ()
                         ,#(to_object
-                           [[`definitions  [(quotel quote) (clone Environment.definitions)]]
+                           [[`definitions  [(quotel quote) (if options.do_not_include
+							       (to_object
+								(reduce (defset (pairs Environment.definitions))
+									(if (not (contains? defset.0 options.do_not_include))
+									    [defset.0 defset.1])))
+							     (clone Environment.definitions))
+								]]
 			    [`declarations (clone Environment.declarations)]
                             [`config ;(clone (prop Environment.global_ctx.scope "*env_config*")) ]
                                            (let

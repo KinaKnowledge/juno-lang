@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-18 16:32:23
-// Version: 2022.10.18.16.32
-export const DLISP_ENV_VERSION='2022.10.18.16.32';
+// Build Time: 2022-10-20 12:02:15
+// Version: 2022.10.20.12.02
+export const DLISP_ENV_VERSION='2022.10.20.12.02';
 
 
 
@@ -835,10 +835,16 @@ await Environment.set_global("is_regex?",async function(x) {
 await Environment.set_global("bind_function",(await Environment.get_global("bind")),{
     description:"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description.",requires:["bind"]
 });
+{
+     Environment.set_global("is_error?",function(val) {
+        return (val instanceof Error)
+    },{ "name":"is_error?","fn_args":"(val)","description":"Returns true if the passed value is a instance of an Error type, otherwise returns false.","usage":["val:*"],"tags":["Error","types","predicate","type","instanceof"]
+})
+};
 await Environment.set_global("is_reference?",async function(val) {
     return ["=:and",["=:is_string?",val],["=:>",["=:length",val],2],["=:starts_with?",["=:quote","=:"],val]]
 },{ "eval_when":{ "compile_time":true
-},"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol"]
+},"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol","predicate"]
 });
 {
      Environment.set_global("scan_str",function(regex,search_string) {
@@ -3652,16 +3658,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_43707;
+                                                let _expr_93900;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_43707=await (async function(){
+                                                _expr_93900=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_43707 && _expr_43707["0"]);
-                                                req_ns=(_expr_43707 && _expr_43707["1"]);
-                                                explicit=(_expr_43707 && _expr_43707["2"]);
+                                                req_sym=(_expr_93900 && _expr_93900["0"]);
+                                                req_ns=(_expr_93900 && _expr_93900["1"]);
+                                                explicit=(_expr_93900 && _expr_93900["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3764,13 +3770,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_78619;
+                    let _expr_71420;
                     let nspace;
-                    _expr_78619=await (async function(){
+                    _expr_71420=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_78619 && _expr_78619["0"]);
-                    nspace=(_expr_78619 && _expr_78619["1"]);
+                    sym=(_expr_71420 && _expr_71420["0"]);
+                    nspace=(_expr_71420 && _expr_71420["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

@@ -37,6 +37,7 @@
   --type-error-color: darkred;
   --type-array-color: #535173;
   --type-path-color: #88127D;
+  --type-key-color:  #88127D;
   --type-regexp-color: #fe2f53;
   --type-code-color: darkblue;
   --value-focus-color: #0168ff;
@@ -1772,7 +1773,7 @@ span.juno-needs-save {
 .juno-menu {
   position: absolute;
   z-index: 20;
-  animation: slide-in 0.2s ease-out;
+  /* animation: slide-in 0.2s ease-out; */
   box-shadow: 2px 3px 8px 0px #00000069;
   background: var(--main-bg-color);
   border: 1px solid var(--main-control-surface-accent-color);
@@ -1826,7 +1827,7 @@ li.juno-menu-header:active {
 
 td.juno-obj-to-dom-key {
     vertical-align: top;
-    color: var(--type-path-color);
+    color: var(--type-key-color);
     text-align: right;
     font-weight: bold;
     padding-right: 5px;
