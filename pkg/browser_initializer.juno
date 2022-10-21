@@ -298,11 +298,21 @@
 (defun_sync to_ace_keybinding (name keybinding_object fx_to_call)
    { name: name
      bindKey: { win: keybinding_object.win mac: keybinding_object.mac }
-     exec: fx_to_call }
+     exec: (or fx_to_call keybinding_object.exec) }
    {
-       description: "Given a Juno keybinding object and a function, returns a keybinding object in a format that can be used with the Ace Editor."
+       description: (+ "Given a Juno keybinding object with an exec function or an override "
+                       "function as the third argument,  returns a keybinding object in a "
+                       "format that can be used with the Ace Editor.")
        usage: ["name:string" "keybinding_object:object" "fx_to_call:function"]
        tags: ["key" "binding" "Ace" "editor" "command"]
+   })
+
+(defun_sync editor_key_bindings (editor)
+   (resolve_path [`commands `commandKeyBinding ] editor)
+   {
+       `description: "Returns current key bindings for the provided ACE editor object."
+       `usage: ["editor:object"]
+       `tags: ["bindings" "key" "controls"]
    })
 
 (defun_sync dispatch_event(event_obj)
@@ -2596,7 +2606,9 @@
                               (when (is_array? options.commands)
                                 (for_each (command options.commands)
                                           (do
-                                            (bind_key command command.exec)))))))
+                                            (-> editor.commands `addCommand
+                                                (to_ace_keybinding command.name command))))))))
+                                            
                               
        (initialize_editor (fn ()
                             (when (not initialized)
@@ -2764,6 +2776,7 @@
         `display_context_message: display_context_message
         `get_evaluator: (fn ()
                           options.evaluator)
+        `bind_key: bind_key
         `save: (function ()
                          (when options.on_save (options.on_save (-> editor `getValue))))
         `increase_font_size: increase_font_size
@@ -3115,8 +3128,7 @@
                                  (set_show_prototypes (not options.display_options.include_prototypes)))]]))
                       
        (on_focus (fn ()
-                   (progn
-                    ;(-> input_container.editor `focus) ;; bring focus to the repl
+                   (progn                   
                     (add_class "juno-focused" control_status)))) ;; we know that is the command bar
        (log_message (fn (`& args)
                       (progn
@@ -3225,13 +3237,12 @@
        (repl_key_bindings (function ()
                                     (map (function (kb)
                                              (destructuring_bind (command_name bindings)
-                                                 kb
-                                                {
-                                                 `name: command_name
-                                                 `bindKey: bindings
-                                                 `exec: (function (editor)
-                                                                  (-> intf command_name editor))
-                                                 }))                                                      
+                                                 kb                                                                                                                  
+                                                 { name: command_name
+                                                   mac: (prop bindings `mac)
+                                                   win: (prop bindings `win)
+                                                  exec: (function (editor)
+                                                                  (-> intf command_name editor)) }))                                                                                                                                                                  
                                          (or (pairs *key_bindings*.repl) []))))
        (evaluator (fn (lisp_text no_eval)
                     (let
@@ -3389,9 +3400,14 @@
              `view: view
              `options: options
              `name: name             
-             `input_container: input_container
+             ;`input_container: input_container  ;; do not use
+             `editor_control: input_container             
              `history_next_entry: history_next_entry
              `history_prior_entry: history_prior_entry
+             `command_history: (function ()
+                                        history)
+             `clear_history: (function ()
+                                       (clear_history))
              `clear_output: clear_output             
              `initialize: initialize
              `destroy: destroy
@@ -3640,7 +3656,7 @@
                          (-> resize_observer `observe view.parentElement))))
          (on_focus (fn ()
                    (progn
-                    ;(-> input_container.editor `focus) ;; bring focus to the repl
+                     ;; bring focus to the repl
                     (add_class "juno-focused" control_status ))))
          (control_view (div { `class: "juno-empty-content" } ""))
          (view (div { `tabindex: 0 `control_id: id `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
@@ -4004,7 +4020,9 @@
 (defun build_starter_environment ()
   (if is_served?
     (progn
-     (log (iframe { width: "90%" height: 300 src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )))))
+     (log (iframe { width: 500 height: 300
+                   `style: "width: 90%; min-width: 500px; overflow: scroll; border: 0px solid transparent;"
+                   src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )))))
 
 
 (defun controls_by_parent ()
