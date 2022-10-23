@@ -4257,13 +4257,16 @@
                                                (if entry.isDirectory
                                                     (span { `style: "display: inline-block; float: right" } "▸")
                                                       "")) })
-                              ;(log "render_entry: " rval)
                               rval)))
         (next_possibles (fn (stack control)
                            (let
                               ((next_values (if (== stack.length 0)
                                                 (http/list_files "/")
                                                 (http/list_files (join "/" stack)))))
+                              (when (is_array? next_values)
+                                 (sort next_values { `key:`name }))
+                              ;(log "next_values: " (clone next_values))
+                              (= next_values (clone next_values))
                               (= current_stack stack)
                               (cond
                                  (is_array? next_values)
@@ -4677,6 +4680,7 @@
    (new Promise (fn (resolve reject)
                    (let
                        ((selection nil)
+                        (target_control (or *last_focus* (default_focus)))
                         (control (file_tree_browser { `on_select: (fn (stack)
                                                                     (progn
                                                                      (= selection (join "/" stack))
@@ -4686,7 +4690,11 @@
                                                                         
                                                      `on_destroy: (fn (self)
                                                                     (progn
-                                                                     (resolve selection)
+                                                                     (setTimeout (fn ()
+                                                                                    (progn
+                                                                                       (set_focus_to target_control)
+                                                                                       (resolve selection))
+                                                                                    20))
                                                                      true)) })))
                       (place_control `below control)))))
 
@@ -4705,6 +4713,8 @@
                        (is_string? options.filename)
                        (conj ["$files"] (split_by "/" options.filename))))
        (acc []))
+      (if (eq options.filename nil)
+          (return nil))
       (assert (and symbol_path options.filename) "Invalid options to edit_file")
       (if (and (starts_with? "$files" symbol_path)
                (eq nil (resolve_path symbol_path Environment.global_ctx.scope)))
@@ -4720,6 +4730,7 @@
          symbol_path)
       (unless options.type
          (set_prop options `type "juno"))
+      (log "new options: " options)
       (new_buffer options)))
       
 
