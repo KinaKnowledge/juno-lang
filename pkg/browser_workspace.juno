@@ -108,7 +108,7 @@
        
        (input_container (html/div {  `style: "height: calc(20% - 15px); overflow: hidden; " }
                                   ""))
-       (juno_container (html/div { `id: "discard_container" `style: "height: inherit; max-height: 100%; overflow: hidden;" }
+       (juno_container (html/div { `id: "discard_container" `style: "height: inherit; max-height: 100%; overflow: scroll;" }
                                  output_container
                                  input_container))
        (perform_resize (fn ()

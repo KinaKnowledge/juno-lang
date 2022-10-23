@@ -230,6 +230,22 @@
      `tags: [`file `convert `text `io]
      })
 
+(defun list_files (path)
+   (let
+      ((rval (http/get (+ "/files/" path ))))
+      (if (instanceof rval Response)
+          (throw Error rval.statusText)
+          (cond
+             (== rval.rval "OK")
+             rval.entries
+             else
+             rval)))
+   {
+       `description: "Given a path to a directory, returns an array of elements if the path is found, otherwise will throw an Error."
+       `usage: ["path:string"]
+       `tags: ["files" "io" "path" "directory" "folder"]
+   })
+
 (register_feature "http_client")
 (load_pends "http")
 true

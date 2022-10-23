@@ -819,7 +819,7 @@
         else
         (progn
             (notify "Unhandled swap condition - see console")
-            (console.warn "unhandled swap position: target: " position_details_target "new: " position_details_new)
+            (log "unhandled swap position: target: " position_details_target "new: " position_details_new)
             nil))))                                
 
 
@@ -2144,7 +2144,11 @@
                                     ["left" (+ "" (Math.max 0 (Math.min (- max_dims.width 30) (+ dims.left (- e.pageX move_state.mx)))) "px") ]]
                                    frame))))
                                    
-       (frame (div { `style: "cursor: default; user-select: none; box-shadow: 1px 1px 6px 2px #00000080; background: var(--main-bg-color); position: absolute;z-index: 10; left: 70%; top: 10px; min-width: 300px; "}
+       (frame (div { `style: (+ "cursor: default; user-select: none; box-shadow: 1px 1px 6px 2px #00000080; background: var(--main-bg-color); position: absolute;z-index: 10; left: 70%; top: 10px; min-width: 300px; "
+                                (if (is_string? options.style)
+                                  (+ "" options.style ";")
+                                  ""))
+                                  }
                (control_frame {}
                 control_bar
                 (cond
@@ -2371,7 +2375,31 @@
    })
           
            
-           
+ (defun show_editor_keybindings (editor_control)
+   (let
+      ((binding_row (fn (keysequence binding)
+                       (tr
+                           (td keysequence)
+                           (td (or binding.description
+                                   (from_key binding.name)))))))
+      (table { `style: "width: 100%" }
+       (thead
+              (tr
+                  (th "Key Sequence")
+                  (th "Description")))
+       (tbody
+              (for_each (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
+                                        { `key: [`0] }))
+                 (destructuring_bind (keysequence binding)
+                    bindpair
+                    (cond
+                       (is_array? binding)
+                       (for_each (bindval binding)
+                          (binding_row keysequence bindval))
+                       (is_object? binding)
+                       (binding_row keysequence binding)
+                       else
+                       [])))))))     
 
 (defun clone_edit_session (session)
    (let
@@ -2390,6 +2418,7 @@
          (-> session `$cloneFoldData))
       s))
        
+
 
 (defun make_editor (content options)
   (let
@@ -2677,7 +2706,7 @@
                                                     (-> intf `set_theme it)
                                                     (remove_class "opacity-0" editor_div))) 50)))
                               (build_key_bindings editor)       
-                              (console.log "editor initialized: content: " (subtype content) options.filename)
+
                               (if (is_string? options.filename)
                                   (if is_served?
                                       (try
@@ -2924,6 +2953,7 @@
                                    type: mode
                                    command_bar: command_bar                                                                     
                                    on_save: on_save
+                                   filename: options.filename
                                    id: id
                                    theme: options.theme
                                    read_only: options.read_only
@@ -3703,10 +3733,9 @@
        (control_options (if (is_object? control_options)
                             control_options
                             {}))
-       (control_bar? (if control_options.buffer_bar
+       (control_bar? (if control_options.control_bar
                         true)))            
        (assert name "control name is required: check syntax for defcontrol")
-       
        (if (< (length (reduce (d declared_allocations)
                          (contains? d required_allocations)))
               (length required_allocations))
@@ -3721,17 +3750,7 @@
               (initialized false)
               (title_span (span { `class: "juno-title" } name))
               (command_button (commands_button id))
-              (control_status (if ,#control_bar?
-                                  (div { `class: "juno-buffer-bar" }
-                                   command_button
-                                   (cond 
-                                      (is_array? options.additional_elements)
-                                      options.additional_elements
-                                      else
-                                      title_span))
-                                  nil))
-                                                 
-              (cview (div { } "uninitialized.."))
+              (content_view (div { } "uninitialized.."))
               (resize (fn ()
                          (progn
                             (let
@@ -3747,8 +3766,28 @@
                                      true)
                                true))))
               ,@user_allocations
+              (control_status (if ,#control_bar?
+                                  (div { `class: "juno-buffer-bar" }
+                                   command_button
+                                   (cond 
+                                      (is_array? options.additional_elements)
+                                      options.additional_elements
+                                      else
+                                      title_span)
+                                   ,#(if (contains? (quote control_bar_elements) declared_allocations)
+                                         (progn
+                                            (log (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
+                                            (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
+                                         []))
+                                  nil))
               (do_render (fn ()
-                            (-> cview `replaceChildren (render))))
+                            (let
+                               ((new_view (render self)))
+                               (if (and new_view
+                                        (not (== content_view new_view)))
+                                   (-> content_view `replaceChildren new_view))
+                               (if _on_render
+                                   (_on_render self)))))
               (resize_observer (new ResizeObserver resize))
               (view (control_frame (to_object
                                        [[`id id]
@@ -3756,22 +3795,22 @@
                      (if ,#control_bar?
                          control_status
                          [])
-                                cview))
-              (_on_focus (fn ()
+                                content_view))
+              (_on_render ,#(if (contains? (quote on_render) declared_allocations)
+                                `(on_render self)
+                                nil))
+                             
+              (_on_focus (fn ()                           
                            (progn
-                              (fn ()
-                                 (progn
-                                    ,#(if control_bar?
-                                       `(add_class "juno-focused" control_status)
-                                       `[])
-                                    ,#(if (contains? (quote on_focus) declared_allocations)
-                                          `(on_focus self)))))))
-              (_on_destroy (fn ()
-                           (progn
-                              (fn ()
-                                 (progn
-                                    ,#(if (contains? (quote on_destroy) declared_allocations)
-                                          `(on_destroy self)))))))
+                            ,#(if control_bar?
+                                `(add_class "juno-focused" control_status)
+                                `[])
+                            ,#(if (contains? (quote on_focus) declared_allocations)
+                                `(on_focus self)))))
+              (_on_destroy (fn ()                                     
+                             (progn
+                              ,#(if (contains? (quote on_destroy) declared_allocations)
+                                  `(on_destroy self)))))
               (_to_json (function ()
                            (progn
                               ,#(if (contains? (quote to_json) declared_allocations)
@@ -3783,7 +3822,8 @@
                                            (not initialized))
                                    (= initialized true)
                                    (-> resize_observer `observe view.parentElement)
-                                   ,#(if (contains? (quote `on_initialize) declared_allocations)
+                                   (log "defcontrol: base initialize called" ,#(if (contains? (quote on_initialize) declared_allocations) "has on_initialize" "on_initialize not detected"))
+                                   ,#(if (contains? (quote on_initialize) declared_allocations)
                                          `(on_initialize self)
                                          true)
                                    (do_render))))))
@@ -3815,9 +3855,456 @@
              self)
           ,#meta))
    {
-       `description: (+ "The macro defcontrol creates a function in the current namespace that ")
+       `description: (+ "The macro defcontrol creates a function in the current namespace that implements the specified "
+                        "control features passed to the macro.  The macro handles most of the boiler plate for a basic "
+                        "control, combining the passed allocations and options to produce a standardized control "
+                        "constructor.  The macro is similar in shape to a defun+let form with some differences.<br><br>"
+                        "Like the defun macro, the first argument provides the name of the control that it will be used " 
+                        "to construct the name and type of the control.  Also similar to defun, the second argument is "
+                        "an array containing any arguments for the control.  Note that, mandatorily, an options argument "
+                        "will be appended as the last argument of the argument list, so an empty array passed will "
+                        "cause the control only to have an options argument.<br><br>"
+                        "The next argument is a series of allocation forms that are integrated into a let allocation "
+                        "structure, and so should be in the same form as the allocation block of the let operator.  For "
+                        "example, ((render (fn () (div { } \"My View\")))) would meet the minimal requirement for a "
+                        "control to be constructed.  The caller of this macro can have as many allocation forms as needed "
+                        "to implement the required behavior of the emitted control.  To note that there are "
+                        "symbols that made available to these provided forms in the evaluation context of the form that "
+                        "can be referenced and used by the user provided forms:<br>"
+                        "self:object - The interface object returned.<br>"
+                        "content_view:Element - The control's view (not including the control_bar.  Effectively the contents of "
+                        "the control view.<br>"
+                        "do_render:function - Calls the (render) function provided to the macro.  User code can call this "
+                        "function when a redraw is required.<br>"
+                        "resize:function - A resize function to invoke if a forced resize is required.<br>"
+                        "initialized:boolean - This value is true if the function is initialized or false if it hasn't " 
+                        "yet been.<br>"
+                        "options:object - The options object passed to the control on instantiation.<br>"
+                        "<br><br>"
+                        "There are multiple functions that are called upon certain events, which allow the caller to build "
+                        "customized behavior and hook into the system when needed.  These functions are specified in the "
+                        "allocation forms provided to the macro and are all optional except for render:<br>"
+                        "render:function - This function returns the DOM structure assigned to content_view and is what is "
+                        "drawn in the control's content container.  If the function returns nil, nothing is done.  Can be "
+                        "used in conjunction with the on_render below, which acts on the already drawn view.<br>"
+                        "on_focus:function - When a focusing event occurs to the control, this function is called with the "
+                        "self object of the macro.<br>"
+                        "on_render:function - If this function is specified it will act as the render function so as to "
+                        "manipulate an already built view, via the content_view in scope symbol, which is the contents of the "
+                        "controls view.<br>"
+                        "control_bar_elements:array - If the control is specified with the control_bar control_options set to "
+                        "true, the Elements in this array will be placed into the control bar after any runtime additional_elements "
+                        "provided to the options object.<br>"
+                        "menu_items:function - A function that is called on demand that should return an array containing "
+                        "pairs of [menu_text menu_function] that implement any command functionality for the menu.<br>"
+                        "on_destroy:function - When the control receives a destroy call, this user provided function will be "
+                        "called with the self object.<br>"
+                        "on_initialize:function - Upon initialization, this function will be called with the self function. It "
+                        "should be expected that the initialization should be called only once for a control lifespan.<br>"
+                        "to_json:function - This synchronous function call can be used to provide a customization hook "
+                        "for the control.  The return value must be a structure that can be serialized into JSON form.<br><br>"
+                        "The final object, control_options is meta data and other flags for the macro:<br>"
+                        "exposes:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
+                        "on the self interface and provide the API for the control.  In order for a resource in the control "
+                        "scope to be accessed, it must be specified in this option, otherwise the function remains effectively "
+                        "private to the control.<br>"
+                        "usage:array - The argument specification for the macro"
+                        "description:string - The description of the control that is registered in the Environment.<br>"
+                        "control_bar:boolean - If a control bar is to be displayed on the top of the control, set this to "
+                        "true.<br>")
        `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
+       `tags: ["control" "define" "controls" "ui"]
    })
+
+(defcontrol tree_browser ()
+   ((options (or (and (is_object? options)
+                          options)
+                     (throw SyntaxError "options object is required for tree_browser")))
+    (stack [])
+    (title_span (or options.title_span (span { `class: "juno-title" } name)))
+    (path_span (span { `class: "juno-path" `style: "float: right" } ""))
+    (on_initialize (fn (self)
+                      (log "initialized")))
+    (filter_span (span { `style: "margin-left: 8px; margin-right: 8px; font-family: var(--main-mono-space);" } ""))
+    (filter_span_container (span { `style: "border-radius: 3px; margin-left: 10px; padding-top: 2px; padding-bottom: 2px; border: 1px solid var(--type-regexp-color);" }
+                            (span { `style: "padding-left: 10px; padding-right: 10px; background: var(--type-regexp-color); padding-top: 2px; padding-bottom: 2px; color: wheat;" } (+ (dtext "Filter") ":"))
+                                     filter_span))
+    (olist_style "padding-block-start: 3px; margin-block-start: 0.2em; padding-inline-start: 2px; ")
+    (control_bar_elements filter_span_container)
+    (li_style "")
+    (element_for_pos (fn (pos want_parent?)
+                           (let
+                               ((target_col nil))                                
+                             (= target_col (-> content_view `querySelector (+ "[pos='" (if pos pos 0) "']")))                             
+                             (cond 
+                               (and want_parent? target_col)
+                               target_col
+                               target_col
+                               (or (-> target_col `querySelector ".juno-selected")
+                                   target_col.children.0)))))
+    (filter_by_text (fn (pos text)
+                            (let
+                                ((elems (aif (element_for_pos pos true)
+                                             it.children
+                                             []))
+                                 (elem nil)
+                                 (num_found 0)
+                                 (elem_bank_found [])
+                                 (elem_bank_not_found [])
+                                 (target_focus nil)
+                                 ;;(remove_class "filtered-hidden" elem) (add_class "filtered-hidden" elem)
+                                 (clear_it (blank? text)))
+                                (if clear_it
+                                    (progn
+                                        (remove_class "filtered-hidden" elems)
+                                        (focus_to (element_for_pos pos))
+                                        false)
+                                    (progn
+                                        (for_each (idx (range elems.length))
+                                            (progn
+                                                (= elem (prop elems idx))
+                                                (if (starts_with? text elem.innerText)
+                                                    (push elem_bank_found elem)
+                                                    (push elem_bank_not_found elem))))
+                                        (cond
+                                            (== elem_bank_found.length 0)
+                                            false ;; do nothing
+                                            (> elem_bank_found.length 0)
+                                            (progn
+                                                (for_each (elem elem_bank_found)
+                                                    (remove_class "filtered-hidden" elems))
+                                                (for_each (elem elem_bank_not_found)
+                                                    (add_class "filtered-hidden" elem))
+                                                (focus_to elem_bank_found.0)
+                                                true)))))))
+    (filter_state { chars: []
+                   col_num: nil
+                   })
+    (render_view on_render)  ;; make a synonym 
+    (show_filter_state (fn ()
+                          (progn
+                             (if (> (length filter_state.chars) 0)
+                                 (set_style [["opacity" "1"]] filter_span_container)
+                                 (set_style [["opacity" "0"]] filter_span_container))
+                             (set_prop filter_span
+                                `innerText (join "" filter_state.chars)))))
+    (clear_selector (fn (update?)
+                       (progn
+                          (when filter_state.col_num
+                             (filter_by_text filter_state.col_num ""))
+                          (set_prop filter_state
+                             `chars []
+                             `col_num nil)
+                          (when update?
+                             (show_filter_state)))))
+    (pop_from_selector (fn (pos)
+                          (progn
+                             (if (== pos filter_state.col_num)
+                                 (progn
+                                    (pop filter_state.chars)
+                                    (filter_by_text filter_state.col_num (join "" filter_state.chars)))
+                                 (clear_selector))
+                             (show_filter_state))))
+    (push_into_selector (fn (pos k)
+                           (progn
+                              (defvar elems nil)
+                              (cond
+                                 (eq nil filter_state.col_num)
+                                 (progn
+                                    (set_prop filter_state
+                                       `col_num
+                                       pos)
+                                    (when (filter_by_text pos (+ (join "" filter_state.chars) k))
+                                       (push filter_state.chars k)))
+                                 (eq pos filter_state.col_num)
+                                 (progn
+                                    (when (filter_by_text pos (+ (join "" filter_state.chars) k))
+                                       (push filter_state.chars k)))
+                                 else
+                                 (progn
+                                    (push_into_selector pos k)))
+                              ;; update the displayed state of our filter
+                              (show_filter_state)
+                              )))
+    (handle_keyup (fn (e)
+                     (when (and e.srcElement
+                                (get_attribute e.srcElement "ctype"))
+                        (let
+                           ((elem e.srcElement)
+                            (ctype (get_attribute elem "ctype"))
+                            (pos (parseInt (get_attribute elem "pos")))
+                            (final_pos stack.length))
+                           (log "pos: " pos "press: " e.key e.keyCode)
+                           (cond
+                              (== e.key "Escape")
+                              (destroy_control self)     
+                              (and (== e.key "ArrowUp")
+                                   e.altKey)
+                              (focus_to elem.parentElement.children.0)
+                              (== e.key "ArrowUp")
+                              (focus_to elem.previousElementSibling)
+                              (== e.key "ArrowDown")
+                              (focus_to elem.nextElementSibling)
+                              (and (== e.key "ArrowLeft")
+                                   (>= pos 0))
+                              (progn
+                                 (aif (element_for_pos (- pos 1))
+                                      (focus_to it))
+                                 (clear_selector true))
+                              (== e.key "ArrowRight")
+                              (progn
+                                 (console.log "moving to the right: " (element_for_pos (+ pos 1)))
+                                 (aif (element_for_pos (+ pos 1))
+                                      (focus_to it)
+                                      (focus_to (element_for_pos (+ pos 1) true))) ;; didn't get a standard list, it's probably a value of sort..
+                                 (clear_selector true))
+                              (== e.key "Enter")
+                              (progn
+                                 (handle_event e)
+                                 (handle_click e))
+                              (== e.key "Backspace")
+                              (pop_from_selector pos)
+                              (== e.key "Tab")
+                              nil
+                              (> e.keyCode 47)
+                              (progn
+                                 (push_into_selector pos e.key)
+                                 (console.log "filter state: " (as_lisp filter_state))))))))
+    (find_path_value (fn (elem)
+                        (cond
+                           (get_attribute elem "path_value")
+                           elem
+                           elem.parentElement
+                           (find_path_value elem.parentElement)
+                           else
+                           nil)))
+                             
+    
+    (on_initialize (fn (self)
+                      (progn
+                         (attach_event_listener view
+                                                `click
+                                                handle_click)
+                         (attach_event_listener view
+                                                `keyup
+                                                handle_keyup))))
+                      
+    
+    (handle_click (fn (e)
+                          (when (and e.srcElement 
+                                     (find_path_value e.srcElement))
+                              (let
+                                  ((elem (find_path_value e.srcElement))
+                                   (ctype (when elem (get_attribute elem "ctype")))
+                                   (pos (when elem (get_attribute elem "pos")))
+                                   (has_children? (has_class? `juno-list-item-has-children elem))
+                                   (path_value (if (get_attribute elem "path_value")
+                                                   (get_attribute elem "path_value")))
+                                   (final_pos stack.length))
+                                  (when pos
+                                      (= pos (parseInt pos)))
+                                  (clear_selector true)
+                                  (remove_class "juno-selected" elem.parentElement.children)
+                                  (add_class "juno-selected" elem)
+                                  (cond
+                                     (and (== pos final_pos)
+                                          true) ;path_value)
+                                     (progn
+                                         (push stack path_value)
+                                         (on_render))
+                                     (< pos final_pos)
+                                     (progn
+                                         (= stack (-> stack `slice 0 pos))
+                                         (push stack path_value)
+                                         (for_each (child_num (-> (range content_view.children.length) `reverse))
+                                            (progn
+                                                (when (> (parseInt (get_attribute (prop content_view.children child_num) `pos)) (- stack.length 1))
+                                                    (-> (prop content_view.children child_num) `remove))))
+                                         (on_render))                                         
+                                     (and (== elem.tagName "LI")
+                                          path_value)
+                                     (progn
+                                      (push stack  path_value)                                 
+                                      (on_render)
+                                      ))))))
+
+    (on_destroy (fn (self)
+                  (progn
+                   (when options.on_destroy
+                     (log "tree browser destroying self with options.on_destroy")
+                     (options.on_destroy self))
+                   true)))
+    (content_view (div { `style: "" `class: "juno-symbol-browser" }))
+    (next_possibles (fn (stack)
+                       (cond 
+                          (is_function? options.next_possibles_elem)
+                          (-> options `next_possibles_elem stack self)
+                          (is_function? options.next_possibles)  ;;  returns either a single obj with keys or an array of those objects
+                          ;; keys: ctype has_children? title path_value  and view
+                          (let
+                                ((idx -1)
+                                 (val nil))
+                                (= val (-> options `next_possibles stack self))
+                                (cond
+                                   (is_array? val)
+                                   (for_each (obj val)
+                                      (progn
+                                         (inc idx)
+                                         (li { `tabindex: 0 
+                                               `ctype: (or obj.ctype "sym" )
+                                               `pos: stack.length
+                                               `title: obj.title
+                                               `class: (+ "juno-list-item " (if obj.has_children? "juno-list-item-has-children " ""))
+                                               `style: (or obj.style li_style )
+                                               `path_value: obj.path_value
+                                               } (if obj.view obj.view idx))))
+                                   (is_object? val)
+                                   (li { `tabindex: 0
+                                         `ctype: (or val.ctype "sym" )
+                                         `pos: stack.length
+                                         `title: val.title
+                                         `class: (+ "juno-list-item " (if val.has_children? "juno-list-item-has-children " "") (if val.class val.class ""))
+                                         `style:  (or val.style li_style )
+                                         `path_value: val.path_value
+                                         } (if val.view val.view idx))
+                                   (is_string? val)
+                                   (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; overflow: scroll; width: 100%;" }
+                                    val)
+                                   else
+                                   (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px;overflow: scroll; width: 100%;" }
+                                    (value_to_dom val))))
+                           else
+                           (div { } "Missing next_possibles function or next_possibles_elem in options"))))
+     (current_root nil)
+     (on_render (fn (self)
+                       (progn
+                        (if (> stack.length 1)
+                          (set_prop path_span
+                                    `innerText (+ "[ "(join " " (rest stack )) " ]"))
+                          (set_prop path_span
+                                    `innerText ""))                                    
+                        (clear_selector true)
+                        (cond
+                          (== stack.length 0) ;; initial state
+                          (progn
+                           (-> content_view `replaceChildren
+                              (ol { `pos: 0 }
+                               (for_each (node (or (and options.next_possibles (-> options `next_possibles stack self))
+                                                 []))
+                                         (li {`tabindex: 0
+                                              `ctype: "root"
+                                              `pos: 0
+                                              `path_value: node.path_value
+                                              `class: (+ "juno-list-item " (if node.has_children? "juno-list-item-has-children " "") (if (== node current_root) " juno-selected" ""))
+                                              `style: li_style
+                                              } node.view))))
+                           (focus_to (element_for_pos 0)))
+                          else
+                          (progn
+                           (defvar next_elem (next_possibles stack self))
+                           ;(log "on_render: next_possibles returned: " next_elem)
+                           (cond
+                             (is_array? next_elem)
+                             (progn
+                                 (-> content_view `appendChild
+                                    (ol { `pos: stack.length  }
+                                         next_elem))                                 
+                                 (setTimeout (fn () (focus_to (element_for_pos stack.length))) 10))
+                             (is_element? next_elem)
+                             (progn
+                              (-> content_view `appendChild
+                                  next_elem)
+                              (-> next_elem `setAttribute "pos" stack.length)
+                              (focus_to next_elem)))
+                           
+                           (set_prop content_view `scrollLeft (+ content_view.offsetWidth 20)))))))
+     (initial_render false)
+     (get_current_stack (fn ()
+                           stack))
+     (render (fn ()
+                (if (not initial_render)
+                    (progn
+                       (= initial_render true)
+                       content_view)
+                    nil))))
+   {
+     `control_bar: true
+     `expose: [[`get_current_stack get_current_stack ]]
+     })
+
+(defun file_tree_browser(options)
+    (let
+       ((open_button (button { `class: "juno-primary" `style: "float:right" } "Open"))
+        (current_stack [])
+        (title_span (span { `class: "juno-title" } (or options.title "File Tree")))
+        (render_entry (fn (entry)
+                         (let
+                              ((etype (fn (entry)
+                                         (cond
+                                                entry.isDirectory "directory"
+                                                entry.isFile "file"
+                                                entry.isSymlink "symlink")))
+                               (rval nil))
+                              (= rval
+                               {
+                                 `has_children?: entry.isDirectory
+                                 `path_value: entry.name
+                                 `class: (etype entry)
+                                 `ctype: "sym"
+                                 `view: (div { `style: "display: inline-block; width: 100%;"
+                                               `class: (+ "juno-type-file-entry " (etype entry)) }
+                                               entry.name
+                                               (if entry.isDirectory
+                                                    (span { `style: "display: inline-block; float: right" } "▸")
+                                                      "")) })
+                              ;(log "render_entry: " rval)
+                              rval)))
+        (next_possibles (fn (stack control)
+                           (let
+                              ((next_values (if (== stack.length 0)
+                                                (http/list_files "/")
+                                                (http/list_files (join "/" stack)))))
+                              (= current_stack stack)
+                              (cond
+                                 (is_array? next_values)
+                                 (for_each (entry next_values)
+                                    (render_entry entry))
+                                 (instanceof next_values Blob)
+                                 {
+                                   `has_children?: false
+                                   `ctype: "file"
+                                   `style: "width: 100% !important;"
+                                   `view: (div { `style: "display: inline-block; width: 100%; height: 100%; overflow: hidden" }
+                                           (div { `style: "height: calc(100% - 30px); overflow: scroll;" }
+                                            (pre {} (-> next_values `text)))
+                                           (div { `style: "padding: 10px;" }
+                                            open_button))
+                                   }
+                                 else
+                                 {
+                                   `has_children?: false
+                                   `ctype: "file"
+                                   `view: (pre {} (sub_type next_values))
+                                   }))))
+
+        (control (tree_browser (+ { `title_span: title_span
+                                    `render_entry: render_entry
+                                    `next_possibles: next_possibles}
+                                    (if (is_object? options)
+                                        options
+                                        {})))))
+        
+       (attach_event_listener open_button
+                              `click
+                              (fn (e)
+                                 (when options.on_select 
+                                    (try
+                                       (options.on_select (-> control `get_current_stack) control)
+                                       (catch Error (e)
+                                          (progn
+                                             (log "file_tree_browser: error on on_select handler: " e.message e)
+                                             (notify (+ "Error: " e.message))))))))
+       control))
 
 (defcontrol line_display ()
    ((menu_items (fn ()
@@ -4138,6 +4625,8 @@
    "")  ;; we let the control take care of this since it has better visibility to prior lines
 
 
+
+
 (defun new_buffer (options)
   (let
       ((options (cond
@@ -4165,8 +4654,8 @@
     (when symbol_data.path
       (if (is_top_control? target_container)
         (container_view_operation "split_right" (first (-> target_container `controls))
-                                  (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type ))
-        (swap_control target_container (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type )))))
+                                  (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type options))
+        (swap_control target_container (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type options )))))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                        "split the view to the right for the new editor.  If no options are provided, the user "
@@ -4183,6 +4672,56 @@
       `tags: ["editor" "edit" "buffer" "control"]
       `usage: ["options:object?"]
   })
+
+(defun wait_for_file_selection () 
+   (new Promise (fn (resolve reject)
+                   (let
+                       ((selection nil)
+                        (control (file_tree_browser { `on_select: (fn (stack)
+                                                                    (progn
+                                                                     (= selection (join "/" stack))
+                                                                     (if (> stack.length 0)
+                                                                       (progn
+                                                                        (destroy_control control)))))
+                                                                        
+                                                     `on_destroy: (fn (self)
+                                                                    (progn
+                                                                     (resolve selection)
+                                                                     true)) })))
+                      (place_control `below control)))))
+
+(defun edit_file (options)
+   (let
+      ((options (if (and (is_object? options)
+                         options.filename)
+                    options
+                    (progn
+                       {
+                           filename: (wait_for_file_selection)
+                       })))
+       (symbol_path (cond
+                       (is_array? options.path)
+                       options.path
+                       (is_string? options.filename)
+                       (conj ["$files"] (split_by "/" options.filename))))
+       (acc []))
+      (assert (and symbol_path options.filename) "Invalid options to edit_file")
+      (if (and (starts_with? "$files" symbol_path)
+               (eq nil (resolve_path symbol_path Environment.global_ctx.scope)))
+          (progn
+             (for_each (comp (chop symbol_path))
+                (progn
+                   (push acc comp)
+                   (set_path acc Environment.global_ctx.scope {})))
+             (push acc (last symbol_path))
+             (set_path acc Environment.global_ctx.scope "")))
+      (set_prop options
+         `path
+         symbol_path)
+      (unless options.type
+         (set_prop options `type "juno"))
+      (new_buffer options)))
+      
 
 (defun set_key_binding (scope name desc)
   (let
@@ -4226,7 +4765,7 @@
                    ["Text" (fn (e) (new_buffer { `type: "text" })) ]
                    ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
     (if is_served?
-      ["New Browser Environment" build_starter_environment]
+      ["Generate Starter Environment" build_starter_environment]
       [])
     (if (and *last_focus*
              (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text

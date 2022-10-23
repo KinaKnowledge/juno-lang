@@ -8,7 +8,10 @@
   --main-color: #000000;  
   --highlight-bg-color: #DADADA;
   --highlight-color: #000000;
+  --selected-bg-color: #0278e7;
+  --selected-color: #FFFFFF;
   --control-text-input-color-bg: #FFFFFF50;
+  --control-text-input-color: #000000;
   --control-focused: #efe5e540;
   --control-unfocused-color: darkgray;
   --control-disabled-bg-color: #eaeded;
@@ -1532,6 +1535,7 @@ input {
 }
 
 input:focus {
+  color: var(--control-text-input-color);
   border-top: 1px solid var(--main-accent-line);
   border-left: 1px solid var(--main-accent-line);
   border-right: 1px solid var(--main-accent-line);
@@ -1754,11 +1758,7 @@ div.juno-symbol-browser {
   background-color: var(--highlight-bg-color);
 }
 
-.juno-list-item-has-children > .juno-list-item:after {
-    padding-left: 0.5em;
-    content: "▸";
-    font-size: small;
-}
+
 
 div.juno-focused {
   background: var(--control-focused);
@@ -1806,9 +1806,16 @@ li.juno-menu-header:hover {
   color: var(--highlight-color);
 }
 
+
 li.juno-menu-header:active {
   background: var(--highlight-bg-color);
   color: var(--highlight-color);
+}
+
+.juno-selected {
+  background: var(--selected-bg-color);
+  color: var(--selected-color);
+  font-weight: bold;	      
 }
 
 
@@ -1919,8 +1926,7 @@ summary.juno-type-function {
 }
 
 .juno-type-symbol {
-  color: var(--type-symbol-color);
-  background: #ffffff;
+  color: var(--type-symbol-color);  
   box-shadow: 0 0 4px 1px #a0a0a042;
 }
 

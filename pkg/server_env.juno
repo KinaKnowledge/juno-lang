@@ -187,28 +187,7 @@
                 
                        
 
-(defmacro file_spooler (base_directory)
-   `(fn (request_parameters request_event)
-       (let
-          ((filepath request_parameters.path)
-           (file nil)
-           (readable_stream nil))
-          (try
-             (progn
-                (= file (-> Deno `open (+ ,#base_directory "/" filepath) { read: true }))
-                (= readable_stream file.readable)
-                (new Response readable_stream))
-             (catch Error (e)
-                (progn
-                   (new Response "404 Not Found" { status: 404 }))))))
-   {
-       `description: (+ "Creates an HTTP file streamer bound to the provided base_directory. The "
-                        "macro returns a function that can be used as a route handler.  To do so, "
-                        "add the returned function with a request method and service path to "
-                        "*http_routes*.  Use the add_http_route function to do so.")
-       `usage: ["base_directory:string"]
-       `tags: ["http" "route_handler" "file" "spool"]
-   })
+
                 
 
 (defun find_matching_route (method pathname)
@@ -444,7 +423,41 @@
      `usage: ["connection:Listener"]
      })
                  
-               
+
+(defmacro file_spooler (base_directory)
+   `(fn (request_parameters request_event)
+       (let
+          ((filepath request_parameters.path)
+           (file nil)
+           (absolute_path (+ ,#base_directory "/" filepath))
+           (descriptor nil)
+           (entries [])
+           (readable_stream nil))         
+          (try
+            (progn
+               (= descriptor (Deno.stat absolute_path))
+               (cond 
+                  descriptor.isFile
+                  (progn
+                     (= file (-> Deno `open absolute_path { read: true }))
+                     (= readable_stream file.readable)
+                     (new Response readable_stream))
+                  descriptor.isDirectory
+                  (progn
+                     (for_with (entry (Deno.readDir absolute_path))
+                        (push entries entry))
+                     (new Response (json_response { `rval: "OK" `entries: entries })))))
+             (catch Error (e)
+                (progn
+                   (new Response "404 Not Found" { status: 404 }))))))
+   {
+       `description: (+ "Creates an HTTP file streamer bound to the provided base_directory. The "
+                        "macro returns a function that can be used as a route handler.  To do so, "
+                        "add the returned function with a request method and service path to "
+                        "*http_routes*.  Use the add_http_route function to do so.")
+       `usage: ["base_directory:string"]
+       `tags: ["http" "route_handler" "file" "spool"]
+   })
 
 ;; Add a simple file service
 
@@ -544,7 +557,7 @@
                                       (if (starts_with? "file" name)
                                         (progn
                                          (= buffer (new Uint8Array (-> value `arrayBuffer)))
-                                         (= outfile (-> Deno `open (+ base_directory (or path "") "/" value.name) { create: true write: true }))
+                                         (= outfile (-> Deno `open (+ base_directory (or path "") "/" value.name) { truncate: true create: true write: true }))
                                          (while (< bytes_written buffer.length)
                                            (inc bytes_written
                                                 (-> outfile `write (-> buffer `subarray bytes_written))))                                         
