@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-20 12:02:15
-// Version: 2022.10.20.12.02
-export const DLISP_ENV_VERSION='2022.10.20.12.02';
+// Build Time: 2022-10-24 07:10:02
+// Version: 2022.10.24.07.10
+export const DLISP_ENV_VERSION='2022.10.24.07.10';
 
 
 
@@ -1114,7 +1114,39 @@ await Environment.set_global("set_path",async function(path,obj,value) {
         throw new RangeError(("set_path: invalid path: "+ path));
         
     }
-},{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"],"requires":["pop","resolve_path"]
+},{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","make_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"],"requires":["pop","resolve_path"]
+});
+await Environment.set_global("make_path",async function(target_path,root_obj,value,_pos) {
+    let segment;
+    let cval;
+    let pos;
+    segment=(target_path).shift();
+    cval=null;
+    pos=(_pos|| []);
+    (pos).push(segment);
+    return await async function(){
+        if (check_true (((target_path && target_path.length)===0))) {
+            {
+                await (await Environment.get_global("set_path"))(pos,root_obj,value);
+                return value
+            }
+        } else if (check_true (cval=await (await Environment.get_global("resolve_path"))(pos,root_obj))) {
+            return await async function(){
+                if (check_true (((cval instanceof Object)&& ((null==cval[await (await Environment.get_global("first"))(target_path)])|| (cval[await (await Environment.get_global("first"))(target_path)] instanceof Object)|| ((target_path && target_path.length)===1))))) {
+                    return await (await Environment.get_global("make_path"))(target_path,root_obj,value,pos)
+                } else {
+                    throw new TypeError(("make_path: non-object encountered at "+ await (await Environment.get_global("as_lisp"))(await (await Environment.get_global("add"))(pos,await (await Environment.get_global("first"))(target_path)))));
+                    
+                }
+            } ()
+        } else {
+            {
+                await (await Environment.get_global("set_path"))(pos,root_obj,new Object());
+                return await (await Environment.get_global("make_path"))(target_path,root_obj,value,pos)
+            }
+        }
+    } ()
+},{ "name":"make_path","fn_args":"(target_path root_obj value _pos)","description":["=:+","Given a target_path array, a target object and a value to set, ","constructs the path to the object, constructing where ","required.  If the path cannot be made due to a ","non-nil, non-object value encountered at one of ","the path segments, the function will throw a TypeError, ","otherwise it will return the provided value if successful."],"usage":["path:array","root_obj:object","value:*"],"tags":["set_path","path","set","object","resolve_path","mutate"],"requires":["take","push","set_path","resolve_path","is_object?","first","make_path","as_lisp","add"]
 });
 await Environment.set_global("minmax",async function(container) {
     let value_found;
@@ -3658,16 +3690,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_93900;
+                                                let _expr_60597;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_93900=await (async function(){
+                                                _expr_60597=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_93900 && _expr_93900["0"]);
-                                                req_ns=(_expr_93900 && _expr_93900["1"]);
-                                                explicit=(_expr_93900 && _expr_93900["2"]);
+                                                req_sym=(_expr_60597 && _expr_60597["0"]);
+                                                req_ns=(_expr_60597 && _expr_60597["1"]);
+                                                explicit=(_expr_60597 && _expr_60597["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3770,13 +3802,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_71420;
+                    let _expr_3584;
                     let nspace;
-                    _expr_71420=await (async function(){
+                    _expr_3584=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_71420 && _expr_71420["0"]);
-                    nspace=(_expr_71420 && _expr_71420["1"]);
+                    sym=(_expr_3584 && _expr_3584["0"]);
+                    nspace=(_expr_3584 && _expr_3584["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

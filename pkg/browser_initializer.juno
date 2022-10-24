@@ -32,7 +32,7 @@
 ;; nil if there are no focus points or values.
 
 (defparameter core/is_served? (not (blank? (resolve_path [ `location `hostname ] window))))
-
+(defparameter filesystem {})
 (defparameter *last_focus* nil)
 (defparameter *last_top_frame* nil)
 (defparameter *app_menu_control* nil)
@@ -483,7 +483,30 @@
           (when (== name control.name)
                (= ctrl control)
                (break))))
-    ctrl))                                                   
+    ctrl))
+
+(defun select_controls (predicate_func)
+  (let
+      ((controls (current_controls))
+       (acc [])
+       (ctrl nil))
+    (for_each (`control controls)
+        (progn
+         (when (predicate_func control)
+           (push acc control))))
+    acc)
+  {
+   `description: (+ "Given a predicate function (a function that takes a "
+                    "single value and returns a true or false value), tests "
+                    "control by passing the control to the predicate and if "
+                    "the function returns true, the control will be "
+                    "returned in the array.  The function will return all "
+                    "controls which tested true.")
+   `usage: ["predicate_function:function"]
+   `tags: ["selection" "filter" "controls"]
+   })
+
+
 
 (defun render_control_tree (controls)
    (let
@@ -1300,10 +1323,11 @@
     (when e.altKey
       (push k "Alt"))
     (when e.metaKey
-      (push k "Meta"))
+      (push k "Command"))
     (when e.shiftKey
       (push k "Shift"))
-    (push k e.key)
+    (unless (contains? e.key [ "Control" "Alt" "Meta" ])      
+            (push k e.key))
     (join "-" k)))
 
 
@@ -1749,7 +1773,7 @@
                                (ctype (get_attribute elem "ctype"))
                                (pos (parseInt (get_attribute elem "pos")))
                                (final_pos stack.length))
-                            (console.log "pos: " pos "press: " e)                           
+                            ;(console.log "pos: " pos "press: " e)                           
                             (cond
                               (and (== e.key "ArrowUp")
                                    e.altKey)
@@ -2908,31 +2932,37 @@
        (current_pos nil)
        (on_save (fn (value)
                   (let
-                      ((rval nil))
-                   (try
-                     (progn
-                      (set_path path_to_value nseval.global_ctx.scope
-                                value)
-                      (when (and is_served?
-                                 (is_string? options.filename)
-                                 (contains? "http_client" *env_config*.features))
-                        (= rval (handle_save_file edit_control { remote: true no_prompt: true}))
-                        (log "handle_save_file result: " rval)
-                        (if (is_error? rval)
-                          (throw rval)))                          
-                      (remove_class "juno-needs-save" title_span)
-                      (= is_dirty? false)
-                      (if (eq nil rval)
-                        (-> edit_control `display_context_message (+ (dtext "Set path") " " (as_lisp path_to_value)))
-                        (setTimeout (fn ()
-                                      (-> edit_control `display_context_message (+ (dtext "Set path") " " (as_lisp path_to_value))))
-                                    2000)))
-                     (catch Error (`e)
-                       (progn
-                        (log_error (+ (dtext "Unable to save buffer")
-                                      " "
-                                      title)
-                                   e)))))))
+                      ((rval nil)
+                       (report []))
+                      (try
+                         (make_path path_to_value nseval.global_ctx.scope
+                                    value)
+                         (catch Error (e)
+                            (progn
+                               (log_error "Invalid path: " e.message)
+                               (push report (+ (dtext "Invalid local path") e.message)))))
+                      (try
+                         (progn
+                            (when (and is_served?
+                                       (is_string? options.filename)
+                                       (contains? "http_client" *env_config*.features))
+                               (= rval (handle_save_file edit_control { remote: true no_prompt: true}))
+                               (log "handle_save_file result: " rval)
+                               (if (is_error? rval)
+                                   (throw rval))))
+                         (catch Error (`e)
+                            (progn
+                               (push report (+ (dtext "Unable to save file")
+                                             " "
+                                             options.filename " "
+                                             e.message)))))
+                      (if (== report.length 0)
+                          (progn
+                             (remove_class "juno-needs-save" title_span)
+                             (= is_dirty? false))
+                          (progn
+                             (-> edit_control `display_context_message (join " " report)))
+                         ))))
        (on_focus (fn ()
                    (progn                                     
                     (setq *last_focus* edit_control)
@@ -3821,8 +3851,7 @@
                                 (when (and view.parentElement
                                            (not initialized))
                                    (= initialized true)
-                                   (-> resize_observer `observe view.parentElement)
-                                   (log "defcontrol: base initialize called" ,#(if (contains? (quote on_initialize) declared_allocations) "has on_initialize" "on_initialize not detected"))
+                                   (-> resize_observer `observe view.parentElement)                                   
                                    ,#(if (contains? (quote on_initialize) declared_allocations)
                                          `(on_initialize self)
                                          true)
@@ -4034,7 +4063,7 @@
                             (ctype (get_attribute elem "ctype"))
                             (pos (parseInt (get_attribute elem "pos")))
                             (final_pos stack.length))
-                           (log "pos: " pos "press: " e.key e.keyCode)
+                           ;(log "pos: " pos "press: " e.key e.keyCode)
                            (cond
                               (== e.key "Escape")
                               (destroy_control self)     
@@ -4130,8 +4159,7 @@
 
     (on_destroy (fn (self)
                   (progn
-                   (when options.on_destroy
-                     (log "tree browser destroying self with options.on_destroy")
+                   (when options.on_destroy                     
                      (options.on_destroy self))
                    true)))
     (content_view (div { `style: "" `class: "juno-symbol-browser" }))
@@ -4308,6 +4336,21 @@
                                              (log "file_tree_browser: error on on_select handler: " e.message e)
                                              (notify (+ "Error: " e.message))))))))
        control))
+
+(defun save_active_buffer (save_all)
+  (cond
+    save_all
+    (for_each (control (select_controls (fn (ctl) (is_function? (prop ctl `save)))))
+              (-> control `save))
+    (and *last_focus*
+         (prop *last_focus* `save))
+    (-> *last_focus* `save)
+    *last_focus*         
+    (notify (+ "" (or (prop *last_focus* `name) "Unnamed") " " (dtext "doesn't have a save method") "."))
+    else
+    (notify (dtext "There isn't an active control."))))
+    
+    
 
 (defcontrol line_display ()
    ((menu_items (fn ()
@@ -4696,7 +4739,10 @@
                                                                                        (resolve selection))
                                                                                     20))
                                                                      true)) })))
-                      (place_control `below control)))))
+
+                     (place_control `below control)))))
+
+
 
 (defun edit_file (options)
    (let
@@ -4711,12 +4757,12 @@
                        (is_array? options.path)
                        options.path
                        (is_string? options.filename)
-                       (conj ["$files"] (split_by "/" options.filename))))
+                       (conj ["filesystem"] (split_by "/" options.filename))))
        (acc []))
       (if (eq options.filename nil)
           (return nil))
       (assert (and symbol_path options.filename) "Invalid options to edit_file")
-      (if (and (starts_with? "$files" symbol_path)
+      (if (and (starts_with? "filesystem" symbol_path)
                (eq nil (resolve_path symbol_path Environment.global_ctx.scope)))
           (progn
              (for_each (comp (chop symbol_path))
@@ -4775,6 +4821,9 @@
                    ["CSS" (fn (e) (new_buffer { `type: "css" })) ]
                    ["Text" (fn (e) (new_buffer { `type: "text" })) ]
                    ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
+    (if is_served?
+      ["Open File" edit_file ]
+      [])
     (if is_served?
       ["Generate Starter Environment" build_starter_environment]
       [])
@@ -4999,13 +5048,23 @@
 
        
        (set_prop *key_bindings*.global
-                 "open_new_buffer" { win: "Meta-Enter"
-                                     mac: "Meta-Enter"
+                 "open_new_buffer" { win: "Command-Enter"
+                                     mac: "Command-Enter"
                                      description: "New Juno Buffer"
                                      exec: (fn () (new_buffer { type: "juno" }))
                                     }
+                 "save_file" { win: "Ctrl-s"
+                               mac: "Command-s"
+                               description: "Save File"
+                               exec: (fn () (save_active_buffer))                              
+                              }
+                 "open_file" { win: "Ctrl-o"
+                               mac: "Command-o"
+                               description: "Open File"
+                               exec: (fn () (edit_file))
+                              }
                  "save_environment" { win: "Ctrl-Shift-s"
-                                      mac: "Meta-Shift-s"
+                                      mac: "Command-Shift-s"
                                       description: "Saves the current state of the application"
                                       exec: (fn () (save_control_image))
                                      })
@@ -5107,13 +5166,13 @@
                            (function (e)
                              (progn                              
                               (defvar kcode (get_key_code e))
+                              (when *log_key_events* (log "key_code:" kcode ))
                               ;(console.log "kcode is: " kcode)
                               (aif (prop *key_bindings*.active kcode)
                                    (progn
                                     (handle_event e)
-                                    (it)))
-                              
-                              (when *log_key_events* (console.log "key_up: " e)))))
+                                    (it)))                              
+                              )))
 
     
     

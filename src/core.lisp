@@ -947,8 +947,45 @@
                     "(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>"
                     "(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>"
                     "foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]")
-   `tags: [ "resolve_path" "path" "set" "tree" "mutate" ]
+   `tags: [ "resolve_path" "make_path" "path" "set" "tree" "mutate" ]
    `usage: [ "path:array" "tree:array|object" "value:*" ]
+   })
+
+(defun make_path (target_path root_obj value _pos)
+   (let
+      ((segment (take target_path))
+       (cval nil)
+       (pos (or _pos [])))
+      (push pos segment)
+      (cond
+        (== target_path.length 0)
+        (progn
+           (set_path pos root_obj
+                     value)
+           value)
+        
+        (= cval (resolve_path pos root_obj))
+        (cond 
+           (and (is_object? cval)
+                (or (eq nil (prop cval (first target_path)))
+                    (is_object?  (prop cval (first target_path)))
+                    (== target_path.length 1)))
+           (make_path target_path root_obj value pos)
+           else
+           (throw TypeError (+ "make_path: non-object encountered at " (as_lisp (+ pos (first target_path))))))
+        else
+        (progn
+           (set_path pos root_obj {})
+           (make_path target_path root_obj value pos))))
+   {
+       `description: (+ "Given a target_path array, a target object and a value to set, "
+                        "constructs the path to the object, constructing where "
+                        "required.  If the path cannot be made due to a "
+                        "non-nil, non-object value encountered at one of "
+                        "the path segments, the function will throw a TypeError, "
+                        "otherwise it will return the provided value if successful.")
+       `usage: ["path:array" "root_obj:object" "value:*"]
+       `tags: ["set_path" "path" "set" "object" "resolve_path" "mutate"]
    })
 
 (defun minmax (container)
