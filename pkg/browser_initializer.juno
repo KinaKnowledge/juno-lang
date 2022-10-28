@@ -1318,18 +1318,43 @@
 (defun_sync get_key_code (e)
   (let
       ((k []))
-    (when e.ctrlKey
-      (push k "Ctrl"))
-    (when e.altKey
-      (push k "Alt"))
-    (when e.metaKey
-      (push k "Command"))
+      (when e.metaKey
+         (push k "Command"))
+      (when e.ctrlKey
+         (push k "Ctrl"))
+      (when e.altKey
+         (push k "Alt"))
     (when e.shiftKey
       (push k "Shift"))
-    (unless (contains? e.key [ "Control" "Alt" "Meta" ])      
-            (push k e.key))
-    (join "-" k)))
-
+    (unless (contains? e.key [ "Shift" "Control" "Alt" "Meta" ])      
+            ;; normalize to the printed key characters on the keyboard
+            (push k (cond 
+                       (starts_with? "Key" e.code)
+                       (-> e.code `substr 3)
+                       (starts_with? "Digit" e.code)
+                       (-> e.code `substr 5)
+                       else
+                       e.code)))
+    (if (> k.length 0)
+        (join "-" k)
+        e.code))
+  {
+      `description: (+ "Given a key event, returns a text description of the set of characters in a normalized order "
+                       "for matching keybinding handlers.  If no modifier keys (Control, Alt, Command, or Shift), returns "
+                       "the direct code value from the key event.  If a modifier or modifiers are also pressed, will "
+                       "return a composite value with the following order of priority, where if a key with a lower "
+                       "prority is pressed, it will appear first in the returned value:<br>"
+                       "Command - 0 <br>"
+                       "Ctrl - 1<br>"
+                       "Alt - 2<br>"
+                       "Shift - 3 <br>"
+                       "For example if the user is pressing both the Shift and the Control key and the 'A' key, the "
+                       "returned value will be \"Ctrl-Shift-A\" as the priority value for 'Control' is 1 and the "
+                       "priority value for 'Shift' is 3.  Note that whenever a modifier is pressed, the value of "
+                       "the pressed key will be always uppercase as the descriptor.")
+      `usage: ["event:Event"]
+      `tags: [ "key" "events" "binding" "keycodes" "keyboard"]
+  })
 
 (defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
@@ -3740,8 +3765,76 @@
            `options: options
            `toJSON: (function ()
                       `[empty_selection_control ,#options ])
-       }))
+        }))
 
+(defun find_common_prefix (candidates match_to)
+   (let
+      ((result [])
+       (subset nil)
+       (match_to match_to))
+      (cond
+         (== (length candidates) 0)
+         ""
+         (== (length candidates) 1)
+         (first candidates)
+         
+         (not (blank? match_to))
+         (progn
+            (while (progn
+                      (= subset (reduce (c candidates)
+                                   (when (starts_with? match_to c)
+                                      c)))
+                      (and (< subset.length 2)
+                           (> match_to.length 0)))
+               (= match_to (chop match_to)))
+            
+            (find_common_prefix subset))
+         else
+         (progn
+            (= candidates (sort candidates))  ;; make sure the candidates are sorted
+            (for_each (idx (range (length candidates.0)))
+               (if (== (prop (first candidates) idx)
+                       (prop (last candidates) idx))
+                   (push result (prop (first candidates) idx))
+                   (break)))           
+            (join "" result)))))
+
+(defun place_caret_at_end (el)
+   (progn
+      (javascript |
+                  el.focus();
+                  if (typeof window.getSelection != "undefined"
+                             && typeof document.createRange != "undefined") {
+                     var range = document.createRange();
+                     range.selectNodeContents(el);
+                     range.collapse(false);
+                     var sel = window.getSelection();
+                     sel.removeAllRanges();
+                     sel.addRange(range);
+                     }
+                  | )
+      true))
+
+(defmacro on_key_down_event (e view `& key_to_action_pairs)
+   (let
+      ((acc []))     
+      ;(assert (and e view key_to_action_pairs)
+       ;       "Invalid syntax for on_key_down_event")
+      (for_each (key_to_action_pair key_to_action_pairs)
+                        (destructuring_bind (key action)
+                           key_to_action_pair
+                           (if (== key "otherwise")
+                               (push acc true)
+                               (push acc `(== kcode ,#key)))
+                           (push acc action)))
+      `(attach_event_listener 
+          view
+          `keydown
+          (function (e)
+             (let
+                ((kcode e.key))
+                (cond
+                   ,@acc))))))
 
 (defmacro defcontrol (name control_args allocations control_options)
    (let
@@ -3806,7 +3899,6 @@
                                       title_span)
                                    ,#(if (contains? (quote control_bar_elements) declared_allocations)
                                          (progn
-                                            (log (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
                                             (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
                                          []))
                                   nil))
@@ -3826,9 +3918,10 @@
                          control_status
                          [])
                                 content_view))
-              (_on_render ,#(if (contains? (quote on_render) declared_allocations)
+              (_on_render (fn ()
+                             ,#(if (contains? (quote on_render) declared_allocations)
                                 `(on_render self)
-                                nil))
+                                nil)))
                              
               (_on_focus (fn ()                           
                            (progn
@@ -3950,321 +4043,348 @@
                           options)
                      (throw SyntaxError "options object is required for tree_browser")))
     (stack [])
-    (title_span (or options.title_span (span { `class: "juno-title" } name)))
-    (path_span (span { `class: "juno-path" `style: "float: right" } ""))
-    (on_initialize (fn (self)
-                      (log "initialized")))
-    (filter_span (span { `style: "margin-left: 8px; margin-right: 8px; font-family: var(--main-mono-space);" } ""))
-    (filter_span_container (span { `style: "border-radius: 3px; margin-left: 10px; padding-top: 2px; padding-bottom: 2px; border: 1px solid var(--type-regexp-color);" }
-                            (span { `style: "padding-left: 10px; padding-right: 10px; background: var(--type-regexp-color); padding-top: 2px; padding-bottom: 2px; color: wheat;" } (+ (dtext "Filter") ":"))
-                                     filter_span))
-    (olist_style "padding-block-start: 3px; margin-block-start: 0.2em; padding-inline-start: 2px; ")
-    (control_bar_elements filter_span_container)
-    (li_style "")
-    (element_for_pos (fn (pos want_parent?)
-                           (let
-                               ((target_col nil))                                
-                             (= target_col (-> content_view `querySelector (+ "[pos='" (if pos pos 0) "']")))                             
-                             (cond 
-                               (and want_parent? target_col)
-                               target_col
-                               target_col
-                               (or (-> target_col `querySelector ".juno-selected")
-                                   target_col.children.0)))))
-    (filter_by_text (fn (pos text)
-                            (let
-                                ((elems (aif (element_for_pos pos true)
-                                             it.children
-                                             []))
-                                 (elem nil)
-                                 (num_found 0)
-                                 (elem_bank_found [])
-                                 (elem_bank_not_found [])
-                                 (target_focus nil)
-                                 ;;(remove_class "filtered-hidden" elem) (add_class "filtered-hidden" elem)
-                                 (clear_it (blank? text)))
-                                (if clear_it
-                                    (progn
-                                        (remove_class "filtered-hidden" elems)
-                                        (focus_to (element_for_pos pos))
-                                        false)
-                                    (progn
-                                        (for_each (idx (range elems.length))
-                                            (progn
-                                                (= elem (prop elems idx))
-                                                (if (starts_with? text elem.innerText)
-                                                    (push elem_bank_found elem)
-                                                    (push elem_bank_not_found elem))))
-                                        (cond
-                                            (== elem_bank_found.length 0)
-                                            false ;; do nothing
-                                            (> elem_bank_found.length 0)
-                                            (progn
-                                                (for_each (elem elem_bank_found)
-                                                    (remove_class "filtered-hidden" elems))
-                                                (for_each (elem elem_bank_not_found)
-                                                    (add_class "filtered-hidden" elem))
-                                                (focus_to elem_bank_found.0)
-                                                true)))))))
-    (filter_state { chars: []
-                   col_num: nil
-                   })
-    (render_view on_render)  ;; make a synonym 
-    (show_filter_state (fn ()
-                          (progn
-                             (if (> (length filter_state.chars) 0)
-                                 (set_style [["opacity" "1"]] filter_span_container)
-                                 (set_style [["opacity" "0"]] filter_span_container))
-                             (set_prop filter_span
-                                `innerText (join "" filter_state.chars)))))
-    (clear_selector (fn (update?)
-                       (progn
-                          (when filter_state.col_num
-                             (filter_by_text filter_state.col_num ""))
-                          (set_prop filter_state
-                             `chars []
-                             `col_num nil)
-                          (when update?
-                             (show_filter_state)))))
-    (pop_from_selector (fn (pos)
-                          (progn
-                             (if (== pos filter_state.col_num)
-                                 (progn
-                                    (pop filter_state.chars)
-                                    (filter_by_text filter_state.col_num (join "" filter_state.chars)))
-                                 (clear_selector))
-                             (show_filter_state))))
-    (push_into_selector (fn (pos k)
-                           (progn
-                              (defvar elems nil)
-                              (cond
-                                 (eq nil filter_state.col_num)
-                                 (progn
-                                    (set_prop filter_state
-                                       `col_num
-                                       pos)
-                                    (when (filter_by_text pos (+ (join "" filter_state.chars) k))
-                                       (push filter_state.chars k)))
-                                 (eq pos filter_state.col_num)
-                                 (progn
-                                    (when (filter_by_text pos (+ (join "" filter_state.chars) k))
-                                       (push filter_state.chars k)))
-                                 else
-                                 (progn
-                                    (push_into_selector pos k)))
-                              ;; update the displayed state of our filter
-                              (show_filter_state)
-                              )))
-    (handle_keyup (fn (e)
-                     (when (and e.srcElement
-                                (get_attribute e.srcElement "ctype"))
-                        (let
-                           ((elem e.srcElement)
-                            (ctype (get_attribute elem "ctype"))
-                            (pos (parseInt (get_attribute elem "pos")))
-                            (final_pos stack.length))
-                           ;(log "pos: " pos "press: " e.key e.keyCode)
-                           (cond
-                              (== e.key "Escape")
-                              (destroy_control self)     
-                              (and (== e.key "ArrowUp")
-                                   e.altKey)
-                              (focus_to elem.parentElement.children.0)
-                              (== e.key "ArrowUp")
-                              (focus_to elem.previousElementSibling)
-                              (== e.key "ArrowDown")
-                              (focus_to elem.nextElementSibling)
-                              (and (== e.key "ArrowLeft")
-                                   (>= pos 0))
-                              (progn
-                                 (aif (element_for_pos (- pos 1))
-                                      (focus_to it))
-                                 (clear_selector true))
-                              (== e.key "ArrowRight")
-                              (progn
-                                 (console.log "moving to the right: " (element_for_pos (+ pos 1)))
-                                 (aif (element_for_pos (+ pos 1))
-                                      (focus_to it)
-                                      (focus_to (element_for_pos (+ pos 1) true))) ;; didn't get a standard list, it's probably a value of sort..
-                                 (clear_selector true))
-                              (== e.key "Enter")
-                              (progn
-                                 (handle_event e)
-                                 (handle_click e))
-                              (== e.key "Backspace")
-                              (pop_from_selector pos)
-                              (== e.key "Tab")
-                              nil
-                              (> e.keyCode 47)
-                              (progn
-                                 (push_into_selector pos e.key)
-                                 (console.log "filter state: " (as_lisp filter_state))))))))
-    (find_path_value (fn (elem)
-                        (cond
-                           (get_attribute elem "path_value")
-                           elem
-                           elem.parentElement
-                           (find_path_value elem.parentElement)
-                           else
-                           nil)))
-                             
-    
-    (on_initialize (fn (self)
-                      (progn
-                         (attach_event_listener view
-                                                `click
-                                                handle_click)
-                         (attach_event_listener view
-                                                `keyup
-                                                handle_keyup))))
-                      
-    
-    (handle_click (fn (e)
-                          (when (and e.srcElement 
-                                     (find_path_value e.srcElement))
-                              (let
-                                  ((elem (find_path_value e.srcElement))
-                                   (ctype (when elem (get_attribute elem "ctype")))
-                                   (pos (when elem (get_attribute elem "pos")))
-                                   (has_children? (has_class? `juno-list-item-has-children elem))
-                                   (path_value (if (get_attribute elem "path_value")
-                                                   (get_attribute elem "path_value")))
-                                   (final_pos stack.length))
-                                  (when pos
-                                      (= pos (parseInt pos)))
-                                  (clear_selector true)
-                                  (remove_class "juno-selected" elem.parentElement.children)
-                                  (add_class "juno-selected" elem)
-                                  (cond
-                                     (and (== pos final_pos)
-                                          true) ;path_value)
-                                     (progn
-                                         (push stack path_value)
-                                         (on_render))
-                                     (< pos final_pos)
-                                     (progn
-                                         (= stack (-> stack `slice 0 pos))
-                                         (push stack path_value)
-                                         (for_each (child_num (-> (range content_view.children.length) `reverse))
-                                            (progn
-                                                (when (> (parseInt (get_attribute (prop content_view.children child_num) `pos)) (- stack.length 1))
-                                                    (-> (prop content_view.children child_num) `remove))))
-                                         (on_render))                                         
-                                     (and (== elem.tagName "LI")
-                                          path_value)
-                                     (progn
-                                      (push stack  path_value)                                 
-                                      (on_render)
-                                      ))))))
-
+    (initial_render false)
+    (title_span (span { `contenteditable: true `tabindex: 0 `style: "font-weight: bold; min-width: 10px; border: 1px dotted goldenrod; padding-left: 5px; padding-right: 5px" } ""))
     (on_destroy (fn (self)
                   (progn
                    (when options.on_destroy                     
                      (options.on_destroy self))
                    true)))
+    (current_pos 0)
     (content_view (div { `style: "" `class: "juno-symbol-browser" }))
-    (next_possibles (fn (stack)
+    (get_current_stack (fn ()
+                           (clone stack)))
+    (ol_for_pos (fn (pos)
+                   (let
+                      ((target_col nil))
+                      (= target_col (-> content_view `querySelector (+ "ol[pos='" (if pos pos 0) "']")))
+                      target_col)))
+    
+    (select_child (fn (ol_elem selected_child_text)
+                     (when selected_child_text
+                        (for_each (child ol_elem.children)
+                           (if (and (is_element? child)
+                                    (== (get_attribute child "path_value") selected_child_text))
+                               (add_class "juno-selected" child)
+                               (remove_class "juno-selected" child))))))
+    
+    (num_ol_elems (fn ()
+                     (length content_view.children)))
+    
+    (create_ol_at_pos (fn (pos)
+                         (let
+                            ((stack_value_at_pos (prop stack pos))
+                             (contents (get_possibles pos)))
+                            (ol { `style: (if (not (is_array? contents))
+                                              "width: 100%; max-width: 100%;"
+                                              "height: calc(100% - 20px);")
+                                 `pos: pos }
+                                contents))))
+    
+    (find_value (fn (elem key)
+                   (let
+                      ((v nil))
+                      (cond
+                         (= v (get_attribute elem key))
+                         v
+                         elem.parentElement
+                         (find_value elem.parentElement key)
+                         else
+                         nil))))
+    
+    (get_specifics_for_event (fn (e)
+                                (let
+                                   ((elem e.srcElement)
+                                    (path_value (find_value elem "path_value"))
+                                    (pos (int (find_value elem "pos"))))
+                                   (log "clicked: " path_value "at pos: " pos)
+                                   (set_path_at pos path_value))))
+    
+    (set_path_at (fn (pos path_value)
+                    (when path_value
+                       (cond
+                          (== pos stack.length) ;; at end
+                          (progn
+                             (push stack path_value)
+                             (render_stack))
+                          (< pos stack.length)
+                          (progn
+                             (= stack (-> stack `slice 0 pos))
+                             (push stack path_value)
+                             (log "stack truncated to: " stack pos)
+                             (render_stack))
+                          else
+                          (log "set_path_at: unhandled: " pos path_value)))))
+    (at_leaf (fn ()
+                (not (has_class? "filtered-hidden" instruction_div))))
+    (select_matches (fn (k)
+                       (let
+                          ((text nil)
+                           (candidates nil)
+                           (prefix nil)
+                           (pos nil)
+                           (ps (or options.path_separator "/"))
+                           (selected_segment false)
+                           (num_matches 0)
+                           (in_reverse false)
+                           (at_leaf? (at_leaf))
+                           (last_match nil)
+                           (first_match nil)
+                           (comps nil))
+                          (cond
+                             (== k "Backspace")
+                             (progn 
+                                (= text (chop title_span.innerText))
+                                (= in_reverse true))
+                             (or (== k ps)
+                                 (== k "Tab"))
+                             (progn
+                                (= selected_segment true)
+                                (= text title_span.innerText))
+                             else
+                             (= text (+ title_span.innerText (if (== k.length 1)
+                                                             k
+                                                             ""))))
+                          (try
+                             (progn
+                                (= comps
+                                   (split_by ps text))
+                                (if in_reverse
+                                    (= pos (- stack.length 1))
+                                    (= pos stack.length))
+                                (= candidates (aif (ol_for_pos (Math.max 0 pos))
+                                                   (reduce (`c it.children)
+                                                      c.innerText)
+                                                   [])))
+                             (catch Error (e) (log "ERROR: " e.message)))
+                          ;; calculate the prefix
+                          (cond
+                             (and at_leaf?
+                                  (not in_reverse))
+                              (= prefix "")
+                              in_reverse
+                              (= prefix (find_common_prefix candidates (or (last stack) text)))
+                              else
+                              (= prefix (find_common_prefix candidates (or (last comps)
+                                                                           text))))
+                          (log at_leaf? "text is: " text "prefix: " prefix "segment: " (last comps) "pos: " stack.length)
+                          ;; text is the full stack value, comps are the segments
+                          ;; we always care about the last segment only
+                          ;; if the user enter a path separator, then we seek
+                          ;; ONLY for the child that matches the segment prior to the entered
+                          ;; path sep.
+
+                          (if selected_segment
+                              (try 
+                                 (aif (ol_for_pos (Math.max 0 stack.length))
+                                   (for_each (`c it.children)
+                                      (when (== (last comps) (first (split_by "\n" (or c.innerText ""))))
+                                         (inc num_matches)
+                                         (when (eq nil first_match)
+                                            (= first_match c))
+                                         (= last_match c))))
+                                 (catch Error (e)
+                                    (log "ERROR: " e.message)))
+                              (aif (ol_for_pos (Math.max 0 stack.length))
+                                   (for_each (`c it.children)
+                                      (when (starts_with? (last comps) c.innerText)
+                                         (inc num_matches)
+                                         (when (eq nil first_match)
+                                            (= first_match c))
+                                         (= last_match c)))))
+                          (log "num matches: " num_matches "last comps: " (last comps) "delim pressed: " selected_segment)
+                          (cond 
+                             
+                             in_reverse
+                             (progn
+                                (cond
+                                   (or at_leaf? 
+                                        (== (last comps) ""))
+                                   (progn
+                                      (pop stack)
+                                      (render_stack))
+                                   
+                                   (== ps (chomp title_span.innerText))
+                                   (progn
+                                      (pop stack)
+                                      (render_stack))
+                                   else
+                                   (progn
+                                      (= prefix "")))
+                                
+                                (set_prop title_span
+                                   `innerText
+                                   (+ (join ps stack)
+                                      (if (and (> stack.length 0)
+                                               (or (has_class? "filtered-hidden" instruction_div)
+                                                   (not (== prefix ""))))
+                                          "/"
+                                          "")
+                                      (cond
+                                         (and (== stack.length 0)
+                                              (> num_matches 1))
+                                         ""
+                                         
+                                         else
+                                         prefix)
+                                          )))
+                             
+                             (and (== num_matches 1) ;; do selection of that and move to the next choice
+                                  (not (at_leaf)))
+                             (progn
+                                (set_path_at stack.length (first (split_by "\n" last_match.innerText)))
+                                (set_prop title_span
+                                   `innerText (+ (join ps stack)
+                                                 (if (has_class? "filtered-hidden" instruction_div)
+                                                     "/"
+                                                     ""))))
+                             (> num_matches 1)
+                             (set_prop title_span
+                                `innerText (+ (join ps stack)
+                                              (if (and (> stack.length 0)
+                                                       (has_class? "filtered-hidden" instruction_div))
+                                                     "/"
+                                                     "")
+                                              (if (starts_with? prefix (last comps))
+                                                  (last comps)
+                                                  prefix))))
+                          
+                          (place_caret_at_end title_span))))
+    
+    (instruction_div (span {`style: "margin-left: 30px"  `class: "filtered-hidden"  } (dtext "Press Enter To Open")))
+    (open_selection (fn ()
+                       (when (and (not (has_class? "filtered-hidden" instruction_div))
+                                  options.on_select
+                                  (options.on_select stack)))))
+                           
+    (on_initialize (fn (self)
+                      (progn
+                          (on_key_down_event e view
+                             ("Enter" (progn
+                                         (handle_event e)
+                                         (open_selection)))
+                                         
+                             ("Escape" (progn
+                                          (handle_event e)
+                                          (destroy_control self)))
+                             ("Tab" (progn
+                                       (if (not (at_leaf))
+                                           (handle_event e))
+                                       (select_matches e.key)))
+                             (`otherwise (progn 
+                                            (handle_event e)
+                                            (select_matches e.key))))
+                         (-> title_span.parentElement
+                             `appendChild
+                             instruction_div)
+                         (attach_event_listener content_view
+                                                `click
+                                                get_specifics_for_event ))))
+    
+    (get_possibles (fn (pos)
                        (cond 
-                          (is_function? options.next_possibles_elem)
-                          (-> options `next_possibles_elem stack self)
-                          (is_function? options.next_possibles)  ;;  returns either a single obj with keys or an array of those objects
+                          (is_function? options.get_possibles_elem)
+                          (-> options `get_possibles_elem pos)
+                          (is_function? options.get_possibles)  ;;  returns either a single obj with keys or an array of those objects
                           ;; keys: ctype has_children? title path_value  and view
                           (let
                                 ((idx -1)
                                  (val nil))
-                                (= val (-> options `next_possibles stack self))
+                                (= val (-> options `get_possibles pos self))
+                                (if (not (is_array? val))
+                                    (remove_class "filtered-hidden"  instruction_div)
+                                    (add_class "filtered-hidden" instruction_div))
+                                ;(log "get_possibles: val: " val)
                                 (cond
                                    (is_array? val)
                                    (for_each (obj val)
                                       (progn
                                          (inc idx)
-                                         (li { `tabindex: 0 
-                                               `ctype: (or obj.ctype "sym" )
-                                               `pos: stack.length
+                                         
+                                         (li { `tabindex: 0
+                                                `ctype: (or obj.ctype "sym" )
                                                `title: obj.title
                                                `class: (+ "juno-list-item " (if obj.has_children? "juno-list-item-has-children " ""))
-                                               `style: (or obj.style li_style )
+                                               `style: (or obj.style
+                                                           "")
                                                `path_value: obj.path_value
-                                               } (if obj.view obj.view idx))))
+                                               } 
+                                               (if obj.view 
+                                                   obj.view 
+                                                   idx))))
+                                         
                                    (is_object? val)
                                    (li { `tabindex: 0
                                          `ctype: (or val.ctype "sym" )
-                                         `pos: stack.length
                                          `title: val.title
                                          `class: (+ "juno-list-item " (if val.has_children? "juno-list-item-has-children " "") (if val.class val.class ""))
-                                         `style:  (or val.style li_style )
-                                         `path_value: val.path_value
+                                         `style:  (+ "height: calc(100% - 20px); " (if val.style val.style ""))
+                                         `path_value: (or val.path_value nil)
                                          } (if val.view val.view idx))
                                    (is_string? val)
-                                   (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; overflow: scroll; width: 100%;" }
+                                   (pre { `tabindex: 0 `ctype: "string" `style: "min-width: 200px; overflow: scroll; width: calc(100% - 50px);" }
                                     val)
                                    else
-                                   (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px;overflow: scroll; width: 100%;" }
+                                   (pre { `tabindex: 0 `ctype: (subtype val) `style: "min-width: 200px;overflow: scroll; width: calc(100% - 50px);" }
                                     (value_to_dom val))))
                            else
-                           (div { } "Missing next_possibles function or next_possibles_elem in options"))))
-     (current_root nil)
-     (on_render (fn (self)
-                       (progn
-                        (if (> stack.length 1)
-                          (set_prop path_span
-                                    `innerText (+ "[ "(join " " (rest stack )) " ]"))
-                          (set_prop path_span
-                                    `innerText ""))                                    
-                        (clear_selector true)
-                        (cond
-                          (== stack.length 0) ;; initial state
-                          (progn
-                           (-> content_view `replaceChildren
-                              (ol { `pos: 0 }
-                               (for_each (node (or (and options.next_possibles (-> options `next_possibles stack self))
-                                                 []))
-                                         (li {`tabindex: 0
-                                              `ctype: "root"
-                                              `pos: 0
-                                              `path_value: node.path_value
-                                              `class: (+ "juno-list-item " (if node.has_children? "juno-list-item-has-children " "") (if (== node current_root) " juno-selected" ""))
-                                              `style: li_style
-                                              } node.view))))
-                           (focus_to (element_for_pos 0)))
-                          else
-                          (progn
-                           (defvar next_elem (next_possibles stack self))
-                           ;(log "on_render: next_possibles returned: " next_elem)
-                           (cond
-                             (is_array? next_elem)
-                             (progn
-                                 (-> content_view `appendChild
-                                    (ol { `pos: stack.length  }
-                                         next_elem))                                 
-                                 (setTimeout (fn () (focus_to (element_for_pos stack.length))) 10))
-                             (is_element? next_elem)
-                             (progn
-                              (-> content_view `appendChild
-                                  next_elem)
-                              (-> next_elem `setAttribute "pos" stack.length)
-                              (focus_to next_elem)))
-                           
-                           (set_prop content_view `scrollLeft (+ content_view.offsetWidth 20)))))))
-     (initial_render false)
-     (get_current_stack (fn ()
-                           stack))
-     (render (fn ()
-                (if (not initial_render)
-                    (progn
-                       (= initial_render true)
-                       content_view)
-                    nil))))
+                           (div { } "Missing get_possibles function or get_possibles_elem in options"))))
+    (render_stack (fn ()
+                     (let
+                        ((ol_elem nil))
+                        (log "render_stack starting: num_ol_elems: " (num_ol_elems)  "stack: " stack)
+                        
+                        (when (== stack.length 0)
+                              `innerText "")
+                        (when (> (num_ol_elems) stack.length)
+                           (for_each (pos (range_inc  stack.length (num_ol_elems)))
+                              (progn
+                                 (= ol_elem (ol_for_pos pos))
+                                 (when ol_elem
+                                    (-> ol_elem `remove)))))
+                        ;; is the stack already drawn, or do we need to render it?
+                        (for_each (pos (range (+ stack.length 1)))
+                           (progn
+                              (= ol_elem (ol_for_pos pos))
+                              (if ol_elem
+                                  (select_child ol_elem (prop stack pos))
+                                  (-> content_view `append
+                                      (create_ol_at_pos pos)))))
+                        (set_prop title_span
+                           `innerText
+                           (+ (join "/" stack)
+                              (cond
+                                 (at_leaf)
+                                 ""
+                                 (> stack.length 0)
+                                 "/"
+                                 else
+                                 "")))
+                        (place_caret_at_end title_span))))
+    (on_render (fn (self broaden)
+                       (let
+                          ((next_elem nil))
+                          (log "on_render: called: current_pos: " current_pos)
+                          ;(render_stack)
+                          nil)))
+                          
+    (render (fn ()
+               (if (not initial_render)
+                   (progn
+                      (= initial_render true)
+                      (render_stack)
+                      content_view)
+                   nil))))
    {
      `control_bar: true
-     `expose: [[`get_current_stack get_current_stack ]]
+     `expose: [[`get_current_stack get_current_stack]]
      })
+
+
 
 (defun file_tree_browser(options)
     (let
        ((open_button (button { `class: "juno-primary" `style: "float:right" } "Open"))
-        (current_stack [])
-        (title_span (span { `class: "juno-title" } (or options.title "File Tree")))
         (render_entry (fn (entry)
                          (let
                               ((etype (fn (entry)
@@ -4285,17 +4405,18 @@
                                                (if entry.isDirectory
                                                     (span { `style: "display: inline-block; float: right" } "▸")
                                                       "")) })
+                              ;(log "render_entry: entry rval: " rval rval.view.outerHTML)
                               rval)))
-        (next_possibles (fn (stack control)
+        
+        (get_possibles (fn (pos control)
                            (let
-                              ((next_values (if (== stack.length 0)
+                              ((next_values (if (== pos 0)
                                                 (http/list_files "/")
-                                                (http/list_files (join "/" stack)))))
+                                                (http/list_files (join "/" (-> control `get_current_stack))))))
                               (when (is_array? next_values)
                                  (sort next_values { `key:`name }))
                               ;(log "next_values: " (clone next_values))
                               (= next_values (clone next_values))
-                              (= current_stack stack)
                               (cond
                                  (is_array? next_values)
                                  (for_each (entry next_values)
@@ -4304,8 +4425,8 @@
                                  {
                                    `has_children?: false
                                    `ctype: "file"
-                                   `style: "width: 100% !important;"
-                                   `view: (div { `style: "display: inline-block; width: 100%; height: 100%; overflow: hidden" }
+                                   `style: "width: calc(100% - 10px) !important;"
+                                   `view: (div { `style: "display: inline-block; width: calc(100% - 50px); height: 100%; overflow: hidden" }
                                            (div { `style: "height: calc(100% - 30px); overflow: scroll;" }
                                             (pre {} (-> next_values `text)))
                                            (div { `style: "padding: 10px;" }
@@ -4317,14 +4438,15 @@
                                    `ctype: "file"
                                    `view: (pre {} (sub_type next_values))
                                    }))))
-
-        (control (tree_browser (+ { `title_span: title_span
+        
+        (control (tree_browser (+ { `path_separator: "/"
                                     `render_entry: render_entry
-                                    `next_possibles: next_possibles}
+                                    `get_possibles: get_possibles}
                                     (if (is_object? options)
                                         options
                                         {})))))
-        
+       
+                                    
        (attach_event_listener open_button
                               `click
                               (fn (e)
@@ -4336,6 +4458,30 @@
                                              (log "file_tree_browser: error on on_select handler: " e.message e)
                                              (notify (+ "Error: " e.message))))))))
        control))
+
+(defun wait_for_file_selection () 
+   (new Promise (fn (resolve reject)
+                   (let
+                       ((selection nil)
+                        (target_control (or *last_focus* (default_focus)))
+                        (control (file_tree_browser { `on_select: (fn (stack)
+                                                                    (progn
+                                                                     (= selection (join "/" stack))
+                                                                     (if (> stack.length 0)
+                                                                       (progn
+                                                                        (destroy_control control)))))
+                                                                        
+                                                     `on_destroy: (fn (self)
+                                                                    (progn
+                                                                     (setTimeout (fn ()
+                                                                                    (progn
+                                                                                       (set_focus_to target_control)
+                                                                                       (resolve selection))
+                                                                                    20))
+                                                                     true)) })))
+                      (place_control `below control)
+                      (set_focus_to control)
+                      ))))
 
 (defun save_active_buffer (save_all)
   (cond
@@ -4401,7 +4547,7 @@
 
       
                                                  
-      
+
 
 
 (defun app_menu(global_menu_path options)
@@ -4633,7 +4779,8 @@
 
 (defun save_control_image ()
   (progn
-   
+
+   (log (dtext "Saving Application State.."))
    (set_focus_to nil)
    (defvar system_repl *system_repl*)
    (= *system_repl* nil)
@@ -4642,7 +4789,8 @@
       ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
    (console.log "*serialized_controls*: " *serialized_controls*)
    
-   (save_image)
+   (log (dtext "Save Application State Results: ") (save_image))
+   (log (dtext "Complete"))
    (= *system_repl* system_repl)))
 
 (defun rehydrate_controls (container serialized_controls)
@@ -4740,7 +4888,8 @@
                                                                                     20))
                                                                      true)) })))
 
-                     (place_control `below control)))))
+                     (place_control `below control)
+                     (set_focus_to control)))))
 
 
 
@@ -5053,17 +5202,17 @@
                                      description: "New Juno Buffer"
                                      exec: (fn () (new_buffer { type: "juno" }))
                                     }
-                 "save_file" { win: "Ctrl-s"
-                               mac: "Command-s"
+                 "save_file" { win: "Ctrl-S"
+                               mac: "Command-S"
                                description: "Save File"
                                exec: (fn () (save_active_buffer))                              
                               }
-                 "open_file" { win: "Ctrl-o"
-                               mac: "Command-o"
+                 "open_file" { win: "Ctrl-O"
+                               mac: "Command-O"
                                description: "Open File"
                                exec: (fn () (edit_file))
                               }
-                 "save_environment" { win: "Ctrl-Shift-s"
+                 "save_environment" { win: "Ctrl-Shift-S"
                                       mac: "Command-Shift-s"
                                       description: "Saves the current state of the application"
                                       exec: (fn () (save_control_image))
@@ -5162,7 +5311,7 @@
                              (handle_app_click_event e)))
     
     (attach_event_listener juno_container
-                           `keyup
+                           `keydown
                            (function (e)
                              (progn                              
                               (defvar kcode (get_key_code e))

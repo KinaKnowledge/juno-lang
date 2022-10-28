@@ -437,6 +437,45 @@
          `tags: ["ui" "alerts" "alerting" "message" "notify"]
          })
 
+(defun editable_element (`& args)
+   (let
+      ((options (if (and (is_object? args.0)
+                         (not (is_element? args.0)))
+                    (take args)
+                    {}))
+       (elem (div { `tabindex: 0 `contenteditable: true `style: (+ "min-width: 20px; display: inline-block;" (or options.style "")) 
+                    `class: options.class  } 
+                  args))
+       (handler (fn (e)
+                   (cond
+                      (and (not options.multiline) 
+                           (== e.key "Enter"))
+                      (handle_event e)
+                      else
+                      (setTimeout (fn ()
+                                     (progn
+                                        (set_prop elem
+                                           `value
+                                           (trim elem.innerText))
+                                        (when options.on_change
+                                           (options.on_change e))))
+                            10)))))
+      (attach_event_listener elem
+                             `keydown
+                             handler)
+      (log "OPTIONS: " options)
+      (set_prop elem `value elem.innerText)
+       elem)
+   {
+       description:(+ "Returns a contenteditable div with an additional value " 
+                      "property for the innerText value.  Single line by default, "
+                      "setting options.multiline to true will allow for multiple "
+                      "line input values. If ptions.on_change is set as a function "
+                      "it will be called with the keydown event.")
+       usage: ["options:object" "argsN:*"]
+       tags: [`DOM `UI `input `edit `element]
+   })
+
 (defun read_file (file options)
     (new Promise
          (fn (resolve reject)

@@ -231,21 +231,23 @@
        (progn
         (console.log "we are online and we have http client software")
         (= save_environment (fn (fname content content_type)
-                              (console.log "result from http/send_files: "  (http/send_files "/save_file" (http/data_to_file (+ "environments/" (or (prop *env_config*.export `save_prefix) "a1") ".html") content content_type))))))
+                             (http/send_files "/save_file" (http/data_to_file (+ "environments/" (or (prop *env_config*.export `save_prefix) "a1") ".html") content content_type)))))
        (= save_environment save_locally))
+     (new Promise (fn (resolve reject)
+                    (setTimeout (fn ()
+                                  (try
+                                    (resolve (save_environment (or options.save_as                                       
+                                                          (+ (or (prop *env_config*.export `save_prefix) "juno_image")
+                                                             "-" file_version_tag ".html"))
+                                                      (+ "<!DOCTYPE html>\n<html>\n"
+                                                         scaffold_1
+                                                         scaffold_2
+                                                         "</html>")
+                                                      "text/html" ))
+                                    (catch Error (e)
+                                      (reject e))))
+                                100)))))
      
-     (setTimeout (fn ()
-                   (do
-                     (save_environment (or options.save_as                                       
-                                           (+ (or (prop *env_config*.export `save_prefix) "juno_image")
-                                              "-" file_version_tag ".html"))
-                                       (+ "<!DOCTYPE html>\n<html>\n"
-                                          scaffold_1
-                                          scaffold_2
-                                          "</html>")
-                                       "text/html" )))
-                 100)
-     true))
 
 (defun core/*system_initializer* ()
   (let
