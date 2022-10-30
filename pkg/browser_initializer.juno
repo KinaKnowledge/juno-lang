@@ -4171,8 +4171,10 @@
                                           (push not_matched
                                                 c))))))
                        (when highlight?
-                           (for_each (elem not_matched)
-                              (add_class "filtered-lower-opacity" elem))
+                          
+                          
+                          (for_each (elem not_matched)
+                             (add_class "filtered-lower-opacity" elem))
                            (for_each (elem matched)
                               (remove_class "filtered-lower-opacity" elem)))
                        (= first_match matched.0)
@@ -4264,11 +4266,13 @@
                              (or (== k ps)
                                  (== k "Tab"))
                              (progn
-                               (push stack 
-                                     (get_suffix))
-                               (render_stack)
-                               (clear_suffix)
-                               (place_caret_at_end title_span))
+                               (when (and (> (length title_span.innerText) 0)
+                                          (not (ends_with? ps title_span.innerText)))
+                                  (push stack
+                                        (get_suffix))
+                                  (render_stack)
+                                  (clear_suffix)
+                                  (place_caret_at_end title_span)))
                              else
                              (progn
                                 (= matched (get_matches k true))                                                               
@@ -4291,18 +4295,25 @@
                                    
                                 ;; if it is a control type type don't display
     
-    (instruction_div (span {`style: "margin-left: 30px"  `class: "filtered-hidden"  } (dtext "Press Enter To Open")))
+    (instruction_div (span {`style: "padding-left: 8px; padding-right: 8px; margin-left: 30px; font-weight: bold; color: var(--value-modified-color);"  `class: "filtered-hidden"  } (dtext "Press Enter To Open")))
+    (prefix_div (span { `style: "font-size: 1.1em; margin-right: 8px;" } (dtext "Select or Type:")))
     (open_selection (fn ()
                        (when (and (not (has_class? "filtered-hidden" instruction_div))
                                   options.on_select
                                   (options.on_select stack)))))
-                           
+    (handle_enter_event (fn (e)
+                           (cond
+                              (== e.srcElement title_span)
+                              (progn
+                                 (handle_event e)
+                                 (open_selection))
+                              else
+                              (get_specifics_for_event e))))
     (on_initialize (fn (self)
                       (progn
                           (on_key_down_event e view
                              ("Enter" (progn
-                                         (handle_event e)
-                                         (open_selection)))
+                                         (handle_enter_event e)))
                                          
                              ("Escape" (progn
                                           (handle_event e)
@@ -4312,11 +4323,15 @@
                                            (handle_event e))
                                        (select_matches e.key)))
                              (`otherwise (progn 
-                                            (handle_event e)
-                                            (select_matches e.key))))
+                                            (when (== e.srcElement title_span)
+                                               (handle_event e)
+                                               (select_matches e.key)))))
                          (-> title_span.parentElement
                              `appendChild
                              instruction_div)
+                         (-> title_span.parentElement `insertBefore
+                             prefix_div title_span)
+                         
                          (attach_event_listener content_view
                                                 `click
                                                 get_specifics_for_event ))))
