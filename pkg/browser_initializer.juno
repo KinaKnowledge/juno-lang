@@ -368,7 +368,52 @@
     ;(console.log "decorative_usage: ->" val "<-" rval (is_array? description.usage) description.usage)
     rval))
 
-
+(defun ? (text)
+   (let
+      ((results (describe text true))
+       (field (fn (k v)
+                 (div { `style: "display: flex;" } 
+                      (div { `style: "font-weight: bold; width: 200px; text-align: right; padding: 5px" } k)
+                      v))))
+                  
+      (for_each (`result (or results []))
+         (div { `style: "width: calc(100% - 20px);" }
+          (h3 (span { `style: "color: var(--namespace-color); " } result.namespace ) "/" result.name  
+              (if result.macro
+                  (span { `style: "float: right; margin-right: 20px; " } "Macro")
+                  (span { `style: "float: right" `class: (+ "juno-type-" (lowercase result.type)) } result.type)))
+          (hr { `class: "LightHR" })
+          (cond
+             (and (contains? `unction result.type)
+                  result.usage)
+             [(h4 "Usage")
+              (decorative_usage result.name)]
+             (contains? `unction result.type)
+             [(h4 "Arguments")
+              result.fn_args]
+             else
+             [])
+          (if result.description
+              (progn
+                 (h4 "Description")
+                 (for_each (seg (split_by "<br>" (eval result.description)))
+                    (p seg)))
+              [])
+          (if result.requires
+              [(h4 "Requires")
+               (for_each (`sym (sort result.requires))
+                  (span { `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) ""))) `style: "padding: 5px;"} sym ))]
+              [])
+          (if result.tags
+              [(h4 "Tags")
+               (for_each (`sym result.tags)
+                  (span {  `style: "margin-right: 5px; padding: 5px;border: 1px solid var(--main-accent-line-hover)"} sym ))]
+              []))))
+   {
+       `description: "Given a quoted symbol as an argument, the function returns a formatted manual page for the provided symbol."
+       `usage: ["name:quoted_symbol"]
+       `tags:["help" "assistance" "man" "usage" "info"]
+   })
 
 (defun_sync find_last_paren(editor pos)
    (try
