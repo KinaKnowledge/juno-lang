@@ -1,0 +1,88 @@
+ace.define("ace/theme/earth_tones",["require","exports","module","ace/lib/dom"], function(require, exports, module) {
+
+exports.isDark = false;
+exports.cssClass = "ace-earth_tones";
+exports.cssText = "\
+.ace-earth_tones .ace_gutter {\
+background: var(--editor-gutter-bg-color);\
+color: var(--editor-gutter-color);\
+}\
+.ace-earth_tones .ace_print-margin {\
+width: 1px;\
+background: var(--editor-bg-color);\
+}\
+.ace-earth_tones {\
+background-color: var(--editor-bg-color);\
+color: var(--editor-text-color);\
+}\
+.ace-earth_tones .ace_cursor {\
+color: var(--editor-cursor-color);\
+}\
+.ace-earth_tones .ace_marker-layer .ace_selection {\
+background: var(--editor-selected-bg-color);\
+}\
+.ace-earth_tones.ace_multiselect .ace_selection.ace_start {\
+box-shadow: 0 0 3px 0px var(--editor-bg-color);\
+}\
+.ace-earth_tones .ace_marker-layer .ace_step {\
+background: var(--editor-step-bg-color);\
+}\
+.ace-earth_tones .ace_marker-layer .ace_bracket {\
+margin: -1px 0 0 -1px;\
+border: 1px solid var(--matching-paren-outline-color);\
+background: var(--matching-paren-color);\
+}\
+.ace-earth_tones .ace_marker-layer .ace_active-line {\
+background: var(--editor-active-line-bg)\
+}\
+.ace-earth_tones .ace_gutter-active-line {\
+background-color: var(--editor-active-line-gutter-bg-color);\
+}\
+.ace-earth_tones .ace_marker-layer .ace_selected-word {\
+border: 1px solid var(--editor-selected-bg-color);\
+background: var(--editor-selected-bg-color);\
+}\
+.ace-earth_tones .ace_invisible {\
+color: var(--editor-invisible-color)\
+}\
+.ace-earth_tones .ace_fold {\
+border-color: var(--editor-invisible-color)\
+}\
+.ace-earth_tones .ace_constant{color:var(--editor-constant-color);}\
+.ace-earth_tones .ace_constant.ace_numeric{color:var(--editor-numeric-color);}\
+.ace-earth_tones .ace_support{color:var(--editor-support-color);}\
+.ace-earth_tones .ace_function{color:var(--editor-function-color);}\
+.ace-earth_tones .ace_asyncfunction{color:var(--editor-asyncfunction-color);}\
+.ace-earth_tones .ace_constant{color:var(--editor-constant-color);}\
+.ace-earth_tones .ace_storage{color:var(--editor-storage-color);}\
+.ace-earth_tones .ace_invalid.ace_illegal{color:var(--editor-illegal-color);\
+background-color:var(--editor-illegal-bg-color);}\
+.ace-earth_tones .ace_invalid.ace_deprecated{text-decoration:underline;\
+font-style:italic;\
+color:var(--editor-deprecated-color);\
+background-color:var(--editor-deprecated-bg-color);}\
+.ace-earth_tones .ace_string{color:var(--editor-string-color);}\
+.ace-earth_tones .ace_string.ace_regexp{color:var(--editor-regex-color);\
+background-color:var(--editor-regex-bg-color);}\
+.ace-earth_tones .ace_comment{color:var(--editor-comment-color);}\
+.ace-earth_tones .ace_variable{var(--editor-variable-color);}\
+.ace-earth_tones .ace_meta.ace_tag{color:#005273;}\
+.ace-earth_tones .ace_markup.ace_heading{color:var(--editor-heading-color);\
+background-color:var(--editor-heading-bg-color);}\
+.ace-earth_tones .ace_markup.ace_list{color:var(--editor-list-color);}\
+.ace-earth_tones .ace_keyword{color:var(--editor-keyword-color);}\
+.ace-earth_tones .ace_identifier{color:var(--editor-identifier-color);}\
+";
+
+var dom = require("../lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass, false);
+});
+
+(function() {
+  ace.require(["ace/theme/earth_tones"], function(m) {
+    if (typeof module == "object" && typeof exports == "object" && module) {
+      module.exports = m;
+    }
+  });
+})();
+            
