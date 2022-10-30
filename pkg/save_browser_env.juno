@@ -18,6 +18,7 @@
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
 (defglobal core/*global_themes* { juno_light: (read_text_file "html/juno_light.css")
+                                 earth_tones: (read_text_file "html/earth_tones.css")
                                  cobalt: (read_text_file "html/cobalt.css")
                                  idle_fingers: (read_text_file "html/idle_fingers.css")})
 (defglobal core/browser_initializer ((quote quote) (read_text_file "pkg/browser_initializer.juno")))
@@ -74,8 +75,8 @@
 				  sym
 				  nil)))
   (defglobal included_libs ["ext-searchbox.js" "ext-split.js" "mode-juno.js" "ext-language_tools.js" "mode-json.js" "mode-javascript.js" "mode-css.js" "mode-css.js"
-                            "theme-juno_light.js" "theme-chrome.js" "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js" "theme-gruvbox.js"
-                            "theme-dracula.js" "theme-katzenmilch.js" "theme-solarized_dark.js" "theme-solarized_light.js"])
+                            "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js" "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
+                            "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js" "theme-solarized_dark.js" "theme-solarized_light.js"])
 
   
   (set_path [ `included_libraries ] *env_config* included_libs)

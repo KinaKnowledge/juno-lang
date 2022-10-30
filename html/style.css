@@ -5,7 +5,9 @@
 
 :root {
   --main-bg-color: #FBFAF8;
-  --main-color: #000000;  
+  --main-color: #000000;
+  --header-color: inherit;
+  --header-bg-color: inherit;
   --highlight-bg-color: #DADADA;
   --highlight-color: #000000;
   --selected-bg-color: #0278e7;
@@ -17,6 +19,8 @@
   --control-disabled-bg-color: #eaeded;
   --control-disabled-color: #cad2d3;
   --control-readonly-color: #777;
+  --log-message-bg-color: inherit;
+  --log-result-bg-color: inherit;
   --button-hover-bg-color: #00000030;
   --identification-bg-color: #01678338;
   --app-header-color: #546478;
@@ -1564,6 +1568,10 @@ dialog:modal {
   display: none;
 }
 
+.filtered-lower-opacity {
+  opacity: 50%;
+}
+
 .juno-view-container {
   display: inline-block;
   color: var(--main-color);
@@ -1587,6 +1595,13 @@ hr {
 
 .juno-monospace {
   font-family: var(--main-mono-space);
+}
+
+.juno-page-header {
+  color: var(--header-color);
+  background: var(--header-bg-color);
+  height: 28px;
+  display: flex;
 }
 
 .juno-view-container thead {
@@ -1631,6 +1646,7 @@ hr {
 
 li.juno-main-menu-header {
   display: inline-block;
+  color: var(--header-color);
 }
 
 .juno-vertical-dragger { 
@@ -1698,6 +1714,28 @@ li.juno-main-menu-header {
   background: #FFFFFF40;
   box-shadow: 0 0 4px 1px #a0a0a042;
  
+}
+
+div.juno-result,
+details.juno-result {
+  border-left: 3px solid #0167835e;
+  border-top: 1px solid #00000008;
+  padding: 10px;
+  margin-top: 7px;
+  width: calc(100% - 10px);
+  display: inline-block; 
+}
+
+.juno-log-output {
+  background: var(--log-result-bg-color);
+  height: calc(100% - 20px);
+  overflow: scroll;
+  width: 100%;
+  vertical-align:bottom;
+}
+
+.juno-log-message {
+  background: var(--log-message-bg-color);
 }
 
 span.juno-evaluator {

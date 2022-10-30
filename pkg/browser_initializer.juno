@@ -216,7 +216,7 @@
                     pairs))
        (render_table (function () 
                          (table
-                            (body
+                            (tbody
                              (for_each (keyval (get_pairs obj))
                                        (destructuring_bind (key value)
                                                            keyval
@@ -3108,7 +3108,7 @@
 
 (defun log_view (options)
   (let
-      ((output_container (div {   `style: "height: calc(100% - 20px); overflow: scroll; width: 100%; vertical-align:bottom; " } ))       
+      ((output_container (div { `class: "juno-log-output"  } ))       
        (options (or options { `display_options: { include_prototypes: false }}))
        (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
        (control_status (div {  `class: "juno-buffer-bar" }
@@ -3161,16 +3161,17 @@
                         (-> output_container
                             `append
                             (if (> command_text.length 100)
-                              (details {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px;  width: calc(100% - 10px); display: inline-block; " }
+                              (details {  class: "juno-result" }
                                        (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
                                        (pre { `tabindex: 0 `class: "juno-code-value" }
                                              command_text))
-                              (div {  style:"border-left: 3px solid #0167835e; border-top: 1px solid #00000008; padding: 10px; margin-top: 7px;  width: calc(100% - 10px); display: inline-block; " }
+                              (div {  class: "juno-result" }
                                    (code { `tabindex: 0 `class: "juno-code-value" }
                                              command_text)))))
                       (-> output_container
                           `append
-                          (div {  `style: (+ " margin-top: 0px; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
+                          (div { `class: "juno-log-message"
+                                `style: (+ " margin-top: 0px; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
                                             (if (eq nil command_text)
                                               "border-top: 1px solid #00000008; padding: 5px;"
                                               "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) } 
@@ -4044,7 +4045,7 @@
                      (throw SyntaxError "options object is required for tree_browser")))
     (stack [])
     (initial_render false)
-    (title_span (span { `contenteditable: true `tabindex: 0 `style: "font-weight: bold; min-width: 10px; border: 1px dotted goldenrod; padding-left: 5px; padding-right: 5px" } ""))
+    (title_span (span { spellcheck: false `contenteditable: true `tabindex: 0 `style: "outline: none; font-size: 1.1em; font-weight: bold; font-family: var(--main-mono-space); min-width: 10px; border: 1px dotted goldenrod; padding-left: 5px; padding-right: 5px" } ""))
     (on_destroy (fn (self)
                   (progn
                    (when options.on_destroy                     
@@ -4067,6 +4068,8 @@
                                     (== (get_attribute child "path_value") selected_child_text))
                                (add_class "juno-selected" child)
                                (remove_class "juno-selected" child))))))
+    (path_sep (fn ()
+                 (or options.path_separator "/")))
     
     (num_ol_elems (fn ()
                      (length content_view.children)))
@@ -4076,8 +4079,8 @@
                             ((stack_value_at_pos (prop stack pos))
                              (contents (get_possibles pos)))
                             (ol { `style: (if (not (is_array? contents))
-                                              "width: 100%; max-width: 100%;"
-                                              "height: calc(100% - 20px);")
+                                              "width: 100%; max-width: 100%; position: relative;"
+                                              "height: calc(100% - 20px);  position: relative;")
                                  `pos: pos }
                                 contents))))
     
@@ -4112,144 +4115,181 @@
                              (= stack (-> stack `slice 0 pos))
                              (push stack path_value)
                              (log "stack truncated to: " stack pos)
+                             (clear_suffix)
                              (render_stack))
                           else
                           (log "set_path_at: unhandled: " pos path_value)))))
     (at_leaf (fn ()
                 (not (has_class? "filtered-hidden" instruction_div))))
+    
+    (get_path_components (fn ()
+                            (let
+                               ((text (or title_span.innerText ""))
+                                (ps (path_sep)))
+                               (if (ends_with? ps text)
+                                   (= text (chop text)))
+                               (split_by ps text))))
+    (get_suffix (fn ()
+                   (let
+                      ((comps (get_path_components)))
+                      (if (> comps.length stack.length)
+                          (last comps)
+                          ""))))
+    
+    (clear_suffix (fn ()
+                     (let
+                        ((elem (ol_for_pos stack.length))
+                         (ps (path_sep)))
+                        (set_prop title_span
+                           `innerText (+ (join ps stack)
+                                         (if (and (> stack.length 0)
+                                                  (not (at_leaf)))
+                                             ps
+                                             "")))
+                        (if elem
+                            (for_each (c elem.children)
+                               (remove_class "filtered-lower-opacity" c))))))
+                        
+    (get_matches (fn (k highlight?)
+                    (let
+                       ((num_matches 0)
+                        (pos stack.length)
+                        (addl (if (blank? k) "" k))
+                        (suffix (+ (get_suffix) addl))
+                        (matched [])
+                        (first_match nil)
+                        (not_matched []))                       
+                       (if (< pos 0)
+                           []
+                           (aif (ol_for_pos pos)
+                                (for_each (c it.children)
+                                   (progn
+                                      (if (and (not (blank? suffix))
+                                               (starts_with? suffix c.innerText))
+                                          (push matched
+                                                c)
+                                          (push not_matched
+                                                c))))))
+                       (when highlight?
+                           (for_each (elem not_matched)
+                              (add_class "filtered-lower-opacity" elem))
+                           (for_each (elem matched)
+                              (remove_class "filtered-lower-opacity" elem)))
+                       (= first_match matched.0)
+                       (when first_match
+                          (set_prop first_match.parentElement
+                             `scrollTop
+                             (- (prop first_match `offsetTop) 10)))
+                       matched)))
+    
+    (get_last_column_values (fn ()
+                               (let
+                                  ((elem (ol_for_pos stack.length)))
+                                  (if elem
+                                      (for_each (c elem.children)
+                                         (prop c `innerText))
+                                      []))))
+    
+    (matched_as_text (fn (matched)
+                        (map (fn (v)
+                                v.innerText)
+                             matched)))
+    (last_suffix nil)
     (select_matches (fn (k)
                        (let
                           ((text nil)
-                           (candidates nil)
+                           (in_reverse (== k "Backspace"))
+                           (matched nil)
                            (prefix nil)
-                           (pos nil)
-                           (ps (or options.path_separator "/"))
-                           (selected_segment false)
-                           (num_matches 0)
-                           (in_reverse false)
-                           (at_leaf? (at_leaf))
-                           (last_match nil)
-                           (first_match nil)
-                           (comps nil))
+                           (existing_suffix nil)
+                           (ps (path_sep))
+                           (at_leaf? (at_leaf)))                         
+                          ;; are we going forward or backwards?
+                          ;; if forwards, determine if we pressed a delim key or a regular key
+                          ;; if we pressed a delim key, and the final path segment matches an element in the column, push that value to the stack, and redraw the columns and the title_span
+                          ;; if we pressed a regular key, find the common prefixes, write that to the title_span,
+                          ;; ...and follow the filter process.
+                          ;; if we matched to a leaf, display the instruction_div 
+                          
+                          ;; if backwards, determine if we are at a leaf or not
+                          ;; if we are, remove the character from the title_span, pop the stack, find the common prefix, write that to the title_span, follow the filter process
+                          ;; if we are not, remove the character, find the common prefix, write that to the title_span and 
+                          ;; follow the filter process
+                          
+                          ;; Filter process:
+                          ;; Determine the amount of matched elements at the last path segment
+                          ;; if 1 match then append the value to the path and redraw the title and the column selectors
+                          ;; if >1 then find the common prefix, and append the common prefix to the title_span
+                          ;; ..and highlight the matching values in the column
+                          ;; if 0 matches don't append the character since it cannot contribute to narrowing the selection
+                          
                           (cond
-                             (== k "Backspace")
+                             in_reverse
                              (progn 
-                                (= text (chop title_span.innerText))
-                                (= in_reverse true))
+                                (when at_leaf? ;; if we are at leaf state, remove the final value from the stack
+                                    (pop stack)
+                                    (add_class "filtered-hidden" instruction_div))
+                                ;; find the common prefix with one character removed
+                                (= existing_suffix (get_suffix))                                
+                                (when (not (blank? existing_suffix))
+                                   (= prefix (find_common_prefix (get_last_column_values) (chop existing_suffix))))
+                                (when (== prefix last_suffix)
+                                    ;; we had this value last backspace, so we need to go back further
+                                    (= prefix "")
+                                    (= last_suffix nil))
+                                (cond
+                                   (blank? existing_suffix)  ;; there is no suffix, so pop the stack 
+                                   (progn                                      
+                                      (pop stack)
+                                      (clear_suffix)
+                                      (render_stack))
+                                   
+                                   (blank? prefix)  ;; when no common prefix remove the suffix altogether
+                                   ;; we will have to rebuild the title_span explicitly otherwise suffix will be preserved
+                                   (progn
+                                      (clear_suffix)
+                                      (render_stack))
+                                      ;; clear all the matches..
+                                   (> (length prefix) 0)
+                                   (progn
+                                      (clear_suffix)                                     
+                                      (render_stack prefix)
+                                      (= last_suffix prefix)
+                                      (get_matches "" true))
+                                   else
+                                   ;; just clear the last suffix 
+                                   (= last_suffix nil)))
+                                ;; if we were at a leaf, we are no longer so remove the leaf node from the stack
+                               
                              (or (== k ps)
                                  (== k "Tab"))
                              (progn
-                                (= selected_segment true)
-                                (= text title_span.innerText))
+                               (push stack 
+                                     (get_suffix))
+                               (render_stack)
+                               (clear_suffix)
+                               (place_caret_at_end title_span))
                              else
-                             (= text (+ title_span.innerText (if (== k.length 1)
-                                                             k
-                                                             ""))))
-                          (try
                              (progn
-                                (= comps
-                                   (split_by ps text))
-                                (if in_reverse
-                                    (= pos (- stack.length 1))
-                                    (= pos stack.length))
-                                (= candidates (aif (ol_for_pos (Math.max 0 pos))
-                                                   (reduce (`c it.children)
-                                                      c.innerText)
-                                                   [])))
-                             (catch Error (e) (log "ERROR: " e.message)))
-                          ;; calculate the prefix
-                          (cond
-                             (and at_leaf?
-                                  (not in_reverse))
-                              (= prefix "")
-                              in_reverse
-                              (= prefix (find_common_prefix candidates (or (last stack) text)))
-                              else
-                              (= prefix (find_common_prefix candidates (or (last comps)
-                                                                           text))))
-                          (log at_leaf? "text is: " text "prefix: " prefix "segment: " (last comps) "pos: " stack.length)
-                          ;; text is the full stack value, comps are the segments
-                          ;; we always care about the last segment only
-                          ;; if the user enter a path separator, then we seek
-                          ;; ONLY for the child that matches the segment prior to the entered
-                          ;; path sep.
-
-                          (if selected_segment
-                              (try 
-                                 (aif (ol_for_pos (Math.max 0 stack.length))
-                                   (for_each (`c it.children)
-                                      (when (== (last comps) (first (split_by "\n" (or c.innerText ""))))
-                                         (inc num_matches)
-                                         (when (eq nil first_match)
-                                            (= first_match c))
-                                         (= last_match c))))
-                                 (catch Error (e)
-                                    (log "ERROR: " e.message)))
-                              (aif (ol_for_pos (Math.max 0 stack.length))
-                                   (for_each (`c it.children)
-                                      (when (starts_with? (last comps) c.innerText)
-                                         (inc num_matches)
-                                         (when (eq nil first_match)
-                                            (= first_match c))
-                                         (= last_match c)))))
-                          (log "num matches: " num_matches "last comps: " (last comps) "delim pressed: " selected_segment)
-                          (cond 
-                             
-                             in_reverse
-                             (progn
-                                (cond
-                                   (or at_leaf? 
-                                        (== (last comps) ""))
+                                (= matched (get_matches k true))                                                               
+                                (cond                                  
+                                   (== (length matched) 1)  ;; ok we matched only 1 so go ahead and put it into the stack
                                    (progn
-                                      (pop stack)
-                                      (render_stack))
+                                      (push stack 
+                                            (first (split_by "\n" matched.0.innerText)))                                      
+                                      (try (render_stack)
+                                         (catch Error (e)
+                                            (log "ERROR: " e.message))))
+                                   (> (length matched) 1)  ;; multiple matches, so add the character to the suffix
+                                   (progn
+                                      ;; find the common prefix and render title
+                                      (= prefix (find_common_prefix (matched_as_text matched) (get_suffix)))
+                                      ;; subtract suffix                                                                            
+                                      (render_title prefix)))))
+                          (= last_suffix (get_suffix))
+                           true)))
                                    
-                                   (== ps (chomp title_span.innerText))
-                                   (progn
-                                      (pop stack)
-                                      (render_stack))
-                                   else
-                                   (progn
-                                      (= prefix "")))
-                                
-                                (set_prop title_span
-                                   `innerText
-                                   (+ (join ps stack)
-                                      (if (and (> stack.length 0)
-                                               (or (has_class? "filtered-hidden" instruction_div)
-                                                   (not (== prefix ""))))
-                                          "/"
-                                          "")
-                                      (cond
-                                         (and (== stack.length 0)
-                                              (> num_matches 1))
-                                         ""
-                                         
-                                         else
-                                         prefix)
-                                          )))
-                             
-                             (and (== num_matches 1) ;; do selection of that and move to the next choice
-                                  (not (at_leaf)))
-                             (progn
-                                (set_path_at stack.length (first (split_by "\n" last_match.innerText)))
-                                (set_prop title_span
-                                   `innerText (+ (join ps stack)
-                                                 (if (has_class? "filtered-hidden" instruction_div)
-                                                     "/"
-                                                     ""))))
-                             (> num_matches 1)
-                             (set_prop title_span
-                                `innerText (+ (join ps stack)
-                                              (if (and (> stack.length 0)
-                                                       (has_class? "filtered-hidden" instruction_div))
-                                                     "/"
-                                                     "")
-                                              (if (starts_with? prefix (last comps))
-                                                  (last comps)
-                                                  prefix))))
-                          
-                          (place_caret_at_end title_span))))
+                                ;; if it is a control type type don't display
     
     (instruction_div (span {`style: "margin-left: 30px"  `class: "filtered-hidden"  } (dtext "Press Enter To Open")))
     (open_selection (fn ()
@@ -4289,12 +4329,12 @@
                           ;; keys: ctype has_children? title path_value  and view
                           (let
                                 ((idx -1)
-                                 (val nil))
+                                 (val nil)
+                                 (filter_text (last (split_by (or options.path_separator "/") title_span.innerText))))
                                 (= val (-> options `get_possibles pos self))
                                 (if (not (is_array? val))
                                     (remove_class "filtered-hidden"  instruction_div)
-                                    (add_class "filtered-hidden" instruction_div))
-                                ;(log "get_possibles: val: " val)
+                                    (add_class "filtered-hidden" instruction_div))                                
                                 (cond
                                    (is_array? val)
                                    (for_each (obj val)
@@ -4304,7 +4344,12 @@
                                          (li { `tabindex: 0
                                                 `ctype: (or obj.ctype "sym" )
                                                `title: obj.title
-                                               `class: (+ "juno-list-item " (if obj.has_children? "juno-list-item-has-children " ""))
+                                               `class: (+ "juno-list-item " 
+                                                          (if obj.has_children? "juno-list-item-has-children " "") 
+                                                          (if (and (not (blank? filter_text))
+                                                                   (not (starts_with? filter_text obj.path_value)))
+                                                              "filtered-lower-opacity"
+                                                              ""))
                                                `style: (or obj.style
                                                            "")
                                                `path_value: obj.path_value
@@ -4329,10 +4374,29 @@
                                     (value_to_dom val))))
                            else
                            (div { } "Missing get_possibles function or get_possibles_elem in options"))))
-    (render_stack (fn ()
+    
+    (render_title (fn (new_suffix)
+                     (let
+                        ((suffix (or new_suffix (get_suffix) ""))
+                         (ps (path_sep)))                       
+                        (set_prop title_span
+                           `innerText
+                           (+ (join ps stack)
+                              (cond 
+                                 (at_leaf)
+                                 ""
+                                 (and (blank? suffix)
+                                      (> stack.length 0))
+                                 ps
+                                 (== stack.length 0)
+                                 (+ "" suffix)
+                                 else
+                                 (+ ps suffix))))
+                        (place_caret_at_end title_span))))
+    
+    (render_stack (fn (prefix)
                      (let
                         ((ol_elem nil))
-                        (log "render_stack starting: num_ol_elems: " (num_ol_elems)  "stack: " stack)
                         
                         (when (== stack.length 0)
                               `innerText "")
@@ -4350,21 +4414,11 @@
                                   (select_child ol_elem (prop stack pos))
                                   (-> content_view `append
                                       (create_ol_at_pos pos)))))
-                        (set_prop title_span
-                           `innerText
-                           (+ (join "/" stack)
-                              (cond
-                                 (at_leaf)
-                                 ""
-                                 (> stack.length 0)
-                                 "/"
-                                 else
-                                 "")))
-                        (place_caret_at_end title_span))))
+                        (render_title prefix))))
+    
     (on_render (fn (self broaden)
                        (let
                           ((next_elem nil))
-                          (log "on_render: called: current_pos: " current_pos)
                           ;(render_stack)
                           nil)))
                           

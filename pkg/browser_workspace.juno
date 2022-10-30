@@ -212,7 +212,7 @@
         (scaffold_2 (prop
                           
                           (html/body { style: "height: 98vh; overflow: hidden;" `id: "body" }
-                                     (html/header {  `id: "page-header" style: "height: 28px; display: flex;" } )
+                                     (html/header {  `id: "page-header" class: "juno-page-header" } )
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))
