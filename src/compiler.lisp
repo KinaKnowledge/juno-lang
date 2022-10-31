@@ -2457,19 +2457,20 @@
                                      
                                      
             (declare (string preamble.0 preamble.1 preamble.2))
-            
-            
-            (cond 
-                 (not (== (% condition_tokens.length 2) 0))
-                 (throw SyntaxError "cond: Invalid syntax: missing condition block")
-                 (== condition_tokens.length 0)
-                 (throw SyntaxError "cond: Invalid syntax: no conditions provided"))            
-            (while (< idx (- condition_tokens.length 2))
-              (do
-                (inc idx 2)
-                (push acc
-                      (compile_condition (prop condition_tokens idx)
-                                         (prop condition_tokens (+ idx 1))))))
+            (if (eq nil block_step)  ;; if we are not in a block make a pseudo-block
+                (= acc (compile_block (ensure_block tokens) ctx))
+                (progn
+                   (cond
+                      (not (== (% condition_tokens.length 2) 0))
+                      (throw SyntaxError "cond: Invalid syntax: missing condition block")
+                      (== condition_tokens.length 0)
+                      (throw SyntaxError "cond: Invalid syntax: no conditions provided"))
+                   (while (< idx (- condition_tokens.length 2))
+                      (do
+                         (inc idx 2)
+                         (push acc
+                               (compile_condition (prop condition_tokens idx)
+                                (prop condition_tokens (+ idx 1))))))))
             acc)))
                                   
        (`ensure_block (fn (tokens)
@@ -2493,36 +2494,36 @@
                            (block_step ctx.block_step)
                            (preamble (calling_preamble ctx)))
                         (declare (string preamble.0 preamble.1 preamble.2))
-
-                        (if (eq nil block_step)
-                          (= block_step 0))
-
-                        (push acc { `ctype: "ifblock" `block_step: ctx.block_step `block_id: ctx.block_id })
-                        (= compiled_test (compile test_form ctx))
-                        (if (and (is_object? (first compiled_test))
-                                   (prop (first compiled_test) `ctype)
-                                   (is_string? (prop (first compiled_test) `ctype))
-                                   (contains? "unction" (prop (first compiled_test) `ctype)))
-                              (for_each (`t ["if" " " "(check_true (" preamble.0 " " compiled_test "()" "))"])
-                                        (push subacc t))
-                              (for_each (`t ["if" " " "(check_true ("  compiled_test "))"])
-                                        (push subacc t)))
-                        ;; place the test in the accumulator
-                        (push acc subacc)
-                        (= subacc [])
-
-                        ;; next we have the if true or false
-                        ;; if the if_true/if_false are not explicit blocks make them
                         
-                        (= compiled_true (compile_block (ensure_block if_true) ctx))
-                       
-                        (push acc compiled_true)                        
-                        (when if_false
-                          (push acc " ")
-                          (push acc "else")
-                          (push acc " ")
-                          (= compiled_false (compile_block (ensure_block if_false) ctx))                        
-                          (push acc compiled_false))
+                        (if (eq nil block_step)  ;; if we are not in a block make a pseudo-block
+                            (= acc (compile_block (ensure_block tokens) ctx))
+                            (progn
+                               (push acc { `ctype: "ifblock" `block_step: ctx.block_step `block_id: ctx.block_id })
+                               (= compiled_test (compile test_form ctx))
+                               (if (and (is_object? (first compiled_test))
+                                        (prop (first compiled_test) `ctype)
+                                        (is_string? (prop (first compiled_test) `ctype))
+                                        (contains? "unction" (prop (first compiled_test) `ctype)))
+                                   (for_each (`t ["if" " " "(check_true (" preamble.0 " " compiled_test "()" "))"])
+                                      (push subacc t))
+                                   (for_each (`t ["if" " " "(check_true ("  compiled_test "))"])
+                                      (push subacc t)))
+                               ;; place the test in the accumulator
+                               (push acc subacc)
+                               (= subacc [])
+                               
+                               ;; next we have the if true or false
+                               ;; if the if_true/if_false are not explicit blocks make them
+                               
+                               (= compiled_true (compile_block (ensure_block if_true) ctx))
+                               
+                               (push acc compiled_true)
+                               (when if_false
+                                  (push acc " ")
+                                  (push acc "else")
+                                  (push acc " ")
+                                  (= compiled_false (compile_block (ensure_block if_false) ctx))
+                                  (push acc compiled_false))))
                         acc)))
                         
                        

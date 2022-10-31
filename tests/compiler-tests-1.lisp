@@ -2395,5 +2395,12 @@
   []
   true
   "throw within compiled infix operations"]
-  
+  ["(cond (== 2 1) \"Yes\" else \"No\")"
+   []
+   "No"
+   "Top level cond returns fall-through value"]
+  ["(if (== 2 1) false true)"
+   []
+   true
+   "Top level if returns false value"]
 ])
