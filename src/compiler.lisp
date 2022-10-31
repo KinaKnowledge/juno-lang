@@ -731,74 +731,74 @@
        ;; or an "external" reference, such as a globalThis thing.
        
        (`get_lisp_ctx (fn (ctx name)
-                          (if (not (is_string? name))
-                              (throw Error "Compiler Error: get_lisp_ctx passed a non string identifier")
-                              (let
-                                  ((`comps (get_object_path name))
-                                   (`cannot_be_js_global (check_invalid_js_ref comps.0))
-                                   (`ref_name (take comps))                                   
-                                   (`ref_type (if (== ref_name "this")
-                                                      THIS_REFERENCE
-                                                      (progn
-						       (defvar `global_ref (prop root_ctx.defined_lisp_globals ref_name))                                                       
-							(if (or (eq undefined global_ref)
-								(== global_ref "statement"))
-							    (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
-							    global_ref)))))
+                         (if (not (is_string? name))
+                             (throw Error "Compiler Error: get_lisp_ctx passed a non string identifier")
+                             (let
+                                ((`comps (get_object_path name))
+                                 (`cannot_be_js_global (check_invalid_js_ref comps.0))
+                                 (`ref_name (take comps))
+                                 (`ref_type (if (== ref_name "this")
+                                                THIS_REFERENCE
+                                                (progn
+                                                   (defvar `global_ref (prop root_ctx.defined_lisp_globals ref_name))
+                                                   (if (or (eq undefined global_ref)
+                                                           (== global_ref "statement"))
+                                                       (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
+                                                       global_ref)))))
                                 
                                 (when (and (not (== NOT_FOUND_THING ref_type))
                                            (not (contains? ref_name standard_types)))
-                                    (-> referenced_global_symbols
-                                        `add ref_name)
-                                    (aif (get_ctx ctx `__GLOBALS__)
-                                         (-> it `add ref_name))
-                                    ;(-> (get_ctx ctx `__GLOBALS__)
-                                     ;   `add ref_name)
-                                    )
+                                   (-> referenced_global_symbols
+                                       `add ref_name)
+                                   (aif (get_ctx ctx `__GLOBALS__)
+                                        (-> it `add ref_name))
+                                   ;(-> (get_ctx ctx `__GLOBALS__)
+                                   ;   `add ref_name)
+                                   )
                                 (when (verbosity root_ctx)
-				  (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
-                                (cond 
-                                  (== NOT_FOUND_THING ref_type)                                                                       
-                                  undefined 
-                                  (== ref_type THIS_REFERENCE)
-                                  ref_type
-                                  (== comps.length 0)
-                                  ref_type                                  
-                                  (and (== comps.length 1)
-                                       (is_object? ref_type)
-                                       (contains? comps.0 (object_methods ref_type)))
-                                  (prop ref_type comps.0)
-
-				  (and (is_function? ref_type)
-				       (is_ambiguous? root_ctx ref_name))
-				  ref_type				  
-
-				  (is_array? ref_type)				      
-				  ref_type
-
-				  (== ref_type "array")
-				  []
-				  
-                                  (is_object? ref_type)
-                                  (resolve_path comps ref_type)
-                                  
-                                  (and (== (typeof ref_type) "object")
-                                       (contains? comps.0 (-> Object `keys ref_type)))
-                                  (do 
-                                      (while (or (eq ref_type undefined) 
+                                   (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
+                                (cond
+                                   (== NOT_FOUND_THING ref_type)
+                                   undefined
+                                   (== ref_type THIS_REFERENCE)
+                                   ref_type
+                                   (== comps.length 0)
+                                   ref_type
+                                   (and (== comps.length 1)
+                                        (is_object? ref_type)
+                                        (contains? comps.0 (object_methods ref_type)))
+                                   (prop ref_type comps.0)
+                                   
+                                   (and (is_function? ref_type)
+                                        (is_ambiguous? root_ctx ref_name))
+                                   ref_type
+                                   
+                                   (is_array? ref_type)
+                                   ref_type
+                                   
+                                   (== ref_type "array")
+                                   []
+                                   
+                                   (is_object? ref_type)
+                                   (resolve_path comps ref_type)
+                                   
+                                   (and (== (typeof ref_type) "object")
+                                        (contains? comps.0 (-> Object `keys ref_type)))
+                                   (do
+                                      (while (or (eq ref_type undefined)
                                                  (> comps.length 0))
-                                        (= ref_type (prop ref_type (take comps))))
+                                         (= ref_type (prop ref_type (take comps))))
                                       ref_type)
-
-				  (== ref_type "objliteral")
-				  ref_type
-				  
-				  
-                                  else
-                                  (do
-				   (debug)
-                                   (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)                                  
-                                   undefined)                                  
+                                   
+                                   (== ref_type "objliteral")
+                                   ref_type
+                                   
+                                   
+                                   else
+                                   (do
+                                      (debug)
+                                      (get_lisp_ctx_log "symbol not found: " name ref_name ref_type cannot_be_js_global)
+                                      undefined)
                                    )))))
 
        ;; internally used to get a local value in a compilation scope..
@@ -1400,87 +1400,91 @@
                                (push acc ")")
                                acc)))
        
-       (`compile_assignment (fn (tokens ctx)
-                                (let
-                                    ((`acc [])
-                                     (`assignment_operator (prop (first tokens) `name))
-                                     (`token (second tokens))
-                                     (`assignment_value nil)
-                                     (`assignment_type nil)
-                                     (`wrap_as_function? nil)
-                                     (`preamble (calling_preamble ctx))
-                                     (`comps [])
-                                     (`sanitized (if (and token.ref
-                                                          token.name)
-                                                   (sanitize_js_ref_name token.name)
-                                                   (throw SyntaxError (+ "assignment: missing assignment symbol"))))
-                                     (`target_details (cond
-                                                        (get_ctx ctx sanitized)
-                                                        "local"
-                                                        (get_lisp_ctx ctx token.name)
-                                                        "global"
-                                                        else
-                                                        (progn
-                                                         (aif (get_declaration_details ctx token.name)
-                                                              (cond
-                                                                it.is_argument
-                                                                "local"
-                                                                it.declared_global
-                                                                "global"
-                                                                it
-                                                                "local")))))                                     
-                                     (`target (if (== target_details "local")
-                                                sanitized
-                                                token.name)))
-                                  (declare (string preamble.0))                                  
-                                  (= comps (split_by "." target))
-                                  (compiler_syntax_validation `compile_assignment tokens errors ctx expanded_tree)
-                                  (if (== undefined target_details)
-                                    (throw ReferenceError (+ "assignment to undeclared symbol: " token.name)))
-                                  (if (> comps.length 1)
-                                    (throw SyntaxError (+ "invalid assignment to an object property, use set_prop instead: " target)))
-                                  (when (and (== tokens.2.type "arr")
-                                             (== tokens.2.val.0.type "special")
-                                             (== tokens.2.val.0.name "defvar"))
-                                    (throw SyntaxError "cannot assign result of the allocation operator defvar"))
-                                  
-                                  (unset_ambiguous ctx target)
-                                  
-                                  (set_prop ctx
-                                            `in_assignment true)
-                                  (= assignment_value (compile_wrapper_fn tokens.2 ctx))
-                                  
-                                  (if (and (is_array? assignment_value)
-                                           (is_object? assignment_value.0)
-                                           assignment_value.0.ctype)
-                                      (do 
-                                         (= assignment_type
-                                            (map_ctype_to_value assignment_value.0.ctype assignment_value)))                                                 
-                                      (do                                         
-                                         (set_ambiguous ctx target)
-                                         (= assignment_type
-                                            UnknownType)))
-                                  (if (== target_details "local")
-                                      (do
-                                       (set_ctx ctx
-                                                target
-                                                assignment_type)                                       
-                                       (push acc target)
-                                       (push acc "=")
-                                       (push acc assignment_value))
-                                      (do
-                                       (for_each (`t [{ `ctype: "statement"} preamble.0 " " "Environment" "." "set_global" "(" "\"" target "\"" "," assignment_value ")"])
-                                                 (push acc t))))
-                                  
-                                  (set_prop ctx
-                                            `in_assignment false)
-                                  
-                                  (if (== target_details "local")
-                                      (set_ctx ctx
-                                               target
-                                               assignment_type))
-                                  
-                                  acc)))
+       (`compile_assignment
+          (fn (tokens ctx)
+             (let
+                ((`acc [])
+                 (`token (second tokens))
+                 (`assignment_value (if (< tokens.length 3)
+                                        (throw SyntaxError "assignment is missing a value argument")
+                                        nil))
+                 (`assignment_type nil)
+                 (`wrap_as_function? nil)
+                 (`preamble (calling_preamble ctx))
+                 (`comps [])
+                 (`sanitized (if (and token.ref
+                                      token.name)
+                                 (sanitize_js_ref_name token.name)
+                                 (throw SyntaxError (+ "assignment: missing assignment symbol"))))
+                 (`target_details (cond
+                                     (get_ctx ctx sanitized)
+                                     "local"
+                                     (get_lisp_ctx ctx token.name)
+                                     "global"
+                                     else
+                                     (progn
+                                        (aif (get_declaration_details ctx token.name)
+                                             (cond
+                                                it.is_argument
+                                                "local"
+                                                it.declared_global
+                                                "global"
+                                                it
+                                                "local")))))
+                 (`target (if (== target_details "local")
+                              sanitized
+                              token.name)))
+                (declare (string preamble.0))
+                
+                
+                (= comps (split_by "." target))
+                
+                (if (== undefined target_details)
+                    (throw ReferenceError (+ "assignment to undeclared symbol: " token.name)))
+                (if (> comps.length 1)
+                    (throw SyntaxError (+ "invalid assignment to an object property, use set_prop instead: " target)))
+                (when (and (== tokens.2.type "arr")
+                           (== tokens.2.val.0.type "special")
+                           (== tokens.2.val.0.name "defvar"))
+                   (throw SyntaxError "cannot assign result of the allocation operator defvar"))
+                
+                (unset_ambiguous ctx target)
+                
+                (set_prop ctx
+                   `in_assignment true)
+                (= assignment_value (compile_wrapper_fn tokens.2 ctx))
+                
+                (if (and (is_array? assignment_value)
+                         (is_object? assignment_value.0)
+                         assignment_value.0.ctype)
+                    (do
+                       (= assignment_type
+                        (map_ctype_to_value assignment_value.0.ctype assignment_value)))
+                    (do
+                       (set_ambiguous ctx target)
+                       (= assignment_type
+                        UnknownType)))
+                (if (== target_details "local")
+                    (do
+                       (set_ctx ctx
+                        target
+                        assignment_type)
+                       (push acc target)
+                       (push acc "=")
+                       (push acc assignment_value))
+                    (do
+                       (for_each (`t [{ `ctype: "statement"} preamble.0 " " "Environment" "." "set_global" "(" "\"" target "\"" "," assignment_value ")"])
+                          (push acc t))))
+                
+                (set_prop ctx
+                   `in_assignment false)
+                
+                (if (== target_details "local")
+                    (set_ctx ctx
+                     target
+                     assignment_type))
+                
+                acc)))
                                   
        ;; In the top-level mode, if the form is a progn form, each of its body forms is sequentially processed
        ;; as a top level form in the same processing mode.  Otherwise, they are compiled and evaluated as a
@@ -1899,8 +1903,11 @@
                            
                            ;; validate the let structure if we have the functionality
                            
-                           (compiler_syntax_validation `compile_let tokens errors ctx expanded_tree)
-                                
+                           (if (not (is_array? allocations))
+                               (throw SyntaxError "let: missing/malformed allocation section"))
+                           
+                           (if (== block.length 0)
+                               (throw SyntaxError "let: missing block"))
                            
                            (set_prop ctx
                                      `return_last_value
@@ -2010,8 +2017,7 @@
                                     (= alloc_set (prop (prop allocations idx) `val))
                                     
                                     (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
-                                    ;(when (== "check_external_env" reference_name)
-                                     ; (debug))
+                                    
                                     (= ctx_details (get_declaration_details ctx reference_name))
                                                                         
                                     (cond
@@ -2451,7 +2457,8 @@
                                      
                                      
             (declare (string preamble.0 preamble.1 preamble.2))
-            (compiler_syntax_validation `compile_cond tokens errors ctx expanded_tree)
+            
+            
             (cond 
                  (not (== (% condition_tokens.length 2) 0))
                  (throw SyntaxError "cond: Invalid syntax: missing condition block")
@@ -3245,7 +3252,6 @@
                              (push acc (compile t ctx))
                              else
                              (push acc t.val))))
-		   ;(debug)
                 acc)))
      
        (`compile_set_global 
@@ -4445,386 +4451,386 @@
                          rval))))
        ;; main recursive structure                   
        (`compile_inner
-         (fn (tokens ctx _cdepth)
-             (let
-                 ((`operator_type nil)
-                  (`op_token nil)
-                  (`rcv nil)
-                  (`op nil)
-                  (`_cdepth (or _cdepth 100))
-                  (`acc [])
-                  (`preamble (calling_preamble ctx))
-                  (`tmp_name nil)
-                  (`refval nil)                  
-                  (`ref nil))                              
-               (declare (array preamble)
-                        (string preamble.0 preamble.1 preamble.2 tmp_name)                      
-                        (function op))
-               (try
-                (if (eq nil ctx)
-                    (do
-                     (error_log "compile: nil ctx: " tokens)
-                     (throw "compile: nil ctx"))
-                    (cond
-                      (or (is_number? tokens)
-                          (is_string? tokens)                          
-                          (== (sub_type tokens) "Boolean"))
-                      tokens          ;; just return the literal value
-                      (and (is_array? tokens)
-                           tokens.0.ref
-                           (not (== (get_ctx ctx tokens.0.name) UnknownType))
-                           (or (prop op_lookup tokens.0.name)                               
-                               (== Function (get_ctx_val ctx tokens.0.name))
-                               (== AsyncFunction (get_ctx_val ctx tokens.0.name))
-                               (== "function" (typeof (prop root_ctx.defined_lisp_globals tokens.0.name)))
-                               (is_function? (get_lisp_ctx ctx tokens.0.name))))
-                      (do
-                       (= op_token (first tokens))
-                       (= operator (prop op_token `name))
-                        (= operator_type (prop op_token `val))
-                        (= ref (prop op_token `ref))
-                        (= op (prop op_lookup operator))
-                        
-                        (cond 
-                          op
-                          (op tokens ctx)
-                          (prop Environment.inlines operator)
-                          (compile_inline tokens ctx)
-                          else                                        
-                          (compile_scoped_reference tokens ctx))) 
-                                        
-                      (and (is_object? tokens)
-                           (== tokens.type "objlit"))
-                      (do
-                                       
-                       (compile_obj_literal tokens ctx))
-                      
-                      
-                      (is_array? tokens)
-                      (do                       
-                       (cond
-                         ;; simple case, just an empty array, return js equiv     
-                         (== tokens.length 0)
-                         [{ `ctype: "array" `is_literal: true } "[]" ]
-                         else
-                         (let
-                             ((`is_operation false)
-                              (`declared_type nil)
-			      (`prefix "")
-                              (`ctx (new_ctx ctx))
-                              (`symbolic_replacements [])
-                              (`compiled_values []))
-
-
-                           (set_new_completion_scope ctx)
+        (fn (tokens ctx _cdepth)
+           (let
+              ((`operator_type nil)
+               (`op_token nil)
+               (`rcv nil)
+               (`op nil)
+               (`_cdepth (or _cdepth 100))
+               (`acc [])
+               (`preamble (calling_preamble ctx))
+               (`tmp_name nil)
+               (`refval nil)
+               (`ref nil))
+              (declare (array preamble)
+                       (string preamble.0 preamble.1 preamble.2 tmp_name)
+                       (function op))
+              (try
+                 (if (eq nil ctx)
+                     (do
+                        (error_log "compile: nil ctx: " tokens)
+                        (throw "compile: nil ctx"))
+                     (cond
+                        (or (is_number? tokens)
+                            (is_string? tokens)
+                            (== (sub_type tokens) "Boolean"))
+                        tokens          ;; just return the literal value
+                        (and (is_array? tokens)
+                             tokens.0.ref
+                             (not (== (get_ctx ctx tokens.0.name) UnknownType))
+                             (or (prop op_lookup tokens.0.name)
+                                 (== Function (get_ctx_val ctx tokens.0.name))
+                                 (== AsyncFunction (get_ctx_val ctx tokens.0.name))
+                                 (== "function" (typeof (prop root_ctx.defined_lisp_globals tokens.0.name)))
+                                 (is_function? (get_lisp_ctx ctx tokens.0.name))))
+                        (do
+                           (= op_token (first tokens))
+                           (= operator (prop op_token `name))
+                           (= operator_type (prop op_token `val))
+                           (= ref (prop op_token `ref))
+                           (= op (prop op_lookup operator))
                            
-                           ;; in this case we need to compile the contents of the array
-                           ;; and then based on the results of the compilation determine
-                           ;; if it is an evaluation (first element of the array is a
-                           ;; function or operator) or a non operation.  If the former
-                           ;; it must be evaluated and returned or if the latter, returned
-                           ;; as an array of values.
-                           
-                           ;; the first element is the operator potentially...
-                           (when (and tokens.0.ref (is_string? tokens.0.val))
-                             (= declared_type (get_declarations ctx tokens.0.name)))
-                           
-                                                     
-                           (= rcv (compile tokens.0 ctx (+ _cdepth 1)))
-                           
-                           
-
-			   (when (verbosity ctx)
-			     (comp_log (+ "compile: " _cdepth " array: ") "potential operator: " tokens.0.name "declarations: " declared_type))
-			   
-                           ;; compiled values will hold the compiled contents
-                           
-                           (for_each (`t (rest tokens))
-                                (do      
-                                     
-                                     (if (not (get_ctx_val ctx `__IN_LAMBDA__))
-                                         (set_ctx ctx
-                                                  `__LAMBDA_STEP__
-                                                  0))
-                                     
-                                     (push compiled_values
-                                           (compile_wrapper_fn t ctx))))
-                           
-                           ;; next we need to go through and find any blocks 
-                           ;; that need to be wrapped in a temp variable so we don't 
-                           ;; end up writing them out twice due to the array construction
-                           ;; but we also need to preserve the order of evaluation of each array element
-                           ;; from first to last.
-                           
-                           ;; TODO: review below map block if superfluous due to using compiled_wrapper_fn already
-                           
-                           (map (fn (`compiled_element idx)
-                                    (let
-                                        ((`inst (cond
-						    (and (is_object? compiled_element.0)     ;; get the instructive metadata from the compiled structure
-                                                         (prop compiled_element.0 `ctype))
-                                                    (prop compiled_element.0 `ctype)
-						    (== compiled_element.0 "{")
-						    "block"
-						    else
-                                                    nil)))                                      
-                                      (cond 
-                                        (or (== inst "block")
-                                            (== inst "letblock"))
-                                        (do                                         
-                                          ;; the argument offset, the temp variable name and the wrapped function are made available                                           
-                                          (push symbolic_replacements
-                                                [ idx (gen_temp_name "array_arg") 
-                                                 [ preamble.2 "(" preamble.1 " " "function" "()" " " compiled_element " " ")"]]))
-                                        
-                                        (== inst "ifblock")
-                                        (do                                            
-                                           (push symbolic_replacements
-                                                 [ idx (gen_temp_name "array_arg") 
-                                                   [preamble.2 "(" preamble.1 " " "function" "()" " " "{" compiled_element  "}" " " ")"]])))))
-                                
-                                compiled_values)
-                           
-                           ;; next layout the code, and substitute in compiled_values the references to the functions
-                           ;; in the compiled_values array
-                                                      
-                           (for_each (`elem symbolic_replacements)
-                                     (do
-                                      ;; create the function 
-                                      (for_each (`t ["let" " " elem.1 "=" elem.2 ";"])
-                                                (push acc t))
-                                      ;; splice in the reference
-                                      (-> compiled_values `splice elem.0 1 [preamble.0 " " elem.1 "()"])))
-                           
-                           
-                           ;; if we have symbolic replacements, we need to generate a block
-                           ;; and return that since we have to more processing in place 
-                           
-                           (when (> symbolic_replacements.length 0)
-                             (prepend acc "{")
-                             (prepend acc { `ctype: "block" }))
-                                                                                 
-                           (cond 
-                            (or (== declared_type.type Function)
-				(== declared_type.type AsyncFunction)
-                                 (and (is_object? rcv.0)
-                                      (is_function? rcv.0.ctype))
-                                 (and (is_object? rcv.0)
-                                      (not (is_array? rcv.0))
-                                      (is_string? rcv.0.ctype)
-                                      (contains? "unction" rcv.0.ctype)))
-                             (do
-                              (if (== declared_type.type AsyncFunction)
-				  (= prefix "await ")
-				  (= prefix ""))
-                               (= is_operation true)
-                               (for_each (`t [ prefix "(" rcv ")" "(" ])
-                                         (push acc t))
-                               (push_as_arg_list acc compiled_values)
-                               (push acc ")"))
-                                                                                       
-                              (and (eq nil declared_type.type)
-                                 (or (== tokens.0.type "arg")
-                                     (and (is_string? rcv)
-                                          (get_declaration_details ctx rcv))
-                                     (and (is_array? rcv)
-                                          (is_object? rcv.0)
-                                          (is_string? rcv.0.ctype)
-                                          (and rcv.0.ctype
-                                               (and (not (contains? "unction" rcv.0.ctype))
-                                                    (not (contains? "block" rcv.0.ctype))
-                                                    (not (== "string" rcv.0.ctype))
-                                                    (not (== "StringType" rcv.0.ctype))
-                                                    (not (== "nil" rcv.0.ctype))
-                                                    (not (== "NumberType" rcv.0.ctype))
-                                                    (not (== "undefined" rcv.0.ctype))
-                                                    (not (== "objliteral" rcv.0.ctype))
-                                                    (not (== "Boolean" rcv.0.ctype))
-                                                    (not (== "array" rcv.0.ctype)))))))  ;; TODO - RUNTESTS HERE MODIFIED
-                                                
-                                                                                                   
-                              ;; an ambiguity which results in a performance penalty because we need 
-                              ;; create a function that checks the first symbol in the array is a function
-                              ;; if the first symbol in the array is a reference.
-                              
-                              (do ;; tell the user of this opportunity if they want to know...
-                                (when show_hints  
-                                  (comp_warn "value ambiguity - use declare to clarify: " (source_from_tokens tokens expanded_tree true) " " 
-                                                                                              (as_lisp rcv)))
-                                (= tmp_name (gen_temp_name "array_op_rval"))
-                                                                                                                               
-                                (when (> symbolic_replacements.length 0)
-                                  ;; this means it is a block and we need to return the last value
-                                  (push acc { `ctype: "block" })
-                                  (push acc "return")
-                                  (push acc " "))
-                                
-                                (for_each (`t [preamble.0 " " "(" preamble.1 " " "function" "()" "{" "let" " " tmp_name "=" rcv ";" " "  "if" " " "(" tmp_name " " "instanceof" " " "Function" ")" "{"
-                                               "return" " " preamble.0 " " tmp_name "(" ])
-                                          (push acc t))
-                                (push_as_arg_list acc compiled_values)                                        
-                                (for_each (`t [")" " " "}" " " "else" " " "{" "return" " " "[" tmp_name ])
-                                          (push acc t))
-                                
-                                (when (> (length (rest tokens)) 0)
-                                  (push acc ",")
-                                  (push_as_arg_list acc compiled_values))                                         
-                                (for_each (`t ["]" "}" "}" ")" "()"])
-                                          (push acc t)))
-
-                             (and (eq nil declared_type.type)
-                                 (or (and (is_array? rcv)
-                                          (is_object? rcv.0)
-                                          (is_string? rcv.0.ctype)
-                                          (contains?  "block" rcv.0.ctype))))
-                             (do
-                               (when (> symbolic_replacements.length 0)
-                                 (push acc "return")
-                                 (push acc " "))
-                               (push acc "[")
-                               (push acc [ "(" preamble.0 " " "(" preamble.1 " " "function" "() {" rcv "})" "()" ")" ])
-                               (when (> (length (rest tokens)) 0)
-                                 (push acc ",")
-                                 (push_as_arg_list acc compiled_values))
-                               (push acc "]"))
-                             else   
-                             (                                                            
-                              (when (> symbolic_replacements.length 0)
-                                (push acc "return")
-                                (push acc " "))
-                               (push acc "[")                               
-                               (push acc rcv)
-                               (when (> (length (rest tokens)) 0)
-                                 (push acc ",")
-                                 (push_as_arg_list acc compiled_values))                                
-                               (push acc "]")))
-                                        
-                           (when (> symbolic_replacements.length 0)
-                             (push acc "}"))
-                           
-                           acc)))
-
-                      ;; token's value is an array, so just call
-                      ;; compile again with the token value which
-                      ;; move through the code above..
-                                                                  
-                      (and (is_object? tokens)
-                           (is_array? tokens.val)
-                           tokens.type)
-                      (do                        
-                        (set_prop ctx
-                                  `source
-                                  tokens.source)
-                        (= rcv (compile tokens.val ctx (+ _cdepth 1)))                        
-                        rcv)
-                                            
-                      ;; Simple compilations --------
-                      
-                      (or (and (is_object? tokens)
-                               (not (== undefined tokens.val)) ;(check_true tokens.val)
-                               tokens.type)
-                          (== tokens.type "literal")
-                          (== tokens.type "arg")
-                          (== tokens.type "null"))
-                      (do                         
-                       (defvar `snt_name nil)
-                       (defvar `snt_value nil)
-                       
-                        (cond
-                          (and (not tokens.ref)
-                               (== tokens.type "arr"))
-                          (compile tokens.val ctx (+ _cdepth 1))
-                          
-                          (or (== tokens.type "null")
-                              (and (== tokens.type "literal")
-                                   (== tokens.name "null")
-                                   tokens.ref))
-                          [ { `ctype: "nil" } "null" ]
-
-                          (and (== tokens.type "literal")
-                               (== tokens.name "undefined")
-                               tokens.ref)
-                          [ { `ctype: "undefined" } "undefined" ]
-                          
-                          (not tokens.ref)
-                          (if (and (== tokens.type "literal")
-                                   (is_string? tokens.val))                             
-                               [ { `ctype: "string" } (+ "\"" (cl_encode_string tokens.val) "\"") ]                        
-                               (if (is_number? tokens.val)
-                                 [{ `ctype: "NumberType" } tokens.val ]   ;; Number is also a function that can be used so we use NumberType to represent literal numbers
-                                 [{ `ctype: (sub_type tokens.val)  } tokens.val ]))  ;; straight value
-                          
-                          (and tokens.ref
-                               opts.root_environment)
-                           (do 
-                              (path_to_js_syntax (split_by "." (sanitize_js_ref_name tokens.name))))
-                                                         
-                          (and tokens.ref 
-                               (prop op_lookup tokens.name))
-			  tokens.name
-					
-                          (and tokens.ref
-                               (do
-                                (= snt_name (sanitize_js_ref_name tokens.name))
-				(= snt_value (get_ctx_val ctx snt_name))
-				(when (verbosity ctx)
-				  (comp_log "compile: singleton: " "name: " tokens.name " sanitized: " snt_name "found locally as:" snt_value))
-                                   
-			       (not (== snt_value undefined))))
-                                ;(or snt_value
-                                 ;   (== 0 snt_value)
-                                  ;  (== false snt_value))))
-                          (do 
-                            (= refval snt_value) 
-                            (when (== refval ArgumentType)
-                              (= refval snt_name))                            
-                            (cond 
-                              (== tokens.type "literal")
-                              refval
+                           (cond
+                              op
+                              (op tokens ctx)
+                              (prop Environment.inlines operator)
+                              (compile_inline tokens ctx)
                               else
-                              (get_val tokens ctx)))
-                          
-                          (contains? tokens.name standard_types)
-                          tokens.name
-                          ;; check global scope
-                          (not (== undefined (get_lisp_ctx ctx tokens.name)))
-                          (do
-			   (when (verbosity ctx)
-			     (comp_log "compile: singleton: found global: " tokens.name))
-			   (compile_lisp_scoped_reference tokens.name ctx))
-			  
-                                                                             
-                          else
-                          (do
-			   (when (verbosity)
-			     (comp_log "compile: resolver fall through:" tokens.name "-  not found globally or in local context"))
-                           (throw ReferenceError (+ "compile: unknown/not found reference: " tokens.name)))))
-                      else
-                      (do 
-                       
-                        (throw SyntaxError "compile passed invalid compilation structure"))))
-                (catch Error (`e)
-                  (do
-                    (when (and is_error
-                               e.handled)                               
-                      (throw e))
-                    (setq is_error {
-                                    `error: e.name
-                                    `source_name: source_name                                        
-                                    `message: e.message
-                                    `form: (source_from_tokens tokens expanded_tree)
-                                    `parent_forms: (source_from_tokens tokens expanded_tree true)
-                                    `invalid: true
-                                    })
-                    (if (not e.handled)
-                      (do (push errors
-                                is_error)
-                          (set_prop e `handled true)))
-                    (set_prop e
-                              `details
-                              is_error)
-                    (if opts.throw_on_error
-                      (throw e))))))))             
+                              (compile_scoped_reference tokens ctx)))
+                        
+                        (and (is_object? tokens)
+                             (== tokens.type "objlit"))
+                        (do
+                           
+                           (compile_obj_literal tokens ctx))
+                        
+                        
+                        (is_array? tokens)
+                        (do
+                           (cond
+                              ;; simple case, just an empty array, return js equiv
+                              (== tokens.length 0)
+                              [{ `ctype: "array" `is_literal: true } "[]" ]
+                              else
+                              (let
+                                 ((`is_operation false)
+                                  (`declared_type nil)
+                                  (`prefix "")
+                                  (`ctx (new_ctx ctx))
+                                  (`symbolic_replacements [])
+                                  (`compiled_values []))
+                                 
+                                 
+                                 (set_new_completion_scope ctx)
+                                 
+                                 ;; in this case we need to compile the contents of the array
+                                 ;; and then based on the results of the compilation determine
+                                 ;; if it is an evaluation (first element of the array is a
+                                 ;; function or operator) or a non operation.  If the former
+                                 ;; it must be evaluated and returned or if the latter, returned
+                                 ;; as an array of values.
+                                 
+                                 ;; the first element is the operator potentially...
+                                 (when (and tokens.0.ref (is_string? tokens.0.val))
+                                    (= declared_type (get_declarations ctx tokens.0.name)))
+                                 
+                                 
+                                 (= rcv (compile tokens.0 ctx (+ _cdepth 1)))
+                                 
+                                 
+                                 
+                                 (when (verbosity ctx)
+                                    (comp_log (+ "compile: " _cdepth " array: ") "potential operator: " tokens.0.name "declarations: " declared_type))
+                                 
+                                 ;; compiled values will hold the compiled contents
+                                 
+                                 (for_each (`t (rest tokens))
+                                    (do
+                                       
+                                       (if (not (get_ctx_val ctx `__IN_LAMBDA__))
+                                           (set_ctx ctx
+                                            `__LAMBDA_STEP__
+                                            0))
+                                       
+                                       (push compiled_values
+                                             (compile_wrapper_fn t ctx))))
+                                 
+                                 ;; next we need to go through and find any blocks
+                                 ;; that need to be wrapped in a temp variable so we don't
+                                 ;; end up writing them out twice due to the array construction
+                                 ;; but we also need to preserve the order of evaluation of each array element
+                                 ;; from first to last.
+                                 
+                                 ;; TODO: review below map block if superfluous due to using compiled_wrapper_fn already
+                                 
+                                 (map (fn (`compiled_element idx)
+                                         (let
+                                            ((`inst (cond
+                                                       (and (is_object? compiled_element.0)     ;; get the instructive metadata from the compiled structure
+                                                            (prop compiled_element.0 `ctype))
+                                                       (prop compiled_element.0 `ctype)
+                                                       (== compiled_element.0 "{")
+                                                       "block"
+                                                       else
+                                                       nil)))
+                                            (cond
+                                               (or (== inst "block")
+                                                   (== inst "letblock"))
+                                               (do
+                                                  ;; the argument offset, the temp variable name and the wrapped function are made available
+                                                  (push symbolic_replacements
+                                                        [ idx (gen_temp_name "array_arg")
+                                                         [ preamble.2 "(" preamble.1 " " "function" "()" " " compiled_element " " ")"]]))
+                                               
+                                               (== inst "ifblock")
+                                               (do
+                                                  (push symbolic_replacements
+                                                        [ idx (gen_temp_name "array_arg")
+                                                         [preamble.2 "(" preamble.1 " " "function" "()" " " "{" compiled_element  "}" " " ")"]])))))
+                                      
+                                      compiled_values)
+                                 
+                                 ;; next layout the code, and substitute in compiled_values the references to the functions
+                                 ;; in the compiled_values array
+                                 
+                                 (for_each (`elem symbolic_replacements)
+                                    (do
+                                       ;; create the function
+                                       (for_each (`t ["let" " " elem.1 "=" elem.2 ";"])
+                                          (push acc t))
+                                       ;; splice in the reference
+                                       (-> compiled_values `splice elem.0 1 [preamble.0 " " elem.1 "()"])))
+                                 
+                                 
+                                 ;; if we have symbolic replacements, we need to generate a block
+                                 ;; and return that since we have to more processing in place
+                                 
+                                 (when (> symbolic_replacements.length 0)
+                                    (prepend acc "{")
+                                    (prepend acc { `ctype: "block" }))
+                                 
+                                 (cond
+                                    (or (== declared_type.type Function)
+                                        (== declared_type.type AsyncFunction)
+                                        (and (is_object? rcv.0)
+                                             (is_function? rcv.0.ctype))
+                                        (and (is_object? rcv.0)
+                                             (not (is_array? rcv.0))
+                                             (is_string? rcv.0.ctype)
+                                             (contains? "unction" rcv.0.ctype)))
+                                    (do
+                                       (if (== declared_type.type AsyncFunction)
+                                           (= prefix "await ")
+                                           (= prefix ""))
+                                       (= is_operation true)
+                                       (for_each (`t [ prefix "(" rcv ")" "(" ])
+                                          (push acc t))
+                                       (push_as_arg_list acc compiled_values)
+                                       (push acc ")"))
+                                    
+                                    (and (eq nil declared_type.type)
+                                         (or (== tokens.0.type "arg")
+                                             (and (is_string? rcv)
+                                                  (get_declaration_details ctx rcv))
+                                             (and (is_array? rcv)
+                                                  (is_object? rcv.0)
+                                                  (is_string? rcv.0.ctype)
+                                                  (and rcv.0.ctype
+                                                       (and (not (contains? "unction" rcv.0.ctype))
+                                                            (not (contains? "block" rcv.0.ctype))
+                                                            (not (== "string" rcv.0.ctype))
+                                                            (not (== "StringType" rcv.0.ctype))
+                                                            (not (== "nil" rcv.0.ctype))
+                                                            (not (== "NumberType" rcv.0.ctype))
+                                                            (not (== "undefined" rcv.0.ctype))
+                                                            (not (== "objliteral" rcv.0.ctype))
+                                                            (not (== "Boolean" rcv.0.ctype))
+                                                            (not (== "array" rcv.0.ctype)))))))  ;; TODO - RUNTESTS HERE MODIFIED
+                                    
+                                    
+                                    ;; an ambiguity which results in a performance penalty because we need
+                                    ;; create a function that checks the first symbol in the array is a function
+                                    ;; if the first symbol in the array is a reference.
+                                    
+                                    (do ;; tell the user of this opportunity if they want to know...
+                                       (when show_hints
+                                          (comp_warn "value ambiguity - use declare to clarify: " (source_from_tokens tokens expanded_tree true) " "
+                                           (as_lisp rcv)))
+                                       (= tmp_name (gen_temp_name "array_op_rval"))
+                                       
+                                       (when (> symbolic_replacements.length 0)
+                                          ;; this means it is a block and we need to return the last value
+                                          (push acc { `ctype: "block" })
+                                          (push acc "return")
+                                          (push acc " "))
+                                       
+                                       (for_each (`t [preamble.0 " " "(" preamble.1 " " "function" "()" "{" "let" " " tmp_name "=" rcv ";" " "  "if" " " "(" tmp_name " " "instanceof" " " "Function" ")" "{"
+                                                      "return" " " preamble.0 " " tmp_name "(" ])
+                                          (push acc t))
+                                       (push_as_arg_list acc compiled_values)
+                                       (for_each (`t [")" " " "}" " " "else" " " "{" "return" " " "[" tmp_name ])
+                                          (push acc t))
+                                       
+                                       (when (> (length (rest tokens)) 0)
+                                          (push acc ",")
+                                          (push_as_arg_list acc compiled_values))
+                                       (for_each (`t ["]" "}" "}" ")" "()"])
+                                          (push acc t)))
+                                    
+                                    (and (eq nil declared_type.type)
+                                         (or (and (is_array? rcv)
+                                                  (is_object? rcv.0)
+                                                  (is_string? rcv.0.ctype)
+                                                  (contains?  "block" rcv.0.ctype))))
+                                    (do
+                                       (when (> symbolic_replacements.length 0)
+                                          (push acc "return")
+                                          (push acc " "))
+                                       (push acc "[")
+                                       (push acc [ "(" preamble.0 " " "(" preamble.1 " " "function" "() {" rcv "})" "()" ")" ])
+                                       (when (> (length (rest tokens)) 0)
+                                          (push acc ",")
+                                          (push_as_arg_list acc compiled_values))
+                                       (push acc "]"))
+                                    else
+                                    (
+                                     (when (> symbolic_replacements.length 0)
+                                        (push acc "return")
+                                        (push acc " "))
+                                     (push acc "[")
+                                     (push acc rcv)
+                                     (when (> (length (rest tokens)) 0)
+                                        (push acc ",")
+                                        (push_as_arg_list acc compiled_values))
+                                     (push acc "]")))
+                                 
+                                 (when (> symbolic_replacements.length 0)
+                                    (push acc "}"))
+                                 
+                                 acc)))
+                        
+                        ;; token's value is an array, so just call
+                        ;; compile again with the token value which
+                        ;; move through the code above..
+                        
+                        (and (is_object? tokens)
+                             (is_array? tokens.val)
+                             tokens.type)
+                        (do
+                           (set_prop ctx
+                              `source
+                              tokens.source)
+                           (= rcv (compile tokens.val ctx (+ _cdepth 1)))
+                           rcv)
+                        
+                        ;; Simple compilations --------
+                        
+                        (or (and (is_object? tokens)
+                                 (not (== undefined tokens.val)) ;(check_true tokens.val)
+                                 tokens.type)
+                            (== tokens.type "literal")
+                            (== tokens.type "arg")
+                            (== tokens.type "null"))
+                        (do
+                           (defvar `snt_name nil)
+                           (defvar `snt_value nil)
+                           
+                           (cond
+                              (and (not tokens.ref)
+                                   (== tokens.type "arr"))
+                              (compile tokens.val ctx (+ _cdepth 1))
+                              
+                              (or (== tokens.type "null")
+                                  (and (== tokens.type "literal")
+                                       (== tokens.name "null")
+                                       tokens.ref))
+                              [ { `ctype: "nil" } "null" ]
+                              
+                              (and (== tokens.type "literal")
+                                   (== tokens.name "undefined")
+                                   tokens.ref)
+                              [ { `ctype: "undefined" } "undefined" ]
+                              
+                              (not tokens.ref)
+                              (if (and (== tokens.type "literal")
+                                       (is_string? tokens.val))
+                                  [ { `ctype: "string" } (+ "\"" (cl_encode_string tokens.val) "\"") ]
+                                  (if (is_number? tokens.val)
+                                      [{ `ctype: "NumberType" } tokens.val ]   ;; Number is also a function that can be used so we use NumberType to represent literal numbers
+                                      [{ `ctype: (sub_type tokens.val)  } tokens.val ]))  ;; straight value
+                              
+                              (and tokens.ref
+                                   opts.root_environment)
+                              (do
+                                 (path_to_js_syntax (split_by "." (sanitize_js_ref_name tokens.name))))
+                              
+                              (and tokens.ref
+                                   (prop op_lookup tokens.name))
+                              tokens.name
+                              
+                              (and tokens.ref
+                                   (do
+                                      (= snt_name (sanitize_js_ref_name tokens.name))
+                                      (= snt_value (get_ctx_val ctx snt_name))
+                                      (when (verbosity ctx)
+                                         (comp_log "compile: singleton: " "name: " tokens.name " sanitized: " snt_name "found locally as:" snt_value))
+                                      
+                                      (not (== snt_value undefined))))
+                              ;(or snt_value
+                              ;   (== 0 snt_value)
+                              ;  (== false snt_value))))
+                              (do
+                                 (= refval snt_value)
+                                 (when (== refval ArgumentType)
+                                    (= refval snt_name))
+                                 (cond
+                                    (== tokens.type "literal")
+                                    refval
+                                    else
+                                    (get_val tokens ctx)))
+                              
+                              (contains? tokens.name standard_types)
+                              tokens.name
+                              ;; check global scope
+                              (not (== undefined (get_lisp_ctx ctx tokens.name)))
+                              (do
+                                 (when (verbosity ctx)
+                                    (comp_log "compile: singleton: found global: " tokens.name))
+                                 (compile_lisp_scoped_reference tokens.name ctx))
+                              
+                              
+                              else
+                              (do
+                                 (when (verbosity)
+                                    (comp_log "compile: resolver fall through:" tokens.name "-  not found globally or in local context"))
+                                 (throw ReferenceError (+ "compile: unknown/not found reference: " tokens.name)))))
+                        else
+                        (do
+                           
+                           (throw SyntaxError "compile passed invalid compilation structure"))))
+                 (catch Error (`e)
+                    (do
+                       (when (and is_error
+                                  e.handled)
+                          (throw e))
+                       (setq is_error {
+                                        `error: e.name
+                                        `source_name: source_name
+                                        `message: e.message
+                                        `form: (source_from_tokens tokens expanded_tree)
+                                        `parent_forms: (source_from_tokens tokens expanded_tree true)
+                                        `invalid: true
+                                        })
+                       (if (not e.handled)
+                           (do (push errors
+                                     is_error)
+                              (set_prop e `handled true)))
+                       (set_prop e
+                          `details
+                          is_error)
+                       (if opts.throw_on_error
+                           (throw e))))))))
        (`final_token_assembly nil)
        (`main_log (if opts.quiet_mode
                       log
