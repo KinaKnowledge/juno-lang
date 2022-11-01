@@ -2886,7 +2886,7 @@ such as things that connect or use environmental resources.
                                         (or (first (meta_for_symbol comps.0 true))
                                             { `type: "-" })
                                         { `type: "-" })))
-      
+      ;(log "-> remainder_pos" remainder_pos "movement needed: " movement_needed delta.openers "comps" comps)
       (cond
          (== movement_needed 0)
          true
@@ -2897,6 +2897,7 @@ such as things that connect or use environmental resources.
          (or (starts_with? "def" comps.0)
              (contains? comps.0 *formatting_rules*.minor_indent))
          (progn
+            ;(log "rule 0")
             (set_prop delta
                       `indent
                       (+ remainder_pos 3)))
@@ -2910,34 +2911,46 @@ such as things that connect or use environmental resources.
             (if (and (== (length delta.closers) 0)
                      (== (length delta.openers) 1))
                 (progn
+                   ;(log "rule 1A")
                    (set_prop delta
                       `indent
                       (+ remainder_pos 3)))
                 (progn
+                   ;(log "rule 1B")
                    (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2)))))
             
          (== delta.final_type "{")
          (progn
+            ;(log "rule 2")
             (set_prop delta
                       `indent
                       (+ (last delta.openers) 2)))
          
          (contains? comps.0 built_ins)
          (progn
+            ;(log "rule 3")
             (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2)))
          
          (== delta.final_type "[")
          (progn
+            ;(log "rule 4")
+            (set_prop delta
+                     `indent
+                     (+ remainder_pos 1)))
+         (or (starts_with? "[" comps.0)
+             (starts_with? "(" comps.0))
+         (progn
+            ;(log "rule 5")
             (set_prop delta
                      `indent
                      (+ remainder_pos 1)))
          else
          (progn
-            (log "rule default" remainder_pos)
+            ;(log "rule D")
             (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2))))

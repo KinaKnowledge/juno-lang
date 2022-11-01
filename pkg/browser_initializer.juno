@@ -2815,9 +2815,7 @@
                                          (set_prop options
                                             `type
                                             extension)))
-                                         
-                                         
-                                   
+
                                    (cond
                                       (== options.type "juno")
                                       (-> editor.session `setMode "ace/mode/juno")
@@ -2949,11 +2947,12 @@
          `menu_items: (function ()
                          [[(dtext "Increase Font Size") increase_font_size]
                           [(dtext "Decrease Font Size") decrease_font_size]
-                          [(dtext "Set Edit Mode") [["Juno" (fn () (-> intf `set_mode "juno"))]
-                                  ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
-                                  ["Text" (fn () (-> intf `set_mode "text"))]
-                                  ["CSS" (fn () (-> intf `set_mode "css"))]
-                                  ["JSON" (fn () (-> intf `set_mode "json"))]]]
+                          [(dtext "Set Edit Mode") 
+                           [["Juno" (fn () (-> intf `set_mode "juno"))]
+                            ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
+                            ["Text" (fn () (-> intf `set_mode "text"))]
+                            ["CSS" (fn () (-> intf `set_mode "css"))]
+                            ["JSON" (fn () (-> intf `set_mode "json"))]]]
                           [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                   [theme  (fn () (-> intf `set_theme theme))])]])
          `get_active_lisp_operator: (fn ()
@@ -2966,13 +2965,7 @@
                          (when view.parentElement
                             (console.log "editor: performing initialization")
                             (-> resize_observer `observe view.parentElement)
-                            (initialize_editor)
-                            
-                            )) })))
-               
-
-    
-      
+                            (initialize_editor))) })))
 
 (defun select_evaluator ()
   (let
@@ -3003,8 +2996,6 @@
     (when selected_idx
         (prop (prop available selected_idx) 2))))
   
-
-
 (defun buffer_editor (title namespace path_to_value mode options)
   (let
       ((nseval (if (not (blank? namespace))
@@ -3346,8 +3337,6 @@
                                 `(log_view ,#options)))
     interf))
 
-
-   
 
 (defun browser_repl (options)
   (let
@@ -4857,7 +4846,7 @@
 (defun build_starter_environment ()
   (if is_served?
     (progn
-     (log (iframe { width: 500 height: 300
+     (floating_div (iframe { width: 500 height: 300
                    `style: "width: 90%; min-width: 500px; overflow: scroll; border: 0px solid transparent;"
                    src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )))))
 
