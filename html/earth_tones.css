@@ -4,6 +4,8 @@
   --header-color: white;
   --header-bg-color: #000000BF;
   --app-header-color: #E6E6E6;
+  --highlight-bg-color: #FBF7ED;
+  --highlight-color: #000000;
   --control-focused: #efe5e540;
   --control-text-input-color-bg: #FFFFFF50;
   --control-unfocused-color: #0000009e;

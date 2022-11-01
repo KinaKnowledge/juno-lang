@@ -953,7 +953,10 @@
 
 (defun make_path (target_path root_obj value _pos)
    (let
-      ((segment (take target_path))
+      ((target_path (if _pos  ;; if we are already processing...
+                        target_path  ;; use what we have..
+                        (clone target_path)))  ;; otherwise clone it so we don't remove it
+       (segment (take target_path))
        (cval nil)
        (pos (or _pos [])))
       (push pos segment)
