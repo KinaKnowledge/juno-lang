@@ -1069,30 +1069,41 @@
          `tags:  ["range" "iteration" "loop"]
          })
 
-(defglobal HSV_to_RGB (new Function "h, s, v" "{
-        var r, g, b, i, f, p, q, t;
-        if (arguments.length === 1) {
-            s = h.s, v = h.v, h = h.h;
-        }
-        i = Math.floor(h * 6);
-        f = h * 6 - i;
-        p = v * (1 - s);
-        q = v * (1 - f * s);
-        t = v * (1 - (1 - f) * s);
-        switch (i % 6) {
-            case 0: r = v, g = t, b = p; break;
-            case 1: r = q, g = v, b = p; break;
-            case 2: r = p, g = v, b = t; break;
-            case 3: r = p, g = q, b = v; break;
-            case 4: r = t, g = p, b = v; break;
-            case 5: r = v, g = p, b = q; break;
-        }
-        return {
-            r: Math.round(r * 255),
-            g: Math.round(g * 255),
-            b: Math.round(b * 255)
-        }
-    }"))
+(defun HSV_to_RGB (h s v) 
+   (javascript
+         | {
+             var r, g, b, i, f, p, q, t;
+             if (arguments.length === 1) {
+                s = h.s, v = h.v, h = h.h;
+             }
+             i = Math.floor(h * 6);
+             f = h * 6 - i;
+             p = v * (1 - s);
+             q = v * (1 - f * s);
+             t = v * (1 - (1 - f) * s);
+             switch (i % 6) {
+                              case 0: r = v, g = t, b = p; break;
+                              case 1: r = q, g = v, b = p; break;
+                              case 2: r = p, g = v, b = t; break;
+                              case 3: r = p, g = q, b = v; break;
+                              case 4: r = t, g = p, b = v; break;
+                              case 5: r = v, g = p, b = q; break;
+                              }
+             return {
+                      r: Math.round(r * 255),
+                      g: Math.round(g * 255),
+                      b: Math.round(b * 255)
+                      }
+             } |)
+   {
+       `description: (+ "Given a hue, saturation and brightness, all of which " 
+                        "should be values between 0 and 1, returns an object "
+                        "containing 3 keys: r, g, b, with values between 0 and 255, "
+                        "representing the corresponding red, green and blue values "
+                        "for the provided hue, saturation and brightness.")
+       `usage: ["hue:number" "saturation:number" "value:number"]
+       `tags: [ `color `conversion `hue `saturation `brightness `red `green `blue `rgb]
+   })
 
 (defun color_for_number (num saturation brightness)
     (let
@@ -2859,9 +2870,11 @@ such as things that connect or use environmental resources.
 (defun_sync calculate_indent_rule (delta movement_needed)
    (let
       ((lisp_line (-> delta.line `substr (first delta.openers)))
-       (remainder_pos (or (prop delta.openers (- movement_needed 1))
-                                      (first delta.openers)
-                                      delta.indent))
+       (remainder_pos (if (> delta.openers.length 0)
+                          (or (prop delta.openers (- movement_needed 1))
+                              (first delta.openers)
+                              delta.indent)
+                          0))
        (remainder (-> delta.line `substr (+ 1 remainder_pos)))
        (comps (reduce_sync (c (split_by " " remainder))
                              (when (not (blank? c))
@@ -2873,10 +2886,14 @@ such as things that connect or use environmental resources.
                                         (or (first (meta_for_symbol comps.0 true))
                                             { `type: "-" })
                                         { `type: "-" })))
+      
       (cond
          (== movement_needed 0)
          true
-         
+         (and (== comps.length 0)
+              (== delta.openers.length 0)
+              (== delta.closers.length 0))
+         true
          (or (starts_with? "def" comps.0)
              (contains? comps.0 *formatting_rules*.minor_indent))
          (progn
@@ -2895,7 +2912,7 @@ such as things that connect or use environmental resources.
                 (progn
                    (set_prop delta
                       `indent
-                      (+ remainder_pos remainder_pos 3)))
+                      (+ remainder_pos 3)))
                 (progn
                    (set_prop delta
                       `indent
@@ -2920,10 +2937,12 @@ such as things that connect or use environmental resources.
                      (+ remainder_pos 1)))
          else
          (progn
-            
+            (log "rule default" remainder_pos)
             (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2))))
+      
+      
       delta)
    {
        `description: (+ "Given a delta object as returned from analyze_text_line, and an integer representing the "

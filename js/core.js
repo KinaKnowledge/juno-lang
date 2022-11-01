@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-10-31 13:40:17
-// Version: 2022.10.31.13.40
-export const DLISP_ENV_VERSION='2022.10.31.13.40';
+// Build Time: 2022-11-01 11:57:57
+// Version: 2022.11.01.11.57
+export const DLISP_ENV_VERSION='2022.11.01.11.57';
 
 
 
@@ -595,9 +595,7 @@ await Environment.set_global("destructuring_bind",async function(bind_vars,expre
     binding_vars=bind_vars;
     preamble=[];
     allocations=[];
-    expr_result_var=("=:"+ "_expr_"+ await (async function(){
-         return await (await Environment.get_global("random_int"))(100000) 
-    })());
+    expr_result_var=("=:"+ "_expr_"+ await (await Environment.get_global("random_int"))(100000));
     paths=await (async function(){
          return await (await Environment.get_global("destructure_list"))(binding_vars) 
     })();
@@ -1227,7 +1225,33 @@ await Environment.set_global("map_range",async function(n,from_range,to_range) {
     },{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"]
 })
 };
- Environment.set_global("HSV_to_RGB",new Function("h, s, v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: Math.round(r * 255),\n            g: Math.round(g * 255),\n            b: Math.round(b * 255)\n        }\n    }"));
+await Environment.set_global("HSV_to_RGB",async function(h,s,v) {
+     {
+             var r, g, b, i, f, p, q, t;
+             if (arguments.length === 1) {
+                s = h.s, v = h.v, h = h.h;
+             }
+             i = Math.floor(h * 6);
+             f = h * 6 - i;
+             p = v * (1 - s);
+             q = v * (1 - f * s);
+             t = v * (1 - (1 - f) * s);
+             switch (i % 6) {
+                              case 0: r = v, g = t, b = p; break;
+                              case 1: r = q, g = v, b = p; break;
+                              case 2: r = p, g = v, b = t; break;
+                              case 3: r = p, g = q, b = v; break;
+                              case 4: r = t, g = p, b = v; break;
+                              case 5: r = v, g = p, b = q; break;
+                              }
+             return {
+                      r: Math.round(r * 255),
+                      g: Math.round(g * 255),
+                      b: Math.round(b * 255)
+                      }
+             } 
+},{ "name":"HSV_to_RGB","fn_args":"(h s v)","description":["=:+","Given a hue, saturation and brightness, all of which ","should be values between 0 and 1, returns an object ","containing 3 keys: r, g, b, with values between 0 and 255, ","representing the corresponding red, green and blue values ","for the provided hue, saturation and brightness."],"usage":["hue:number","saturation:number","value:number"],"tags":["color","conversion","hue","saturation","brightness","red","green","blue","rgb"]
+});
 await Environment.set_global("color_for_number",async function(num,saturation,brightness) {
     let h;
     let pos;
@@ -1246,7 +1270,9 @@ await Environment.set_global("color_for_number",async function(num,saturation,br
     v=await (async function(){
          return await (await Environment.get_global("map_range"))([v,[0,7],[0.92,1]]) 
     })();
-    rgb=await (await Environment.get_global("HSV_to_RGB"))(h,saturation,brightness);
+    rgb=await (async function(){
+         return await (await Environment.get_global("HSV_to_RGB"))(h,saturation,brightness) 
+    })();
     return ("#"+ await (async function() {
         {
              let __call_target__=await (rgb && rgb["r"])["toString"].call((rgb && rgb["r"]),16), __call_method__="padStart";
@@ -1458,22 +1484,24 @@ await Environment.set_global("use_quoted_initializer",async function(...forms) {
 },{ "eval_when":{ "compile_time":true
 },"name":"use_quoted_initializer","macro":true,"fn_args":"(\"&\" forms)","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"]
 });
-await Environment.set_global("random_int",async function(...args) {
-    let top;
-    let bottom;
-    top=0;
-    bottom=0;
-    if (check_true ((await (await Environment.get_global("length"))(args)>1))){
-        {
-            top=await parseInt((args && args["1"]));
-            bottom=await parseInt((args && args["0"]))
-        }
-    } else {
-        top=await parseInt((args && args["0"]))
-    };
-    return await parseInt(await (await Environment.get_global("add"))((await Math.random()* (top- bottom)),bottom))
-},{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"]
-});
+{
+     Environment.set_global("random_int",function(...args) {
+        let top;
+        let bottom;
+        top=0;
+        bottom=0;
+        if (check_true (( ( Environment.get_global("length"))(args)>1))){
+            {
+                top= parseInt((args && args["1"]));
+                bottom= parseInt((args && args["0"]))
+            }
+        } else {
+            top= parseInt((args && args["0"]))
+        };
+        return  parseInt( ( Environment.get_global("add"))(( Math.random()* (top- bottom)),bottom))
+    },{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"]
+})
+};
 await Environment.set_global("resolve_multi_path",async function(path,obj,not_found) {
     return await async function(){
         if (check_true ((obj instanceof Object))) {
@@ -3697,16 +3725,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__263=async function(req) {
                                             {
-                                                let _expr_54409;
+                                                let _expr_18244;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_54409=await (async function(){
+                                                _expr_18244=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_54409 && _expr_54409["0"]);
-                                                req_ns=(_expr_54409 && _expr_54409["1"]);
-                                                explicit=(_expr_54409 && _expr_54409["2"]);
+                                                req_sym=(_expr_18244 && _expr_18244["0"]);
+                                                req_ns=(_expr_18244 && _expr_18244["1"]);
+                                                explicit=(_expr_18244 && _expr_18244["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3809,13 +3837,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_85145;
+                    let _expr_18337;
                     let nspace;
-                    _expr_85145=await (async function(){
+                    _expr_18337=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_85145 && _expr_85145["0"]);
-                    nspace=(_expr_85145 && _expr_85145["1"]);
+                    sym=(_expr_18337 && _expr_18337["0"]);
+                    nspace=(_expr_18337 && _expr_18337["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4173,12 +4201,18 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
         let comps;
         let symbol_details;
         lisp_line= (delta && delta["line"])["substr"].call((delta && delta["line"]), ( Environment.get_global("first"))((delta && delta["openers"])));
-        remainder_pos=( ( function(){
-            let __targ__302=(delta && delta["openers"]);
-            if (__targ__302){
-                 return(__targ__302)[(movement_needed- 1)]
-            } 
-        })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]));
+        remainder_pos= ( function(){
+            if (check_true (((delta && delta["openers"] && delta["openers"]["length"])>0))){
+                return ( ( function(){
+                    let __targ__302=(delta && delta["openers"]);
+                    if (__targ__302){
+                         return(__targ__302)[(movement_needed- 1)]
+                    } 
+                })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]))
+            } else {
+                return 0
+            }
+        })();
         remainder= (delta && delta["line"])["substr"].call((delta && delta["line"]),(1+ remainder_pos));
         comps= ( function(){
             let __collector;
@@ -4229,21 +4263,35 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
           (function(){
             if (check_true ((movement_needed===0))) {
                 return true
+            } else if (check_true ((((comps && comps.length)===0)&& ((delta && delta["openers"] && delta["openers"]["length"])===0)&& ((delta && delta["closers"] && delta["closers"]["length"])===0)))) {
+                true
             } else if (check_true (( ( Environment.get_global("starts_with?"))("def",(comps && comps["0"]))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.minor_indent")))))) {
                 {
                       (function(){
-                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,3);
+                        delta["indent"]=(remainder_pos+ 3);
                         return delta;
                         
                     })()
                 }
             } else if (check_true (((((symbol_details && symbol_details["type"])&&  ( Environment.get_global("contains?"))("Function",(symbol_details && symbol_details["type"])))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.keywords"))))&&  ( Environment.get_global("contains?"))((delta && delta["final_type"]),["(","[",")","]"])))) {
                 {
-                      (function(){
-                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,(comps && comps["0"] && comps["0"]["length"]),2);
-                        return delta;
-                        
-                    })()
+                    if (check_true ((( ( Environment.get_global("length"))((delta && delta["closers"]))===0)&& ( ( Environment.get_global("length"))((delta && delta["openers"]))===1)))){
+                        {
+                              (function(){
+                                delta["indent"]=(remainder_pos+ 3);
+                                return delta;
+                                
+                            })()
+                        }
+                    } else {
+                        {
+                              (function(){
+                                delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
+                                return delta;
+                                
+                            })()
+                        }
+                    }
                 }
             } else if (check_true (((delta && delta["final_type"])==="{"))) {
                 {
@@ -4256,15 +4304,24 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
             } else if (check_true ( ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("built_ins"))))) {
                 {
                       (function(){
-                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,(comps && comps["0"] && comps["0"]["length"]),2);
+                        delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((delta && delta["final_type"])==="["))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ 1);
                         return delta;
                         
                     })()
                 }
             } else {
                 {
+                    console.log("rule default",remainder_pos);
                       (function(){
-                        delta["indent"]= ( Environment.get_global("add"))(remainder_pos,1);
+                        delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
                         return delta;
                         
                     })()
@@ -4272,7 +4329,7 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
             }
         } )();
         return delta
-    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","add","last","built_ins"]
+    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","add","last","built_ins","log"]
 })
 };
 {
@@ -4290,32 +4347,32 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
                 current_row=(line_number- 1);
                 prior_line= ( function(){
                     let v= ( function(){
-                        let __array_op_rval__312=get_line;
-                         if (__array_op_rval__312 instanceof Function){
-                            return  __array_op_rval__312(current_row) 
+                        let __array_op_rval__314=get_line;
+                         if (__array_op_rval__314 instanceof Function){
+                            return  __array_op_rval__314(current_row) 
                         } else {
-                            return [__array_op_rval__312,current_row]
+                            return [__array_op_rval__314,current_row]
                         }
                     })();
                     ;
                      ( function(){
-                         let __test_condition__313=function() {
+                         let __test_condition__315=function() {
                             return (((v).trim()==="")&& (current_row>0))
                         };
-                        let __body_ref__314=function() {
+                        let __body_ref__316=function() {
                             current_row-=1;
                             return v= ( function(){
-                                let __array_op_rval__315=get_line;
-                                 if (__array_op_rval__315 instanceof Function){
-                                    return  __array_op_rval__315(current_row) 
+                                let __array_op_rval__317=get_line;
+                                 if (__array_op_rval__317 instanceof Function){
+                                    return  __array_op_rval__317(current_row) 
                                 } else {
-                                    return [__array_op_rval__315,current_row]
+                                    return [__array_op_rval__317,current_row]
                                 }
                             })()
                         };
                         let __BREAK__FLAG__=false;
-                        while( __test_condition__313()) {
-                             __body_ref__314();
+                        while( __test_condition__315()) {
+                             __body_ref__316();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -4345,37 +4402,37 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
                             remainder=null;
                             symbol_details=null;
                              ( function(){
-                                 let __test_condition__316=function() {
+                                 let __test_condition__318=function() {
                                     return ((movement_needed<0)&& (current_row>0))
                                 };
-                                let __body_ref__317=function() {
+                                let __body_ref__319=function() {
                                     current_row-=1;
                                     prior_line= ( function(){
-                                        let __array_op_rval__318=get_line;
-                                         if (__array_op_rval__318 instanceof Function){
-                                            return  __array_op_rval__318(current_row) 
+                                        let __array_op_rval__320=get_line;
+                                         if (__array_op_rval__320 instanceof Function){
+                                            return  __array_op_rval__320(current_row) 
                                         } else {
-                                            return [__array_op_rval__318,current_row]
+                                            return [__array_op_rval__320,current_row]
                                         }
                                     })();
                                      ( function(){
-                                         let __test_condition__319=function() {
+                                         let __test_condition__321=function() {
                                             return ((current_row>0)&& ((prior_line).trim()===""))
                                         };
-                                        let __body_ref__320=function() {
+                                        let __body_ref__322=function() {
                                             current_row-=1;
                                             return prior_line= ( function(){
-                                                let __array_op_rval__321=get_line;
-                                                 if (__array_op_rval__321 instanceof Function){
-                                                    return  __array_op_rval__321(current_row) 
+                                                let __array_op_rval__323=get_line;
+                                                 if (__array_op_rval__323 instanceof Function){
+                                                    return  __array_op_rval__323(current_row) 
                                                 } else {
-                                                    return [__array_op_rval__321,current_row]
+                                                    return [__array_op_rval__323,current_row]
                                                 }
                                             })()
                                         };
                                         let __BREAK__FLAG__=false;
-                                        while( __test_condition__319()) {
-                                             __body_ref__320();
+                                        while( __test_condition__321()) {
+                                             __body_ref__322();
                                              if(__BREAK__FLAG__) {
                                                  break;
                                                 
@@ -4387,8 +4444,8 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
                                     return movement_needed=(movement_needed+ (delta && delta["delta"]))
                                 };
                                 let __BREAK__FLAG__=false;
-                                while( __test_condition__316()) {
-                                     __body_ref__317();
+                                while( __test_condition__318()) {
+                                     __body_ref__319();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -4405,19 +4462,19 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
                     }
                 } )();
                 return ( ( function() {
-                    let __for_body__324=function(c) {
+                    let __for_body__326=function(c) {
                         return " "
                     };
-                    let __array__325=[],__elements__323= ( Environment.get_global("range"))((delta && delta["indent"]));
+                    let __array__327=[],__elements__325= ( Environment.get_global("range"))((delta && delta["indent"]));
                     let __BREAK__FLAG__=false;
-                    for(let __iter__322 in __elements__323) {
-                        __array__325.push( __for_body__324(__elements__323[__iter__322]));
+                    for(let __iter__324 in __elements__325) {
+                        __array__327.push( __for_body__326(__elements__325[__iter__324]));
                         if(__BREAK__FLAG__) {
-                             __array__325.pop();
+                             __array__327.pop();
                             break;
                             
                         }
-                    }return __array__325;
+                    }return __array__327;
                      
                 })()).join("")
             }
