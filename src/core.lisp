@@ -1230,7 +1230,7 @@ such as things that connect or use environmental resources.
 	   
 
 
-(defun random_int (`& `args)
+(defun_sync random_int (`& `args)
        (let
             ((`top 0)
              (`bottom 0))
@@ -2883,16 +2883,23 @@ such as things that connect or use environmental resources.
             (set_prop delta
                       `indent
                       (+ remainder_pos 3)))
-            
+         
          (and (or (and symbol_details.type
                        (contains? "Function" symbol_details.type))
                   (contains? comps.0 *formatting_rules*.keywords))
               (contains? delta.final_type ["(" "[" ")" "]"]))
                             
          (progn
-            (set_prop delta
+            (if (and (== (length delta.closers) 0)
+                     (== (length delta.openers) 1))
+                (progn
+                   (set_prop delta
                       `indent
-                      (+ remainder_pos comps.0.length 2)))
+                      (+ remainder_pos remainder_pos 3)))
+                (progn
+                   (set_prop delta
+                      `indent
+                      (+ remainder_pos comps.0.length 2)))))
             
          (== delta.final_type "{")
          (progn
@@ -2905,11 +2912,18 @@ such as things that connect or use environmental resources.
             (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2)))
-         else
+         
+         (== delta.final_type "[")
          (progn
             (set_prop delta
+                     `indent
+                     (+ remainder_pos 1)))
+         else
+         (progn
+            
+            (set_prop delta
                       `indent
-                      (+ remainder_pos 1))))
+                      (+ remainder_pos comps.0.length 2))))
       delta)
    {
        `description: (+ "Given a delta object as returned from analyze_text_line, and an integer representing the "
