@@ -1550,7 +1550,7 @@
                                         (if  (and (== ctx.block_step 0)
                                                   (not (contains? stmt.0.ctype ["block" "ifblock" "tryblock" "letblock"]))
                                                   (not (contains? stmt.0.completion completion_types)))
-                                                  
+                                            
                                           (do
                                             (pop stmts) ;; remove the last statement - we already have it                                            
                                             (assert cmp_rec "compiler error: check_statement_completion unable to find completion_scope record in context")
@@ -1559,9 +1559,12 @@
                                               (do
                                                 (set_prop stmt.0
                                                           `completion
-                                                          "return")                                     
-                                                (push stmts
-                                                      [ stmt.0 "return " (rest stmt) ])
+                                                          "return")
+                                                (if (== stmt.0.ctype "__JS__")
+                                                    (push stmts
+                                                          [ stmt ])
+                                                    (push stmts
+                                                        [ stmt.0 "return " (rest stmt) ]))
                                                 (push cmp_rec.completion_records
                                                       {
                                                        `block_id: ctx.block_id
@@ -3242,7 +3245,7 @@
        (`compile_javascript
            (fn (tokens ctx)
                (let
-                   ((`acc [])
+                   ((`acc [ { `ctype: "__JS__" } ])
                     (`text nil))
                    (for_each (`t (or (rest tokens) []))
                      (do 
@@ -3253,6 +3256,7 @@
                              (push acc (compile t ctx))
                              else
                              (push acc t.val))))
+                   
                 acc)))
      
        (`compile_set_global 

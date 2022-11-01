@@ -2403,4 +2403,35 @@
    []
    true
    "Top level if returns false value"]
+  ["((function (a b)
+   (javascript | 
+         let c = 5;
+         let d = 12;
+         return a * b * c + d;
+         |)) 2 3)"
+   []
+   42
+   "javascript operator as block suppresses return"]
+  ["((function (a b)
+   (if (> a b)
+      (javascript | 
+         let c = 5;
+         let d = 12;
+         return a * b * c + d;
+         |)
+      0)) 2 3)"
+    []
+    0
+    "javascript operator in if block true"]
+  ["((function (a b)
+   (if (> a b)
+       0
+      (javascript | 
+         let c = 5;
+         let d = 12;
+         return a * b * c + d;
+         |))) 2 3)"
+   []
+   42
+   "javascript operator in if block false"]
 ])
