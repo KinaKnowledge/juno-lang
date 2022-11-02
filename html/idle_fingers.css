@@ -37,7 +37,7 @@
     --type-regexp-color: #fe2f81;
     --type-code-color: #ffe2b7;
     --value-focus-color: #0168ff;
-    --mode-color: #0278e7;
+    --mode-color: #a9d5ff;
     --primary-action-bg-color: #0278e7;
     --primary-action-color: #FFFFFF;
     --main-app-font: -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
@@ -53,7 +53,8 @@
     --editor-gutter-bg-color: #e0e0e0;
     --editor-gutter-color: #333;
     --editor-cursor-color: #202020;
-    --editor-selected-bg-color: #4ab1ff3d;
+    --editor-selected-bg-color: #ffd39985;
+    --editor-selected-word-bg-color: #fff05c40;
     --editor-step-bg-color: rgb(198,219,174);
     --editor-active-line-bg: rgb(255 255 255 / 53%);
     --editor-active-line-gutter-bg-color: rgb(166 166 166 / 46%);

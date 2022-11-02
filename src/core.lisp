@@ -2948,6 +2948,12 @@ such as things that connect or use environmental resources.
             (set_prop delta
                      `indent
                      (+ remainder_pos 1)))
+         (== comps.length 1)
+         (progn
+            ;(log "rule 6")
+            (set_prop delta
+                     `indent
+                     (+ remainder_pos 3)))
          else
          (progn
             ;(log "rule D")

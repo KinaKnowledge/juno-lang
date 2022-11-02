@@ -18,7 +18,7 @@ color: #FFFFFF\
 color: #91FF00\
 }\
 .ace-idle-fingers .ace_marker-layer .ace_selection {\
-background: rgba(90, 100, 126, 0.88)\
+background: var(--editor-selected-bg-color)\
 }\
 .ace-idle-fingers.ace_multiselect .ace_selection.ace_start {\
 box-shadow: 0 0 3px 0px #323232;\
@@ -39,7 +39,7 @@ background-color: #353637\
 }\
 .ace-idle-fingers .ace_marker-layer .ace_selected-word {\
 border: 1px solid rgba(90, 100, 126, 0.88);\
-background: var(--editor-selected-bg-color)\
+background: var(--editor-selected-word-bg-color)\
 }\
 .ace-idle-fingers .ace_invisible {\
 color: #404040\

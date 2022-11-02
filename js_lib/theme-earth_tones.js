@@ -40,7 +40,8 @@ background-color: var(--editor-active-line-gutter-bg-color);\
 }\
 .ace-earth_tones .ace_marker-layer .ace_selected-word {\
 border: 1px solid var(--editor-selected-bg-color);\
-background: var(--editor-selected-bg-color);\
+background-color: var(--editor-selected-word-bg-color);\
+box-shadow: 0px 0px 2px 2px #0000001F;\
 }\
 .ace-earth_tones .ace_invisible {\
 color: var(--editor-invisible-color)\

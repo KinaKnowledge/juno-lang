@@ -51,6 +51,7 @@
     --editor-gutter-color: #333;
     --editor-cursor-color: #202020;
     --editor-selected-bg-color: #4ab1ff3d;
+    --editor-selected-word-bg-color: #fff4a36e;
     --editor-step-bg-color: rgb(198,219,174);
     --editor-active-line-bg: rgb(255 255 255 / 53%);
     --editor-active-line-gutter-bg-color: rgb(166 166 166 / 46%);
