@@ -60,7 +60,7 @@
 ;;
 ;; special_operators - when true, return the list of the compiler's special operators
 
-;; Note that this source was originially written in an earlier version of this lisp,
+;; Note that this source was originally written in an earlier version of this lisp,
 ;; which needed symbols to be quoted explicitly in certain form types, principally when
 ;; they are being initially defined, such as in let.  This is no longer the case
 ;; and the rules have been relaxed.  Once this compiler reached a consistently
@@ -1549,7 +1549,8 @@
                                         
                                         (if  (and (== ctx.block_step 0)
                                                   (not (contains? stmt.0.ctype ["block" "ifblock" "tryblock" "letblock"]))
-                                                  (not (contains? stmt.0.completion completion_types)))
+                                                  (not (contains? stmt.0.completion completion_types))
+                                                  (not (== cmp_rec.scope_type `arrow)))
                                             
                                           (do
                                             (pop stmts) ;; remove the last statement - we already have it                                            
@@ -1572,6 +1573,7 @@
                                                        `type: "return"
                                                        `stmt: (last stmts)
                                                        }))
+                                              
                                               (do                                                
                                                 (push stmts
                                                       [ { `completion: "return" } "return " stmt])
@@ -2159,47 +2161,47 @@
                                (do
                                 (prepend acc { `ctype: "letblock" `block_step: ctx.parent.block_step })
                                 acc)))))
-
-       
-	(`in_sync? (fn (ctx)
-		       (get_ctx ctx "__SYNCF__")))
-	(`await? (fn (ctx)
-		     (if (in_sync? ctx)
-			 ""
-		       "await")))
-	(`calling_preamble (fn (ctx)
-			     (if (in_sync? ctx)
-				 ["" "" { `ctype: "Function" `block_step: 0 } "(" ")" ]
-				 ["await" "async" { `ctype: "AsyncFunction" `block_step: 0 } "" "" ])))
-       (`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
-       (`completion_scope_id 0)
-       (`set_new_completion_scope (fn (ctx)
-                                    (let
-                                        ((completion_scope {
-				                            id: (inc completion_scope_id)
-                                                            root_block_id: nil
-                                                            completion_records: []                              
-                                                            is_top: false
-				                            }))
-                                      (set_ctx ctx
-                                               `__COMPLETION_SCOPE__
-                                               completion_scope)
-                                      (set_ctx ctx
-                                               `__COMP_INFIX_OPS__
-                                               nil)
-                                      completion_scope)))
-       (`compile_fn (fn (tokens ctx fn_opts)
+        
+        
+        (`in_sync? (fn (ctx)
+                      (get_ctx ctx "__SYNCF__")))
+        (`await? (fn (ctx)
+                    (if (in_sync? ctx)
+                        ""
+                        "await")))
+        (`calling_preamble (fn (ctx)
+                              (if (in_sync? ctx)
+                                  ["" "" { `ctype: "Function" `block_step: 0 } "(" ")" ]
+                                  ["await" "async" { `ctype: "AsyncFunction" `block_step: 0 } "" "" ])))
+        (`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
+        (`completion_scope_id 0)
+        (`set_new_completion_scope (fn (ctx)
+                                      (let
+                                         ((completion_scope {
+                                                              id: (inc completion_scope_id)
+                                                              root_block_id: nil
+                                                              completion_records: []
+                                                              is_top: false
+                                                              }))
+                                         (set_ctx ctx
+                                                  `__COMPLETION_SCOPE__
+                                                  completion_scope)
+                                         (set_ctx ctx
+                                                  `__COMP_INFIX_OPS__
+                                                  nil)
+                                         completion_scope)))
+        (`compile_fn (fn (tokens ctx fn_opts)
                         (let
-                            ((`acc [])
-                             (`idx -1)
-                             (`arg nil)                             
-                             (`ctx (new_ctx ctx))			     
-                             (`fn_args tokens.1.val)
-                             (`body tokens.2)                             
-                             (`external_declarations tokens.3)
-                             (`type_mark nil)
-                             (`completion_scope (set_new_completion_scope ctx))			   
-                             (`nbody nil))
+                           ((`acc [])
+                            (`idx -1)
+                            (`arg nil)
+                            (`ctx (new_ctx ctx))
+                            (`fn_args tokens.1.val)
+                            (`body tokens.2)
+                            (`external_declarations tokens.3)
+                            (`type_mark nil)
+                            (`completion_scope (set_new_completion_scope ctx))
+                            (`nbody nil))
                                                             
                           (when (eq undefined body)
                             (throw SyntaxError "Invalid function call syntax"))
@@ -2302,7 +2304,8 @@
                           (when fn_opts.arrow
                                 (push acc "=>"))
                           
-                          (if fn_opts.generator
+                          (if (or fn_opts.generator
+                                  fn_opts.arrow)
                               (set_prop ctx
                                     `return_last_value
                                     false)
@@ -2314,8 +2317,7 @@
                             (== body.val.0.name `let)
                             (do                                                           
                              (push acc (compile body.val
-                                                ctx
-                                                )))
+                                                ctx)))
                             (contains? body.val.0.name [ `do `progn `progl ])                                
                             (do                              
                              (push acc (compile_block body.val
@@ -2339,7 +2341,8 @@
                                                        ctx))))                         
                           ;; validate completion records
                           (cond
-                            (== completion_scope.completion_records.length 0)
+                            (and (not fn_opts.arrow)
+                                 (== completion_scope.completion_records.length 0))
                             (throw Error "internal compile error: no completion records for callable")
                             else
                             ;; do validation check here
@@ -3943,23 +3946,23 @@
                                                        (set_declaration ctx name `type Function)))))
                                             
                                             (== declaration "verbose")
-                                            (do 
-                                                (defvar `verbosity_level (parseInt (first (each targeted `name))))
-                                                (if (not (isNaN verbosity_level))
+                                            (do
+                                               (defvar `verbosity_level (parseInt (first (each targeted `name))))
+                                               (if (not (isNaN verbosity_level))
                                                    (do
-                                                    (if (> verbosity_level 0)
-                                                        (set_ctx ctx "__VERBOSITY__" verbosity_level)
-                                                        (do 
-							 (declare_log "verbosity: turned off")
-							 (= verbosity silence)
-							 (set_ctx ctx "__VERBOSITY__" nil)))
-						    (= verbosity check_verbosity)
-                                                    (declare_log "compiler: verbosity set: " (verbosity ctx)))
+                                                      (if (> verbosity_level 0)
+                                                          (set_ctx ctx "__VERBOSITY__" verbosity_level)
+                                                          (do
+                                                             (declare_log "verbosity: turned off")
+                                                             (= verbosity silence)
+                                                             (set_ctx ctx "__VERBOSITY__" nil)))
+                                                      (= verbosity check_verbosity)
+                                                      (declare_log "compiler: verbosity set: " (verbosity ctx)))
                                                    (push warnings
-                                                         "invalid verbosity declaration, expected number, received " (first (each targeted `name)))))
+                                                      "invalid verbosity declaration, expected number, received " (first (each targeted `name)))))
                                             (== declaration "local")
                                             (for_each (`name (each targeted `name))
-                                                 (do
+                                               (do
                                                      (= dec_struct (get_declaration_details ctx name))                                                     
                                                      (set_ctx ctx name dec_struct.value)))
                                             (== declaration "function")

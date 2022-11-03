@@ -2434,4 +2434,61 @@
    []
    42
    "javascript operator in if block false"]
+  ["((fn ()
+       (let
+          ((i 0)
+           (my_incrementor (=> (v) (inc i v)))
+           (my_decrementor (=> (v) (dec i v))))
+          (my_incrementor 4)
+          (my_decrementor 2)
+         i)))"
+    []
+    2
+    "Arrow functions don't get return keyword in containing scope"]
+   ["(let
+        ((i 0)
+         (my_incrementor (=> (v) (inc i v)))
+         (my_decrementor (=> (v) (dec i v))))
+        (my_incrementor 4)
+         (my_decrementor 2)
+        i)"
+    []
+    2
+    "Arrow functions don't get return keyword at top level"]
+  ["((fn ()
+        (let
+          ((i 0)
+           (b 2)
+          (my_incrementor (=> (v) 
+                              (progn
+                               (inc i v)
+                               (dec b))))
+           (my_decrementor (=> (v)
+                              (progn
+                               (dec i v)
+                               (dec b)))))
+         (my_incrementor 4)
+         (my_decrementor 2)
+         b)))"
+     []
+     0
+     "Arrow functions with block operator suppress return in embedded function"]
+  ["(let
+      ((i 0)
+       (b 2)
+       (my_incrementor (=> (v) 
+                           (progn
+                             (inc i v)
+                             (dec b))))
+       (my_decrementor (=> (v)
+                           (progn
+                             (dec i v)
+                             (dec b)))))
+       (my_incrementor 4)
+       (my_decrementor 2)
+       b)"
+     []
+     0
+     "Arrow functions with block operator suppress return - top level"]
+
 ])
