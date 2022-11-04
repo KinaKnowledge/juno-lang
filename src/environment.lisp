@@ -740,7 +740,8 @@
 	 (meta_for_symbol (function (quoted_symbol search_mode)
                                (when (is_string? quoted_symbol)
                                  ;; if we have been given a string, get any local data we have in our global context
-                                 (defvar local_data (prop Environment.global_ctx.scope quoted_symbol))
+                                 (defvar local_data (or (prop Environment.global_ctx.scope quoted_symbol)
+                                                        (prop Environment.definitions quoted_symbol)))
                                  (defvar acc [])				 
                                  (if search_mode
                                    (do                                    
@@ -772,16 +773,16 @@
                                                `name: quoted_symbol }
                                              it)
                                           nil)))))
-			  {
-                           `description: (+ "Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "
-                                            "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "
-                                            "is an array, since there can be symbols with the same name in different environments. If no values are found "
-                                            "an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "
-                                            "only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned.")
-                                            
-                           `usage: ["quoted_symbol:string" "search_mode:boolean"]
-                           `tags: [`describe `meta `help `definition `symbol `metadata ]
-                           })
+                   {
+                     `description: (+ "Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "
+                                      "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "
+                                      "is an array, since there can be symbols with the same name in different environments. If no values are found "
+                                      "an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "
+                                      "only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned.")
+                     
+                     `usage: ["quoted_symbol:string" "search_mode:boolean"]
+                     `tags: [`describe `meta `help `definition `symbol `metadata ]
+                     })
          
        
        (describe (fn (quoted_symbol search_mode)
@@ -806,57 +807,57 @@
                   `tags: [ `meta `help `definition `symbol `metadata `info `meta_for_symbol ]
                   })
                           
-         (undefine (function (quoted_symbol)
-			     (if (is_string? quoted_symbol)
-                               (let
-                                   ((`namespace_identity (split_by "/" quoted_symbol))   ;;  split..namespace_identity may only have 1 component though
-                                    (`parent_call nil)
-                                    (`child_call nil)
-                                    (`target_symbol nil))
-                                 (declare (function parent_call))
-			         (cond
-                                   (or (and (== namespace_identity.length 1)                                        
-                                            (prop Environment.global_ctx.scope namespace_identity.0))
-                                       (and (> namespace_identity.length 1)
-                                            (== namespace_identity.0 namespace)))
-                                   ;; it's not qualified and in our local environment
-				   (progn
-                                    (= target_symbol (if (> namespace_identity.length 1)
-                                                       namespace_identity.1
-                                                       namespace_identity.0))                                                       
-                                    (delete_prop Environment.definitions target_symbol)
-                                    (if (prop Environment.global_ctx.scope target_symbol)
-                                      (delete_prop Environment.global_ctx.scope target_symbol)
-                                      false))
-
-                                   (and (> namespace_identity.length 1)
-                                        parent_environment)
-                                   (progn
-                                    (setq parent_call (-> parent_environment `get_global "undefine"))
-                                    (parent_call quoted_symbol))
-
-                                   (and (> namespace_identity.length 1)
-                                        (prop children namespace_identity.0))
-                                   ;; child namespace, send it there
-                                   (progn
-                                    (setq child_call (-> (prop children namespace_identity.0) `get_global "undefine"))
-                                    (child_call quoted_symbol))
-                                    
-                                   else
-				   false))
-			       (throw SyntaxError "undefine requires a quoted symbol")))
-                   {
-                    `description: (+ "Given a quoted symbol removes the symbol and any definition information from the namespace. "
-                                     "If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "
-                                     "instead of the currently active namespace. If the symbol is successfully removed, the function "
-                                     "will return true, otherwise if it is not found, false will be returned.  Note that if the "
-                                     "specified symbol is non-qualified, but exists in a different, accessible namespace, but the "
-                                     "symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "
-                                     "is not searched and therefore symbols have to be explicitly fully-qualified for any effect "
-                                     "of this function outside the current namespace.")
-                    `usage: ["quoted_symbol:string"]
-                    `tags: [ `symbol `delete `remove `unintern `reference `value ]
-                    })
+       (undefine (function (quoted_symbol)
+                    (if (is_string? quoted_symbol)
+                        (let
+                           ((`namespace_identity (split_by "/" quoted_symbol))   ;;  split..namespace_identity may only have 1 component though
+                            (`parent_call nil)
+                            (`child_call nil)
+                            (`target_symbol nil))
+                           (declare (function parent_call))
+                           (cond
+                              (or (and (== namespace_identity.length 1)
+                                       (prop Environment.global_ctx.scope namespace_identity.0))
+                                  (and (> namespace_identity.length 1)
+                                       (== namespace_identity.0 namespace)))
+                              ;; it's not qualified and in our local environment
+                              (progn
+                                 (= target_symbol (if (> namespace_identity.length 1)
+                                                      namespace_identity.1
+                                                      namespace_identity.0))
+                                 (delete_prop Environment.definitions target_symbol)
+                                 (if (prop Environment.global_ctx.scope target_symbol)
+                                     (delete_prop Environment.global_ctx.scope target_symbol)
+                                     false))
+                              
+                              (and (> namespace_identity.length 1)
+                                   parent_environment)
+                              (progn
+                                 (setq parent_call (-> parent_environment `get_global "undefine"))
+                                 (parent_call quoted_symbol))
+                              
+                              (and (> namespace_identity.length 1)
+                                   (prop children namespace_identity.0))
+                              ;; child namespace, send it there
+                              (progn
+                                 (setq child_call (-> (prop children namespace_identity.0) `get_global "undefine"))
+                                 (child_call quoted_symbol))
+                              
+                              else
+                              false))
+                        (throw SyntaxError "undefine requires a quoted symbol")))
+                 {
+                   `description: (+ "Given a quoted symbol removes the symbol and any definition information from the namespace. "
+                                    "If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "
+                                    "instead of the currently active namespace. If the symbol is successfully removed, the function "
+                                    "will return true, otherwise if it is not found, false will be returned.  Note that if the "
+                                    "specified symbol is non-qualified, but exists in a different, accessible namespace, but the "
+                                    "symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "
+                                    "is not searched and therefore symbols have to be explicitly fully-qualified for any effect "
+                                    "of this function outside the current namespace.")
+                   `usage: ["quoted_symbol:string"]
+                   `tags: [ `symbol `delete `remove `unintern `reference `value ]
+                   })
          
          (eval_exp (fn (expression)
                      (do 
@@ -867,26 +868,28 @@
                     `tags: [ `eval `evaluation `expression ]                                     
                     })
          
-         (indirect_new (new Function "...args"
-                            "{
-                                    let targetClass = args[0];
-                                    if (subtype(targetClass)===\"String\") {
-                                        let tmpf=new Function(\"{ return \"+targetClass+\" }\");
-                                        targetClass = tmpf();
+         (indirect_new (function (`& args)
+                            (javascript |
+                               {
+                                 let targetClass = args[0];
+                                 if (subtype(targetClass)==="String") {
+                                    let tmpf=new Function("{ return "+targetClass+" }");
+                                    targetClass = tmpf();
+                                 }
+                                 if (args.length==1) {
+                                   let f = function(Class) {
+                                     return new (Function.prototype.bind.apply(Class, args));
+                                   }
+                                   let rval = f.apply(this,[targetClass]);
+                                   return rval;
+                                 } else {
+                                    let f = function(Class) {
+                                          return new (Function.prototype.bind.apply(Class, args));
                                     }
-                                    if (args.length==1) {
-                                        let f = function(Class) {
-                                            return new (Function.prototype.bind.apply(Class, args));
-                                        }
-                                        let rval = f.apply(this,[targetClass]);
-                                        return rval;
-                                    } else {
-                                        let f = function(Class) {
-                                            return new (Function.prototype.bind.apply(Class, args));
-                                        }
-                                        let rval = f.apply(this,[targetClass].concat(args.slice(1)));
-                                        return rval;
-                                    }}")
+                                    let rval = f.apply(this,[targetClass].concat(args.slice(1)));
+                                    return rval;
+                                 }
+                               } | ))
                        {
                         `description: (+ "Used by the compiler for implementation of the new operator and shouldn't be directly called by "
                                          "user programs.  The new operator should be called instead.")

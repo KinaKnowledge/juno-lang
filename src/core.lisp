@@ -28,7 +28,7 @@
   {
    minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
                   "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
-                  "compile" "set_prop" "unless" "for_with" "no_await" ]
+                  "compile" "unless" "for_with" "no_await" ]
    keywords: (split_by " " (+ "defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "
                               "cond apply setq defun_sync map while reduce no_await &"
 	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
@@ -36,7 +36,460 @@
                               "defparameter defvalue"))                      
    })
 
+;; setup the special operator definitions of the compiler
 
+(defglobal special_definitions
+   [{ name: "+"
+      usage: ["arg0:*" "argN:*"]
+      description: (+ "The plus operator takes an arbitrary number of arguments and attempts to 'add' them together. "
+                      "Of all the mathematical operators, this is the only one that is overloaded in terms of the "
+                      "type of values it can take.  The adding operation undertaken by the + operator is determined "
+                      "by the first argument in the argument list. The operator accepts the following types: <br>"
+                      "numbers, Objects, arrays and Strings.<br> "
+                      "If the argument type is a number (or declared to be a number), then the normal infix " 
+                      "mathematical expression will be constructed in the emitted javascript, otherwise the synchronous " 
+                      "add function will be used to handle the addition in a dynamic fashion during execution. <br><br>"
+                      "Adding Objects<br>"
+                      "When two objects are added together, a new Object is constructed with the keys and values from "
+                      "each object in successive order from the argument list.  If a later object contains the same "
+                      "key as an earlier object, the later object's value will be used and will overwrite the earlier "
+                      "value of the same key. <br>Example: (+ { abc: 123 def: 456 } { abc: 789 }) -> { abc: 789 def: 456 }<br>"
+                      "If a non-object type is encountered after starting with an object it is ignored.<br>"
+                      "<br>Adding Arrays<br>"
+                      "If an array is the first argument to the operator, all subsequent argument values are appended "
+                      "to the first array and the first array is returned as the result.  The types of the subsequent "
+                      "arguments are not interrogated unlike with Object addition, and are simply concatenated to the "
+                      "first argument.  <br>Example: (+ [ 1 2 3 ] [ 4 5 6] 7 8) <-  [ 1 2 3 [ 4 5 6 ] 7 8 ]<br>"
+                      "<br>Adding Strings<br>"
+                      "A new string is returned as a result of adding all subsequent arguments together.  If a subsequent "
+                      "argument is a string, or is an object with a toString method defined, it is appended to the result "
+                      "as expected.  Otherwise, the default string representation in the prototype chain will be used, "
+                      "which may not be what is expected.<br>" 
+                      "Example: %%%(+ \"This is the result: \" (fn (v) (+ 1 2))) <- \"This is the result: async " 
+                      "function(v) {\n return (1+ 2)\n}\"%%%<\n"
+                      "Example: ( + \"1\" \"2\" ) <- \"12\" <br>"
+                      "Example: (+ \"John\" \"Jingleheimer\") <- \"JohnJingleheimer\"<br>"
+                      "Example: (+ \"An object:\" { abc: 123 }) <- \"An object: [object Object]\"<br>")
+      tags: ["special" "add" "+" "addition" "arithmetic" ] 
+      }
+    { name: "-"
+      usage: ["arg0:*" "argN:*"]
+      description: "Subtracts from the first argument all subsequent arguments and returns the result."
+      tags: ["special" "subtract" "-" "arithmetic" ] }
+    { name: "/"
+      usage: ["dividend:number" "argN:number"]
+      description: "Arithmetically divides the first argument (dividend) by all subsequent arguments (divisors) and returns the result."
+      tags: ["special" "division" "divide" "arithmetic" ]
+      }
+    { name: "*"
+      usage: ["arg0:number" "argN:number"]
+      description: "Multiplies the first argument with all subsequent arguments, returning the result."
+      tags: ["special" "multiplication" "arithmetic" ] }
+    { name: "**"
+      usage: ["base:number" "exponent:number"]
+      description: "The exponentiation operator raises the first argument to the power of the second argument."
+      tags: ["special" "exponent" "base" "power" "arithmetic" ] }
+    { name: "%"
+      usage: ["dividend:number" "divisor:number"]
+      description: "Modulo (Remainder) divides the first argument by the second argument and returns the remainder from the division operation."
+      tags: ["special" "remainder" "modulo" "division" "arithmetic" ] }
+    { name: "<<"
+      usage: ["value:number" "amount_to_shift_left:number"]
+      description: "The << operator performs a leftward shift of the bits of the first argument by the amount of the second argument."
+      tags: ["special" "shift" "bit" "left"]
+      }
+    { name: ">>"
+      usage: ["value:number" "amount_to_shift_right:number"]
+      description: "The << operator performs a rightward shift of the bits of the first argument by the amount of the second argument."
+      tags: ["special" "shift" "bit" "right"]
+      }
+     { name: "and"
+       usage: ["arg0:*" "argN:*"]
+       description: (+ "Each argument to the and operator is evaluated, and upon the first value that is a Javascript false "
+                       "(or an equivalent false, such as nil, undefined or 0), the encountered false is returned.  If all values "
+                       "are equivalent to true , then the final argument is returned. Equivalent to && in Javascript.")
+       tags: ["logic" "condition" "true" "false" "&&"]
+      }
+     { name: "or"
+       usage: ["arg0:*" "argN:*"]
+       tags: ["logic" "condition" "true" "false" "||"]
+       }
+     { name: "apply"
+       usage: ["function_to_call:function" "arg0:*" "argN:array"]
+       description: (+ "Apply calls the specified function (first argument) with the subsequent arguments.  The last argument "
+                       "must be an array, which contains the remaining arguments. <br>" 
+                       "Example: (apply add 1 2 [ 3 4 5]) <- 15<br>")
+       tags: ["function" "arguments" "array" "call"] 
+       }
+     { name: "call"
+       usage: ["target:object" "function_to_call:text" "argsN:*" ]
+       description: (+ "Given a target object, a function to call, calls the function in the target object with the target object as the this value. " 
+                       "The remaining arguments are provided as arguments to the method being called. A synonym for call is the -> operation."
+                       "The result of the call is returned.")
+       tags: ["function" "call" "->" "this" "object"] }
+     
+     { name: "->"
+       usage: ["target:object" "function_to_call:text" "argsN:*" ]
+       description: (+ "Given a target object, a function to call, calls the function in the target object with the target object as the this value. " 
+                       "The remaining arguments are provided as arguments to the method being called. A synonym for -> is the call operation."
+                       "The result of the call is returned.")
+       tags: [ "object" "function" "call" "->" "this" ] }
+     
+     { name: "set_prop"
+       usage: ["place:object" "key0:string|number" "value0:*" "keyN:string" "valueN:*"]
+       description: (+ "Sets a property on the designated place (an object) using the key as the property name and the provided value as the value."
+                       "The operator returns the object that was modified.") }
+     { name: "prop"
+       usage: ["place:object" "key:string|number"]
+       description: (+ "Returns a property on the designated place (an object) using the key as the property name.  If the key isn't found, undefined is returned.") }
+     { name: "="
+       usage: ["target:symbol" "value:*"]
+       description: (+ "Sets the target symbol to the provided value and returns the value.   A Reference error is thrown if the symbol is undeclared.")
+       tags: [`assignment `set `value ]  }
+     { name: "setq"
+       usage: ["target:symbol" "value:*"]
+       description: (+ "Sets the target symbol to the provided value and returns the value.   A Reference error is thrown if the symbol is undeclared.")
+       tags: [`assignment `set `value ] }
+     { name: "=="
+       usage: ["value0:*" "value1:*"]
+       description: (+ "Represents the Javascript === operator and returns true if the operands are equal and of the same type, otherwise false.")
+       tags: [`equality `equivalence `equal `eq ] }
+     { name: "eq"
+       usage: ["value0:*" "value1:*"]
+       description: (+ "Represents the Javascript == operator and returns true if the operands are \"equal\".  This is a looser definition of equality "
+                       "then ===, and different types can be considered equal if the underlying value is the same.<br>"
+                       "Example: (== 5 \"5\") is considered the same.")
+       tags: [`equality `equivalence `equal `eq ] }
+     { name: ">"
+       usage: ["value_left:number" "value_right:number"]
+       description: (+ "Returns true if the left value is greater than the right value, otherwise returns false.")
+       tags: [`equivalence `equal `comparison `gt  ] }
+     { name: "<"
+       usage: ["value_left:number" "value_right:number"]
+       description: (+ "Returns true if the left value is smaller than the right value, otherwise returns false.")
+       tags: [`equivalence `equal `comparison `lt  ] }
+      { name: ">="
+       usage: ["value_left:number" "value_right:number"]
+       description: (+ "Returns true if the left value is greater than or equal to the right value, otherwise returns false.")
+       tags: [`equivalence `equal `comparison `gt  ] }
+      { name: "<="
+       usage: ["value_left:number" "value_right:number"]
+       description: (+ "Returns true if the left value is less than or equal to the right value, otherwise returns false.")
+       tags: [`equivalence `equal `comparison `gt  ] }
+      { name: "new"
+       usage: ["constructor:function" "argN:*"]
+       description: "Given a constructor function and arguments, returns an instantiated object of the requested type."
+       tags: [`constructor `instantiation `object `class  ] }
+      
+      { name: "progn"
+        usage: ["form0:*" "form1:*" "formN:*"]
+        description: `(+ "The block operator evaluates all forms in the order they were provided and returns the last value."
+                         "If the block operator is a top level form, then the forms are evaluated as top level forms, in "
+                         "which the form is compiled and immediately evaluated. The results of any side effects of the "
+                         "compiled form are therefore available to subsequent processing.<br>"
+                         "The block operator introduces a new lexical scope boundary (in JS the equivalence { } ) such that symbols "
+                         "defined locally to the block via defvar will not be visible to blocks above it, only subforms and "
+                         "blocks defined within it.")
+        tags: ["block" "progn" "do" "scope"] }
+      { name: "do"
+        usage: ["form0:*" "form1:*" "formN:*"]
+        description: `(resolve_path [ `definitions `progn ] (Environment.get_namespace_handle `core))
+        tags: ["block" "progn" "do" "scope"] }
+      { name: "progl"
+        usage: ["form0:*" "form1:*" "formN:*"]
+        description: (+ "Like progn, progl is a block operator, but doesn't establish a new scope boundary in the contained forms."
+                        "It also doesn't return any values, but acts as a means by which to manipulate quoted forms (for example in a macro).")
+        tags: ["block" "progn" "do"] }
+      { name: "break"
+        usage: []
+        description: (+ "The break operator is a flow control mechanism used to stop the iteration of a for_each or while " 
+                        "loop. It should be used as a direct subform of the for_each or while.") 
+        tags: ["block" "flow" "control" ] }
+      { name: "inc" 
+        usage: ["target:symbol" "amount:?number" ]
+        description: (+ "Increment the target symbol by the default value of 1 or the provided amount as a second argument. "
+                        "The operator returns the new value of the target symbol.")
+        tags: ["increment" "count" "dec"] }
+      { name: "dec" 
+        usage: ["target:symbol" "amount:?number" ]
+        description: (+ "Decrement the target symbol by the default value of 1 or the provided amount as a second argument. "
+                        "The operator returns the new value of the target symbol.")
+        tags: ["decrement" "count" "inc"] }
+      { name: "try"
+        usage: ["expression:*" "error-clause0:array" "error-clauseN:array"]
+        description: (+ "An expression or block surrounded by a try-catch error clause which throws an Error "
+                        "or subclass of Error is checked against all (but at least 1) catch expressions that match the type " 
+                        "of error which has been thrown. If the error type is matched by a handler for that type, the catch "
+                        "expression is evaluated. If a handler for the error type or the error's prototype chain isn't "
+                        "found, the exception is rethrown, for potential interception by handlers further up the stack "
+                        "heirarchy.  In the following example, the specific error thrown is caught locally.  If an error "
+                        "was thrown that wasn't specifically Deno.errors.NotFound, the error would be rethrown: %%%"
+                        "(try\n"
+                        "   (write_text_file \"/will/not/work.txt\" \"No permissions\")\n"
+                        "   (catch Deno.errors.NotFound (e)\n"
+                        "     (+ \"CAUGHT: type: \" (subtype e) \"MESSAGE: \" e.message)))%%%"
+                        "<- \"CAUGHT: type:  NotFound MESSAGE:  No such file or directory (os error 2), open '/will/not/work.txt'\"<br>\n"
+                        "An example of multiple catches for the same try block:%%%"
+                        "(try\n"
+                        "  (throw Error \"ERROR MESSAGE\")\n"
+                        "  (catch TypeError (e)\n"
+                        "    (progn\n"
+                        "      (log \"Caught TypeError: \" e.message)\n"
+                        "      \"ERROR 1\"))\n"
+                        "  (catch Error (e)\n"
+                        "    (progn\n"
+                        "        (log \"Caught BaseError: \" e.message)\n"
+                        "        \"ERROR 2\")))%%%"
+                        "<- \"ERROR 2\"<br><br>")
+        tags: ["catch" "error" "throw" "flow" "control"]
+        }
+      { name: "throw"
+        usage: ["type:symbol" "message:string"]
+        description: (+ "Given a type as a symbol and a message, constructs an object instance of the specified type " 
+                        "and then throws the object.  The thrown object should be lexically enclosed in a try-catch "
+                        "form otherwise the unhandled throw may cause an exit of the runtime (dependent on the "
+                        "runtime environment behavior for uncaught objects.")
+        tags: ["flow" "control" "error" "exceptions" "try" "catch" ] 
+        }
+      { name: "let"
+        usage: ["allocations:array" "declarations:?expression" "expression0:*" "expressionN:*"]
+        description: (+ "Let is the primary means in which to allocate new bindings, and operate on the declared "
+                        "bindings. The binding forms are evaluated sequentially, but the declared symbols are "
+                        "available for all allocation forms, regardless of position in the sequence of binding "
+                        "forms.  Once all the bindings have been evaluated, the expressions are evaluated in an "
+                        "implicit progn block, with the result of the evaluation of the last expression being "
+                        "returned to the caller.  Note that even though a symbol binding may be accessible to "
+                        "all expressions in the allocation forms, the referenced symbol may not be initialized "
+                        "and have a value of undefined, so caution must be taken to not reference values in "
+                        "prior to initialization.  Syntactically, all symbols allocated in let must be defined "
+                        "an initial value, and so the form (let ((a)) (= a 1)) is invalid.<br>"
+                        "<br>Example:%%%"
+                        "(let\n"
+                        "  ((a 2)      ; b, and f are visible at this point but b and f are undefined\n"
+                        "   (f (fn ()  ; when f is called, a and b will be defined and have value\n"
+                        "        (* a b)))\n"
+                        "   (b 21))    ; once b's init form completes b will be set to the value 21\n"
+                        "  (log \"a is: \" a \" b is: \" b)   ; first block expression - all allocatoins complete\n"
+                        "  (f))         ; last block expression, f will be called and return 42%%%"
+                        "<- 42<br>"
+                        "Note that the above example doesn't contain an optional declaration form, "
+                        "which must come after the allocations and before the block expressions.<br><br>"
+                        "Another consideration when using let is that within the allocation forms, any references to "
+                        "symbols that are lexically scoped outside the let have their values available.  If the contained "
+                        "let re-binds an existing symbol, the new binding will have lexical precedence and the value "
+                        "of the rebound symbol will be determined by the result of the init-form of the allocation."
+                        "This same rule applies to global values: if a let rebinds a global symbol in an allocation, "
+                        "the symbol referenced in the let scope will be the local value, and not the global.  This is "
+                        "defined as shadowing.<br>"
+                        "Example: %%%"
+                        "(let\n"
+                        "  ((a_binding 1))\n"
+                        "  (log \"outer: a_binding: \" a_binding)\n"
+                        "  (let ;; start inner let\n"
+                        "     ((b_binding 2)\n"
+                        "      (a_binding 3))  ;  a is rebound to 3\n"
+                        "     (log \"inner: a_binding: \" a_binding \" b_binding: \" b_binding)\n"
+                        "     a_binding)\n"
+                        "  (log \"outer: a_binding: \" a_binding) ; outer binding again\n"
+                        "  a_binding)\n"
+                        "out: \"outer: a_binding: \" 1 \n"
+                        "out: \"inner: a_binding: \" 2 \"b_binding: \" 3\n"
+                        "out: \"outer: a_binding: \" 1 %%%<br>"
+                        "Declarations can be placed after the allocation form and prior to the "
+                        "expressions comprising the block:%%%"
+                        "(defun handler (options)\n"
+                        "   (let\n"
+                        "      ((validator options.validator)\n"
+                        "       (user_input (request_user_input \"Enter your value\")))\n"
+                        "      (declare (function validator))\n"
+                        "      (validator user_input)))%%%"
+                        "<br>In the above the declare provides an optimization hint for the "
+                        "compiler.  Without the declare, the compiler would have to insert "
+                        "code that checks at runtime whether or not the options.validator value "
+                        "is a function prior to calling it, resulting in less execution efficiency. ")
+        tags: ["compiler" "allocation" "symbol" "initializing" "scope" "declaration"]
+                 }
+      {
+          name: "defvar"
+          usage: ["name:symbol" "value:*"]
+          description: (+ "Define a symbol in the local block scope. The operation doesn't have a return value "
+                          "and a SyntaxError will be thrown by the compiler if the result of a defvar operation "
+                          "is used as part of an assignment form.")
+          tags: ["allocation" "define" "var" "reference" "symbol"]
+      }
+      { name: "defconst"
+        usage: ["name:symbol" "value:*"]
+        description: (+ "Define a constant in either the local scope or global scope.  The defconst operator "
+                        "can be used in both subforms and at the toplevel to specify that a symbol value be "
+                        "treated as a constant.  When top-level, the metadata will indicate that the "
+                        "defined symbol is a constant.  Any attempted changes to the value of the symbol "
+                        "will result in a TypeError being thrown.<br>"
+                        "Example:%%%"
+                        "(defconst ghi \"Unchanging\")\n"
+                        "<- \"Unchanging\"\n\n"
+                        "(= ghi \"Hi there\")\n"
+                        "<- TypeError Assignment to constant variable ghi%%%<br>")
+        tags: ["allocation" "symbol" "define" "constant" "const" ] }
+      { name: "while"
+        usage: ["test_expression:*" "body_expression:array" ]
+        description: (+ "The while operator checks the return value of a test_expression and if the result of the " 
+                        "test is true (or a result equivalent to true), it will then evaluate the body expression. "
+                        "If the result is false, then the while loop doesn't evaluate the body_expression and "
+                        "completes.  Once the body expression is evaluated, the test expression will be "
+                        "evaluated again and the cycle will continue, potentially forever, so it is important "
+                        "to be careful to have a means to break out or the execution environment may not "
+                        "ever return.  The body of the while is not a block, so if there are multiple "
+                        "expressions to be evaluated as part of the body expression they must be wrapped "
+                        "in a progn block operator. The break operator can be used to `break out` of the "
+                        "loop in addition to the test expression returning false.<br>There is no return "
+                        "value from a while loop; it should be considered undefined.<br>Example:%%%"
+                        "(let\n"
+                        "  ((i 10)\n"
+                        "   (count 0))\n"
+                        "  (while (> i 0)\n"
+                        "    (progn\n"
+                        "      (inc count i)\n"
+                        "      (dec i)))\n"
+                        "  ; note: there is no return value from while\n"
+                        "  count)\n"
+                        "<- 55%%%")
+        tags: ["flow" "control" "loop" "break" "for_each"] 
+        }
+      { name: "for_each"
+        usage: ["allocation_form" "body_expression:array"]
+        description: (+ "The for_each operator provides a simple loop variable that allocates a "
+                        "symbol which is assigned the next value in the returned array from the "
+                        "init form in the allocation. It then evaluates the body expression "
+                        "with the symbol in scope.  It will continue to loop, with the allocated "
+                        "symbol being defined successive values until the end of the array "
+                        "is reached, or a (break) operator is encountered in the body "
+                        "expression. Unlike while, the for_each operator is a collector, and "
+                        "all values returned from the body_expression will be returned as an "
+                        "array from for_each.<br>Example:%%%"
+                        "(for_each (r (range 5))\n"
+                        "     (* r 2))\n"
+                        "<- [0 2 4 6 8]%%%<br>")
+        tags: ["flow" "control" "loop" "break" "while"] }
+      { name: "if"
+        usage: ["test_form:*" "if_true:*" "if_false:*"]
+        description: (+ "The conditional if operator evaluates the provided test form "
+                        "and if the result of the evaluation is true, evaluates and returns "
+                        "the results of the if_true form, otherwise the if form will "
+                        "evaluate and return the result of the if_false form.<br>"
+                        "Example:%%%"
+                        "(progn\n"
+                        "   (defvar name (request_user_input \"Enter your name:\"))\n"
+                        "   (if (blank? name)\n"
+                        "        \"No Name Entered\"\n"
+                        "        (+ \"Hello \" name)))\n"
+                        "%%%")
+        tags: ["flow" "control" "condition" "logic" "cond" "branching"]
+        }
+      { name: "cond"
+        usage: ["test_expr0:*" "if_true_expr0:*" "test_expr1:*" "if_true_expr1:*" "test_exprN:*" "if_true_exprN:*"]
+        description: (+ "The cond operator evaluates test expressions sequentially, until either a true value is "
+                        "returned or the end of the test expressions are reached.  If a test expression returns "
+                        "true, the if_true expression following the test expression is evaluated and the result "
+                        "returned.  If no expressions match, then nil is returned.  There is a special keyword "
+                        "available in the cond form, else, which is syntactic sugar for true, that can be used "
+                        "to always have a default value.  The else or true test expression should always be the "
+                        "final test expression otherwise a SyntaxError will result. <br>Example:%%%"
+                        "(let\n"
+                        "  ((name (request_user_input \"Enter your first name name:\")))\n"
+                        "  (cond\n"
+                        "    (blank? name)  ; first test\n"
+                        "    \"Hello there no-name!\"\n"
+                        "    (< (length name) 12)  ; second test\n"
+                        "    (+ \"Hello there \" name \"!\")\n"
+                        "    else  ; the default\n"
+                        "    (+ \"Hello there \" name \"! Your first name is long.\")))%%%<br>")
+        tags: ["flow" "control" "condition" "logic" "if" "branching"] 
+        }
+      {
+          name: "fn"
+          usage: ["arguments:array" "body_expression:*"]
+          description: (+ "There are multiple types of functions that can be created depending on the requirements of the "
+                          "use case:<br>"
+                          "The lambda and fn operators create asynchronous functions. The fn is shorthand for lambda and can be used interchangably.<br>"
+                          "The function keyword creates a synchronous function. <br>"
+                          "The => operator creates Javascript arrow functions.<br>"
+                          "All definitions return a form which contains the compiled body expression. The provided argument array maps  "
+                          "the symbol names to bound symbols available within the body expression. The body expression is evaluated "
+                          "with the bound symbols containing the values of arguments provided at time the function is called and the "
+                          "result of the body expression is returned from the function call.<br>"
+                          "Typically, the body expression is a progn with multiple forms, however, this is not always necessary "
+                          "if the function being defined can be contained in a single form.  With the exception of arrow functions, "
+                          "functions always establish a new block scope, and any arguments that have the same symbolic names as globals " 
+                          "or variables in the closure that defines the function will be shadowed.<br>"
+                          "<br>"
+                          "Once defined, the function is stored in compiled form, meaning that if inspected, the javascript that comprises "
+                          "function will be returned as opposed to the source code of the function.<br>"
+                          "There is a special operator for the arguments that can be used to capture all remaining arguments of a "
+                          "function, the quoted &.  If the `& is included in the argument list of a function, all remaining run time values at "
+                          "the index of the `& operator will be returned as part of the symbol following the `& operator.  This symbol should be "
+                          "the last symbol in a argument list.<br>"
+                          "Example of an asynchronous function:%%%"
+                          "(fn (a b)     ;; a and b are the arguments that are bound\n"
+                          "   (/ (+ a b) 2)) ;; the body expression that acts on the bound arguments a and b%%%<br><br>"
+                          "Example with the ampersand argument operator used in a synchronous function:%%%"
+                          "(function (initial `& vals)\n"
+                          "   (/ (+ initial (apply add vals))\n"
+                          "      (+ 1 (length vals))))%%%"
+                          "<br>In the above example, add was used in the apply because the + operator isn't a true function.<br>"
+                          "Arrow functions do not define their own scope and should be used as anonymous functions within let and scoped blocks.<br>"
+                          "Example:%%%"
+                          "(let\n"
+                          "  ((i 0)\n"
+                          "   (my_incrementor (=> (v)\n"
+                          "                     (inc i v)))\n"
+                          "   (my_decrementor (=> (v)\n"
+                          "                     (dec i v))))\n"
+                          "  (my_incrementor 4)\n"
+                          "  (my_decrementor 2)\n"
+                          "  i)%%%"
+                          "<- 2<br>"
+                          "<br>"
+                          "")
+          tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      }
+      { `name: "function"
+        `usage: ["arguments:array" "body_expression:*"]
+        `description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
+        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      }
+      { `name: "=>"
+        `usage: ["arguments:array" "body_expression:*"]
+        `description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
+        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      }
+      { `name: "lambda"
+        `usage: ["arguments:array" "body_expression:*"]
+        `description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
+        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      }
+      { `name: "defglobal"
+        `usage: ["name:symbol" "value:*" "metadata:object"]
+        `description: (+ "Defines a global variable in the current namespace, or if preceded by a namespace "
+                         "qualifier, will place the variable in the designated namespace.  The metadata value "
+                         "is an optional object that provides information about the defined symbol for purposes "
+                         "of help, rehydration, and other context.  The metadata object tags are arbitrary, but "
+                         "depending on the type of value being referenced by the symbol, there are some "
+                         "reserved keys that are used by the system itself.  ")
+        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      }
+    ])
+
+(for_each (entry special_definitions)
+           (set_prop Environment.definitions
+              entry.name
+              { description: (or entry.description "")
+                usage: (or entry.usage [])
+                tags: (or entry.tags [])
+                type: "Special" }))
+
+;; now undefine the original object since they are now installed into the definitions of the Environment
+
+(undefine `core/special_definitions)
 
 (defglobal defmacro
     (fn (name arg_list `& body)
@@ -100,9 +553,9 @@
                     "Example: <br>"
                     "(defglobal myvar \"foo\")<br>"
                     "(defglobal myarr [ (quote myvar) ])<br>"
-                    "(desym_ref myarr) => (myvar)<br>"
-                    "(desym_ref myarr.0) => myvar<br>"
-                    "(subtype (desym_ref myarr.0)) => \"String\"")
+                    "(desym_ref myarr) <- (myvar)<br>"
+                    "(desym_ref myarr.0) <- myvar<br>"
+                    "(subtype (desym_ref myarr.0)) <- \"String\"")
    `usage: ["val:*"]
    `tags: ["symbol" "reference" "syntax" "dereference" "desym" "desym_ref" ]
    })

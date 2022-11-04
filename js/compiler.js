@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-11-02 06:00:59
-// Version: 2022.11.02.06.00
-export const DLISP_ENV_VERSION='2022.11.02.06.00';
+// Build Time: 2022-11-04 09:41:11
+// Version: 2022.11.04.09.41
+export const DLISP_ENV_VERSION='2022.11.04.09.41';
 
 
 
@@ -73,10 +73,10 @@ export async function init_compiler(Environment) {
             {
                 rval=[];
                 await (async function(){
-                     let __test_condition__15=async function() {
+                     let __test_condition__20=async function() {
                         return (idx<(tree && tree.length))
                     };
-                    let __body_ref__16=async function() {
+                    let __body_ref__21=async function() {
                         tval=tree[idx];
                         if (check_true ((tval===deferred_operator))){
                             {
@@ -94,8 +94,8 @@ export async function init_compiler(Environment) {
                         return idx+=1
                     };
                     let __BREAK__FLAG__=false;
-                    while(await __test_condition__15()) {
-                        await __body_ref__16();
+                    while(await __test_condition__20()) {
+                        await __body_ref__21();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -109,7 +109,7 @@ export async function init_compiler(Environment) {
             {
                 rval=new Object();
                 await (async function() {
-                    let __for_body__19=async function(pset) {
+                    let __for_body__24=async function(pset) {
                         return await async function(){
                             rval[(pset && pset["0"])]=await (async function(){
                                  return await do_deferred_splice((pset && pset["1"])) 
@@ -118,16 +118,16 @@ export async function init_compiler(Environment) {
                             
                         }()
                     };
-                    let __array__20=[],__elements__18=await (await Environment.get_global("pairs"))(tree);
+                    let __array__25=[],__elements__23=await (await Environment.get_global("pairs"))(tree);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__17 in __elements__18) {
-                        __array__20.push(await __for_body__19(__elements__18[__iter__17]));
+                    for(let __iter__22 in __elements__23) {
+                        __array__25.push(await __for_body__24(__elements__23[__iter__22]));
                         if(__BREAK__FLAG__) {
-                             __array__20.pop();
+                             __array__25.pop();
                             break;
                             
                         }
-                    }return __array__20;
+                    }return __array__25;
                      
                 })();
                 return rval
@@ -206,18 +206,18 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__236=async function() {
+         let __test_condition__241=async function() {
             return current_obj
         };
-        let __body_ref__237=async function() {
+        let __body_ref__242=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__236()) {
-            await __body_ref__237();
+        while(await __test_condition__241()) {
+            await __body_ref__242();
              if(__BREAK__FLAG__) {
                  break;
                 
@@ -2632,7 +2632,7 @@ export async function init_compiler(Environment) {
                     }
                 })();
                 cmp_rec=await get_ctx(ctx,"__COMPLETION_SCOPE__");
-                if (check_true ((((ctx && ctx["block_step"])===0)&& await not(await contains_ques_((stmt && stmt["0"] && stmt["0"]["ctype"]),["block","ifblock","tryblock","letblock"]))&& await not(await contains_ques_((stmt && stmt["0"] && stmt["0"]["completion"]),completion_types))))){
+                if (check_true ((((ctx && ctx["block_step"])===0)&& await not(await contains_ques_((stmt && stmt["0"] && stmt["0"]["ctype"]),["block","ifblock","tryblock","letblock"]))&& await not(await contains_ques_((stmt && stmt["0"] && stmt["0"]["completion"]),completion_types))&& await not(((cmp_rec && cmp_rec["scope_type"])==="arrow"))&& await not(((cmp_rec && cmp_rec["scope_type"])==="generator"))&& await not(((stmt && stmt["0"] && stmt["0"]["0"])==="yield"))))){
                     {
                         (stmts).pop();
                         await (await Environment.get_global("assert"))(cmp_rec,"compiler error: check_statement_completion unable to find completion_scope record in context");
@@ -2669,11 +2669,13 @@ export async function init_compiler(Environment) {
                             }
                         } else {
                             {
-                                (stmts).push(await (async function(){
-                                     return [{
-                                        completion:"return"
-                                    },"return ",stmt] 
-                                })());
+                                if (check_true ((await not(((cmp_rec && cmp_rec["scope_type"])==="arrow"))&& await not(((cmp_rec && cmp_rec["scope_type"])==="generator"))))){
+                                    (stmts).push(await (async function(){
+                                         return [{
+                                            completion:"return"
+                                        },"return ",stmt] 
+                                    })())
+                                };
                                 ((cmp_rec && cmp_rec["completion_records"])).push({
                                     block_id:(ctx && ctx["block_id"]),type:"return",block_step:(ctx && ctx["block_step"]),stmt:await last(stmts)
                                 })
@@ -3623,9 +3625,9 @@ export async function init_compiler(Environment) {
                         }
                     } else if (check_true ((fn_opts && fn_opts["generator"]))) {
                         {
+                            await set_ctx(ctx,"__SYNCF__",true);
                             type_mark=await type_marker("GeneratorFunction");
                             (acc).push(type_mark);
-                            (acc).push("async");
                             (acc).push(" ")
                         }
                     } else {
@@ -3724,7 +3726,7 @@ export async function init_compiler(Environment) {
                         (acc).push("=>")
                     }
                 };
-                if (check_true ((fn_opts && fn_opts["generator"]))){
+                if (check_true (((fn_opts && fn_opts["generator"])|| (fn_opts && fn_opts["arrow"])))){
                     await async function(){
                         ctx["return_last_value"]=false;
                         return ctx;
@@ -3770,7 +3772,7 @@ export async function init_compiler(Environment) {
                     }
                 } ();
                 await async function(){
-                    if (check_true (((completion_scope && completion_scope["completion_records"] && completion_scope["completion_records"]["length"])===0))) {
+                    if (check_true ((await not((fn_opts && fn_opts["arrow"]))&& await not((fn_opts && fn_opts["generator"]))&& ((completion_scope && completion_scope["completion_records"] && completion_scope["completion_records"]["length"])===0)))) {
                         throw new Error("internal compile error: no completion records for callable");
                         
                     } else {

@@ -3,9 +3,11 @@
 :root {
     --main-bg-color: hsl(40deg 13% 90%);
     --main-color: #000000;
-    --header-bg-color: #f1f0ee;
-    --highlight-bg-color: #DADADA;
-    --highlight-color: #000000;
+    --header-bg-color: hsl(40deg 13% 90%);
+    --highlight-bg-color: #404040;
+    --highlight-color: white;
+    --selected-bg-color: #0278e7;
+    --selected-color: #FFFFFF;
     --control-focused: hsl(0deg 0% 84%);
     --control-text-input-color-bg: #FFFFFF50;
     --control-unfocused-color: darkgray;

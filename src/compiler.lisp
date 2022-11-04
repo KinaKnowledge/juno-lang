@@ -1550,9 +1550,12 @@
                                         (if  (and (== ctx.block_step 0)
                                                   (not (contains? stmt.0.ctype ["block" "ifblock" "tryblock" "letblock"]))
                                                   (not (contains? stmt.0.completion completion_types))
-                                                  (not (== cmp_rec.scope_type `arrow)))
+                                                  (not (== cmp_rec.scope_type `arrow))
+                                                  (not (== cmp_rec.scope_type `generator))
+                                                  (not (== stmt.0.0 "yield")))
                                             
                                           (do
+                                            
                                             (pop stmts) ;; remove the last statement - we already have it                                            
                                             (assert cmp_rec "compiler error: check_statement_completion unable to find completion_scope record in context")
                                             (if (and (is_object? stmt.0)
@@ -1574,9 +1577,11 @@
                                                        `stmt: (last stmts)
                                                        }))
                                               
-                                              (do                                                
-                                                (push stmts
-                                                      [ { `completion: "return" } "return " stmt])
+                                              (do 
+                                                 (if (and (not (== cmp_rec.scope_type `arrow))
+                                                          (not (== cmp_rec.scope_type `generator)))
+                                                     (push stmts
+                                                        [ { `completion: "return" } "return " stmt]))
                                                 (push cmp_rec.completion_records
                                                       {
                                                        `block_id: ctx.block_id
@@ -2237,9 +2242,10 @@
                                (push acc type_mark))
                              fn_opts.generator
                              (do
+                                 (set_ctx ctx "__SYNCF__" true)
                                  (= type_mark (type_marker `GeneratorFunction))
                                  (push acc type_mark)
-                                 (push acc "async")
+                                 ;(push acc "async")
                                  (push acc " "))
                              else
                               (do
@@ -2342,6 +2348,7 @@
                           ;; validate completion records
                           (cond
                             (and (not fn_opts.arrow)
+                                 (not fn_opts.generator)
                                  (== completion_scope.completion_records.length 0))
                             (throw Error "internal compile error: no completion records for callable")
                             else

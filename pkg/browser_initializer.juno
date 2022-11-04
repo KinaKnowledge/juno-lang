@@ -352,7 +352,22 @@
        `tags: ["log" "console" "values" "display"]
    })
 
-(defun_sync decorative_usage (symbol)
+(defun_sync clear_log ()
+   (aif (and *last_focus*
+             (prop *last_focus* `clear_output)
+             *last_focus*)
+        (progn
+           (setTimeout (fn ()
+                          (-> it `clear_output))
+                       5)
+           nil))
+   {
+     `description: "Clears the REPL that is currently focused."
+     `usage: []
+     `tags: ["log" "console" "clear" "output" "display"]
+     })
+
+(defun_sync decorative_usage (symbol suppress_type)
   (let
       ((val (if true
                 (cond
@@ -363,58 +378,106 @@
                    else
                    symbol)
                 symbol))
+       (show_type (function ()
+                     (span { `style: "margin-left: 15px; font-style: italic" 
+                             `class: (+ "juno-type-" (lowercase (or description.type "")))
+                             }
+                         (cond 
+                            description.macro
+                            "Macro"
+                            description.type
+                            (if suppress_type [] 
+                                description.type)))))
        (description (first (or (meta_for_symbol (trim val) true) [])))
        (view nil)
        (rval nil))
     (= rval 
      (cond
         (is_array? description.usage)
-        (div { `style: "display: inline-block"} 
-         (flatten [(span { `class: "juno-operator-name" } val)
+        (div { `style: "display: inline-block"} "("
+             (flatten [(span { `class: "juno-operator-name" `style: "font-weight: bold;" } val)
                    (for_each (arg description.usage)
                       (destructuring_bind (arg_name arg_type arg_needed)
                          (split_by ":" arg)
                          (span { `class: (+ "juno-type-" (lowercase (or arg_type ""))
                                             " juno-arg-name") `title: arg_type
-                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name ":" arg_type)))]))
+                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name ":" arg_type)))])
+             ")" (show_type))
+             
+        
+        (is_string? description.fn_args)
+        (div { `style: "display: inline-block"} "("
+             (span { `class: "juno-operator-name" `style: "font-weight: bold;" } val)
+             (for_each (arg_name (split_by " " (chop (rest description.fn_args))))
+                (span { `class: "juno-arg-name" } arg_name))
+             ")" (show_type)) 
                             
         else
         nil))
-    ;(console.log "decorative_usage: ->" val "<-" rval (is_array? description.usage) description.usage)
-    rval))
+    rval)
+  {
+    `usage: ["symbol:string"]
+    `description: (+ "Given a symbol name as a string, returns a DOM element of the usage information.  "
+                     "If the usage metadata is defined for the symbol it will use that, otherwise "
+                     "if the symbol is a function and has fn_args defined, that content will be returned "
+                     "in a DOM element.  Used by the editor to display usage information. ")
+    `tags: [ `usage `editor `formatting `help `assist ]
+    })
+
+(defun unpack_description (description)
+   (let
+      ((desc (eval description))
+       (rr (new RegExp "<-" `g))
+       (subsections []))
+       (for_each (seg (split_by "<br>" desc))
+          (when (is_string? seg)
+             (= seg (replace rr "\\u{279C}"  seg))
+             (map (fn (comp i)
+                     (if (== 1 (% i 2))
+                         (push subsections
+                            (pre comp))
+                         (push subsections
+                            (p comp))))
+                  (split_by "%%%" seg))))
+       (div
+          subsections))
+    {
+       `usage: ["description:text"]
+       `description: "Given a marked up description text, builds the output format for the browser."
+       `tags: [ `usage `help `assist `formatted `markup ]
+   })
 
 (defun format_help (meta_obj)
    (div { `style: "width: calc(100% - 20px);" }
     (h3 (span { `style: "color: var(--namespace-color); " } meta_obj.namespace ) "/" meta_obj.name
         (if meta_obj.macro
             (span { `style: "float: right; margin-right: 20px; " } "Macro")
-            (span { `style: "float: right" `class: (+ "juno-type-" (lowercase meta_obj.type)) } meta_obj.type)))
+            (span { `title: "Type" `style: "float: right" `class: (+ "juno-type-" (lowercase meta_obj.type)) } meta_obj.type)))
     (hr { `class: "LightHR" })
     (cond
        (and (contains? `unction meta_obj.type)
             meta_obj.usage)
        [(h4 "Usage")
-        (decorative_usage meta_obj.name)]
+        (decorative_usage meta_obj.name true)]
        (contains? `unction meta_obj.type)
        [(h4 "Arguments")
         meta_obj.fn_args]
        else
        [])
     (if meta_obj.description
-        (progn
-           (h4 "Description")
-           (for_each (seg (split_by "<br>" (eval meta_obj.description)))
-              (p seg)))
+        [(h4 "Description")
+         (unpack_description meta_obj.description)]
+        [])
+    
+    (if meta_obj.tags
+        [(h4 "Tags")
+         (for_each (`sym meta_obj.tags)
+            (span {  `style: "margin-right: 5px; padding: 5px;border: 1px solid var(--main-accent-line-hover)"} sym ))]
         [])
     (if meta_obj.requires
         [(h4 "Requires")
          (for_each (`sym (sort meta_obj.requires))
             (span { `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) ""))) `style: "padding: 5px;"} sym ))]
-        [])
-    (if meta_obj.tags
-        [(h4 "Tags")
-         (for_each (`sym meta_obj.tags)
-            (span {  `style: "margin-right: 5px; padding: 5px;border: 1px solid var(--main-accent-line-hover)"} sym ))]
         []))
    {
      `description: (+ "Render object definitions to html.  Given a path " 
@@ -425,30 +488,50 @@
    })
 
 
-(defun ? (text options)
-   (let
-      ((results (describe text true)))
-      (for_each (`meta_obj (or results []))
-         (format_help meta_obj)
-         ))
+(defmacro ? (symname)
+   `(let
+       ((results (describe ,#(if (starts_with? "=:" symname)
+                                 (-> symname `substr 2)
+                                 symname) true)))
+       (for_each (`meta_obj (or results []))
+          (format_help meta_obj)
+          ))
    {
        `description: "Given a quoted symbol as an argument, the function returns a formatted manual page for the provided symbol."
        `usage: ["name:quoted_symbol"]
        `tags:["help" "assistance" "man" "usage" "info"]
    })
 
-(defun_sync find_last_paren(editor pos)
+(defun_sync find_last_paren (editor pos)
    (try
       (let
          ((pos  (or pos (-> editor `getCursorPosition)))
           (stream (indirect_new TokenIterator editor.session pos.row pos.column))
           (done false)
+          (depth 0)
+          (t nil)
+          (comps nil)
+          (calc_depth (function (val)
+                          (progn
+                            (= comps (split_by "" val))
+                            (while (> comps.length 0)
+                              (progn
+                                 (= t (pop comps))          
+                               (cond 
+                                  (or (== t ")")
+                                      (== t "]"))
+                                  (inc depth)
+                                  (or (== t "(")
+                                      (== t "["))
+                                  (dec depth)))))))
           (start nil)
-          (token nil))         
+          (token nil))
          (while (and (not done)
                      (not start))
             (progn
                (= token (-> stream `getCurrentToken))
+               (when (== token.type "keyword")
+                  (calc_depth token.value))
                (if (eq token nil)
                    (progn
                       (= done true)
@@ -456,11 +539,14 @@
                    (if (and (== token.type "keyword")
                             (or (== token.value.0 "(")
                                 (== token.value.0 "[")))
-                       (progn
-                          (= start { row: (-> stream `getCurrentTokenRow)
-                                    column: (-> stream `getCurrentTokenColumn) })
-                          (= done true)
-                          (break))))
+                      (progn
+                         (if (<= depth 0)
+                             (progn
+                                (= start { row: (-> stream `getCurrentTokenRow)
+                                               column: (-> stream `getCurrentTokenColumn) })
+                                (= done true)
+                                (break))))))
+                       
                (= token (-> stream `stepBackward))))
          (when start
             (-> editor.session `getBracketRange start)))
@@ -1116,10 +1202,13 @@
        (progn
           (swap_control target_control control_to_show)
           (set_focus_to control_to_show)
+          (sleep 0.1)
+          
           true)
        control_to_show
        (progn
           (place_control "right" control_to_show)
+          (sleep 0.1)
           (set_focus_to control_to_show)
           true)
        else
@@ -1215,21 +1304,24 @@
       ((options (either options { `flat_index: 0 }))
        (path (either _path []))
        (disappear_timer nil)
-       (id (either options.id "cmenu"))       
+       (min_width (+ "min-width: " (or options.min_width 300) "px;"))
+       (id (either options.id "cmenu"))  
+       (active_menu_item nil)
        (menu_element
         (fn (idx text `& args)
           (let
               ((view (li {  `class: "pure-list-item"                                         
-                          `style: (if (> args.length 0)
-                                    "position: relative;"
-                                    "")
+                          `style: (+ (if (> args.length 0)
+                                         "position: relative;"
+                                         "")
+                                     min_width)
                           }
                          (a { 
                              `idx: idx
                              `path: (join "~" (conj path idx))
                              `href: "#"
                              `class: "pure-menu-link" 
-                             `style: "min-width: 150px;"
+                             `style: ""
                              }
                             (if (== args.length 0)
                               (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
@@ -1238,32 +1330,41 @@
                          args))
                (timer nil))
             (if (== args.length 0)
-              view                           
+              (progn
+                 (attach_event_listener view
+                    `mouseenter
+                    (fn (e)
+                       (apply remove_class "juno-menu-selected" e.srcElement.parentElement.children)))
+                 view)
               (progn
                (attach_event_listener view
-                                      `mouseenter
-                                      (fn (e)
-                                        (do
-                                          (when timer
-                                            (clearTimeout timer))
-                                          (= timer
-                                             (setTimeout (fn ()
-                                                           (set_style [["display" "inline-block" ]
-                                                                       ["position" "absolute"]
-                                                                       ["top" "0px"]
-                                                                       ["left" (+ "" e.srcElement.offsetWidth "px") ]]
-                                                                      view.children.1))                                                           
-                                                         150)))))
+                  `mouseenter
+                  (fn (e)
+                     (do
+                        (= active_menu_item e.srcElement)
+                        (apply remove_class "juno-menu-selected" e.srcElement.parentElement.children)
+                        (add_class "juno-menu-selected" e.srcElement)
+                        (when timer
+                           (clearTimeout timer))
+                        (= timer
+                           (setTimeout (fn ()
+                                          (set_style [["display" "inline-block" ]
+                                                      ["position" "absolute"]
+                                                      ["top" "0px"]
+                                                      ["left" (+ "" e.srcElement.offsetWidth "px") ]]
+                                                     view.children.1))
+                                       150)))))
                (attach_event_listener view
-                                      `mouseleave
-                                      (fn (e)
-                                        (do
-                                          (when timer
-                                            (clearTimeout timer))
-                                          (= timer
-                                             (setTimeout (fn ()                                                         
-                                                           (set_style [["display" "none"]] view.children.1))
-                                                         150)))))
+                  `mouseleave
+                  (fn (e)
+                     (do
+                        (when timer
+                           (clearTimeout timer))
+                        (= timer
+                           (setTimeout (fn ()
+                                          (progn
+                                             (set_style [["display" "none"]] view.children.1)))
+                                       150)))))
                
                view)))))
        (view nil))
@@ -1311,8 +1412,11 @@
                                      (target (if path
                                                (resolve_path (split_by "~" path) items))))
                                   (handle_event e)
-                                  (console.log "clicked: " path e target )
                                   (-> view `remove)
+                                  (aif (get_by_id "cmenu")
+                                       (-> it `remove))
+                                  (when (is_function? options.on_select)
+                                     (options.on_select path))
                                   (sleep 0.01) ;; disconnect and move to back of the event loop for the call
                                   (when (and target
                                              (is_function? target.1))
@@ -1328,8 +1432,9 @@
                                                           (clearTimeout disappear_timer))
                                                         (= disappear_timer (setTimeout (fn ()
                                                                                          (progn
-                                                                                          
                                                                                           (-> view `remove)
+                                                                                          (when (is_function? options.on_select)
+                                                                                             (options.on_select nil))
                                                                                           (= disappear_timer nil)))
                                                                                        (or *env_config*.application.menu_timeout
                                                                                            options.menu_timeout
@@ -1566,6 +1671,7 @@
        (error_message error_instance.message))
      (console.error error_instance))))
      
+
 
 (defun load_js_file (file)
   (let
@@ -2470,11 +2576,20 @@
        tags: ["editor" "selection" "form" "lisp" "editing"]
    })
 
-(defun select_to_current_form (editor pos)
+(defun_sync select_to_current_form (editor pos)
   (if editor
     (let
-        ((cpos (or pos (-> editor `getCursorPosition)))
-         (rng nil))        
+        ((rng (-> editor `getSelectionRange))
+         (already_selected? (if (and (== rng.start.row rng.end.row)
+                                     (== rng.start.column rng.end.column))
+                                false
+                                true))
+         (cpos (or pos 
+                   (if already_selected?
+                      (progn
+                         (-> editor `navigateTo rng.start.row rng.start.column)
+                         (-> editor `getCursorPosition))
+                      (-> editor `getCursorPosition)))))
       (when cpos
         (= rng (find_last_paren editor cpos))
         (when rng
@@ -2700,10 +2815,12 @@
                                                (when (not (== new_op active_lisp_operator))
                                                   (= active_lisp_operator new_op)
                                                   (= usage (decorative_usage active_lisp_operator))
-                                                  (when usage
+                                                  (if usage 
                                                      (-> help_context_elem
-                                                         `replaceChildren usage))
-                                                  (dispatch_event { `command: "display_usage" `args: [active_lisp_operator] })
+                                                        `replaceChildren usage)
+                                                     (-> help_context_elem `replaceChildren))
+                                                  (when usage 
+                                                     (dispatch_event { `command: "display_usage" `args: [active_lisp_operator] }))
                                                   (when options.on_new_lisp_operator
                                                      (options.on_new_lisp_operator active_lisp_operator))))
                                             (progn
@@ -2743,7 +2860,7 @@
                                  (bind_key "increase_font_size" increase_font_size)
                                  (bind_key "decrease_font_size" decrease_font_size)
                                  (bind_key "select_form_root" select_form_root)
-                                 (bind_key "select_current_form" select_form_root)
+                                 (bind_key "select_current_form" select_current_form)
                                  (bind_key "indent_current_row" indent_current_row)
                                  (bind_key "evaluate_selection" evaluate_selection)
                                  
@@ -2876,9 +2993,17 @@
                                                                       (find_active_lisp_operator))
                                                                    (options.on_change editor val)))))
                                    (-> editor `resize true)
+                                   (unless options.clone_with_editor_id
+                                      (try
+                                         (aif (-> editor.session `getUndoManager)
+                                              (-> it `reset))
+                                         (catch Error (e)
+                                            (log "ERROR on undo manager:" e,message))))
                                    (set_prop intf `editor editor)
                                    (when (is_object? options.on_mode_set)
                                       (options.on_mode_set options.type))
+                                   (when options.on_initialized
+                                      (options.on_initialized intf))
                                    )))))
       
       (if (not (is_symbol? `$ace_editor))
@@ -2939,6 +3064,8 @@
          `display_context_message: display_context_message
          `get_evaluator: (fn ()
                             options.evaluator)
+         `resize: (fn ()
+                     (perform_resize))
          `bind_key: bind_key
          `save: (function ()
                    (when options.on_save (options.on_save (-> editor `getValue))))
@@ -3372,23 +3499,30 @@
                        (progn
                         (push history
                                 lisp_text)
-                        (= history_idx (- history.length 1))
+                        (= history_idx history.length)
                         (when (> history.length (or options.max_history_size
                                                     50))
                           (take history)))))
        (history_idx 0) 
        (history_prior_entry (fn ()
                               (when (> history.length 0)
-                               (-> input_container `set (prop history history_idx))
-                               (dec history_idx)                               
-                               (when (< history_idx 0)
-                                 (= history_idx (- history.length 1))))))
+                                 (dec history_idx)
+                                 (when (or (< history_idx 0)
+                                           (>= history_idx history.length))
+                                    (= history_idx history.length))
+                                 (if (== history_idx history.length)
+                                     (-> input_container `set "")
+                                     (-> input_container `set (prop history history_idx)))
+                               )))
        (history_next_entry (fn ()
                               (when (> history.length 0)
-                               (inc history_idx)                               
-                               (when (>= history_idx history.length)
-                                 (= history_idx 0))
-                               (-> input_container `set (prop history history_idx)))))
+                                 (inc history_idx)
+                                 (if (== history_idx history.length)
+                                     (-> input_container `set "")
+                                     (progn
+                                        (if (>= history_idx history.length)
+                                            (= history_idx 0))
+                                        (-> input_container `set (prop history history_idx)))))))
        (clear_output (fn ()
                        (-> output_control `clear)))
        (clear_history (fn ()
@@ -3449,7 +3583,13 @@
                                                  (push_history lisp_text)
                                                  (evaluator lisp_text no_eval no_clear)))
                                    commands: (repl_key_bindings)
-                                   }))
+                                   `on_initialized: (fn (control)
+                                                       (when initialized
+                                                          (try
+                                                             (-> control.editor `focus)
+                                                             (catch Error (e)
+                                                                (log "error on focus: " e.message)))))
+                                                       }))
 
        (sview (split_view_horizontal
                                  output_control
@@ -3461,7 +3601,8 @@
        (on_focus (fn ()
                    (progn
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
-                    (add_class "juno-focused" output_control.control_bar )))) ;; we know that is the command bar
+                    (add_class "juno-focused" output_control.control_bar )
+                    )))
        (on_blur (fn ()
                   (progn
                    true)))
@@ -3639,11 +3780,12 @@
             (add_control (fn (control)
                              (when (not (== control intf))
                                  (assert (and control.type control.options.id) "Invalid control provided")
-                                 (set_prop my_controls
-                                           control.options.id
-                                           control)
-                                 (render_view)
-                                 control)))
+                                 (when (not (== control.type "empty_control"))  ;; don't store the empty controls since they are placeholders
+                                    (set_prop my_controls
+                                       control.options.id
+                                       control)
+                                    (render_view)
+                                    control))))
             (remove_control (fn (id)
                               (if (is_object? id)
                                 (aif (prop my_controls id.options.id)
@@ -4727,6 +4869,53 @@
                               `remove)
                           (-> menu_trees `splice existing_idx 1))
                         (set_path global_menu_path Environment.context.scope menu_trees))))
+       (show_sub_menu (fn (e)
+                         (let
+                            ((idx (-> e.srcElement `getAttribute `idx))
+                             (menu_header (if (== e.srcElement.tagName "SPAN")
+                                              e.srcElement.parentElement
+                                              e.srcElement))
+                             (pos (-> menu_header `getBoundingClientRect))
+                             (help_menu_function nil)
+                             (on_select (fn ()
+                                           (when menu_header
+                                              (remove_class "juno-menu-selected" menu_header))))
+                             (mview nil)
+                             (menu nil))
+                            (aif (get_by_id "cmenu")
+                                 (-> it `remove))
+                            (remove_class "juno-menu-selected" menu_header)
+                            (when idx
+                               (add_class "juno-menu-selected" menu_header)
+                               (if (== (parseInt idx) help_idx)
+                                   (= help_menu_function *help_menu_function*)
+                                   (= help_menu_function nil))
+                               (console.log "app_menu: clicked: " idx "help_idx: " help_idx (prop menu_trees (parseInt idx)))
+                               (aif (or help_menu_function
+                                        (resolve_path [ (parseInt idx) 1 ] menu_trees))
+                                    (progn
+                                       (cond
+                                          help_menu_function
+                                          (= menu (menu_tree (it) { `on_select: on_select } ))
+                                          (is_function? it)
+                                          ;; if the underlying menu is a function, call the function to get..
+                                          ;; up to the minute menu contents
+                                          (= menu (menu_tree (it (first (prop menu_trees (parseInt idx)))) { `on_select: on_select } ))
+                                          ;; other wise it is a standard menu, which may not rehydrate well depending
+                                          ;; on how it was created..
+                                          else
+                                          (= menu (menu_tree it { `on_select: on_select } )))
+                                       (= mview (div { `id: `cmenu `class: "juno-menu" `style: " z-index: 30" }
+                                                     menu.view))
+                                       (set_style [["position" "absolute"]
+                                                   ["left" (+ "" (Math.max 0 pos.left 0) "px")]
+                                                   ["top" (+ "" (Math.max 0 pos.bottom ) "px") ]]
+                                                  mview)
+                                       (-> (get_by_id "body") `appendChild
+                                           mview))
+                                    (progn
+                                       (remove_class "juno-menu-selected" menu_header)
+                                       (notify "Unable to find menu resource")))))))
        (build_view (fn ()
                        (let
                            ((new_view nil)
@@ -4745,49 +4934,25 @@
                                              (span { `idx: idx `class: "juno-menu-item" } (dtext top_level))))
                                        top_levels)
                                   [])))
+                         (map (fn (child)
+                                 (progn
+                                    (attach_event_listener child
+                                       `mouseenter
+                                       (fn (e)
+                                          (progn
+                                             (when (get_by_id "cmenu") ;; if the menu is already showing show the new menu, otherwise don't do anything
+                                                (remove_class "juno-menu-selected" new_view.children)
+                                                (show_sub_menu e)))))
+                                    (attach_event_listener child
+                                       `mouseleave
+                                       (fn (e)
+                                          true))))
+                              new_view.children)
                          (attach_event_listener new_view
                                                 `click
-                                                (fn (e)
-                                                  (let
-                                                      ((idx (-> e.srcElement `getAttribute `idx))
-                                                       (pos (if (== e.srcElement.tagName "SPAN")
-                                                              (-> e.srcElement.parentElement `getBoundingClientRect)
-                                                              (-> e.srcElement `getBoundingClientRect)))
-                                                       (help_menu_function nil)
-                                                       (mview nil)
-                                                       (menu nil))
-                                                    (aif (get_by_id "cmenu")
-                                                         (-> it `remove))
-                                                    (when idx
-                                                      
-                                                      (if (== (parseInt idx) help_idx)
-                                                        (= help_menu_function *help_menu_function*)
-                                                        (= help_menu_function nil))
-                                                      (console.log "app_menu: clicked: " idx "help_idx: " help_idx (prop menu_trees (parseInt idx)))
-                                                      (aif (or help_menu_function
-                                                               (resolve_path [ (parseInt idx) 1 ] menu_trees))
-                                                           (progn
-                                                            (cond
-                                                              help_menu_function
-                                                              (= menu (menu_tree (it)))
-                                                              (is_function? it)
-                                                              ;; if the underlying menu is a function, call the function to get..
-                                                              ;; up to the minute menu contents
-                                                              (= menu (menu_tree (it (first (prop menu_trees (parseInt idx))))))
-                                                              ;; other wise it is a standard menu, which may not rehydrate well depending
-                                                              ;; on how it was created..
-                                                              else
-                                                              (= menu (menu_tree it)))
-                                                            (= mview (div { `id: `cmenu `class: "juno-menu" `style: " z-index: 30" }
-                                                                   menu.view))
-                                                            (set_style [["position" "absolute"]
-                                                                        ["left" (+ "" (Math.max 0 pos.left 0) "px")]
-                                                                        ["top" (+ "" (Math.max 0 pos.bottom ) "px") ]]
-                                                                       mview)                                                                
-                                                            (-> (get_by_id "body") `appendChild
-                                                                   mview))
-                                                           (notify "Unable to find menu resource"))))))
+                                                show_sub_menu)
                                                                         
+                         
                          (if view.parentElement
                            (-> view `replaceWith new_view))
                          (= view new_view)
@@ -5125,8 +5290,9 @@
     (if (and *last_focus*
              (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text
              (prop *last_focus* `name))  ;; and a name to identify it
-        [(+ (dtext "Save") " " 
-            (or (resolve_path [ `options `filename ] *last_focus*)
+        [(+ (dtext "save") " " 
+            (or (aif (resolve_path [ `options `filename ] *last_focus*)
+                     (last (split_by "/" it)))
                 (resolve_path [ `options `name ] *last_focus*)
                 "")
             "...")
@@ -5199,7 +5365,7 @@
                                    (get_control_by_name key)
                                    (empty_selection_control))))])])))))
 
-(defun gen_view_menu ()
+(defun gen_controls_menu ()
   (progn
    (defvar holding_tank (get_control_by_name "Holding Tank"))                
    (defvar holding_tank_visible? (if (prop (control_position holding_tank) `parent)
@@ -5327,12 +5493,14 @@
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
-       (push *main_menu*
-             [ "File" gen_file_menu])
+       (push *main_menu*   ;; using a wrapper function allows us to change the menu more dynamically
+             [ "File" (fn ()
+                         (gen_file_menu))])
                          
        
        (push *main_menu*            
-             ["View" gen_view_menu])
+             ["Controls" (fn ()
+                        (gen_controls_menu))])
        (push *main_menu*
              ["Layout"
                gen_layout_menu])

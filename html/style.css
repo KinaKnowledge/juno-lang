@@ -1851,6 +1851,12 @@ li.juno-menu-header:active {
   color: var(--highlight-color);
 }
 
+
+li.juno-menu-selected {
+  background: var(--highlight-bg-color);
+  color: var(--highlight-color);
+}
+
 .juno-selected {
   background: var(--selected-bg-color);
   color: var(--selected-color);
