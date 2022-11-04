@@ -1311,7 +1311,8 @@
                          (let
                              ((`acc ["["])
                               (`compiled_values []))
-                           
+                           (aif (get_ctx_val ctx "assignment_for")
+                                   (set_declaration ctx it `type Array))
                            (for_each (`t (-> tokens `slice 1))
                                      (push compiled_values
                                            (compile_wrapper_fn t ctx)))
@@ -1873,42 +1874,42 @@
                               else
                               name)))
                                  
-        (`compile_let (fn (tokens ctx)
-                         (let
-                             ((`acc [])
-                              (`ctx (new_ctx ctx))
-                              (`clog (if quiet_mode
-                                         log
-                                         (defclog { `prefix: (+ "compile_let: " (or ctx.block_id "")) `background: "#B0A0F0" `color: "black"})))
-                              (`token nil)
-                              (`declarations_handled false)
-                              (`assignment_value nil)
-                              (`suppress_return nil)
-                              (`block_declarations {})
-                              (`my_tokens tokens)
-                              (`assignment_type nil)
-                              (`stmt nil)
-                              (`def_idx nil)
-                              (`redefinitions {})  ;; maps symbols that are already defined in scope to tmp variables in a JS block...
-                                                   ;; which are then redefined with local shadowing: ALREADY DEFINED SYMBOL->TEMP_SYMBOL
-                              (`need_sub_block false)
-                              (`assignments {})                     
-                              (`reference_name nil)
-                              (`shadowed_globals {})
-                              (`alloc_set nil)
-                              (`is_first_level false)
-                              (`sub_block_count 0)
-                              (`ctx_details nil)
-                              (`preamble (calling_preamble ctx))
-                              (`structure_validation_rules [ [[1 `val] (list is_array?) "allocation section"]
-                                                             [[2] (list (fn (v) (not (== v undefined)))) "block"]])
-                              
-                              (`validation_results nil)
-                              (`allocations tokens.1.val)
-                              (`block (-> tokens `slice 2))
-                              (`syntax_error nil)
-                              (`idx -1))
-
+       (`compile_let (fn (tokens ctx)
+                        (let
+                           ((`acc [])
+                            (`ctx (new_ctx ctx))
+                            (`clog (if quiet_mode
+                                       log
+                                       (defclog { `prefix: (+ "compile_let: " (or ctx.block_id "")) `background: "#B0A0F0" `color: "black"})))
+                            (`token nil)
+                            (`declarations_handled false)
+                            (`assignment_value nil)
+                            (`suppress_return nil)
+                            (`block_declarations {})
+                            (`my_tokens tokens)
+                            (`assignment_type nil)
+                            (`stmt nil)
+                            (`def_idx nil)
+                            (`redefinitions {})  ;; maps symbols that are already defined in scope to tmp variables in a JS block...
+                            ;; which are then redefined with local shadowing: ALREADY DEFINED SYMBOL->TEMP_SYMBOL
+                            (`need_sub_block false)
+                            (`assignments {})
+                            (`reference_name nil)
+                            (`shadowed_globals {})
+                            (`alloc_set nil)
+                            (`is_first_level false)
+                            (`sub_block_count 0)
+                            (`ctx_details nil)
+                            (`preamble (calling_preamble ctx))
+                            (`structure_validation_rules [ [[1 `val] (list is_array?) "allocation section"]
+                                                          [[2] (list (fn (v) (not (== v undefined)))) "block"]])
+                            
+                            (`validation_results nil)
+                            (`allocations tokens.1.val)
+                            (`block (-> tokens `slice 2))
+                            (`syntax_error nil)
+                            (`idx -1))
+                           
                            (declare (string preamble.0 preamble.1 preamble.2))
                            
                            ;; validate the let structure if we have the functionality
@@ -1920,51 +1921,51 @@
                                (throw SyntaxError "let: missing block"))
                            
                            (set_prop ctx
-                                     `return_last_value
-                                     true)
-
+                              `return_last_value
+                              true)
+                           
                            (set_ctx ctx `__LOCAL_SCOPE__
                                     true)
-                                     
                            
-                           ;; start the main block 
+                           
+                           ;; start the main block
                            (push acc "{")
                            (inc sub_block_count)
-                                                     
-                           ;; let must be two pass, because we need to know all the symbol names being defined in the 
+                           
+                           ;; let must be two pass, because we need to know all the symbol names being defined in the
                            ;; allocation block because let allows us to refer to symbol names out of order, similar to
-                           ;; let* in Common Lisp.  
-                                                                                 
+                           ;; let* in Common Lisp.
+                           
                            ;; Check declaration details if they exist in the first form of the block form
                            
                            (when (== block.0.val.0.name "declare")
                               (= declarations_handled true)
                               (push acc (compile_declare block.0.val ctx)))
-
-                           (when needs_first_level                       ;; if we are on the first level, do some setup for aliases for easier code reading, etc..            
-                             (= is_first_level true)                             
-                             (= needs_first_level false)
-                             (when is_first_level
-                               (push acc first_level_setup)))
+                           
+                           (when needs_first_level                       ;; if we are on the first level, do some setup for aliases for easier code reading, etc..
+                              (= is_first_level true)
+                              (= needs_first_level false)
+                              (when is_first_level
+                                 (push acc first_level_setup)))
                            
                            ;; In let allocation forms, we need to check each allocated symbol's (AS) assignment
                            ;; form for the symbol name in enclosing scope, because any operations that are
                            ;; performed as part of the symbol value assignment are actually references to
-                           ;; the previously allocated closure symbol (CS).  The local AS symbol will be assigned 
+                           ;; the previously allocated closure symbol (CS).  The local AS symbol will be assigned
                            ;; the computed value of the assignment form and should shadow the CS.
-                            
-                           ;; However, in JS scope rules the right hand side is referencing AS 
+                           
+                           ;; However, in JS scope rules the right hand side is referencing AS
                            ;; symbol, not the CS bound symbol, and so a Reference Error will occur.  Therefore
                            ;; we need a strategy for evaluating assignment value form with the CS, and then
-                           ;; providing the value to the AS, which is just being allocated. 
-                           ;; NOTE that this situation doesn't apply to function arguments enclosing the let block, 
-                           ;; which are considered local to the allocaton, and not in a closure.  The compiler 
+                           ;; providing the value to the AS, which is just being allocated.
+                           ;; NOTE that this situation doesn't apply to function arguments enclosing the let block,
+                           ;; which are considered local to the allocaton, and not in a closure.  The compiler
                            ;; doesn't reallocate those function arguments.
-                            
+                           
                            ;; Approach:
                            ;; 1. We need to detect if the allocated symbol is already allocated in a closure,
-                           ;;    but we don't care if it is a global symbol because these use dynamic 
-                           ;;    lookup, (get_global), or if it is an enclosing function argument.  
+                           ;;    but we don't care if it is a global symbol because these use dynamic
+                           ;;    lookup, (get_global), or if it is an enclosing function argument.
                            ;; 2. If it is in the closure already, then we need allocate to a temp name
                            ;;    in a higher block { } and then introduce a new subblock where the AS
                            ;;    is actually allocated and assigned the value from the temp variable.
@@ -1973,199 +1974,210 @@
                            ;;    after our let block as completed.
                            
                            ;; First pass: build symbols in context for the left hand side of the allocation forms
-                           ;; set them to AsyncFunction, unless we have a declaration already for it 
+                           ;; set them to AsyncFunction, unless we have a declaration already for it
                            ;; from declare...
                            
                            
                            (while (< idx (- allocations.length 1))
                               (do
-                                  (inc idx)
-                                  (= alloc_set (prop (prop allocations idx) `val))
-                                  (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
-                                  (assert (and (is_string? reference_name)
-					       (> (length reference_name) 0))
-					  (+ "Invalid reference name: " alloc_set.0.name))
-                                  (= ctx_details (get_declaration_details ctx reference_name))
-                                  (when ctx_details                                        
-                                        ;; already declared..
-                                        (when (and (not ctx_details.is_argument)
-                                                   (> ctx_details.levels_up 1))
-                                              (= need_sub_block true)
-                                              (if (prop redefinitions reference_name)
-                                                  (push (prop redefinitions reference_name)
-                                                        (gen_temp_name reference_name))
-                                                  (set_prop redefinitions
-                                                            reference_name
-                                                            [0 (gen_temp_name reference_name)]))
-                                              (when (and ctx_details.declared_global
-                                                         (not ctx_details.is_argument))
-                                                  (set_prop shadowed_globals
-                                                            alloc_set.0.name
-                                                            true))))
-                                                                                                                                                                                           
-                                  ;; if it isn't an argument to a potential parent lambda, set the ctx 
-                                  (when (not ctx_details.is_argument)
-                                   ;; set a placeholder for the reference
-                                      (set_ctx ctx
-                                               reference_name 
-                                               AsyncFunction)))) ;; assume callable for recursion
-
-                                  
+                                 (inc idx)
+                                 (= alloc_set (prop (prop allocations idx) `val))
+                                 (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
+                                 (assert (and (is_string? reference_name)
+                                              (> (length reference_name) 0))
+                                         (+ "Invalid reference name: " alloc_set.0.name))
+                                 (= ctx_details (get_declaration_details ctx reference_name))
+                                 (when ctx_details
+                                    ;; already declared..
+                                    (when (and (not ctx_details.is_argument)
+                                               (> ctx_details.levels_up 1))
+                                       (= need_sub_block true)
+                                       (if (prop redefinitions reference_name)
+                                           (push (prop redefinitions reference_name)
+                                                 (gen_temp_name reference_name))
+                                           (set_prop redefinitions
+                                              reference_name
+                                              [0 (gen_temp_name reference_name)]))
+                                       (when (and ctx_details.declared_global
+                                                  (not ctx_details.is_argument))
+                                          (set_prop shadowed_globals
+                                             alloc_set.0.name
+                                             true))))
+                                 
+                                 ;; if it isn't an argument to a potential parent lambda, set the ctx
+                                 (when (not ctx_details.is_argument)
+                                    ;; set a placeholder for the reference
+                                    (set_ctx ctx
+                                             reference_name
+                                             AsyncFunction)))) ;; assume callable for recursion
+                           
+                           
                            ;; reset our index to the top of the allocation list
                            (= idx -1)
                            
                            ;; build all the right hand side allocations.  When the allocation value is to be
                            ;; assigned to a shadowed symbol in local scope, we need to make a function in an
-                           ;; enclosing block that can be called in the right order to assign the value to the 
+                           ;; enclosing block that can be called in the right order to assign the value to the
                            ;; shadowed variable.  By putting the function in an enclosing scope, we can access
                            ;; the CS value.
                            
                            (while (< idx (- allocations.length 1))
-                                  (do
-                                    (inc idx)
-                                    (= stmt [])
-                                    (= alloc_set (prop (prop allocations idx) `val))
-                                    
-                                    (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
-                                    
-                                    (= ctx_details (get_declaration_details ctx reference_name))
-                                                                        
-                                    (cond
-                                      (is_array? alloc_set.1.val)
-                                      (do
-                                       (set_prop ctx
-                                                 `in_assignment
-                                                 true)
-                                       (= assignment_value (compile_wrapper_fn alloc_set.1 ctx))
-                                                                              
-                                       (set_prop ctx 
-                                                  `in_assignment
-                                                  false))
-                                      
-                                      ;; local shadow of a globally declared variable
-                                      (and (is_string? alloc_set.1.name)
-                                           (not ctx_details.is_argument)
-					   alloc_set.1.ref
-                                           (not (== (-> Environment `get_global alloc_set.1.name NOT_FOUND_THING) NOT_FOUND_THING))
-                                           (prop shadowed_globals alloc_set.0.name))
-                                                  
-                                      (do
-                                          (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
-                                      else
-                                      (do                                        
-                                       (= assignment_value (compile_wrapper_fn alloc_set.1 ctx))                                       
-                                       (when (verbosity ctx)
-                                         (clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value)))))
-                                                                                                           
-                                    (cond 
-                                       (and (is_array? assignment_value)
-                                            (is_object? assignment_value.0)
-                                              assignment_value.0.ctype)
-                                        (do 
-                                           (set_ctx ctx
-                                                    reference_name
-                                                    (map_ctype_to_value assignment_value.0.ctype assignment_value)))
-                                        (and (is_array? assignment_value)
-                                             (is_array? assignment_value.0)
-                                             assignment_value.0.0.ctype)
-                                        (do 
-                                           (set_ctx ctx
-                                                    reference_name
-                                                    (map_ctype_to_value assignment_value.0.0.ctype assignment_value))) 
-                                        else 
-                                         (do 
-                                             (set_ctx ctx
-                                                      reference_name
-                                                      assignment_value)))
-                                                                                                                                                              
-                                     (when ctx_details.is_argument
-                                           (set_prop block_declarations
-                                                     reference_name
-                                                     true)) ;; if this is an argument to this function, we don't want to redeclare it below or we will error..
-                                     (= def_idx nil)            
-                                     (cond
-                                         (and (prop redefinitions reference_name)
-                                              (first (prop redefinitions reference_name)))
-                                         (do 
-                                             (= def_idx (first (prop redefinitions reference_name)))
-                                             (inc def_idx)
-                                             (set_prop (prop redefinitions reference_name)
-                                                       0
-                                                       def_idx)
-                                                  
-                                             (for_each (`t ["let" " " (prop (prop redefinitions reference_name) def_idx) "=" " " preamble.1 " " "function" "()" "{" "return" " " assignment_value "}" ";"])
-                                                (push acc t)))
-                                         ;; if the name isn't shadowing declare it, so it can be used if referenced by others
-                                         (not (prop block_declarations reference_name))
-                                         (do 
-                                             (for_each (`t ["let" " " reference_name ";" ])
-                                                (push acc t))
-                                             (set_prop block_declarations reference_name true)))
-                                     (when (not (prop assignments reference_name))
-                                           (set_prop assignments
-                                                     reference_name
-                                                     []))
-                                     (push (prop assignments
-                                                  reference_name) 
-                                           (if def_idx
-                                               [preamble.0 " " (prop (prop redefinitions reference_name) def_idx) "()" ";" ]
-                                               assignment_value))))
-                                           
-                           (when need_sub_block                    
-                               (for_each (`pset (pairs redefinitions))
-                                 (do
-                                   (for_each (`redef pset.1)
-                                     (take (prop redefinitions pset.0))))))
+                              (do
+                                 (inc idx)
+                                 (= stmt [])
+                                 (= alloc_set (prop (prop allocations idx) `val))
                                  
+                                 (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
+                                 
+                                 (= ctx_details (get_declaration_details ctx reference_name))
+                                 
+                                 (cond
+                                    (is_array? alloc_set.1.val)
+                                    (do
+                                       (set_prop ctx
+                                          `in_assignment
+                                          true)
+                                       (set_ctx ctx 
+                                                `assignment_for
+                                                reference_name)
+                                       (= assignment_value (compile_wrapper_fn alloc_set.1 ctx))
+                                       (set_ctx ctx
+                                                `assignment_for
+                                                nil)
+                                       (set_prop ctx
+                                          `in_assignment
+                                          false))
+                                    
+                                    ;; local shadow of a globally declared variable
+                                    (and (is_string? alloc_set.1.name)
+                                         (not ctx_details.is_argument)
+                                         alloc_set.1.ref
+                                         (not (== (-> Environment `get_global alloc_set.1.name NOT_FOUND_THING) NOT_FOUND_THING))
+                                         (prop shadowed_globals alloc_set.0.name))
+                                    
+                                    (do
+                                       (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
+                                    else
+                                    (do
+                                       (set_ctx ctx 
+                                                `assignment_for
+                                                reference_name)
+                                       (= assignment_value (compile_wrapper_fn alloc_set.1 ctx ))
+                                       (set_ctx ctx
+                                                `assignment_for
+                                                nil)
+                                       (when (verbosity ctx)
+                                          (clog "setting simple assignment value for" reference_name ": <- " (clone assignment_value)))))
+                                 
+                                 (cond
+                                    (and (is_array? assignment_value)
+                                         (is_object? assignment_value.0)
+                                         assignment_value.0.ctype)
+                                    (do
+                                       (set_ctx ctx
+                                                reference_name
+                                                (map_ctype_to_value assignment_value.0.ctype assignment_value)))
+                                    (and (is_array? assignment_value)
+                                         (is_array? assignment_value.0)
+                                         assignment_value.0.0.ctype)
+                                    (do
+                                       (set_ctx ctx
+                                                reference_name
+                                                (map_ctype_to_value assignment_value.0.0.ctype assignment_value)))
+                                    else
+                                    (do
+                                       (set_ctx ctx
+                                                reference_name
+                                                assignment_value)))
+                                 
+                                 (when ctx_details.is_argument
+                                    (set_prop block_declarations
+                                       reference_name
+                                       true)) ;; if this is an argument to this function, we don't want to redeclare it below or we will error..
+                                 (= def_idx nil)
+                                 (cond
+                                    (and (prop redefinitions reference_name)
+                                         (first (prop redefinitions reference_name)))
+                                    (do
+                                       (= def_idx (first (prop redefinitions reference_name)))
+                                       (inc def_idx)
+                                       (set_prop (prop redefinitions reference_name)
+                                                 0
+                                                 def_idx)
+                                       
+                                       (for_each (`t ["let" " " (prop (prop redefinitions reference_name) def_idx) "=" " " preamble.1 " " "function" "()" "{" "return" " " assignment_value "}" ";"])
+                                          (push acc t)))
+                                    ;; if the name isn't shadowing declare it, so it can be used if referenced by others
+                                    (not (prop block_declarations reference_name))
+                                    (do
+                                       (for_each (`t ["let" " " reference_name ";" ])
+                                          (push acc t))
+                                       (set_prop block_declarations reference_name true)))
+                                 (when (not (prop assignments reference_name))
+                                    (set_prop assignments
+                                       reference_name
+                                       []))
+                                 (push (prop assignments
+                                             reference_name)
+                                       (if def_idx
+                                          [preamble.0 " " (prop (prop redefinitions reference_name) def_idx) "()" ";" ]
+                                          assignment_value))))
                            
                            (when need_sub_block
-                             (push acc "{")
-                             (inc sub_block_count))
-                         
+                              (for_each (`pset (pairs redefinitions))
+                                 (do
+                                    (for_each (`redef pset.1)
+                                       (take (prop redefinitions pset.0))))))
+                           
+                           
+                           (when need_sub_block
+                              (push acc "{")
+                              (inc sub_block_count))
+                           
                            (= idx -1)
                            (while (< idx (- allocations.length 1))
-                                (do
-                                    (inc idx)
-                                    (= def_idx nil)
-                                    
-                                    (= stmt [])
-                                    (= alloc_set (prop (prop allocations idx) `val)) 
-                                    (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
-                                    (= ctx_details (get_declaration_details ctx reference_name))
-                                    
-                                    (= assignment_value (take (prop assignments reference_name)))
-                                    
-                                    ;; test for whether or now we need to declare it without getting in trouble with JS
-                                    (cond
-                                       (prop block_declarations reference_name)
-                                       true    ;; already declared in the above block or in this block
-                                       else
-                                       (do 
-                                         (push stmt "let")   ;; depending on block status, this may be let for a scoped {}
-                                         (push stmt " ")))
-                                    (push stmt reference_name)
-                                    (set_prop block_declarations reference_name true) ;; mark that we have already declared so that if it is redeclared we don't try and declare in JS again
-                                    (push stmt "=")
-                                    (push stmt assignment_value)
-                                    (push stmt ";")                                    
-                                    (push acc stmt)))                           
+                              (do
+                                 (inc idx)
+                                 (= def_idx nil)
+                                 
+                                 (= stmt [])
+                                 (= alloc_set (prop (prop allocations idx) `val))
+                                 (= reference_name (clean_quoted_reference (sanitize_js_ref_name alloc_set.0.name)))
+                                 (= ctx_details (get_declaration_details ctx reference_name))
+                                 
+                                 (= assignment_value (take (prop assignments reference_name)))
+                                 
+                                 ;; test for whether or now we need to declare it without getting in trouble with JS
+                                 (cond
+                                    (prop block_declarations reference_name)
+                                    true    ;; already declared in the above block or in this block
+                                    else
+                                    (do
+                                       (push stmt "let")   ;; depending on block status, this may be let for a scoped {}
+                                       (push stmt " ")))
+                                 (push stmt reference_name)
+                                 (set_prop block_declarations reference_name true) ;; mark that we have already declared so that if it is redeclared we don't try and declare in JS again
+                                 (push stmt "=")
+                                 (push stmt assignment_value)
+                                 (push stmt ";")
+                                 (push acc stmt)))
                            
                            (push acc (compile_block (conj ["PLACEHOLDER"]
                                                           block)
                                                     ctx
                                                     {
-                                                     `no_scope_boundary: true
-                                                     `suppress_return: suppress_return
-                                                    `ignore_declarations: declarations_handled
-                                                    }))
+                                                      `no_scope_boundary: true
+                                                      `suppress_return: suppress_return
+                                                      `ignore_declarations: declarations_handled
+                                                      }))
                            (for_each (`i (range sub_block_count))
-                            (push acc "}"))
+                              (push acc "}"))
                            
                            (if false ; (== ctx.return_point 1)
-                               acc
-                               (do
-                                (prepend acc { `ctype: "letblock" `block_step: ctx.parent.block_step })
-                                acc)))))
+                              acc
+                              (do
+                                 (prepend acc { `ctype: "letblock" `block_step: ctx.parent.block_step })
+                                 acc)))))
         
         
         (`in_sync? (fn (ctx)
@@ -2544,97 +2556,97 @@
                                (compile_wrapper_fn tokens ctx { `force: true })))
        
        (`compile_wrapper_fn (fn (tokens ctx opts)
-                                (let
-                                    ((`acc [])
-                                     (`ctx ctx)
-                                     (`preamble (calling_preamble ctx))
-                                     (`needs_await true))
-
+                               (let
+                                  ((`acc [])
+                                   (`ctx ctx)
+                                   (`preamble (calling_preamble ctx))
+                                   (`needs_await true))
+                                  
                                   (declare (string preamble.0))
                                   
                                   (cond
-                                    (and (is_object? tokens)
-                                         (not (is_array? tokens))
-                                         (not (== tokens.type "arr")))
-                                    (do 
-                                     (= needs_await false)                                     
-                                     (= acc (compile tokens ctx)))
-
-                                    (and (is_object? tokens)
-                                         (== tokens.val.0.type "fun"))
-                                             
-                                    (do
-                                      (= needs_await false)
-                                      (= acc (compile tokens ctx)))
-
-				    opts.force
-				    (do
-				     (= ctx (new_ctx ctx))
-                                     (set_new_completion_scope ctx)
-                                     (= acc (compile_block_to_anon_fn tokens ctx)))
-				     
-                                    (is_block? tokens)                                       
-                                    (do
+                                     (and (is_object? tokens)
+                                          (not (is_array? tokens))
+                                          (not (== tokens.type "arr")))
+                                     (do
+                                        (= needs_await false)
+                                        (= acc (compile tokens ctx)))
                                      
-                                      (= ctx (new_ctx ctx))
-                                      (set_new_completion_scope ctx)
-                                      (set_prop ctx
-                                                `block_step
-                                                0)
-                                                                          
-                                      (= acc [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
-                                    (and (is_object? tokens)
-                                         (== tokens.val.0.type "special")
-                                         (or (== tokens.val.0.name "if")                                            
-                                             (and (== tokens.val.0.name "throw")
-                                                  (get_ctx ctx "__COMP_INFIX_OPS__"))))
-                                    (do 
-                                      (= ctx (new_ctx ctx))
-                                      (set_new_completion_scope ctx)                                    
-                                     (set_prop ctx
-                                               `block_step
-                                               0)
-                                      (for_each (`t [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
-                                                (push acc t)))
-                                    (and (is_array? tokens)
-                                         (or (== tokens.0.type "fun")
-                                             (== tokens.0.type "asf")
-                                             (== tokens.0.type "function")))
-                                    (do
-                                      (= needs_await false)
-                                      (= acc (compile tokens ctx)))
-                                         
-                                    (is_array? tokens)
-                                    (do
-                                     (= ctx (new_ctx ctx))
-                                     (set_new_completion_scope ctx)
-                                     (= acc (compile_block_to_anon_fn tokens ctx)))
-                                    
-                                    (and (is_object? tokens)
-                                         (== tokens.type "arr")
-                                         (or (== tokens.val.length 0)
-                                             (== tokens.val.0.type "literal")
-                                             (or (== tokens.val.0.type "arg")
-                                                 (and (== tokens.val.0.type "special")
-                                                      (not (contains? tokens.val.0.name [ "if" "try" "do" "progn" "let" "cond" ]))))))
-                                         ;;(contains? tokens.val.0.name [ "or" "and" "==" "fn" "function" "function*" "lambda" "<" ">" ">=" "%" "*" "-" "+" "<<" ">>" "prop" "set_prop" "for_each" "while" "new" ]))))                                        
-                                    (progn
-                                     (= needs_await false)
+                                     (and (is_object? tokens)
+                                          (== tokens.val.0.type "fun"))
+                                     
+                                     (do
+                                        (= needs_await false)
+                                        (= acc (compile tokens ctx)))
+                                     
+                                     opts.force
+                                     (do
+                                        (= ctx (new_ctx ctx))
+                                        (set_new_completion_scope ctx)
+                                        (= acc (compile_block_to_anon_fn tokens ctx opts)))
+                                     
+                                     (is_block? tokens)
+                                     (do
+                                        
+                                        (= ctx (new_ctx ctx))
+                                        (set_new_completion_scope ctx)
+                                        (set_prop ctx
+                                           `block_step
+                                           0)
+                                        
+                                        (= acc [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile tokens ctx) "}" ")""()"]))
+                                     (and (is_object? tokens)
+                                          (== tokens.val.0.type "special")
+                                          (or (== tokens.val.0.name "if")
+                                              (and (== tokens.val.0.name "throw")
+                                                   (get_ctx ctx "__COMP_INFIX_OPS__"))))
+                                     (do
+                                        (= ctx (new_ctx ctx))
+                                        (set_new_completion_scope ctx)
+                                        (set_prop ctx
+                                           `block_step
+                                           0)
+                                        (for_each (`t [preamble.2 "(" preamble.1 " " "function" "()" "{" (compile_if tokens.val ctx) "}" ")" "()" ])
+                                           (push acc t)))
+                                     (and (is_array? tokens)
+                                          (or (== tokens.0.type "fun")
+                                              (== tokens.0.type "asf")
+                                              (== tokens.0.type "function")))
+                                     (do
+                                        (= needs_await false)
+                                        (= acc (compile tokens ctx)))
+                                     
+                                     (is_array? tokens)
+                                     (do
+                                        (= ctx (new_ctx ctx))
+                                        (set_new_completion_scope ctx)
+                                        (= acc (compile_block_to_anon_fn tokens ctx opts)))
+                                     
+                                     (and (is_object? tokens)
+                                          (== tokens.type "arr")
+                                          (or (== tokens.val.length 0)
+                                              (== tokens.val.0.type "literal")
+                                              (or (== tokens.val.0.type "arg")
+                                                  (and (== tokens.val.0.type "special")
+                                                       (not (contains? tokens.val.0.name [ "if" "try" "do" "progn" "let" "cond" ]))))))
+                                     ;;(contains? tokens.val.0.name [ "or" "and" "==" "fn" "function" "function*" "lambda" "<" ">" ">=" "%" "*" "-" "+" "<<" ">>" "prop" "set_prop" "for_each" "while" "new" ]))))
+                                     (progn
+                                        (= needs_await false)
+                                        (= acc (compile tokens ctx)))
+                                     (and (is_object? tokens)
+                                          tokens.val
+                                          (== tokens.type "arr"))
+                                     ;(== tokens.val.0.type "special")
+                                     ;(contains? tokens.val.0.name ["do" "progn" "lets" "try" "throw"]))
+                                     (do
+                                        (= ctx (new_ctx ctx))
+                                        (set_new_completion_scope ctx)
+                                        (= acc (compile_block_to_anon_fn tokens.val ctx opts)))
+                                     else
                                      (= acc (compile tokens ctx)))
-                                    (and (is_object? tokens)
-                                         tokens.val
-                                         (== tokens.type "arr"))
-                                         ;(== tokens.val.0.type "special")
-                                         ;(contains? tokens.val.0.name ["do" "progn" "lets" "try" "throw"]))
-                                    (do                                       
-                                      (= ctx (new_ctx ctx))
-                                     (set_new_completion_scope ctx)
-                                     (= acc (compile_block_to_anon_fn tokens.val ctx)))
-                                    else
-                                    (= acc (compile tokens ctx)))
-                                  (if needs_await 
-                                      [preamble.0 " " acc]
-                                      acc))))
+                                  (if needs_await
+                                     [preamble.0 " " acc]
+                                     acc))))
        
        (`compile_block_to_anon_fn (fn (tokens ctx opts)
                                       (let
@@ -2654,11 +2666,11 @@
                                                      `return_last_value
                                                      true)
                                            (set_prop ctx
-                                            `return_point
-                                            0)
+                                                     `return_point
+                                                     0)
                                         
                                             (for_each (`t ["(" preamble.1 " " "function" "()" (compile_block tokens ctx) ")" "()" ])
-                                                      (push acc t)))
+                                               (push acc t)))
                                           
                                           (and (== tokens.0.name "let")
                                                (== tokens.0.type "special"))
@@ -2667,25 +2679,25 @@
                                                      `return_last_value
                                                      true)
                                            (set_prop ctx
-                                            `return_point
-                                            0)
-                                            (for_each (`t ["(" preamble.1 " " "function" "()" (compile tokens ctx) ")" "()"])
-                                                      (push acc t)))                                          
+                                                     `return_point
+                                                     0)
+                                           (for_each (`t ["(" preamble.1 " " "function" "()" (compile tokens ctx) ")" "()"])
+                                              (push acc t)))
                                           (and (== tokens.0.type "special")
                                                (or (== tokens.0.name "if")
                                                    (== tokens.0.name "try")))
                                           (do                                                                                       
                                             (for_each (`t ["(" preamble.1 " " "function" "() { " (compile tokens ctx) "})" "()"])
-                                                      (push acc t)))    
+                                               (push acc t)))
                                           else
                                           (do                                        
                                            (set_prop ctx
                                                      `return_last_value
                                                      true)
                                            (set_prop ctx
-                                            `return_point
-                                            0)
-                                            (for_each (`t ["(" preamble.1 " " "function" "()" "{" " " "return"  " " (compile tokens ctx) " " "}" ")" "()"  ])
+                                                     `return_point
+                                                     0)
+                                           (for_each (`t ["(" preamble.1 " " "function" "()" "{" " " "return"  " " (compile tokens ctx) " " "}" ")" "()"  ])
                                                       (push acc t))))                                        
                                         acc)))
        (`make_do_block (fn (tokens)
@@ -3889,152 +3901,152 @@
                          log
                         (defclog { `prefix: "DECLARE" `color: "white" `background: "black" })))
        (`compile_declare (fn (tokens ctx)
-                             (let
-                                 ((`expressions (rest tokens))
-                                  (`targeted nil)
-                                  (`acc [])
-                                  (`source nil)
-                                  (`details nil)
-                                  (`sanitized_name nil)
-                                  (`declaration nil)
-                                  (`dec_struct nil))
-                                 
-                                 (for_each (`exp expressions)
-                                    (do
-                                        (= declaration exp.val.0.name)
-                                        (= targeted (rest exp.val))
-				      (when (verbosity ctx)
-					(declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted))
-                                        (cond
-                                            (== declaration "toplevel")
-                                            (do
-                                               (set_prop opts
-                                                         `root_environment
-                                                         targeted.0)
-                                               (if opts.root_environment
-                                                   (= env_ref "")
-                                                   (= env_ref "Environment.")))
-                                            (== declaration "include")
-                                            (do 
-                                               (for_each (`name (each targeted `name))
-                                                 (do
-                                                     (= sanitized_name (sanitize_js_ref_name name))
-                                                     (= dec_struct (get_declaration_details ctx name))
-
-                                                     (when dec_struct                                                              
-                                                             ;; this is a global so we just produce a reference for this 
-                                                             (for_each (`t [ "let" " " sanitized_name "=" ])
-                                                                (push acc t))
-                                                             (cond
-                                                                 (and (is_function? dec_struct.value)
-                                                                      (prop (prop Environment.definitions name)
-                                                                            `fn_body))
-                                                                 (do
-                                                                     (= details (prop Environment.definitions name))
-                                                                     (= source (+ "(fn " details.fn_args " " details.fn_body ")"))
-                                                                     
-                                                                     (= source (compile (tokenize (read_lisp source) ctx) ctx 1000))
-                                                                     
-                                                                     (push acc source)
-                                                                     (set_ctx ctx name AsyncFunction))
-                                                                 (is_function? dec_struct.value)
-                                                                 (do 
-                                                                     (push acc (-> (-> dec_struct.value `toString) `replace "\n" ""))
-                                                                     (set_ctx ctx name AsyncFunction))
-                                                                 else
-                                                                 (do 
-                                                                     (push acc (-> dec_struct.value `toString))
-                                                                     (set_ctx ctx name ArgumentType))
-                                                                     )
-                                                              (push acc ";"))
-                                                     (set_declaration ctx name `inlined true)
-                                                     (if (and (== "undefined" (prop (get_declarations ctx name) `type))
-                                                              (is_function? dec_struct.value))
-                                                       (set_declaration ctx name `type Function)))))
-                                            
-                                            (== declaration "verbose")
-                                            (do
-                                               (defvar `verbosity_level (parseInt (first (each targeted `name))))
-                                               (if (not (isNaN verbosity_level))
-                                                   (do
-                                                      (if (> verbosity_level 0)
-                                                          (set_ctx ctx "__VERBOSITY__" verbosity_level)
-                                                          (do
-                                                             (declare_log "verbosity: turned off")
-                                                             (= verbosity silence)
-                                                             (set_ctx ctx "__VERBOSITY__" nil)))
-                                                      (= verbosity check_verbosity)
-                                                      (declare_log "compiler: verbosity set: " (verbosity ctx)))
-                                                   (push warnings
-                                                      "invalid verbosity declaration, expected number, received " (first (each targeted `name)))))
-                                            (== declaration "local")
-                                            (for_each (`name (each targeted `name))
+                            (let
+                               ((`expressions (rest tokens))
+                                (`targeted nil)
+                                (`acc [])
+                                (`source nil)
+                                (`details nil)
+                                (`sanitized_name nil)
+                                (`declaration nil)
+                                (`dec_struct nil))
+                               
+                               (for_each (`exp expressions)
+                                  (do
+                                     (= declaration exp.val.0.name)
+                                     (= targeted (rest exp.val))
+                                     (when (verbosity ctx)
+                                        (declare_log "declaration: " declaration "targeted: " (each targeted `name) targeted))
+                                     (cond
+                                        (== declaration "toplevel")
+                                        (do
+                                           (set_prop opts
+                                              `root_environment
+                                              targeted.0)
+                                           (if opts.root_environment
+                                              (= env_ref "")
+                                              (= env_ref "Environment.")))
+                                        (== declaration "include")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (do
+                                                 (= sanitized_name (sanitize_js_ref_name name))
+                                                 (= dec_struct (get_declaration_details ctx name))
+                                                 
+                                                 (when dec_struct
+                                                    ;; this is a global so we just produce a reference for this
+                                                    (for_each (`t [ "let" " " sanitized_name "=" ])
+                                                       (push acc t))
+                                                    (cond
+                                                       (and (is_function? dec_struct.value)
+                                                            (prop (prop Environment.definitions name)
+                                                                  `fn_body))
+                                                       (do
+                                                          (= details (prop Environment.definitions name))
+                                                          (= source (+ "(fn " details.fn_args " " details.fn_body ")"))
+                                                          
+                                                          (= source (compile (tokenize (read_lisp source) ctx) ctx 1000))
+                                                          
+                                                          (push acc source)
+                                                          (set_ctx ctx name AsyncFunction))
+                                                       (is_function? dec_struct.value)
+                                                       (do
+                                                          (push acc (-> (-> dec_struct.value `toString) `replace "\n" ""))
+                                                          (set_ctx ctx name AsyncFunction))
+                                                       else
+                                                       (do
+                                                          (push acc (-> dec_struct.value `toString))
+                                                          (set_ctx ctx name ArgumentType))
+                                                       )
+                                                    (push acc ";"))
+                                                 (set_declaration ctx name `inlined true)
+                                                 (if (and (== "undefined" (prop (get_declarations ctx name) `type))
+                                                          (is_function? dec_struct.value))
+                                                     (set_declaration ctx name `type Function)))))
+                                        
+                                        (== declaration "verbose")
+                                        (do
+                                           (defvar `verbosity_level (parseInt (first (each targeted `name))))
+                                           (if (not (isNaN verbosity_level))
                                                (do
-                                                     (= dec_struct (get_declaration_details ctx name))                                                     
-                                                     (set_ctx ctx name dec_struct.value)))
-                                            (== declaration "function")
-                                            (do					      
-                                               (for_each (`name (each targeted `name))
-                                                         (set_declaration ctx name `type Function)))
-                                            (== declaration "fn")
-                                            (do					      
-                                               (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type AsyncFunction)))
-                                            (== declaration "array")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type Array)))
-                                            (== declaration "number")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type NumberType)))
-                                            (== declaration "string")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type StringType)))
-                                            (== declaration "boolean")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type Boolean)))
-                                            (== declaration "regexp")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-                                                  (set_declaration ctx name `type RegExp)))
-                                            (== declaration "object")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-							 (set_declaration ctx name `type Object)))
-					    (== declaration "global")
-                                            (do
-                                               (for_each (`name (each targeted `name))
-							 (set_declaration ctx name `location "global")))
-                                            (== declaration "optimize")
-                                            (do                                                 
-                                                (for_each (`factor (each targeted `val))
-                                                  (do                                                       
-                                                      (= factor (each factor `name))
-                                                      (cond
-                                                          (== factor.0 "safety")
-                                                          (set_declaration ctx "__SAFETY__" `level factor.1))                                                       
-                                                      )))
-					    (== declaration "namespace")
-                                            (do
-                                              (when (not (== targeted.length 1))
-                                                (throw SyntaxError "namespace declaration requires exactly 1 value"))
-                                              (when (get_ctx ctx "__IN_LAMBDA__")
-                                                (throw SyntaxError "namespace compiler declaration must be toplevel"))
-                                              (setq target_namespace targeted.0.name)
-					      ;; reset our environment pointer
-					      (setq Environment
-						    (-> Environment `get_namespace_handle targeted.0.name)))
-                                              
-                                            
-                                            else
-                                            (do
-                                              (push warnings
-                                                    (+ "unknown declaration directive: " declaration))
-                                              (warn (+ "compiler: unknown declaration directive: " declaration))))))                                 
-                                 acc)))
+                                                  (if (> verbosity_level 0)
+                                                      (set_ctx ctx "__VERBOSITY__" verbosity_level)
+                                                      (do
+                                                         (declare_log "verbosity: turned off")
+                                                         (= verbosity silence)
+                                                         (set_ctx ctx "__VERBOSITY__" nil)))
+                                                  (= verbosity check_verbosity)
+                                                  (declare_log "compiler: verbosity set: " (verbosity ctx)))
+                                               (push warnings
+                                                  "invalid verbosity declaration, expected number, received " (first (each targeted `name)))))
+                                        (== declaration "local")
+                                        (for_each (`name (each targeted `name))
+                                           (do
+                                              (= dec_struct (get_declaration_details ctx name))
+                                              (set_ctx ctx name dec_struct.value)))
+                                        (== declaration "function")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type Function)))
+                                        (== declaration "fn")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type AsyncFunction)))
+                                        (== declaration "array")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type Array)))
+                                        (== declaration "number")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type NumberType)))
+                                        (== declaration "string")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type StringType)))
+                                        (== declaration "boolean")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type Boolean)))
+                                        (== declaration "regexp")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type RegExp)))
+                                        (== declaration "object")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `type Object)))
+                                        (== declaration "global")
+                                        (do
+                                           (for_each (`name (each targeted `name))
+                                              (set_declaration ctx name `location "global")))
+                                        (== declaration "optimize")
+                                        (do
+                                           (for_each (`factor (each targeted `val))
+                                              (do
+                                                 (= factor (each factor `name))
+                                                 (cond
+                                                    (== factor.0 "safety")
+                                                    (set_declaration ctx "__SAFETY__" `level factor.1))
+                                                 )))
+                                        (== declaration "namespace")
+                                        (do
+                                           (when (not (== targeted.length 1))
+                                              (throw SyntaxError "namespace declaration requires exactly 1 value"))
+                                           (when (get_ctx ctx "__IN_LAMBDA__")
+                                              (throw SyntaxError "namespace compiler declaration must be toplevel"))
+                                           (setq target_namespace targeted.0.name)
+                                           ;; reset our environment pointer
+                                           (setq Environment
+                                              (-> Environment `get_namespace_handle targeted.0.name)))
+                                        
+                                        
+                                        else
+                                        (do
+                                           (push warnings
+                                              (+ "unknown declaration directive: " declaration))
+                                           (warn (+ "compiler: unknown declaration directive: " declaration))))))
+                               acc)))
        
        (`safety_level (fn (ctx)
                           (when ctx
