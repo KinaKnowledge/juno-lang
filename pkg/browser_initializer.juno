@@ -367,17 +367,17 @@
      `tags: ["log" "console" "clear" "output" "display"]
      })
 
-(defun_sync decorative_usage (symbol suppress_type)
+(defun_sync decorative_usage (symbol_data namespace suppress_type)
   (let
-      ((val (if true
+      ((val (if (is_string? symbol_data)
                 (cond
-                   (starts_with? "(" symbol)
-                   (-> symbol `substr 1)
-                   (starts_with? "[" symbol)
-                   (-> symbol `substr 1)
+                   (starts_with? "(" symbol_data)
+                   (-> symbol_data `substr 1)
+                   (starts_with? "[" symbol_data)
+                   (-> symbol_data `substr 1)
                    else
-                   symbol)
-                symbol))
+                   symbol_data)
+                symbol_data.name))
        (show_type (function ()
                      (span { `style: "margin-left: 15px; font-style: italic" 
                              `class: (+ "juno-type-" (lowercase (or description.type "")))
@@ -388,36 +388,64 @@
                             description.type
                             (if suppress_type [] 
                                 description.type)))))
-       (description (first (or (meta_for_symbol (trim val) true) [])))
+       (metadata (if (and (is_object? symbol_data)
+                          namespace
+                          (not symbol_data.require_ns))
+                     [list symbol_data]
+                     (meta_for_symbol (trim val) true)))
+       
+       (description (if (is_object? symbol_data)
+                        symbol_data
+                        (if namespace
+                           (first (reduce_sync (v metadata)
+                                     (when (== v.namespace namespace)
+                                        v)))
+                           (first (or metadata [])))))
        (view nil)
+       (is_symbol_binding (if (and description.require_ns
+                                   (is_array? description.initializer)
+                                   (== description.initializer.0 (quote pend_load)))
+                              true
+                              false))
        (rval nil))
-    (= rval 
-     (cond
-        (is_array? description.usage)
-        (div { `style: "display: inline-block"} "("
-             (flatten [(span { `class: "juno-operator-name" `style: "font-weight: bold;" } val)
-                   (for_each (arg description.usage)
-                      (destructuring_bind (arg_name arg_type arg_needed)
-                         (split_by ":" arg)
-                         (span { `class: (+ "juno-type-" (lowercase (or arg_type ""))
-                                            " juno-arg-name") `title: arg_type
-                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name ":" arg_type)))])
-             ")" (show_type))
-             
-        
-        (is_string? description.fn_args)
-        (div { `style: "display: inline-block"} "("
-             (span { `class: "juno-operator-name" `style: "font-weight: bold;" } val)
-             (for_each (arg_name (split_by " " (chop (rest description.fn_args))))
-                (span { `class: "juno-arg-name" } arg_name))
-             ")" (show_type)) 
-                            
-        else
-        nil))
-    rval)
+     
+      (when (and is_symbol_binding
+                 (is_object? description))
+       (set_prop description
+          `usage
+          (prop (first (reduce_sync (v metadata)
+                                    (when (== v.namespace description.require_ns)
+                                       v)))
+                `usage)))
+      (= rval
+         (cond
+            (is_array? description.usage)
+            (div { `style: "display: inline-block"} "("
+                 (flatten [(span { `class: "juno-operator-name" `style: "font-weight: bold;" } val)
+                           (for_each (arg description.usage)
+                              (destructuring_bind (arg_name arg_type arg_needed)
+                                 (split_by ":" arg)
+                                 (= arg_type (or arg_type ""))
+                                 (span { `class: (+ "juno-type-" (if (starts_with? "?" arg_type)
+                                                                     (lowercase (or (chop_front arg_type) ""))
+                                                                     (lowercase arg_type))
+                                                    " juno-arg-name") `title: arg_type
+                                                `style: (if (== arg_needed "required") "text-decoration: underline" "") } arg_name ":" arg_type)
+                                 ))])
+                 ")" (show_type))
+            (is_string? description.fn_args)
+            (div { `style: "display: inline-block"} "("
+                 (span { `class: "juno-operator-name" `style: "font-weight: bold;" } val)
+                 (for_each (arg_name (split_by " " (chop (rest description.fn_args))))
+                    (span { `class: "juno-arg-name" } arg_name))
+                 ")" (show_type))
+            
+            else
+            nil))
+      rval)
   {
-    `usage: ["symbol:string"]
-    `description: (+ "Given a symbol name as a string, returns a DOM element of the usage information.  "
+    `usage: ["symbol:string|object" "namespace:?string" "suppress_type:?boolean"]
+    `description: (+ "Given a symbol name as a string or an object metadata value (as from describe), returns a DOM element of the usage information.  "
                      "If the usage metadata is defined for the symbol it will use that, otherwise "
                      "if the symbol is a function and has fn_args defined, that content will be returned "
                      "in a DOM element.  Used by the editor to display usage information. ")
@@ -448,44 +476,71 @@
    })
 
 (defun format_help (meta_obj)
-   (div { `style: "width: calc(100% - 20px);" }
-    (h3 (span { `style: "color: var(--namespace-color); " } meta_obj.namespace ) "/" meta_obj.name
-        (if meta_obj.macro
-            (span { `style: "float: right; margin-right: 20px; " } "Macro")
-            (span { `title: "Type" `style: "float: right" `class: (+ "juno-type-" (lowercase meta_obj.type)) } meta_obj.type)))
-    (hr { `class: "LightHR" })
-    (cond
-       (and (contains? `unction meta_obj.type)
-            meta_obj.usage)
-       [(h4 "Usage")
-        (decorative_usage meta_obj.name true)]
-       (contains? `unction meta_obj.type)
-       [(h4 "Arguments")
-        meta_obj.fn_args]
-       else
-       [])
-    (if meta_obj.description
-        [(h4 "Description")
-         (unpack_description meta_obj.description)]
-        [])
-    
-    (if meta_obj.tags
-        [(h4 "Tags")
-         (for_each (`sym meta_obj.tags)
-            (span {  `style: "margin-right: 5px; padding: 5px;border: 1px solid var(--main-accent-line-hover)"} sym ))]
-        [])
-    (if meta_obj.requires
-        [(h4 "Requires")
-         (for_each (`sym (sort meta_obj.requires))
-            (span { `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) ""))) `style: "padding: 5px;"} sym ))]
-        []))
+   (let
+      ((is_symbol_binding (if (and meta_obj.require_ns
+                                   (is_array? meta_obj.initializer)
+                                   (== meta_obj.initializer.0 (quote pend_load)))
+                              true
+                              false))
+       (imported_usage (first (if is_symbol_binding
+                                  (reduce  (v (meta_for_symbol meta_obj.name true))
+                                     (when (== v.namespace meta_obj.require_ns)
+                                        v))
+                                  []))))
+      (when imported_usage
+         (set_prop meta_obj
+            `usage
+            (prop imported_usage `usage))
+         (set_prop meta_obj
+            `tags
+            (prop imported_usage `tags)))
+            
+            
+      
+      (div { `style: "width: calc(100% - 20px);" }
+           (h3 (span { `style: "color: var(--namespace-color); " } meta_obj.namespace ) "/" meta_obj.name
+               (if meta_obj.macro
+                  (span { `style: "float: right; margin-right: 20px; " } "Macro")
+                  (span { `title: "Type" `style: "float: right" `class: (+ "juno-type-" (lowercase meta_obj.type)) } meta_obj.type)))
+           (hr { `class: "LightHR" })
+           (cond
+              (and (contains? `unction meta_obj.type)
+                   meta_obj.usage)
+              [(h4 "Usage")
+               (decorative_usage meta_obj meta_obj.namespace true)]
+              (contains? `unction meta_obj.type)
+              [(h4 "Arguments")
+               meta_obj.fn_args]
+              else
+              [])
+           (if (or meta_obj.description
+                   is_symbol_binding)
+               [(h4 "Description")
+                (if is_symbol_binding
+                   (p
+                      (div { } "This is a bound symbol into " (span { `style: "color: var(--namespace-color); " }  meta_obj.require_ns)
+                           " to " (join " " meta_obj.requires) ".  For more information refer to the core/use_symbols macro and to " (join " " meta_obj.requires) ".")
+                      (br))
+                   (unpack_description meta_obj.description))]
+                [])
+              
+              (if meta_obj.tags
+                 [(h4 "Tags")
+                  (for_each (`sym meta_obj.tags)
+                     (span {  `style: "margin-right: 5px; padding: 5px;border: 1px solid var(--main-accent-line-hover)"} sym ))]
+                 [])
+              (if meta_obj.requires
+                 [(h4 "Requires")
+                  (for_each (`sym (sort meta_obj.requires))
+                     (span { `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) ""))) `style: "padding: 5px;"} sym ))]
+                 []) ))
    {
-     `description: (+ "Render object definitions to html.  Given a path " 
+     `description: (+ "Render object definitions to html.  Given a path "
                       "to Environment.definitions, or the output of the "
                       "describe function, returns a DOM element.")
-      `usage: ["meta_obj:object"]
-      `tags: [`help `? `usage `info `man `manual ]
-   })
+     `usage: ["meta_obj:object"]
+     `tags: [`help `? `usage `info `man `manual ]
+     })
 
 
 (defmacro ? (symname)
@@ -2345,31 +2400,59 @@
    (let
       ((close_button (button { `title: (dtext "Close") } "X"))
        (move_state nil)
+       (expander_elem (div { `style: "position: absolute; right: 0px; bottom: 0px; width: 15px; height: 15px; cursor: nwse-resize; background: transparent;" }
+                           ""))
        (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
        (dims nil)
+       (resize_mode false)
        (max_dims {
                   `width: 0
                   `height: 0
                   })
        (body_element nil)
+       (block_on (fn (e)
+                    (progn
+                       (= dims (-> frame `getBoundingClientRect))
+                       (= body_element (get_by_id "body"))
+                       (= max_dims {
+                                     `width: (prop body_element `offsetWidth)
+                                     `height: (prop body_element `offsetHeight) })
+                       (-> body_element `appendChild full_block)
+                       (= move_state {
+                                       mx: e.pageX
+                                       my: e.pageY
+                                       fx: dims.right
+                                       fy: dims.top
+                                       w: dims.width
+                                       h: dims.height
+                                       }))))
        (control_bar (div { `class: "juno-buffer-bar" style: "cursor: grab;" }
                  close_button
                  (or options.title "")))
        (end_drag (fn (e)
                     (progn
                        (= move_state nil)
+                       (= resize_mode false)
+                       (if (is_function? contents.resize)
+                           (-> contents `resize))
                        (-> full_block `remove))))       
        (handle_drag (fn (e)
                       (when (and move_state
                                  (== e.buttons 1))
-                        (set_style [["top" ( + "" (Math.max 0 (Math.min (- max_dims.height 30) (+ dims.top (- e.pageY move_state.my)))) "px") ]
-                                    ["left" (+ "" (Math.max 0 (Math.min (- max_dims.width 30) (+ dims.left (- e.pageX move_state.mx)))) "px") ]]
-                                   frame))))
+                         (if resize_mode
+                            (set_style [["width"  (+ "" (Math.max 300 (Math.min (- max_dims.width 30) (+ dims.width (- e.pageX move_state.mx)))) "px")]
+                                        ["height" (+ "" (Math.max 30 (Math.min (- max_dims.height 30) (+ dims.height (- e.pageY move_state.my)))) "px")]]
+                                       frame)
+                            (set_style [["top"  (+ "" (Math.max 0 (Math.min (- max_dims.height 30) (+ dims.top (- e.pageY move_state.my)))) "px") ]
+                                        ["left" (+ "" (Math.max 0 (Math.min (- max_dims.width 30) (+ dims.left (- e.pageX move_state.mx)))) "px") ]]
+                                       frame)))))
                                    
-       (frame (div { `style: (+ "cursor: default; user-select: none; box-shadow: 1px 1px 6px 2px #00000080; background: var(--main-bg-color); position: absolute;z-index: 10; left: 70%; top: 10px; min-width: 300px; "
+       (frame (div { class: "juno-floating-container" 
+                     style: (+ "left: " (+ 50 (random_int 10)) "%; " 
+                               "top: " (+ 5 (random_int 10)) "px; "
                                 (if (is_string? options.style)
-                                  (+ "" options.style ";")
-                                  ""))
+                                    (+ "" options.style ";")
+                                    ""))
                                   }
                (control_frame {}
                 control_bar
@@ -2380,30 +2463,29 @@
                    (is_element? contents)
                    contents
                    else
-                   (value_to_dom contents))))))
+                   (value_to_dom contents)))
+               expander_elem)))
+      
       (attach_event_listener close_button
-                             `click
-                             (fn (v)
-                                (progn
-                                   (when options.on_close
-                                      (options.on_close))
-                                   (-> frame `remove))))
+         `click
+         (fn (v)
+            (progn
+               (when options.on_close
+                  (options.on_close))
+               (-> frame `remove))))
+      
       (attach_event_listener control_bar
-                             `mousedown
-                             (fn (e)
-                                (progn
-                                 (= dims (-> frame `getBoundingClientRect))
-                                 (= body_element (get_by_id "body"))
-                                 (= max_dims {
-                                              `width: (prop body_element `offsetWidth)
-                                              `height: (prop body_element `offsetHeight) })                                 
-                                 (-> body_element `appendChild full_block)
-                                   (= move_state {
-                                                   mx: e.pageX
-                                                   my: e.pageY
-                                                   fx: dims.right
-                                                   fy: dims.top
-                                                   }))))
+         `mousedown
+         (fn (e)
+            (block_on e)))
+      (attach_event_listener expander_elem
+         `mousedown
+         (fn (e)
+            (progn
+               (= resize_mode true)
+               (block_on e))))
+      
+      
       (attach_event_listener full_block
                              `mouseup
                              end_drag)
@@ -2417,6 +2499,11 @@
                              `mousemove
                              handle_drag)
       (-> (get_by_id "body") `appendChild frame)
+      ;; if we have a control, initialize it if it needs it since it is 
+      ;; now mounted on the DOM
+      (when contents.initialize
+         (-> contents `initialize))
+      
       true))
 
 (defun monitor_control_tree ()

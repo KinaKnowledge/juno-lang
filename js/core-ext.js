@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-11-04 09:41:11
-// Version: 2022.11.04.09.41
-export const DLISP_ENV_VERSION='2022.11.04.09.41';
+// Build Time: 2022-11-05 08:27:07
+// Version: 2022.11.05.08.27
+export const DLISP_ENV_VERSION='2022.11.05.08.27';
 
 
 
@@ -1215,20 +1215,22 @@ await Environment.set_global("match_all",async function(regex_str,search_string)
     return await (await Environment.get_global("match_all_js"))(regex_str,search_string)
 },{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"]
 });
-await Environment.set_global("chop_front",async function(container,amount) {
-    amount=(amount|| 1);
-    return await async function(){
-        if (check_true ((container instanceof String || typeof container==='string'))) {
-            return await container["substr"].call(container,amount)
-        } else if (check_true ((container instanceof Array))) {
-            return await container["slice"].call(container,amount)
-        } else {
-            throw new Error("chop: container must be a string or array");
-            
-        }
-    } ()
-},{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"]
-});
+{
+     Environment.set_global("chop_front",function(container,amount) {
+        amount=(amount|| 1);
+        return   (function(){
+            if (check_true ((container instanceof String || typeof container==='string'))) {
+                return  container["substr"].call(container,amount)
+            } else if (check_true ((container instanceof Array))) {
+                return  container["slice"].call(container,amount)
+            } else {
+                throw new Error("chop: container must be a string or array");
+                
+            }
+        } )()
+    },{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"]
+})
+};
 [];
 await Environment.set_global("compile_lisp",async function(text) {
     if (check_true (text)){

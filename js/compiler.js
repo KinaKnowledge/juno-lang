@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-11-04 09:41:11
-// Version: 2022.11.04.09.41
-export const DLISP_ENV_VERSION='2022.11.04.09.41';
+// Build Time: 2022-11-05 08:27:07
+// Version: 2022.11.05.08.27
+export const DLISP_ENV_VERSION='2022.11.05.08.27';
 
 
 
@@ -2255,6 +2255,15 @@ export async function init_compiler(Environment) {
                 let compiled_values;
                 acc=["["];
                 compiled_values=[];
+                {
+                    let it;
+                    it=await get_ctx_val(ctx,"assignment_for");
+                    if (check_true (it)){
+                        await set_declaration(ctx,it,"type",Array)
+                    } else {
+                        
+                    }
+                };
                 await (async function() {
                     let __for_body__91=async function(t) {
                         return (compiled_values).push(await compile_wrapper_fn(t,ctx))
@@ -3263,7 +3272,9 @@ export async function init_compiler(Environment) {
                                         return ctx;
                                         
                                     }();
+                                    await set_ctx(ctx,"assignment_for",reference_name);
                                     assignment_value=await compile_wrapper_fn((alloc_set && alloc_set["1"]),ctx);
+                                    await set_ctx(ctx,"assignment_for",null);
                                     return await async function(){
                                         ctx["in_assignment"]=false;
                                         return ctx;
@@ -3280,7 +3291,9 @@ export async function init_compiler(Environment) {
                                 }
                             } else {
                                 {
+                                    await set_ctx(ctx,"assignment_for",reference_name);
                                     assignment_value=await compile_wrapper_fn((alloc_set && alloc_set["1"]),ctx);
+                                    await set_ctx(ctx,"assignment_for",null);
                                     if (check_true (await verbosity(ctx))){
                                         {
                                             await clog("setting simple assignment value for",reference_name,": <- ",await (async function(){
@@ -4144,7 +4157,7 @@ export async function init_compiler(Environment) {
                         {
                             ctx=await new_ctx(ctx);
                             await set_new_completion_scope(ctx);
-                            acc=await compile_block_to_anon_fn(tokens,ctx)
+                            acc=await compile_block_to_anon_fn(tokens,ctx,opts)
                         }
                     } else if (check_true (await is_block_ques_(tokens))) {
                         {
@@ -4212,7 +4225,7 @@ export async function init_compiler(Environment) {
                         {
                             ctx=await new_ctx(ctx);
                             await set_new_completion_scope(ctx);
-                            acc=await compile_block_to_anon_fn(tokens,ctx)
+                            acc=await compile_block_to_anon_fn(tokens,ctx,opts)
                         }
                     } else if (check_true (((tokens instanceof Object)&& ((tokens && tokens["type"])==="arr")&& (((tokens && tokens["val"] && tokens["val"]["length"])===0)|| ((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["type"])==="literal")|| (((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["type"])==="arg")|| (((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["type"])==="special")&& await not(await contains_ques_((tokens && tokens["val"] && tokens["val"]["0"] && tokens["val"]["0"]["name"]),["if","try","do","progn","let","cond"])))))))) {
                         {
@@ -4225,7 +4238,7 @@ export async function init_compiler(Environment) {
                         {
                             ctx=await new_ctx(ctx);
                             await set_new_completion_scope(ctx);
-                            acc=await compile_block_to_anon_fn((tokens && tokens["val"]),ctx)
+                            acc=await compile_block_to_anon_fn((tokens && tokens["val"]),ctx,opts)
                         }
                     } else {
                         acc=await (async function(){

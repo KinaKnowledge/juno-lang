@@ -1004,7 +1004,7 @@
     
    
          
-    (defun chop_front (container amount)
+    (defun_sync chop_front (container amount)
         (let 
             ((amount (or amount 1)))
             (cond 

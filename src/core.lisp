@@ -240,7 +240,15 @@
                         "    (progn\n"
                         "        (log \"Caught BaseError: \" e.message)\n"
                         "        \"ERROR 2\")))%%%"
-                        "<- \"ERROR 2\"<br><br>")
+                        "<- \"ERROR 2\"<br><br>The try-catch constructs returns the last value of the try block "
+                        "or the return value from a matched catch block, otherwise there is no local return.<br>Example:%%%"
+                        "(let\n"
+                        "   ((result (try\n"
+                        "              (throw Error \"Invalid!\") ; just throw to demonstrate the catch return\n"
+                        "              (catch Error (e)\n"
+                        "                  e.message))))\n" 
+                        "   result)%%%"
+                        "<- \"Invalid!\"")
         tags: ["catch" "error" "throw" "flow" "control"]
         }
       { name: "throw"
@@ -248,8 +256,13 @@
         description: (+ "Given a type as a symbol and a message, constructs an object instance of the specified type " 
                         "and then throws the object.  The thrown object should be lexically enclosed in a try-catch "
                         "form otherwise the unhandled throw may cause an exit of the runtime (dependent on the "
-                        "runtime environment behavior for uncaught objects.")
+                        "runtime environment behavior for uncaught objects.<br>See also: try<br>")
         tags: ["flow" "control" "error" "exceptions" "try" "catch" ] 
+        }
+      { name: "catch"
+        usage: ["error_type:*" "allocation:array" "expression:*"]
+        description: `(resolve_path [ `definitions `try ] (Environment.get_namespace_handle `core))
+        tags: ["flow" "control" "error" "exceptions" "try" "throw" ]
         }
       { name: "let"
         usage: ["allocations:array" "declarations:?expression" "expression0:*" "expressionN:*"]
@@ -452,30 +465,71 @@
                           "")
           tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
       }
-      { `name: "function"
-        `usage: ["arguments:array" "body_expression:*"]
-        `description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
-        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      {  name: "function"
+         usage: ["arguments:array" "body_expression:*"]
+         description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
+         tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
       }
-      { `name: "=>"
-        `usage: ["arguments:array" "body_expression:*"]
-        `description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
-        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      {  name: "=>"
+         usage: ["arguments:array" "body_expression:*"]
+         description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
+         tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
       }
-      { `name: "lambda"
-        `usage: ["arguments:array" "body_expression:*"]
-        `description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
-        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      {  name: "lambda"
+         usage: ["arguments:array" "body_expression:*"]
+         description: `(resolve_path [ `definitions `fn ] (Environment.get_namespace_handle `core))
+         tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
       }
-      { `name: "defglobal"
-        `usage: ["name:symbol" "value:*" "metadata:object"]
-        `description: (+ "Defines a global variable in the current namespace, or if preceded by a namespace "
+      {  name: "defglobal"
+         usage: ["name:symbol" "value:*" "metadata:object"]
+         description: (+ "Defines a global variable in the current namespace, or if preceded by a namespace "
                          "qualifier, will place the variable in the designated namespace.  The metadata value "
                          "is an optional object that provides information about the defined symbol for purposes "
                          "of help, rehydration, and other context.  The metadata object tags are arbitrary, but "
                          "depending on the type of value being referenced by the symbol, there are some "
-                         "reserved keys that are used by the system itself.  ")
-        `tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+                         "reserved keys that are used by the system itself.<br>Example:%%%"
+                         "(defglobal *global_var* \"The value of the global.\"\n"
+                         "           { description: \"This is a global in the current namespace\"\n"
+                         "             tags: [ `keywords `for `grouping ] }\n%%%"
+                         "<br>"
+                         "The key/value pairs attached to a symbol are arbitrary and "
+                         "can be provided for purposes of description or use by users or programatic elements.")
+         tags: ["function" "lambda" "fn" "call" "apply" "scope" "arrow" "lambda"]
+      }
+      {
+          name: "list"
+          usage: ["item0:*" "item1:*" "itemN:*"]
+          description: (+ "Unlike languages like Common-Lisp and other lisps that use proper lists, "
+                           "the Juno language doesn't have a true list type.  All sequential collections "
+                           "are in arrays because the underlying language, Javascript, doesn't have a "
+                           "true list structure.  The list operator here is for backward compatibility "
+                           "with older versions of this language that explicitly used the term as part of "
+                           "a way to construct an array.")
+      }
+      {
+          name: "yield"
+          usage: ["value:*"]
+          description: (+ "Note that the yield operator and generator functions aren't official yet and "
+                           "are still requiring development work and testing due to how to structure "
+                           "the emitted code to ensure that the yield is placed within a function* "
+                           "structure vs. a typical function.")
+          tags: [`generator `experimental]
+      }
+      {
+          name: "for_with"
+          usage: ["allocation_form" "body_expression:array"]
+          description: (+ "The for_with operator provides a simple loop variable that allocates a "
+                          "symbol which is assigned the next value from the iterator function in the "
+                          "init form in the allocation. It then evaluates the body expression "
+                          "with the symbol in scope.  It will continue to loop, with the allocated "
+                          "symbol being defined successive values until the end of the array "
+                          "is reached, or a (break) operator is encountered in the body "
+                          "expression. Unlike for_each, the for_with operator is not a collector, and "
+                          "there is no return value and attempting to assign the return value will not work.<br>Example:%%%"
+                          "(for_with (next_val (generator instream))\n"
+                          "     (log (-> text_decoder `decode next_val)))\n"
+                          "%%%<br>")
+          tags: [`iteration `generator `loop `flow `control ]
       }
     ])
 

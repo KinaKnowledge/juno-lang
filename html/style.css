@@ -1825,6 +1825,7 @@ li.juno-menu-header {
   padding-left: 10px;
   padding-right: 10px;
   border-radius: 4px;
+  user-select: none;
 }
 
 li.juno-main-menu-header {
@@ -1863,8 +1864,6 @@ li.juno-menu-selected {
   font-weight: bold;	      
 }
 
-
-
 .juno-header {  
   padding-top: 5px;
   padding-bottom: 4px;
@@ -1875,6 +1874,16 @@ li.juno-menu-selected {
   color: var(--app-header-color);
   padding-left: 10px;
   padding-right: 10px;
+}
+
+div.juno-floating-container {
+    cursor: default;
+    user-select: none;
+    box-shadow: 1px 1px 6px 2px #00000080;
+    background: var(--main-bg-color);
+    position: absolute;
+    z-index: 10;
+    min-width: 300px;
 }
 
 td.juno-obj-to-dom-key {
