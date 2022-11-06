@@ -98,7 +98,7 @@ var JunoHighlightRules = function() {
                 regex : '[!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+||=|!=|<=|>=|<>|<|>|!|&&]'
             }, {
                 token : keywordMapper,
-                regex : "[a-zA-Z_$][a-zA-Z0-9_$\\-]*\\b"
+                regex : "[*a-zA-Z_$][a-zA-Z0-9_$\\-*?]*"
             }, {
                 token : "string", // single line
                 regex : '"',

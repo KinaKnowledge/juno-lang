@@ -1706,6 +1706,7 @@
                                   (set_prop Environment.global_ctx.scope
                                             "compiler"
                                             compiler)
+                                  
                                   (register_feature "compiler"))
                                 (do
                                   (console.error "Invalid compiler function: invalid operators returned. Not installing.")
@@ -2323,32 +2324,32 @@
      (set_prop Environment
                `eval eval_struct
                `identify subtype
-               `meta_for_symbol meta_for_symbol	       
+               `meta_for_symbol meta_for_symbol
                `set_compiler set_compiler
                `read_lisp reader
                `as_lisp as_lisp
                `symbols symbols
                `inlines inlines
                `clone_to_new clone_to_new
-	       `export_symbol_set export_symbol_set
-	       `save_env save_env
+               `export_symbol_set export_symbol_set
+               `save_env save_env
                `special_operators special_operators
                `definitions Environment.definitions
                `declarations Environment.declarations
                `get_namespace_handle get_namespace_handle
-               `compile compile	       
+               `compile compile
                `evaluate evaluate
                `evaluate_local evaluate_local
                `do_deferred_splice do_deferred_splice
                `id (fn () id)
                `set_check_external_env (fn (state)
-                                         (do 
-                                           (= check_external_env_default
-                                              state)
-                                           check_external_env_default))
+                                          (do
+                                             (= check_external_env_default
+                                                state)
+                                             check_external_env_default))
                `check_external_env (fn ()
-                                     check_external_env_default))
-
+                                      check_external_env_default))
+     
      ;; two initializations - one for the system and one for the user
     
      

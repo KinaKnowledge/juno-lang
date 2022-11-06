@@ -24,17 +24,7 @@
 ;; When this function is called, it will have the values assigned to the
 ;; values in the let.
 
-(defglobal *formatting_rules*
-  {
-   minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
-                  "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
-                  "compile" "unless" "for_with" "no_await" ]
-   keywords: (split_by " " (+ "defun defmacro throw try defvar typeof instanceof == < > <= >= eq return yield jslambda "
-                              "cond apply setq defun_sync map while reduce no_await &"
-	                      "defglobal do fn if let new function progn javascript catch evaluate eval call import "
-                              "dynamic_import quote for_each for_with declare break -> * + / - and or prop set_prop "
-                              "defparameter defvalue"))                      
-   })
+
 
 ;; setup the special operator definitions of the compiler
 
@@ -3258,7 +3248,181 @@ such as things that connect or use environmental resources.
                                    pset
                                   (if (options.filter_by name val)
                                        name)))
-                             (keys ns_handle.context.scope))) ])))))
+                             (keys ns_handle.context.scope))) ]))))
+  {
+    `usage: ["options:object"]
+    `description: (+ "Returns an object with a key for each namespace, with the values of each key being the symbols defined in that namespace. "
+                     "If the options object has a key for `filter_by with a predicate function, then only symbols that the predicate function "
+                     "returns true for will be returned.")
+    `tags: ["symbols" "namespace" ]
+    })
+
+
+(defglobal *formatting_rules*
+  {
+    minor_indent: ["defun", "defun_sync", "defmacro", "define", "when", "let", "destructuring_bind", "while",
+                   "for_each","fn","lambda","function", "progn","do","reduce","cond","try","catch","macroexpand",
+                   "compile" "unless" "for_with" "no_await" "reduce_sync"]
+    keywords: ["-" "->" "*" "**" "/" "%" "+" "<" "<<" "<=" "=" "==" "=>" ">" ">=" ">>" "and" "apply" "break" "call"
+               "cond" "debug" "dec" "declare" "defconst" "defglobal" "defvar" "do" "dynamic_import" "eq" "eval" "fn"
+               "for_each" "for_with" "function" "function*" "if" "inc" "instanceof" "javascript" "jslambda" "lambda"
+               "let" "list" "new" "or" "progl" "progn" "prop" "quote" "quotel" "quotem" "return" "set_prop" "setq"
+               "static_import" "throw" "try" "typeof" "unquotem" "while" "yield"]
+    functions: []
+    allocating_forms: {
+                       `let: (fn (tree)
+                                (progn
+                                   (flatten [ (resolve_multi_path [ 1 `* 0 ] tree) ])))
+                       `defun: (fn (tree)
+                                  (progn
+                                     (conj (list (resolve_path [ 1 ] tree))
+                                           (flatten (resolve_path [ 2 ] tree)))))
+                       `defun_sync: (fn (tree)
+                                       (progn
+                                          (conj (list (resolve_path [ 1 ] tree))
+                                                (flatten (resolve_path [ 2 ] tree)))))
+                       `defmacro: (fn (tree)
+                                     (progn
+                                        (conj (list (resolve_path [ 1 ] tree))
+                                              (flatten (resolve_path [ 2 ] tree)))))
+                       `function: (fn (tree)
+                                     (flatten [ (resolve_path [ 1 ] tree) ]))
+                       `fn: (fn (tree)
+                               (flatten [ (resolve_path [ 1 ] tree) ]))
+                       `lambda: (fn (tree)
+                                   (flatten[ (resolve_path [ 1 ] tree) ]))
+                       `destructuring_bind: (fn (tree)
+                                               (progn
+                                                  (flatten [(resolve_path [ 1 ] tree)])))
+                       `defvar: (fn (tree)
+                                   [list  (prop tree 1) ])
+                       `for_each: (fn (tree)
+                                     [list (resolve_path [ 1 0 ] tree)])
+                       `for_with: (fn (tree)
+                                     [list (resolve_path [ 1 0 ] tree)])
+                       `reduce: (fn (tree)
+                                   [list (resolve_path [ 1 0 ] tree)])
+                       `reduce_sync: (fn (tree)
+                                        [list (resolve_path [ 1 0 ] tree)])
+                       `defglobal: (fn (tree)
+                                      [list (prop tree 1)])
+                       `defparameter: (fn (tree)
+                                         [list (prop tree 1)])
+                       
+                       }
+    })
+   
+(defun all_globals ()
+   (let
+      ((acc (new Set)))
+   (for_each (ns (namespaces))
+      (for_each (k (keys (resolve_path [ `global_ctx `scope ] (-> Environment `get_namespace_handle ns))))
+         (-> acc `add k)))
+   acc)
+   {
+       `usage: []
+       `description: "Returns a set of all global symbols, regardless of namespace."
+       `tags: ["editor" "globals" "autocomplete"]
+   })
+
+(defun process_tree_symbols (tree prefix _ctx)
+   (let
+      ((is_root (eq nil _ctx))
+       (rval nil)
+       (_ctx (or _ctx {
+                        acc: []
+                        allocations: (new Set)
+                        symbols: (new Set)
+                        keywords: (new Set)
+                        literals: (new Set)
+                        globals: (new Set)
+                        global_detail: {}
+                        }))
+       (symbol nil)
+       (global_details nil)
+       (allocator nil)
+       (allocations nil)
+       (sort_token (fn (t)
+                      (progn
+                         (= symbol (desym_ref t))
+                         (unless (== symbol prefix)
+                            (cond
+                               (is_array? t)
+                               (process_tree_symbols t prefix _ctx)
+                               
+                               (contains? symbol *formatting_rules*.keywords)
+                               (-> _ctx.keywords `add symbol)
+                               
+                               (progn
+                                  (= global_details (meta_for_symbol symbol true) )
+                                  (> (length global_details) 0))
+                               (progn
+                                  (-> _ctx.globals `add symbol))
+                               
+                               (is_reference? t)
+                               (-> _ctx.symbols `add (desym_ref t))
+                               (or ;(is_string? t)
+                                  (is_number? t)
+                                  (== true t)
+                                  (== false t)
+                                  (== "nil" (desym_ref t)))
+                               (-> _ctx.literals `add (+ "" t)))))))
+       (format_token (fn (token)
+                        {
+                            `value: token.name
+                            `score: 0
+                            `meta: (if (== token.type "arg")
+                                       "local"
+                                       token.type)
+                        })))
+      (cond
+         (and (is_array? tree)
+              (> tree.length 0))
+         (progn
+            (= allocator (prop *formatting_rules*.allocating_forms (desym_ref (prop tree 0))))
+            (if (is_function? allocator)
+                 (progn
+                    (= allocations (allocator tree))
+                    (for_each (allocation allocations)
+                       (progn
+                          (= symbol (desym_ref allocation))
+                          (unless (or (== symbol prefix)
+                                      (== symbol "\"&\""))
+                             (-> _ctx.allocations
+                                `add symbol))))))
+                    
+            (for_each (`t tree)
+               (progn
+                  (sort_token t))))
+         (is_object? tree)
+         (progn
+            (for_each (pset (pairs tree))
+               (progn
+                  (-> _ctx.literals 
+                     `add pset.0)   ;; the key
+                  (sort_token pset.1))))
+         else
+         (sort_token tree))
+      
+      (when is_root
+         (= rval {
+             allocations: (to_array _ctx.allocations)
+             symbols: (to_array _ctx.symbols)
+             keywords: (to_array _ctx.keywords)
+             literals: (to_array _ctx.literals)
+             globals: (to_array _ctx.globals)
+             }))
+      rval)
+   {
+       `usage: ["tree:*"]
+       `description: (+ "Given a JSON structure, such as produced by the reader, returns an object containing the various determined types of the provided structure:<br>"
+                        "allocations:array - All locally allocated symbols<br>"
+                        "symbols:array - All identified symbols<br>"
+                        "keywords:array - All keywords used in the structure"
+                        "literals:array - All identified literals (i.e. not a symbol)"
+                        "globals:array - All referenced globals")
+       `tags: ["editor" "usage" "scope" "structure" ]
+   })
 
 (defun_sync keys* (obj)
   (if (is_object? obj)
@@ -3538,6 +3702,8 @@ such as things that connect or use environmental resources.
      `tags: [ `formatting `indentation `text `indent ]
      `usage: ["line_number:integer" "get_line:function"]
    })
+
+
 
 (defun_sync keyword_mapper (token)
   (if (contains? token *formatting_rules*.keywords)

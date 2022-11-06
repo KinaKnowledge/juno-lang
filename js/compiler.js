@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-11-05 08:27:07
-// Version: 2022.11.05.08.27
-export const DLISP_ENV_VERSION='2022.11.05.08.27';
+// Build Time: 2022-11-06 11:23:23
+// Version: 2022.11.06.11.23
+export const DLISP_ENV_VERSION='2022.11.06.11.23';
 
 
 
@@ -1279,7 +1279,7 @@ export async function init_compiler(Environment) {
                             } else {
                                 return false
                             }
-                        })(),local:(local|| null),global:((global&& await not((NOT_FOUND===global)))|| null)
+                        })(),local:(local|| null),global:((await not((undefined===global))&& await not((NOT_FOUND===global)))|| null)
                     }
                 }
             };
@@ -1723,19 +1723,19 @@ export async function init_compiler(Environment) {
                                             }
                                         } else if (check_true ((argtype==="Function"))) {
                                             return {
-                                                type:"fun",__token__:true,val:arg,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"fun",__token__:true,val:arg,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true ((argtype==="AsyncFunction"))) {
                                             return {
-                                                type:"asf",__token__:true,val:arg,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"asf",__token__:true,val:arg,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true ((argtype==="array"))) {
                                             return {
-                                                type:"array",__token__:true,val:arg,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"array",__token__:true,val:arg,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true ((argtype==="Number"))) {
                                             return {
-                                                type:"num",__token__:true,val:argvalue,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),path:await add(_path,idx)
+                                                type:"num",__token__:true,val:argvalue,ref:is_ref,name:(""+ await (await Environment.get_global("as_lisp"))(arg)),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true (((argtype==="String")&& is_ref))) {
                                             return {
@@ -1761,7 +1761,7 @@ export async function init_compiler(Environment) {
                                             }
                                         } else if (check_true (((argtype==="unbound")&& is_ref&& (null==argvalue)))) {
                                             return {
-                                                type:"arg",__token__:true,val:arg,ref:true,name:await clean_quoted_reference((""+ await (await Environment.get_global("as_lisp"))(arg))),path:await add(_path,idx)
+                                                type:"arg",__token__:true,val:arg,ref:true,name:await clean_quoted_reference((""+ await (await Environment.get_global("as_lisp"))(arg))),global:(argdetails && argdetails["global"]),path:await add(_path,idx)
                                             }
                                         } else if (check_true (((argtype==="unbound")&& is_ref))) {
                                             return {

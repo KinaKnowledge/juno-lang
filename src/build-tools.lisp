@@ -249,7 +249,7 @@
        (output_path (fn (filename)
                       (join path.sep [ output_dir filename ]))))
 
-    (console.log "Environment Build Time: " build_time)
+    (console.log "Environment Build Time: " build_time  "In Namespace: " *namespace*)
     (console.log "Version Tag: " version_tag)
     (console.log "Source Directory: " source_dir)
     (console.log "Output Directory: " output_dir)
@@ -264,7 +264,7 @@
 
     ;; reload the reader as this is compiled directly into the environment itself
     
-    (console.log (load (source_path "reader.lisp")))
+    (defglobal reader (load (source_path "reader.lisp")))
     (success "reloaded reader")
 
     ;; compile the various core sources

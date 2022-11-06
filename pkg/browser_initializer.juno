@@ -61,6 +61,8 @@
 
 
 
+
+
 ;;(create_css_entry "span.juno-value"
  ;;                 [["display" "inline-block"]])
    
@@ -2323,13 +2325,76 @@
                      (-> dwin `showModal))))))
 
 
-(defun find_root_forms_for_buffer (buffer_text)
+(defun make_autocompletion_scores (analysis_object)
+   (let
+      ((result_set [])
+       (keywords (try (compiler `[ true ] { `special_operators: true `env: Environment } )
+                    (catch Error (e)
+                       (progn
+                          (log "error on compiler: " e.message)
+                          (new Set)))))
+       (included (new Set))
+       (score 0))
+      (for_each (r (sort analysis_object.allocations))
+         (progn
+            (-> included `add r)
+            (cond
+               (contains? r analysis_object.globals)
+               (push result_set
+                  { `value: r `score: (inc score) `meta: "local (shadowed global)" })
+               else
+               (push result_set
+                  { `value: r `score: (inc score) `meta: "local" }))))
+      (for_each (r (sort analysis_object.symbols))
+         (cond
+            (contains? r analysis_object.allocations)
+            true ;; we already placed it 
+            else
+            (progn
+               (-> included `add r)
+               (push result_set
+                  { `value: r `score: (inc score) `meta: "local?" } ))))
+      (for_each (r (sort analysis_object.keywords))
+         (progn
+            (-> included `add r)
+            (push result_set
+               { `value: r `score: (inc score) `meta: "keyword" })))
+      (for_each (r (sort analysis_object.globals))
+         (progn
+            (-> included `add r)
+            (push result_set
+               { `value: r `score: (inc score) `meta: "global" })))
+      (for_each (r (sort analysis_object.literals))
+         (progn
+            (-> included `add r)
+            (push result_set
+               { `value: r `score: (inc score) `meta: "literal" })))
+      (for_each (r (sort (to_array keywords)))
+         (if (not (-> included `has r))
+             (progn
+                (-> included `add r)
+                (push result_set
+                   { `value: r `score: (inc score) `meta: "keyword" }))))
+      (for_each (r (sort (to_array (all_globals))))
+         (if (not (-> included `has r))
+             (push result_set
+                { `value: r `score: (inc score) `meta: "global" })))
+      result_set)
+   {
+       `usage: ["analysis_object:object"]
+       `description: (+ "Given the output of process_tree_symbols, returns a result_set to be provided to the Ace autocomplete callback for "
+                        "suggestions for autocomplete.")
+       `tags: ["editor" "analysis" "autocomplete" "session" "Ace"]
+   })
+
+(defun find_root_forms_for_buffer (buffer_text options)
    (let
       ((lines (split_by "\n" buffer_text))
        (ldat nil)
        (lnum -1)
        (running_depth_for_line 0)
        (new_depth nil)
+       (last_line_max_col 0)
        (boundaries nil)
        (depth_positions [])
        (current_root_form nil))
@@ -2344,6 +2409,7 @@
                                              (for_each (c ldat.closers)
                                                 [c -1 (prop line c)]))
                                        { `key: [ 0 ] }))
+                   (= last_line_max_col (or (last ldat.closers) (length line)))
                    (for_each (t boundaries)
                       (progn
                          (= running_depth_for_line (+ t.1 running_depth_for_line))
@@ -2365,11 +2431,30 @@
                                   `end_col t.0)
                                (push depth_positions current_root_form)
                                (= current_root_form nil)))))))
-      depth_positions))
+      (if (and options.flexibility
+               current_root_form
+               (> running_depth_for_line 0)) ;; most likely unclosed form
+          (progn
+             (set_prop current_root_form
+                `end_row lnum
+                `end_col last_line_max_col)
+             (push depth_positions current_root_form)
+             (= current_root_form nil)))
+      depth_positions)
+   {
+     description: (+ "Given a text value as a string and an optional options object, returns an array of objects, "
+                      "each representing the starting and ending positions of each found form.  The returned objects "
+                      "have the keys: start_row, start_col, end_row, and end_col, which will be numeric offsets "
+                      "from line 0 and column 0 respectively.<br>"
+                      "If an options object is given with the key flexibility set to true, then if the final "
+                      "form is incomplete, will return the start to final part of the end form.")
+     usage: ["text_buffer:string" "options:object"]
+     tags: ["forms" "parsing" "syntax" "selection" ]
+     })
 
-(defun get_root_form_for_position (buffer_text row column)
+(defun get_root_form_for_position (buffer_text row column flexibility_mode)
    (let
-      ((root_forms (find_root_forms_for_buffer buffer_text))
+      ((root_forms (find_root_forms_for_buffer buffer_text { flexibility: (if flexibility_mode true false) } ))
        (target nil))
       (for_each (form (or root_forms []))
          (progn
@@ -2392,7 +2477,7 @@
                      "{ start_row:int end_row:int start_col:int end_col:int }<br>"
                      "All values start at offset 0.")
      tags: ["form" "position" "selection" "text" "lisp"]
-     usage: ["buffer_text:string" "row:int" "column:int"]
+     usage: ["buffer_text:string" "row:int" "column:int" "flexibility_mode:?boolean"]
    })
 
 
@@ -2693,32 +2778,48 @@
    })
           
            
- (defun show_editor_keybindings (editor_control)
+(defun show_editor_keybindings (editor_control)
    (let
       ((binding_row (fn (keysequence binding)
                        (tr
-                           (td keysequence)
-                           (td (or binding.description
-                                   (from_key binding.name)))))))
+                          (td keysequence)
+                          (td (or binding.description
+                                  (from_key binding.name)))))))
       (table { `style: "width: 100%" }
-       (thead
-              (tr
-                  (th "Key Sequence")
-                  (th "Description")))
-       (tbody
-              (for_each (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
-                                        { `key: [`0] }))
-                 (destructuring_bind (keysequence binding)
-                    bindpair
-                    (cond
-                       (is_array? binding)
-                       (for_each (bindval binding)
-                          (binding_row keysequence bindval))
-                       (is_object? binding)
-                       (binding_row keysequence binding)
-                       else
-                       [])))))))     
+             (thead
+                (tr
+                   (th "Key Sequence")
+                   (th "Description")))
+             (tbody
+                (for_each (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
+                                          { `key: [`0] }))
+                   (destructuring_bind (keysequence binding)
+                      bindpair
+                      (cond
+                         (is_array? binding)
+                         (for_each (bindval binding)
+                            (binding_row keysequence bindval))
+                         (is_object? binding)
+                         (binding_row keysequence binding)
+                         else
+                         [])))))))
 
+(defun get_juno_autocompletions (editor session pos prefix callback)
+   (let
+      ((root_form (get_root_form_for_position (-> editor `getValue) pos.row pos.column true))
+       (collect_error (fn (e)
+                         true))
+       (text_data (+ "" (-> editor.session `getTextRange (new ace.Range root_form.start_row root_form.start_col root_form.end_row root_form.end_col)) ")"))
+       (tokens (reader text_data { `suppress_throw_on_error: true on_error: collect_error  } )))
+      
+      (= tokens (make_autocompletion_scores (process_tree_symbols tokens prefix)))
+      (callback null tokens))
+   {
+       `usage: ["editor:object" "session:object" "pos:object" "prefix:text" "callback:fn" ]
+       `description: "Internally used by the editor for autocompletion."
+       `tags: ["ace" "editor" "autocomplete" ]
+   })
+ 
 (defun clone_edit_session (session)
    (let
       ((s (new ace.EditSession (-> session `getDocument)
@@ -2983,7 +3084,7 @@
                                             `evaluator
                                             (prop *system_repl* `evaluate))))
                                    
-                                   (console.log "initialize_editor: options: " options)
+                                   (console.log "initialize_editor: " options.type " options: " (clone options))
                                    (set_evaluator)
                                    
                                    (when options.on_focus
@@ -2995,15 +3096,7 @@
                                    (when options.on_click
                                       (-> editor `on `click options.on_click))
                                    (-> editor.session `setUseSoftTabs true)
-                                   (-> editor `setOptions {
-                                                            `enableBasicAutocompletion: true
-                                                            `enableLiveAutocompletion: true
-                                                            `showFoldWidgets: true
-                                                            `cursorStyle: "wide"
-                                                            `firstLineNumber: (or options.first_line_number 0)
-                                                            `useSoftTabs: true
-                                                            `highlightActiveWord: true
-                                                            })
+                                   
                                    (-> editor.session `setUseWorker true)
                                    (-> editor.session `setUseSoftTabs true)
                                    (-> editor `setShowFoldWidgets true)
@@ -3019,16 +3112,36 @@
                                          (set_prop options
                                             `type
                                             extension)))
-
+                                   (console.log "initialize_editor: setting mode: " (clone options.type) " options: " (clone options))
                                    (cond
                                       (== options.type "juno")
-                                      (-> editor.session `setMode "ace/mode/juno")
+                                      (progn
+                                         (console.log "mode to juno")
+                                         (-> editor.session `setMode "ace/mode/juno")
+                                         (-> editor `setOptions {
+                                                                  
+                                                                  `enableBasicAutocompletion:  [{ getCompletions: (fn (editor session pos prefix callback)
+                                                                                                                     (get_juno_autocompletions editor session pos prefix callback)) }] 
+                                                                  `enableLiveAutocompletion: true
+                                         }))
                                       (== options.type "javascript")
-                                      (-> editor.session `setMode "ace/mode/javascript")
+                                      (progn
+                                         (-> editor `setOptions {
+                                                                  `enableLiveAutocompletion: true
+                                                                  `enableBasicAutocompletion: true })
+                                         (-> editor.session `setMode "ace/mode/javascript"))
                                       (== options.type "css")
-                                      (-> editor.session `setMode "ace/mode/css")
+                                      (progn
+                                         (-> editor.session `setMode "ace/mode/css")
+                                         (-> editor `setOptions {
+                                                                  `enableLiveAutocompletion: true
+                                                                  `enableBasicAutocompletion: true }))
                                       options.type
-                                      (-> editor.session `setMode options.type))
+                                      (progn
+                                         (-> editor.session `setMode options.type)
+                                         (-> editor `setOptions {
+                                                               `enableLiveAutocompletion: true
+                                                                  `enableBasicAutocompletion: true })))
                                    
                                    (cond
                                       (is_string? options.theme)
@@ -3042,7 +3155,13 @@
                                                              (-> intf `set_theme it)
                                                              (remove_class "opacity-0" editor_div))) 50)))
                                    (build_key_bindings editor)
-                                   
+                                   (-> editor `setOptions {
+                                                            `showFoldWidgets: true
+                                                            `cursorStyle: "wide"
+                                                            `firstLineNumber: (or options.first_line_number 0)
+                                                            `useSoftTabs: true
+                                                            `highlightActiveWord: true
+                                                            })
                                    (if (is_string? options.filename)
                                        (if is_served?
                                            (try
@@ -3071,7 +3190,7 @@
                                       `font_size
                                       font_size)
                                    (defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
-                                   
+                                   (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                    (when options.on_change
                                       (-> editor `on `change (function (val)
                                                                 (progn
@@ -5570,6 +5689,51 @@
 
     (-> (get_by_id "body") `appendChild juno_container)
 
+    
+    (set_prop *formatting_rules*
+       `allocating_forms {
+                           `let: (fn (tree)
+                                    (progn
+                                       (flatten [ (resolve_multi_path [ 1 `* 0 ] tree) ])))
+                           `defun: (fn (tree)
+                                      (progn
+                                         (conj (list (resolve_path [ 1 ] tree))
+                                               (flatten (resolve_path [ 2 ] tree)))))
+                           `defun_sync: (fn (tree)
+                                           (progn
+                                              (conj (list (resolve_path [ 1 ] tree))
+                                                    (flatten (resolve_path [ 2 ] tree)))))
+                           `defmacro: (fn (tree)
+                                         (progn
+                                            (conj (list (resolve_path [ 1 ] tree))
+                                                  (flatten (resolve_path [ 2 ] tree)))))
+                           `function: (fn (tree)
+                                         (flatten [ (resolve_path [ 1 ] tree) ]))
+                           `fn: (fn (tree)
+                                   (flatten [ (resolve_path [ 1 ] tree) ]))
+                           `lambda: (fn (tree)
+                                       (flatten[ (resolve_path [ 1 ] tree) ]))
+                           `destructuring_bind: (fn (tree)
+                                                   (progn
+                                                      (flatten [(resolve_path [ 1 ] tree)])))
+                           `defvar: (fn (tree)
+                                       [list  (prop tree 1) ])
+                           `for_each: (fn (tree)
+                                         [list (resolve_path [ 1 0 ] tree)])
+                           `for_with: (fn (tree)
+                                         [list (resolve_path [ 1 0 ] tree)])
+                           `reduce: (fn (tree)
+                                       [list (resolve_path [ 1 0 ] tree)])
+                           `reduce_sync: (fn (tree)
+                                            [list (resolve_path [ 1 0 ] tree)])
+                           `defglobal: (fn (tree)
+                                          [list (prop tree 1)])
+                           `defparameter: (fn (tree)
+                                             [list (prop tree 1)])
+                           
+                           })
+    
+    
     ;; initialize or rehydrate the controls
     (if (== (length *serialized_controls*) 0)
       (progn       

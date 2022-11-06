@@ -654,7 +654,7 @@
                                         val)                                          
                                `ref: (if ref true false)
                                `local: (or local nil)
-                               `global: (or (and global
+                               `global: (or (and (not (== undefined global))
                                                  (not (== NOT_FOUND global)))
                                             nil)
                                 })))
@@ -965,61 +965,61 @@
                                           true))
                             
                              (for_each (`arg args)
-                              (do
-                               (inc idx)
-			       (try
-				(= argdetails (find_in_context ctx arg))
-				(catch LispSyntaxError (e)
-				   (progn
-				     (setq is_error {
-					   `error: e.name
-					   `source_name: source_name                                        
-					   `message: e.message
-					   `form: (resolve_path _path expanded_tree)
-					   `parent_forms: (or (and (chop _path)
-								   (resolve_path (chop _path) expanded_tree))
-							      [])
-					   `invalid: true
-					   })
-				     (set_prop e
-					       `details is_error
-					       `handled true)
-				     (console.error is_error)
-				     (debug)
-				     (throw e))))
-                                                              
-                               (= argvalue argdetails.val)
-                               (= argtype argdetails.type)
-                                
-                               (= is_ref argdetails.ref)                                      
-                               (cond
-                                  (== (sub_type arg) "array")
-                                  {`type: `arr `__token__:true  `val: (tokenize arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx) }
-                                  (== argtype "Function")
-                                  {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
-                                  (== argtype "AsyncFunction")
-                                  {`type: `asf `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
-                                  (== argtype "array")
-                                  {`type: `array `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `path: (+ _path idx)}
-                                  (== argtype "Number")
-                                  {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym_ref arg)`path: (+ _path idx)}
-                                  (and (== argtype "String") is_ref)
-                                  {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx) }
-                                  (== argtype "String")
-                                  {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}				  
-				  (== argtype "dom")  ;; we cannot compile DOM elements directly - they must be reproduced on initiation
-                                  {`type: `null `__token__:true `val: null `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}	
-				  (is_object? arg)
-                                  (do 
-                                   {`type: `objlit `__token__:true  `val: (tokenize_object arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx)})
-                                  (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
-                                  {`type: `null `__token__:true `val: null `ref: true `name: "null" `path: (+ _path idx)}
-                                  (and (== argtype "unbound") is_ref (eq nil argvalue))
-                                  {`type: "arg" `__token__:true `val: arg `ref: true `name: (clean_quoted_reference (desym_ref arg)) `path: (+ _path idx)}
-                                  (and (== argtype "unbound") is_ref)
-                                  {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (clean_quoted_reference (sanitize_js_ref_name (desym_ref arg))) `path: (+ _path idx)}
-                                  else
-                                  {`type: argtype `__token__:true  `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx)}))))))))
+                                (do
+                                   (inc idx)
+                                   (try
+                                      (= argdetails (find_in_context ctx arg))
+                                      (catch LispSyntaxError (e)
+                                         (progn
+                                            (setq is_error {
+                                                             `error: e.name
+                                                             `source_name: source_name
+                                                             `message: e.message
+                                                             `form: (resolve_path _path expanded_tree)
+                                                             `parent_forms: (or (and (chop _path)
+                                                                                     (resolve_path (chop _path) expanded_tree))
+                                                                                [])
+                                                             `invalid: true
+                                                             })
+                                            (set_prop e
+                                               `details is_error
+                                               `handled true)
+                                            (console.error is_error)
+                                            (debug)
+                                            (throw e))))
+                                   
+                                   (= argvalue argdetails.val)
+                                   (= argtype argdetails.type)
+                                   
+                                   (= is_ref argdetails.ref)
+                                   (cond
+                                      (== (sub_type arg) "array")
+                                      {`type: `arr `__token__:true  `val: (tokenize arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx) }
+                                      (== argtype "Function")
+                                      {`type: `fun `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `global: argdetails.global `path: (+ _path idx)}
+                                      (== argtype "AsyncFunction")
+                                      {`type: `asf `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `global: argdetails.global `path: (+ _path idx)}
+                                      (== argtype "array")
+                                      {`type: `array `__token__:true `val: arg `ref: is_ref `name: (desym_ref arg) `global: argdetails.global  `path: (+ _path idx)}
+                                      (== argtype "Number")
+                                      {`type: `num `__token__:true `val: argvalue `ref: is_ref  `name: (desym_ref arg) `global: argdetails.global `path: (+ _path idx)}
+                                      (and (== argtype "String") is_ref)
+                                      {`type: `arg `__token__:true `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx) }
+                                      (== argtype "String")
+                                      {`type: `literal `__token__:true `val:  argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}
+                                      (== argtype "dom")  ;; we cannot compile DOM elements directly - they must be reproduced on initiation
+                                      {`type: `null `__token__:true `val: null `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `path: (+ _path idx)}
+                                      (is_object? arg)
+                                      (do
+                                         {`type: `objlit `__token__:true  `val: (tokenize_object arg ctx (+ _path idx)) `ref: is_ref `name: nil `path: (+ _path idx)})
+                                      (and (== argtype "literal") is_ref (== (desym_ref arg) "nil"))
+                                      {`type: `null `__token__:true `val: null `ref: true `name: "null" `path: (+ _path idx)}
+                                      (and (== argtype "unbound") is_ref (eq nil argvalue))
+                                      {`type: "arg" `__token__:true `val: arg `ref: true `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global  `path: (+ _path idx)}
+                                      (and (== argtype "unbound") is_ref)
+                                      {`type: (sub_type argvalue) `__token__:true `val: argvalue `ref: true `name: (clean_quoted_reference (sanitize_js_ref_name (desym_ref arg)))  `path: (+ _path idx)}
+                                      else
+                                      {`type: argtype `__token__:true  `val: argvalue `ref: is_ref `name: (clean_quoted_reference (desym_ref arg)) `global: argdetails.global `local: argdetails.local `path: (+ _path idx)}))))))))
        
        ;; checks to see if the first argument to the passed array is 
        ;; a compile time function, as registered in the environment's definitions 
