@@ -3587,17 +3587,12 @@ such as things that connect or use environmental resources.
                       `indent
                       (+ remainder_pos 3)))
                 (progn
-                   ;(log "rule 1B")
+                   (log "rule 1B")
                    (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2)))))
             
-         (== delta.final_type "{")
-         (progn
-            ;(log "rule 2")
-            (set_prop delta
-                      `indent
-                      (+ (last delta.openers) 2)))
+         
          
          (contains? comps.0 built_ins)
          (progn
@@ -3625,10 +3620,17 @@ such as things that connect or use environmental resources.
             (set_prop delta
                      `indent
                      (+ remainder_pos 3)))
+         (and (== delta.final_type "{")
+              (> movement_needed 0))
+         (progn
+            ;(log "rule 2")
+            (set_prop delta
+               `indent
+               (+ (last delta.openers) 2)))
          (== comps.length 0)
          (progn
-           ; (log "rule 7")
-            (set_prop delta
+           ;(log "rule 7")
+           (set_prop delta
                      `indent
                      (+ 1 remainder_pos)))
          else

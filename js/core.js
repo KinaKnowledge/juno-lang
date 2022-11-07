@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-11-07 05:52:50
-// Version: 2022.11.07.05.52
-export const DLISP_ENV_VERSION='2022.11.07.05.52';
+// Build Time: 2022-11-07 10:02:29
+// Version: 2022.11.07.10.02
+export const DLISP_ENV_VERSION='2022.11.07.10.02';
 
 
 
@@ -3854,16 +3854,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__268=async function(req) {
                                             {
-                                                let _expr_82505;
+                                                let _expr_1287;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_82505=await (async function(){
+                                                _expr_1287=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_82505 && _expr_82505["0"]);
-                                                req_ns=(_expr_82505 && _expr_82505["1"]);
-                                                explicit=(_expr_82505 && _expr_82505["2"]);
+                                                req_sym=(_expr_1287 && _expr_1287["0"]);
+                                                req_ns=(_expr_1287 && _expr_1287["1"]);
+                                                explicit=(_expr_1287 && _expr_1287["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3966,13 +3966,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_44759;
+                    let _expr_76284;
                     let nspace;
-                    _expr_44759=await (async function(){
+                    _expr_76284=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_44759 && _expr_44759["0"]);
-                    nspace=(_expr_44759 && _expr_44759["1"]);
+                    sym=(_expr_76284 && _expr_76284["0"]);
+                    nspace=(_expr_76284 && _expr_76284["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4657,6 +4657,7 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                         }
                     } else {
                         {
+                            console.log("rule 1B");
                               (function(){
                                 delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
                                 return delta;
@@ -4664,14 +4665,6 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                             })()
                         }
                     }
-                }
-            } else if (check_true (((delta && delta["final_type"])==="{"))) {
-                {
-                      (function(){
-                        delta["indent"]= ( Environment.get_global("add"))( ( Environment.get_global("last"))((delta && delta["openers"])),2);
-                        return delta;
-                        
-                    })()
                 }
             } else if (check_true ( ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("built_ins"))))) {
                 {
@@ -4705,6 +4698,14 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                         
                     })()
                 }
+            } else if (check_true ((((delta && delta["final_type"])==="{")&& (movement_needed>0)))) {
+                {
+                      (function(){
+                        delta["indent"]= ( Environment.get_global("add"))( ( Environment.get_global("last"))((delta && delta["openers"])),2);
+                        return delta;
+                        
+                    })()
+                }
             } else if (check_true (((comps && comps.length)===0))) {
                 {
                       (function(){
@@ -4724,7 +4725,7 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
             }
         } )();
         return delta
-    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","add","last","built_ins"]
+    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","log","built_ins","add","last"]
 })
 };
 {

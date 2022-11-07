@@ -1048,7 +1048,18 @@
             (-> holding_tank `add_control position_details_target.child)
             (cascade_resize)
             (set_focus_to position_details_new.child))
-            
+        (and (-> holding_tank `has_control? position_details_new.child)
+             position_details_target.parent.set_content)
+        (progn
+           (-> position_details_target.parent `set_content
+              position_details_target.child_position
+              position_details_new.child)
+           ;; remove from the holding tank
+           (-> holding_tank `remove_control position_details_new.child)
+           (-> holding_tank `add_control position_details_target.child)
+           (cascade_resize)
+           (set_focus_to position_details_new.child))
+        
         else
         (progn
             (notify "Unhandled swap condition - see console")
@@ -1592,15 +1603,17 @@
                                     options.input
                                     (input { `type: (or type "text") `style: "width: calc(100% - 15px)" })))
                       (completed false)
-                      (ok_button (button { `class: "juno-primary" `style: "float:right" } "OK"))
-                      (cancel_button (button { `class: "juno-secondary" }  "Cancel"))
+                      (ok_button (button { `class: "juno-primary" `style: "float:right" } (dtext "OK")))
+                      (cancel_button (button { `class: "juno-secondary" }  (dtext "Cancel")))
                       (dwin (dialog { `style: "height: min-content; width: min-content;"   }
                                     (div { `class: "juno-instructions" } prompt)
                                     (br)
                                     user_input
                                     (br)
                                     (div { `class: "pure-button-group juno-control-group" `style: "margin-top: 10px;" `role: "group" }
-                                         cancel_button
+                                         (if options.no_cancel_button
+                                            []
+                                            cancel_button)
                                          ok_button)))
                       (clean_up (fn (val)
                                     (when (not completed)
@@ -1649,7 +1662,38 @@
                      (-> dwin `showModal)
                      (focus_to user_input))))))
                  
-                 
+  
+(defun alert_box (message detail)
+   (request_user_input (or message "No message provided!") 
+                       nil 
+                       { `input: (if detail 
+                                     (div detail)
+                                     (span {})) 
+                         `no_cancel_button: true })
+   {
+     `usage:[ "message:text" "detail:text|Element"]
+     `description: "Creates a modal type popup dialog box which pauses the current execution flow until the OK button is clicked. The return value is undefined."
+     `tags: ["alert" "popup" "modal" "box" "warn" "ui" "DOM" ]
+   })
+     
+(defmacro alert_on_error (error_title `& forms)
+   `(try
+       (progn
+          ,@forms)
+       (catch Error (e)
+          (progn
+             (alert_box ,#(or error_title (dtext "Error on Operation"))
+                         e.message)
+             nil)))
+   {
+       `usage: ["error_title:text" "forms:*"]
+       `description: (+ "All provided forms will be wrapped in a progn and the last value of the provided forms returned.  " 
+                        "Any uncaught errors in the provided forms will be caught by this macro abd the provided " 
+                        "error_title, and exception message presented to the user for acknowledgement.  On a caught error "
+                        "nil will be returned to the calling code.")
+       `tags: ["alert" "popup" "catch" "errors" "ui" "DOM"]
+   })
+          
 (defun handle_save_file (control options)
   (let
       ((fname (when control
@@ -2320,6 +2364,8 @@
                                               (resolve nil))))
                    (-> juno_container
                        `appendChild dwin)
+                   (set_prop symbol_ctl.options
+                      `temporary true)
                    (-> symbol_ctl `initialize)
                    (when (is_function? dwin.showModal)
                      (-> dwin `showModal))))))
@@ -3387,7 +3433,7 @@
                  (-> Environment `get_namespace_handle namespace)
                  Environment))
        (already_exists? (if (get_control_by_name title)
-                            (throw ReferenceError "Control with the same name already exists")))
+                            (throw ReferenceError "An editor with the same name is already open.")))
        (title (name_control title))
        (title_span (span { `class: "juno-title" } title))
        (options (or options {}))
@@ -4049,7 +4095,8 @@
             (add_control (fn (control)
                              (when (not (== control intf))
                                  (assert (and control.type control.options.id) "Invalid control provided")
-                                 (when (not (== control.type "empty_control"))  ;; don't store the empty controls since they are placeholders
+                                 (when (and (not (== control.type "empty_control"))  ;; don't store the empty controls since they are placeholders
+                                            (not control.options.temporary))
                                     (set_prop my_controls
                                        control.options.id
                                        control)
@@ -4190,7 +4237,11 @@
           intf)))
 
 (defun empty_selection_control (options)
-    (let
+   (let
+      ((existing_control (last (holding_tank_controls))))
+      (if existing_control
+         existing_control
+     (let
         ((options (or options {
                                `name: "Empty Selection" 
                                }))
@@ -4254,7 +4305,7 @@
            `options: options
            `toJSON: (function ()
                       `[empty_selection_control ,#options ])
-        }))
+        }))))
 
 (defun find_common_prefix (candidates match_to)
    (let
@@ -5015,29 +5066,7 @@
                                              (notify (+ "Error: " e.message))))))))
        control))
 
-(defun wait_for_file_selection () 
-   (new Promise (fn (resolve reject)
-                   (let
-                       ((selection nil)
-                        (target_control (or *last_focus* (default_focus)))
-                        (control (file_tree_browser { `on_select: (fn (stack)
-                                                                    (progn
-                                                                     (= selection (join "/" stack))
-                                                                     (if (> stack.length 0)
-                                                                       (progn
-                                                                        (destroy_control control)))))
-                                                                        
-                                                     `on_destroy: (fn (self)
-                                                                    (progn
-                                                                     (setTimeout (fn ()
-                                                                                    (progn
-                                                                                       (set_focus_to target_control)
-                                                                                       (resolve selection))
-                                                                                    20))
-                                                                     true)) })))
-                      (place_control `below control)
-                      (set_focus_to control)
-                      ))))
+
 
 (defun save_active_buffer (save_all)
   (cond
@@ -5446,6 +5475,8 @@
       `usage: ["options:object?"]
   })
 
+
+
 (defun wait_for_file_selection () 
    (new Promise (fn (resolve reject)
                    (let
@@ -5468,7 +5499,14 @@
                                                                      true)) })))
 
                      (place_control `below control)
-                     (set_focus_to control)))))
+                     (set_focus_to control))))
+   {
+       `description: (+ "Opens a file tree browser for selection of a file.  Once the a " 
+                        "file is chosen, or the selection is cancelled via escape, then either "
+                        "the selected path is returned, or nil if cancelled or closed.")
+       `usage:[]
+       `tags: ["UI" "DOM" "file" "editor" "select" "open"]
+   })
 
 
 
@@ -5502,9 +5540,19 @@
       (set_prop options
          `path
          symbol_path)
-      ;(unless options.type
-       ;  (set_prop options `type "juno"))
-      (new_buffer options)))
+      (alert_on_error "File Open Error"
+         (new_buffer options)))
+   {
+       `description: (+ "If provided an options object with a filename key and file path value, "
+                        "the function will attempt to fetch and present that file for editing. "
+                        "If an error is encountered, the error will be presented to the user "
+                        "in a popup window and nil returned.  If called with no options, the "
+                        "function will prompt the user to select a file via a file_tree_browser "
+                        "control.")
+       `usage: ["options:object"]
+       `tags: ["DOM" "ui" "file" "edit" "open"]
+   })
+         
       
 
 (defun set_key_binding (scope name desc)
@@ -5605,10 +5653,10 @@
                               nil
                               (== operation "Split Right")
                               (fn ()
-                                (place_control "right" (symbol_browser)))
+                                (place_control "right" (empty_selection_control)))
                               (== operation "Split Bottom")
                               (fn ()
-                                (place_control "below" (symbol_browser)))
+                                (place_control "below" (empty_selection_control)))
                               (or (and (== operation "Show")
                                        (-> holding_tank `has_control? control))
                                   (and (== operation "Hide")
