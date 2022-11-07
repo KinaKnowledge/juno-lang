@@ -67,6 +67,9 @@ var JunoHighlightRules = function() {
                 token : "comment",
                 regex : ";.*$"
             }, {
+                token : keywordMapper,
+                regex : "[*a-zA-Z_$][a-zA-Z0-9_$\\-*?]*"
+            }, {
                 token : "keyword", //parens
                 regex : "[\\(|\\)]"
             }, {
@@ -81,25 +84,16 @@ var JunoHighlightRules = function() {
             }, {
                     token : "keyword", // ampersands
                     regex : '[\\&]'
-            }, {
-                    token : "keyword", // metadata
-                    regex : '[\\#\\^\\{]'
-            }, {
-                    token : "keyword", // anonymous fn syntactic sugar
-                    regex : '[\\%]'
             },  {
                 token : "constant.numeric", // hex
                 regex : "0[xX][0-9a-fA-F]+\\b"
             }, {
                 token : "constant.numeric", // float
                 regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
-            }, {
+            }, /*{
                 token : "constant.language",
                 regex : '[!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+||=|!=|<=|>=|<>|<|>|!|&&]'
-            }, {
-                token : keywordMapper,
-                regex : "[*a-zA-Z_$][a-zA-Z0-9_$\\-*?]*"
-            }, {
+            },*/  {
                 token : "string", // single line
                 regex : '"',
                 next: "string"

@@ -3147,6 +3147,7 @@
                              (when (not initialized)
                                 (let
                                    ((comps nil)
+                                    (identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
                                     (extension nil))
                                    (setq initialized true)
                                    (setq parent_view view.parentElement)
@@ -3186,7 +3187,6 @@
                                    (-> editor `setShowFoldWidgets true)
                                    
                                    ;; set the extension if we haven't been given a specific option type
-                                   
                                    (when (and (eq nil options.type)
                                               (is_string? options.filename))
                                       (= comps (split_by "." options.filename))
@@ -3203,10 +3203,11 @@
                                          (console.log "mode to juno")
                                          (-> editor.session `setMode "ace/mode/juno")
                                          (-> editor `setOptions {
-                                                                  
-                                                                  `enableBasicAutocompletion:  [{ getCompletions: (fn (editor session pos prefix callback)
+                                                                  `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
+                                                                                                  getCompletions: (fn (editor session pos prefix callback)
                                                                                                                      (get_juno_autocompletions editor session pos prefix callback)) }] 
-                                                                  `enableLiveAutocompletion: true
+                                                                  enableLiveAutocompletion: true
+                                                                  enableSnippets: true
                                          }))
                                       (== options.type "javascript")
                                       (progn
