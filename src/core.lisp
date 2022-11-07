@@ -3625,6 +3625,12 @@ such as things that connect or use environmental resources.
             (set_prop delta
                      `indent
                      (+ remainder_pos 3)))
+         (== comps.length 0)
+         (progn
+           ; (log "rule 7")
+            (set_prop delta
+                     `indent
+                     (+ 1 remainder_pos)))
          else
          (progn
             ;(log "rule D")
@@ -3690,7 +3696,7 @@ such as things that connect or use environmental resources.
             (> movement_needed 0)
             (progn
                (= delta (calculate_indent_rule delta movement_needed))))
-       (join "" (for_each (c (range delta.indent)) " "))))
+       (join "" (for_each (c (range (Math.max 0 delta.indent))) " "))))
    {
      `description: (+ "Given a line number and an accessor function (synchronous), returns a"
                       "a text string representing the computed indentation for the provided "

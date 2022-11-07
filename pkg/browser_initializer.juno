@@ -2726,27 +2726,6 @@
     ;(-> editor.selection `setRange selected_range)
     (console.log "tab: reselected fixed: " (-> editor `getCopyText))))
 
-(defun select_to_root_form (editor pos)
-   (if editor
-       (let
-          ((cpos (-> editor `getCursorPosition))
-           (pos (if pos
-                    (get_root_form_for_position (-> editor `getValue) pos.row pos.column)
-                    (get_root_form_for_position (-> editor `getValue) cpos.row cpos.column))))
-          (when pos
-             (-> editor.selection `clearSelection)
-             (-> editor.selection `setSelectionAnchor pos.start_row pos.start_col)
-             (-> editor.selection `selectTo pos.end_row (+ pos.end_col 1))
-             true))
-       (throw TypeError "editor must be provided to select_to_root_form"))
-   {
-       description: (+ "Given an editor and an optional position, will select the complete form (to a depth of 0) if possible. "
-                        "If given a position object with a row and column value, the function will use that instead.  If "
-                        "succesful, the value true will be returned.  If no editor is provided, the function will throw a "
-                        "TypeError.")
-       usage: ["editor:object" "pos:?object"]
-       tags: ["editor" "selection" "form" "lisp" "editing"]
-   })
 
 (defun_sync select_to_current_form (editor pos)
   (if editor
@@ -2804,9 +2783,67 @@
                          else
                          [])))))))
 
+(defun_sync select_root_form (editor pos)
+   (if (and (is_object? editor)
+            (is_object? pos))
+       (let
+          ((last_selection nil)
+           (idx 0)
+           (current_selection nil))
+          ;; start with the current position
+          (= current_selection (find_last_paren editor pos))
+          (while (and (< idx 100)
+                      current_selection
+                      (or (eq nil last_selection)
+                          (not (and (== last_selection.start.column current_selection.start.column)
+                                    (== last_selection.start.row current_selection.start.row)
+                                    (== last_selection.end.column current_selection.end.column)
+                                    (== last_selection.end.row current_selection.end.row)))))
+             (progn
+                (inc idx)
+                (= last_selection current_selection)
+                (= current_selection (find_last_paren editor current_selection.start))
+                ))
+          (aif current_selection
+             {
+               `start_row: it.start.row
+               `start_col: it.start.column
+               `end_row: it.end.row
+               `end_col: it.end.column
+               })
+             ))
+   {
+     `usage: ["editor:object" "pos:object"]
+     `description: "Given an editor and a position, returns the determined root form for the position."
+     `tags: ["selection" "editor" "root" "form" "position"]
+     })
+
+(defun select_to_root_form (editor pos)
+   (if editor
+       (let
+          ((cpos (-> editor `getCursorPosition))
+           (pos (if pos
+                    (select_root_form editor pos)
+                     (select_root_form editor cpos))))
+          (when pos
+             (-> editor.selection `clearSelection)
+             (-> editor.selection `setSelectionAnchor pos.start_row pos.start_col)
+             (-> editor.selection `selectTo pos.end_row (+ pos.end_col 1))
+             true))
+       (throw TypeError "editor must be provided to select_to_root_form"))
+   {
+       description: (+ "Given an editor and an optional position, will select the complete form (to a depth of 0) if possible. "
+                        "If given a position object with a row and column value, the function will use that instead.  If "
+                        "succesful, the value true will be returned.  If no editor is provided, the function will throw a "
+                        "TypeError.")
+       usage: ["editor:object" "pos:?object"]
+       tags: ["editor" "selection" "form" "lisp" "editing"]
+   })
+
+
 (defun get_juno_autocompletions (editor session pos prefix callback)
    (let
-      ((root_form (get_root_form_for_position (-> editor `getValue) pos.row pos.column true))
+      ((root_form (select_root_form editor pos))
        (collect_error (fn (e)
                          true))
        (text_data (+ "" (-> editor.session `getTextRange (new ace.Range root_form.start_row root_form.start_col root_form.end_row root_form.end_col)) ")"))
@@ -2855,6 +2892,7 @@
        (content (or content ""))
        (controls (div { `style: "display: flex; " }))
        (parent_view nil)
+       (name (name_control (or options.name "Untitled Buffer")))
        (context_clear_timer nil)
        (display_context_message (function (value)
                                    (if (and (blank? value)
@@ -3068,7 +3106,7 @@
                                    (setq parent_view view.parentElement)
                                    (setq editor
                                          (ace.edit editor_div))
-                                   
+                                   (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                    (when options.clone_with_editor_id
                                       (let ((editor_to_clone (aif (get_control_by_id options.clone_with_editor_id)
                                                                   it.editor))
@@ -3189,8 +3227,11 @@
                                    (set_prop options
                                       `font_size
                                       font_size)
+                                   (set_prop options
+                                      `name
+                                      name)
+                                   
                                    (defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
-                                   (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                    (when options.on_change
                                       (-> editor `on `change (function (val)
                                                                 (progn
@@ -3280,6 +3321,9 @@
          `menu_items: (function ()
                          [[(dtext "Increase Font Size") increase_font_size]
                           [(dtext "Decrease Font Size") decrease_font_size]
+                          (if (-> editor `getReadOnly)
+                              [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
+                              [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
                           [(dtext "Set Edit Mode") 
                            [["Juno" (fn () (-> intf `set_mode "juno"))]
                             ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
@@ -3290,8 +3334,16 @@
                                   [theme  (fn () (-> intf `set_theme theme))])]])
          `get_active_lisp_operator: (fn ()
                                        (find_active_lisp_operator))
+         `set_read_only: (fn (read_only?)
+                           (-> editor `setReadOnly read_only?))
          `options: options
-         `name: (or options.name "Untitled Buffer")
+         `name: options.name 
+         `set_name: (fn (new_name)
+                      (when (not (blank? new_name))
+                         (set_prop options
+                            `name
+                            (name_control new_name))
+                         options.name))
          `toJSON: (function ()
                      `(make_editor ,#(-> editor `getValue) ,#options))
          `initialize: (fn ()
@@ -3334,6 +3386,9 @@
       ((nseval (if (not (blank? namespace))
                  (-> Environment `get_namespace_handle namespace)
                  Environment))
+       (already_exists? (if (get_control_by_name title)
+                            (throw ReferenceError "Control with the same name already exists")))
+       (title (name_control title))
        (title_span (span { `class: "juno-title" } title))
        (options (or options {}))
        (id (or options.id (generate_id "buffer_editor")))
@@ -3345,7 +3400,7 @@
                     options.evaluator
                     *system_repl*
                     *system_repl*))
-                                                
+       
        (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
        (buffer_commands_button (commands_button id))
        (nav_back_button (button { `title: (dtext "back") } "<"))
@@ -3469,6 +3524,7 @@
                               (notify (+ (dtext "Evaluator set to ") it.name)))))))
                             
     
+     
     (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
    
     (attach_event_listener edit_control.view
@@ -3476,7 +3532,9 @@
                            (function (e)
                               (update_position)))
                               
-                                          
+    
+    
+                                        
     (set_prop options
               `id
               id)
@@ -3485,6 +3543,11 @@
               edit_control.initialize
               `sub_menu_items
               edit_control.menu_items)
+    
+    (set_prop options
+       `name
+       title)
+    
     (set_prop edit_control
               `set_evaluator_control  set_evaluator_control
               `on_focus on_focus
@@ -4525,7 +4588,6 @@
                                    ((elem e.srcElement)
                                     (path_value (find_value elem "path_value"))
                                     (pos (int (find_value elem "pos"))))
-                                   (log "clicked: " path_value "at pos: " pos)
                                    (set_path_at pos path_value))))
     
     (set_path_at (fn (pos path_value)
@@ -4539,7 +4601,6 @@
                           (progn
                              (= stack (-> stack `slice 0 pos))
                              (push stack path_value)
-                             (log "stack truncated to: " stack pos)
                              (clear_suffix)
                              (render_stack))
                           else
@@ -5694,42 +5755,42 @@
        `allocating_forms {
                            `let: (fn (tree)
                                     (progn
-                                       (flatten [ (resolve_multi_path [ 1 `* 0 ] tree) ])))
+                                       (flatten (list (resolve_multi_path [ 1 `* 0 ] tree)))))
                            `defun: (fn (tree)
                                       (progn
                                          (conj (list (resolve_path [ 1 ] tree))
-                                               (flatten (resolve_path [ 2 ] tree)))))
+                                               (flatten (list (resolve_path [ 2 ] tree) ) ))))
                            `defun_sync: (fn (tree)
                                            (progn
                                               (conj (list (resolve_path [ 1 ] tree))
-                                                    (flatten (resolve_path [ 2 ] tree)))))
+                                                    (flatten (list (resolve_path [ 2 ] tree) ) ))))
                            `defmacro: (fn (tree)
                                          (progn
                                             (conj (list (resolve_path [ 1 ] tree))
-                                                  (flatten (resolve_path [ 2 ] tree)))))
+                                                  (flatten (list (resolve_path [ 2 ] tree))))))
                            `function: (fn (tree)
-                                         (flatten [ (resolve_path [ 1 ] tree) ]))
+                                         (flatten (list (resolve_path [ 1 ] tree) )))
                            `fn: (fn (tree)
-                                   (flatten [ (resolve_path [ 1 ] tree) ]))
+                                   (flatten (list (resolve_path [ 1 ] tree) )))
                            `lambda: (fn (tree)
-                                       (flatten[ (resolve_path [ 1 ] tree) ]))
+                                       (flatten (list (resolve_path [ 1 ] tree) )))
                            `destructuring_bind: (fn (tree)
                                                    (progn
-                                                      (flatten [(resolve_path [ 1 ] tree)])))
+                                                      (flatten (list (resolve_path [ 1 ] tree)))))
                            `defvar: (fn (tree)
-                                       [list  (prop tree 1) ])
+                                        (flatten (list (prop tree 1))))
                            `for_each: (fn (tree)
-                                         [list (resolve_path [ 1 0 ] tree)])
+                                         (list (resolve_path [ 1 0 ] tree)))
                            `for_with: (fn (tree)
-                                         [list (resolve_path [ 1 0 ] tree)])
+                                         (list (resolve_path [ 1 0 ] tree)))
                            `reduce: (fn (tree)
-                                       [list (resolve_path [ 1 0 ] tree)])
+                                       (list (resolve_path [ 1 0 ] tree)))
                            `reduce_sync: (fn (tree)
-                                            [list (resolve_path [ 1 0 ] tree)])
+                                            (list (resolve_path [ 1 0 ] tree)))
                            `defglobal: (fn (tree)
-                                          [list (prop tree 1)])
+                                          (list (prop tree 1)))
                            `defparameter: (fn (tree)
-                                             [list (prop tree 1)])
+                                             (list (prop tree 1)))
                            
                            })
     
