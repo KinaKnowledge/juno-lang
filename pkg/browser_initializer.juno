@@ -312,7 +312,9 @@
    })
 
 (defun_sync editor_key_bindings (editor)
-   (resolve_path [`commands `commandKeyBinding ] editor)
+   (if editor
+      (resolve_path [`commands `commandKeyBinding ] editor)
+      nil)
    {
        `description: "Returns current key bindings for the provided ACE editor object."
        `usage: ["editor:object"]
@@ -626,13 +628,35 @@
                   (unless (-> ids `has ctl.options.id)
                           (-> ids `add ctl.options.id)
                           ctl))))
-         ctls)))
+         ctls))
+  {
+      `usage: ["no_subcontrols:?boolean"]
+      `description: "Returns an array of all controls in the control tree,"
+      `tags: ["controls" "active" "tree" "ui"]
+  })
+
+(defun all_editor_controls ()
+   (reduce (ctl (current_controls))
+      (when ctl.editor
+         ctl))
+   {
+       `description: "Returns an array all editor controls in the control_tree."
+       `usage: []
+       `tags: ["controls" "editors" "active" "ui"]
+   })
 
 (defun cascade_resize (top_control)
   (control_tree (or top_control $root_controls)
                 (fn (control)
                   (if control.resize
-                    (-> control `resize)))))
+                    (-> control `resize))))
+  {
+      `usage: ["top_control:?object"]
+      `description: (+ "This function invokes the resize methodFor every control " 
+                       "in the control tree or from the provided starting control "
+                       "and it's child controls.")
+      `tags: ["controls" "active" "resize" "ui"]
+  })
     
 
 (defun set_global_theme (theme_name options)
@@ -682,7 +706,13 @@
               (when (== id (and control.options control.options.id))
                 (= ctrl control)
                 (break)))
-    ctrl))
+    ctrl)
+  {
+      usage: ["id:string"]
+      description: (+ "Returns the control with the given identifier, " 
+                      "or nil if not found.")
+      tags: [ "ui" "controls" "id" "find" ]
+  })
 
 (defun get_control_by_name (name)
   (let
@@ -693,7 +723,13 @@
           (when (== name control.name)
                (= ctrl control)
                (break))))
-    ctrl))
+    ctrl)
+  {
+      usage: ["id:string"]
+      description: (+ "Returns the first control with the given name, " 
+                      "or nil if not found.")
+      tags: [ "ui" "controls" "name" "find" ]
+  })
 
 (defun select_controls (predicate_func)
   (let
@@ -723,7 +759,7 @@
       ((cell_style "border: 1px dashed var(--main-accent-line-hover);")
        (sub_style "border-right: 1px dashed var(--main-accent-line-hover); border-bottom: 1px dashed var(--main-accent-line-hover);border-top: 1px dashed var(--main-accent-line-hover);")
        (parent_style "border-left: 1px dashed var(--main-accent-line-hover); border-bottom: 1px dashed var(--main-accent-line-hover);border-top: 1px dashed var(--main-accent-line-hover);"))
-      (table { `style: "vertical-align: top; margin: 5px; box-shadow: 1px 1px 4px 1px #00000060;" }
+      (table { `style: "vertical-align: top; margin: 5px; box-shadow: 1px 1px 4px 1px #00000060; width: calc(100% - 20px);" }
         (cond
            (is_array? controls)
            (for_each (ctl controls)
@@ -747,12 +783,23 @@
                  (td { `control_id: controls.options.id `style: cell_style } (render_control_tree (-> controls `controls)))]
                 (td { `control_id: controls.options.id `colspan: 2 
                       `style: (+ "" cell_style (if (== controls *last_focus*) "font-weight: bold; background: var(--control-focused);" "")) }  
-                      (or controls.name (+ "/" controls.type)))))))))
+                      (or controls.name (+ "/" controls.type))))))))
+   {
+     usage: ["controls:array"]
+     description: (+ "Renders the given controls and their children as a HTML/table " 
+                     "representing the hierarchy and the control positions in the tree.")
+     tags: [ "ui" "controls" "DOM" "structure" "tree" ]
+     })
 
 (defun holding_tank_controls ()
   (aif (get_control_by_name "Holding Tank")
        (-> it `controls)
-       []))
+       [])
+  {
+      usage: []
+      description: "Returns an array of all controls currently stored in the control holding tank."
+      tags: ["ui" "controls" "holding" "tank"]
+  })
 
 (defun replace_control (target_control new_control)
   (let
@@ -864,7 +911,12 @@
       existing_container))
 
 (defun_sync is_control? (val)
-  (and (is_object? val) val.type val.view val.toJSON))
+  (and (is_object? val) val.type val.view val.toJSON true)
+  {
+    usage: "val:object"
+    description: "Predicate function which returns true if the provided object tests to be a control."
+    tags: ["controls" "ui" "control"]
+  })
 
 (defun_sync is_top_control? (control)
   (if (is_control? control)
@@ -2829,6 +2881,38 @@
                          else
                          [])))))))
 
+(defun show_key_bindings ()
+   (let
+      ((categories (reduce (k (keys *key_bindings* ))
+                      (unless (== k "active")
+                         k)))
+       (td_style (function () 
+                    { `style: "padding: 5px; border-bottom: 1px solid var(--main-accent-line);" } ))
+       (platform (get_operating_platform)))
+      (table { `style: "width: 100%" }
+         (thead
+            (tr { `style: "" }
+               (th { `style: "padding: 5px;" } "Key Binding")
+               (th { `style: "padding: 5px;" } "Command")
+               (th { `style: "padding: 5px;" } "Category")
+               (th { `style: "padding: 5px;" } "Description")))
+         (tbody
+            (for_each (category categories)
+               (for_each (binding (pairs (resolve_path [ category ] *key_bindings*)))
+                  (destructuring_bind (name entry)
+                     binding
+                     (tr { `style: "padding: 5px; " }
+                        (td (td_style) (prop entry platform))
+                        (td (td_style) (from_key name))
+                        (td (td_style) (from_key category))
+                        (td (td_style) (or (prop entry `description)
+                                "No Description")))))))))
+   {
+     `description: "Returns a table DOM element of the current key bindings."
+     `usage: []
+     `tags: ["help" "keys" "bindings" "display" ]
+     })
+
 (defun_sync select_root_form (editor pos)
    (if (and (is_object? editor)
             (is_object? pos))
@@ -4355,6 +4439,33 @@
                      }
                   | )
       true))
+
+(defun next_control (backward?)
+   (let
+      ((candidates (holding_tank_controls))
+       (cmd (if backward? 
+                first
+                last))
+       (new_ctl nil))
+   (if (> candidates.length 0)
+      (progn 
+         (= new_ctl (cmd candidates))
+         (swap_control *last_focus* new_ctl)
+         ;; control will get the on_focus event, but we want to default
+         ;; focus into the editor for this operation
+         (focus_to new_ctl.editor)
+      )
+      (notify (dtext "No controls are in the holding tank."))))
+   {
+     `usage: ["backward?:boolean"]
+     `description: (+ "If backward? is false (default) swap the current control " 
+                      "with the last control in the holding tank. Otherwise "
+                      "swap with the first control in the holding tank. "
+                      "If there are no controls, notifies the user that there are "
+                      "no other non-displayed controls to swap to.")
+     `tags: ["ui" "controls" "swap" "buffers" "editor" "next"]
+     })
+
 
 (defmacro on_key_down_event (e view `& key_to_action_pairs)
    (let
@@ -5895,7 +6006,17 @@
                                       mac: "Command-Shift-s"
                                       description: "Saves the current state of the application"
                                       exec: (fn () (save_control_image))
-                                     })
+                                     } 
+                 "next_control" { win: "Alt-Period"
+                                 mac: "Alt-Period"
+                                 description: "Next Control"
+                                 exec: (fn () (next_control))
+                                 }
+                 "prior_control" { win: "Alt-Comma"
+                                 mac: "Alt-Comma"
+                                 description: "Prior Control"
+                                 exec: (fn () (next_control true))
+                                 })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        
@@ -5989,12 +6110,12 @@
                            (fn (e)
                              (handle_app_click_event e)))
     
-    (attach_event_listener juno_container
+    (attach_event_listener (first (get_by_tag `body))
                            `keydown
                            (function (e)
                              (progn                              
                               (defvar kcode (get_key_code e))
-                              (when *log_key_events* (log "key_code:" kcode ))
+                              (when *log_key_events* (log "key_code:" kcode "->" (prop *key_bindings*.active kcode)))
                               ;(console.log "kcode is: " kcode)
                               (aif (prop *key_bindings*.active kcode)
                                    (progn
