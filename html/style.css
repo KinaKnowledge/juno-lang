@@ -1413,7 +1413,7 @@ since IE8 won't execute CSS that contains a CSS3 selector.
 
 .pure-menu-selected > .pure-menu-link,
 .pure-menu-selected > .pure-menu-link:visited {
-    color: #000;
+    color:  #000;
 }
 
 .pure-table {
@@ -1833,7 +1833,7 @@ li.juno-main-menu-header {
 }
 
 span.juno-menu-text {
-  
+ 
 }
 
 span.juno-menu-submenu {
@@ -1846,7 +1846,6 @@ li.juno-menu-header:hover {
   color: var(--highlight-color);
 }
 
-
 li.juno-menu-header:active {
   background: var(--highlight-bg-color);
   color: var(--highlight-color);
@@ -1854,8 +1853,13 @@ li.juno-menu-header:active {
 
 
 li.juno-menu-selected {
-  background: var(--highlight-bg-color);
-  color: var(--highlight-color);
+  background: var(--highlight-bg-color) !important;
+  color: var(--highlight-color) !important;
+}
+
+.juno-menu-selected > .pure-menu-link {
+  background: var(--highlight-bg-color) !important;
+  color: var(--highlight-color) !important;
 }
 
 .juno-selected {

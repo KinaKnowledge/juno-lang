@@ -321,9 +321,7 @@
        `tags: ["bindings" "key" "controls"]
    })
 
-(defun_sync dispatch_event(event_obj)
-  ;(console.log "dispatch_event: " event_obj)
-  true)
+
 
 (defun edit_mode_for_extension (ext)
    (or (resolve_path [ `editor `extensions_to_mode ext ] *env_config*)
@@ -616,24 +614,32 @@
 
 
 
-(defun current_controls (no_subcontrols)
-  (let
-     ((ctls (uniq (flatten (control_tree $root_controls))))
-      (ids nil))
-     (if no_subcontrols
+(defun current_controls (no_subcontrols from_control)
+   (let
+      ((ctls (uniq (flatten (control_tree (if from_control
+                                              [ from_control ]
+                                              $root_controls)))))
+       (ids nil))
+      (if no_subcontrols
          (progn
             (= ids (new Set))
             (reduce (ctl ctls)
                (progn
                   (unless (-> ids `has ctl.options.id)
-                          (-> ids `add ctl.options.id)
-                          ctl))))
+                     (-> ids `add ctl.options.id)
+                     ctl))))
          ctls))
-  {
-      `usage: ["no_subcontrols:?boolean"]
-      `description: "Returns an array of all controls in the control tree,"
-      `tags: ["controls" "active" "tree" "ui"]
-  })
+   {
+     `usage: ["no_subcontrols:?boolean" "from_control:?control"]
+     `description: (+ "Returns an array of all controls in the control tree.  "
+                      "If no_subcontrols is true, then composite type contols "
+                      "made up of multiple controls will be included in the "
+                      "results only as the main control.  Otherwise, the "
+                      "subcontrols will also be returned. If from_control "
+                      "is a provided control, only controls that are "
+                      "contained by that root control will be returned.")
+     `tags: ["controls" "active" "tree" "ui"]
+     })
 
 (defun all_editor_controls ()
    (reduce (ctl (current_controls))
@@ -982,7 +988,8 @@
     (if target_control
       (progn
               
-       (-> target_control `on_focus)              
+       (if target_control.on_focus 
+          (-> target_control `on_focus))
        (setq *last_focus* target_control)
        (setq core/$current_control *last_focus*)
        (setq *last_top_frame* (top_frame target_control))
@@ -1024,13 +1031,22 @@
        (replaced_keys (new Set)))
     (assert (is_control? target_control) "Invalid control provided for old_control")
     (assert (is_control? new_control) "Invalid control provided for new_control")
-    (assert (not (== target_control new_control)) "Cannot swap the same control")
-    ;; get their position in the tree 
-    (= position_details_target (control_position target_control))
-    (= position_details_new (control_position new_control))
-    (console.log "swap_control: target: " target_control "new: " new_control)
-    (debug)
-    (cond        
+    
+    (if (== target_control new_control)
+        (progn
+           (set_focus_to target_control)
+           (if target_control.editor
+              (focus_to target_control.editor)))
+        (progn
+           ;; get their position in the tree
+           (= position_details_target (control_position target_control))
+           (= position_details_new (control_position new_control))
+           (console.log "swap_control: target: " target_control "new: " new_control)))
+    
+    (cond
+        (== target_control new_control)
+        nil ;; do nothing 
+        
         (== position_details_target.parent holding_tank)   ;; target is in the holding tank so take the old control out and replace with new
         (progn
             (-> holding_tank `remove_control position_details_target.child)
@@ -1116,7 +1132,7 @@
         (progn
             (notify "Unhandled swap condition - see console")
             (log "unhandled swap position: target: " position_details_target "new: " position_details_new)
-            nil))))                                
+            nil))))                               
 
 
 
@@ -1745,7 +1761,268 @@
                         "nil will be returned to the calling code.")
        `tags: ["alert" "popup" "catch" "errors" "ui" "DOM"]
    })
+
+;; -- Control Events --------
+;; event routing is handled by a map that combines the command value and the source value.
+;; if an array is found at the value, it will call each function in the array in sequence
+;; as each function in the array is an event handler
+
+(defparameter *event_routes* 
+   { }
+   {
+     `description: (+ "The event routing object which contains routes used by dispatch_event. "
+                      "<br>Use register_event_handler to add event handlers and " 
+                      "remove_event_handler remove handlers. ")
+     `tags: ["events" "controls" "key" "handlers" "dispatch" "routes"  ]
+     })
+
+(defun_sync compute_handler_key (source command)
+   (+ (if (is_string? source)
+                           (+ "" source )
+                           "")
+                       (if (is_string? command)
+                           (+ "+" command)
+                           ""))
+   {
+       `usage: ["source:string" "command:string"]
+       `description: "Given a source and a command, computes the event_handler lookup key for control events."
+       `tags: ["events" "controls" "key" "handlers" "dispatch" "routes" ]
+   })
+
+
+(defun register_event_handler (source command function_id handler_function)
+   (let
+      ((handler_key (compute_handler_key source command))
+       (handlers nil)
+       (exists false))
+      (if (blank? handler_key)
+          (throw TypeError "register_event_handler: one or more of source and command must be specified as strings"))
+      (if (blank? function_id)
+          (throw TypeError "register_event_handler: function_id is required"))
+      (if (blank? handler_function)
+          (throw TypeError "register_event_handler: handler_function is required"))
+      (setq handlers
+         (prop *event_routes* handler_key))
+      (if (eq nil handlers)
+         (set_prop *event_routes*
+            handler_key
+            (list { `fid: function_id f: handler_function }))
+         (progn
+            (for_each (handler handlers)
+               (if (== handler.fid function_id)
+                   (setq exists true)))
+            (if exists
+               (throw ReferenceError "register_event_handler: function already registered for key")
+               (push handlers { fid: function_id f: handler_function }))))
+      handler_key)
+   {
+       `usage: ["source:string" "command:string" "handler_function_id:string" "handler_function:function"]
+       `description: (+ "Given a control source id, command string, and a handler function, adds the function to the "
+                        "event handler.  If the function is determined to be already registered using equality, then "
+                        "the function will throw a ReferenceError that the same function is already registered.  "
+                        "Returns the computed handler_key.")
+       `tags: ["events" "controls" "key" "handlers" "dispatch" "routes" "create" ]
+   })
+    
+(defun remove_event_handler (source command handler_function_id)
+   (let
+      ((handler_key (compute_handler_key source command))
+       (handlers nil)
+       (idx nil))
+      (if (blank? handler_key)
+          (throw TypeError "remove_event_handler: one or more of source and command must be specified as strings"))
+      (setq handlers
+         (prop *event_routes* handler_key))
+      (if (eq nil handlers)
+          true
+          (progn
+             (if (eq nil handler_function_id) ;; if no handler_function_id is provided, remove all handlers for the events
+                 (progn
+                    (set_prop *event_routes*
+                       handler_key
+                       [])
+                    true)
+                 (progn
+                    (map (fn (f i)
+                            (if (== f.fid handler_function_id)
+                                (setq idx i)))
+                         handlers)
+                    (when idx
+                       (-> handlers `splice idx 1))
+                    (if idx
+                       true
+                       false))))))
+   {
+       `usage: ["source:string" "command:string" "handler_function_id:string"]
+       `description: (+ "Given a control source id, command string, and a handler function, removes the function to the "
+                        "event handler.  If the function isn't found in the event handlers using equality, then "
+                        "the function will return false, otherwise if successful it will return true.  If no function is "
+                        "is provided, then all handlers for the key will be removed.")
+       `tags: ["events" "controls" "key" "handlers" "dispatch" "routes" "create" ]
+   })
+
+(defun get_control_event_handlers (source command)
+   (prop *event_routes* (compute_handler_key source command))
+   {
+       `usage: ["source:string" "command:string"]
+       `description: "Given an source string and command string, returns an array of all specific matching handlers for the given values."
+       `tags: ["events" "controls" "handlers" "dispatch" "routes" ]
+   })  
+  
+(defun remove_all_handlers_for_source (source)
+   (let
+      ((routes nil))
+      (when (not (is_string? source))
+         (throw TypeError "source must be a string"))
+      (setq routes
+         (reduce (key (keys *event_routes*))
+            (when (starts_with? (+ "" source "+") key)
+               key)))
+      (apply delete_prop *event_routes* routes)
+      (length routes))
+   {
+       usage: ["source:string"]
+       description: (+ "Given a source identifier, removes all routes associated with that source. "
+                       "Returns the number of routes removed.")
+       tags: ["events" "controls" "routes" "handlers" "source" "dispatch"]
+   })
+
+(defun_sync dispatch_event(event_obj)
+   (let
+      ((handler_key (compute_handler_key event_obj.source event_obj.command))
+       (handlers (when handler_key  ;; check for handlers that match specifically, match only source events, and match only command events
+                    (flatten (conj (or (prop *event_routes* handler_key) [])
+                                   (or (prop *event_routes* (compute_handler_key event_obj.source nil)) [])
+                                   (or (prop *event_routes* (compute_handler_key nil event_obj.command)) []))))))
+                    
+     (when (> handlers.length 0)
+        (log "dispatch_event: " event_obj handler_key handlers))
+      (if (> handlers.length 0)
+           (for_each (handler handlers)
+              (try
+                 (-> handler `f event_obj)
+                 (catch Error (e)
+                    (log (+ "Error on event handler for route: " handler_key ": " e.message))))))
+      (when event_obj.error
+         (progn
+            (log "dispatch_event: error: " event_obj)
+            (alert_box (+ ""
+                          (from_key event_obj.command)
+                          (if event_obj.args.1.message
+                             (+ ": " event_obj.args.1.message)
+                             ""))
+                       (aif (and event_obj.args.0
+                                event_obj.args.0.options.filename)
+                           (+ "The file " it " was unable to be saved.")))))
+      true)
+   {
+     `usage: ["event_obj:object"]
+     `description: (+ "Dispatches received event objects from controls using the *event_routes* table.  Routes are "
+                      "determined via compute_handler_key.  If a route key resolves to an array, each handler function in "
+                      "the found array in the *event_routes* table is called in sequence.  Routes are collected by first " 
+                      "looking for handlers that act on the source+command, then source, then command."
+                      "<br>Use register_event_handler to add event handlers and remove_event_handler remove handlers. "
+                      "The function return value shouldn't be used.")
+     `tags: ["events" "controls" "key" "handlers" "dispatch" "routes" "create" ]
+     })
+     
+
+
+(defun get_editors_for_path (path)
+   (let
+      ((spath (cond
+                 (is_array? path)
+                 (join "~" path)
+                 (is_string? path)
+                 path
+                 else
+                 (throw TypeError "path must be an array or string"))))
+      (reduce (ctl (current_controls))
+         (when (and ctl.editor
+                    ctl.options.path
+                    (== (join "~" ctl.options.path) spath))
+            ctl)))
+   {
+       `description: "Returns an array of all controls that are editors and that have the supplied path value."
+       `usage: ["path:array|string"]
+       `tags: ["controls" "editor" "path"]
+   }) 
+
+;; when save events are dispatched, this function should be the
+;; receiver.  It will get the value from the sending control,
+;; attempt to save it, and if successful, will dispatch save_complete to
+;; all editors with the specific path
+
+(defun save_event_handler (event_obj)
+   (alert_on_error "Unable to save"
+       (let
+          ((control (get_control_by_id event_obj.source))
+           (pathname (when control
+                        control.options.path))
+           (nseval (if (not (blank? control.options.path_namespace))
+                       (-> Environment `get_namespace_handle control.options.path_namespace)
+                       Environment))
+           (do_remote_save (fn ()
+                              
+                              (let
+                                 ((rval nil))
+                                 (= rval (http/send_files "/save_file" (http/data_to_file control.options.filename (-> control `get))))
+                                 (if (and rval
+                                          (== rval.rval "OK"))
+                                     (progn
+                                        (= rval rval.results)
+                                        (log "save_event_handler: saved remote file OK: " (clone rval))
+                                        (if (== rval.length 1)
+                                            (publish_results (+ { `target: rval.0.filename `type: "filename" } rval.0 ))
+                                            (progn
+                                               (log "ERROR: got different result for save_file then expected" (clone rval))
+                                               (throw TypeError "Got different result for save file then expected"))))
+                                     (progn
+                                        (log "ERROR: save_event_handler: couldn't remote save: " (clone rval)))
+                                        (throw TypeError (or rval.message "Uknown response from server"))))))
+           (do_path_save (fn ()
+                            (progn
+                               (make_path pathname nseval.global_ctx.scope
+                                  (-> control `get))
+                               (if (not (== (-> control `get) (resolve_path pathname nseval.global_ctx.scope)))
+                                   (progn
+                                      (log "ERROR: save_event_handler: couldn't save path: values not matching: namespace: " control.options.path_namespace "path:" pathname )
+                                      (throw TypeError "couldn't save to the local path - values not matching for path/namespace"))
+                                   (progn
+                                      (log "save_event_handler: saved local path OK: " control.options.path_namespace pathname)
+                                      (publish_results { `target: pathname `type: "path" `namespace: control.options.path_namespace }))))))
+                                   
+                               
+           (publish_results (fn (results_obj)
+                               (let
+                                  ((controls_to_notify (get_editors_for_path control.options.path)))
+                                  (for_each (ctl controls_to_notify)
+                                     (-> ctl `on_save_complete { `command: "save_complete" `source: control.options.id args: [ results_obj ] }))))))
           
+          ;; validate we have what we need 
+          (cond
+             (eq nil control)
+             (throw ReferenceError "Source control not found")
+             (eq nil control.get)
+             (throw TypeError "Source control doesn't have a get method for saving"))
+          
+          (cond
+             (and (is_string? control.options.filename) ;; do we have a filename
+                  is_served?)  ;; can we do a save?
+             (progn
+                (if (contains? "http_client" *env_config*.features)
+                    (do_remote_save)
+                    (throw ReferenceError "http_client is not a registered feature.")))
+             (is_string? control.options.filename)
+             (throw Error "Not connected to a server - cannot save the remove file")
+             
+             control.options.path
+             (progn
+                (do_path_save))))))
+             
+             
+
+
 (defun handle_save_file (control options)
   (let
       ((fname (when control
@@ -1766,6 +2043,7 @@
       (set_prop control.options
                 `filename
                 fname)
+                
       (cond
         options.remote
         (try
@@ -1779,19 +2057,19 @@
                     (when (== rval.length 1)
                        (if control.display_context_message
                            (-> control `display_context_message (+ (dtext "Saved to") " " rval.0.filename)))
-                       (dispatch_event { `command: "save_complete" `args: [ control rval.0.filename ] }))
+                       (dispatch_event { `command: "save_complete" `source: control.options.id `args: [ control rval.0.filename ] }))
                     rval)
                   (progn
                      (if control.display_context_message
                          (-> control `display_context_message (+ (dtext "ERROR") ":" (dtext "Cannot Save File") " " rval.message)))
-                     (dispatch_event { `command: "save_error" `args: [ control rval ] })
+                     (dispatch_event { `command: "save_error" `source: control.options.id `args: [ control rval ] })
                      rval))
               rval)
            (catch Error (e)
               (progn
                  (if control.display_context_message
                      (-> control `display_context_message (+ (dtext "ERROR") ":" (dtext "Cannot Save File") " " e.message)))
-                 (dispatch_event {  `command: "save_error" `error: "true" `args: [ control e] })
+                 (dispatch_event {  `command: "save_error" `source: control.options.id `error: "true" `args: [ control e] })
                  e)))
         else
         (= rval
@@ -3003,13 +3281,12 @@
       (set_prop s session.$foldData
          (-> session `$cloneFoldData))
       s))
-       
 
 
 (defun make_editor (content options)
    (let
       ((options (or options {
-                              `type: "juno"
+                              `mode: "juno"
                               }))
        (resize_observer nil)
        (intf {})
@@ -3070,6 +3347,9 @@
        (editor nil)
        (set_evaluator (fn ()
                          (when options.evaluator
+                            (dispatch_event { command: "editor_change" 
+                                              source: options.id
+                                              args: [ { `option: "evaluator" `value: options.evaluator } ] })
                             (aif (get_keybinding "editor" "evaluate_selection")
                                  (bind_key "evaluate_selection" evaluate_selection)
                                  (-> editor.commands `addCommand
@@ -3176,7 +3456,7 @@
                                                         `replaceChildren usage)
                                                      (-> help_context_elem `replaceChildren))
                                                   (when usage 
-                                                     (dispatch_event { `command: "display_usage" `args: [active_lisp_operator] }))
+                                                     (dispatch_event { `command: "display_usage" `source: id `args: [active_lisp_operator] }))
                                                   (when options.on_new_lisp_operator
                                                      (options.on_new_lisp_operator active_lisp_operator))))
                                             (progn
@@ -3190,14 +3470,15 @@
                       (indent_editor_line editor row_number options)))
        
        (indent_current_row (function (editor)
-                              (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
-                                 (if (not (is_selected?))
-                                     (progn
-                                        (defvar row_number (prop (-> editor `getCursorPosition)
-                                                                 `row))
-                                        (console.log "tab: start: single line: " row_number)
-                                        (indent_row row_number { `apply: true }))
-                                     (indent_editor_selection editor)))))
+                              (when (== *last_focus* intf)
+                                 (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                    (if (not (is_selected?))
+                                        (progn
+                                           (defvar row_number (prop (-> editor `getCursorPosition)
+                                                                    `row))
+                                           (console.log "tab: start: single line: " row_number)
+                                           (indent_row row_number { `apply: true }))
+                                        (indent_editor_selection editor))))))
        
        (bind_key (fn (key_command func)
                     (aif (get_keybinding "editor" key_command)
@@ -3205,14 +3486,29 @@
                             (console.log "binding command: " key_command it (to_ace_keybinding key_command it func))
                             (-> editor.commands `addCommand
                                 (to_ace_keybinding key_command it func))))))
+       (request_save (function ()
+                        (progn
+                           (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
        
+       (save_complete (function (event_obj)
+                         (progn
+                            (display_context_message (+ "Saved " (cond 
+                                                                    (and (== event_obj.args.0.type "path")
+                                                                         (is_array? event_obj.args.0.target))
+                                                                    (join "~" event_obj.args.0.target)
+                                                                    (== event_obj.args.0.type "filename")
+                                                                    event_obj.args.0.target)))
+                            (log "editor: save_complete: " (clone event_obj))
+                            (when options.on_save
+                               (-> options `on_save intf)))))
+                     
+                      
        (build_key_bindings (fn (editor)
                               (progn
                                  (console.log "building_key_bindings")
                                  
                                  (when options.on_save
-                                    (bind_key "on_save" (function (editor)
-                                                           (options.on_save (-> editor `getValue)))))
+                                    (bind_key "on_save" request_save))
                                  (bind_key "increase_font_size" increase_font_size)
                                  (bind_key "decrease_font_size" decrease_font_size)
                                  (bind_key "select_form_root" select_form_root)
@@ -3226,7 +3522,7 @@
                                           (-> editor.commands `addCommand
                                               (to_ace_keybinding command.name command))))))))
        
-       
+       (linked_editor nil)
        (initialize_editor (fn ()
                              (when (not initialized)
                                 (let
@@ -3238,14 +3534,18 @@
                                    (setq editor
                                          (ace.edit editor_div))
                                    (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
-                                   (when options.clone_with_editor_id
-                                      (let ((editor_to_clone (aif (get_control_by_id options.clone_with_editor_id)
-                                                                  it.editor))
-                                            (new_session nil))
-                                         (when editor_to_clone
-                                            (= new_session (clone_edit_session editor_to_clone.session))
-                                            (-> editor `setSession new_session))))
                                    
+                                   ;; are we a cloned editor?
+                                   
+                                   (when options.clone_with_editor_id
+                                      (let ((control_to_clone (get_control_by_id options.clone_with_editor_id))
+                                            (new_session nil))
+                                         (when (and control_to_clone
+                                                    control_to_clone.editor)
+                                            (= new_session (clone_edit_session control_to_clone.editor.session))
+                                            (= linked_editor control_to_clone.options.id)
+                                            (-> editor `setSession new_session))))
+                                            
                                    (unless options.evaluator
                                       (when *system_repl*
                                          (display_context_message (+ "Evaluator for this buffer is " (prop *system_repl* `name)))
@@ -3253,7 +3553,7 @@
                                             `evaluator
                                             (prop *system_repl* `evaluate))))
                                    
-                                   (console.log "initialize_editor: " options.type " options: " (clone options))
+                                   (console.log "initialize_editor: " options.mode " options: " (clone options))
                                    (set_evaluator)
                                    
                                    (when options.on_focus
@@ -3264,25 +3564,26 @@
                                       (-> editor `setReadOnly true))
                                    (when options.on_click
                                       (-> editor `on `click options.on_click))
-                                   (-> editor.session `setUseSoftTabs true)
-                                   
-                                   (-> editor.session `setUseWorker true)
-                                   (-> editor.session `setUseSoftTabs true)
+                                   (unless linked_editor
+                                      (-> editor.session `setUseSoftTabs true)
+                                      
+                                      (-> editor.session `setUseWorker true)
+                                      (-> editor.session `setUseSoftTabs true))
                                    (-> editor `setShowFoldWidgets true)
                                    
-                                   ;; set the extension if we haven't been given a specific option type
-                                   (when (and (eq nil options.type)
+                                   ;; set the extension if we haven't been given a specific option mode
+                                   (when (and (eq nil options.mode)
                                               (is_string? options.filename))
                                       (= comps (split_by "." options.filename))
                                       (when (> comps.length 1)
                                          (= extension (edit_mode_for_extension (last comps)))
                                          (console.log "make_editor: setting extension: " extension " based on: " options.filename)
                                          (set_prop options
-                                            `type
+                                            `mode
                                             extension)))
-                                   (console.log "initialize_editor: setting mode: " (clone options.type) " options: " (clone options))
+                                   (console.log "initialize_editor: setting mode: " (clone options.mode) " options: " (clone options))
                                    (cond
-                                      (== options.type "juno")
+                                      (== options.mode "juno")
                                       (progn
                                          (console.log "mode to juno")
                                          (-> editor.session `setMode "ace/mode/juno")
@@ -3293,21 +3594,21 @@
                                                                   enableLiveAutocompletion: true
                                                                   enableSnippets: true
                                          }))
-                                      (== options.type "javascript")
+                                      (== options.mode "javascript")
                                       (progn
                                          (-> editor `setOptions {
                                                                   `enableLiveAutocompletion: true
                                                                   `enableBasicAutocompletion: true })
                                          (-> editor.session `setMode "ace/mode/javascript"))
-                                      (== options.type "css")
+                                      (== options.mode "css")
                                       (progn
                                          (-> editor.session `setMode "ace/mode/css")
                                          (-> editor `setOptions {
                                                                   `enableLiveAutocompletion: true
                                                                   `enableBasicAutocompletion: true }))
-                                      options.type
+                                      options.mode
                                       (progn
-                                         (-> editor.session `setMode options.type)
+                                         (-> editor.session `setMode options.mode)
                                          (-> editor `setOptions {
                                                                `enableLiveAutocompletion: true
                                                                   `enableBasicAutocompletion: true })))
@@ -3331,27 +3632,37 @@
                                                             `useSoftTabs: true
                                                             `highlightActiveWord: true
                                                             })
-                                   (if (is_string? options.filename)
-                                       (if is_served?
-                                           (try
-                                              (progn
-                                                 (defvar remote_content (-> (fetch (+ "/files/" options.filename)) `text))
-                                                 (if (is_string? remote_content)
-                                                     (-> editor `setValue remote_content -1)
-                                                     (progn
-                                                        (-> editor `setValue content)
-                                                        (display_context_message (+ "NOTICE: unable to fetch file: " options.filename " (editor set to local value)")))))
-                                              (catch Error (e)
-                                                 (progn
-                                                    (-> editor `setValue content)
-                                                    (display_context_message (+ "ERROR on fetching: " options.filename " (editor set to local value)  " e.message))
-                                                    (log "Error on fetching file: " options.filename ": " e))))
-                                           (progn
-                                              (-> editor `setValue content)
-                                              (display_context_message (+ "NOTICE: not online, so the file cannot be fetched.  Using existing local value at path."))))
-                                       (progn
-                                          (-> editor `setValue content -1)
-                                          (display_context_message "Editing local value")))
+                                   (if (not linked_editor)
+                                      (if (is_string? options.filename)
+                                          (if is_served?
+                                             (try
+                                                (progn
+                                                   (defvar remote_content (-> (fetch (+ "/files/" options.filename)) `text))
+                                                   (if (is_string? remote_content)
+                                                       (-> editor `setValue remote_content -1)
+                                                       (progn
+                                                          (-> editor `setValue content)
+                                                          (display_context_message (+ "NOTICE: unable to fetch file: " options.filename " (editor set to local value)")))))
+                                                (catch Error (e)
+                                                   (progn
+                                                      (-> editor `setValue content)
+                                                      (display_context_message (+ "ERROR on fetching: " options.filename " (editor set to local value)  " e.message))
+                                                      (log "Error on fetching file: " options.filename ": " e))))
+                                             (progn
+                                                (-> editor `setValue content)
+                                                (display_context_message (+ "NOTICE: not online, so the file cannot be fetched.  Using existing local value at path."))))
+                                          (progn
+                                             (-> editor `setValue content -1)
+                                             (display_context_message "Editing local value")))
+                                      ;; we are cloning an editor..
+                                      (if options.path
+                                         (progn ;; mark each as temporary so if they are hidden the instance that is hidden will be destroyed...
+                                            (for_each (`ctl (get_editors_for_path options.path))
+                                               (set_prop ctl.options
+                                                  `temporary
+                                                  true)))))
+                                            
+                                      
                                    (if (eq nil font_size)
                                        (= font_size (parseInt (-> editor `getFontSize)))
                                        (-> editor `setFontSize font_size))
@@ -3359,16 +3670,22 @@
                                       `font_size
                                       font_size)
                                    (set_prop options
-                                      `name
-                                      name)
+                                      `name name
+                                      `id id)
+                                      
                                    
                                    (defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
                                    (when options.on_change
                                       (-> editor `on `change (function (val)
                                                                 (progn
                                                                    (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
-                                                                      (handle_lisp_format_event val editor)
+                                                                      (when (not linked_editor)
+                                                                         (handle_lisp_format_event val editor))
                                                                       (find_active_lisp_operator))
+                                                                    (when (not linked_editor)
+                                                                       (dispatch_event { command: "editor_change" 
+                                                                                         source: options.id
+                                                                                         args: [ val ] }))
                                                                    (options.on_change editor val)))))
                                    (-> editor `resize true)
                                    (unless options.clone_with_editor_id
@@ -3379,11 +3696,36 @@
                                             (log "ERROR on undo manager:" e,message))))
                                    (set_prop intf `editor editor)
                                    (when (is_object? options.on_mode_set)
-                                      (options.on_mode_set options.type))
+                                      (options.on_mode_set options.mode))
+                                   (dispatch_event { command: "editor_change" 
+                                                     source: options.id
+                                                     args: [ { `option: "mode" `value: options.mode } ] })
+                                   
+                                   (when linked_editor
+                                      (defvar pos (-> (prop (get_control_by_id linked_editor) `editor)
+                                                      `getCursorPosition))
+                                      (log "editor: completing initialization: moving to pos" pos)
+                                      (-> editor `navigateTo  pos.row pos.column)
+                                      (-> editor `scrollToLine pos.row true nil)
+                                   
+                                      (register_event_handler linked_editor 
+                                                              "destroy_control"
+                                                              id
+                                                              (fn (event_obj)
+                                                                 (progn
+                                                                    (log options.id ": handle_event: received: destroy_control" event_obj)
+                                                                    (when linked_editor 
+                                                                       (log options.id ": handle_event: linked_editor:" event_obj)
+                                                                       (remove_event_handler linked_editor "destroy_control"))
+                                                                    ))))
                                    (when options.on_initialized
                                       (options.on_initialized intf))
                                    )))))
-      
+       
+      (set_prop options
+               `id
+               id)
+    
       (if (not (is_symbol? `$ace_editor))
           (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
       
@@ -3405,6 +3747,14 @@
          `type: `make_editor
          `destroy: (fn ()
                       (when editor
+                         (defvar others_and_me (get_editors_for_path options.path))
+                         (log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
+                         (when (== others_and_me.length 1)
+                            (delete_prop others_and_me.0.options
+                               `temporary))  ;; it's ok to delete both temporary flags since this control is already being destroyed
+                             
+                         (log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
+                         (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                          (-> editor `destroy)
                          (= editor nil)
                          (= intf nil)))
@@ -3418,27 +3768,36 @@
          `set_mode: (fn (mode_name)
                        (progn
                           (set_prop options
-                             `type
+                             `mode
                              mode_name)
                           (cond
-                             (== options.type "juno")
+                             (== options.mode "juno")
                              (-> editor.session `setMode "ace/mode/juno")
-                             (== options.type "javascript")
+                             (== options.mode "javascript")
                              (-> editor.session `setMode "ace/mode/javascript")
-                             (== options.type "css")
+                             (== options.mode "css")
                              (-> editor.session `setMode "ace/mode/css")
                              else
-                             (-> editor.session `setMode options.type))
+                             (-> editor.session `setMode options.mode))
+                           (dispatch_event { command: "editor_change" 
+                                             source: options.id
+                                             args: [ { `option: "mode" `value: options.mode } ] })
                           (when options.on_mode_set
                              (options.on_mode_set mode_name))))
+         `get_mode: (fn ()
+                      options.mode)
          `set_theme: (fn (theme_name)
                         (progn
                            (-> editor `setTheme (+ "ace/theme/" theme_name))
                            (set_prop options
                               `theme
                               theme_name)
+                           (dispatch_event { command: "editor_change" 
+                                             source: options.id
+                                             args: [ { `option: "theme" `value: theme_name } ] })
                            (when options.on_theme_set
                               (options.on_theme_set theme_name))))
+         
          `display_context_message: display_context_message
          `get_evaluator: (fn ()
                             options.evaluator)
@@ -3446,7 +3805,9 @@
                      (perform_resize))
          `bind_key: bind_key
          `save: (function ()
-                   (when options.on_save (options.on_save (-> editor `getValue))))
+                   (request_save))
+         `on_save_complete: (function (event_obj)
+                               (save_complete event_obj))
          `increase_font_size: increase_font_size
          `decrease_font_size: decrease_font_size
          `menu_items: (function ()
@@ -3512,204 +3873,263 @@
     (when selected_idx
         (prop (prop available selected_idx) 2))))
   
-(defun buffer_editor (title namespace path_to_value mode options)
-  (let
-      ((nseval (if (not (blank? namespace))
-                 (-> Environment `get_namespace_handle namespace)
-                 Environment))
-       (already_exists? (if (get_control_by_name title)
-                            (throw ReferenceError "An editor with the same name is already open.")))
-       (title (name_control title))
-       (title_span (span { `class: "juno-title" } title))
-       (options (or options {}))
-       (id (or options.id (generate_id "buffer_editor")))
-       (evaluator (cond
-                    (and (is_object? options.evaluator)
-                         (is_function? options.evaluator.evaluate))
-                    options.evaluator.evaluate
-                    (is_function? options.evaluator)
-                    options.evaluator
-                    *system_repl*
-                    *system_repl*))
+
+(defun compute_name_for_editor (title path_to_value)
+   (let
+      ((others (get_editors_for_path path_to_value))
+       (counter 2))
+      (log "compute_name_for_editor: # of editors for base title: " title ": " others.length "  path: " path_to_value)
+      ;(log "compute_name_for_editor: basename found: " (get_control_by_name title))
+      (cond 
+         (== others.length 0)
+         title
+         (not (get_control_by_name title))
+         (progn
+            ;(log "compute_name_for_editor: returning: " title)
+            title)
+         else
+         (progn
+            (while (get_control_by_name (+ title " - " counter ""))
+               (inc counter))
+            ;(log "compute_name_for_editor: returning: " (+ title " - " counter))
+            (+ title " - " counter "")))))
+(defun recalc_names_for_path (path_to_value)
+   (let
+      ((ctls (get_editors_for_path path_to_value)))
+      (for_each (ctl ctls)
+         (when ctl.recalculate_name
+            (-> ctl `recalculate_name)))))
        
-       (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
-       (buffer_commands_button (commands_button id))
-       (nav_back_button (button { `title: (dtext "back") } "<"))
-       (nav_forward_button (button { `title: (dtext "forward") } ">"))
-       (is_dirty? false)
-       (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
-       (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
-       (command_bar (or options.command_bar
-                        (div { `class: "juno-buffer-bar" }
-                             buffer_commands_button
-                             title_span                                                             
-                             (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace)
-                             evaluator_span
-                             (if options.read_only
-                               (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
-                               ())
-                             mode_span
-                             col_pos_span)))
-       (init_value (resolve_path path_to_value nseval.global_ctx.scope))
-       (current_pos nil)
-       (on_save (fn (value)
-                  (let
-                      ((rval nil)
-                       (report []))
-                      (try
-                         (make_path path_to_value nseval.global_ctx.scope
-                                    value)
-                         (catch Error (e)
-                            (progn
-                               (log_error "Invalid path: " e.message)
-                               (push report (+ (dtext "Invalid local path") e.message)))))
-                      (try
+
+(defun buffer_editor (title namespace path_to_value mode options)
+   (aif (and (not options.clone_with_editor_id)
+             (get_control_by_name title))
+        it
+        (let
+           ((nseval (if (not (blank? namespace))
+                        (-> Environment `get_namespace_handle namespace)
+                        Environment))
+            (orig_title (clone title))
+            (title (compute_name_for_editor orig_title path_to_value))
+            (title_span (span { `class: "juno-title" } title))
+            (options (or options {}))
+            (id (or options.id (generate_id "buffer_editor")))
+            (evaluator (cond
+                          (and (is_object? options.evaluator)
+                               (is_function? options.evaluator.evaluate))
+                          options.evaluator.evaluate
+                          (is_function? options.evaluator)
+                          options.evaluator
+                          *system_repl*
+                          *system_repl*))
+            
+            (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
+            (buffer_commands_button (commands_button id))
+            (nav_back_button (button { `title: (dtext "back") } "<"))
+            (nav_forward_button (button { `title: (dtext "forward") } ">"))
+            (is_dirty? false)
+            (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
+            (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
+            (command_bar (or options.command_bar
+                             (div { `class: "juno-buffer-bar" }
+                                  buffer_commands_button
+                                  title_span
+                                  (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace)
+                                  evaluator_span
+                                  (if options.read_only
+                                     (span { `title: "This buffer doesn't allow editing" `style: "padding-left: 5px; padding-right: 5px;" } (dtext "Locked"))
+                                     ())
+                                  mode_span
+                                  col_pos_span)))
+            (init_value (resolve_path path_to_value nseval.global_ctx.scope))
+            (current_pos nil)
+            (on_save (fn (ctl)
+                        (let
+                           ((rval nil)
+                            (report []))
+                           ;; on_save should only send the request to the save handler and wait for a registered event handler response to display results
+                           (remove_class "juno-needs-save" title_span)
+                           (= is_dirty? false))))
+            
+            
+            (on_focus (fn ()
                          (progn
-                            (when (and is_served?
-                                       (is_string? options.filename)
-                                       (contains? "http_client" *env_config*.features))
-                               (= rval (handle_save_file edit_control { remote: true no_prompt: true}))
-                               (log "handle_save_file result: " rval)
-                               (if (is_error? rval)
-                                   (throw rval))))
-                         (catch Error (`e)
-                            (progn
-                               (push report (+ (dtext "Unable to save file")
-                                             " "
-                                             options.filename " "
-                                             e.message)))))
-                      (if (== report.length 0)
-                          (progn
-                             (remove_class "juno-needs-save" title_span)
-                             (= is_dirty? false))
-                          (progn
-                             (-> edit_control `display_context_message (join " " report)))
-                         ))))
-       (on_focus (fn ()
-                   (progn                                     
-                    (setq *last_focus* edit_control)
-                    (add_class "juno-focused" command_bar))))
-       (update_position (function ()
-                          (progn
-                           (= current_pos (-> edit_control.editor `getCursorPosition))
-                           (set_prop col_pos_span
-                                     `innerText
-                                     (+ "[" current_pos.row " " current_pos.column "]"))                           
-                           (set_prop options `cursor_position current_pos)
-                           ;; check for new lisp operator
-                           (-> edit_control `get_active_lisp_operator))))       
-       (edit_control (make_editor (if (is_string? init_value)
-                                    init_value
-                                    "")                                  
-                                  {
-                                   type: mode
-                                   command_bar: command_bar                                                                     
-                                   on_save: on_save
-                                   filename: options.filename
-                                   id: id
-                                   theme: options.theme
-                                   read_only: options.read_only
-                                   font_size: options.font_size
-                                   on_click: (function ()
-                                                       (update_position))                                   
-                                   on_theme_set: (function (val)
-                                                           (set_prop options
-                                                                     `theme
-                                                                     val))
-                                   on_mode_set: (function (val)
-                                                          (progn
-                                                           (= mode val)
-                                                           (set_prop mode_span `innerText val)))
-                                   on_change: (function (editor val)
-                                                        (progn                                                         
-                                                         (when (not is_dirty?)
-                                                           (= is_dirty? true)
-                                                           (add_class "juno-needs-save" title_span))
-                                                         (when options.on_change
-                                                           (-> options.on_change editor val))))
-                                   evaluator: evaluator                                   
-                                   }))
-       (menu_items (fn ()
-                     (conj  
-                      [(when path_to_value
-                         [(+ (dtext "Save to") " " (last path_to_value))
-                          (fn (e) (-> edit_control `save))])
-                       [(dtext "Select Evaluator")
-                        select_my_evaluator]]
-                      (-> edit_control `sub_menu_items))))
-       (set_evaluator_control (fn (control)
-                                (if control.evaluate
-                                  (progn
-                                   (-> edit_control `set_evaluator control.evaluate)
-                                   (set_prop options
-                                             `evaluator_id
-                                             control.options.id)                                   
-                                   (if control.name
-                                     (set_prop evaluator_span
-                                               `innerText
-                                               (+ "⭢ " control.name)))))))
-       (select_my_evaluator (fn ()
-                        (aif (select_evaluator)
-                             (progn
-                              (set_evaluator_control it)
-                              (notify (+ (dtext "Evaluator set to ") it.name)))))))
-                            
-    
-     
-    (console.log "buffer_editor: init_value: " init_value path_to_value nseval)
-   
-    (attach_event_listener edit_control.view
-                           `keyup
-                           (function (e)
-                              (update_position)))
-                              
-    
-    
-                                        
-    (set_prop options
+                            (setq *last_focus* edit_control)
+                            (add_class "juno-focused" command_bar))))
+            (update_position (function ()
+                                (progn
+                                   (= current_pos (-> edit_control.editor `getCursorPosition))
+                                   (set_prop col_pos_span
+                                      `innerText
+                                      (+ "[" current_pos.row " " current_pos.column "]"))
+                                   (set_prop options `cursor_position current_pos)
+                                   ;; check for new lisp operator
+                                   (-> edit_control `get_active_lisp_operator))))
+            (edit_control (make_editor (if (is_string? init_value)
+                                           init_value
+                                           "")
+                                       {
+                                         mode: mode
+                                         command_bar: command_bar
+                                         on_save: on_save
+                                         filename: options.filename
+                                         path: path_to_value
+                                         path_namespace: namespace
+                                         id: id
+                                         theme: options.theme
+                                         clone_with_editor_id: options.clone_with_editor_id
+                                         read_only: options.read_only
+                                         font_size: options.font_size
+                                         on_click: (function ()
+                                                      (update_position))
+                                         on_theme_set: (function (val)
+                                                          (set_prop options
+                                                             `theme
+                                                             val))
+                                         on_mode_set: (function (val)
+                                                         (progn
+                                                            (= mode val)
+                                                            (set_prop mode_span `innerText val)))
+                                         on_change: (function (editor val)
+                                                       (progn
+                                                          (when (not is_dirty?)
+                                                             (= is_dirty? true)
+                                                             (add_class "juno-needs-save" title_span))
+                                                          
+                                                          (when options.on_change
+                                                             (-> options.on_change editor val))))
+                                         evaluator: evaluator
+                                         }))
+            (menu_items (fn ()
+                           (conj
+                              [(when path_to_value
+                                  [(+ (dtext "Save to") " " (last path_to_value))
+                                   (fn (e) (-> edit_control `save))])
+                               [(dtext "Select Evaluator")
+                                select_my_evaluator]]
+                              (-> edit_control `sub_menu_items))))
+            (set_evaluator_control (fn (control)
+                                      (if control.evaluate
+                                         (progn
+                                            (-> edit_control `set_evaluator control.evaluate)
+                                            (set_prop options
+                                               `evaluator_id
+                                               control.options.id)
+                                            (if control.name
+                                               (set_prop evaluator_span
+                                                  `innerText
+                                                  (+ "⭢ " control.name)))))))
+            (select_my_evaluator (fn ()
+                                    (aif (select_evaluator)
+                                         (progn
+                                            (set_evaluator_control it)
+                                            (notify (+ (dtext "Evaluator set to ") it.name)))))))
+           
+           
+           
+           
+           
+           (attach_event_listener edit_control.view
+              `keyup
+              (function (e)
+                 (update_position)))
+           
+           (set_prop options
               `id
               id)
-    (set_prop edit_control
+           
+           
+           (set_prop edit_control
               `sub_initializer
               edit_control.initialize
               `sub_menu_items
-              edit_control.menu_items)
-    
-    (set_prop options
-       `name
-       title)
-    
-    (set_prop edit_control
+              edit_control.menu_items
+              `sub_destroy
+              edit_control.destroy)
+           
+           (if options.clone_with_editor_id
+              (set_prop options
+                 `temporary
+                 true))   ;; when hidden it is closed - no need to keep two copies around
+           
+           (set_prop options
+              `name
+              title
+              `namespace
+              namespace
+              `path
+              edit_control.options.path)
+           
+           (set_prop edit_control
               `set_evaluator_control  set_evaluator_control
               `on_focus on_focus
-              `on_destroy (fn ()                           
-                            (cond
-                              (not is_dirty?)
-                              true 
-                              is_dirty?
-                              (request_user_input (+ "" title ": " (dtext "The value of this editor hasn't been stored. Really remove?"))
-                                                  "text"
-                                                  { input: (input { `type: "hidden" `value: "remove" }) })))                                                                                                                                                     
+              `on_destroy (fn ()
+                             (cond
+                                (not is_dirty?)
+                                true
+                                is_dirty?
+                                (request_user_input (+ "" title ": " (dtext "The value of this editor hasn't been stored. Really remove?"))
+                                                    "text"
+                                                    { input: (input { `type: "hidden" `value: "remove" }) })))
+              `recalculate_name (fn ()
+                                    (unless (== orig_title title)
+                                       (progn
+                                          (defvar new_name (compute_name_for_editor orig_title path_to_value))
+                                          (log "recalculate_name: " orig_title "->" new_name)
+                                          (set_prop title_span
+                                             `innerText
+                                             new_name)
+                                          (set_prop options
+                                             `name
+                                             new_name)
+                                          (= title new_name)
+                                          (set_prop edit_control
+                                             `name
+                                             new_name))))
+              `destroy (fn ()
+                          (progn
+                             (log "buffer_editor: got destroy: " options.name orig_title)
+                             (-> edit_control `sub_destroy)
+                             (recalc_names_for_path path_to_value)
+                             (set_focus_to (default_focus))))
+                                         
               `options options
               `name title
+              `basename (fn ()
+                           orig_title)
               `menu_items menu_items
               `type `buffer_editor
               `initialize (fn ()
-                            (when edit_control.view.parentElement                              
-                              (-> edit_control `sub_initializer)
-                              (console.log "buffer_editor: sub initialized: setting evaluator if I have it: " options)
-                              (cond
-                                options.evaluator_id
-                                (set_evaluator_control (get_control_by_id options.evaluator_id))
-                                *system_repl*
-                                (set_evaluator_control *system_repl*))))
-                                       
-                              
-              `toJSON (function ()                                                                 
-                                 `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
-    edit_control))
+                             (when edit_control.view.parentElement
+                                (-> edit_control `sub_initializer)
+                                (console.log "buffer_editor: sub initialized: setting evaluator if I have it: " options)
+                                (cond
+                                   options.evaluator_id
+                                   (set_evaluator_control (get_control_by_id options.evaluator_id))
+                                   *system_repl*
+                                   (set_evaluator_control *system_repl*))))
+              
+              
+              `toJSON (function ()
+                         `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
+           edit_control)))
 
-
+(defun clone_editor_control (editor_control)
+   (let
+      ((id editor_control.options.id)
+       (new_name (if editor_control.basename
+                     (-> editor_control `basename)
+                     editor_control.options.name)))
+      (when (and editor_control.editor id)
+         (alert_on_error "Unable to clone the editor"
+                         (buffer_editor new_name 
+                                        editor_control.options.namespace 
+                                        editor_control.options.path 
+                                        (-> editor_control `get_mode)
+                                        (+ {} ;; start options 
+                                           editor_control.options 
+                                           { `id: (gen_id "buffer_editor") 
+                                             `clone_with_editor_id: id }))))))
 
 (defun log_view (options)
   (let
@@ -3967,7 +4387,7 @@
        (input_container (make_editor 
                                    ""                                  
                                   {
-                                   type: "juno"                                                                                                                             
+                                   mode: "juno"                                                                                                                             
                                    on_change: (function (editor val)
                                                         (progn
                                                          true))
@@ -3977,13 +4397,13 @@
                                    repl_mode: true
                                    on_new_lisp_operator: (function (val)
                                                             (progn                                                               
-                                                               (dispatch_event { `command: "display_usage" `args: [val] })))
+                                                               (dispatch_event { `command: "display_usage" source: id `args: [val] })))
                                    evaluator: (fn (lisp_text no_eval no_clear)
                                                 (progn
                                                  (push_history lisp_text)
                                                  (evaluator lisp_text no_eval no_clear)))
                                    commands: (repl_key_bindings)
-                                   `on_initialized: (fn (control)
+                                   on_initialized: (fn (control)
                                                        (when initialized
                                                           (try
                                                              (-> control.editor `focus)
@@ -4002,6 +4422,9 @@
                    (progn
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
                     (add_class "juno-focused" output_control.control_bar )
+                    (set_prop intf
+                       `editor
+                       (resolve_path [ `editor_container `editor ] intf))
                     )))
        (on_blur (fn ()
                   (progn
@@ -4104,8 +4527,8 @@
              `view: view
              `options: options
              `name: name             
-             ;`input_container: input_container  ;; do not use
-             `editor_control: input_container             
+             `editor_container: input_container             
+             `editor: nil ;; will be filled in on initialization 
              `history_next_entry: history_next_entry
              `history_prior_entry: history_prior_entry
              `command_history: (function ()
@@ -4180,13 +4603,21 @@
             (add_control (fn (control)
                              (when (not (== control intf))
                                  (assert (and control.type control.options.id) "Invalid control provided")
-                                 (when (and (not (== control.type "empty_control"))  ;; don't store the empty controls since they are placeholders
-                                            (not control.options.temporary))
-                                    (set_prop my_controls
-                                       control.options.id
-                                       control)
-                                    (render_view)
-                                    control))))
+                                 
+                                 (if (and (not (== control.type "empty_control"))  ;; don't store the empty controls since they are placeholders
+                                          (not control.options.temporary))
+                                     (progn
+                                        (set_prop my_controls
+                                           control.options.id
+                                           control)
+                                        (render_view)
+                                        control)
+                                     (progn
+                                        (log "control_holding_tank: destroying temporary control: " control.options control.destroy)
+                                        (if control.destroy
+                                           (progn
+                                              (log "control_holding_tank: calling control destroy")
+                                              (-> control `destroy))))))))
             (remove_control (fn (id)
                               (if (is_object? id)
                                 (aif (prop my_controls id.options.id)
@@ -4212,7 +4643,7 @@
                                             (td control.type)
                                             (td { `for_control_id: control.options.id }
                                                 (button (dtext "View"))                                               
-                                                (button { `style: "float: right" } (dtext "Destroy"))))))))))
+                                                (button { `style: "float: right" } (dtext "Close Control"))))))))))
             (handle_button_event (fn (elem)
                                    (aif (and elem.parentElement
                                             (-> elem.parentElement `getAttribute "for_control_id"))
@@ -4221,7 +4652,7 @@
                                          (cond
                                            (== elem.innerText (dtext "View"))
                                            (swap_control intf (get_control_by_id it))
-                                           (== elem.innerText (dtext "Destroy"))
+                                           (== elem.innerText (dtext "Close Control"))
                                            (container_view_operation "destroy" (get_control_by_id it)))))))
                                    
             (initialize (fn ()
@@ -4319,7 +4750,19 @@
               `toJSON: (function ()
                                  `(control_holding_tank ,#(values my_controls)  ,#options ))
               })
-          intf)))
+          intf))
+  {
+    `usage: ["initial_controls:array" "options:object"]
+    `description: (+ "The control holding tank is a is a singleton control that 'holds' any "
+                     "control (except itself) that is currently not displayed.  Once instantiated "
+                     "any new instantiations of the control holding tank will return the "
+                     "previously instantiated control for the namespace.  All arguments will be " 
+                     "ignored after the initial instantiation call as the global instance will be "
+                     "returned. Controls are added to the holding tank by the container_view_operation "
+                     "function which manages the view state.  The holding tank can be checked for a "
+                     "control being held by it by calling the has_control? function. ")
+    `tags: ["ui" "controls" "hidden" "container" "holding"]
+    })
 
 (defun empty_selection_control (options)
    (let
@@ -4440,7 +4883,7 @@
                   | )
       true))
 
-(defun next_control (backward?)
+(defun next_hidden_control (backward?)
    (let
       ((candidates (holding_tank_controls))
        (cmd (if backward? 
@@ -4453,8 +4896,8 @@
          (swap_control *last_focus* new_ctl)
          ;; control will get the on_focus event, but we want to default
          ;; focus into the editor for this operation
-         (focus_to new_ctl.editor)
-      )
+         (when new_ctl.editor
+            (focus_to new_ctl.editor)))
       (notify (dtext "No controls are in the holding tank."))))
    {
      `usage: ["backward?:boolean"]
@@ -4466,6 +4909,46 @@
      `tags: ["ui" "controls" "swap" "buffers" "editor" "next"]
      })
 
+(defun next_displayed_control (backward?)
+      (let
+      ((next_index nil)
+       (displayed_root_control (reduce (ctl (uniq (flatten (control_tree $root_controls))))
+                                  (if (and (not (-> (control_holding_tank) `has_control? ctl))
+                                           (== ctl.type "control_container"))
+                                      ctl)))
+       (candidates (reduce (ctl (current_controls true displayed_root_control))
+                      (unless (or (-> (control_holding_tank) `has_control? ctl)  ;; we only want controls that are able to take a direct focus
+                                  (== ctl.type "control_container")
+                                  (== ctl.type "split_view_vertical")
+                                  (== ctl.type "split_view_horizontal"))
+                         ctl)))
+       (dir (if backward? 
+                -2
+                1))
+       (new_ctl nil))
+   (if (> candidates.length 0)
+      (progn 
+         (map (fn (ctl idx)
+                 (if (== ctl *last_focus*)
+                     (= next_index (% (+ idx dir) (length candidates)))))
+              candidates)
+         (when next_index
+            (= new_ctl (prop candidates next_index))
+            (set_focus_to new_ctl)
+            ;; control will get the on_focus event, but we want to default
+            ;; focus into the editor for this operation if the control has an editor
+            (if new_ctl.editor
+               (focus_to new_ctl.editor))))
+      (notify (dtext "No controls are in the holding tank."))))
+   {
+     `usage: ["backward?:boolean"]
+     `description: (+ "If backward? is false (default) swap the current control " 
+                      "with the next control in the displayed control tree. Otherwise "
+                      "swap with the first control in the holding tank. "
+                      "If there are no controls, notifies the user that there are "
+                      "no other non-displayed controls to swap to.")
+     `tags: ["ui" "controls" "swap" "buffers" "editor" "next"]
+     })
 
 (defmacro on_key_down_event (e view `& key_to_action_pairs)
    (let
@@ -5238,8 +5721,9 @@
                                 [(dtext "Hide") (fn ()
                                                   (hide_control control))]
                                 ["--" nil]
-                                [(dtext "Destroy") (fn ()
-                                                     (destroy_control control))]])))
+                                [(dtext "Close Control")
+                                 (fn ()
+                                    (destroy_control control))]])))
         (make_menu elem control_menu)))))
 
       
@@ -5419,6 +5903,7 @@
 (defun build_starter_environment ()
   (if is_served?
     (progn
+     (log "building starter environment")
      (floating_div (iframe { width: 500 height: 300
                    `style: "width: 90%; min-width: 500px; overflow: scroll; border: 0px solid transparent;"
                    src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )))))
@@ -5545,17 +6030,17 @@
   (let
       ((options (cond
                    (is_array? options)
-                   { `path: options `type: "juno"}
+                   { `path: options `mode: "juno"}
                    (is_object? options)
-                   options
+                   (+ { `mode: `juno } options)  ;; if options has mode specified, it will override the default juno mode
                    (is_string? options)
-                   { `path: [ options ] `type: "juno" }
+                   { `path: [ options ] `mode: "juno" }
                    else
-                   { `type: "juno" }))
+                   { `mode: "juno" }))
        (target_container (or *last_focus*  (default_focus)))
        (symbol_data (if options.path
                         { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                        (symbol_chooser "Select a symbol to edit" options.type)))
+                        (symbol_chooser "Select a symbol to edit" options.mode)))
        (target_ns symbol_data.namespace)
        (target_env nil))
       (console.log "new_buffer: for: " options target_ns symbol_data)
@@ -5566,10 +6051,12 @@
        (console.log "new_buffer: target symbol doesn't exist: creating it")
        (set_path symbol_data.path target_env.global_ctx.scope ""))
     (when symbol_data.path
-      (if (is_top_control? target_container)
-        (container_view_operation "split_right" (first (-> target_container `controls))
-                                  (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type options))
-        (swap_control target_container (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.type options )))))
+      (cond
+         (is_top_control? target_container)
+         (container_view_operation "split_right" (first (-> target_container `controls))
+                                   (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.mode options))
+         else
+         (swap_control target_container (buffer_editor (last symbol_data.path) target_ns symbol_data.path options.mode options )))))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                        "split the view to the right for the new editor.  If no options are provided, the user "
@@ -5582,7 +6069,7 @@
                        "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
                        "it will create it.<br>"
                        "  namespace: string: the namespace to use for accessing the provided path.<br>"
-                       "  type: the mode to open the editor in. The default mode is Juno.<br>")
+                       "  mode: the mode to open the editor in. The default mode is Juno.<br>")
       `tags: ["editor" "edit" "buffer" "control"]
       `usage: ["options:object?"]
   })
@@ -5741,7 +6228,13 @@
       ((menu_acc [])
        (idx 0)
        (holding_tank (get_control_by_name "Holding Tank"))
+       (control_to_place (fn ()
+                            (if (prop *last_focus* `editor) ;; if we are in an editor, split it
+                                (clone_editor_control *last_focus*) 
+                                (empty_selection_control)))) ;; otherwise pull the last control out of storage
+                             
        (root_ctls (new Set)))
+      
       (reduce (pset (pairs (controls_by_parent)))
          (destructuring_bind (key controls)
             pset
@@ -5765,15 +6258,15 @@
                               nil
                               (== operation "Split Right")
                               (fn ()
-                                (place_control "right" (empty_selection_control)))
+                                (place_control "right" (control_to_place)))
                               (== operation "Split Bottom")
                               (fn ()
-                                (place_control "below" (empty_selection_control)))
+                                (place_control "below" (control_to_place)))
                               (or (and (== operation "Show")
                                        (-> holding_tank `has_control? control))
                                   (and (== operation "Hide")
                                        (not (-> holding_tank `has_control? control)))
-                                  (and (== operation "Destroy")
+                                  (and (== operation "Close Control")
                                        (-> holding_tank `has_control? control)))
                               (progn
                                  (when (-> holding_tank `has_control? control)
@@ -5790,7 +6283,7 @@
                                   (console.log key "operation: " operation controls)
                                   (container_view_operation (to_key operation)
                                    (get_control_by_name key)
-                                   (empty_selection_control))))])])))))
+                                   (control_to_place))))])])))))
 
 (defun gen_controls_menu ()
   (progn
@@ -5804,9 +6297,8 @@
                        control.options.id)
               (defvar is_displayed? (and (not (== holding_tank control))
                                          (not (-> holding_tank `has_control? control))))
-              (console.log "is_displayed: " is_displayed? control.name)
               [(or control.name "Untitled") 
-               (reduce (operation ["Show" "Focus" "Hide" "--" "Destroy"])
+               (reduce (operation ["Show" "Focus" "Hide" "--" "Close Control"])
                        (cond
                          (== control.name "Holding Tank")                              
                          (cond
@@ -5842,7 +6334,7 @@
                               (aif (get_control_by_id control.options.id)
                                    (container_view_operation "hide" it)
                                    (notify (+ "Unable to find control " (or control.name control.options.id)))))
-                            (== operation "Destroy")
+                            (== operation "Close Control")
                             (fn (e)
                               (aif (get_control_by_id control.options.id)
                                    (container_view_operation "destroy" it)
@@ -5975,7 +6467,8 @@
                         (gen_controls_menu))])
        (push *main_menu*
              ["Layout"
-               gen_layout_menu])
+               (fn ()
+                  (gen_layout_menu))])
        
        (push $root_controls
              (app_header [(app_menu [ `*main_menu* ])]
@@ -6007,16 +6500,21 @@
                                       description: "Saves the current state of the application"
                                       exec: (fn () (save_control_image))
                                      } 
-                 "next_control" { win: "Alt-Period"
-                                 mac: "Alt-Period"
-                                 description: "Next Control"
-                                 exec: (fn () (next_control))
-                                 }
-                 "prior_control" { win: "Alt-Comma"
-                                 mac: "Alt-Comma"
-                                 description: "Prior Control"
-                                 exec: (fn () (next_control true))
-                                 })
+                 "next_hidden_control" { win: "Alt-Shift-Period"
+                                         mac: "Command-Shift-Period"
+                                         description: "Next Hidden Control"
+                                         exec: (fn () (next_hidden_control))
+                                         }
+                 "prior_hidden_control" { win: "Alt-Shift-Comma"
+                                          mac: "Command-Shift-Comma"
+                                          description: "Prior Hidden Control"
+                                          exec: (fn () (next_hidden_control true))
+                                          }
+                 "next_displayed_control" { win: "Alt-Period"
+                                            mac: "Command-Period"
+                                            description: "Next Displayed Control"
+                                            exec: (fn () (next_displayed_control))
+                                            })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        
@@ -6026,7 +6524,7 @@
                                         description: "Evaluate the current selected text"
                                         exec: nil
                                        }
-                 "on_save" {  description: "On Save Event"
+                 "on_save" {  description: "Invokes save for the currently focused control"
                               win: "Ctrl-s"
                               mac: "Command-s"
                               exec: nil
