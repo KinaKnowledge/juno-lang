@@ -1394,6 +1394,7 @@
                    target)))
       (if control
           (progn
+             (log "hide_control: " target.options.name " -> hiding")
              (container_view_operation (if destroy? "destroy" "hide") control nil)
              true)
           (progn
@@ -3764,7 +3765,6 @@
                                    (when linked_editor
                                       (defvar pos (-> (prop (get_control_by_id linked_editor) `editor)
                                                       `getCursorPosition))
-                                      (log "editor: completing initialization: moving to pos" pos)
                                       (-> editor `navigateTo  pos.row pos.column)
                                       (-> editor `scrollToLine pos.row true nil)
                                    
@@ -3807,12 +3807,14 @@
          `is_selected?: is_selected?
          `type: `make_editor
          `can_hide?: (fn ()
-                              (< (length (get_editors_for_path options.path)) 2))
+                        (progn
+                           ;(log "editor: can_hide? " (get_editors_for_path options.path) "<= 1 can hide" options.path)
+                           (< (length (get_editors_for_path options.path)) 2)))
          `destroy: (fn ()
                       (when editor
-                         (defvar others_and_me (get_editors_for_path options.path))
-                         (log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
-                         (log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
+                         ;(defvar others_and_me (get_editors_for_path options.path))
+                         ;(log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
+                         ;(log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                          (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                          (-> editor `destroy)
                          (= editor nil)
@@ -4166,7 +4168,6 @@
                                     (unless (== orig_title title)
                                        (progn
                                           (defvar new_name (compute_name_for_editor orig_title path_to_value))
-                                          (log "recalculate_name: " orig_title "->" new_name)
                                           (set_prop title_span
                                              `innerText
                                              new_name)
@@ -4179,7 +4180,6 @@
                                              new_name))))
               `destroy (fn ()
                           (progn
-                             (log "buffer_editor: got destroy: " options.name orig_title)
                              (-> edit_control `sub_destroy)
                              (recalc_names_for_path path_to_value)
                              (set_focus_to (default_focus))))
@@ -4690,29 +4690,27 @@
             (add_control (fn (control)
                              (when (not (== control intf))
                                  (assert (and control.type control.options.id) "Invalid control provided")
-                                 
+                                 (set_prop my_controls
+                                    control.options.id
+                                    control) 
+                                 ;(log "control_holding_tank: " control.options.name  "can_hide?" (and control.can_hide? (-> control `can_hide?)))
                                  (if (or (== control.type "empty_control")  ;; don't store the empty controls since they are placeholders
                                          control.options.temporary          ;; or if the control is marked temporary
                                          (and control.can_hide?       ;; does the control want to be hidden?
                                               (not (-> control `can_hide?))))
                                      (progn
-                                        ;(log "control_holding_tank: destroying temporary control: " control.options control.destroy)
                                         (if control.destroy
                                            (progn
                                               (when *app_menu_control*
                                                  (-> *app_menu_control* `remove_menu control.options.name))
+                                              (remove_control control.options.id)
                                               (-> control `destroy)
                                               (when (== *last_focus* control)
                                                  (== *last_focus* nil))
-                                              (default_focus))))     
-                                                    
-                                     (progn
-                                        (set_prop my_controls
-                                           control.options.id
-                                           control)
-                                        (render_view)
-                                        control)
-                                     ))))
+                                              (default_focus)))))
+                                 (render_view)
+                                 control)
+                             ))
             (remove_control (fn (id)
                               (if (is_object? id)
                                 (aif (prop my_controls id.options.id)
@@ -5787,6 +5785,8 @@
                          (-> target `split_horizontal)
                          else
                          (notify (+ "The control " (prop target.options `name) " cannot be directly split."))))))
+
+
                       
 
 (defcontrol line_display ()
@@ -6651,6 +6651,12 @@
                                        mac: "Alt-2"
                                        description: "Split the current control horizontally"
                                        exec: (fn () (split_control `horizontal))
+                                      }
+                  "hide_control" {
+                                       win: "Alt-0"
+                                       mac: "Alt-0"
+                                       description: "Hide the current control view"
+                                       exec: (fn () (hide_control *last_focus*))
                                       })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
