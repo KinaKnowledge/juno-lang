@@ -1174,10 +1174,11 @@
          (= target_control (first (-> position_details.child `controls)))
          (= position_details (control_position target_control))
          (console.log "container_view_operation: shifted down: target_control was a top control: " position_details))
-      
-      (if (and (== command "destroy")
-               (is_function? target_control.on_destroy))
-          (= confirmed (-> target_control `on_destroy)))
+      ;(log "container_view_operation: options.suppress_destroy_confirm: " options.suppress_destroy_confirm  (and *last_focus* (prop *last_focus* `options)))
+      (unless options.suppress_destroy_confirm
+         (if (and (== command "destroy")
+                  (is_function? target_control.on_destroy))
+             (= confirmed (-> target_control `on_destroy))))
       (console.log "container_view_operation: confirmed: " confirmed)
       (if confirmed
           ;; if the parent structure is nil in position_details, then we are at the root
@@ -1221,7 +1222,9 @@
                             (progn
                                (when *app_menu_control*
                                   (-> *app_menu_control* `remove_menu target_control.options.name))
-                               (-> target_control `destroy))))
+                               (-> target_control `destroy)
+                               (when (== *last_focus* target_control)
+                                  (== *last_focus* nil)))))
                       (cascade_resize)
                       (default_focus)
                       true)
@@ -1233,7 +1236,8 @@
                          (-> *app_menu_control* `remove_menu position_details.child.options.name))
                       (if (is_function? position_details.child.destroy)
                         (-> position_details.child `destroy))
-                      
+                      (when (== *last_focus* target_control)
+                         (== *last_focus* nil))
                       (default_focus))
                    else
                    (progn
@@ -1242,6 +1246,7 @@
              
              (== command "replace")
              (progn
+                (log "container_view_operation: command is replace: swap: " target_control new_control)
                 (swap_control target_control new_control)
                 true)
              
@@ -1705,7 +1710,13 @@
                                           (fn (e)
                                             (progn  
                                               (handle_event e)
-                                              (clean_up user_input.value))))
+                                              (cond 
+                                                 user_input.value
+                                                 (clean_up user_input.value)
+                                                 (getAttribute user_input `value)
+                                                 (clean_up (getAttribute user_input `value))
+                                                 options.no_cancel_button
+                                                 (clean_up true)))))
                     ;; don't immediately react to keyup so as not to immediately react
                     ;; in certain scenarios
                    (setTimeout (fn ()
@@ -1973,12 +1984,25 @@
    })
 
 (defun close_file (editor_control)
-   (progn
-      (aif (and (is_function? editor_control.on_destroy)
+   (let
+      ((closed_focus? false))
+      (log "close_file: " (and editor_control (prop editor_control `options)))
+      (if (and (is_function? editor_control.on_destroy)
                (-> editor_control `on_destroy))
-           (for_each (ctl (get_editors_for_path editor_control.options.path))
-              (container_view_operation `destroy ctl nil))
-           (notify "Close cancelled."))))
+          (progn
+             (for_each (ctl (get_editors_for_path editor_control.options.path))
+                (progn
+                   (if (not closed_focus?)
+                       (= closed_focus? (== ctl *last_focus*)))
+                   
+                   (try
+                      (container_view_operation `destroy ctl nil { `suppress_destroy_confirm: true } )
+                      (catch Error (e)
+                         (log "close_file error: " e.message)))))
+             ;(log "close_file: calling default_focus" closed_focus?)
+             (if closed_focus?
+                   (default_focus)))
+          (notify "Close cancelled."))))
 
 ;; when save events are dispatched, this function should be the
 ;; receiver.  It will get the value from the sending control,
@@ -3693,14 +3717,8 @@
                                                 (display_context_message (+ "NOTICE: not online, so the file cannot be fetched.  Using existing local value at path."))))
                                           (progn
                                              (-> editor `setValue content -1)
-                                             (display_context_message "Editing local value")))
-                                      ;; we are cloning an editor..
-                                      (if options.path
-                                         (progn ;; mark each as temporary so if they are hidden the instance that is hidden will be destroyed...
-                                            (for_each (`ctl (get_editors_for_path options.path))
-                                               (set_prop ctl.options
-                                                  `temporary
-                                                  true)))))
+                                             (display_context_message "Editing local value"))))
+                                      
                                             
                                    (console.log "initialize_editor: setting font size...")   
                                    (if (eq nil font_size)
@@ -3788,14 +3806,12 @@
          `get_selection: get_selection
          `is_selected?: is_selected?
          `type: `make_editor
+         `can_hide?: (fn ()
+                              (< (length (get_editors_for_path options.path)) 2))
          `destroy: (fn ()
                       (when editor
                          (defvar others_and_me (get_editors_for_path options.path))
                          (log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
-                         (when (== others_and_me.length 1)
-                            (delete_prop others_and_me.0.options
-                               `temporary))  ;; it's ok to delete both temporary flags since this control is already being destroyed
-                             
                          (log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                          (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                          (-> editor `destroy)
@@ -3943,6 +3959,24 @@
          (when ctl.recalculate_name
             (-> ctl `recalculate_name)))))
        
+(defun clone_editor_control (editor_control)
+   (let
+      ((id editor_control.options.id)
+       (new_name (if editor_control.basename
+                     (-> editor_control `basename)
+                     editor_control.options.name)))
+      (declare (function buffer_editor)
+               (global buffer_editor))
+      (when (and editor_control.editor id)
+         (alert_on_error "Unable to clone the editor"
+                         (buffer_editor new_name 
+                                        editor_control.options.namespace 
+                                        editor_control.options.path 
+                                        (-> editor_control `get_mode)
+                                        (+ {} ;; start options 
+                                           editor_control.options 
+                                           { `id: (gen_id "buffer_editor") 
+                                             `clone_with_editor_id: id }))))))
 
 (defun buffer_editor (title namespace path_to_value mode options)
    (aif (and (not options.clone_with_editor_id)
@@ -3994,11 +4028,27 @@
                            (remove_class "juno-needs-save" title_span)
                            (= is_dirty? false))))
             
-            
             (on_focus (fn ()
                          (progn
                             (setq *last_focus* edit_control)
                             (add_class "juno-focused" command_bar))))
+            (split_editor (fn (dir)
+                             (let
+                                ((new_editor nil))
+                             (cond
+                                (== dir "vertical")
+                                (progn
+                                   (= new_editor (clone_editor_control edit_control))
+                                   (alert_on_error "Unable to split"
+                                                   (container_view_operation "split_right" edit_control new_editor)))
+                                (== dir "horizontal")
+                                (progn
+                                   (= new_editor (clone_editor_control edit_control))
+                                   (alert_on_error "Unable to split"
+                                                   (container_view_operation "split_below" edit_control new_editor)))
+                                else
+                                (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
+                                   
             (update_position (function ()
                                 (when edit_control.editor
                                    (= current_pos (-> edit_control.editor `getCursorPosition))
@@ -4049,7 +4099,13 @@
                                   [(+ (dtext "Save to") " " (last path_to_value))
                                    (fn (e) (-> edit_control `save))])
                                [(dtext "Select Evaluator")
-                                select_my_evaluator]]
+                                select_my_evaluator]
+                               [(dtext "Split Vertically") 
+                                (fn (e)
+                                   (split_editor `vertical)) ]
+                               [(dtext "Split Horizontally")
+                                (fn (e)
+                                   (split_editor `horizontal))]]
                               (-> edit_control `sub_menu_items))))
             (set_evaluator_control (fn (control)
                                       (if control.evaluate
@@ -4068,10 +4124,7 @@
                                             (set_evaluator_control it)
                                             (notify (+ (dtext "Evaluator set to ") it.name)))))))
            
-           
-           
-           
-           
+   
            (attach_event_listener edit_control.view
               `keyup
               (function (e)
@@ -4081,7 +4134,7 @@
               `id
               id)
            
-           
+        
            (set_prop edit_control
               `sub_initializer
               edit_control.initialize
@@ -4089,11 +4142,6 @@
               edit_control.menu_items
               `sub_destroy
               edit_control.destroy)
-           
-           (if options.clone_with_editor_id
-              (set_prop options
-                 `temporary
-                 true))   ;; when hidden it is closed - no need to keep two copies around
            
            (set_prop options
               `name
@@ -4111,9 +4159,9 @@
                                 (not is_dirty?)
                                 true
                                 is_dirty?
-                                (request_user_input (+ "" title ": " (dtext "The value of this editor hasn't been stored. Really remove?"))
+                                (request_user_input title 
                                                     "text"
-                                                    { input: (input { `type: "hidden" `value: "remove" }) })))
+                                                    { input: (div { value: "remove" } (dtext "The contents of this editor haven't been stored. Really remove?")) })))
               `recalculate_name (fn ()
                                     (unless (== orig_title title)
                                        (progn
@@ -4135,7 +4183,12 @@
                              (-> edit_control `sub_destroy)
                              (recalc_names_for_path path_to_value)
                              (set_focus_to (default_focus))))
-                                         
+              `needs_save? (function ()
+                              is_dirty?)
+              `split_vertical (fn ()
+                                 (split_editor `vertical))
+              `split_horizontal (fn ()
+                                   (split_editor `horizontal))
               `options options
               `name title
               `basename (fn ()
@@ -4145,6 +4198,12 @@
               `initialize (fn ()
                              (when edit_control.view.parentElement
                                 (-> edit_control `sub_initializer)
+                                (when options.clone_with_editor_id
+                                   (if (get_control_by_id options.clone_with_editor_id)
+                                       (progn
+                                          (= is_dirty? (-> (get_control_by_id options.clone_with_editor_id) `needs_save?))
+                                          (when is_dirty?
+                                             (add_class "juno-needs-save" title_span)))))
                                 (console.log "buffer_editor: sub initialized: setting evaluator if I have it: " options)
                                 (cond
                                    options.evaluator_id
@@ -4157,22 +4216,7 @@
                          `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
            edit_control)))
 
-(defun clone_editor_control (editor_control)
-   (let
-      ((id editor_control.options.id)
-       (new_name (if editor_control.basename
-                     (-> editor_control `basename)
-                     editor_control.options.name)))
-      (when (and editor_control.editor id)
-         (alert_on_error "Unable to clone the editor"
-                         (buffer_editor new_name 
-                                        editor_control.options.namespace 
-                                        editor_control.options.path 
-                                        (-> editor_control `get_mode)
-                                        (+ {} ;; start options 
-                                           editor_control.options 
-                                           { `id: (gen_id "buffer_editor") 
-                                             `clone_with_editor_id: id }))))))
+
 
 (defun log_view (options)
   (let
@@ -4647,22 +4691,28 @@
                              (when (not (== control intf))
                                  (assert (and control.type control.options.id) "Invalid control provided")
                                  
-                                 (if (and (not (== control.type "empty_control"))  ;; don't store the empty controls since they are placeholders
-                                          (not control.options.temporary))
+                                 (if (or (== control.type "empty_control")  ;; don't store the empty controls since they are placeholders
+                                         control.options.temporary          ;; or if the control is marked temporary
+                                         (and control.can_hide?       ;; does the control want to be hidden?
+                                              (not (-> control `can_hide?))))
+                                     (progn
+                                        ;(log "control_holding_tank: destroying temporary control: " control.options control.destroy)
+                                        (if control.destroy
+                                           (progn
+                                              (when *app_menu_control*
+                                                 (-> *app_menu_control* `remove_menu control.options.name))
+                                              (-> control `destroy)
+                                              (when (== *last_focus* control)
+                                                 (== *last_focus* nil))
+                                              (default_focus))))     
+                                                    
                                      (progn
                                         (set_prop my_controls
                                            control.options.id
                                            control)
                                         (render_view)
                                         control)
-                                     (progn
-                                        (log "control_holding_tank: destroying temporary control: " control.options control.destroy)
-                                        (if control.destroy
-                                           (progn
-                                              (log "control_holding_tank: calling control destroy")
-                                              (when *app_menu_control*
-                                                 (-> *app_menu_control* `remove_menu control.options.name))
-                                              (-> control `destroy))))))))
+                                     ))))
             (remove_control (fn (id)
                               (if (is_object? id)
                                 (aif (prop my_controls id.options.id)
@@ -5722,6 +5772,22 @@
     (notify (dtext "There isn't an active control."))))
     
     
+(defun split_control (dir)
+   (alert_on_error "Unable to perform split"
+                   (let
+                      ((target *last_focus*))
+                      (if (eq nil target)
+                          (throw Error "No Focused Control to split"))
+                      (cond
+                         (and (== dir "vertical")
+                              (prop target `split_vertical))
+                         (-> target `split_vertical)
+                         (and (== dir "horizontal")
+                              (prop target `split_horizontal))
+                         (-> target `split_horizontal)
+                         else
+                         (notify (+ "The control " (prop target.options `name) " cannot be directly split."))))))
+                      
 
 (defcontrol line_display ()
    ((menu_items (fn ()
@@ -6287,7 +6353,8 @@
        (idx 0)
        (holding_tank (get_control_by_name "Holding Tank"))
        (control_to_place (fn ()
-                            (if (prop *last_focus* `editor) ;; if we are in an editor, split it
+                            (if (and (prop *last_focus* `editor) ;; if we are in an editor, (but not repl) split it
+                                     (not (== (prop *last_focus* `type) "browser_repl")))
                                 (clone_editor_control *last_focus*) 
                                 (empty_selection_control)))) ;; otherwise pull the last control out of storage
                              
@@ -6572,7 +6639,19 @@
                                             mac: "Command-Period"
                                             description: "Next Displayed Control"
                                             exec: (fn () (next_displayed_control))
-                                            })
+                                            }
+                 "split_vertically" {
+                                       win: "Alt-3"
+                                       mac: "Alt-3"
+                                       description: "Split the current control vertically"
+                                       exec: (fn () (split_control `vertical))
+                                      }
+                 "split_horizontally" {
+                                       win: "Alt-2"
+                                       mac: "Alt-2"
+                                       description: "Split the current control horizontally"
+                                       exec: (fn () (split_control `horizontal))
+                                      })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        
