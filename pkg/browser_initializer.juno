@@ -724,18 +724,21 @@
   (let
       ((controls (current_controls))
        (ctrl nil))
-    (for_each (`control controls)
-        (progn
-          (when (== name control.name)
-               (= ctrl control)
-               (break))))
-    ctrl)
+      (when (is_string? name)
+         (for_each (`control controls)
+            (progn
+               (when (== name control.name)
+                  (= ctrl control)
+                  (break)))))
+      ctrl)
   {
       usage: ["id:string"]
       description: (+ "Returns the first control with the given name, " 
                       "or nil if not found.")
       tags: [ "ui" "controls" "name" "find" ]
   })
+
+
 
 (defun select_controls (predicate_func)
   (let
@@ -996,7 +999,8 @@
        (when target_control.menu_items
          (-> *app_menu_control* `add_menu [ (or target_control.name
                                                 "Control")
-                                           target_control.menu_items ])))
+                                           target_control.menu_items 
+                                           "control_menu"])))
              
        
       (progn
@@ -1214,7 +1218,10 @@
                                 target_control)
                             (and (== command "destroy")
                                  (is_function? target_control.destroy))
-                            (-> target_control `destroy)))
+                            (progn
+                               (when *app_menu_control*
+                                  (-> *app_menu_control* `remove_menu target_control.options.name))
+                               (-> target_control `destroy))))
                       (cascade_resize)
                       (default_focus)
                       true)
@@ -1222,8 +1229,11 @@
                         (== command "destroy"))
                    (progn
                       (-> holding_tank `remove_control position_details.child.options.id)
+                      (when *app_menu_control*
+                         (-> *app_menu_control* `remove_menu position_details.child.options.name))
                       (if (is_function? position_details.child.destroy)
                         (-> position_details.child `destroy))
+                      
                       (default_focus))
                    else
                    (progn
@@ -1406,6 +1416,8 @@
    `tags: ["controls" "control" "display" "destroy" "remove" "holding_tank" "ui"]
    `usage: ["target:string|object"]
    })
+
+
 
 (defun process_focus_chain (e originator_container)
   (progn
@@ -1947,6 +1959,26 @@
        `usage: ["path:array|string"]
        `tags: ["controls" "editor" "path"]
    }) 
+
+(defun get_editor_file_basename (editor_control)
+   (aif (resolve_path [ `options `filename ] editor_control)
+        (last (split_by "/" it))
+        nil)
+   {
+       description: (+ "If given a control with an editor which is operating on a file, " 
+                        "will return the filename without the directory path for that editor. "
+                        "Otherwise, it will return nil")
+       usage: [ "editor_control:object"]
+       tags: ["editor" "file" "basename" "filename" "path"]
+   })
+
+(defun close_file (editor_control)
+   (progn
+      (aif (and (is_function? editor_control.on_destroy)
+               (-> editor_control `on_destroy))
+           (for_each (ctl (get_editors_for_path editor_control.options.path))
+              (container_view_operation `destroy ctl nil))
+           (notify "Close cancelled."))))
 
 ;; when save events are dispatched, this function should be the
 ;; receiver.  It will get the value from the sending control,
@@ -3519,22 +3551,28 @@
                                  (when (is_array? options.commands)
                                     (for_each (command options.commands)
                                        (do
+                                          (console.log "optional commands: " command.name command)
                                           (-> editor.commands `addCommand
-                                              (to_ace_keybinding command.name command))))))))
+                                              (to_ace_keybinding command.name command)))))
+                                 (console.log "building_key_bindings: complete.")
+                                 true)))
        
        (linked_editor nil)
        (initialize_editor (fn ()
                              (when (not initialized)
                                 (let
                                    ((comps nil)
+                                    (start_time (time_in_millis))
                                     (identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
                                     (extension nil))
                                    (setq initialized true)
                                    (setq parent_view view.parentElement)
                                    (setq editor
                                          (ace.edit editor_div))
+                                   (console.log "initialize_editor: " options.mode " options: " (clone options))
+                                   (console.log "initialize_editor: loading ace langtools: ace/ext/language_tools..")
                                    (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
-                                   
+                                   (console.log "initialize_editor: loaded langtool")
                                    ;; are we a cloned editor?
                                    
                                    (when options.clone_with_editor_id
@@ -3553,7 +3591,6 @@
                                             `evaluator
                                             (prop *system_repl* `evaluate))))
                                    
-                                   (console.log "initialize_editor: " options.mode " options: " (clone options))
                                    (set_evaluator)
                                    
                                    (when options.on_focus
@@ -3612,6 +3649,7 @@
                                          (-> editor `setOptions {
                                                                `enableLiveAutocompletion: true
                                                                   `enableBasicAutocompletion: true })))
+                                   (console.log "initialize_editor: mode set done.")
                                    
                                    (cond
                                       (is_string? options.theme)
@@ -3637,7 +3675,9 @@
                                           (if is_served?
                                              (try
                                                 (progn
+                                                   (console.log "initialize_editor: requesting: " options.filename)
                                                    (defvar remote_content (-> (fetch (+ "/files/" options.filename)) `text))
+                                                   (console.log "initialize_editor: received content: time: " (- (time_in_millis) start_time) "ms")
                                                    (if (is_string? remote_content)
                                                        (-> editor `setValue remote_content -1)
                                                        (progn
@@ -3662,7 +3702,7 @@
                                                   `temporary
                                                   true)))))
                                             
-                                      
+                                   (console.log "initialize_editor: setting font size...")   
                                    (if (eq nil font_size)
                                        (= font_size (parseInt (-> editor `getFontSize)))
                                        (-> editor `setFontSize font_size))
@@ -3673,8 +3713,9 @@
                                       `name name
                                       `id id)
                                       
-                                   
+                                   (console.log "initialize_editor: loading ace/token_iterator..")
                                    (defglobal TokenIterator (prop (-> ace `require "ace/token_iterator") `TokenIterator))
+                                   (console.log "initialize_editor: loaded token_iterator");
                                    (when options.on_change
                                       (-> editor `on `change (function (val)
                                                                 (progn
@@ -3701,6 +3742,7 @@
                                                      source: options.id
                                                      args: [ { `option: "mode" `value: options.mode } ] })
                                    
+                                   (console.log "initialize_editor: is this a linked_editor: " linked_editor)
                                    (when linked_editor
                                       (defvar pos (-> (prop (get_control_by_id linked_editor) `editor)
                                                       `getCursorPosition))
@@ -3718,6 +3760,7 @@
                                                                        (log options.id ": handle_event: linked_editor:" event_obj)
                                                                        (remove_event_handler linked_editor "destroy_control"))
                                                                     ))))
+                                   (console.log "initialize_editor: time: " (- (time_in_millis) start_time) " base initialization complete: " (clone options))
                                    (when options.on_initialized
                                       (options.on_initialized intf))
                                    )))))
@@ -3878,7 +3921,7 @@
    (let
       ((others (get_editors_for_path path_to_value))
        (counter 2))
-      (log "compute_name_for_editor: # of editors for base title: " title ": " others.length "  path: " path_to_value)
+      ;(log "compute_name_for_editor: # of editors for base title: " title ": " others.length "  path: " path_to_value)
       ;(log "compute_name_for_editor: basename found: " (get_control_by_name title))
       (cond 
          (== others.length 0)
@@ -3957,7 +4000,7 @@
                             (setq *last_focus* edit_control)
                             (add_class "juno-focused" command_bar))))
             (update_position (function ()
-                                (progn
+                                (when edit_control.editor
                                    (= current_pos (-> edit_control.editor `getCursorPosition))
                                    (set_prop col_pos_span
                                       `innerText
@@ -4617,6 +4660,8 @@
                                         (if control.destroy
                                            (progn
                                               (log "control_holding_tank: calling control destroy")
+                                              (when *app_menu_control*
+                                                 (-> *app_menu_control* `remove_menu control.options.name))
                                               (-> control `destroy))))))))
             (remove_control (fn (id)
                               (if (is_object? id)
@@ -5727,10 +5772,7 @@
         (make_menu elem control_menu)))))
 
       
-                                                 
-
-
-
+                                                
 (defun app_menu(global_menu_path options)
   (let
       ((view nil)
@@ -5741,7 +5783,14 @@
        (intf {})
        (menu_trees (or menu_trees []))
        (compute_top_levels (fn ()
-                             (each menu_trees `0)))
+                             (progn
+                                
+                                (defvar headers (each menu_trees `0))
+                                (if (== nil (get_control_by_name (last headers)))
+                                    (pop headers))
+                                
+                                headers)))
+                                    
        (help_idx nil)
        (add_menu (fn (menu)
                    (let
@@ -6032,7 +6081,10 @@
                    (is_array? options)
                    { `path: options `mode: "juno"}
                    (is_object? options)
-                   (+ { `mode: `juno } options)  ;; if options has mode specified, it will override the default juno mode
+                   (+ (if options.filename
+                          {}
+                          { `mode: `juno })
+                      options)  ;; if options has mode specified and we don't have a filename, it will override the default juno mode
                    (is_string? options)
                    { `path: [ options ] `mode: "juno" }
                    else
@@ -6196,32 +6248,38 @@
                    ["Text" (fn (e) (new_buffer { `type: "text" })) ]
                    ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
     (if is_served?
-      ["Open File" edit_file ]
-      [])
+       ["Open File" edit_file ]
+       [])
+    (if (and is_served?
+             *last_focus*
+             (resolve_path [ `options `filename ] *last_focus*))
+        [(+ (dtext "Close ") (get_editor_file_basename *last_focus*))
+         (fn () (close_file *last_focus*)) ]
+        [])
     (if is_served?
-      ["Generate Starter Environment" build_starter_environment]
-      [])
+       ["Generate Starter Environment" build_starter_environment]
+       [])
     (if (and *last_focus*
              (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text
              (prop *last_focus* `name))  ;; and a name to identify it
-        [(+ (dtext "save") " " 
+        [(+ (dtext "save") " "
             (or (aif (resolve_path [ `options `filename ] *last_focus*)
                      (last (split_by "/" it)))
                 (resolve_path [ `options `name ] *last_focus*)
                 "")
             "...")
-          [(if is_served?
-               [(dtext "to server file") (fn (e) (handle_save_file *last_focus* { `remote: true }))]
-               [])
-           [(dtext "as local file") (fn (e) (handle_save_file *last_focus*))]]]
-        [])    
+         [(if is_served?
+              [(dtext "to server file") (fn (e) (handle_save_file *last_focus* { `remote: true }))]
+              [])
+          [(dtext "as local file") (fn (e) (handle_save_file *last_focus*))]]]
+        [])
     ["Save Environment" (fn (e) (save_control_image)) ]
     ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]
     (if *global_themes*
-        ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
-                               [theme_name (fn ()
-                                              (set_global_theme theme_name))])]
-        [])])
+       ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
+                              [theme_name (fn ()
+                                             (set_global_theme theme_name))])]
+       [])])
 
 (defun gen_layout_menu ()
    (let

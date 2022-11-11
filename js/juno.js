@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2022-11-07 10:02:34
-// Version: 2022.11.07.10.02
-export const DLISP_ENV_VERSION='2022.11.07.10.02';
+// Build Time: 2022-11-11 07:02:37
+// Version: 2022.11.11.07.02
+export const DLISP_ENV_VERSION='2022.11.11.07.02';
 
 
 
@@ -3517,7 +3517,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.07.10.02",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.11.07.02",imports:await ( async function(){
         let __obj__283=new Object();
         __obj__283["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5172,7 +5172,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.07.10.02",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.11.07.02",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -10424,16 +10424,16 @@ export async function init_dlisp(Environment)  {
                                     return await (async function() {
                                         let __for_body__268=async function(req) {
                                             {
-                                                let _expr_1287;
+                                                let _expr_13771;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_1287=await (async function(){
+                                                _expr_13771=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_1287 && _expr_1287["0"]);
-                                                req_ns=(_expr_1287 && _expr_1287["1"]);
-                                                explicit=(_expr_1287 && _expr_1287["2"]);
+                                                req_sym=(_expr_13771 && _expr_13771["0"]);
+                                                req_ns=(_expr_13771 && _expr_13771["1"]);
+                                                explicit=(_expr_13771 && _expr_13771["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10536,13 +10536,13 @@ export async function init_dlisp(Environment)  {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_76284;
+                    let _expr_22955;
                     let nspace;
-                    _expr_76284=await (async function(){
+                    _expr_22955=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_76284 && _expr_76284["0"]);
-                    nspace=(_expr_76284 && _expr_76284["1"]);
+                    sym=(_expr_22955 && _expr_22955["0"]);
+                    nspace=(_expr_22955 && _expr_22955["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -15353,10 +15353,10 @@ export async function init_dlisp(Environment)  {
                     {
                         await async function(){
                             if (check_true (await not((((condition_tokens && condition_tokens.length)% 2)===0)))) {
-                                throw new SyntaxError("cond: Invalid syntax: missing condition block");
+                                throw new LispSyntaxError("cond: Invalid syntax: missing condition block");
                                 
                             } else if (check_true (((condition_tokens && condition_tokens.length)===0))) {
-                                throw new SyntaxError("cond: Invalid syntax: no conditions provided");
+                                throw new LispSyntaxError("cond: Invalid syntax: no conditions provided");
                                 
                             }
                         } ();

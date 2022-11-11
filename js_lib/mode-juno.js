@@ -373,7 +373,7 @@ oop.inherits(Mode, TextMode);
     };
 
     this.$id = "ace/mode/juno";
-    this.snippetFileId = "ace/snippets/juno";
+    // this.snippetFileId = "ace/snippets/juno";
 }).call(Mode.prototype);
 
 

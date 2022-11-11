@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-11-07 10:02:29
-// Version: 2022.11.07.10.02
-export const DLISP_ENV_VERSION='2022.11.07.10.02';
+// Build Time: 2022-11-11 07:02:32
+// Version: 2022.11.11.07.02
+export const DLISP_ENV_VERSION='2022.11.11.07.02';
 
 
 
@@ -3982,10 +3982,10 @@ export async function init_compiler(Environment) {
                     {
                         await async function(){
                             if (check_true (await not((((condition_tokens && condition_tokens.length)% 2)===0)))) {
-                                throw new SyntaxError("cond: Invalid syntax: missing condition block");
+                                throw new LispSyntaxError("cond: Invalid syntax: missing condition block");
                                 
                             } else if (check_true (((condition_tokens && condition_tokens.length)===0))) {
-                                throw new SyntaxError("cond: Invalid syntax: no conditions provided");
+                                throw new LispSyntaxError("cond: Invalid syntax: no conditions provided");
                                 
                             }
                         } ();
