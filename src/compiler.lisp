@@ -2487,9 +2487,9 @@
                 (progn
                    (cond
                       (not (== (% condition_tokens.length 2) 0))
-                      (throw SyntaxError "cond: Invalid syntax: missing condition block")
+                      (throw LispSyntaxError "cond: Invalid syntax: missing condition block")
                       (== condition_tokens.length 0)
-                      (throw SyntaxError "cond: Invalid syntax: no conditions provided"))
+                      (throw LispSyntaxError "cond: Invalid syntax: no conditions provided"))
                    (while (< idx (- condition_tokens.length 2))
                       (do
                          (inc idx 2)
