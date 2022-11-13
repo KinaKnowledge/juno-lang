@@ -1163,7 +1163,6 @@
       
       (assert target_control "Unable to find the target control")
       (assert holding_tank "Unable to find the holding tank")
-      
       (= position_details (control_position target_control))
       (console.log "container_view_operation: original_target: " orig_target)
       (console.log "container_view_operation: computed_target: " target_control)
@@ -1184,7 +1183,8 @@
           ;; if the parent structure is nil in position_details, then we are at the root
           (cond
              (or (== command "hide")
-                 (== command "destroy"))
+                 (and (not (resolve_path [ `options `locked ] target_control))
+                      (== command "destroy")))
              (progn
                 (cond
                    ;; the control is not a root control if it has a parent
@@ -1217,7 +1217,8 @@
                             (-> holding_tank
                                 `add_control
                                 target_control)
-                            (and (== command "destroy")
+                            (and (not (resolve_path [ `options `locked ] target_control))
+                                 (== command "destroy")
                                  (is_function? target_control.destroy))
                             (progn
                                (when *app_menu_control*
@@ -1228,7 +1229,8 @@
                       (cascade_resize)
                       (default_focus)
                       true)
-                   (and (== position_details.parent holding_tank)
+                   (and (not (resolve_path [ `options `locked ] target_control))
+                        (== position_details.parent holding_tank)
                         (== command "destroy"))
                    (progn
                       (-> holding_tank `remove_control position_details.child.options.id)
@@ -1239,9 +1241,24 @@
                       (when (== *last_focus* target_control)
                          (== *last_focus* nil))
                       (default_focus))
+                   (and (== command "destroy")
+                        (resolve_path [ `options `locked ] target_control))
+                   (notify (+ "" (or (resolve_path [ `options `name ] target_control)
+                                  "The control")
+                           " is set to locked and cannot be removed."))
+                   (== command "destroy")   ;; single control under the root frame so swap if possible with the holding tank
+                   (progn
+                       (if (> (length (holding_tank_controls)) 0)
+                           (progn
+                              (set_path_value target_control [`options `temporary ] target_control) ;; mark as temporary
+                              (swap_control target_control (last (holding_tank_controls))))
+                           (progn
+                              (notify "Cannot hide a single control - try replacing."))))
                    else
                    (progn
-                      (notify "Cannot hide a single control - try replacing")
+                      (if (> (length (holding_tank_controls)) 0)
+                          (swap_control target_control (last (holding_tank_controls)))
+                          (notify "Cannot hide a single control - try replacing"))
                       position_details)))
              
              (== command "replace")
@@ -1303,6 +1320,13 @@
                 (-> position_details.parent `set_content position_details.child_position new_container)
                 (cascade_resize)
                 true)
+             (resolve_path [ `options `locked ] target_control)
+             (progn
+                (notify (+ "" (or (resolve_path [ `options `name ] target_control)
+                                  "The control")
+                           " is set to locked and cannot be removed."))
+                false)
+             ;; otherwise we don't know how to process the command 
              else
              (progn
                 (notify (+ "container_view_operation: unknown command: " command))
@@ -1310,11 +1334,7 @@
           (progn
              false))))
   
-  
-
-
-
-    
+ 
 (defmacro place_control(placement `& control_def)
    (let
       ((where_map {
@@ -1394,7 +1414,6 @@
                    target)))
       (if control
           (progn
-             (log "hide_control: " target.options.name " -> hiding")
              (container_view_operation (if destroy? "destroy" "hide") control nil)
              true)
           (progn
@@ -3222,14 +3241,14 @@
                       (unless (== k "active")
                          k)))
        (td_style (function () 
-                    { `style: "padding: 5px; border-bottom: 1px solid var(--main-accent-line);" } ))
+                    { `style: "vertical-align:top; padding: 5px; border-bottom: 1px solid var(--main-accent-line);" } ))
        (platform (get_operating_platform)))
       (table { `style: "width: 100%" }
          (thead
             (tr { `style: "" }
                (th { `style: "padding: 5px;" } "Key Binding")
                (th { `style: "padding: 5px;" } "Command")
-               (th { `style: "padding: 5px;" } "Category")
+               (th { `style: "padding: 5px;" } "Scope")
                (th { `style: "padding: 5px;" } "Description")))
          (tbody
             (for_each (category categories)
@@ -4517,7 +4536,9 @@
                   (progn
                    true)))
        (destroy (fn ()
-                  (-> input_container `destroy)))
+                  (if options.locked
+                     (throw EvalError (+ "" options.name " is marked as locked and cannot be destroyed"))
+                     (-> input_container `destroy))))
        (menu_items (fn ()
                      [[(dtext "Clear Output Log")
                        (function ()
@@ -4555,7 +4576,11 @@
                          ;; become the system_repl if none is yet defined
                          (when (eq nil *system_repl*)
                            (= *system_repl* intf)
-                           (-> input_container `display_context_message (+ "This control (" intf.name ") is now the *system_repl*")))
+                           (set_prop options
+                              `locked true)
+                           (setTimeout (fn ()
+                                          (-> input_container `display_context_message (+ "This control (" intf.name ") is now the *system_repl*")))
+                                       250))
                          
                          true))))))
 
@@ -4694,10 +4719,11 @@
                                     control.options.id
                                     control) 
                                  ;(log "control_holding_tank: " control.options.name  "can_hide?" (and control.can_hide? (-> control `can_hide?)))
-                                 (if (or (== control.type "empty_control")  ;; don't store the empty controls since they are placeholders
-                                         control.options.temporary          ;; or if the control is marked temporary
-                                         (and control.can_hide?       ;; does the control want to be hidden?
-                                              (not (-> control `can_hide?))))
+                                 (if (and (not (resolve_path [ `options `locked ] control))
+                                          (or (== control.type "empty_control")  ;; don't store the empty controls since they are placeholders
+                                              control.options.temporary          ;; or if the control is marked temporary
+                                              (and control.can_hide?       ;; does the control want to be hidden?
+                                                 (not (-> control `can_hide?)))))
                                      (progn
                                         (if control.destroy
                                            (progn
@@ -5273,6 +5299,7 @@
     (stack [])
     (initial_render false)
     (title_span (span { spellcheck: false `contenteditable: true `tabindex: 0 `style: "caret-color: red; outline: none; display: inline-block; font-size: 1.1em; font-weight: bold; font-family: var(--main-mono-space); min-width: 10px; border: 1px dotted goldenrod; padding-left: 5px; padding-right: 5px" } ""))
+    (caps_lock_span (span { `class: "juno-display-none" `style: "margin-left: 20px; padding-top: 2px; padding-left: 5px; padding-right: 5px; padding-bottom: 2px; border-radius: 3px; border: 1px solid var(--main-color); " } (dtext "caps lock")))
     (on_destroy (fn (self)
                   (progn
                    (when options.on_destroy                     
@@ -5282,6 +5309,8 @@
     (content_view (div { `style: "" `class: "juno-symbol-browser" }))
     (get_current_stack (fn ()
                            (clone stack)))
+    (select_text (dtext (or options.select_text
+                            "Press Enter To Open")))
     (ol_for_pos (fn (pos)
                    (let
                       ((target_col nil))
@@ -5299,17 +5328,21 @@
                  (or options.path_separator "/")))
     
     (num_ol_elems (fn ()
-                     (length content_view.children)))
+                    (length content_view.children)))
+                       
     
     (create_ol_at_pos (fn (pos)
-                         (let
-                            ((stack_value_at_pos (prop stack pos))
-                             (contents (get_possibles pos)))
-                            (ol { `style: (if (not (is_array? contents))
-                                              "width: 100%; max-width: 100%; position: relative;"
-                                              "height: calc(100% - 20px);  position: relative;")
-                                 `pos: pos }
-                                contents))))
+                         (try
+                            (let
+                               ((stack_value_at_pos (prop stack pos))
+                                (contents (get_possibles pos)))
+                               (ol { `style: (if (not (is_array? contents))
+                                                 "width: 100%; max-width: 100%; position: relative;"
+                                                 "height: calc(100% - 20px);  position: relative;")
+                                            `pos: pos }
+                                   contents))
+                            (catch Error (e)
+                               (log "ERROR: create_ol_at_pos: " pos "" e.message)))))
     
     (find_value (fn (elem key)
                    (let
@@ -5344,16 +5377,24 @@
                              (render_stack))
                           else
                           (log "set_path_at: unhandled: " pos path_value)))))
+    (is_at_leaf false)
+    (was_at_leaf false)
     (at_leaf (fn ()
-                (not (has_class? "filtered-hidden" instruction_div))))
+                (progn 
+                   is_at_leaf)))
+                   ;(log "at_leaf?: is_at_leaf: " is_at_leaf (not (has_class? "filtered-hidden" instruction_div)))
+                   ;(not (has_class? "filtered-hidden" instruction_div)))))
     
-    (get_path_components (fn ()
+    (get_path_components (fn (raw)
                             (let
                                ((text (or title_span.innerText ""))
                                 (ps (path_sep)))
-                               (if (ends_with? ps text)
-                                   (= text (chop text)))
-                               (split_by ps text))))
+                               (if raw
+                                  text
+                                  (progn
+                                     (if (ends_with? ps text)
+                                         (= text (chop text)))
+                                     (split_by ps text))))))
     (get_suffix (fn ()
                    (let
                       ((comps (get_path_components)))
@@ -5365,12 +5406,13 @@
                      (let
                         ((elem (ol_for_pos stack.length))
                          (ps (path_sep)))
-                        (set_prop title_span
-                           `innerText (+ (join ps stack)
-                                         (if (and (> stack.length 0)
-                                                  (not (at_leaf)))
-                                             ps
-                                             "")))
+                        
+                           (set_prop title_span
+                              `innerText (+ (join ps stack)
+                                            (if (and (> stack.length 0)
+                                                     (not (at_leaf)))
+                                                ps
+                                                "")))
                         (if elem
                             (for_each (c elem.children)
                                (remove_class "filtered-lower-opacity" c))))))
@@ -5395,6 +5437,7 @@
                                                 c)
                                           (push not_matched
                                                 c))))))
+                       (= last_matched matched)
                        (when highlight?
                           
                           
@@ -5422,12 +5465,16 @@
                                 v.innerText)
                              matched)))
     (last_suffix nil)
+    (caps_lock_timer nil)
+    (last_matched [])
     (select_matches (fn (k)
                        (let
                           ((text nil)
                            (in_reverse (== k "Backspace"))
                            (matched nil)
                            (prefix nil)
+                           (suffix nil)
+                           (exact_match nil)
                            (existing_suffix nil)
                            (ps (path_sep))
                            (at_leaf? (at_leaf)))                         
@@ -5449,27 +5496,51 @@
                           ;; if >1 then find the common prefix, and append the common prefix to the title_span
                           ;; ..and highlight the matching values in the column
                           ;; if 0 matches don't append the character since it cannot contribute to narrowing the selection
-                          
+                         
                           (cond
                              in_reverse
                              (progn 
+                                (= was_at_leaf at_leaf?)
                                 (when at_leaf? ;; if we are at leaf state, remove the final value from the stack
                                     (pop stack)
+                                   
+                                    (= is_at_leaf false)
                                     (add_class "filtered-hidden" instruction_div))
+                                (if options.allow_non_matches
+                                   (run_validations))
                                 ;; find the common prefix with one character removed
-                                (= existing_suffix (get_suffix))                                
+                                (= existing_suffix (get_suffix))                    
                                 (when (not (blank? existing_suffix))
-                                   (= prefix (find_common_prefix (get_last_column_values) (chop existing_suffix))))
+                                   (if options.allow_non_matches
+                                      (= prefix (chop existing_suffix))
+                                      (= prefix (find_common_prefix (get_last_column_values) (chop existing_suffix)))))
                                 (when (== prefix last_suffix)
                                     ;; we had this value last backspace, so we need to go back further
                                     (= prefix "")
                                     (= last_suffix nil))
                                 (cond
+                                   (and options.allow_non_matches
+                                        (blank? prefix))
+                                   (progn
+                                      (if (blank? last_suffix)
+                                          (progn
+                                             (pop stack)
+                                             (render_stack))
+                                          (progn 
+                                             (clear_suffix)
+                                             (render_title prefix)
+                                             true)))
                                    (blank? existing_suffix)  ;; there is no suffix, so pop the stack 
-                                   (progn                                      
+                                   (progn        
                                       (pop stack)
-                                      (clear_suffix)
-                                      (render_stack))
+                                      (try
+                                         (clear_suffix)
+                                         (catch Error (e)
+                                            (log "ERROR on clear_suffux: " e.message)))
+                                      (try
+                                         (render_stack)
+                                         (catch Error (e)
+                                            (log "ERROR on render stack: " e.message))))
                                    
                                    (blank? prefix)  ;; when no common prefix remove the suffix altogether
                                    ;; we will have to rebuild the title_span explicitly otherwise suffix will be preserved
@@ -5479,19 +5550,23 @@
                                       ;; clear all the matches..
                                    (> (length prefix) 0)
                                    (progn
-                                      (clear_suffix)                                     
-                                      (render_stack prefix)
+                                      (clear_suffix)
+                                      (render_stack prefix true)
                                       (= last_suffix prefix)
                                       (get_matches "" true))
                                    else
                                    ;; just clear the last suffix 
-                                   (= last_suffix nil)))
+                                   (progn
+                                      (= last_suffix nil))))
                                 ;; if we were at a leaf, we are no longer so remove the leaf node from the stack
-                               
-                             (or (== k ps)
-                                 (== k "Tab"))
+                             
+                             (and (not options.allow_non_matches)
+                                  (or (== k ps)
+                                      (== k "Tab")))
                              (progn
+                                (= matched (get_matches k true))
                                (when (and (> (length title_span.innerText) 0)
+                                          (== (length matched) 1)
                                           (not (ends_with? ps title_span.innerText)))
                                   (push stack
                                         (get_suffix))
@@ -5500,15 +5575,53 @@
                                   (place_caret_at_end title_span)))
                              else
                              (progn
-                                (= matched (get_matches k true))                                                               
+                                (if options.allow_non_matches
+                                   (if (or (== k "Tab")
+                                           (== k ps))
+                                       (= matched (get_matches "" true))
+                                       (= matched (get_matches k true)))
+                                   (= matched (get_matches k true)))
+                                (= last_matched matched)  
                                 (cond                                  
+                                   (and (not (== k ps))
+                                        (not (== k "Tab"))
+                                        (not (> k.length 1))
+                                        options.allow_non_matches)
+                                   (progn
+                                      (= prefix (+ (or (get_suffix) "") k))
+                                      (render_title prefix)
+                                      (when options.validate_selection
+                                        (run_validations)))
                                    (== (length matched) 1)  ;; ok we matched only 1 so go ahead and put it into the stack
                                    (progn
                                       (push stack 
-                                            (first (split_by "\n" matched.0.innerText)))                                      
-                                      (try (render_stack)
+                                            (first (split_by "\n" matched.0.innerText)))
+                                      (try 
+                                         (render_stack)
                                          (catch Error (e)
                                             (log "ERROR: " e.message))))
+                                   
+                                   (and options.allow_non_matches
+                                        (> (length matched) 1)
+                                        (or (== k "Tab")
+                                            (== k ps)))
+                                   (progn
+                                      (= prefix (get_suffix))
+                                      (= exact_match (first (reduce (v matched)
+                                                               (when (== (first (split_by "\n" v.innerText)) prefix)
+                                                                  prefix))))
+                                      (if exact_match
+                                         (progn
+                                            (push stack
+                                               (first (split_by "\n" matched.0.innerText)))
+                                            (try (render_stack)
+                                               (catch Error (e)
+                                                  (log "ERROR: " e.message))))
+                                         (progn
+                                            ;; find the common prefix and render title
+                                            (= prefix (find_common_prefix (matched_as_text matched) (get_suffix)))
+                                            ;; subtract suffix
+                                            (render_title prefix))))
                                    (> (length matched) 1)  ;; multiple matches, so add the character to the suffix
                                    (progn
                                       ;; find the common prefix and render title
@@ -5519,13 +5632,17 @@
                            true)))
                                    
                                 ;; if it is a control type type don't display
-    
-    (instruction_div (span {`style: "padding-left: 8px; padding-right: 8px; margin-left: 30px; font-weight: bold; color: var(--value-modified-color);"  `class: "filtered-hidden"  } (dtext "Press Enter To Open")))
+    (select_button (button { `tabindex: 0 `class: "juno-primary" `style: "font-weight: bold;margin-right: 20px;" } (or options.select_button_text "Select")))
+    (instruction_div (span {`style: "float: right; margin-right: 30px; padding-left: 8px; padding-right: 8px; font-weight: bold; color: var(--value-modified-color);"  `class: "filtered-hidden"  } 
+                           select_button
+                           select_text))
     (prefix_div (span { `style: "font-size: 1.1em; margin-right: 8px;" } (dtext "Select or Type:")))
     (open_selection (fn ()
                        (when (and (not (has_class? "filtered-hidden" instruction_div))
                                   options.on_select
-                                  (options.on_select stack)))))
+                                  (if options.allow_non_matches
+                                     (options.on_select (get_path_components))
+                                     (options.on_select stack))))))
     (handle_enter_event (fn (e)
                            (cond
                               (== e.srcElement title_span)
@@ -5545,18 +5662,40 @@
                                           (handle_event e)
                                           (destroy_control self)))
                              ("Tab" (progn
-                                       (if (not (at_leaf))
+                                       (if (or options.allow_non_matches
+                                               (not (at_leaf)))
                                            (handle_event e))
                                        (select_matches e.key)))
                              (`otherwise (progn 
                                             (when (== e.srcElement title_span)
                                                (handle_event e)
-                                               (select_matches e.key)))))
+                                               (if (or (== e.key "CapsLock") 
+                                                       (-> e `getModifierState "CapsLock"))
+                                                   (progn
+                                                      (when caps_lock_timer
+                                                         (clearTimeout caps_lock_timer))
+                                                      (= caps_lock_timer 
+                                                         (setTimeout (fn () (add_class "juno-display-none" caps_lock_span)) 1000))
+                                                      (remove_class "juno-display-none" caps_lock_span))
+                                                   (add_class "juno-display-none" caps_lock_span))
+                                               
+                                               (select_matches e.key)
+                                               ))))
+                         
                          (-> title_span.parentElement
                              `appendChild
                              instruction_div)
+                         (-> title_span.parentElement
+                            `appendChild
+                            caps_lock_span)
                          (-> title_span.parentElement `insertBefore
                              prefix_div title_span)
+                         (attach_event_listener select_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (handle_event e)
+                                  (open_selection))))
                          (add_class "juno-highlighted" title_span.parentElement)
                          (attach_event_listener content_view
                                                 `click
@@ -5574,8 +5713,20 @@
                                  (filter_text (last (split_by (or options.path_separator "/") title_span.innerText))))
                                 (= val (-> options `get_possibles pos self))
                                 (if (not (is_array? val))
-                                    (remove_class "filtered-hidden"  instruction_div)
-                                    (add_class "filtered-hidden" instruction_div))                                
+                                    (progn
+                                       ;(remove_class "filtered-hidden"  instruction_div)
+                                       (= is_at_leaf true))
+                                    (progn
+                                       (= is_at_leaf false)
+                                       ;(add_class "filtered-hidden" instruction_div) 
+                                       ))
+                                (if (and options.allow_non_matches
+                                         options.validate_selection)
+                                    (run_validations)
+                                    (if is_at_leaf
+                                       (remove_class "filtered-hidden"  instruction_div)
+                                       (add_class "filtered-hidden" instruction_div)))
+                                    
                                 (cond
                                    (is_array? val)
                                    (for_each (obj val)
@@ -5615,11 +5766,18 @@
                                     (value_to_dom val))))
                            else
                            (div { } "Missing get_possibles function or get_possibles_elem in options"))))
-    
+    (run_validations (fn ()
+                        (when (and options.allow_non_matches
+                                   options.validate_selection)
+                           (if (-> options `validate_selection (get_path_components true) (at_leaf) last_matched)
+                               (remove_class "filtered-hidden" instruction_div)
+                               (add_class "filtered-hidden" instruction_div)))))
+                           
+                            
     (render_title (fn (new_suffix)
                      (let
                         ((suffix (or new_suffix (get_suffix) ""))
-                         (ps (path_sep)))                       
+                         (ps (path_sep)))
                         (set_prop title_span
                            `innerText
                            (+ (join ps stack)
@@ -5627,35 +5785,53 @@
                                  (at_leaf)
                                  ""
                                  (and (blank? suffix)
-                                      (> stack.length 0))
+                                      (> stack.length 0)
+                                      (if (and options.allow_non_matches
+                                               options.validate_selection)
+                                          (not (-> options `validate_selection (get_path_components true) (at_leaf) last_matched))
+                                          true))
                                  ps
                                  (== stack.length 0)
                                  (+ "" suffix)
                                  else
                                  (+ ps suffix))))
+                        (run_validations)
                         (place_caret_at_end title_span))))
     
-    (render_stack (fn (prefix)
+    (render_stack (fn (prefix no_rerender)
                      (let
-                        ((ol_elem nil))
+                        ((ol_elem nil)
+                         (new_ol_elem nil))
                         
-                        (when (== stack.length 0)
-                              `innerText "")
+                        (if (or (not no_rerender)
+                                was_at_leaf)
                         (when (> (num_ol_elems) stack.length)
+                           (try
                            (for_each (pos (range_inc  stack.length (num_ol_elems)))
                               (progn
                                  (= ol_elem (ol_for_pos pos))
                                  (when ol_elem
-                                    (-> ol_elem `remove)))))
+                                    (-> ol_elem `remove))))
+                           (catch Error (e)
+                              (log "Error on: stack render p1: " e.message)))))
                         ;; is the stack already drawn, or do we need to render it?
-                        (for_each (pos (range (+ stack.length 1)))
-                           (progn
-                              (= ol_elem (ol_for_pos pos))
-                              (if ol_elem
-                                  (select_child ol_elem (prop stack pos))
-                                  (-> content_view `append
-                                      (create_ol_at_pos pos)))))
-                        (render_title prefix))))
+                        (try
+                           (for_each (pos (range (+ stack.length 1)))
+                              (progn
+                                 (= ol_elem (ol_for_pos pos))
+                                 (if ol_elem
+                                    (select_child ol_elem (prop stack pos))
+                                    (progn
+                                       (= new_ol_elem (create_ol_at_pos pos))
+                                       (if new_ol_elem
+                                          (-> content_view `append
+                                             (create_ol_at_pos pos)))))))
+                           (catch Error (e)
+                              (log "Error on: stack render p2: " e.message)))
+                        (try
+                           (render_title prefix)
+                           (catch Error (e)
+                              (log "Error on render_title: " e.message))))))
     
     (on_render (fn (self broaden)
                        (let
@@ -5679,7 +5855,7 @@
 
 (defun file_tree_browser(options)
     (let
-       ((open_button (button { `class: "juno-primary" `style: "font-weight: bold;" } "Open"))
+       ((create_mode options.create_mode)
         (render_entry (fn (entry)
                          (let
                               ((etype (fn (entry)
@@ -5710,7 +5886,6 @@
                                                 (http/list_files (join "/" (-> control `get_current_stack))))))
                               (when (is_array? next_values)
                                  (sort next_values { `key:`name }))
-                              ;(log "next_values: " (clone next_values))
                               (= next_values (clone next_values))
                               (cond
                                  (is_array? next_values)
@@ -5722,10 +5897,10 @@
                                    `ctype: "file"
                                    `style: "width: calc(100% - 10px) !important;"
                                    `view: (div { `style: "display: inline-block; width: calc(100% - 50px); height: 100%; overflow: hidden" }
-                                           (div { `style: "height: calc(100% - 30px); overflow: scroll;" }
-                                            (pre {} (-> next_values `text)))
-                                           (div { `style: "padding: 10px;" }
-                                            open_button))
+                                               (div { `style: "height: calc(100% - 30px); overflow: scroll;" }
+                                                    (pre {} (-> next_values `text)))
+                                               (div { `style: "padding: 10px;" }
+                                                    []))  ;; placeholder for any additional information about the file
                                    }
                                  else
                                  {
@@ -5736,22 +5911,41 @@
         
         (control (tree_browser (+ { `path_separator: "/"
                                     `render_entry: render_entry
-                                    `get_possibles: get_possibles}
+                                    `get_possibles: get_possibles
+                                    allow_non_matches: (if create_mode true false)
+                                    select_text: (if create_mode
+                                                    "Press Enter To Create"
+                                                    "Press Enter To Open")
+                                    select_button_text: (if create_mode
+                                                           "Create"
+                                                           "Open")
+                                    validate_selection: (fn (path at_leaf matches)
+                                                           (try
+                                                              (progn
+                                                                 ;(log "v:" path  "at_leaf: " at_leaf "# m: " (length matches))
+                                                                 (cond
+                                                                    at_leaf
+                                                                    false
+                                                                    (ends_with? "/" path)
+                                                                    false
+                                                                    (== 0 (length path))
+                                                                    false
+                                                                    (and (is_array? matches)
+                                                                         (== (length matches) 1)
+                                                                         (== (first (split_by "\n" (prop (first matches) `innerText)))
+                                                                             (last (split_by "/" path))))
+                                                                    false
+                                                                    else
+                                                                    true))
+                                                              (catch Error (e)
+                                                                 (progn
+                                                                    (log "Error: " e.message)
+                                                                    false))))
+                                    }
                                     (if (is_object? options)
                                         options
                                         {})))))
        
-                                    
-       (attach_event_listener open_button
-                              `click
-                              (fn (e)
-                                 (when options.on_select 
-                                    (try
-                                       (options.on_select (-> control `get_current_stack) control)
-                                       (catch Error (e)
-                                          (progn
-                                             (log "file_tree_browser: error on on_select handler: " e.message e)
-                                             (notify (+ "Error: " e.message))))))))
        control))
 
 
@@ -6194,19 +6388,21 @@
 
 
 
-(defun wait_for_file_selection () 
+(defun wait_for_file_selection (create_mode) 
    (new Promise (fn (resolve reject)
                    (let
                        ((selection nil)
                         (target_control (or *last_focus* (default_focus)))
-                        (control (file_tree_browser { `on_select: (fn (stack)
+                        (control (file_tree_browser { 
+                                                      create_mode: create_mode                          
+                                                      on_select: (fn (stack)
                                                                     (progn
                                                                      (= selection (join "/" stack))
                                                                      (if (> stack.length 0)
                                                                        (progn
                                                                         (destroy_control control)))))
                                                                         
-                                                     `on_destroy: (fn (self)
+                                                     on_destroy: (fn (self)
                                                                     (progn
                                                                      (setTimeout (fn ()
                                                                                     (progn

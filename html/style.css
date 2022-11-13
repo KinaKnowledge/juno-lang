@@ -1880,6 +1880,10 @@ li.juno-menu-selected {
   padding-right: 10px;
 }
 
+.juno-display-none {
+    display: none !important;
+}
+
 div.juno-floating-container {
     cursor: default;
     user-select: none;
