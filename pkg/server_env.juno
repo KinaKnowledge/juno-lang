@@ -571,6 +571,166 @@
            {
             `status: 200
             }))))
+(defun create_websocket (uri options)
+   (let
+      ((`options (or options {}))
+       (`ws (new WebSocket(uri)))
+       (`on_close (if options.on_close
+                      options.on_close
+                      nil))
+       (`on_open (or options.on_open nil))
+       (`on_message (or options.on_message (fn (e)
+                                              (console.log e.data))))
+       (`on_error (or options.on_error (fn (e)
+                                          (console.error "ERROR: " e.data)))))
+      
+      (when on_open
+         (set_prop ws
+            `onopen
+            on_open))
+      (when on_close
+         (set_prop ws
+            `onclose
+            on_close))
+      
+      (when on_message
+         (set_prop ws
+            `onmessage
+            on_message))
+      
+      (when on_error
+         (set_prop ws
+            `onerror
+            on_error))
+      ws)
+   {
+     `usage: "[uri:string] [options:object]"
+     `description: (+ "Creates a websocket client with the given uri format: ws://hostname:port/path and returns a WebSocket object."
+                      "Options are as follows with each function receiving the event object as a single argument:<br>"
+                      "on_open:function - Called when the socket is opened<br>"
+                      "on_close:function - Called when the socket is closed<br>"
+                      "on_message:function - Called when the socket receives a message event<br>"
+                      "on_error:function - Called when an error event occurs on the socket.<br>")
+     `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message" "open" "create"]
+     })
+
+(defun send_to_ws (ws data)
+   (-> ws `send (if (is_object? data)
+                    (JSON.stringify data)
+                    data))
+   {
+     `description: (+ "Given an active websocket and a data value such as a string or object, sends that data value over "
+                      "the websocket. If the websocket is an object, it will call JSON.stringify on the object prior to "
+                      "sending.")
+     `usage: ["ws:WebSocket" "data:*"]
+     `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message"]
+     })
+
+(defun close_ws (ws)
+   (-> ws `close)
+   {
+     `description: (+ "Closes the provided websocket and returns the result of the operation.")
+     `usage: ["ws:WebSocket"]
+     `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message" "close"]
+     })
+
+(defun websocket_handler (options)
+   (progn
+      (assert (and (is_object? options)
+                   options.on_open
+                   options.on_close
+                   options.on_message
+                   options.on_error)
+              "Invalid options provided to the websocket_handler: options must be an object with on_open, on_close, on_message and on_error functions.")
+      (fn (parameters request_event)
+         (let
+            ()
+            (declare (local socket response)
+                     (object socket response))
+            ;; embed js since the compiler doesn't have a construct for multiple return values.
+            (javascript | let { socket, response } = Deno.upgradeWebSocket(request_event.request) | )
+            (set_prop socket
+               `onopen
+               (fn (event)
+                  (-> options `on_open socket event parameters))
+               `onmessage
+               (fn (event)
+                  (-> options `on_message socket event))
+               `onclose
+               (fn (event)
+                  (-> options `on_close socket event))
+               `onerror
+               (fn (event)
+                  (-> options `on_error socket event)))
+            response)))
+      {
+        `description: (+ "Returns a handler function to establish a server-side websocket handler. "
+                         "The handler must be provided with an options object that handles the "
+                         "event lifecycle of the websocket it is serving.  All provided handler functions "
+                         "are provided the socket and the event object.  The on_open object is provided any parameters "
+                         "that were provided with the establishing request.<br> Options are as follows:<br>"
+                         "on_open:function - Provided the arguments (socket event_object parameters) when a new socket is requested to be established.<br>"
+                         "on_message:function - Called as (socket event_object) for the received event message.<br>"
+                         "on_close:function - When a socket is requested to close, this function is called with (socket event_object)<br>"
+                         "on_error:function - When an error occurs, this function is called as (socket event_object).<br>"
+                         "<br>")
+        `tags: ["websocket" "handler" "server" "upgrade" "open" ]
+        `usage: ["options:object"]
+      })
+
+(defglobal ws_repl_handler
+   (websocket_handler {
+                        `on_open: (fn (ws event parameters)
+                                     (try
+                                        (send_to_ws ws
+                                                    { config: *env_config*
+                                                      namespace: (current_namespace)
+                                                      })
+                                        (catch Error (e)
+                                           (console.log "ws_repl_handler: cannot send to client: " e.message))))
+                        `on_message: (fn (ws event)
+                                        (let
+                                           ((data (JSON.parse event.data))
+                                            (command (prop data `command))
+                                            (args (prop data `args))
+                                            (request_id (prop data `req_id))
+                                            (result nil))
+                                           (console.log "ws_repl_handler: on_data: " data)
+                                           (cond
+                                              (and (== command "eval")
+                                                   (is_array? args))
+                                              (try
+                                                 (progn
+                                                    (= result (-> Environment `evaluate args.0))
+                                                    (log "ws_repl: <- " result)
+                                                    (send_to_ws ws
+                                                                {
+                                                                  `req_id: request_id
+                                                                  `result: result
+                                                                  `rval: "OK"
+                                                                  }))
+                                                 (catch Error (e)
+                                                    (progn
+                                                       (console.error "ws_repl_handler: error on eval: " e.message)
+                                                       (send_to_ws ws
+                                                                   {
+                                                                     `req_id: request_id
+                                                                     `message: e.message
+                                                                     `rval: "FAIL"
+                                                                     }))))
+                                              (== command "close")
+                                              (progn
+                                                 (log "closing repl connection")
+                                                 (try
+                                                    (close_ws ws)
+                                                    (catch Error (e)
+                                                       (progn
+                                                          (log "Error on closing: " e.message))))))))
+                        `on_error: (fn (ws error)
+                                      (log "error on websocket: " error))
+                        `on_close: (fn (ws event)
+                                      (log "websocket closed"))
+                        }))
 
 (defun env_bank (port base_directory options)
    (let
@@ -598,6 +758,8 @@
                      echo_params)
      (add_http_route "POST" "/save_file"
                      (save_file_handler base_directory))
+     (add_http_route "GET" "/connect_repl"
+                     ws_repl_handler)
       (if (eq nil options)
           (= options {}))
       (set_prop options

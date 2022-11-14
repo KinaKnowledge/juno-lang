@@ -246,6 +246,69 @@
        `tags: ["files" "io" "path" "directory" "folder"]
    })
 
+(defun create_websocket (uri options)
+   (let
+      ((`options (or options {}))
+       (`ws (new WebSocket(uri)))
+       (`on_close (if options.on_close
+                      options.on_close
+                      nil))
+       (`on_open (or options.on_open nil))
+       (`on_message (or options.on_message (fn (e)
+                                              (console.log e.data))))
+       (`on_error (or options.on_error (fn (e)
+                                          (console.error "ERROR: " e.data)))))
+      
+      (when on_open
+         (set_prop ws
+            `onopen
+            on_open))
+      (when on_close
+         (set_prop ws
+            `onclose
+            on_close))
+      
+      (when on_message
+         (set_prop ws
+            `onmessage
+            on_message))
+      
+      (when on_error
+         (set_prop ws
+            `onerror
+            on_error))
+      ws)
+   {
+     `usage: "[uri:string] [options:object]"
+     `description: (+ "Creates a websocket client with the given uri format: ws://hostname:port/path and returns a WebSocket object."
+                      "Options are as follows with each function receiving the event object as a single argument:<br>"
+                      "on_open:function - Called when the socket is opened<br>"
+                      "on_close:function - Called when the socket is closed<br>"
+                      "on_message:function - Called when the socket receives a message event<br>"
+                      "on_error:function - Called when an error event occurs on the socket.<br>")
+     `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message" "open" "create"]
+     })
+
+(defun send_to_ws (ws data)
+   (-> ws `send (if (is_object? data)
+                    (JSON.stringify data)
+                    data))
+   {
+       `description: (+ "Given an active websocket and a data value such as a string or object, sends that data value over "
+                        "the websocket. If the websocket is an object, it will call JSON.stringify on the object prior to "
+                        "sending.")
+       `usage: ["ws:WebSocket" "data:*"]
+       `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message"]
+   })
+
+(defun close_ws (ws)
+   (-> ws `close)
+   {
+     `description: (+ "Closes the provided websocket and returns the result of the operation.")
+     `usage: ["ws:WebSocket"]
+     `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message" "close"]
+   })
+
 (register_feature "http_client")
 (load_pends "http")
 true

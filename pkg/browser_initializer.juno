@@ -4386,7 +4386,7 @@
                                 `(log_view ,#options)))
     interf))
 
-
+;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
 (defun browser_repl (options)
   (let
       ((options (or options {}))
@@ -4417,6 +4417,13 @@
        (history (if (is_array? options.history)
                   options.history
                   []))
+       (clog (fn (`& args)
+               (progn
+                  (apply console.log args)
+                  (-> intf `log (apply div { `style: "display: flex;" }
+                                       (for_each (val args)
+                                          (div { `style: "padding-right: 10px" } (value_to_dom val)))))
+                  nil)))
        (push_history (fn (lisp_text)
                        (progn
                         (push history
@@ -4462,28 +4469,125 @@
                                                   exec: (function (editor)
                                                                   (-> intf command_name editor)) }))                                                                                                                                                                  
                                          (or (pairs *key_bindings*.repl) []))))
+       (repl_ws nil)
+       (request_id 0)
+       (requests {})
+       (open_remote_evaluator (fn ()
+                                 (if options.remote_repl
+                                    (progn
+                                       (= repl_ws
+                                          (http/create_websocket options.remote_repl
+                                                            {
+                                                              `on_message: (fn (event)
+                                                                             (try
+                                                                                (let
+                                                                                   ((data (JSON.parse event.data))
+                                                                                    (pdata nil)
+                                                                                    (resolver nil))
+                                                                                   (cond
+                                                                                      (and (is_object? data)
+                                                                                           data.req_id)
+                                                                                      (progn
+                                                                                         (if (prop requests data.req_id)
+                                                                                             (progn
+                                                                                                (= pdata (prop requests data.req_id))
+                                                                                                (remove_prop requests data.req_id)
+                                                                                                (clearTimeout (third pdata)) ;; remove the timeout
+                                                                                                (if (== data.rval "OK")
+                                                                                                    (progn
+                                                                                                       (= resolver (first pdata))
+                                                                                                       (resolver data.result nil))
+                                                                                                    (progn
+                                                                                                       (= resolver (second pdata)) ;; promise rejection
+                                                                                                       (resolver data.message true))))
+                                                                                             (progn
+                                                                                                ;; received a request but it is not tied to a request we made, could be a log message
+                                                                                                (if (== data.rval "OK")
+                                                                                                    (clog data.result)
+                                                                                                    (clog data.message)))))
+                                                                                      (and (is_object? data)
+                                                                                           data.result)
+                                                                                      (clog "[message]:" data.result)
+                                                                                      else
+                                                                                      (clog  data)))
+                                                                                (catch Error (e)
+                                                                                   (clog "Unable to process received message: " e.message))))
+                                                              `on_open: (fn (event)
+                                                                           (clog (+ "Connected to Remote REPL: " options.remote_repl)))
+                                                              `on_close: (fn (event)
+                                                                            (clog "Interface is now closed"))
+                                                              `on_error: (fn (event)
+                                                                            (clog "Error on WS:" event))
+                                                            }))))))
+       (send_wait (fn (lisp_text)
+                     (let
+                        ((rval nil))
+                       (try
+                          (= rval (new Promise 
+                                       (fn (resolve reject)
+                                          (let
+                                             ((my_request_id (inc request_id))
+                                              (timer nil))
+                                             (= timer (setTimeout (fn ()
+                                                                     (progn
+                                                                        (clog "timeout occurred")
+                                                                        (reject { `rval: "FAIL" `message: (+ "Timeout on request id: " my_request_id) })))
+                                                                  (* 90 1000)))
+                                             ;; set the request id in request object, and then wait to resolve the promise until results are returned, or a timeout occurs
+                                             (set_prop requests
+                                                my_request_id
+                                                (list resolve reject timer))
+                                             (try 
+                                                (http/send_to_ws repl_ws
+                                                                 { `command: "eval"
+                                                                   `req_id: request_id
+                                                                   `args: [ lisp_text ] })
+                                                (catch Error (e)
+                                                   (clog "ERROR on send_to_ws: " e.message)))
+                                             true))))
+                             (catch Error (e)
+                                (log (+ "Error on send_wait: " e.message))))
+                       rval)))
+                                                
+                                  
        (evaluator (fn (lisp_text no_eval no_clear)
                     (let
                         ((result nil))
                       (setq error_state nil)
-                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                    
-                      (try
-                        (= result (if no_eval
-                                    lisp_text
-                                    (-> current_env `evaluate lisp_text {} { `throw_on_error: true })))
-                        (catch Error (ex)
-                          (do
-                            (= error_state true)
-                            (notify (+ "Error: " ex.message))
-                            (= result ex))))
-                      (console.log "<-" result)
-                      (set_prop namespace_span
-                                `innerText
-                                (current_namespace))                     
-                      (-> output_control `append result lisp_text error_state)
-                      (if (and (not error_state)
-                               (not no_clear))
-                        (-> input_container `set ""))
+                      (if options.remote_repl
+                         (progn
+                            (try
+                               (progn
+                                  (= result (send_wait lisp_text)))
+                               (catch Error (e)
+                                  (do
+                                     (= error_state true)
+                                     (notify (+ "Error: " e.message)))))
+                            (console.log "remote: <-" result)
+                            
+                            (-> output_control `append result lisp_text error_state)
+                            (if (and (not error_state)
+                                     (not no_clear))
+                                (-> input_container `set "")))
+                         (progn
+                            (setq current_env (-> Environment `get_namespace_handle (current_namespace)))
+                            (try
+                               (= result (if no_eval
+                                             lisp_text
+                                             (-> current_env `evaluate lisp_text {} { `throw_on_error: true })))
+                               (catch Error (ex)
+                                  (do
+                                     (= error_state true)
+                                     (notify (+ "Error: " ex.message))
+                                     (= result ex))))
+                            (console.log "<-" result)
+                            (set_prop namespace_span
+                               `innerText
+                               (current_namespace))
+                            (-> output_control `append result lisp_text error_state)
+                            (if (and (not error_state)
+                                     (not no_clear))
+                                (-> input_container `set ""))))
                       result)))
                              
        (input_container (make_editor 
@@ -4565,6 +4669,13 @@
                                      { `include_prototypes: false }))                           
                          (if options.display_options.include_prototypes
                            (add_class "juno-button-on" show_prototype_details_button))
+                         (try
+                            (if options.remote_repl
+                               (progn
+                                  (-> output_control `append (+ "Connecting to remote repl: " options.remote_repl))
+                                  (open_remote_evaluator)))
+                            (catch Error (e)
+                               (log "Cannot open remote REPL: " e.message)))
                          (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
                                               (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
@@ -4671,6 +4782,7 @@
                           (evaluator lisp_text no_eval no_clear))
              })
     intf))
+
 
 
 ;; singleton - if it already exists, just return the control
@@ -6386,13 +6498,15 @@
 (defun new_juno_repl (options)
    (let
       ((name (compute_name_for_control "Juno REPL"))
-       (target_container (or options.control_to_replace *last_focus*  (default_focus))))
+       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (remote_repl (if (is_string? options.remote_repl)
+                        options.remote_repl)))
       (alert_on_error "REPL Error"
                       (cond
                          (is_top_control? target_container)
-                         (container_view_operation "split_right" (first (-> target_container `controls)) (browser_repl { `name: name }))
+                         (container_view_operation "split_right" (first (-> target_container `controls)) (browser_repl { `name: name `remote_repl: remote_repl }))
                          else
-                         (swap_control target_container (browser_repl { `name: name })))))
+                         (swap_control target_container (browser_repl { `name: name `remote_repl: remote_repl })))))
    {
        usage: ["options:?object"]
        description: (+ "Creates a new REPL in the current frame.  If provided with a `control_to_replace "
@@ -6658,7 +6772,9 @@
     (if is_served?
        ["Open File" edit_file ]
        [])
-    ["--" nil]
+    (if (resolve_path [ `get ] *last_focus*) 
+        ["--" nil]
+        [])
     (if (and is_served?
              *last_focus*
              (resolve_path [ `options `filename ] *last_focus*))

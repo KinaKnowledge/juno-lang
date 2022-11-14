@@ -60,6 +60,10 @@
 ;;
 ;; special_operators - when true, return the list of the compiler's special operators
 
+;; *on_compiler_eval_error* - when evaluations are required to occur in the compiler, and an error
+;;                            is thrown, if this function value is present in the compiler namespace, 
+;;                            it will be called with (*on_compiler_eval_error* thrown_error assembled_js)
+
 ;; Note that this source was originally written in an earlier version of this lisp,
 ;; which needed symbols to be quoted explicitly in certain form types, principally when
 ;; they are being initially defined, such as in let.  This is no longer the case
@@ -1492,49 +1496,49 @@
        ;; unit in a lambda.
        
        (`top_level_log (defclog { `prefix: "top-level" `color: `darkgreen `background: "#300010" } ))
-       (`compile_toplevel 
-                       (fn (lisp_tree ctx block_options)
-                           (if (get_ctx_val ctx `__IN_LAMBDA__)
-                               (throw EvalError "Compiler attempt to compile top-level in lambda (most likely a bug)")
-                               (do
-                                 (let
-                                     ((`idx 0)
-                                      (`rval nil)
-                                      (`tokens nil)
-                                      (`stmt nil)
-                                      (`base_ctx ctx)
-                                      (`num_non_return_statements (- (length lisp_tree) 2))
-                                      (`ctx (if block_options.no_scope_boundary
-                                                ctx
-                                                (new_ctx ctx))))
-                                     (while (< idx num_non_return_statements)
-                                        (do
-                                          (inc idx)
-                                          ;; since we are in a top level mode we need to reset the has_first_level flag
-                                          ;; or we will get reference errors on subsequent compilations for __GG__
-
-                                          (= ctx (new_ctx ctx))
-                                          (set_new_completion_scope ctx)                                          
-                                          (set_ctx ctx `__TOP_LEVEL__ true)
-                                          
-                                          ;; since we have the source lisp tree, first tokenize each statement and 
-                                          ;; then compile and then evaluate it.                                          
-                                          (if (verbosity ctx)
-                                              (progn
-						(console.log "")
-						(top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx)))))
-                                          (= tokens (tokenize (prop lisp_tree idx) ctx))
-                                          
-                                          (= stmt (compile tokens ctx))
-                                                                                                                                 
-                                          (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
-                                          (when (verbosity ctx)
-					      (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " (as_lisp stmt))
-					      (top_level_log (+ "" idx "/" num_non_return_statements) "<-" (as_lisp rval)))					  
-                                          ))
-                                   ;; return the last statement for standard compilation.
-				   
-                                   (prop lisp_tree (+ idx 1)))))))
+       (`compile_toplevel
+          (fn (lisp_tree ctx block_options)
+             (if (get_ctx_val ctx `__IN_LAMBDA__)
+                 (throw EvalError "Compiler attempt to compile top-level in lambda (most likely a bug)")
+                 (do
+                    (let
+                       ((`idx 0)
+                        (`rval nil)
+                        (`tokens nil)
+                        (`stmt nil)
+                        (`base_ctx ctx)
+                        (`num_non_return_statements (- (length lisp_tree) 2))
+                        (`ctx (if block_options.no_scope_boundary
+                                  ctx
+                                  (new_ctx ctx))))
+                       (while (< idx num_non_return_statements)
+                          (do
+                             (inc idx)
+                             ;; since we are in a top level mode we need to reset the has_first_level flag
+                             ;; or we will get reference errors on subsequent compilations for __GG__
+                             
+                             (= ctx (new_ctx ctx))
+                             (set_new_completion_scope ctx)
+                             (set_ctx ctx `__TOP_LEVEL__ true)
+                             
+                             ;; since we have the source lisp tree, first tokenize each statement and
+                             ;; then compile and then evaluate it.
+                             (if (verbosity ctx)
+                                 (progn
+                                    (console.log "")
+                                    (top_level_log (+ "" idx "/" num_non_return_statements) "->" (as_lisp (prop lisp_tree idx)))))
+                             (= tokens (tokenize (prop lisp_tree idx) ctx))
+                             
+                             (= stmt (compile tokens ctx))
+                             
+                             (= rval (wrap_and_run stmt ctx { `bind_mode: true }))
+                             (when (verbosity ctx)
+                                (top_level_log (+ "" idx "/" num_non_return_statements) "compiled <- " (as_lisp stmt))
+                                (top_level_log (+ "" idx "/" num_non_return_statements) "<-" (as_lisp rval)))
+                             ))
+                       ;; return the last statement for standard compilation.
+                       
+                       (prop lisp_tree (+ idx 1)))))))
        
 
        ;; detemines if to place a return on the final statement in the statement list
@@ -2803,176 +2807,176 @@
        
        
        (`compile_val_mod (fn (tokens ctx)
-                             (let
-                                 ((`target (or tokens.1.name
-                                               (progn
+                            (let
+                               ((`target (or tokens.1.name
+                                             (progn
                                                 (throw SyntaxError
-                                                      (+ tokens.0.name
-                                                         " requires at least one argument indicating the symbol which value is to be modified")))))
-                                  (`target_location (cond 
-                                                      (get_ctx ctx tokens.1.name)
-                                                      "local"
-                                                      (get_lisp_ctx ctx tokens.1.name)
-                                                      "global"))
-                                  (`comps (split_by "." target))
-                                  (`target_details (get_declaration_details ctx (first comps)))
-                                  (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
-                                  (`operation (if in_infix
-                                                  (cond
-                                                    (== tokens.0.name "inc")
-                                                    "+"
-                                                    (== tokens.0.name "dec")
-                                                    "-"
-                                                    else
-                                                    (throw SyntaxError (+ "Invalid value modification operator: " tokens.0.name)))
-                                                  (cond
-                                                         
-                                                    (and (== target_location "local")
-                                                         (== tokens.0.name "inc"))
-                                                    "+="
-                                                    (and (== target_location "local")
-                                                         (== tokens.0.name "dec"))
-                                                    "-="
-                                                    (== tokens.0.name "inc")
-                                                    "+"
-                                                    else
-                                                    "-")))
-                                  (`mod_source nil)
-                                  (`how_much (or (and tokens.2
-                                                      (compile tokens.2 ctx)) 
-                                                 1)))
+                                                   (+ tokens.0.name
+                                                      " requires at least one argument indicating the symbol which value is to be modified")))))
+                                (`target_location (cond
+                                                     (get_ctx ctx tokens.1.name)
+                                                     "local"
+                                                     (get_lisp_ctx ctx tokens.1.name)
+                                                     "global"))
+                                (`comps (split_by "." target))
+                                (`target_details (get_declaration_details ctx (first comps)))
+                                (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
+                                (`operation (if in_infix
+                                                (cond
+                                                   (== tokens.0.name "inc")
+                                                   "+"
+                                                   (== tokens.0.name "dec")
+                                                   "-"
+                                                   else
+                                                   (throw SyntaxError (+ "Invalid value modification operator: " tokens.0.name)))
+                                                (cond
+                                                   
+                                                   (and (== target_location "local")
+                                                        (== tokens.0.name "inc"))
+                                                   "+="
+                                                   (and (== target_location "local")
+                                                        (== tokens.0.name "dec"))
+                                                   "-="
+                                                   (== tokens.0.name "inc")
+                                                   "+"
+                                                   else
+                                                   "-")))
+                                (`mod_source nil)
+                                (`how_much (or (and tokens.2
+                                                    (compile tokens.2 ctx))
+                                               1)))
                                
                                
                                (if (== undefined target_details)
-                                 (throw ReferenceError (+ "unknown symbol: " comps.0)))
-                               (cond 
+                                   (throw ReferenceError (+ "unknown symbol: " comps.0)))
+                               (cond
                                   (== target_location "global")
                                   (do
-                                    (= has_lisp_globals true)                                    
-                                    ["(" "await" " " env_ref "set_global(\"" target "\","
-                                     "await" " " env_ref "get_global(\"" target "\")" " " operation " " how_much "))"])                                                                                 
+                                     (= has_lisp_globals true)
+                                     ["(" "await" " " env_ref "set_global(\"" target "\","
+                                      "await" " " env_ref "get_global(\"" target "\")" " " operation " " how_much "))"])
                                   in_infix
-                                  (do 
+                                  (do
                                      ["(" target "=" target operation how_much ")"])
-                                 
+                                  
                                   else
-                                   [target operation how_much]))))                       
+                                  [target operation how_much]))))
        
        (`compile_try
-        (fn (tokens ctx)
-          ;; when ctx block step is nil, this means that try was called directly from
-            ;; the top level, and needs to be in an explicit block that would contain
-            ;; both the try block and the catch blocks.
-          (if (eq nil ctx.block_step)
-            (compile_block (ensure_block tokens) ctx)
-            (compile_try_inner tokens ctx))))
+          (fn (tokens ctx)
+             ;; when ctx block step is nil, this means that try was called directly from
+             ;; the top level, and needs to be in an explicit block that would contain
+             ;; both the try block and the catch blocks.
+             (if (eq nil ctx.block_step)
+                 (compile_block (ensure_block tokens) ctx)
+                 (compile_try_inner tokens ctx))))
        
        (`compile_try_inner
-        (fn (tokens ctx)
-          (let
-              ((acc [])
-               (try_block (cond
-			   (and tokens.1
-				(eq nil tokens.1.val))
-			   tokens.1
-			   tokens.1			   
-			   tokens.1.val))
-               (compiled_try_block nil)
-               (catch_block nil)
-               (idx -1)
-               (exception_ref (gen_temp_name "exception"))
-               (base_error_caught false)
-               (catch_stmts [])
-               (catches (-> tokens `slice 2))
-               (compile_catch (fn (catch_block)
-                                (let
-                                    ((throwable_type catch_block.1.name)
-                                     (throwable_ref catch_block.2.val.0.name)
-                                     (catch_statements catch_block.3)
-                                     (stmts nil)
-                                     (subacc [])
-                                     (ctx (new_ctx ctx)))
-                                  (set_ctx ctx
-                                           throwable_ref
-                                           (new catch_block.1.name))
-                                  (when (== throwable_type "Error")
-                                    (= base_error_caught true))
-                                  (= stmts (compile_block (ensure_block catch_statements) ctx))
-                                  (if (> idx 0)
-                                    (push subacc [" " "else" " "]))
-                                  (push subacc
-                                        ["if (" exception_ref " instanceof " throwable_type ") " "{" "let " throwable_ref "=" exception_ref ";" stmts "}"])
-                                  (when (and (== idx (- catches.length 1))
-                                             (not base_error_caught))
-                                    (push subacc [" " "else" " "])
-                                    (push subacc [ { `completion: `throw } "throw" " " exception_ref ";"]))
-                                    
-                                  subacc))))                                                                                                      
+          (fn (tokens ctx)
+             (let
+                ((acc [])
+                 (try_block (cond
+                               (and tokens.1
+                                  (eq nil tokens.1.val))
+                               tokens.1
+                               tokens.1
+                               tokens.1.val))
+                 (compiled_try_block nil)
+                 (catch_block nil)
+                 (idx -1)
+                 (exception_ref (gen_temp_name "exception"))
+                 (base_error_caught false)
+                 (catch_stmts [])
+                 (catches (-> tokens `slice 2))
+                 (compile_catch (fn (catch_block)
+                                   (let
+                                      ((throwable_type catch_block.1.name)
+                                       (throwable_ref catch_block.2.val.0.name)
+                                       (catch_statements catch_block.3)
+                                       (stmts nil)
+                                       (subacc [])
+                                       (ctx (new_ctx ctx)))
+                                      (set_ctx ctx
+                                               throwable_ref
+                                               (new catch_block.1.name))
+                                      (when (== throwable_type "Error")
+                                         (= base_error_caught true))
+                                      (= stmts (compile_block (ensure_block catch_statements) ctx))
+                                      (if (> idx 0)
+                                          (push subacc [" " "else" " "]))
+                                      (push subacc
+                                         ["if (" exception_ref " instanceof " throwable_type ") " "{" "let " throwable_ref "=" exception_ref ";" stmts "}"])
+                                      (when (and (== idx (- catches.length 1))
+                                                 (not base_error_caught))
+                                         (push subacc [" " "else" " "])
+                                         (push subacc [ { `completion: `throw } "throw" " " exception_ref ";"]))
+                                      
+                                      subacc))))
             ;; check syntax
             (cond
-              (< tokens.length 2)
-              (throw SyntaxError "invalid try form: missing try block")
-              (or (eq nil catches)
-                  (< catches.length 1))
-              (throw SyntaxError "invalid catch block: missing catch"))
+               (< tokens.length 2)
+               (throw SyntaxError "invalid try form: missing try block")
+               (or (eq nil catches)
+                   (< catches.length 1))
+               (throw SyntaxError "invalid catch block: missing catch"))
             
             (= compiled_try_block (compile_block (ensure_block try_block) ctx))
             (push acc { `ctype: "tryblock" })
             (push acc [ "try" " " compiled_try_block ])
             (push catch_stmts [ " " "catch" " " "(" exception_ref ")" " " ])
-            (push catch_stmts "{")            
+            (push catch_stmts "{")
             (while (< idx (- catches.length 1))
-              (do
-                (inc idx)
-                (= catch_block (prop (prop catches idx) `val))
-                (if (is_array? catch_block)                         
-                  (push catch_stmts (compile_catch catch_block))
-                  (throw SyntaxError "invalid catch form"))))
+               (do
+                  (inc idx)
+                  (= catch_block (prop (prop catches idx) `val))
+                  (if (is_array? catch_block)
+                      (push catch_stmts (compile_catch catch_block))
+                      (throw SyntaxError "invalid catch form"))))
             (push catch_stmts "}")
             (push acc catch_stmts)
             acc)))
                                            
        (`compile_throw (fn (tokens ctx)
-                           (let
-                               ((`acc [])
-                                (`error_message nil)
-                                (`mode 1)
-                                (`cmp_rec (get_ctx ctx `__COMPLETION_SCOPE__))
-                                (`error_instance nil))
+                          (let
+                             ((`acc [])
+                              (`error_message nil)
+                              (`mode 1)
+                              (`cmp_rec (get_ctx ctx `__COMPLETION_SCOPE__))
+                              (`error_instance nil))
                              (assert cmp_rec "compiler error: throw unable to find completion scope in context")
                              (cond
-                               (and (is_array? tokens)
-                                    (== tokens.length 2)
-                                    tokens.1.ref)
-                               (do 
+                                (and (is_array? tokens)
+                                     (== tokens.length 2)
+                                     tokens.1.ref)
+                                (do
                                    (= mode 0)
                                    (= error_instance (compile tokens.1 ctx)))
-                               (and (is_array? tokens)
-                                    (== tokens.length 3))
-                               (do
-                                (= error_instance (compile tokens.1 ctx))
-                                (= error_message (compile tokens.2 ctx)))
-                               (and (is_array? tokens)
-                                    (== tokens.length 2))
-                               (do
-                                (= error_message (compile tokens.1 ctx))
-                                (= error_instance "Error"))
-                               else
-                               (throw SyntaxError "Invalid Throw Syntax"))
-                           
+                                (and (is_array? tokens)
+                                     (== tokens.length 3))
+                                (do
+                                   (= error_instance (compile tokens.1 ctx))
+                                   (= error_message (compile tokens.2 ctx)))
+                                (and (is_array? tokens)
+                                     (== tokens.length 2))
+                                (do
+                                   (= error_message (compile tokens.1 ctx))
+                                   (= error_instance "Error"))
+                                else
+                                (throw SyntaxError "Invalid Throw Syntax"))
+                             
                              (if (== mode 0)
                                  (for_each (`t [ { `completion: "throw" } "throw" " " error_instance ";" ])
                                     (push acc t))
                                  (for_each (`t [ { `completion: "throw" } "throw" " " "new" " " error_instance "(" error_message ")" ";"])
-                                           (push acc t)))
+                                    (push acc t)))
                              (push cmp_rec.completion_records
-                                   {
-                                    `block_id: ctx.block_id                                                       
-                                    `type: "throw"
-                                    `block_step: ctx.block_step
-                                    `stmt: acc
-                                    })
-                                                                   
+                                {
+                                  `block_id: ctx.block_id
+                                  `type: "throw"
+                                  `block_step: ctx.block_step
+                                  `stmt: acc
+                                  })
+                             
                              acc)))
        
        
@@ -3008,250 +3012,250 @@
                        (defclog { `prefix: "compile_apply" `background: "sienna" `color: "white" })))
        
        (`compile_apply (fn (tokens ctx)
-                           (let
-                               ((`acc [])
-                                (`fn_ref tokens.1)
-                                (`complex? false)
-                                (`args_ref (gen_temp_name "apply_args"))
-                                (`function_ref (gen_temp_name "apply_fn"))
-                                (`target_argument_ref nil)
-                                (`target_arg nil)
-                                (`ctype nil)
-                                (`preceding_arg_ref nil)
-                                (`preamble (calling_preamble ctx))
-                                (`requires_await false)
-                                (`ctx (new_ctx ctx))
-                                (`compiled_fun_resolver nil)
-                                (`args (-> tokens `slice 2)))
+                          (let
+                             ((`acc [])
+                              (`fn_ref tokens.1)
+                              (`complex? false)
+                              (`args_ref (gen_temp_name "apply_args"))
+                              (`function_ref (gen_temp_name "apply_fn"))
+                              (`target_argument_ref nil)
+                              (`target_arg nil)
+                              (`ctype nil)
+                              (`preceding_arg_ref nil)
+                              (`preamble (calling_preamble ctx))
+                              (`requires_await false)
+                              (`ctx (new_ctx ctx))
+                              (`compiled_fun_resolver nil)
+                              (`args (-> tokens `slice 2)))
                              (declare (string preamble.0))
                              (set_new_completion_scope ctx)
                              (when (and args (== args.length 1))
-                               (= args (first args)))
+                                (= args (first args)))
                              
                              (= function_ref (compile_wrapper_fn fn_ref ctx))
-                           
+                             
                              (when fn_ref.ref
-                                 (= ctype (get_declaration_details ctx fn_ref.name)))
+                                (= ctype (get_declaration_details ctx fn_ref.name)))
                              
                              (when (is_function? ctype.value)
-                                 (= requires_await true))
-                            
+                                (= requires_await true))
+                             
                              ;; now handle the arguments
                              
                              ;; Dlisp allows for multiple arguments to apply, with the last argument must be an array.
                              ;; In this case, we are going to need to unshift the preceding arguments into the final argument (which must be an array)
                              
                              (if (is_array? args)
-                                 (do                                             
-                                  (= target_argument_ref (gen_temp_name "target_arg"))
-                                  (= target_arg (pop args)) ;; take the last argument
-                                   (for_each (`t [ "let" " " target_argument_ref "=" "[]" ".concat" "(" (compile target_arg ctx) ")" ";"])
-                                             (push acc t))
-                                   (for_each (`t [ "if" "(" "!" target_argument_ref " " "instanceof" " " "Array" ")" "{" "throw" " " "new" " " "TypeError" "(" "\"Invalid final argument to apply - an array is required\"" ")" "}" ])
-                                             (push acc t))
-                                   (for_each (`token args)
-                                             (do
-                                              (= preceding_arg_ref (gen_temp_name "pre_arg"))
-                                              
-                                              (if (is_form? token)
-                                                  (do
-                                                   (for_each (`t [ "let" " " preceding_arg_ref "="  (compile_wrapper_fn token ctx) ";" ])
-                                                             (push acc t)))
-                                                  (= preceding_arg_ref (compile_wrapper_fn token ctx)))
-                                               (push acc
-                                                     [ target_argument_ref ".unshift" "(" preceding_arg_ref ")" ";" ])))
-                                   ;; now we have our arguments placed into the front of the final array 
-                                   ;; now call the functions apply method and return it
-                                   (for_each (`t ["return" " "  "(" function_ref ")" "." "apply" "(" "this" "," target_argument_ref ")"])
-                                             (push acc t)))
-                                                                  
+                                 (do
+                                    (= target_argument_ref (gen_temp_name "target_arg"))
+                                    (= target_arg (pop args)) ;; take the last argument
+                                    (for_each (`t [ "let" " " target_argument_ref "=" "[]" ".concat" "(" (compile target_arg ctx) ")" ";"])
+                                       (push acc t))
+                                    (for_each (`t [ "if" "(" "!" target_argument_ref " " "instanceof" " " "Array" ")" "{" "throw" " " "new" " " "TypeError" "(" "\"Invalid final argument to apply - an array is required\"" ")" "}" ])
+                                       (push acc t))
+                                    (for_each (`token args)
+                                       (do
+                                          (= preceding_arg_ref (gen_temp_name "pre_arg"))
+                                          
+                                          (if (is_form? token)
+                                              (do
+                                                 (for_each (`t [ "let" " " preceding_arg_ref "="  (compile_wrapper_fn token ctx) ";" ])
+                                                    (push acc t)))
+                                              (= preceding_arg_ref (compile_wrapper_fn token ctx)))
+                                          (push acc
+                                             [ target_argument_ref ".unshift" "(" preceding_arg_ref ")" ";" ])))
+                                    ;; now we have our arguments placed into the front of the final array
+                                    ;; now call the functions apply method and return it
+                                    (for_each (`t ["return" " "  "(" function_ref ")" "." "apply" "(" "this" "," target_argument_ref ")"])
+                                       (push acc t)))
+                                 
                                  ;; otherwise - just one arg (which presumably is an array) and so just construct the JS statement
-                                 (do                                   
-                                  (if (is_form? args)
-                                      (do 
-                                       (for_each (`t [ "let" " " args_ref "="  (compile_wrapper_fn args.val ctx) ";" ])
-                                                 (push acc t))
-                                       (= complex? true)))
-                                  
-                                   (for_each (`t [ "return" " " "(" " " function_ref ")" "." "apply" "(" "this" ])
-                                             (push acc t))
-                                   (when args
-                                     (push acc ",")
-                                     (if complex?
-                                         (push acc args_ref)
-                                         (push acc (compile_wrapper_fn args ctx) ctx)))
-                                   (push acc ")")))
+                                 (do
+                                    (if (is_form? args)
+                                        (do
+                                           (for_each (`t [ "let" " " args_ref "="  (compile_wrapper_fn args.val ctx) ";" ])
+                                              (push acc t))
+                                           (= complex? true)))
+                                    
+                                    (for_each (`t [ "return" " " "(" " " function_ref ")" "." "apply" "(" "this" ])
+                                       (push acc t))
+                                    (when args
+                                       (push acc ",")
+                                       (if complex?
+                                          (push acc args_ref)
+                                          (push acc (compile_wrapper_fn args ctx) ctx)))
+                                    (push acc ")")))
                              
                              [ preamble.0 " " "(" preamble.1 " " "function" "()" "{" acc "}" ")" "()"])))
        
        (`compile_call (fn (tokens ctx)
-                          (let
-                              ((`preamble (calling_preamble ctx))
-                               (`simple_target? (if (== tokens.1.ref true)
-                                                    true
-                                                    false))
-                               (`simple_method? (if (== tokens.2.type "literal")
-                                                    true
-                                                    false))
-                               (`ctx ctx))
+                         (let
+                            ((`preamble (calling_preamble ctx))
+                             (`simple_target? (if (== tokens.1.ref true)
+                                                  true
+                                                  false))
+                             (`simple_method? (if (== tokens.2.type "literal")
+                                                  true
+                                                  false))
+                             (`ctx ctx))
                             (declare (string preamble.2))
-                             (cond
-                                 (and simple_target?
-                                      simple_method?)
-                                 (compile_call_inner tokens ctx { `type: 0 `preamble: preamble })
-                                 simple_target?
-                                 (compile_call_inner tokens ctx { `type: 0 `preamble: preamble })
-                                 else
-                                 (do
-                                   (= ctx (new_ctx ctx))
-                                   (set_new_completion_scope ctx)
-                                   [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{" 
-                                             (compile_call_inner tokens ctx { `type: 2 `preamble: preamble })
-                                             " " "}" ")" "()" ])))))
+                            (cond
+                               (and simple_target?
+                                  simple_method?)
+                               (compile_call_inner tokens ctx { `type: 0 `preamble: preamble })
+                               simple_target?
+                               (compile_call_inner tokens ctx { `type: 0 `preamble: preamble })
+                               else
+                               (do
+                                  (= ctx (new_ctx ctx))
+                                  (set_new_completion_scope ctx)
+                                  [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{"
+                                   (compile_call_inner tokens ctx { `type: 2 `preamble: preamble })
+                                   " " "}" ")" "()" ])))))
        (`compile_call_inner (fn (tokens ctx opts)
-                          (let
-                              ((`acc [])
-                               (`target nil)
-                               (`idx -1)
-                               (`preamble opts.preamble)
-                               (`add_args (fn ()
-                                              (for_each (`token (-> tokens `slice 3))
-                                                (do
-                                                 (push acc ",")
-                                                 (push acc (compile_wrapper_fn token ctx))))))
-                               (`method nil))
-                            
-                            (when (< tokens.length 3)
-                              (throw SyntaxError (+ "call: missing arguments, requires at least 2")))
-                                                        
-                            (= target (compile_wrapper_fn tokens.1 ctx))
-                            (= method (compile_wrapper_fn tokens.2 ctx))
-                                                                                    
-                            (cond 
-                                (or (== opts.type 0)
-                                    (== opts.type 1))
-                                (do
-                                    (cond 
-                                          (== tokens.length 3)
-                                          (for_each (`t [preamble.0 " " target "[" method "]" "()"])
-                                            (push acc t))
-                                          else
-                                          (do 
+                               (let
+                                  ((`acc [])
+                                   (`target nil)
+                                   (`idx -1)
+                                   (`preamble opts.preamble)
+                                   (`add_args (fn ()
+                                                 (for_each (`token (-> tokens `slice 3))
+                                                    (do
+                                                       (push acc ",")
+                                                       (push acc (compile_wrapper_fn token ctx))))))
+                                   (`method nil))
+                                  
+                                  (when (< tokens.length 3)
+                                     (throw SyntaxError (+ "call: missing arguments, requires at least 2")))
+                                  
+                                  (= target (compile_wrapper_fn tokens.1 ctx))
+                                  (= method (compile_wrapper_fn tokens.2 ctx))
+                                  
+                                  (cond
+                                     (or (== opts.type 0)
+                                         (== opts.type 1))
+                                     (do
+                                        (cond
+                                           (== tokens.length 3)
+                                           (for_each (`t [preamble.0 " " target "[" method "]" "()"])
+                                              (push acc t))
+                                           else
+                                           (do
                                               (for_each (`t [preamble.0 " " target "[" method "]" ".call" "(" target ])
                                                  (push acc t))
                                               (add_args)
                                               (push acc ")"))))
-                                (== opts.type 2)
-                                (do 
-                                    (for_each (`t ["{" " " "let" " " "__call_target__" "="  target "," " " "__call_method__" "=" method ";" ])
-                                        (push acc t))
-                                    (cond
-                                      (== tokens.length 3)
-                                      (for_each (`t [ "return" " " preamble.0 " " "__call_target__"  "[" "__call_method__" "]" "()"])
-                                                (push acc t))
-                                      else
-                                      (do 
-                                       (for_each (`t [ "return" " " preamble.0 " " "__call_target__"   "[" "__call_method__" "]" "." "call" "(" "__call_target__"])
+                                     (== opts.type 2)
+                                     (do
+                                        (for_each (`t ["{" " " "let" " " "__call_target__" "="  target "," " " "__call_method__" "=" method ";" ])
+                                           (push acc t))
+                                        (cond
+                                           (== tokens.length 3)
+                                           (for_each (`t [ "return" " " preamble.0 " " "__call_target__"  "[" "__call_method__" "]" "()"])
+                                              (push acc t))
+                                           else
+                                           (do
+                                              (for_each (`t [ "return" " " preamble.0 " " "__call_target__"   "[" "__call_method__" "]" "." "call" "(" "__call_target__"])
                                                  (push acc t))
-                                        (add_args)
-                                        (push acc ")")))                                                       
-                                    (push acc "}")))                            
-                            acc)))
+                                              (add_args)
+                                              (push acc ")")))
+                                        (push acc "}")))
+                                  acc)))
        
        
        (`check_needs_wrap (fn (stmts)
-                              (let
-                                  ((`fst (or (and (is_array? stmts)
-						  (first stmts)
-						  (is_object? (first stmts))
-						  (not (is_function? (prop (first stmts) `ctype)))
-						  (prop (first stmts) `ctype)
-						  (cond
-						    (is_string? (prop (first stmts) `ctype))
-						    (prop (first stmts) `ctype)
-						    else
-						    (sub_type (prop (first stmts) `ctype))))
-                                                   "")))
+                             (let
+                                ((`fst (or (and (is_array? stmts)
+                                                (first stmts)
+                                                (is_object? (first stmts))
+                                                (not (is_function? (prop (first stmts) `ctype)))
+                                                (prop (first stmts) `ctype)
+                                                (cond
+                                                   (is_string? (prop (first stmts) `ctype))
+                                                   (prop (first stmts) `ctype)
+                                                   else
+                                                   (sub_type (prop (first stmts) `ctype))))
+                                           "")))
                                 (console.warn "DEPRECATION: check_needs_wrap called: " stmts)
                                 (cond
-                                  (contains? "block" fst)
-                                  true
-                                  else
-                                  false))))
+                                   (contains? "block" fst)
+                                   true
+                                   else
+                                   false))))
        
        ;; Import code from exports
        ;; static import
        ;; really used when exporting files
        
-       (`compile_import 
-            (fn (tokens ctx)
-                (let
-                    ((`symbol_tokens tokens.1)
-                     (`symbols [])
-                     (`from_tokens nil)
-                     (`from_place nil)
-                     (`acc []))
-		  (if (< tokens.length 3)
-		      (throw SyntaxError "import requires exactly two arguments"))
-		 (= symbol_tokens tokens.1)
-                 (= from_tokens tokens.2)
-		 
-                 ;(console.log "compile_import: ->" (clone symbol_tokens))
-                 (= from_place (compile from_tokens ctx))
-                 (push acc { `ctype: "statement" `meta: { `imported_from: from_place }})
-                 (push acc "import")
-                 (push acc " ")                                                  
-                 ;(console.log "compile_import: compiled symbols:    " symbols)
-                 ;(console.log "compile_import: compiled from place: " from_place)
-                 (cond
-                     (is_array? symbol_tokens.val )
-                     (do
-                         (for_each (`s symbol_tokens.val)
-                            (push symbols s.name))      
-                         (for_each (`t (flatten ["{" " " symbols " " "}" " " "from" " " from_place ]))
-				   (push acc t)))
-		     else
-		     (throw SyntaxError "import requires an array of imported symbols as a second argument"))
-                     
+       (`compile_import
+          (fn (tokens ctx)
+             (let
+                ((`symbol_tokens tokens.1)
+                 (`symbols [])
+                 (`from_tokens nil)
+                 (`from_place nil)
+                 (`acc []))
+                (if (< tokens.length 3)
+                    (throw SyntaxError "import requires exactly two arguments"))
+                (= symbol_tokens tokens.1)
+                (= from_tokens tokens.2)
+                
+                ;(console.log "compile_import: ->" (clone symbol_tokens))
+                (= from_place (compile from_tokens ctx))
+                (push acc { `ctype: "statement" `meta: { `imported_from: from_place }})
+                (push acc "import")
+                (push acc " ")
+                ;(console.log "compile_import: compiled symbols:    " symbols)
+                ;(console.log "compile_import: compiled from place: " from_place)
+                (cond
+                   (is_array? symbol_tokens.val )
+                   (do
+                      (for_each (`s symbol_tokens.val)
+                         (push symbols s.name))
+                      (for_each (`t (flatten ["{" " " symbols " " "}" " " "from" " " from_place ]))
+                         (push acc t)))
+                   else
+                   (throw SyntaxError "import requires an array of imported symbols as a second argument"))
+                
                 ;(console.log "compile_import: <- " (clone acc))
                 acc)))
        ;; dynamic import 
          ;; (dynamic_import source_location)   
        
-       (`compile_dynamic_import 
+         (`compile_dynamic_import
             (fn (tokens ctx)
-                (let
-                    ((`from_tokens nil)
-                     (`preamble (calling_preamble ctx))
-                     (`from_place nil)
-                     (`can_be_static false)
-		     (`metaval nil)
-                     (`imported_from nil)
-                     (`acc []))
+               (let
+                  ((`from_tokens nil)
+                   (`preamble (calling_preamble ctx))
+                   (`from_place nil)
+                   (`can_be_static false)
+                   (`metaval nil)
+                   (`imported_from nil)
+                   (`acc []))
                   (declare (string preamble.0))
-                 (= from_tokens tokens.1)                                  
-                 (= from_place (compile_wrapper_fn from_tokens ctx))
-                 
-                 (= imported_from (if (is_array? from_place)
-                                    from_place.1
-                                    from_place))
-                 (when (and (is_string? imported_from)
-                            (starts_with? "\"" imported_from)
-                            (ends_with? "\"" imported_from))
-                   (= can_be_static true)
-                   (= imported_from (-> imported_from `substr 1 (- imported_from.length 2))))
-                                  
-                 (set_prop external_dependencies
-                           imported_from
-                           true)
-		 (= metaval (if can_be_static ;; place holder 
-                                { `initializer: (quote (javascript "undefined" )) }
-                                {}))
-                 (push acc { `ctype: "statement"  `meta: metaval })
-                 
-                 (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
-                    (push acc t))                
-                acc)))
+                  (= from_tokens tokens.1)
+                  (= from_place (compile_wrapper_fn from_tokens ctx))
+                  
+                  (= imported_from (if (is_array? from_place)
+                                       from_place.1
+                                       from_place))
+                  (when (and (is_string? imported_from)
+                             (starts_with? "\"" imported_from)
+                             (ends_with? "\"" imported_from))
+                     (= can_be_static true)
+                     (= imported_from (-> imported_from `substr 1 (- imported_from.length 2))))
+                  
+                  (set_prop external_dependencies
+                     imported_from
+                     true)
+                  (= metaval (if can_be_static ;; place holder
+                                 { `initializer: (quote (javascript "undefined" )) }
+                                 {}))
+                  (push acc { `ctype: "statement"  `meta: metaval })
+                  
+                  (for_each (`t (flatten [preamble.0 " " "import" " " "(" from_place ")"]))
+                     (push acc t))
+                  acc)))
                             
        ;; The javascript operator allows direct embedding of
        ;; javascript characters in the compilation stream
@@ -3282,117 +3286,117 @@
                 acc)))
      
        (`compile_set_global 
-         (fn (tokens ctx opts)
+          (fn (tokens ctx opts)
              (let
-                 ((`target tokens.1.name)
-                  (`wrap_as_function? nil)
-                  (`ctx (new_ctx ctx))
-                  (`global_dependencies nil)
-                  (`preamble (calling_preamble ctx))
-                  (`acc nil)
-                  (`clog (if opts.quiet_mode
-                             log
-                             (defclog { `prefix: "compile_set_global" `color: `blue `background: "#205020" })))
-                  (`metavalue nil)
-                  (`assignment_value nil))
-               (declare (string preamble.0))
-               
-               (cond
-                 (eq nil tokens.1)
-                 (throw SyntaxError "set global directive missing assignment target and assignment value")                 
-                 (eq nil tokens.2)
-                 (throw SyntaxError "set global directive missing assignment value"))
-               
-               (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly
-
-               (set_ctx ctx `__GLOBALS__ (new Set))  ;; reset our globals scope so we capture any dependencies for this global
-               
-               ;; setup the reference in the globals as an assumed function type
-               (set_prop root_ctx.defined_lisp_globals
-                              target
-                              AsyncFunction)
-               
-               (= assignment_value
-                  (do 
-                    (compile_wrapper_fn tokens.2 ctx)))
-               
-               (= global_dependencies (to_array (get_ctx ctx `__GLOBALS__)))
-              
-               (when (> global_dependencies.length 0)                 
-                 (cond
-                   (eq nil tokens.3)
-                   (push tokens (tokenize { `requires: global_dependencies } ctx))
-                   (is_object? tokens.3.val.val.1) ; (resolve_path [ `val `val 1 ] tokens.3))
-                   (set_prop tokens.3.val.val.1
-                             `requires
-                             global_dependencies)
-                   (and (is_array? tokens.3.val)
-                        (== tokens.3.type "objlit"))
+                ((`target tokens.1.name)
+                 (`wrap_as_function? nil)
+                 (`ctx (new_ctx ctx))
+                 (`global_dependencies nil)
+                 (`preamble (calling_preamble ctx))
+                 (`acc nil)
+                 (`clog (if opts.quiet_mode
+                            log
+                            (defclog { `prefix: "compile_set_global" `color: `blue `background: "#205020" })))
+                 (`metavalue nil)
+                 (`assignment_value nil))
+                (declare (string preamble.0))
+                
+                (cond
+                   (eq nil tokens.1)
+                   (throw SyntaxError "set global directive missing assignment target and assignment value")
+                   (eq nil tokens.2)
+                   (throw SyntaxError "set global directive missing assignment value"))
+                
+                (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly
+                
+                (set_ctx ctx `__GLOBALS__ (new Set))  ;; reset our globals scope so we capture any dependencies for this global
+                
+                ;; setup the reference in the globals as an assumed function type
+                (set_prop root_ctx.defined_lisp_globals
+                   target
+                   AsyncFunction)
+                
+                (= assignment_value
                    (do
-                     (= global_dependencies (tokenize { `requires: global_dependencies } ctx))
-                     (push tokens.3.val
-                         global_dependencies.val.0))))
-               
-               (when tokens.3                 
-                 (= metavalue
-                    (if (is_complex? tokens.3)
-                        (compile_wrapper_fn tokens.3 ctx)
-                        (compile tokens.3 ctx))))
-               
-               (cond 
+                      (compile_wrapper_fn tokens.2 ctx)))
+                
+                (= global_dependencies (to_array (get_ctx ctx `__GLOBALS__)))
+                
+                (when (> global_dependencies.length 0)
+                   (cond
+                      (eq nil tokens.3)
+                      (push tokens (tokenize { `requires: global_dependencies } ctx))
+                      (is_object? tokens.3.val.val.1) ; (resolve_path [ `val `val 1 ] tokens.3))
+                      (set_prop tokens.3.val.val.1
+                         `requires
+                         global_dependencies)
+                      (and (is_array? tokens.3.val)
+                           (== tokens.3.type "objlit"))
+                      (do
+                         (= global_dependencies (tokenize { `requires: global_dependencies } ctx))
+                         (push tokens.3.val
+                            global_dependencies.val.0))))
+                
+                (when tokens.3
+                   (= metavalue
+                      (if (is_complex? tokens.3)
+                          (compile_wrapper_fn tokens.3 ctx)
+                          (compile tokens.3 ctx))))
+                
+                (cond
                    (and (is_object? assignment_value.0)
                         assignment_value.0.ctype)
                    (do
-                     (when assignment_value.0.meta                        
-                       (if (not metavalue)
-                         (do                           
-                           (= metavalue (quote_tree assignment_value.0.meta ctx)))))
-                     
-                    (set_prop root_ctx.defined_lisp_globals
-                              target
-                              (cond (== assignment_value.0.ctype "Function")
-                                Function
-                                (== assignment_value.0.ctype "AsyncFunction")
-                                AsyncFunction
-                                (== assignment_value.0.ctype "Number")
-                                NumberType
-                                (== assignment_value.0.ctype "expression")
-                                Expression 
-                                else
-                                assignment_value.0.ctype)))                                      
+                      (when assignment_value.0.meta
+                         (if (not metavalue)
+                             (do
+                                (= metavalue (quote_tree assignment_value.0.meta ctx)))))
+                      
+                      (set_prop root_ctx.defined_lisp_globals
+                         target
+                         (cond (== assignment_value.0.ctype "Function")
+                            Function
+                            (== assignment_value.0.ctype "AsyncFunction")
+                            AsyncFunction
+                            (== assignment_value.0.ctype "Number")
+                            NumberType
+                            (== assignment_value.0.ctype "expression")
+                            Expression
+                            else
+                            assignment_value.0.ctype)))
                    else
-                   (do 
-                       (if (and (is_array? assignment_value)
-                                (== assignment_value.0 "await"))
-                           (do
-			     (set_prop root_ctx.defined_lisp_globals
-                                       target
-                                       AsyncFunction)
-			     (set_ambiguous root_ctx target))
-                           (set_prop root_ctx.defined_lisp_globals
-                                     target
-                                     assignment_value))))
-               
-               (when (verbosity ctx)
-		 (clog "target: " (as_lisp target))
-		 (clog "assignment_value: " (as_lisp assignment_value)))
-                           
-               (= acc [{ `ctype: "statement" } (if (or (== Function (prop root_ctx.defined_lisp_globals target))
-                                                       (in_sync? ctx))
-                                                   ""
-                                                   "await") 
-                       " " "Environment" "." "set_global"
-                       "(" """\"" tokens.1.name "\"" ","
-                       assignment_value
-                       (if (or metavalue opts.constant) "," "")
-                       (if metavalue
-                         metavalue
-                         (if opts.constant
-                           "null"
-                           ""))
-                       (if opts.constant "," "") (if opts.constant "true" "")
-                       ")" ])
-               acc)))
+                   (do
+                      (if (and (is_array? assignment_value)
+                               (== assignment_value.0 "await"))
+                          (do
+                             (set_prop root_ctx.defined_lisp_globals
+                                target
+                                AsyncFunction)
+                             (set_ambiguous root_ctx target))
+                          (set_prop root_ctx.defined_lisp_globals
+                             target
+                             assignment_value))))
+                
+                (when (verbosity ctx)
+                   (clog "target: " (as_lisp target))
+                   (clog "assignment_value: " (as_lisp assignment_value)))
+                
+                (= acc [{ `ctype: "statement" } (if (or (== Function (prop root_ctx.defined_lisp_globals target))
+                                                    (in_sync? ctx))
+                                 ""
+                                 "await")
+                          " " "Environment" "." "set_global"
+                          "(" """\"" tokens.1.name "\"" ","
+                          assignment_value
+                          (if (or metavalue opts.constant) "," "")
+                          (if metavalue
+                             metavalue
+                             (if opts.constant
+                                "null"
+                                ""))
+                          (if opts.constant "," "") (if opts.constant "true" "")
+                          ")" ])
+                acc)))
        
        (`is_token? (fn (t)
                        (or (and (is_object? t)
@@ -3415,96 +3419,104 @@
                              [acc])))
        
        (`wrap_and_run (fn (js_code ctx run_opts)
-                          (let
-                              ((`assembly nil)
-                               (`result nil)
-                               (`fst nil)
-			       (`ctype nil)
-                               (`comp_meta nil)
-                               (`needs_braces? false)
-                               (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
-                               (`run_log (if opts.quiet_mode
-                                             log
-                                             (defclog { `prefix: "wrap_and_run" `background: "#703030" `color: "white" } )))
-                               (`needs_return?
+                         (let
+                            ((`assembly nil)
+                             (`result nil)
+                             (`fst nil)
+                             (`ctype nil)
+                             (`comp_meta nil)
+                             (`needs_braces? false)
+                             (`in_quotem (get_ctx ctx "__IN_QUOTEM__"))
+                             (`run_log (if opts.quiet_mode
+                                           log
+                                           (defclog { `prefix: "wrap_and_run" `background: "#703030" `color: "white" } )))
+                             (`needs_return?
                                 (do
-				  (= ctype (if (and (is_array? js_code)
-						    (first js_code)
-                                                    (is_object? (first js_code))
-                                                    (prop (first js_code) `ctype))
+                                   (= ctype (if (and (is_array? js_code)
+                                                     (first js_code)
+                                                     (is_object? (first js_code))
+                                                     (prop (first js_code) `ctype))
                                                 (prop (first js_code) `ctype)))
-				  (if (and (== (typeof ctype) "object")
-                                           (not (is_object? ctype)))
-                                    (= fst "")
-                                    (= fst (+ "" (or ctype
-                                                     ""))))
-                                  (when (is_function? fst)
-                                        (= fst (sub_type fst)))
-                                  (cond
-                                     (contains? "block" fst)
-                                     (do 
-                                      (if (== fst "ifblock")
-                                          (= needs_braces? true)
-                                          (= needs_braces? false))
-                                      false)
-                                     (== (first js_code) "throw")
-                                     (do 
-                                      (= needs_braces? false)
-                                      false)
-                                     else
-                                     (do 
-                                      (= needs_braces? true)
-                                      true))))
-                                
-                               (`assembled nil))
+                                   (if (and (== (typeof ctype) "object")
+                                            (not (is_object? ctype)))
+                                       (= fst "")
+                                       (= fst (+ "" (or ctype
+                                                        ""))))
+                                   (when (is_function? fst)
+                                      (= fst (sub_type fst)))
+                                   (cond
+                                      (contains? "block" fst)
+                                      (do
+                                         (if (== fst "ifblock")
+                                             (= needs_braces? true)
+                                             (= needs_braces? false))
+                                         false)
+                                      (== (first js_code) "throw")
+                                      (do
+                                         (= needs_braces? false)
+                                         false)
+                                      else
+                                      (do
+                                         (= needs_braces? true)
+                                         true))))
+                             
+                             (`assembled nil))
                             (declare (boolean needs_return?))
                             (if (and false (not opts.root_environment)
-				     (== first_level_setup.length 0)
+                                     (== first_level_setup.length 0)
                                      has_lisp_globals)
-                              (push first_level_setup
-                                    ["const __GG__=" env_ref "get_global" ";" ]))
-                                                                                                                          
+                                (push first_level_setup
+                                   ["const __GG__=" env_ref "get_global" ";" ]))
+                            
                             (= assembled js_code)
                             ;; is this our env's namespace or not?
                             ;; if not send it to the right namespace for execution
-                            (if (and target_namespace
-                                     (is_object? assembled.0)
-                                     (not (== target_namespace Environment.namespace)))
-                              (do
-                                (= comp_meta (first assembled))
-                                (set_prop comp_meta
-                                          `namespace
-                                          target_namespace)
-				(when (and (verbosity ctx)
-					   comp_meta.namespace)
-				  (run_log "specified namespace: " comp_meta.namespace))
-                                (= result (-> Environment `evaluate_local [comp_meta (assemble_output assembled)] ctx { `compiled_source: true }))
-                                (when (verbosity ctx)
-                                  (run_log "<- " result))
-                                result)
-                              ;; this is in our own environment
-                              (do                              
-                                (= assembled (assemble_output assembled))                                
-                                (= assembled (+ (if needs_braces? "{" "")
-                                                (if needs_return? " return " "")
-                                                assembled
-                                                (if needs_braces? "}" "")))                                
-                                (when (verbosity ctx)
-                                  (run_log "assembled: " assembled))                                       
-                                (try
-				   (= assembly (new AsyncFunction "Environment"  assembled))
-				 (catch Error (`e)
-					(progn					 
-					  (throw e))))
-                                (when run_opts.bind_mode
-                                  (= assembly (bind_function assembly Environment)))
-                                
-                                        ;(if ctx_access
-                                        ; (= result (assembly Environment ctx_access))
-                                (= result (assembly Environment))
-                                (when (verbosity ctx)
-                                  (run_log "<- " result))
-                                result)))))         
+                            (try
+                               (if (and target_namespace
+                                        (is_object? assembled.0)
+                                        (not (== target_namespace Environment.namespace)))
+                                   (do
+                                      (= comp_meta (first assembled))
+                                      (set_prop comp_meta
+                                         `namespace
+                                         target_namespace)
+                                      (when (and (verbosity ctx)
+                                                 comp_meta.namespace)
+                                         (run_log "specified namespace: " comp_meta.namespace))
+                                      (= result (-> Environment `evaluate_local [comp_meta (assemble_output assembled)] ctx { `compiled_source: true }))
+                                      (when (verbosity ctx)
+                                         (run_log "<- " result))
+                                      result)
+                                   ;; this is in our own environment
+                                   (do
+                                      (= assembled (assemble_output assembled))
+                                      (= assembled (+ (if needs_braces? "{" "")
+                                                      (if needs_return? " return " "")
+                                                      assembled
+                                                      (if needs_braces? "}" "")))
+                                      (when (verbosity ctx)
+                                         (run_log "assembled: " assembled))
+                                      (try
+                                         (= assembly (new AsyncFunction "Environment"  assembled))
+                                         (catch Error (`e)
+                                            (progn
+                                               (throw e))))
+                                      (when run_opts.bind_mode
+                                         (= assembly (bind_function assembly Environment)))
+                                      
+                                      ;(if ctx_access
+                                      ; (= result (assembly Environment ctx_access))
+                                      (= result (assembly Environment))
+                                      (when (verbosity ctx)
+                                         (run_log "<- " result))
+                                      result))
+                               (catch Error (e)
+                                  (progn
+                                     (console.log "compiler: wrap_and_run: caught error on evaluation: " e.message)
+                                     (if (is_function? (resolve_path [ `context `scope `*on_compiler_eval_error* ] Environment))
+                                        (= result ((resolve_path [ `context `scope `*on_compiler_eval_error* ] Environment) e assembled))
+                                        (throw e)) ; else just raise it up
+                                     result))))))
        
        ;; quote_tree 
        ;; convert the hierarchical tree to a flattened, serializable
