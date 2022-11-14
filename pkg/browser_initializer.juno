@@ -1706,7 +1706,20 @@
                  (let
                      ((user_input (if options.input
                                     options.input
-                                    (input { `type: (or type "text") `style: "width: calc(100% - 15px)" })))
+                                    (input (+ {`tabindex: 0 `type: (or type "text") `style: "width: calc(100% - 15px)" }
+                                              (if options.placeholder
+                                                 { placeholder: options.placeholder }
+                                                 {})
+                                              (if options.title
+                                                 { `title: options.title }
+                                                 {})
+                                              (if options.class
+                                                 { `class: options.class } 
+                                                 {})
+                                              (if options.value
+                                                 { `value: options.value } 
+                                                 {})
+                                                ))))
                       (completed false)
                       (ok_button (button { `class: "juno-primary" `style: "float:right" } (dtext "OK")))
                       (cancel_button (button { `class: "juno-secondary" }  (dtext "Cancel")))
@@ -1769,9 +1782,14 @@
                                               
                    (-> juno_container
                        `appendChild dwin)
+                   ;(setTimeout (fn ()
+                    ;              (place_caret_at_end user_input))
+                     ;          50)
                    (when (is_function? dwin.showModal)
                      (-> dwin `showModal)
-                     (focus_to user_input))))))
+                     (-> user_input `select)
+                     ;(focus_to user_input)
+                     )))))
                  
   
 (defun alert_box (message detail)
@@ -2098,69 +2116,6 @@
              
              
 
-
-(defun handle_save_file (control options)
-  (let
-      ((fname (when control
-                (or (and options.no_prompt
-                         (is_string? control.options.filename)
-                         control.options.filename)
-                    (request_user_input (dtext "Please enter a filename to save as:")
-                                        "text"
-                                        {
-                                         `default_value: (or control.options.filename
-                                                             control.name)
-                                         }))))
-       (rval nil))
-      
-    (when (and control 
-               (not (blank? fname)) 
-               control.get)
-      (set_prop control.options
-                `filename
-                fname)
-                
-      (cond
-        options.remote
-        (try
-           (progn
-              (= rval (http/send_files "/save_file" (http/data_to_file fname (-> control `get))))
-              (if (and rval 
-                       (== rval.rval "OK"))
-                  (progn
-                 ;; check the results
-                    (= rval rval.results)
-                    (when (== rval.length 1)
-                       (if control.display_context_message
-                           (-> control `display_context_message (+ (dtext "Saved to") " " rval.0.filename)))
-                       (dispatch_event { `command: "save_complete" `source: control.options.id `args: [ control rval.0.filename ] }))
-                    rval)
-                  (progn
-                     (if control.display_context_message
-                         (-> control `display_context_message (+ (dtext "ERROR") ":" (dtext "Cannot Save File") " " rval.message)))
-                     (dispatch_event { `command: "save_error" `source: control.options.id `args: [ control rval ] })
-                     rval))
-              rval)
-           (catch Error (e)
-              (progn
-                 (if control.display_context_message
-                     (-> control `display_context_message (+ (dtext "ERROR") ":" (dtext "Cannot Save File") " " e.message)))
-                 (dispatch_event {  `command: "save_error" `source: control.options.id `error: "true" `args: [ control e] })
-                 e)))
-        else
-        (= rval
-           (save_locally fname (-> control `get)
-                         "application/text"))))    
-    rval)
-  {
-   `usage: ["control:object" "options:?object"]
-   `description: (+ "Given a control and an optional options object, will call the control's"
-                    "`get method for the data value.  The user will be prompted for a filename "
-                    "with the default value being either the control.options.filename or "
-                    "control.options.name (in that order). The result of the save operation "
-                    "is returned.")
-   `tags: ["save" "file" "control"]
-   })
     
                      
 (defun message (text)
@@ -3500,6 +3455,16 @@
                             (progn
                                (select_to_root_form editor)
                                nil)))
+       (evaluate_root_form (fn ()
+                              (let
+                                 ((cpos (current_position)))
+                                 (select_form_root)
+                                 (evaluate_selection editor)
+                                 (sleep 0.02)
+                                 (-> editor.selection `clearSelection)
+                                 (-> editor `navigateTo cpos.row cpos.column)
+                                 )))
+                                
        (select_current_form (fn ()
                                (select_to_current_form editor)))
        (get_selection (function ()
@@ -3513,6 +3478,8 @@
                                      (== rng.start.column rng.end.column))))))
        (last_bracket_match nil)
        (active_lisp_operator nil) ;; the last active lisp operator
+       (current_position (fn ()
+                            (-> editor `getCursorPosition)))
        (find_active_lisp_operator (function ()
                                      (let
                                         ((new_op nil)
@@ -3577,6 +3544,7 @@
                             (log "editor: save_complete: " (clone event_obj))
                             (when options.on_save
                                (-> options `on_save intf)))))
+       
                      
                       
        (build_key_bindings (fn (editor)
@@ -3591,6 +3559,7 @@
                                  (bind_key "select_current_form" select_current_form)
                                  (bind_key "indent_current_row" indent_current_row)
                                  (bind_key "evaluate_selection" evaluate_selection)
+                                 (bind_key "evaluate_root_form" evaluate_root_form)
                                  
                                  (when (is_array? options.commands)
                                     (for_each (command options.commands)
@@ -3908,6 +3877,8 @@
                                        (find_active_lisp_operator))
          `set_read_only: (fn (read_only?)
                            (-> editor `setReadOnly read_only?))
+         `get_current_pos: (fn ()
+                              (current_position))
          `options: options
          `name: options.name 
          `set_name: (fn (new_name)
@@ -3973,6 +3944,31 @@
                (inc counter))
             ;(log "compute_name_for_editor: returning: " (+ title " - " counter))
             (+ title " - " counter "")))))
+
+(defun compute_name_for_control (name)
+   (if (and (is_string? name)
+            (not (blank? name)))
+       (let
+           ((ctl_exists? (get_control_by_name name))
+            (counter 2))
+          (cond
+             (not ctl_exists?)
+             name
+             else
+             (progn
+                (while (get_control_by_name (+ name " - " counter ""))
+                   (inc counter))
+                (+ name " - " counter "")))))
+   {
+       `description: (+ "Given a proposed name for a control, if the name isn't " 
+                        "used by another control, will return the provided name. "
+                        "Otherwise, the function will return a unique non-used "
+                        "name by appending a digit, starting with 2 on the control "
+                        "name.  The new name will then be returned.")
+       `tags: ["control" "name" "ui" "identifier"]
+       `usage: ["name:string"]
+   })
+
 (defun recalc_names_for_path (path_to_value)
    (let
       ((ctls (get_editors_for_path path_to_value)))
@@ -6349,7 +6345,7 @@
                    { `path: [ options ] `mode: "juno" }
                    else
                    { `mode: "juno" }))
-       (target_container (or *last_focus*  (default_focus)))
+       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
        (symbol_data (if options.path
                         { `path: options.path `namespace: (or options.namespace (current_namespace)) }
                         (symbol_chooser "Select a symbol to edit" options.mode)))
@@ -6387,6 +6383,26 @@
   })
 
 
+(defun new_juno_repl (options)
+   (let
+      ((name (compute_name_for_control "Juno REPL"))
+       (target_container (or options.control_to_replace *last_focus*  (default_focus))))
+      (alert_on_error "REPL Error"
+                      (cond
+                         (is_top_control? target_container)
+                         (container_view_operation "split_right" (first (-> target_container `controls)) (browser_repl { `name: name }))
+                         else
+                         (swap_control target_container (browser_repl { `name: name })))))
+   {
+       usage: ["options:?object"]
+       description: (+ "Creates a new REPL in the current frame.  If provided with a `control_to_replace "
+                       "in options, it will replace that control with the new REPL, with the replaced control "
+                       "being put in the holding tank if the replaced control is allowed."
+                       "If no target is provided, the function will split the top frame, replacing the " 
+                       "currently focused control.")
+       tags: [ "REPL" "create" "new" "control"]
+   })
+   
 
 (defun wait_for_file_selection (create_mode) 
    (new Promise (fn (resolve reject)
@@ -6425,9 +6441,16 @@
 
 (defun edit_file (options)
    (let
-      ((options (if (and (is_object? options)
-                         options.filename)
-                    options
+      ((options (cond 
+                   (and (is_object? options)
+                        options.filename)
+                   options
+                   (and (is_object? options)
+                        options.create_mode)
+                   (+ {} 
+                      options
+                      { filename: (wait_for_file_selection true) })
+                   else
                     (progn
                        {
                            filename: (wait_for_file_selection)
@@ -6437,10 +6460,33 @@
                        options.path
                        (is_string? options.filename)
                        (conj ["filesystem"] (split_by "/" options.filename))))
+       (rval nil)
        (acc []))
       (if (eq options.filename nil)
           (return nil))
       (assert (and symbol_path options.filename) "Invalid options to edit_file")
+      
+      ;; if we are given a create mode, make the shell of a file
+      (if options.create_mode
+         (try
+            (progn
+               (= rval (http/send_files "/save_file" (http/data_to_file options.filename "")))
+               (if (and rval
+                        (== rval.rval "OK"))
+                   (log "Created empty file: " options.filename)
+                   (throw Error rval.message)))
+            (catch Error (e)
+               (progn
+                  (alert_box (dtext "Unable to Create File")
+                             (+ "" options.filename
+                                e.message))
+                  (set_prop options
+                             `filename
+                             nil)))))
+            
+      (if (eq options.filename nil)
+          (return nil))
+      
       (if (and (starts_with? "filesystem" symbol_path)
                (eq nil (resolve_path symbol_path Environment.global_ctx.scope)))
           (progn
@@ -6461,12 +6507,93 @@
                         "If an error is encountered, the error will be presented to the user "
                         "in a popup window and nil returned.  If called with no options, the "
                         "function will prompt the user to select a file via a file_tree_browser "
-                        "control.")
+                        "control.  If create_mode is true in the options, then a new file "
+                        "creation will be attempted and an editor returned for that.  If a "
+                        "new file cannot be created, the user will be warned and nil will "
+                        "be returned.")
        `usage: ["options:object"]
        `tags: ["DOM" "ui" "file" "edit" "open"]
    })
-         
-      
+       
+
+
+  
+;; control behavior for unsaved controls in remote mode
+;; if a control that is a buffer is to be saved to a file:
+;;  1.  select a file to create
+;;  2.  make a new editor with the contents of the old control as a proper file
+;;  3.  swap with old control. 
+;; if we do not have a host and are running locally, 
+;;  1.  Establish an export_as name and save the file to that, but retain the existing editor
+
+(defun handle_save_file (control options)
+  (let
+      ((fname (when control
+                (or (and options.no_prompt
+                         (is_string? control.options.filename)
+                         control.options.filename)
+                    (and options.remote
+                       (wait_for_file_selection true))
+                    (and (not options.remote)
+                         (request_user_input (dtext "Download Buffer To Local File") 
+                                             `text
+                                             { `placeholder: (dtext "Name Of File")
+                                                            `value: (aif (resolve_path [ `options `export_as ] control)
+                                                                         it
+                                                                         nil) })))))
+       (rval nil))
+      (declare (function wait_for_file_selection)
+               (global wait_for_file_selection))
+    
+    (when (and (not (blank? fname))
+               control
+               control.get)
+       (cond
+          (and options.remote
+               fname)
+          (progn
+             (alert_on_error "Cannot Create File"
+                (progn
+                   (= rval (http/send_files "/save_file" (http/data_to_file fname (-> control `get))))
+                   (if (and rval
+                            (== rval.rval "OK"))
+                       (progn
+                          (= rval rval.results)
+                          (notify "File saved")
+                          (when (== rval.length 1)
+                             ;; we made the file, now open a new buffer to it and swap with the old control
+                             (edit_file { `filename: fname `control_to_replace: control })))
+                       (progn
+                          (log "ERROR on file creation: " rval)
+                          (throw rval.message))))))
+          fname
+          (alert_on_error "Cannot Save Locally"
+             (= rval (save_locally fname (-> control `get)
+                                   "application/text"))
+             (when rval
+                (set_path_value control [ `options `export_as ] fname)
+                (if control.display_context_message
+                   (-> control `display_context_message (+ (dtext "Exported as: ") fname))))
+             (log "Local save returned: " rval)))))
+  {
+   `usage: ["control:object" "options:?object"]
+   `description: (+ "Given a control and an optional options object, will call the control's "
+                    "`get method for the data value, and saves the value returned by the get "
+                    "operation.  If the remote option is true and there is no options.filename "
+                    "set, the user will be prompted with a chooser.  If the file is to be saved "
+                    "locally, the user will be asked for a name to export it as, and the file "
+                    "will be downloaded from the browser to the local environment and placed "
+                    "in the default download folder of the browser.<br>"
+                    "When a file is saved remotely, a new editor is established that is now "
+                    "linked to the remote file and further saves for that buffer will be "
+                    "defaulted to that filename.  If local, on subsequent saves the user will "
+                    "be prompted to confirm the filename, or choose another."
+                    "<br>Options are: <br>"
+                    "remote:boolean - Attempt to save the file to the hosting server.<br>"
+                    "no_prompt:boolean - If a filename is already established via options.filename "
+                    "do not prompt for a new filename.")
+   `tags: ["save" "file" "control"]
+   })    
 
 (defun set_key_binding (scope name desc)
   (let
@@ -6478,8 +6605,21 @@
                desc)
      (set_prop *key_bindings*.active
                (prop desc key_mode) 
-               (prop desc `exec)))))
-
+               (prop desc `exec))))
+  {
+      `description: (+ "Given a scope for the keybinding, a command ame key, and a description object, "
+                       "establishes the binding in the *key_bindings* and in the environment as active. "
+                       "<br>The description object should contain the following keys:<br>"
+                       "description:text - A human readable description of what the key binding does.<br>"
+                       "exec:fn - The function to execute when the key binding occurs. Some exec entries " 
+                       "can be nil if the control has an internal function for the command name.<br>"
+                       "mac:text - The key sequence to use on environments running on MacOS<br>"
+                       "win:text - The key sequence to use when running on Windows or Linux (or non Mac environments)<br>")
+      `usage: ["scope:string" "name:string" "desc:object"]
+      `tags: ["keys" "bindings" "settings" "configuration" "config" ]
+                       
+  })
+  
 ;; build a more sophisticated keyword_mapper
 (defun_sync keyword_mapper (token)
    (progn
@@ -6499,44 +6639,62 @@
 
 ;; and redirect the core/keyword_mapper
 
+
 (use_quoted_initializer
  (defun_sync core/keyword_mapper (token)
    (user/keyword_mapper token)))
 
 (defun gen_file_menu ()
-   [["New Editor" [["Juno Lisp" (fn (e) (new_buffer { `type: "juno" }))]
-                   ["Javascript" (fn (e) (new_buffer { `type: "javascript" })) ]
-                   ["CSS" (fn (e) (new_buffer { `type: "css" })) ]
-                   ["Text" (fn (e) (new_buffer { `type: "text" })) ]
-                   ["JSON" (fn (e) (new_buffer { `type: "json" }))]]]
+   [["New..." [(if is_served?
+                   ["File" (fn (e) (edit_file { `create_mode: true }))]
+                   [])
+               ["Juno REPL" (fn (e) (new_juno_repl))]
+               ["--" nil]
+               ["Juno Lisp Editor" (fn (e) (new_buffer { `type: "juno" }))]
+               ["Javascript Editor" (fn (e) (new_buffer { `type: "javascript" })) ]
+               ["CSS Editor" (fn (e) (new_buffer { `type: "css" })) ]
+               ["Text Editor" (fn (e) (new_buffer { `type: "text" })) ]
+               ["JSON Editor" (fn (e) (new_buffer { `type: "json" }))]]]
     (if is_served?
        ["Open File" edit_file ]
        [])
+    ["--" nil]
     (if (and is_served?
              *last_focus*
              (resolve_path [ `options `filename ] *last_focus*))
         [(+ (dtext "Close ") (get_editor_file_basename *last_focus*))
          (fn () (close_file *last_focus*)) ]
         [])
-    (if is_served?
-       ["Generate Starter Environment" build_starter_environment]
-       [])
     (if (and *last_focus*
+             is_served?
              (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text
              (prop *last_focus* `name))  ;; and a name to identify it
-        [(+ (dtext "save") " "
+        [(+ (dtext "Save") " "
             (or (aif (resolve_path [ `options `filename ] *last_focus*)
                      (last (split_by "/" it)))
                 (resolve_path [ `options `name ] *last_focus*)
-                "")
+                ""))
+         (fn (e) (save_active_buffer))]
+        [])
+    (if (and *last_focus*
+             (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text
+             (prop *last_focus* `name))  ;; and a name to identify it
+        [(+ (dtext "Save As")
             "...")
          [(if is_served?
-              [(dtext "to server file") (fn (e) (handle_save_file *last_focus* { `remote: true }))]
+              [(dtext "New Server File") (fn (e) (handle_save_file *last_focus* { `remote: true }))]
               [])
-          [(dtext "as local file") (fn (e) (handle_save_file *last_focus*))]]]
+          [(dtext "Local File") (fn (e) (handle_save_file *last_focus*))]]]
         [])
+    ["--" nil]
     ["Save Environment" (fn (e) (save_control_image)) ]
+    (if is_served?
+       ["Generate Starter Environment" build_starter_environment]
+       [])
     ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]
+    (if *global_themes*
+       ["--" nil]
+       [])
     (if *global_themes*
        ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
                               [theme_name (fn ()
@@ -6889,6 +7047,12 @@
                                         description: "select_current_form"
                                         win: "Ctrl-Enter"
                                         mac: "Ctrl-Enter" 
+                                        }
+                 "evaluate_root_form" {
+                                        description: "Evaluates the current form at the cursor position."
+                                        win: "Alt-C"
+                                        mac: "Alt-C"
+                                        exec: nil
                                         }
                  "indent_current_row" {
                                        description: "Indent the row at the cursor position"
