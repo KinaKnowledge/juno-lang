@@ -1443,7 +1443,7 @@
 
 
 
-(defun hide_control (target destroy?)
+(defun hide_control (target destroy? no_mod_layout)
    (let
       ((control (cond 
                    (and (is_string? target)
@@ -1453,11 +1453,28 @@
                         (get_control_by_id target))
                    (get_control_by_id target)
                    (is_control? target)
-                   target)))
-      (if control
+                   target))
+       (confirmed true)
+       (swap_target (and no_mod_layout
+                         (last (-> (control_holding_tank) `controls)))))
+      (declare (function control_holding_tank)
+               (global control_holding_tank))
+      (cond 
+         (and control swap_target)
+         (progn
+            (if (and destroy?
+                     (is_function? control.on_destroy))
+                (= confirmed (-> control `on_destroy)))
+            (sleep 0.01)
+            (when confirmed   
+               (swap_control control swap_target)
+               (if destroy?
+                  (container_view_operation "destroy" control nil { `suppress_destroy_confirm: true } ))))
+         control
           (progn
              (container_view_operation (if destroy? "destroy" "hide") control nil)
              true)
+          else
           (progn
              (notify "Control not found")
              false)))
@@ -7279,22 +7296,28 @@
                                             exec: (fn () (next_displayed_control))
                                             }
                  "split_vertically" {
-                                       win: "Alt-3"
-                                       mac: "Alt-3"
-                                       description: "Split the current control vertically"
+                                       win: "Ctrl-Backslash"
+                                       mac: "Ctrl-Backslash"
+                                       description: "Split the current control to the right"
                                        exec: (fn () (split_control `vertical))
                                       }
                  "split_horizontally" {
-                                       win: "Alt-2"
-                                       mac: "Alt-2"
-                                       description: "Split the current control horizontally"
+                                       win: "Alt-Backslash"
+                                       mac: "Alt-Backslash"
+                                       description: "Split the current control downward"
                                        exec: (fn () (split_control `horizontal))
                                       }
-                  "hide_control" {
+                  "close_panel" {
                                        win: "Alt-0"
                                        mac: "Alt-0"
-                                       description: "Hide the current control view"
+                                       description: "Close the currently focused panel and put the control into the holding tank."
                                        exec: (fn () (hide_control *last_focus*))
+                                      }
+                  "close_control" {
+                                       win: "Alt-D"
+                                       mac: "Alt-D"
+                                       description: "Close (Destroy) the control in the currently focused panel."
+                                       exec: (fn () (hide_control *last_focus* true true))
                                       })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
