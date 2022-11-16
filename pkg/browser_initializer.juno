@@ -1043,8 +1043,6 @@
                                                 "Control")
                                            target_control.menu_items 
                                            "control_menu"])))
-             
-       
       (progn
        ;(setq *last_focus* nil)
        ))))
@@ -1067,6 +1065,14 @@
   (button { `control_id: id
             `class: "juno-command-button"
             `title: (dtext "Commands") } "⋯"))
+
+(defun focus_to_editor ()
+   (progn
+      (if (prop *last_focus* `editor)
+          (focus_to (prop *last_focus* `editor)))
+      *last_focus*))
+
+
 
 (defun swap_control (target_control new_control)
   (let
@@ -1101,7 +1107,8 @@
               (progn
                (-> position_details_new.parent `set_content position_details_new.child_position position_details_target.child)
                (cascade_resize)
-               (set_focus_to position_details_target.child))
+               (set_focus_to position_details_target.child)
+               (focus_to_editor))
                 position_details_target.child))
 
         (and (== position_details_target.child holding_tank)   ;; target IS the holding tank so replace the holding tank with the new value and hide the holding tank
@@ -1124,6 +1131,7 @@
                                              position_details_target.child)
             (set_focus_to position_details_new.child)
             (cascade_resize)
+            (focus_to_editor)
             target_control)
         
         (and (== position_details_new.child holding_tank)
@@ -1138,6 +1146,7 @@
          (-> holding_tank `show)
          (cascade_resize)
          (set_focus_to position_details_new.child)
+         (focus_to_editor)
          target_control)
          
         (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
@@ -1151,6 +1160,7 @@
                                                 position_details_new.child)
             (set_focus_to position_details_new.child)
             (cascade_resize)
+            (focus_to_editor)
             position_details_new.child)
         
         (and (eq nil position_details_new.parent)  ;; this is a new control without a parent
@@ -1161,7 +1171,8 @@
                                                 position_details_new.child)
             (-> holding_tank `add_control position_details_target.child)
             (cascade_resize)
-            (set_focus_to position_details_new.child))
+            (set_focus_to position_details_new.child)
+            (focus_to_editor))
         (and (-> holding_tank `has_control? position_details_new.child)
              position_details_target.parent.set_content)
         (progn
@@ -1172,7 +1183,8 @@
            (-> holding_tank `remove_control position_details_new.child)
            (-> holding_tank `add_control position_details_target.child)
            (cascade_resize)
-           (set_focus_to position_details_new.child))
+           (set_focus_to position_details_new.child)
+           (focus_to_editor))
         
         else
         (progn
@@ -3770,7 +3782,8 @@
                                                 (display_context_message (+ "NOTICE: not online, so the file cannot be fetched.  Using existing local value at path."))))
                                           (progn
                                              (-> editor `setValue content -1)
-                                             (display_context_message "Editing local value"))))
+                                             (unless options.repl_mode 
+                                                (display_context_message "Editing local value")))))
                                       
                                             
                                    (console.log "initialize_editor: setting font size...")   
@@ -4290,7 +4303,10 @@
                                    options.evaluator_id
                                    (set_evaluator_control (get_control_by_id options.evaluator_id))
                                    *system_repl*
-                                   (set_evaluator_control *system_repl*))))
+                                   (set_evaluator_control *system_repl*))
+                                (sleep 0.01)
+                                (-> (prop edit_control `editor) `focus)))
+                                
               
               
               `toJSON (function ()
@@ -4460,9 +4476,9 @@
        (resize_observer nil)
        (id (or options.id (generate_id "repl")))
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
-       (location_span (span { `title: "Location" `style: "float: right; display:inline-block; padding-left: 30px; padding-right: 5px;" } 
+       (location_span (span { `title: "Location" `style: "float: right; display:inline-block; padding-left: 10px; padding-right: 10px;" } 
                           (if options.remote_repl
-                                   "Server"
+                                   "Connecting"
                                    "Browser")))
        (control_button (commands_button id));  { `title: "REPL Commands" } "⋯"))
        (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
@@ -4827,13 +4843,18 @@
                                                                  (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                                             "Version: " Environment.build_version   ))))
                          ;; become the system_repl if none is yet defined
-                         (when (eq nil *system_repl*)
-                           (= *system_repl* intf)
-                           (set_prop options
-                              `locked true)
-                           (setTimeout (fn ()
-                                          (-> input_container `display_context_message (+ "This control (" intf.name ") is now the *system_repl*")))
-                                       250))
+                         (if (eq nil *system_repl*)
+                             (progn
+                                (= *system_repl* intf)
+                                (set_prop options
+                                   `locked true)
+                                (setTimeout (fn ()
+                                               (progn
+                                                  (-> input_container `display_context_message (+ "*system_repl* / REPL Mode: Press Shift-Enter to evaluate editor contents"))))
+                                            250))
+                             (setTimeout (fn ()
+                                            (-> input_container `display_context_message "REPL Mode: Press Shift-Enter to evaluate editor contents")
+                                            250)))
                          
                          true))))))
 
