@@ -83,7 +83,10 @@
                               parent))))
       (set_prop elem
                 `toString
-                (-> serialize `bind elem elem))
+                (-> serialize `bind elem elem)
+                `toJSON
+                (function ()
+                   `(,#(+ "=:" *namespace* "/" element_name) ,#(prop elem `attributes) ,#content)))
                 ;(function ()
                  ;         (do
                   ;          (console.log "serializing: " elem)

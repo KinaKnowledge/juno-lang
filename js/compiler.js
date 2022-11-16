@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-11-14 10:23:51
-// Version: 2022.11.14.10.23
-export const DLISP_ENV_VERSION='2022.11.14.10.23';
+// Build Time: 2022-11-15 08:24:09
+// Version: 2022.11.15.08.24
+export const DLISP_ENV_VERSION='2022.11.15.08.24';
 
 
 
@@ -5973,6 +5973,8 @@ export async function init_compiler(Environment) {
                                         let e=__exception__377;
                                         {
                                             {
+                                                await console.error("compiler: wrap_and_run: caught error on constructing new async_function");
+                                                await console.error("compiler: wrap_and_run: ",assembled);
                                                 throw e;
                                                 
                                             }

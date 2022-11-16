@@ -3500,6 +3500,8 @@
                                          (= assembly (new AsyncFunction "Environment"  assembled))
                                          (catch Error (`e)
                                             (progn
+                                               (console.error "compiler: wrap_and_run: caught error on constructing new async_function")
+                                               (console.error "compiler: wrap_and_run: " assembled)
                                                (throw e))))
                                       (when run_opts.bind_mode
                                          (= assembly (bind_function assembly Environment)))

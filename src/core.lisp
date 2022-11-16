@@ -3095,7 +3095,14 @@ such as things that connect or use environmental resources.
    })
 
                  
-             
+(if_compile_time_defined `Deno
+   (defun hostname ()
+      (Deno.hostname)
+      {
+        `description: "Returns the hostname of the system the environment is running on."
+        `usage: []
+        `tags: ["hostname" "server" "environment"]
+        }))
 
 (defmacro use_symbols (namespace symbol_list target_namespace)
   (let

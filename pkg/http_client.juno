@@ -249,7 +249,7 @@
 (defun create_websocket (uri options)
    (let
       ((`options (or options {}))
-       (`ws (new WebSocket(uri)))
+       (`ws (new WebSocket uri))
        (`on_close (if options.on_close
                       options.on_close
                       nil))

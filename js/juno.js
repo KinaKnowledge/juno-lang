@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2022-11-14 10:23:56
-// Version: 2022.11.14.10.23
-export const DLISP_ENV_VERSION='2022.11.14.10.23';
+// Build Time: 2022-11-15 08:24:14
+// Version: 2022.11.15.08.24
+export const DLISP_ENV_VERSION='2022.11.15.08.24';
 
 
 
@@ -3476,6 +3476,7 @@ export async function init_dlisp(Environment)  {
 },"formatted_date":{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"],"requires":["date_components","join","values"]
 },"dtext":{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"]
 },"nth":{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"]
+},"hostname":{ "name":"hostname","fn_args":"()","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"]
 },"use_symbols":{ "eval_when":{ "compile_time":true
 },"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","assert","is_array?","push","current_namespace"]
 },"use_unique_symbols":{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","length"]
@@ -3517,7 +3518,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.14.10.23",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.15.08.24",imports:await ( async function(){
         let __obj__283=new Object();
         __obj__283["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5172,7 +5173,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.14.10.23",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.15.08.24",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -10205,6 +10206,8 @@ export async function init_dlisp(Environment)  {
             return collection[idx]
         }
     } ()
+};__obj__1["hostname"]=async function() {
+    return await Deno.hostname()
 };__obj__1["use_symbols"]=async function(namespace,symbol_list,target_namespace) {
     let acc;
     let nspace;
@@ -10424,16 +10427,16 @@ export async function init_dlisp(Environment)  {
                                     return await (async function() {
                                         let __for_body__268=async function(req) {
                                             {
-                                                let _expr_10314;
+                                                let _expr_22429;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_10314=await (async function(){
+                                                _expr_22429=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_10314 && _expr_10314["0"]);
-                                                req_ns=(_expr_10314 && _expr_10314["1"]);
-                                                explicit=(_expr_10314 && _expr_10314["2"]);
+                                                req_sym=(_expr_22429 && _expr_22429["0"]);
+                                                req_ns=(_expr_22429 && _expr_22429["1"]);
+                                                explicit=(_expr_22429 && _expr_22429["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10536,13 +10539,13 @@ export async function init_dlisp(Environment)  {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_13387;
+                    let _expr_77810;
                     let nspace;
-                    _expr_13387=await (async function(){
+                    _expr_77810=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_13387 && _expr_13387["0"]);
-                    nspace=(_expr_13387 && _expr_13387["1"]);
+                    sym=(_expr_77810 && _expr_77810["0"]);
+                    nspace=(_expr_77810 && _expr_77810["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -17344,6 +17347,8 @@ export async function init_dlisp(Environment)  {
                                         let e=__exception__377;
                                         {
                                             {
+                                                await console.error("compiler: wrap_and_run: caught error on constructing new async_function");
+                                                await console.error("compiler: wrap_and_run: ",assembled);
                                                 throw e;
                                                 
                                             }

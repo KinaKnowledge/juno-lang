@@ -62,7 +62,7 @@ fi
 
 if [ "$MAIN_MODE" == "compile" ] && [ "$PLATFORM" == "deno" ]; then
     if [ -n "$COMP_OUT" ]; then
-	$PLATFORM compile --output="$COMP_OUT" --allow-write --allow-read --allow-net "$STARTUP"
+	$PLATFORM compile --output="$COMP_OUT" --allow-sys --allow-env --allow-write --allow-read --allow-net "$STARTUP"
     else
 	echo "$MYNAME: missing compile output argument. See --help for arguments" >&2
 	exit 1
@@ -98,7 +98,7 @@ EOF
 
 elif [ -n "$MAIN_SWITCH" ]; then
     if [ "$PLATFORM" == "deno" ]; then
-	 rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --allow-write --allow-net --allow-read "$STARTUP"
+	 rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --allow-all "$STARTUP"
     elif [ "$PLATFORM" == "node" ]; then
 	rlwrap -c -r -m -q'"' -M .clj node $MAIN_SWITCH "$STARTUP"
     else

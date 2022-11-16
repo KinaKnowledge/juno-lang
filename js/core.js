@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-11-14 10:23:51
-// Version: 2022.11.14.10.23
-export const DLISP_ENV_VERSION='2022.11.14.10.23';
+// Build Time: 2022-11-15 08:24:09
+// Version: 2022.11.15.08.24
+export const DLISP_ENV_VERSION='2022.11.15.08.24';
 
 
 
@@ -3628,6 +3628,10 @@ await Environment.set_global("nth",async function(idx,collection) {
     } ()
 },{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"]
 });
+await Environment.set_global("hostname",async function() {
+    return await Deno.hostname()
+},{ "name":"hostname","fn_args":"()","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"]
+});
 await Environment.set_global("use_symbols",async function(namespace,symbol_list,target_namespace) {
     let acc;
     let nspace;
@@ -3854,16 +3858,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__268=async function(req) {
                                             {
-                                                let _expr_10314;
+                                                let _expr_22429;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_10314=await (async function(){
+                                                _expr_22429=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_10314 && _expr_10314["0"]);
-                                                req_ns=(_expr_10314 && _expr_10314["1"]);
-                                                explicit=(_expr_10314 && _expr_10314["2"]);
+                                                req_sym=(_expr_22429 && _expr_22429["0"]);
+                                                req_ns=(_expr_22429 && _expr_22429["1"]);
+                                                explicit=(_expr_22429 && _expr_22429["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -3966,13 +3970,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_13387;
+                    let _expr_77810;
                     let nspace;
-                    _expr_13387=await (async function(){
+                    _expr_77810=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_13387 && _expr_13387["0"]);
-                    nspace=(_expr_13387 && _expr_13387["1"]);
+                    sym=(_expr_77810 && _expr_77810["0"]);
+                    nspace=(_expr_77810 && _expr_77810["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

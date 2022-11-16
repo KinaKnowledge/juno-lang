@@ -155,7 +155,49 @@
                                      (= render_function nil))))
     detail_elem))
     
-                
+(defun_sync remote_function_to_dom (fdesc options _path)
+  (let
+      ((_path (or _path []))
+       (options (or options {}))
+       (detail_elem nil)
+       (expanded false)
+       (ftype (cond
+                 (== fdesc.type "async")
+                 "asyncfunction"
+                 (== fdesc.type "sync")
+                 "function"
+                 else
+                 fdesc.type))
+       (expansion_elem nil)
+       (lpath (function () (join "~" _path)))
+       (classes (+"juno-value juno-type-" ftype))
+       (render_function (function ()
+                                  (pre  { `lpath: (lpath)  `tabindex: 0 `class: "juno-value juno-type-code" } fdesc.body))))
+      (assert (is_object? fdesc) "remote_function_to_dom requires an object from fn_signature")
+    (= detail_elem
+       (details (summary { `tabindex: 0 `lpath: (lpath) `class: classes }
+                        (span { `lpath: (lpath)
+                               `class: classes
+                               `style: "margin-left: 5px; font-style: italic;" }
+                              
+                                   (if (== ftype "class")
+                                     (+ "class " fdesc.name)                                            
+                                     (+ (if (== fdesc.type "async")
+                                          "(fn ("                                            
+                                          "(function (")
+                                        (join " " fdesc.args)
+                                        "))"))))
+                (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))))
+    
+    (attach_event_listener detail_elem
+                                `toggle
+                                (fn (e)
+                                    (unless expanded
+                                     (= expanded true)
+                                     (-> expansion_elem `replaceWith (render_function))
+                                     (= render_function nil))))
+    detail_elem))
+                   
        
        
        
@@ -2060,7 +2102,7 @@
                               
                               (let
                                  ((rval nil))
-                                 (= rval (http/send_files "/save_file" (http/data_to_file control.options.filename (-> control `get))))
+                                 (= rval (http/send_files "/save_file" (http/data_to_file control.options.filename (or (-> control `get) ""))))
                                  (if (and rval
                                           (== rval.rval "OK"))
                                      (progn
@@ -2119,14 +2161,14 @@
     
                      
 (defun message (text)
-  (log (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text)))
+  (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text))
 
 (defun error_message (text)
-  (log (div { `style: "border-left: 5px solid red; padding: 5px;" } text)))
+  (div { `style: "border-left: 5px solid red; padding: 5px;" } text))
 
 (defun log_error (message error_instance)
   (progn
-   (error_message message)
+   (log (error_message message))
    (console.error message)
    (when error_instance
      (when error_instance.messasge
@@ -2143,7 +2185,7 @@
                   e)))
        (assignment_to nil)
        (error nil))
-    (message (+ "found and read JS " file.name ", size: " file.size))
+    (log (message (+ "found and read JS " file.name ", size: " file.size)))
     (cond
       (and fdata
            (not (instanceof fdata Error)))
@@ -2164,10 +2206,10 @@
                 (catch Error (e)
                   (do
                     (= error true)
-                    (error_message (+ "Unable to create " assignment_to ": " e.message))
+                    (log (error_message (+ "Unable to create " assignment_to ": " e.message)))
                     (console.error "ERROR: " e))))                                                    
               (when (not error)
-                (message (+ "Loaded JS to " assignment_to ))))
+                (log (message (+ "Loaded JS to " assignment_to )))))
             (notify "Entry Cancelled")))
       else
       (progn
@@ -2202,7 +2244,7 @@
                   e)))
        (assignment_to nil)
        (error nil))
-    (message (+ "found and read JS " file.name ", size: " file.size))
+    (log (message (+ "found and read JS " file.name ", size: " file.size)))
     (cond
       (and fdata
            (not (instanceof fdata Error)))
@@ -2215,10 +2257,10 @@
                 (catch Error (e)
                   (do
                     (= error true)
-                    (error_message (+ "Unable to create " assignment_to ": " e.message))
+                    (log (error_message (+ "Unable to create " assignment_to ": " e.message)))
                     (console.error "ERROR: " e))))                                                    
               (when (not error)
-                (message (+ "Loaded JS to " assignment_to ))))
+                (log (message (+ "Loaded JS to " assignment_to )))))
             (notify "Entry Cancelled")))
       else
       (progn
@@ -3535,6 +3577,8 @@
        
        (save_complete (function (event_obj)
                          (progn
+                            (if options.create_mode
+                               (delete_prop options `create_mode))
                             (display_context_message (+ "Saved " (cond 
                                                                     (and (== event_obj.args.0.type "path")
                                                                          (is_array? event_obj.args.0.target))
@@ -3575,6 +3619,7 @@
                              (when (not initialized)
                                 (let
                                    ((comps nil)
+                                    (remote_content nil)
                                     (start_time (time_in_millis))
                                     (identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
                                     (extension nil))
@@ -3689,7 +3734,9 @@
                                              (try
                                                 (progn
                                                    (console.log "initialize_editor: requesting: " options.filename)
-                                                   (defvar remote_content (-> (fetch (+ "/files/" options.filename)) `text))
+                                                   (if options.create_mode
+                                                      (= remote_content "")
+                                                      (= remote_content (-> (fetch (+ "/files/" options.filename)) `text)))
                                                    (console.log "initialize_editor: received content: time: " (- (time_in_millis) start_time) "ms")
                                                    (if (is_string? remote_content)
                                                        (-> editor `setValue remote_content -1)
@@ -4043,6 +4090,7 @@
                             (report []))
                            ;; on_save should only send the request to the save handler and wait for a registered event handler response to display results
                            (remove_class "juno-needs-save" title_span)
+                           (delete_prop options `create_mode)
                            (= is_dirty? false))))
             
             (on_focus (fn ()
@@ -4082,6 +4130,7 @@
                                          mode: mode
                                          command_bar: command_bar
                                          on_save: on_save
+                                         create_mode: options.create_mode ;; this will be removed by the editor on first save but signals that it shouldn't try to open the file if not found.
                                          filename: options.filename
                                          path: path_to_value
                                          path_namespace: namespace
@@ -4387,19 +4436,24 @@
     interf))
 
 ;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
-(defun browser_repl (options)
+(defun visual_repl (options)
   (let
       ((options (or options {}))
        (name options.name)       
        (resize_observer nil)
        (id (or options.id (generate_id "repl")))
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
+       (location_span (span { `title: "Location" `style: "float: right; display:inline-block; padding-left: 30px; padding-right: 5px;" } 
+                          (if options.remote_repl
+                                   "Server"
+                                   "Browser")))
        (control_button (commands_button id));  { `title: "REPL Commands" } "⋯"))
        (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
        (show_prototype_details_button (button { `title: (dtext "Show Object Prototype Detail") } "P"))
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
        (error_state nil)
+       (remote_command_timeout 120000) ;; 2 minute default
        (initialized false)       
        (intf nil)       
        (toggle_prototype_detail (function ()
@@ -4413,7 +4467,7 @@
                                              (add_class "juno-button-on" show_prototype_details_button)
                                              (remove_class "juno-button-on" show_prototype_details_button)))))
        (output_control (log_view { `display_options: (or options.display_options {} )
-                                   `additional_elements: [ control_button title_span show_prototype_details_button namespace_span path_span ] `id: id }))
+                                   `additional_elements: [ control_button title_span show_prototype_details_button namespace_span  path_span location_span] `id: id }))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -4481,9 +4535,17 @@
                                                               `on_message: (fn (event)
                                                                              (try
                                                                                 (let
-                                                                                   ((data (JSON.parse event.data))
+                                                                                   ((data nil)
                                                                                     (pdata nil)
                                                                                     (resolver nil))
+                                                                                   
+                                                                                   (try 
+                                                                                      (= data (JSON.parse event.data))
+                                                                                      (catch Error (e)
+                                                                                         (progn
+                                                                                            (clog "Unable to parse json data: " e.message)
+                                                                                            (= data event.data))))
+                                                                                   (clog "<-" event.data)
                                                                                    (cond
                                                                                       (and (is_object? data)
                                                                                            data.req_id)
@@ -4496,10 +4558,10 @@
                                                                                                 (if (== data.rval "OK")
                                                                                                     (progn
                                                                                                        (= resolver (first pdata))
-                                                                                                       (resolver data.result nil))
+                                                                                                       (resolver data nil))
                                                                                                     (progn
-                                                                                                       (= resolver (second pdata)) ;; promise rejection
-                                                                                                       (resolver data.message true))))
+                                                                                                       (= resolver (first pdata)) ;; we will resolve the promise and handle the error in our remote eval result function.
+                                                                                                       (resolver data true))))
                                                                                              (progn
                                                                                                 ;; received a request but it is not tied to a request we made, could be a log message
                                                                                                 (if (== data.rval "OK")
@@ -4509,19 +4571,30 @@
                                                                                            data.result)
                                                                                       (clog "[message]:" data.result)
                                                                                       else
-                                                                                      (clog  data)))
+                                                                                      (clog data)))
                                                                                 (catch Error (e)
                                                                                    (clog "Unable to process received message: " e.message))))
                                                               `on_open: (fn (event)
-                                                                           (clog (+ "Connected to Remote REPL: " options.remote_repl)))
+                                                                           (progn
+                                                                              (clog (+ "Connected to Remote REPL: " options.remote_repl))
+                                                                              (try 
+                                                                                 (set_prop location_span
+                                                                                    `innerText (prop (send_wait "(hostname)") `result))
+                                                                                 (catch Error (e)
+                                                                                    (clog "Unable to determine remote hostname: " e)))))
                                                               `on_close: (fn (event)
                                                                             (clog "Interface is now closed"))
                                                               `on_error: (fn (event)
                                                                             (clog "Error on WS:" event))
-                                                            }))))))
+                                                            }))
+                                       (defglobal *repl_ws* repl_ws)
+                                       ))))
        (send_wait (fn (lisp_text)
                      (let
                         ((rval nil))
+                        (assert (and (instanceof repl_ws WebSocket)
+                                     (== repl_ws.readyState repl_ws.OPEN))
+                                "Websocket is not open")
                        (try
                           (= rval (new Promise 
                                        (fn (resolve reject)
@@ -4532,7 +4605,7 @@
                                                                      (progn
                                                                         (clog "timeout occurred")
                                                                         (reject { `rval: "FAIL" `message: (+ "Timeout on request id: " my_request_id) })))
-                                                                  (* 90 1000)))
+                                                                  remote_command_timeout))
                                              ;; set the request id in request object, and then wait to resolve the promise until results are returned, or a timeout occurs
                                              (set_prop requests
                                                 my_request_id
@@ -4543,13 +4616,46 @@
                                                                    `req_id: request_id
                                                                    `args: [ lisp_text ] })
                                                 (catch Error (e)
-                                                   (clog "ERROR on send_to_ws: " e.message)))
+                                                   (clog "ERROR on send_to_ws: " e)))
                                              true))))
                              (catch Error (e)
-                                (log (+ "Error on send_wait: " e.message))))
+                                (log (+ "Error on send_wait: " e))))
                        rval)))
                                                 
-                                  
+       (process_remote_eval_result (fn (result)
+                                      (if (is_object? result)
+                                          (try
+                                             (let
+                                                ((is_system_error? (== "FAIL" result.rval))
+                                                 (is_compiler_error? (and (resolve_path [ `result 0 `error ] result)
+                                                                          (resolve_path [ `result 0 `message ] result))))
+                                                (cond
+                                                   is_system_error?
+                                                   (progn
+                                                      (div { `style: "border-left: 5px solid red; padding: 5px;" } 
+                                                           (+ result.result_type ": " result.message)
+                                                           (value_to_dom result)))
+                                                   is_compiler_error?
+                                                   (progn
+                                                      (notify (+ "Error: " is_compiler_error?))
+                                                      (div { `style: "border-left: 5px solid red; padding: 5px;" }
+                                                           (if (== (length result.result) 1)
+                                                               (value_to_dom result.result.0)
+                                                               (value_to_dom result.result))))
+                                                   
+                                                   (ends_with? "unction" result.result_type)
+                                                   (remote_function_to_dom result.result)
+                                                   result.needs_eval
+                                                   (eval_struct (JSON.parse result.result))
+                                                   else
+                                                   result.result))
+                                             (catch Error (e)
+                                                (list e.message result)))
+                                          result)))
+       
+       
+                                            
+                                            
        (evaluator (fn (lisp_text no_eval no_clear)
                     (let
                         ((result nil))
@@ -4562,13 +4668,19 @@
                                (catch Error (e)
                                   (do
                                      (= error_state true)
-                                     (notify (+ "Error: " e.message)))))
+                                     (when e.message
+                                        (notify (+ "Error: " e.message))))))
                             (console.log "remote: <-" result)
+                            (when (is_object? result)
+                               (set_prop namespace_span
+                                  `innerText
+                                  (or result.namespace "Unknown!")))
                             
-                            (-> output_control `append result lisp_text error_state)
+                            (-> output_control `append (process_remote_eval_result result) lisp_text error_state)
                             (if (and (not error_state)
                                      (not no_clear))
                                 (-> input_container `set "")))
+                            
                          (progn
                             (setq current_env (-> Environment `get_namespace_handle (current_namespace)))
                             (try
@@ -4638,7 +4750,19 @@
        (destroy (fn ()
                   (if options.locked
                      (throw EvalError (+ "" options.name " is marked as locked and cannot be destroyed"))
-                     (-> input_container `destroy))))
+                     (progn
+                        (if options.remote_repl
+                            (try
+                               (progn
+                                  (log "remote_repl state: " repl_ws.readyState)
+                                  (when (== repl_ws.readyState repl_ws.OPEN)
+                                     (log "remote_repl: closing open connection on destroy. ")
+                                     (-> repl_ws `close))
+                                  (log "remote_repl state: clean up complete."))
+                               (catch Error (e)
+                                  (log "remote_repl: couldn't close the socket: " e.message))))
+                           
+                        (-> input_container `destroy)))))
        (menu_items (fn ()
                      [[(dtext "Clear Output Log")
                        (function ()
@@ -4672,14 +4796,19 @@
                          (try
                             (if options.remote_repl
                                (progn
-                                  (-> output_control `append (+ "Connecting to remote repl: " options.remote_repl))
+                                  (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
+                                                                       (html/span { `style: "font-weight: bold; display: inline-block;" } "remote: ")
+                                                                       (html/span { `style: "display: inline-block; margin-left: 10px;" }
+                                                                                  options.remote_repl )))
+                                  
                                   (open_remote_evaluator)))
                             (catch Error (e)
-                               (log "Cannot open remote REPL: " e.message)))
-                         (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
-                                              (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
-                                              (html/span { `style: "display: inline-block; margin-left: 10px;" }
-                                                         "Version: " Environment.build_version   )))
+                               (clog "Cannot open remote REPL: " e.message)))
+                         (unless options.remote_repl
+                            (-> output_control `append (html/div { `style: "display: flex padding: 5px" }
+                                                                 (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
+                                                                 (html/span { `style: "display: inline-block; margin-left: 10px;" }
+                                                                            "Version: " Environment.build_version   ))))
                          ;; become the system_repl if none is yet defined
                          (when (eq nil *system_repl*)
                            (= *system_repl* intf)
@@ -4757,7 +4886,7 @@
              `clear_output: clear_output             
              `initialize: initialize
              `destroy: destroy
-             `type: "browser_repl"
+             `type: "visual_repl"
              `resize: (fn ()
                        (-> sview `resize))
              `menu_items: menu_items                           
@@ -4772,7 +4901,7 @@
                                  (set_prop options
                                            `history
                                            [(quote quotel) history])
-                                `(browser_repl ,#(or options { `ratio: sview.options.ratio } ))))
+                                `(visual_repl ,#(or options { `ratio: sview.options.ratio } ))))
              `controls: (fn () [ input_container output_control])
              
              `output_container: output_control.view
@@ -4833,15 +4962,14 @@
                                               (and control.can_hide?       ;; does the control want to be hidden?
                                                  (not (-> control `can_hide?)))))
                                      (progn
+                                        (when *app_menu_control*
+                                           (-> *app_menu_control* `remove_menu control.options.name))
+                                        (remove_control control.options.id)
                                         (if control.destroy
-                                           (progn
-                                              (when *app_menu_control*
-                                                 (-> *app_menu_control* `remove_menu control.options.name))
-                                              (remove_control control.options.id)
-                                              (-> control `destroy)
-                                              (when (== *last_focus* control)
-                                                 (== *last_focus* nil))
-                                              (default_focus)))))
+                                           (-> control `destroy))
+                                        (when (== *last_focus* control)
+                                           (== *last_focus* nil))
+                                        (default_focus)))
                                  (render_view)
                                  control)
                              ))
@@ -5585,6 +5713,7 @@
                            (exact_match nil)
                            (existing_suffix nil)
                            (ps (path_sep))
+                           (last_path nil)
                            (at_leaf? (at_leaf)))                         
                           ;; are we going forward or backwards?
                           ;; if forwards, determine if we pressed a delim key or a regular key
@@ -5672,15 +5801,33 @@
                                   (or (== k ps)
                                       (== k "Tab")))
                              (progn
-                                (= matched (get_matches k true))
-                               (when (and (> (length title_span.innerText) 0)
-                                          (== (length matched) 1)
-                                          (not (ends_with? ps title_span.innerText)))
-                                  (push stack
+                                (= matched (get_matches "" true))
+                                (= last_path (last (get_path_components)))
+                                
+                               (cond 
+                                  ;; if there is only one match 
+                                  (and (> (length title_span.innerText) 0)
+                                       (== (length matched) 1)
+                                       (not (ends_with? ps title_span.innerText)))
+                                  (progn
+                                     (push stack
                                         (get_suffix))
-                                  (render_stack)
-                                  (clear_suffix)
-                                  (place_caret_at_end title_span)))
+                                     (render_stack)
+                                     (clear_suffix)
+                                     (place_caret_at_end title_span))
+                                  ;; if there are multiple matches, but in those matches there is an exact match
+                                  (and (> (length title_span.innerText) 0)
+                                       (== (length (reduce (t (matched_as_text matched))
+                                                      (== last_path (first (split_by "\n" t)))))
+                                           1))
+                                  (progn
+                                     (push stack
+                                        (get_suffix))
+                                     (render_stack)
+                                     (clear_suffix)
+                                     (place_caret_at_end title_span))))
+                                  
+                                     
                              else
                              (progn
                                 (if options.allow_non_matches
@@ -5709,7 +5856,7 @@
                                          (catch Error (e)
                                             (log "ERROR: " e.message))))
                                    
-                                   (and options.allow_non_matches
+                                   (and ;options.allow_non_matches
                                         (> (length matched) 1)
                                         (or (== k "Tab")
                                             (== k ps)))
@@ -6085,8 +6232,14 @@
                          (and (== dir "horizontal")
                               (prop target `split_horizontal))
                          (-> target `split_horizontal)
+                         (and (== dir "vertical")
+                              (> (length (-> (control_holding_tank) `controls)) 0))
+                         (container_view_operation "split_right" target (last (-> (control_holding_tank) `controls)))
+                         (and (== dir "horizontal")
+                              (> (length (-> (control_holding_tank) `controls)) 0))
+                         (container_view_operation "split_below" target (last (-> (control_holding_tank) `controls)))
                          else
-                         (notify (+ "The control " (prop target.options `name) " cannot be directly split."))))))
+                         (notify (+ "No controls to split to" (prop target.options `name) " cannot be split"))))))
 
 
                       
@@ -6494,6 +6647,14 @@
       `usage: ["options:object?"]
   })
 
+(defun new_top_level_frame ()
+   (let
+      ((ctl (empty_selection_control))
+       (new_frame (control_container ctl { `root_frame: true } )))
+      (push $root_controls
+         new_frame)
+      (if (> (length (-> (control_holding_tank) `controls)) 0)
+          (swap_control ctl (last (-> (control_holding_tank) `controls))))))
 
 (defun new_juno_repl (options)
    (let
@@ -6504,9 +6665,9 @@
       (alert_on_error "REPL Error"
                       (cond
                          (is_top_control? target_container)
-                         (container_view_operation "split_right" (first (-> target_container `controls)) (browser_repl { `name: name `remote_repl: remote_repl }))
+                         (container_view_operation "split_right" (first (-> target_container `controls)) (visual_repl { `name: name `remote_repl: remote_repl }))
                          else
-                         (swap_control target_container (browser_repl { `name: name `remote_repl: remote_repl })))))
+                         (swap_control target_container (visual_repl { `name: name `remote_repl: remote_repl })))))
    {
        usage: ["options:?object"]
        description: (+ "Creates a new REPL in the current frame.  If provided with a `control_to_replace "
@@ -6575,16 +6736,18 @@
                        (is_string? options.filename)
                        (conj ["filesystem"] (split_by "/" options.filename))))
        (rval nil)
+       (data_to_save (or options.initial_data ""))
        (acc []))
       (if (eq options.filename nil)
           (return nil))
       (assert (and symbol_path options.filename) "Invalid options to edit_file")
       
       ;; if we are given a create mode, make the shell of a file
-      (if options.create_mode
+      (if (and options.create_mode
+               (> (length data_to_save) 0) )
          (try
             (progn
-               (= rval (http/send_files "/save_file" (http/data_to_file options.filename "")))
+               (= rval (http/send_files "/save_file" (http/data_to_file options.filename data_to_save "text/plain")))
                (if (and rval
                         (== rval.rval "OK"))
                    (log "Created empty file: " options.filename)
@@ -6592,7 +6755,7 @@
             (catch Error (e)
                (progn
                   (alert_box (dtext "Unable to Create File")
-                             (+ "" options.filename
+                             (+ "" options.filename ": "
                                 e.message))
                   (set_prop options
                              `filename
@@ -6668,7 +6831,7 @@
           (progn
              (alert_on_error "Cannot Create File"
                 (progn
-                   (= rval (http/send_files "/save_file" (http/data_to_file fname (-> control `get))))
+                   (= rval (http/send_files "/save_file" (http/data_to_file fname (or (-> control `get) ""))))
                    (if (and rval
                             (== rval.rval "OK"))
                        (progn
@@ -6763,6 +6926,9 @@
                    ["File" (fn (e) (edit_file { `create_mode: true }))]
                    [])
                ["Juno REPL" (fn (e) (new_juno_repl))]
+               (if is_served? 
+                  ["Juno Remote REPL" (fn (e) (new_juno_repl { `remote_repl: (+ "ws://" window.location.host "/connect_repl") }))]
+                  [])
                ["--" nil]
                ["Juno Lisp Editor" (fn (e) (new_buffer { `type: "juno" }))]
                ["Javascript Editor" (fn (e) (new_buffer { `type: "javascript" })) ]
@@ -6824,61 +6990,63 @@
        (holding_tank (get_control_by_name "Holding Tank"))
        (control_to_place (fn ()
                             (if (and (prop *last_focus* `editor) ;; if we are in an editor, (but not repl) split it
-                                     (not (== (prop *last_focus* `type) "browser_repl")))
+                                     (not (== (prop *last_focus* `type) "visual_repl")))
                                 (clone_editor_control *last_focus*) 
                                 (empty_selection_control)))) ;; otherwise pull the last control out of storage
                              
        (root_ctls (new Set)))
-      
-      (reduce (pset (pairs (controls_by_parent)))
-         (destructuring_bind (key controls)
-            pset
-            (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
-            (cond
-               (== key "root")
-               (progn
-                  (for_each (control controls)
-                     (-> root_ctls `add control.name))
-                  nil)
-               
-               (and (-> root_ctls `has key)
-                    (not (== key "Holding Tank")))
-               [key (for_each (operation ["Split Right" "Split Bottom" "Show" "Hide"])
-                       (progn
-                          (defvar control (get_control_by_name key))
-                          [(dtext operation)
-                           (cond
-                              (and (> idx 1)
-                                   (== operation "--"))
-                              nil
-                              (== operation "Split Right")
-                              (fn ()
-                                (place_control "right" (control_to_place)))
-                              (== operation "Split Bottom")
-                              (fn ()
-                                (place_control "below" (control_to_place)))
-                              (or (and (== operation "Show")
-                                       (-> holding_tank `has_control? control))
-                                  (and (== operation "Hide")
-                                       (not (-> holding_tank `has_control? control)))
-                                  (and (== operation "Close Control")
-                                       (-> holding_tank `has_control? control)))
-                              (progn
-                                 (when (-> holding_tank `has_control? control)
-                                    (inc idx))
+      (conj
+         ;[["New Frame" (fn ()
+                          ;(new_top_level_frame))]]
+         (reduce (pset (pairs (controls_by_parent)))
+            (destructuring_bind (key controls)
+               pset
+               (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
+               (cond
+                  (== key "root")
+                  (progn
+                     (for_each (control controls)
+                        (-> root_ctls `add control.name))
+                     nil)
+                  
+                  (and (-> root_ctls `has key)
+                       (not (== key "Holding Tank")))
+                  [key (for_each (operation ["Split Right" "Split Bottom" "Show" "Hide"])
+                          (progn
+                             (defvar control (get_control_by_name key))
+                             [(dtext operation)
+                              (cond
+                                 (and (> idx 1)
+                                      (== operation "--"))
+                                 nil
+                                 (== operation "Split Right")
                                  (fn ()
-                                    (container_view_operation (to_key operation)
-                                     (get_control_by_name key)
-                                     nil))))]))]
-               
-               (not (== key "Holding Tank"))
-               [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
-                       [(dtext operation) (fn ()
-                               (progn
-                                  (console.log key "operation: " operation controls)
-                                  (container_view_operation (to_key operation)
-                                   (get_control_by_name key)
-                                   (control_to_place))))])])))))
+                                    (place_control "right" (control_to_place)))
+                                 (== operation "Split Bottom")
+                                 (fn ()
+                                    (place_control "below" (control_to_place)))
+                                 (or (and (== operation "Show")
+                                          (-> holding_tank `has_control? control))
+                                     (and (== operation "Hide")
+                                          (not (-> holding_tank `has_control? control)))
+                                     (and (== operation "Close Control")
+                                          (-> holding_tank `has_control? control)))
+                                 (progn
+                                    (when (-> holding_tank `has_control? control)
+                                       (inc idx))
+                                    (fn ()
+                                       (container_view_operation (to_key operation)
+                                                                 (get_control_by_name key)
+                                                                 nil))))]))]
+                  
+                  (not (== key "Holding Tank"))
+                  [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
+                          [(dtext operation) (fn ()
+                                  (progn
+                                     (console.log key "operation: " operation controls)
+                                     (container_view_operation (to_key operation)
+                                                               (get_control_by_name key)
+                                                               (control_to_place))))])]))))))
 
 (defun gen_controls_menu ()
   (progn
@@ -7048,7 +7216,7 @@
        (console.log "initializing control surface")
        ;; take in the global default theme, but don't impact the setting for the sub themes
        (set_global_theme *env_config*.application.global_theme { `suppress_set_sub_theme: true `suppress_cascade: true })
-       (defglobal $repl (browser_repl { `name: "Juno REPL" }))
+       (defglobal $repl (visual_repl { `name: "Juno REPL" }))
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
