@@ -1,4 +1,4 @@
-
+;; TODO: SPLIT UP INTO SEPARATE FILES - TOO LARGE 
 ;; main browser initialization file - initializes the user browser environment
 ;; after the browser_workspace has setup the underlying environment
 
@@ -93,15 +93,32 @@
          (progn
           (if val.parentElement
             (details
-             (summary { `lpath: (lpath) `class: (+ classes "view") `tabindex:0 } (+ (sub_type val) " "))
+             (summary (+ {} (if options.namespace
+                               { ns: options.namespace }
+                               {})
+                         { `lpath: (lpath) 
+                           `class: (+ classes "view") 
+                           `tabindex:0 }) 
+                      (+ (sub_type val) " "))
              (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))
             val))
          (is_regex? val)
-         (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "regexp") } (-> val `toString))
+         (span (+ {} (if options.namespace
+                         { `ns: options.namespace }
+                         {})
+                  { `lpath: (lpath) 
+                    `tabindex: 0  
+                    `class: (+ classes "regexp") }) 
+               (-> val `toString))
          (is_string? val)
          (if (starts_with? "=:" val)
-           (span { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } (JSON.stringify val))
-           (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") } (JSON.stringify val)))
+           (span (+ {} (if options.namespace { `ns: options.namespace } {}) 
+                    { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } )
+                 (JSON.stringify val))
+           (span (+ {} (if options.namespace { `ns: options.namespace } {}) 
+                    { `lpath: (lpath) `tabindex: 0 `class: (+ classes "string") }) 
+                 (JSON.stringify val)))
+         
          (instanceof val Error)
          (details (summary { `class: (+ classes "error") } 
                            (span { `tabindex: 0 `class: (+ classes "error") `style: "margin-left: 5px; font-style: italic;" } val.name " " val.message))
@@ -116,7 +133,9 @@
          (is_object? val)
          (obj_to_dom val options _path)          
          else
-         (span { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) } val)))
+         (span  (+ {} (if options.namespace { `ns: options.namespace } {}) 
+                   { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) }) 
+               val)))
     elem))  
 
 (defun_sync function_to_dom (val options _path)
@@ -1742,6 +1761,7 @@
          (push k "Alt"))
     (when e.shiftKey
       (push k "Shift"))
+    (console.log e)
     (unless (contains? e.key [ "Shift" "Control" "Alt" "Meta" ])      
             ;; normalize to the printed key characters on the keyboard
             (push k (cond 
@@ -1804,65 +1824,176 @@
                                             []
                                             cancel_button)
                                          ok_button)))
+                      (rval nil)
+                      (get_current_value (fn ()
+                                            (cond
+                                               user_input.value
+                                               user_input.value
+                                               (getAttribute user_input `value)
+                                               (getAttribute user_input `value)
+                                               options.no_cancel_button
+                                               true)))
+                      (return_value (fn ()
+                                       (progn
+                                          (= rval (get_current_value))
+                                          (cond
+                                             (is_function? options.validator)
+                                             (if (-> options `validator rval)      
+                                                 (clean_up rval) ;; if the validator returns true, ok remove the dialog box
+                                                 nil) ;; wait for an appropriate inpit
+                                              else
+                                              (clean_up rval)))))
+                                                     
+                                                     
                       (clean_up (fn (val)
                                     (when (not completed)
                                         (= completed true)
                                         (resolve val)
                                         (-> dwin `remove)))))
-                   (attach_event_listener ok_button
-                                          `click
-                                          (fn (e)
-                                            (progn  
-                                              (handle_event e)
-                                              (cond 
-                                                 user_input.value
-                                                 (clean_up user_input.value)
-                                                 (getAttribute user_input `value)
-                                                 (clean_up (getAttribute user_input `value))
-                                                 options.no_cancel_button
-                                                 (clean_up true)))))
-                    ;; don't immediately react to keyup so as not to immediately react
-                    ;; in certain scenarios
-                   (setTimeout (fn ()
-                                       (attach_event_listener user_input
-                                          `keyup
-                                          (fn (e)
-                                            (cond 
-                                              (== e.key "Enter")
-                                              (progn
+                     
+                     
+                     
+                     (if (is_function? options.validator)
+                         (set_disabled ok_button))
+                     
+                     (attach_event_listener ok_button
+                        `click
+                        (fn (e)
+                           (progn
+                              (handle_event e)
+                              (return_value))))
+                     ;; don't immediately react to keyup so as not to immediately react
+                     ;; in certain scenarios
+                     (setTimeout (fn ()
+                                    (attach_event_listener user_input
+                                       `keyup
+                                       (fn (e)
+                                          (cond
+                                             (== e.key "Enter")
+                                             (progn
                                                 (handle_event e)
-                                                (clean_up user_input.value)
-                                              )))))
-                                250); 
-                   (attach_event_listener cancel_button
-                                          `click
-                                          (fn (e)
-                                            (progn
-                                                (handle_event e)
-                                                (clean_up))))
-                                              
-                   (attach_event_listener dwin
-                                          `close
-                                          (fn (e)
-                                              (clean_up nil)))
-                   
-                   (when options.default_value
-                       (set_prop user_input
-                                 `value
-                                 options.default_value))
-                                              
-                   (-> juno_container
-                       `appendChild dwin)
-                   ;(setTimeout (fn ()
-                    ;              (place_caret_at_end user_input))
+                                                (return_value))
+                                             (is_function? options.validator)
+                                             (progn
+                                                (if (-> options `validator (get_current_value))
+                                                    (set_enabled ok_button)
+                                                    (set_disabled ok_button)))))))
+                                 
+                                 250);
+                     (attach_event_listener cancel_button
+                        `click
+                        (fn (e)
+                           (progn
+                              (handle_event e)
+                              (return_value))))
+                     
+                     (attach_event_listener dwin
+                        `close
+                        (fn (e)
+                           (clean_up nil)))
+                     
+                     (when options.default_value
+                        (set_prop user_input
+                           `value
+                           options.default_value))
+                     
+                     (-> juno_container
+                        `appendChild dwin)
+                     ;(setTimeout (fn ()
+                     ;              (place_caret_at_end user_input))
                      ;          50)
-                   (when (is_function? dwin.showModal)
-                     (-> dwin `showModal)
-                     (-> user_input `select)
-                     ;(focus_to user_input)
-                     )))))
+                     (when (is_function? dwin.showModal)
+                        (-> dwin `showModal)
+                        (-> user_input `select)))))
+  {
+    description: (+ "This function will pause the flow of execution until the user makes a choice, "
+                    "selection or input and then will return the result of the user action.  If the "
+                    "user presses cancel or presses the Escape key, a return value of nil will be "
+                    "returned.<br>"
+                    "By default, the user is presented with a text input box in which text can "
+                    "entered.  Once the user presses return or clicks the OK button, the value is "
+                    "returned.  However, if the `type option is given as an input, the input will "
+                    "be of the specified type, such as \"number\" or \"date\". <br>"
+                    "Additionally options can be provided for more control over the interaction "
+                    "and value presentation.  If provided with a key of \"input\" and an input element, "
+                    "the provided input element will be displayed and the final value returned.  "
+                    "Other elements can be provided and as long as they either set a value property "
+                    "or value attribute on the element, that value will be returned.<br>"
+                    "Values can be validated by passing a \"validator\" function.  Upon the user "
+                    "pressing a key, the validation function will be called with the "
+                    "current value and if the validation function returns true, OK will be enabled, "
+                    "or if the user pressed enter, the validated value will be returned to the caller, "
+                    "otherwise the OK button will be disabled and the dialog box will not close. "
+                    "Note that the validator function is responsible for any prompting of "
+                    "or additional notices of how to comply with the validation rules.  This "
+                    "could be done by providing a more complicated element structure as an input that is in "
+                    "the closure of the validator whose values could be updated.")
+    usage: ["prompt:string" "type:string" "options:object"]
+    tags: ["user" "input" "request" "collect" "wait" "ui" "DOM"]
+    })
                  
-  
+(defun select_control_by_name (prompt options)
+   (let
+      ((no_sub_controls (not options.include_sub_controls))
+       (controls (current_controls no_sub_controls))
+       (prompt (or prompt (dtext "Please Select a Control")))
+       (names  (reduce (ctl controls)
+                 (let
+                    ((name (resolve_path [ `options `name ] ctl)))
+                    (progn
+                       (cond
+                          options.include_specials
+                          name
+                          (is_function? options.include_if_true)
+                          (if (-> options `include_if_true ctl)
+                              name
+                              nil)
+                          (and (not (== ctl (control_holding_tank)))
+                               (not (starts_with? "split_view" ctl.type))
+                               (not (resolve_path [ `options `root_frame ] ctl)))
+                          name)))))
+                          
+                          
+       (name_elems (map (fn (name) 
+                           (option name))
+                        names))
+       
+       (dlist_id (gen_id "controls"))
+       (dlist (apply datalist { `id: dlist_id } name_elems))
+       (selector (input { `list: dlist_id `style: "width: calc(100% - 10px);"} ))
+       (value nil))
+      (try
+         (progn
+           (-> (get_by_id `body) `append dlist)
+           (= value (request_user_input prompt 
+                                        `text 
+                                        { input: selector
+                                          validator: (fn (v)
+                                                        (contains? v names))
+                                        })))
+         (catch Error (e)
+            (progn
+               (log "select_control_by_name: error in request_user_input operation: " e.message))))
+      (log "selected: " value)
+      (-> dlist `remove)
+      (get_control_by_name value))
+   {
+       `description: (+ "Given a prompt and an optional options object, presents a dialog that displays the "
+                        "given prompt and allows the user to select or type a control name.  A drop down "
+                        "allows the user to select the closest matched to the typed in text.<br>"
+                        "The selected control is returned, or nil if the user presses cancel or presses Escape.<br>"
+                        "By default no split_views, sub controls (controls contained by other controls) " 
+                        "or root controls are displayed, only content controls.<br>"
+                        "Options:<br>"
+                        "include_specials:boolean - By default false, all controls will be presented.<br>"
+                        "include_sub_controls - Include the sub controls.<br>"
+                        "include_if_true:function - Predicate function which is passed a control, and if the function "
+                        "returns true the control will be included in the selection, otherwise it will not be.")
+       `usage: ["prompt:text" "options:object"]
+       `tags: ["controls" "select" "choose" "user" "UI" "DOM" ]
+   })  
+
+
 (defun alert_box (message detail)
    (request_user_input (or message "No message provided!") 
                        nil 
@@ -1952,7 +2083,9 @@
        `description: (+ "Given a control source id, command string, and a handler function, adds the function to the "
                         "event handler.  If the function is determined to be already registered using equality, then "
                         "the function will throw a ReferenceError that the same function is already registered.  "
-                        "Returns the computed handler_key.")
+                        "Returns the computed handler_key.<br>The handler function should be defined in the "
+                        "form of (fn (event_obj)), where event_obj will be the event object as transmitted " 
+                        "from the source.<br>")
        `tags: ["events" "controls" "key" "handlers" "dispatch" "routes" "create" ]
    })
     
@@ -2027,12 +2160,13 @@
                                    (or (prop *event_routes* (compute_handler_key event_obj.source nil)) [])
                                    (or (prop *event_routes* (compute_handler_key nil event_obj.command)) []))))))
                     
-     (when (> handlers.length 0)
-        (log "dispatch_event: " event_obj handler_key handlers))
+     ;(when (> handlers.length 0)
+      ;  (log "dispatch_event: " event_obj handler_key handlers))
       (if (> handlers.length 0)
            (for_each (handler handlers)
               (try
-                 (-> handler `f event_obj)
+                 (progn 
+                    (-> handler `f event_obj))
                  (catch Error (e)
                     (log (+ "Error on event handler for route: " handler_key ": " e.message))))))
       (when event_obj.error
@@ -2079,6 +2213,19 @@
        `usage: ["path:array|string"]
        `tags: ["controls" "editor" "path"]
    }) 
+
+(defun get_control_by_editor (editor)
+   (let
+      ((ctls (current_controls true)))
+      (first (reduce (ctl ctls)
+                (when (== ctl.editor editor)
+                   (log "found ctl for editor")
+                   ctl))))
+   {
+       `description: "Given an editor object, returns the control associated with it."
+       `usage: ["editor:object"]
+       `tags: ["editor" "control" "find"]
+   })
 
 (defun get_editor_file_basename (editor_control)
    (aif (resolve_path [ `options `filename ] editor_control)
@@ -3263,12 +3410,42 @@
 
 (defun show_key_bindings ()
    (let
-      ((categories (reduce (k (keys *key_bindings* ))
+      ((platform (get_operating_platform))
+       (default_editor_keys (if (-> Environment `get_global "*orig_key_bindings*" nil)
+                                (reduce (entry (values (-> Environment `get_global "*orig_key_bindings*")))
+                                   (when (prop entry.bindKey platform)
+                                      (to_object
+                                         [[`name entry.name]
+                                          [`description entry.description]
+                                          [ (+ "" platform) (prop entry.bindKey platform) ]])))))
+       
+                                       
+       (categories (reduce (k (keys *key_bindings* ))
                       (unless (== k "active")
                          k)))
        (td_style (function () 
                     { `style: "vertical-align:top; padding: 5px; border-bottom: 1px solid var(--main-accent-line);" } ))
-       (platform (get_operating_platform)))
+       (table_values  (sort
+                           (conj (-> (for_each (category categories)
+                                        (for_each (binding (pairs (resolve_path [ category ] *key_bindings*)))
+                                           (destructuring_bind (name entry)
+                                              binding
+                                              [ (prop entry platform)
+                                               (from_key name)
+                                               (from_key category)
+                                               (or (prop entry `description)
+                                                   "No Description") ] )))
+                                     `flat 1)
+                                 
+                                 (for_each (binding default_editor_keys)
+                                    [(prop binding platform)
+                                     (from_key binding.name)
+                                     "Editor"
+                                     (or (prop binding `description)
+                                         "No Description")]))
+                           { `key: [`0] }
+                            )))
+      (log "Table values: " table_values)
       (table { `style: "width: 100%" }
          (thead
             (tr { `style: "" }
@@ -3277,16 +3454,12 @@
                (th { `style: "padding: 5px;" } "Scope")
                (th { `style: "padding: 5px;" } "Description")))
          (tbody
-            (for_each (category categories)
-               (for_each (binding (pairs (resolve_path [ category ] *key_bindings*)))
-                  (destructuring_bind (name entry)
-                     binding
-                     (tr { `style: "padding: 5px; " }
-                        (td (td_style) (prop entry platform))
-                        (td (td_style) (from_key name))
-                        (td (td_style) (from_key category))
-                        (td (td_style) (or (prop entry `description)
-                                "No Description")))))))))
+            (for_each (row table_values)
+               (tr { `style: "padding: 5px; " }
+                  (td (td_style) row.0)
+                  (td (td_style) row.1)
+                  (td (td_style) row.2)
+                  (td (td_style) row.3))))))
    {
      `description: "Returns a table DOM element of the current key bindings."
      `usage: []
@@ -3383,6 +3556,54 @@
       (set_prop s session.$foldData
          (-> session `$cloneFoldData))
       s))
+
+(defun eval_selected_text_in_place (ctl options)
+   (progn
+      (let
+         ((text (-> ctl `get_selected_text))
+          (editor (or ctl.editor
+                      options.editor
+                      (throw TypeError "eval_selected_text_in_place: no editor for provided control")))
+          (selection (-> ctl `get_selection))  ;; range to replace with results
+          (evaluator nil)
+          (result nil))
+         (= evaluator
+            (cond
+               (is_function? options.evaluator)
+               options.evaluator
+               ctl.get_evaluator
+               (-> ctl `get_evaluator)))
+         (assert (is_function? evaluator) "eval_selected_text_in_place: no evaluator found for control or in provided options.")
+         (= result (evaluator text false true true))
+         (log "result: " result)
+         (= result
+            (cond
+               (is_object? result)
+               (if options.as_json
+                  (JSON.stringify result nil 2)
+                  (+ "" (as_lisp result)))
+               (is_string? result)
+               result
+               else
+               (+ "" (as_lisp result))))
+         (try 
+            (-> (-> editor `getSession) `replace selection result)
+            (catch Error (e)
+               (progn
+                  (-> (-> editor `getSession) `replace selection text)
+                  (-> ctl `display_context_message (+ "Error on replace: " e.message))
+                  (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
+                  (log e))))
+         ))
+   {
+     description: (+ "Given a control with an editor, the selected text is evaluated " 
+                     "using the editors evaluator.  The evaluated selection is replaced with the result."  
+                     "An optional 'evaluator' function can be passed to be used as the evaluator instead "
+                     "of the controls default evaluator.  If 'as_json' as true, then the result will be "
+                     "written as a JSON object in the editor.")
+     usage: ["control:object" "options:?object"]
+     tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
+   })
 
 
 (defun make_editor (content options)
@@ -3538,6 +3759,8 @@
                                 
        (select_current_form (fn ()
                                (select_to_current_form editor)))
+       (get_selected_text (function () 
+                             (-> editor `getSelectedText)))
        (get_selection (function ()
                          (-> editor.selection `getRange)))
        (get_lines (function (from to)
@@ -3597,7 +3820,13 @@
        (bind_key (fn (key_command func)
                     (aif (get_keybinding "editor" key_command)
                          (progn
-                            (console.log "binding command: " key_command it (to_ace_keybinding key_command it func))
+                            ;(log "binding command: " key_command it (prop it (get_operating_platform)) (to_ace_keybinding key_command it func))
+                            ;(if (is_string? key_command) 
+                             ;   (try
+                              ;    (if (resolve_path [ `keyBinding `$defaultHandler `commandKeyBinding (prop it (get_operating_platform)) ] editor)
+                               ;       (delete_path [ `keyBinding `$defaultHandler `commandKeyBinding (prop it (get_operating_platform)) ] editor))
+                                ;  (catch Error (e)
+                                 ;    (log "ERROR on finding existing keybinding: " e.message))))
                             (-> editor.commands `addCommand
                                 (to_ace_keybinding key_command it func))))))
        (request_save (function ()
@@ -3619,11 +3848,14 @@
                                (-> options `on_save intf)))))
        
                      
-                      
+       (orig_bindings nil)                  
        (build_key_bindings (fn (editor)
                               (progn
                                  (console.log "building_key_bindings")
-                                 
+                                 ;; we need to remove any keybinding that interferes with our globals and then
+                                 ;; rebuild to the right scope
+                                 (= orig_bindings (clone (resolve_path [ `keyBinding `$defaultHandler `commandKeyBinding ] editor)))
+                                 (defglobal *orig_key_bindings* orig_bindings)
                                  (when options.on_save
                                     (bind_key "on_save" request_save))
                                  (bind_key "increase_font_size" increase_font_size)
@@ -3633,7 +3865,18 @@
                                  (bind_key "indent_current_row" indent_current_row)
                                  (bind_key "evaluate_selection" evaluate_selection)
                                  (bind_key "evaluate_root_form" evaluate_root_form)
-                                 
+                                 (bind_key "evaluate_selected_in_place" (fn (editor)
+                                                                           (progn
+                                                                              (setTimeout (fn ()
+                                                                                             (try
+                                                                                                (progn
+                                                                                                   (defvar rval (eval_selected_text_in_place (get_control_by_editor editor)))
+                                                                                                   true)
+                                                                                                (catch Error (e)
+                                                                                                   (display_context_message "Error on evaluation: " e.message))))
+                                                                                          10)
+                                                                              true)))
+                                                                           
                                  (when (is_array? options.commands)
                                     (for_each (command options.commands)
                                        (do
@@ -3869,6 +4112,7 @@
          `get: (fn (text)
                   (-> editor `getValue))
          `get_selection: get_selection
+         `get_selected_text: get_selected_text
          `is_selected?: is_selected?
          `type: `make_editor
          `can_hide?: (fn ()
@@ -3930,6 +4174,8 @@
          `resize: (fn ()
                      (perform_resize))
          `bind_key: bind_key
+         `key_bindings: (fn ()
+                           (resolve_path [ `keyBinding `$defaultHandler `commandKeyBinding] editor))
          `save: (function ()
                    (request_save))
          `on_save_complete: (function (event_obj)
@@ -4001,6 +4247,19 @@
     (when selected_idx
         (prop (prop available selected_idx) 2))))
   
+
+
+
+(defun set_scroll_speed (ctl value)
+   (if ctl.editor
+      (-> ctl `editor) `setScrollSpeed (Math.min 1 10))
+   {
+       description: (+ "Sets the scroll speed for the editor by taking a control with an " 
+                       "editor and a value between 1 and 10, where 10 will scroll the fastest "
+                       "and 1 will be the slowest scroll value.  No return value.")
+       usage: ["control:object" "value:number"]
+       tags: ["editor" "scroll" "speed"]
+   })
 
 (defun compute_name_for_editor (title path_to_value)
    (let
@@ -4578,7 +4837,7 @@
                                                                                          (progn
                                                                                             (clog "Unable to parse json data: " e.message)
                                                                                             (= data event.data))))
-                                                                                   (clog "<-" event.data)
+                                                                                   ;(clog "<-" event.data)
                                                                                    (cond
                                                                                       (and (is_object? data)
                                                                                            data.req_id)
@@ -4689,7 +4948,7 @@
        
                                             
                                             
-       (evaluator (fn (lisp_text no_eval no_clear)
+       (evaluator (fn (lisp_text no_eval no_clear no_log)
                     (let
                         ((result nil))
                       (setq error_state nil)
@@ -4708,9 +4967,10 @@
                                (set_prop namespace_span
                                   `innerText
                                   (or result.namespace "Unknown!")))
-                            
-                            (-> output_control `append (process_remote_eval_result result) lisp_text error_state)
+                            (unless no_log
+                               (-> output_control `append (process_remote_eval_result result) lisp_text error_state))
                             (if (and (not error_state)
+                                     (not no_log)
                                      (not no_clear))
                                 (-> input_container `set "")))
                             
@@ -4729,8 +4989,10 @@
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))
-                            (-> output_control `append result lisp_text error_state)
+                            (unless no_log
+                               (-> output_control `append result lisp_text error_state))
                             (if (and (not error_state)
+                                     (not no_log)
                                      (not no_clear))
                                 (-> input_container `set ""))))
                       result)))
@@ -4747,8 +5009,10 @@
                                    clone_with_editor_id: options.clone_with_editor_id
                                    repl_mode: true
                                    on_new_lisp_operator: (function (val)
-                                                            (progn                                                               
-                                                               (dispatch_event { `command: "display_usage" source: id `args: [val] })))
+                                                            (progn      
+                                                               true
+                                                               ;(dispatch_event { `command: "display_usage" source: id `args: [val] })
+                                                               ))
                                    evaluator: (fn (lisp_text no_eval no_clear)
                                                 (progn
                                                  (push_history lisp_text)
@@ -4829,8 +5093,8 @@
                          (try
                             (if options.remote_repl
                                (progn
-                                  (-> output_control `append (html/div { `style: "display: flex padding: 5px" }                
-                                                                       (html/span { `style: "font-weight: bold; display: inline-block;" } "remote: ")
+                                  (clog  (html/div { `style: "display: flex padding: 5px" }                
+                                                                       (html/span { `style: "font-weight: bold; display: inline-block;" } "connecting to: ")
                                                                        (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                                                   options.remote_repl )))
                                   
@@ -4945,8 +5209,8 @@
              `output_container: output_control.view
              `log: (fn (val)
                      (-> output_control `log_message val))
-             `evaluate: (fn (lisp_text no_eval no_clear)
-                          (evaluator lisp_text no_eval no_clear))
+             `evaluate: (fn (lisp_text no_eval no_clear no_log)
+                          (evaluator lisp_text no_eval no_clear no_log))
              })
     intf))
 
@@ -6280,8 +6544,6 @@
                          (notify (+ "No controls to split to" (prop target.options `name) " cannot be split"))))))
 
 
-                      
-
 (defcontrol line_display ()
    ((menu_items (fn ()
                    [["Test" (fn ()
@@ -6299,6 +6561,157 @@
        `expose: [[`set set]]
        `usage: []
    })
+
+(defcontrol juno_documentation_control ()
+   ((definition_view (div { `class: "juno-log-output" `style: "padding: 5px; overflow: scroll; width: calc(100% - 20px);" } "Help Introduction"))
+    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden;" } 
+                       definition_view))
+    (view (div { `class: "juno-log-output" `style: "padding: 5px; width: calc(100% - 20px); overflow: hidden;"} 
+          content_view))
+    (name "Juno Documentation")
+    (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } (dtext "Documentation")))
+    (pin_button (button { } (dtext "Pin")))
+    (history_button (button { } (dtext "History")))
+    (pinned? (fn ()
+                (has_class? "juno-button-on" pin_button)))
+    (history [])
+    (history_max_length 5)
+    (current_symbol nil)
+    (control_bar_elements [pin_button history_button])
+    (render_command_elem (fn (command)
+                            (let
+                               ((results (describe command true)))
+                               (for_each (meta_obj (or results ()))
+                                  (format_help meta_obj)))))
+    
+    (render_help (fn (command)
+                    (div { `class: "" `style: "overflow-x: hidden;" }
+                         (for_each (v (to_array (or (render_command_elem command) [])))
+                            (div { `style: "padding: 5px; margin-bottom: 10px; background: var(--editor-bg-color);" }
+                                 v)))))
+    
+    (message_receiver (fn (event_obj force)
+                         (let
+                            ((first_arg (let
+                                           ((comps (split_by "(" event_obj.args.0)))
+                                           (or (second comps)
+                                               (first comps))))
+                             (new_view nil))
+                            ;; deal with recording the history 
+                            (when first_arg
+                               (when (not (== (last history) first_arg))
+                                  ;(log "pushed:" (last history) first_arg)
+                                  (push history
+                                     first_arg)
+                                  (if (pinned?)
+                                      (-> history_content_view `prepend (render_help first_arg))
+                                      (if (> (length history) 1)
+                                          (-> history_content_view `prepend (render_help (prop history (- (length history) 2)))))))
+                               (when (> (length history) history_max_length)
+                                  (take history)
+                                  (aif (last history_content_view.children)
+                                       (-> it `remove))))
+                              
+                            (when (or (and force first_arg)
+                                      (and first_arg
+                                         (not (pinned?))))
+                               (= current_symbol first_arg)
+                               (-> definition_view `replaceChildren
+                                  (render_help current_symbol))))))
+    
+    (handler_function_id (gen_id "hid"))
+    (history_mode? (fn ()
+                      (has_class? "juno-button-on" history_button)))
+    (history_content_view (div { `style: "overflow: scroll; height: calc(100% - 10px); width: calc(100% - 20px;) overflow: scroll;" } ))
+    (history_view (div { `class: "juno-log-output" `style: "height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden; padding: 5px;" } 
+                       history_content_view))
+    (split_view nil)
+    (show_history (fn (show?)
+                       (let
+                          ()
+                          (if show? ;; update our button
+                             (add_class "juno-button-on" history_button)
+                             (remove_class "juno-button-on" history_button))
+                          (cond
+                             (and (history_mode?)
+                                  (is_control? split_view))
+                             nil ;; already showing
+                             (and (history_mode?)
+                                  (eq nil split_view))
+                             (progn
+                                (-> definition_view `remove)
+                                (= split_view
+                                   (split_view_horizontal definition_view history_view))
+                                (-> content_view
+                                   `replaceChildren
+                                   split_view.view))
+                             (not (history_mode?))
+                             (progn
+                                (-> split_view.view `remove)
+                                (-> split_view `destroy)
+                                (= split_view nil)
+                                (-> content_view
+                                   `replaceChildren
+                                   definition_view))))))
+                             
+                          
+                          
+    (render (fn ()
+               (if (not initialized)
+                   view)))
+    (on_render (fn ()
+                  (when current_symbol
+                     (-> definition_view `replaceChildren
+                        content_view))))
+                 
+    (on_initialize (fn (anything_here)
+                      (progn
+                         (register_event_handler nil "display_usage" handler_function_id message_receiver)
+                         (attach_event_listener pin_button
+                            `click
+                            (fn (e)
+                               (if (has_class? "juno-button-on" pin_button)
+                                   (remove_class "juno-button-on" pin_button)
+                                   (add_class "juno-button-on" pin_button))))
+                         (attach_event_listener history_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (show_history (not (history_mode?))))))
+                               
+                         anything_here)))
+    (on_destroy (fn (anything_here)
+                   (progn
+                      (remove_event_handler nil "display_usage" handler_function_id)
+                      )))
+    (set_pinned (fn (value)
+                   (cond
+                      (== value current_symbol)
+                      (add_class "juno-button-on" pin_button)
+                      (is_string? value)
+                      (progn
+                         (add_class "juno-button-on" pin_button)
+                         (message_receiver { args: [ value ] } true))
+                      else
+                      (add_class "juno-button-on" pin_button))))
+    (release_pin (fn ()
+                    (remove_class "juno-button-on" pin_button)))
+    
+    )
+   {
+     `control_bar: true
+     `expose: [[ `set_pinned set_pinned]
+                [ `get_history (function () (clone history)) ]]
+     `usage: []
+     })
+
+;; hide the documentation control behind a singleton function
+(defun juno_documentation (options)
+   (aif (get_control_by_name "Juno Documentation")
+        it
+        (juno_documentation_control options)))
+
+
 
 (defun handle_app_click_event (e)
   (let
@@ -6632,6 +7045,23 @@
    "")  ;; we let the control take care of this since it has better visibility to prior lines
 
 
+(defun toggle_help_panel ()
+   (progn
+      (defvar ctl_holding (control_holding_tank))
+      (try
+         (cond
+            (-> ctl_holding `has_control? (juno_documentation))
+            (progn
+               (place_control `right (juno_documentation)))
+            (get_control_by_name "Juno Documentation")
+            (hide_control (juno_documentation))
+            else
+            (progn
+               (defvar ctl (juno_documentation))
+               (place_control `right ctl)))
+         (catch Error (e)
+            (notify (+ "Unable to open help panel: " e.message))))))
+
 
 
 (defun new_buffer (options)
@@ -6922,7 +7352,7 @@
                (prop desc key_mode) 
                (prop desc `exec))))
   {
-      `description: (+ "Given a scope for the keybinding, a command ame key, and a description object, "
+      `description: (+ "Given a scope for the keybinding, a command name key, and a description object, "
                        "establishes the binding in the *key_bindings* and in the environment as active. "
                        "<br>The description object should contain the following keys:<br>"
                        "description:text - A human readable description of what the key binding does.<br>"
@@ -7173,6 +7603,10 @@
        
     (defvalue $root_controls [])
     
+    (set_prop window
+       `onbeforeunload
+       (function ()
+          true))
     
     ;; the root container which controls are added to..
     (defglobal juno_container
@@ -7296,8 +7730,13 @@
                                description: "Open File"
                                exec: (fn () (edit_file))
                               }
+                 "toggle_documentation" { win: "Shift-Escape"
+                                        mac: "Shift-Escape"
+                                        description: "Show Help Panel"
+                                        exec: (fn () 
+                                                 (toggle_help_panel)) }
                  "save_environment" { win: "Ctrl-Shift-S"
-                                      mac: "Command-Shift-s"
+                                      mac: "Command-Shift-S"
                                       description: "Saves the current state of the application"
                                       exec: (fn () (save_control_image))
                                      } 
@@ -7387,7 +7826,13 @@
                                        win: "tab"
                                        mac: "tab"
                                        exec: nil
-                                       })
+                                       }
+                 "evaluate_selected_in_place" {
+                                                description: "Evaluates and then replaces the selected text with the results of the evaluation."
+                                                win: "Alt-R"
+                                                mac: "Alt-R"
+                                                exec: nil
+                                                })
                  
        
        

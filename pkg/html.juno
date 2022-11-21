@@ -539,7 +539,8 @@
        content_list))
      
     (is_element? content_list)
-    { view: content_list }))
+    { view: content_list })) 
+
                     
 (defvalue *frame_count* -1)
 (defvalue *view_count* -1)

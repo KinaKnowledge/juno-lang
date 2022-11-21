@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-11-15 08:24:09
-// Version: 2022.11.15.08.24
-export const DLISP_ENV_VERSION='2022.11.15.08.24';
+// Build Time: 2022-11-21 14:23:33
+// Version: 2022.11.21.14.23
+export const DLISP_ENV_VERSION='2022.11.21.14.23';
 
 
 
@@ -3786,8 +3786,15 @@ export async function init_compiler(Environment) {
                 } ();
                 await async function(){
                     if (check_true ((await not((fn_opts && fn_opts["arrow"]))&& await not((fn_opts && fn_opts["generator"]))&& ((completion_scope && completion_scope["completion_records"] && completion_scope["completion_records"]["length"])===0)))) {
-                        throw new Error("internal compile error: no completion records for callable");
-                        
+                        {
+                            await console.error("internal compile error: no completion records for callable");
+                            await console.log("error provoking source: ",await source_from_tokens(tokens,expanded_tree,true));
+                            await console.log("output: ",acc);
+                            let internal_syntax_error=new SyntaxError("internal compile error: no completion records for callable");
+                            ;
+                            throw internal_syntax_error;
+                            
+                        }
                     } else {
                         true
                     }

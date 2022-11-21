@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-11-15 08:24:09
-// Version: 2022.11.15.08.24
-export const DLISP_ENV_VERSION='2022.11.15.08.24';
+// Build Time: 2022-11-21 14:23:33
+// Version: 2022.11.21.14.23
+export const DLISP_ENV_VERSION='2022.11.21.14.23';
 
 
 
@@ -1995,6 +1995,20 @@ await Environment.set_global("show",async function(thing) {
     } ()
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"]
 });
+{
+     Environment.set_global("rotate_right",function(array_obj) {
+        (array_obj).unshift((array_obj).pop());
+        return array_obj
+    },{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"]
+})
+};
+{
+     Environment.set_global("rotate_left",function(array_obj) {
+        (array_obj).push((array_obj).shift());
+        return array_obj
+    },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"]
+})
+};
 await (await Environment.get_global("register_feature"))("core-ext");
 return true
 }

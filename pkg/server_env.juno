@@ -116,10 +116,7 @@
      tags: ["routes" "http" "io" "server" "network"]
      })
           
-          
 
-
- 
 (defun create_http_server (port_number options)
    (-> Deno `listen (+ {}
                      { port: port_number }
@@ -129,6 +126,7 @@
        usage: ["port_number:number" "options:object"]
        tags: ["server" "http" "network" "io" "handler"]
     })
+
 
 (defun serve_using_handler (server handler options)
    (let
@@ -152,19 +150,23 @@
               (progn
                  (resolve control_function)
                  (try
-                    (for_with (connection server)
-                       (no_await
-                          (try
-                             (handler connection state)
-                             (catch Error (e)
-                                (progn
-                                   (if options.on_error
-                                      (options.on_error server connection state)
-                                      nil))))))
+                    (while state.run_server
+                       (for_with (connection server)
+                          (no_await
+                             (try
+                                (handler connection state)
+                                (catch Error (e)
+                                   (progn
+                                      (if options.on_error
+                                         (options.on_error server connection state)
+                                         nil)))))))
                     (catch Error (e)
                        (if (== state.run_server false)
                            true ;; expected
-                           (throw e)))))))) ;; otherwise this is a real error to deal with
+                           (progn
+                              (if options.on_connection_error
+                                 (-> options `on_connection_error e)
+                                 (console.error (formatted_date (new Date)) " serve_using_handler: error: " e)))))))))) ;; otherwise this is a real error to deal with
    {
        description: (+ "Given a Listener object, a handler function (see default_handler) "
                        "and an optional options object, sets up service controller for "
@@ -186,10 +188,6 @@
    })
                 
                        
-
-
-                
-
 (defun find_matching_route (method pathname)
    (if (and (is_string? method)
             (is_string? pathname))
@@ -393,7 +391,6 @@
                       (progn
                          (set_prop state
                             `request_count (+ 1 state.request_count))
-                         (console.log "default_handler: new request_event: " request_event)
                          (try
                             (= response (http_request_router request_event state))
                             (catch Error (e)
@@ -579,6 +576,7 @@
            {
             `status: 200
             }))))
+
 (defun create_websocket (uri options)
    (let
       ((`options (or options {}))
@@ -828,6 +826,7 @@
                            `on_close: (fn (ws event)
                                          (log "websocket closed"))
                            })))
+
 (defglobal ws_repl_handler
    (create_ws_repl_handler { `namespace: "user" }))
 
@@ -870,11 +869,29 @@
          `service_path "/env"
          `base_directory base_directory)))
 
+(if_compile_time_defined `Deno
+   (defun open_browser (options)
+      (let
+         ((os (operating_system))
+          (browser (or options.path_to_browser
+                       (cond
+                          (== os "darwin")
+                          "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+                          (== os "linux")
+                          "/usr/bin/google-chrome"
+                          else
+                          (throw EvalError "Please provide the path_to_browser option.")))))
+         (Deno.run { `cmd: [browser "--new-window" (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "a1.html")) ] }))))
+                       
+      
+
+
 (defun start (options)
   (progn   
    (env_bank (or options.port 56432)
              (or options.base_directory "./")
              options)))
+
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")

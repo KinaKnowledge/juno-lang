@@ -2366,7 +2366,12 @@
                             (and (not fn_opts.arrow)
                                  (not fn_opts.generator)
                                  (== completion_scope.completion_records.length 0))
-                            (throw Error "internal compile error: no completion records for callable")
+			    (progn
+			      (console.error "internal compile error: no completion records for callable")
+			      (console.log "error provoking source: " (source_from_tokens tokens expanded_tree true))
+			      (console.log "output: " acc)
+			      (defvar internal_syntax_error (new SyntaxError "internal compile error: no completion records for callable"))			      
+			      (throw internal_syntax_error))
                             else
                             ;; do validation check here
                             true)  ;; stub

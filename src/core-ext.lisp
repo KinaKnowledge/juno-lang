@@ -1621,10 +1621,33 @@
     
     })
 
+ (defun_sync rotate_right (array_obj)
+   (progn
+      (prepend array_obj (pop array_obj))
+      array_obj)
+   {
+       description: (+ "Given an array, takes the element at the last " 
+                        "position (highest index), removes it and places " 
+                        "it at the front (index 0) and returns the array. ")
+       usage: ["array_obj:array"]
+       tags: ["array" "rotation" "shift" "right"]
+   })
+
+ (defun_sync rotate_left (array_obj)
+    (progn
+       (push array_obj (take array_obj))
+       array_obj)
+    {
+      description: (+ "Given an array, takes the element at the first "
+                      "position (index 0), removes it and places "
+                      "it at the front (highest index) and returns the array. ")
+      usage: ["array_obj:array"]
+      tags: ["array" "rotation" "shift" "left"]
+      })
  
-  (register_feature "core-ext")
+ (register_feature "core-ext")
   
-    true
+ true
 )
 
 

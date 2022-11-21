@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2022-11-15 08:24:14
-// Version: 2022.11.15.08.24
-export const DLISP_ENV_VERSION='2022.11.15.08.24';
+// Build Time: 2022-11-21 14:23:38
+// Version: 2022.11.21.14.23
+export const DLISP_ENV_VERSION='2022.11.21.14.23';
 
 
 
@@ -3409,7 +3409,8 @@ export async function init_dlisp(Environment)  {
 },"use_quoted_initializer":{ "eval_when":{ "compile_time":true
 },"name":"use_quoted_initializer","macro":true,"fn_args":"(\"&\" forms)","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"]
 },"random_int":{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"]
-},"resolve_multi_path":{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":"Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list.","requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"]
+},"resolve_multi_path":{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":["=:+","Given a list containing a path to a value in a nested array, return the value at the given ","path. If the value * is in the path, the path value is a wild card if the passed object ","structure at the path position is a vector or list."],"requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"]
+},"delete_path":{ "name":"delete_path","fn_args":"(path obj)","description":["=:+","Given a path and an target object, removes the specified value ","at the path and returns the original object, which will have been modified. ","If the value isn't found, there are no modifications to the object and the ","object is returned.  Will throw a TypeError if the obj argument isn't an ","object type, of if the path isn't an array with at least one element."],"usage":["path:array","obj:object"],"tags":["path","delete","remove","object","resolve","modify","value"],"requires":["pop","not","is_array?","is_object?","length","is_value?","delete_prop","resolve_path"]
 },"symbol_tree":{ "name":"symbol_tree","fn_args":"(quoted_form _state _current_path)","description":"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.","usage":["quoted_form:quote"],"tags":["structure","development","analysis"],"requires":["unquotify","resolve_multi_path","is_array?","push","map","symbol_tree","conj","add","is_string?","starts_with?","is_object?","pairs"]
 },"except_nil":{ "name":"except_nil","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
 },"each":{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"],"requires":["is_string?","is_number?","except_nil","sub_type","is_array?","push","resolve_path","is_function?"]
@@ -3492,6 +3493,9 @@ export async function init_dlisp(Environment)  {
 },"calculate_indent_rule":{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","log","built_ins","add","last"]
 },"format_lisp_line":{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. "],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
 },"keyword_mapper":{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"]
+},"operating_system":{ "name":"operating_system","fn_args":"()","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"]
+},"platform_architecture":{ "name":"platform_architecture","fn_args":"()","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"]
+},"platform":{ "name":"platform","fn_args":"()","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"]
 },"compiler":{ "requires":["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set"]
 },"read_text_file":{ "description":"Given an accessible filename including path with read permissions returns the file contents as a string.","usage":["filename:string","options:object"],"tags":["file","read","text","input","io"],"initializer":["=:bind","=:Deno.readTextFile","=:Deno"],"requires":["bind"]
 },"readline_mod":{ "initializer":["=:javascript","undefined"]
@@ -3518,7 +3522,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.15.08.24",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.21.14.23",imports:await ( async function(){
         let __obj__283=new Object();
         __obj__283["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5173,7 +5177,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.15.08.24",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.21.14.23",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -8426,59 +8430,107 @@ export async function init_dlisp(Environment)  {
             top= parseInt((args && args["0"]))
         };
         return  parseInt( ( Environment.get_global("add"))(( Math.random()* (top- bottom)),bottom))
-    };__obj__1["resolve_multi_path"]=async function(path,obj,not_found) {
-    return await async function(){
-        if (check_true ((obj instanceof Object))) {
-            return await async function(){
-                if (check_true (((await (await Environment.get_global("length"))(path)===1)&& ("*"===await (await Environment.get_global("first"))(path))))) {
-                    return (obj|| not_found)
-                } else if (check_true (((await (await Environment.get_global("length"))(path)===1)&& (obj[await (await Environment.get_global("first"))(path)] instanceof Object)))) {
-                    return (obj[await (await Environment.get_global("first"))(path)]|| not_found)
-                } else if (check_true (((await (await Environment.get_global("length"))(path)===1)&& await (await Environment.get_global("not"))((obj[await (await Environment.get_global("first"))(path)] instanceof Object))&& await (await Environment.get_global("not"))((null==obj[await (await Environment.get_global("first"))(path)]))))) {
-                    return obj[await (await Environment.get_global("first"))(path)]
-                } else if (check_true (((obj instanceof Array)&& ("*"===await (await Environment.get_global("first"))(path))))) {
-                    return await (async function() {
-                        let __for_body__106=async function(val) {
-                            return await (await Environment.get_global("resolve_multi_path"))(await (await Environment.get_global("rest"))(path),val,not_found)
-                        };
-                        let __array__107=[],__elements__105=obj;
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__104 in __elements__105) {
-                            __array__107.push(await __for_body__106(__elements__105[__iter__104]));
-                            if(__BREAK__FLAG__) {
-                                 __array__107.pop();
-                                break;
-                                
-                            }
-                        }return __array__107;
-                         
-                    })()
-                } else if (check_true (((obj instanceof Object)&& ("*"===await (await Environment.get_global("first"))(path))))) {
-                    return await (async function() {
-                        let __for_body__110=async function(val) {
-                            return await (await Environment.get_global("resolve_multi_path"))(await (await Environment.get_global("rest"))(path),val,not_found)
-                        };
-                        let __array__111=[],__elements__109=await (await Environment.get_global("values"))(obj);
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__108 in __elements__109) {
-                            __array__111.push(await __for_body__110(__elements__109[__iter__108]));
-                            if(__BREAK__FLAG__) {
-                                 __array__111.pop();
-                                break;
-                                
-                            }
-                        }return __array__111;
-                         
-                    })()
-                } else if (check_true ((await (await Environment.get_global("length"))(path)>1))) {
-                    return await (await Environment.get_global("resolve_multi_path"))(await (await Environment.get_global("rest"))(path),obj[await (await Environment.get_global("first"))(path)],not_found)
+    };__obj__1["resolve_multi_path"]=function(path,obj,not_found) {
+        return   (function(){
+            if (check_true ((obj instanceof Object))) {
+                return   (function(){
+                    if (check_true ((( ( Environment.get_global("length"))(path)===1)&& ("*"=== ( Environment.get_global("first"))(path))))) {
+                        return (obj|| not_found)
+                    } else if (check_true ((( ( Environment.get_global("length"))(path)===1)&& (obj[ ( Environment.get_global("first"))(path)] instanceof Object)))) {
+                        return (obj[ ( Environment.get_global("first"))(path)]|| not_found)
+                    } else if (check_true ((( ( Environment.get_global("length"))(path)===1)&&  ( Environment.get_global("not"))((obj[ ( Environment.get_global("first"))(path)] instanceof Object))&&  ( Environment.get_global("not"))((null==obj[ ( Environment.get_global("first"))(path)]))))) {
+                        return obj[ ( Environment.get_global("first"))(path)]
+                    } else if (check_true (((obj instanceof Array)&& ("*"=== ( Environment.get_global("first"))(path))))) {
+                        return  ( function() {
+                            let __for_body__106=function(val) {
+                                return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),val,not_found)
+                            };
+                            let __array__107=[],__elements__105=obj;
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__104 in __elements__105) {
+                                __array__107.push( __for_body__106(__elements__105[__iter__104]));
+                                if(__BREAK__FLAG__) {
+                                     __array__107.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__107;
+                             
+                        })()
+                    } else if (check_true (((obj instanceof Object)&& ("*"=== ( Environment.get_global("first"))(path))))) {
+                        return  ( function() {
+                            let __for_body__110=function(val) {
+                                return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),val,not_found)
+                            };
+                            let __array__111=[],__elements__109= ( Environment.get_global("values"))(obj);
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__108 in __elements__109) {
+                                __array__111.push( __for_body__110(__elements__109[__iter__108]));
+                                if(__BREAK__FLAG__) {
+                                     __array__111.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__111;
+                             
+                        })()
+                    } else if (check_true (( ( Environment.get_global("length"))(path)>1))) {
+                        return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),obj[ ( Environment.get_global("first"))(path)],not_found)
+                    }
+                } )()
+            } else {
+                return not_found
+            }
+        } )()
+    };__obj__1["delete_path"]=function(path,obj) {
+        let mpath;
+        let key;
+        let place_path;
+        let place;
+        mpath= ( function(){
+             return  clone(path) 
+        })();
+        key=(mpath).pop();
+        place_path=mpath;
+        place=null;
+        if (check_true ( ( Environment.get_global("not"))((path instanceof Array)))){
+            {
+                throw new TypeError("path must be an array when provided to delete_path");
+                
+            }
+        };
+        if (check_true ( ( Environment.get_global("not"))((obj instanceof Object)))){
+            {
+                throw new TypeError("Invalid object provided to delete_path");
+                
+            }
+        };
+        return   (function(){
+            if (check_true ((( ( Environment.get_global("length"))(place_path)===0)&&  ( function(){
+                 return  ( Environment.get_global("is_value?"))(key) 
+            })()))) {
+                {
+                     ( Environment.get_global("delete_prop"))(obj,key);
+                    return obj
                 }
-            } ()
-        } else {
-            return not_found
-        }
-    } ()
-};__obj__1["symbol_tree"]=async function(quoted_form,_state,_current_path) {
+            } else if (check_true ((( ( Environment.get_global("length"))(place_path)>0)&&  ( function(){
+                 return  ( Environment.get_global("is_value?"))(key) 
+            })()))) {
+                {
+                    place= ( Environment.get_global("resolve_path"))(place_path,obj);
+                    if (check_true ((place instanceof Object))){
+                        {
+                             ( Environment.get_global("delete_prop"))(place,key)
+                        }
+                    };
+                    return obj
+                }
+            } else {
+                throw new TypeError("delete_path: invalid path or object provided");
+                
+            }
+        } )()
+    };__obj__1["symbol_tree"]=async function(quoted_form,_state,_current_path) {
     let acc;
     let allocators;
     let uop;
@@ -8504,9 +8556,7 @@ export async function init_dlisp(Environment)  {
             {
                 return await (async function() {
                     let __for_body__114=async function(sym_path) {
-                        fval=await (async function(){
-                             return await (await Environment.get_global("resolve_multi_path"))(sym_path,quoted_form) 
-                        })();
+                        fval=await (await Environment.get_global("resolve_multi_path"))(sym_path,quoted_form);
                         await console.log("Fval is: ",fval,"sym_path: ",sym_path,"current_path: ",_current_path," ",quoted_form);
                         uop=await (async function(){
                              return await (await Environment.get_global("unquotify"))((quoted_form && quoted_form["0"])) 
@@ -10427,16 +10477,16 @@ export async function init_dlisp(Environment)  {
                                     return await (async function() {
                                         let __for_body__268=async function(req) {
                                             {
-                                                let _expr_22429;
+                                                let _expr_83580;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_22429=await (async function(){
+                                                _expr_83580=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_22429 && _expr_22429["0"]);
-                                                req_ns=(_expr_22429 && _expr_22429["1"]);
-                                                explicit=(_expr_22429 && _expr_22429["2"]);
+                                                req_sym=(_expr_83580 && _expr_83580["0"]);
+                                                req_ns=(_expr_83580 && _expr_83580["1"]);
+                                                explicit=(_expr_83580 && _expr_83580["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10539,13 +10589,13 @@ export async function init_dlisp(Environment)  {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_77810;
+                    let _expr_3985;
                     let nspace;
-                    _expr_77810=await (async function(){
+                    _expr_3985=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_77810 && _expr_77810["0"]);
-                    nspace=(_expr_77810 && _expr_77810["1"]);
+                    sym=(_expr_3985 && _expr_3985["0"]);
+                    nspace=(_expr_3985 && _expr_3985["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -11382,6 +11432,12 @@ export async function init_dlisp(Environment)  {
         } else {
             return "identifier"
         }
+    };__obj__1["operating_system"]=function() {
+        return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
+    };__obj__1["platform_architecture"]=function() {
+        return  ( Environment.get_global("resolve_path"))(["build","arch"],Deno)
+    };__obj__1["platform"]=function() {
+        return Deno["build"]
     };__obj__1["compiler"]=async function(quoted_lisp,opts) {
     let Environment=(opts && opts["env"]);
     ;
@@ -15160,8 +15216,15 @@ export async function init_dlisp(Environment)  {
                 } ();
                 await async function(){
                     if (check_true ((await not((fn_opts && fn_opts["arrow"]))&& await not((fn_opts && fn_opts["generator"]))&& ((completion_scope && completion_scope["completion_records"] && completion_scope["completion_records"]["length"])===0)))) {
-                        throw new Error("internal compile error: no completion records for callable");
-                        
+                        {
+                            await console.error("internal compile error: no completion records for callable");
+                            await console.log("error provoking source: ",await source_from_tokens(tokens,expanded_tree,true));
+                            await console.log("output: ",acc);
+                            let internal_syntax_error=new SyntaxError("internal compile error: no completion records for callable");
+                            ;
+                            throw internal_syntax_error;
+                            
+                        }
                     } else {
                         true
                     }

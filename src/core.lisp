@@ -1758,7 +1758,7 @@ such as things that connect or use environmental resources.
        })
 
 
-(defun resolve_multi_path (path obj not_found)
+(defun_sync resolve_multi_path (path obj not_found)
   (do 
     ;(console.log "path: " path " obj: " obj)
     (cond
@@ -1793,7 +1793,44 @@ such as things that connect or use environmental resources.
    {
        `tags: ["path" "wildcard" "tree" "structure"]
        `usage:["path:array" "obj:object" "not_found:?*"]
-       `description:  "Given a list containing a path to a value in a nested array, return the value at the given path. If the value * is in the path, the path value is a wild card if the passed object structure at the path position is a vector or list."
+       `description:  (+ "Given a list containing a path to a value in a nested array, return the value at the given " 
+                         "path. If the value * is in the path, the path value is a wild card if the passed object " 
+                         "structure at the path position is a vector or list.")
+   })
+
+(defun_sync delete_path (path obj)
+   (let
+      ((mpath (clone path))
+       (key (pop mpath))
+       (place_path mpath)
+       (place nil))
+      (when (not (is_array? path))
+         (throw TypeError "path must be an array when provided to delete_path"))
+      (when (not (is_object? obj))
+         (throw TypeError "Invalid object provided to delete_path"))
+      (cond 
+         (and (== (length place_path) 0)
+              (is_value? key))
+         (progn
+            (delete_prop obj key)
+            obj)
+         (and (> (length place_path) 0)
+              (is_value? key))
+         (progn
+            (= place (resolve_path place_path obj))
+            (when (is_object? place)
+               (delete_prop place key))
+            obj)
+         else
+         (throw TypeError "delete_path: invalid path or object provided")))
+   {
+       `description: (+ "Given a path and an target object, removes the specified value " 
+                        "at the path and returns the original object, which will have been modified. "
+                        "If the value isn't found, there are no modifications to the object and the "
+                        "object is returned.  Will throw a TypeError if the obj argument isn't an "
+                        "object type, of if the path isn't an array with at least one element.")
+       `usage: ["path:array" "obj:object"]
+       `tags: ["path" "delete" "remove" "object" "resolve" "modify" "value" ]
    })
 
 (defun symbol_tree (quoted_form _state _current_path )
@@ -3724,6 +3761,31 @@ such as things that connect or use environmental resources.
   (if (contains? token *formatting_rules*.keywords)
     "keyword"
     "identifier"))
+
+(defun_sync operating_system ()
+   (resolve_path [ `build `os ] Deno)
+   {
+       `description: "Returns a text string of the operating system name: darwin, linux, windows"
+       `usage: []
+       `tags: ["os" "environment" "build" "platform" "env" ]
+   })
+
+(defun_sync platform_architecture ()
+   (resolve_path [ `build `arch ] Deno)
+   {
+       `description: "Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64."
+       `usage: []
+       `tags: ["os" "platform" "architecture" "hardware" "type" "build" ]
+   })
+
+(defun_sync platform ()
+   (prop Deno `build)
+   {
+       `description: "Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  "
+       `usage: []
+       `tags: ["os" "platform" "architecture" "hardware" "type" "build"]
+   })
+
 
 true
  
