@@ -11,8 +11,8 @@ width: 1px;\
 background: #3b3b3b\
 }\
 .ace-idle-fingers {\
-background-color: #323232;\
-color: #FFFFFF\
+background-color: var(--editor-bg-color);\
+color: var(--editor-text-color)\
 }\
 .ace-idle-fingers .ace_cursor {\
 color: #91FF00\

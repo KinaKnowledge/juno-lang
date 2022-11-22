@@ -2057,6 +2057,29 @@ div.juno-help-context {
   margin-left: 2px;  
 }
 
+span.juno-tag {
+    cursor: pointer; 
+    margin-right: 5px; 
+    padding: 5px;
+    border: 1px solid var(--main-accent-line-hover);
+    transition: all .1s ease-in-out;
+}
+
+span.juno-tag:hover {
+    transition: all .1s ease-in-out;
+    box-shadow: 0 0 5px 1px #a0a0a052;
+    background: #FFFFFF10;
+}
+
+span.juno-requires {
+    padding: 5px;
+    cursor: pointer;
+}
+
+span.juno-requires:hover {
+    text-decoration: underline;
+}
+
 .opacity-0 {
   opacity: 0;
 }

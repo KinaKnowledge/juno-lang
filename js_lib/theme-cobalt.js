@@ -12,7 +12,7 @@ background: #555555\
 }\
 .ace-cobalt {\
 background-color: #002240;\
-color: #FFFFFF\
+color: var(--editor-text-color)\
 }\
 .ace-cobalt .ace_cursor {\
 color: #FFFFFF\

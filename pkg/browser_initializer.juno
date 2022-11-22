@@ -18,7 +18,7 @@
 
 (defvalue *main_menu* [])
 (defvalue *serialized_controls* [])
-
+(defparameter *tags_to_meta* {})
 (defparameter core/$current_control nil)
 
 ;; the controls at the top level of the view
@@ -396,8 +396,6 @@
        `tags: ["extension" "files" "type" "mode" "edit" "editor" ]
    })
 
-(defun *help_menu_function* ()
-  [["No Help Installed" (fn () false) ]])
 
 
 (defun log (`& args)
@@ -515,22 +513,32 @@
     `tags: [ `usage `editor `formatting `help `assist ]
     })
 
-(defun unpack_description (description)
+(defun unpack_description (description options)
    (let
       ((desc (eval description))
        (rr (new RegExp "<-" `g))
-       (subsections []))
-       (for_each (seg (split_by "<br>" desc))
-          (when (is_string? seg)
-             (= seg (replace rr "\\u{279C}"  seg))
-             (map (fn (comp i)
-                     (if (== 1 (% i 2))
-                         (push subsections
-                            (pre comp))
-                         (push subsections
-                            (p comp))))
-                  (split_by "%%%" seg))))
-       (div
+       (subsections [])
+       (segments (split_by "<br>" desc))
+       (current_seg 0)
+       (total_segs (length segments)))
+       (for_each (seg segments)
+          (progn
+             (inc current_seg)
+             (when (is_string? seg)
+                (= seg (replace rr "\\u{279C}"  seg))
+                (map (fn (comp i)
+                        (if (== 1 (% i 2))
+                            (push subsections
+                               (pre comp))
+                            (push subsections
+                               (if options.wrap_fn
+                                  (try
+                                     (-> options `wrap_fn comp current_seg total_segs)
+                                     (catch Error (e)
+                                        (p "Error in wrap_fn call: " e.message)))
+                                  (p comp)))))
+                     (split_by "%%%" seg)))))
+       (div 
           subsections))
     {
        `usage: ["description:text"]
@@ -538,7 +546,7 @@
        `tags: [ `usage `help `assist `formatted `markup ]
    })
 
-(defun format_help (meta_obj)
+(defun format_help (meta_obj options)
    (let
       ((is_symbol_binding (if (and meta_obj.require_ns
                                    (is_array? meta_obj.initializer)
@@ -549,7 +557,10 @@
                                   (reduce  (v (meta_for_symbol meta_obj.name true))
                                      (when (== v.namespace meta_obj.require_ns)
                                         v))
-                                  []))))
+                                  [])))
+       (elem nil))
+      
+     
       (when imported_usage
          (set_prop meta_obj
             `usage
@@ -559,49 +570,61 @@
             (prop imported_usage `tags)))
             
             
-      
-      (div { `style: "width: calc(100% - 20px);" }
-           (h3 (span { `style: "color: var(--namespace-color); " } meta_obj.namespace ) "/" meta_obj.name
-               (if meta_obj.macro
-                  (span { `style: "float: right; margin-right: 20px; " } "Macro")
-                  (span { `title: "Type" `style: "float: right" `class: (+ "juno-type-" (lowercase meta_obj.type)) } meta_obj.type)))
-           (hr { `class: "LightHR" })
-           (cond
-              (and (contains? `unction meta_obj.type)
-                   meta_obj.usage)
-              [(h4 "Usage")
-               (decorative_usage meta_obj meta_obj.namespace true)]
-              (contains? `unction meta_obj.type)
-              [(h4 "Arguments")
-               meta_obj.fn_args]
-              else
-              [])
-           (if (or meta_obj.description
-                   is_symbol_binding)
-               [(h4 "Description")
-                (if is_symbol_binding
-                   (p
-                      (div { } "This is a bound symbol into " (span { `style: "color: var(--namespace-color); " }  meta_obj.require_ns)
-                           " to " (join " " meta_obj.requires) ".  For more information refer to the core/use_symbols macro and to " (join " " meta_obj.requires) ".")
-                      (br))
-                   (unpack_description meta_obj.description))]
-                [])
+      (= elem
+         (div { `command: (+ "" meta_obj.name)  `style: "width: calc(100% - 20px); padding-bottom: 5px;" }
+              (h3 (span { `style: "color: var(--namespace-color); " } meta_obj.namespace ) "/" meta_obj.name
+                  (if meta_obj.macro
+                     (span { `style: "float: right; margin-right: 20px; " } "Macro")
+                     (span { `title: "Type" `style: "float: right" `class: (+ "juno-type-" (lowercase meta_obj.type)) } meta_obj.type)))
+              (hr { `class: "LightHR" })
+              (cond
+                 (and (contains? `unction meta_obj.type)
+                      meta_obj.usage)
+                 [(h4 "Usage")
+                  (decorative_usage meta_obj meta_obj.namespace true)]
+                 (contains? `unction meta_obj.type)
+                 [(h4 "Arguments")
+                  meta_obj.fn_args]
+                 else
+                 [])
+              (if (or meta_obj.description
+                      is_symbol_binding)
+                  [(h4 "Description")
+                   (if is_symbol_binding
+                      (p
+                         (div { } "This is a bound symbol into " (span { `style: "color: var(--namespace-color); " }  meta_obj.require_ns)
+                              " to " (join " " meta_obj.requires) ".  For more information refer to the core/use_symbols macro and to " (join " " meta_obj.requires) ".")
+                         (br))
+                      (unpack_description meta_obj.description))]
+                  [])
               
               (if meta_obj.tags
                  [(h4 "Tags")
                   (for_each (`sym meta_obj.tags)
-                     (span {  `style: "margin-right: 5px; padding: 5px;border: 1px solid var(--main-accent-line-hover)"} sym ))]
+                     (span { `class: "juno-tag" `style: "" } sym ))]
                  [])
               (if meta_obj.requires
                  [(h4 "Requires")
                   (for_each (`sym (sort meta_obj.requires))
-                     (span { `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) ""))) `style: "padding: 5px;"} sym ))]
-                 []) ))
+                     (span {  `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) "")) " juno-requires") } sym ))]
+                 [])
+              ))
+      (cond
+         (is_function? options.on_click)
+         (attach_event_listener elem
+            `click
+            (fn (e)
+               (-> options `on_click e))))
+      elem)
    {
      `description: (+ "Render object definitions to html.  Given a path "
                       "to Environment.definitions, or the output of the "
-                      "describe function, returns a DOM element.")
-     `usage: ["meta_obj:object"]
+                      "describe function, returns a DOM element.  If options "
+                      "is provided, the if the value for the key 'on_click' "
+                      "is a function, when the produced element is clicked "
+                      "the click event will be passed to the on_click function "
+                      "provided.")
+     `usage: ["meta_obj:object" "options:?object"]
      `tags: [`help `? `usage `info `man `manual ]
      })
 
@@ -6562,10 +6585,145 @@
        `usage: []
    })
 
+
+(defun build_documentation_datalist ()
+   (let
+      ((keywords (new Set))
+       (dlist_id "documentation_datalist")
+       (dlist nil))
+      (for_each (pset (pairs *tags_to_meta*))
+         (progn
+            (-> keywords `add pset.0)
+            (-> keywords `add (first (split_by "/" pset.1.0)))
+            (for_each (`target pset.1)
+               (-> keywords `add (second (split_by "/" target))))))
+      (= dlist (datalist { `id: dlist_id } (for_each (keyword (sort (to_array keywords)))
+                            (option keyword))))
+      (aif (get_by_id dlist_id)
+          (-> it `remove))
+      (-> (first (get_by_tag "body"))
+          `append dlist)))
+
+
+(defun build_tag_index ()
+   (let
+      ((new_db {})
+       (stime (time_in_millis))
+       (env nil)
+       (is_reindex? (if (== (length (keys *tags_to_meta*)) 0)
+                        false
+                        true)))
+      (for_each (ns (namespaces))
+         (progn
+            (= env (-> Environment `get_namespace_handle ns))
+            (for_each (pset (pairs env.definitions))
+               (destructuring_bind (name def)
+                  pset
+                  (when def.tags
+                     (when is_reindex?
+                        (sleep 0.005))
+                     (for_each (tag def.tags)
+                        (when (and (is_string? tag)
+                                   (not (== tag "constructor")))
+                           (if (eq nil (prop new_db tag))
+                               (set_prop new_db
+                                  tag
+                                  []))
+                           (assert (prop new_db tag) (+ "Error: tag " tag " should be a place in new_db"))
+                           (push (prop new_db tag)
+                                 (+ "" ns "/" name)))))))))
+      (= *tags_to_meta*
+         new_db)
+      (build_documentation_datalist)
+      (log (+ "build_tag_index: time to index: " (- (time_in_millis) stime) "ms  " (if is_reindex? " (throttled)" ""))))
+      
+   {
+     `description: "Builds or rebuilds the tag index as held in *tags_to_meta* for use by the documentation facility."
+     `tags: ["help" "index" "tags" "rebuild" "documentation" ]
+     `usage: []
+   })
+
+
+(defun search_documentation_index (search_text target_element)
+   (if (and (is_string? search_text)
+              (> search_text.length 1)
+              (is_element? target_element))
+      (let
+         ((results_by_ns {})
+          (target nil)
+          (ns nil)
+          (comps []))
+         ;(log "searching for " search_text)
+      ;; do we have tags?
+      (when (prop  *tags_to_meta* search_text)
+         (for_each (command (prop  *tags_to_meta* search_text))
+            (progn
+               (= comps (split_by "/" command))
+               (= ns (first comps))
+               ;(log "ns: " ns comps.1)
+               (if (eq nil (prop results_by_ns ns))
+                   (set_prop results_by_ns
+                      ns
+                      {}))
+               (set_prop (prop results_by_ns ns)
+                         comps.1
+                         (resolve_path [ `definitions comps.1 ] (-> Environment `get_namespace_handle ns))))))
+      (log "Results: "results_by_ns)
+      (try
+         (= target
+            (div
+               (for_each (ns_title (keys results_by_ns))
+                  [(details { `open: true `style: "margin-bottom: 10px;"  }
+                            (summary { style: "font-size: 1.2em; color: var(--namespace-color); font-weight: bold" } ns_title)
+                            (table { `style: "width: 100%;font-size: 1.1em; background: var(--editor-bg-color);" }
+                                   (thead
+                                      (tr (th { `style: " padding: 5px;" } "Symbol Name") 
+                                          (th { `style: "width: 100%; padding: 5px;" } "Description")))
+                                   (tbody
+                                      (for_each (pset (sort (pairs (prop results_by_ns ns_title))
+                                                            { `key: [ 0 ] }))
+                                         (destructuring_bind (k meta_obj)
+                                            pset
+                                            (when k
+                                               (defvar desc "")
+                                               (tr { `style: " vertical-align:top;" }
+                                                   (td { `class: "juno-requires" `tabindex: 0 `style: "min-width: 200px; cursor: pointer; border-bottom: 1px solid var(--main-accent-line); padding-bottom: 10px; margin-bottom: 10px; padding-right: 5px; font-weight: bold; text-align: right; vertical-align:top;" } k)
+                                                   (td { `style: "border-bottom: 1px solid var(--main-accent-line); margin-bottom: 10px;vertical-align:top;  padding-bottom: 10px; width: calc(100% - 150px);" }
+                                                       (or (and meta_obj.description
+                                                                (unpack_description meta_obj.description { `wrap_fn: (fn (content i total)
+                                                                                                                        (progn
+                                                                                                                           (= desc (+ desc content))
+                                                                                                                           (if (== i total)
+                                                                                                                               (div { `style: "line-height: 1.5em;" }
+                                                                                                                                    (if (> (length desc) 150)
+                                                                                                                                        (+ (-> desc `substr 0 150) "...")
+                                                                                                                                        desc))
+                                                                                                                               "")))
+                                                                                                                           
+                                                                                                                    
+                                                                                                                    }))
+                                                           "(No Description)")))))))))
+                   ])))
+         (catch Error (e)
+            (log "ERROR: " e.message)))
+      (-> target_element `replaceChildren target))
+      (log "Inproper args to search_documentation_index: " search_text)))
+
 (defcontrol juno_documentation_control ()
    ((definition_view (div { `class: "juno-log-output" `style: "padding: 5px; overflow: scroll; width: calc(100% - 20px);" } "Help Introduction"))
-    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden;" } 
+    (search_input (input { `type: "search" `list: "documentation_datalist" `style: "width: calc(100% - 10px); border: 0px; background: var(--editor-bg-color); color: var(--editor-text-color);" } ))
+    (search_bar_elem (div { `style: "display: inline-block; width: calc(100% - 400px);" }
+                          search_input))
+    (search_result_view (div { `style: "overflow: scroll; height: calc(100% - 10px); width: calc(100% - 20px); " }
+                             (div { `style: "width: 100%; text-align: center; padding: 10px; font-size: 1.2em;" } (dtext "Type Search Text and Press Enter"))))
+    (search_view (div { `style: "display: inline-block; height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden; padding: 5px;" `class: "juno-display-none" } 
+                      (div { `style: "display: inline-block; font-weight: bold; padding: 5px; font-size: 1.2em;" }  (dtext "Search Results"))
+                                          search_result_view))
+    (upper_content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden;" } 
+                       search_view
                        definition_view))
+    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden;" } 
+                       upper_content_view))
     (view (div { `class: "juno-log-output" `style: "padding: 5px; width: calc(100% - 20px); overflow: hidden;"} 
           content_view))
     (name "Juno Documentation")
@@ -6573,22 +6731,46 @@
     (pin_button (button { } (dtext "Pin")))
     (history_button (button { } (dtext "History")))
     (pinned? (fn ()
-                (has_class? "juno-button-on" pin_button)))
+                (or (has_class? "juno-button-on" pin_button)
+                    (not (has_class? "juno-display-none" search_view)))))
     (history [])
-    (history_max_length 5)
+    (history_max_length 15)
     (current_symbol nil)
-    (control_bar_elements [pin_button history_button])
+    (handle_click (fn (e)
+                     (cond
+                        (has_class? "juno-requires"  e.srcElement)
+                        (progn
+                           (-> self `set_pinned e.srcElement.innerText))
+                        (has_class? "juno-tag" e.srcElement)
+                        (progn
+                           (-> self `search_by_tag e.srcElement.innerText)))))
+    (control_bar_elements [pin_button history_button search_bar_elem])
     (render_command_elem (fn (command)
                             (let
                                ((results (describe command true)))
                                (for_each (meta_obj (or results ()))
-                                  (format_help meta_obj)))))
+                                  (format_help meta_obj { `on_click: handle_click } )))))
     
     (render_help (fn (command)
                     (div { `class: "" `style: "overflow-x: hidden;" }
                          (for_each (v (to_array (or (render_command_elem command) [])))
                             (div { `style: "padding: 5px; margin-bottom: 10px; background: var(--editor-bg-color);" }
                                  v)))))
+    (search_by_tag (fn (tagname)
+                      (notify (+ "Searching by tagname: " tagname))))
+    (remove_all_priors (fn (command)
+                          (progn
+                             (for_each (elem (-> history_content_view `querySelectorAll (+ "[command='" command "']")))
+                                (try
+                                   (if (is_element? elem)
+                                       (-> elem.parentElement `remove))
+                                   (catch Error (e)
+                                      (log "ERROR: on remove: " e.message (sub_type elem)))))
+                             (when (contains? command history)  ;; if history contains the command name already, remove it and display it first
+                                  (defvar idx (index_of command history))
+                                  (if (< idx 0)
+                                      (notify "cannot find history item, even though contains? said it was there.")
+                                      (-> history `splice idx 1))))))
     
     (message_receiver (fn (event_obj force)
                          (let
@@ -6596,22 +6778,29 @@
                                            ((comps (split_by "(" event_obj.args.0)))
                                            (or (second comps)
                                                (first comps))))
+                             (num_found_in_history_view 0)
+                             (dup_remover {})
                              (new_view nil))
                             ;; deal with recording the history 
                             (when first_arg
-                               (when (not (== (last history) first_arg))
-                                  ;(log "pushed:" (last history) first_arg)
-                                  (push history
-                                     first_arg)
-                                  (if (pinned?)
-                                      (-> history_content_view `prepend (render_help first_arg))
-                                      (if (> (length history) 1)
-                                          (-> history_content_view `prepend (render_help (prop history (- (length history) 2)))))))
-                               (when (> (length history) history_max_length)
-                                  (take history)
-                                  (aif (last history_content_view.children)
-                                       (-> it `remove))))
-                              
+                               ;; if there is anything in the history view that matches it, remove it so we can put it back on top
+                               (remove_all_priors first_arg)
+                               (= num_found_in_history_view (length (to_array (-> history_content_view `querySelectorAll (+ "[command='" first_arg "']")))))
+                               
+                               (push history
+                                  first_arg)
+                               (if (pinned?)
+                                   (-> history_content_view `prepend (render_help first_arg))
+                                   (if (> (length history) 1)
+                                       (-> history_content_view `prepend (render_help (prop history (- (length history) 2)))))))
+                            
+                            ;; if the history is too long, prune it
+                            (when (> (length history) history_max_length)
+                               (take history)
+                               (aif (last history_content_view.children)
+                                    (-> it `remove)))
+                            
+                            
                             (when (or (and force first_arg)
                                       (and first_arg
                                          (not (pinned?))))
@@ -6625,6 +6814,7 @@
     (history_content_view (div { `style: "overflow: scroll; height: calc(100% - 10px); width: calc(100% - 20px;) overflow: scroll;" } ))
     (history_view (div { `class: "juno-log-output" `style: "height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden; padding: 5px;" } 
                        history_content_view))
+    
     (split_view nil)
     (show_history (fn (show?)
                        (let
@@ -6639,9 +6829,9 @@
                              (and (history_mode?)
                                   (eq nil split_view))
                              (progn
-                                (-> definition_view `remove)
+                                (-> upper_content_view `remove)
                                 (= split_view
-                                   (split_view_horizontal definition_view history_view))
+                                   (split_view_horizontal upper_content_view history_view))
                                 (-> content_view
                                    `replaceChildren
                                    split_view.view))
@@ -6652,10 +6842,15 @@
                                 (= split_view nil)
                                 (-> content_view
                                    `replaceChildren
-                                   definition_view))))))
+                                   upper_content_view))))))
                              
-                          
-                          
+    (reindex_timer nil)                      
+    (is_displayed? (fn ()
+                      (progn
+                         (defvar ctl_holding_tank (control_holding_tank))
+                         (if (->  ctl_holding_tank `has_control? self)
+                             false
+                             true))))
     (render (fn ()
                (if (not initialized)
                    view)))
@@ -6663,9 +6858,18 @@
                   (when current_symbol
                      (-> definition_view `replaceChildren
                         content_view))))
-                 
+    (enable_search (fn ()
+                      (progn
+                         (remove_class "juno-display-none" search_view)
+                         )))
+    
+    (hide_search_view (fn ()
+                         (progn
+                            (add_class "juno-display-none" search_view))))
+                           
     (on_initialize (fn (anything_here)
                       (progn
+                         
                          (register_event_handler nil "display_usage" handler_function_id message_receiver)
                          (attach_event_listener pin_button
                             `click
@@ -6678,13 +6882,48 @@
                             (fn (e)
                                (progn
                                   (show_history (not (history_mode?))))))
-                               
+                         
+                         (attach_event_listener search_input
+                            `click
+                            (fn (e)
+                               (progn
+                                  (sleep 0.05)
+                                  (if (blank? search_input.value)
+                                      (hide_search_view)
+                                      (enable_search)))))
+                         (attach_event_listener search_input
+                            `keydown
+                            (fn (e)
+                                  (cond
+                                     (== e.key "Escape")
+                                     (progn
+                                        (handle_event e)
+                                        (set_prop search_input
+                                           `value
+                                           "")
+                                        (hide_search_view)))))
+                         (attach_event_listener search_input
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (when (== e.key "Enter")
+                                     (search_documentation_index e.srcElement.value search_result_view))
+                                  (if (> (length search_input.value) 0)
+                                      (enable_search)
+                                      (hide_search_view)))))
+                         
+                         (build_tag_index)
+                         (= reindex_timer
+                            (setInterval build_tag_index 60000))
                          anything_here)))
     (on_destroy (fn (anything_here)
                    (progn
                       (remove_event_handler nil "display_usage" handler_function_id)
-                      )))
+                      (if reindex_timer
+                         (clearInterval reindex_timer))
+                      true)))
     (set_pinned (fn (value)
+                  
                    (cond
                       (== value current_symbol)
                       (add_class "juno-button-on" pin_button)
@@ -6701,16 +6940,67 @@
    {
      `control_bar: true
      `expose: [[ `set_pinned set_pinned]
-                [ `get_history (function () (clone history)) ]]
+               [ `search_by_tag search_by_tag ]
+               [ `is_displayed? is_displayed? ]
+               [ `get_history (function () (clone history)) ]]
      `usage: []
      })
 
 ;; hide the documentation control behind a singleton function
+
 (defun juno_documentation (options)
    (aif (get_control_by_name "Juno Documentation")
         it
-        (juno_documentation_control options)))
+        (juno_documentation_control options))
+   {
+       `tags: ["help" "control" "show" "search" "tags" "documentation" ]
+       `usage: ["options:object"]
+       `description: "Creates a new documentation control if none exists and return it, otherwise returns the existing documentation control."
+   })
 
+
+(defun toggle_help_panel ()
+   (progn
+      (defvar ctl_holding (control_holding_tank))
+      (try
+         (cond
+            (-> ctl_holding `has_control? (juno_documentation))
+            (progn
+               (place_control `right (juno_documentation)))
+            (get_control_by_name "Juno Documentation")
+            (hide_control (juno_documentation))
+            else
+            (progn
+               (defvar ctl (juno_documentation))
+               (place_control `right ctl)))
+         (catch Error (e)
+            (notify (+ "Unable to open help panel: " e.message)))))
+   {
+     `description: "Shows the documentation panel if it is not displayed."
+     `tags: ["help" "show" "documentation" ]
+     `usage: []
+     })
+
+(defun show_help_panel ()
+   (let
+      ((ctl (get_control_by_name "Juno Documentation")))
+   (cond
+      (and ctl (-> ctl `is_displayed?))
+      true
+      else
+      (toggle_help_panel)))
+   {
+       `description: "Shows the documentation panel if it is not displayed."
+       `tags: ["help" "show" "documentation" ]
+       `usage: []
+   })
+        
+             
+       
+
+(defun *help_menu_function* ()
+  [["Toggle Documentation" (fn () 
+                              (toggle_help_panel)) ]])
 
 
 (defun handle_app_click_event (e)
@@ -7044,23 +7334,6 @@
 (defun_sync juno_format_handler (line tab base_indent)
    "")  ;; we let the control take care of this since it has better visibility to prior lines
 
-
-(defun toggle_help_panel ()
-   (progn
-      (defvar ctl_holding (control_holding_tank))
-      (try
-         (cond
-            (-> ctl_holding `has_control? (juno_documentation))
-            (progn
-               (place_control `right (juno_documentation)))
-            (get_control_by_name "Juno Documentation")
-            (hide_control (juno_documentation))
-            else
-            (progn
-               (defvar ctl (juno_documentation))
-               (place_control `right ctl)))
-         (catch Error (e)
-            (notify (+ "Unable to open help panel: " e.message))))))
 
 
 
@@ -7756,14 +8029,14 @@
                                             exec: (fn () (next_displayed_control))
                                             }
                  "split_vertically" {
-                                       win: "Ctrl-Backslash"
-                                       mac: "Ctrl-Backslash"
+                                       win: "Ctrl-Backslash|Alt-3"
+                                       mac: "Ctrl-Backslash|Alt-3"
                                        description: "Split the current control to the right"
                                        exec: (fn () (split_control `vertical))
                                       }
                  "split_horizontally" {
-                                       win: "Alt-Backslash"
-                                       mac: "Alt-Backslash"
+                                       win: "Alt-Backslash|Alt-2"
+                                       mac: "Alt-Backslash|Alt-2"
                                        description: "Split the current control downward"
                                        exec: (fn () (split_control `horizontal))
                                       }
@@ -7875,9 +8148,10 @@
               {})  ;; reset out and copy
     (for_each (desc (values (prop *key_bindings* `global)))
        (progn
-        (set_prop *key_bindings*.active
-                  (prop desc key_mode) 
-                  (prop desc `exec))))
+          (for_each (key_combo (split_by "|" (prop desc key_mode)))
+             (set_prop *key_bindings*.active
+                key_combo
+                (prop desc `exec)))))
 
      (attach_event_listener juno_container
                            `click
