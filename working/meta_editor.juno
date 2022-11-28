@@ -1,0 +1,978 @@
+
+
+
+(defun unpack_description (description options)
+   (let
+      ((table_regex (new RegExp "(^[a-zA-Z0-9?_*\\-]+):([a-zA-Z0-9]+)[ ]*-[ ]*(.+)"))
+       (desc (progn
+                (defvar tmp (eval description))
+                (if (and (is_object? tmp)
+                         (not (is_array? tmp)))
+                    tmp.description
+                    tmp)))
+       (rr (new RegExp "<-" `g))
+       (subsections [])
+       (segments (split_by "<br>" desc))
+       (table_section nil)
+       (current_seg 0)
+       (total_segs (length segments)))
+       (for_each (seg segments)
+          (progn
+             (inc current_seg)
+             (when (is_string? seg)
+                (= seg (replace rr "\\u{279C}"  seg))
+                (map (fn (comp i)
+                        (if (== 1 (% i 2))
+                            (push subsections
+                               (if options.wrap_fn
+                                  (try
+                                     (progn
+                                        (-> options `wrap_fn comp current_seg total_segs))
+                                     (catch Error (e)
+                                        (pre "Error in wrap_fn call 1: " e.message)))
+                                  (pre comp)))
+                            (push subsections
+                               (if options.wrap_fn
+                                  (try
+                                     (-> options `wrap_fn comp current_seg total_segs)
+                                     (catch Error (e)
+                                        (p "Error in wrap_fn call 2: " e.message)))
+                                  (progn
+                                     (= table_section (scan_str table_regex comp))
+                                     (if (> (length table_section) 0)
+                                         (for_each (tbl_row table_section)
+                                            (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                                 (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
+                                         (p comp)))))))
+                     (split_by "%%%" seg)))))
+       (div 
+          subsections))
+    {
+       `usage: ["description:text"]
+       `description: "Given a marked up description text, builds the output format for the browser."
+       `tags: [ `usage `help `assist `formatted `markup ]
+   })
+
+
+(defun_sync get_cursor_position (element)
+  (javascript | {
+                  let position = 0;
+                  const isSupported = typeof window.getSelection !== "undefined";
+                  if (isSupported) {
+                       const selection = window.getSelection();
+                       if (selection.rangeCount !== 0) {
+                              const range = window.getSelection().getRangeAt(0);
+                              const preCaretRange = range.cloneRange();
+                              preCaretRange.selectNodeContents(element);
+                              preCaretRange.setEnd(range.endContainer, range.endOffset);
+                              position = preCaretRange.toString().length;
+                              }
+                       }
+                  return position;
+                  } |))
+
+(defun_sync get_caret_coordinates ()
+   (javascript | {
+                   let x = 0,
+                   y = 0;
+                   const isSupported = typeof window.getSelection !== "undefined";
+                   if (isSupported) {
+                                      const selection = window.getSelection();
+                                      if (selection.rangeCount !== 0) {
+                                                                        const range = selection.getRangeAt(0).cloneRange();
+                                                                        range.collapse(true);
+                                                                        const rect = range.getClientRects()[0];
+                                                                        if (rect) {
+                                                                                    x = rect.left;
+                                                                                    y = rect.top;
+                                                                                    }
+                                                                        }
+                                      }
+                   return { x, y };
+                   } | ))
+
+(defun_sync set_end_of_content_editable (content_editable_element)
+   (javascript | 
+      {
+        var range,selection;
+    if(document.createRange) //Firefox, Chrome, Opera, Safari, IE 9+
+    {
+        range = document.createRange();//Create a range (a range is a like the selection but invisible)
+        range.selectNodeContents(content_editable_element);//Select the entire contents of the element with the range
+        range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
+        selection = window.getSelection();//get the selection object (allows you to change selection)
+        selection.removeAllRanges();//remove any selections already made
+        selection.addRange(range);//make the range you have just created the visible selection
+    }
+        } | ))
+
+(defun element_to_lisp (element options)
+   (if (is_element? element)
+       (let
+          ((tag_name (if (is_function? options.tagname_for_element)
+                         (-> options `tagname_for_element element)
+                         element.tagName))
+           (elem_as_lisp (list (+ "=:" (lowercase tag_name))))
+           (acc [])
+           (nodes nil)
+           (ptype nil)
+           (val nil)
+           (attrib_list (prop element `attributes))
+           (attribs {}))
+          (for_each (attrib_num (range (length attrib_list)))
+             (progn
+                (set_prop attribs
+                   (resolve_path [ `attributes attrib_num `name ] element)
+                   (resolve_path [ `attributes attrib_num `value ] element))))
+          (push elem_as_lisp
+             attribs)
+          (= nodes element.childNodes)
+          (for_each (cnum (range (length nodes)))
+             (cond 
+                (== 3 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (if (is_function? options.on_text)
+                       (-> options `on_text (resolve_path [ cnum `nodeValue] nodes) nodes)
+                       (resolve_path [ cnum `nodeValue] nodes)))
+                (== 1 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (element_to_lisp (resolve_path [ cnum ] nodes) options))))
+          (if (is_function? options.on_element_complete)
+              (-> options `on_element_complete elem_as_lisp)
+              elem_as_lisp))
+       [ "UNKNOWN:" element ])
+   {
+     `description: (+ "Given a DOM element, returns the lisp represenation of the DOM element.<br>"
+                      "If provided with an options object, the following keys are applicable:<br>"
+                      "tagname_for_element:(fn element) - For every new element encountered in the "
+                      "provided tree, will be called with the new element.  The function should "
+                      "return a string value to be used for the tagname as opposed to the original "
+                      "element tagName value.<br>"
+                      "on_text:(fn text nodes) - Will be called on a text node with the text and "
+                      "and the sibling nodes.<br>"
+                      "on_element_complete:(fn array) - Will be called with the quoted lisp form "
+                      "that was constructed.  The function can then manipulate the completed form "
+                      "prior to it being placed in the returned lisp form.  Note that this function "
+                      "is called for every completed element, not just the final return value.")
+     `usage: ["element:element"]
+     `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
+   })
+                
+(defun_sync doc_exec (command_name value show_default_ui )
+   (-> document `execCommand command_name 
+                             (if (== show_default_ui true) true false) 
+                             value)
+   {
+       `description: (+ "Executes document.execCommand with the arguments provided "
+                        "on the DOM element currently in focus.<br>"
+                        "Returns false if the command is unsupported.  The " 
+                        "show_default_ui argument defaults to true.<br>" 
+                        "<br>Note that browser support is officially deprecated for the "
+                        "execCommand method of document.")
+       `tags: ["DOM" "ui" "command" "formatting" "editing" ]
+       `resources: ["https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand"]
+       `usage:["command_name:string" "value:*" "show_default_ui:?boolean"]
+   })
+            
+
+(defun checkbox (`& args)
+   (let
+      ((options (if (and (is_object? args.0)
+                      (not (is_element? args.0)))
+                 args.0
+                 {}))
+       (args (if (> (length options) 0)
+                 (rest args)
+                 args))
+       (state (if options.value
+                  true
+                  false))
+       (check_input (input (+ { `type: "checkbox" }
+                              (if options.value
+                                 { `checked: true }
+                                 {})
+                              { `style: "padding: 5px; margin-right: 5px;" }
+                              (if (is_object? options.checkbox)
+                                  options.checkbox
+                                  {}))))
+       (view (label (+ {}
+                       (if (is_object? options.label)
+                           options.label
+                        {}))
+                    check_input
+                    args)))
+      (attach_event_listener view
+         `click
+         (fn (e)
+            (progn
+               (= state (prop check_input `checked))
+               (set_prop check_input
+                  `value
+                  state)
+               (set_prop view
+                  `value
+                  state))))
+      (set_prop view
+         `value
+         state)
+      view)
+   {
+       `description: (+ "Creates a checkbox with a label element and "
+                        "returns the label element.  The state of the "
+                        "check box input is set to the value property "
+                        "of the label, such that when the check box input "
+                        "is checked, the value will be true, otherwise "
+                        "it will be false.  Event listeners can be "
+                        "attached as needed.<br>Example:%%%"
+                        "(defconst my_checkbox (checkbox { `value: true } \"Completed\"))\n"
+                        "(attach_event_listener my_checkbox\n"
+                        "   `click\n"
+                        "   (fn (e)\n"
+                        "      (log \"State: \" e.srcElement.value)))\n%%%"
+                        "<br>"
+                        "Options for the checkbox:<br>"
+                        "value:boolean - If true the checkbox is checked when first "
+                        "presented.<br>"
+                        "label:object - If provided, will be used for the attributes of the label element.<br>"
+                        "checkbox:object - If provided, will be used for the attributes of the checkbox input "
+                        "element.<br>")
+       `usage: ["options:?object" "label_contents:string|Element" ]
+       `tags: [ "html" "ui" "DOM" "element" "node"]
+   })
+                
+         
+
+(defun pair_editor (pair options)
+   (let
+      ((pair [ pair.0 pair.1 ])
+       (key_elem (input (+ { `tabindex: 0 }
+                           (if options.placeholder_0 
+                              { `placeholder: options.placeholder_0 }
+                              {})
+                           (if (is_array? options.path)
+                              { `path: (join "~" (conj options.path [ 0 ])) }
+                              { path: "0" })
+                           { value: (or pair.0 "") 
+                             style: "padding: 5px; flex-grow: 1; flex-basis: 100px;" } )))
+       (value_elem (input (+ { `tabindex: 0 }
+                             (if options.placeholder_1 
+                              { `placeholder: options.placeholder_1 }
+                              {})
+                           (if (is_array? options.path)
+                              { `path:  (join "~"  (conj options.path [ 1 ])) }
+                              { path: "1" })
+                           { value: (or pair.1 "") style: "padding: 5px; flex-grow: 2; flex-basis: 150px;" } )))
+       (view (div { `class: "juno-editable" style: (+ "display:flex; align-items: flex-end; flex-wrap: wrap; gap: 16px;"
+                                                      (if (is_string? options.style)
+                                                          options.style
+                                                          ""))
+                           }
+                  key_elem
+                  value_elem
+                  (if options.additional_elements
+                     options.additional_elements
+                     [])))
+       (handler (fn (e)
+                   (progn
+                      (defvar edited_path (get_attribute e.srcElement "path"))
+                      (if (and edited_path
+                               (is_function? options.on_change))
+                         (-> options `on_change (split_by "~" edited_path) e.srcElement.value))))))
+      (log "pair editor: " pair)
+      (attach_event_listener view
+         `keyup
+         handler)
+      (attach_event_listener view
+         `click
+         handler)
+      view))
+                  
+
+(defun dtable (row_data options)
+   (table { `style: "width: 100%" }
+          (if (is_array? options.columns)
+              (thead
+                 (for_each (colheader options.columns)
+                    (cond 
+                       (is_string? colheader)
+                       (th { `style: "padding: 5px;" }  colheader)
+                       (and (is_object? colheader)
+                            colheader.name)
+                       (th { `style: "padding: 5px;" }  colheader.name))))
+              [])
+         (tbody
+            (for_each (row (or row_data []))
+               (tr
+                  (for_each (cell row)
+                     (td { `style: "padding: 3px;" } 
+                         cell)))))))
+
+(defun meta! ()
+   (new Promise 
+      (fn (resolve reject)
+          (place_control `right 
+                         (meta_editor {
+                                        `on_close: (fn (intf)
+                                                      (resolve (-> intf `get))) })))))
+   
+
+;; convenience for debugging
+(set_key_binding "global" "open_meta_editor"
+                 {
+                   `win: "Alt-M"
+                   `mac: "Alt-M"
+                   `exec: (fn () (meta!))
+                   `description: "Opens the meta editor"
+                   })
+  
+(defglobal *status*
+   (div (div "down")
+        (div "up")
+        (div "next")))
+(defglobal *monitor*
+   (floating_div 
+      *status*
+      ))
+
+(defun process_entry (event action)
+   (let
+      ((elem event.srcElement)
+       (key event.key)
+       (new_elem nil)
+       (selection nil)
+       (code_node nil)
+       (sel_node nil)
+       (end_node nil)
+       (selrange nil)
+       (coords (get_caret_coordinates))
+       (actual_elem (-> document `elementFromPoint coords.x coords.y))
+       (pos (get_cursor_position actual_elem))
+       (total_length (length actual_elem.innerText))
+       (next_elem (aif (-> window `getSelection)
+                       it.anchorNode.parentElement.nextSibling))
+       (priors (if (== action "down")
+                   (-> actual_elem.innerText `substr (- pos 2) 2)
+                   (-> actual_elem.innerText `substr (- pos 3) 3)))
+       (inner_text (prop elem `innerText))
+       (monofont  "font-family: var(--main-mono-space);"))
+      
+      (cond
+         (and (== key "`")
+              (== action "down")
+              (not (== actual_elem.tagName "PRE"))
+              (== priors "``"))
+         (progn
+            (handle_event event)
+            ;(doc_exec "insertText" "`")
+            (= selection (-> window `getSelection))
+            (-> selection `modify `extend `backward `character)
+            (-> selection `modify `extend `backward `character)
+            (-> selection `deleteFromDocument)
+            (= selection (-> window `getSelection))
+            (doc_exec "insertHTML" "<br/>")
+            (when (doc_exec "insertHTML" (+ "<pre style='" monofont " border: 2px dotted var(--main-accent-line-hover); background: #FFFFFF10;padding: 3px;'>CODE HERE</pre>"))
+               (= selection (-> window `getSelection))
+               (cond
+                  (== selection.anchorNode.nodeType 3)
+                  (try
+                     (progn
+                        (= code_node selection.anchorNode.parentNode)
+                        (= end_node selection.anchorNode.parentNode)
+                        (-> selection `selectAllChildren code_node))
+                     (catch Error (e) (log "ERROR: cannot select!" e.message))))))
+         
+         ;; ignore control effects in code mode
+         (and (== action "down")
+              (== actual_elem.tagName "PRE")
+              (or (and (== (get_operating_platform) "mac")
+                       event.metaKey)
+                  (and (== (get_operating_platform) "win")
+                       event.ctrlKey)))
+         (cond 
+            (or (== key "b")
+                (== key "i"))
+            (handle_event event))
+        
+         (and (== action "down")
+              (== actual_elem.tagName "PRE")
+              (== key "ArrowDown")
+              (> pos (- total_length 2)))
+         (progn
+            (log "leaving pre")
+            (= selection (-> window `getSelection))
+            (when selection
+               (try
+                  (progn
+                     (defvar `added_text false)
+                     (= sel_node selection.anchorNode.parentElement)
+                     (cond 
+                        sel_node.nextSibling
+                        (progn
+                           (log "existing one - going there" (element_to_lisp sel_node.nextSibling))
+                           (if (blank? sel_node.nextSibling.innerText)
+                               (try
+                                  (progn
+                                     (= new_elem (div { `contenteditable: true tabindex: 0 } (dtext "Enter text")))
+                                     (-> sel_node.nextSibling `insertAdjacentElement `beforebegin new_elem)
+                                     (setTimeout (fn () 
+                                                    (progn
+                                                       (-> selection `removeAllRanges)
+                                                       (= selrange (-> document `createRange))
+                                                       (-> selrange `selectNode new_elem)
+                                                       (-> selection `addRange selrange)
+                                                       true))
+                                                 1))
+                                  (catch Error (e)
+                                     (log "ERROR: " e.message)))))
+                          
+                           
+                           
+                        (== nil sel_node.nextSibling) 
+                        (progn
+                           (= new_elem (div { `contenteditable: true tabindex: 0 } (dtext "Enter text")))
+                           (-> sel_node.parentElement `append new_elem)
+                           (setTimeout (fn () 
+                                          (try
+                                             (progn
+                                                (log "making new element " sel_node.parentElement)
+                                                (-> selection `removeAllRanges)
+                                                (= selrange (-> document `createRange))
+                                                (-> selrange `selectNode new_elem)
+                                                (-> selection `addRange selrange)
+                                                true)
+                                             (catch Error (e)
+                                                (log "ERROR: " e.message))))
+                                       1)
+                           
+                           ;(defvar `id (gen_id "ed"))
+                           ;(= new_elem (div { `tabindex: 0 `id: id `contentEditable: true } "-"))
+                           
+                           ;(-> sel_node `insertAdjacentElement `afterend new_elem)
+                           
+                           ;(setTimeout (fn () (doc_exec `selectAll nil false)) 1)
+                           ))
+                           
+                           
+                     (log "Next: " (element_to_lisp sel_node.nextSibling)))
+                  (catch Error (e)
+                     (log "ERROR: " e.message)
+                   ))))
+              
+         (and (== action "down")
+              (== key "Enter")
+              (== actual_elem.tagName "PRE"))
+         (progn
+            (handle_event event))
+            
+         
+         (and (== action "up")
+              (not (== actual_elem.tagName "SPAN"))
+              (not (== actual_elem.tagName "PRE"))
+              (== key "Enter"))
+         (progn
+            (doc_exec "insertText" "\n" true))
+            ;(log "Up Enter! on non-span non-pre"))
+         (and (== action "up")
+              (== key "Enter")
+              (or (== actual_elem.tagName "PRE")
+                  (== actual_elem.tagName "SPAN")))
+         (progn
+            (handle_event event)
+            (if (< pos (- total_length 1))
+                (doc_exec "insertHTML" "\n" false)
+                (doc_exec "insertHTML" "\n\n" false))
+            ;(log "Up Enter on Pre or Span" actual_elem.tagName)
+            ))))
+              
+
+
+ 
+
+(defcontrol meta_editor ()
+   ((meta_struct (or options.content
+                           {
+                             description: ""
+                             name: "Unnamed"
+                             type: "unknown"
+                             namespace: (current_namespace)
+                             usage: []
+                             tags: []
+                             }))
+    (usage (for_each (arg (or meta_struct.usage []))
+              (progn
+                 (defvar comps (split_by ":" arg))
+                 (cond
+                    (and (> comps.length 1)
+                         (starts_with? "?" (second comps)))
+                    [comps.0 (-> comps.1 `substr 1) true ]
+                    (> comps.length 1)
+                    [comps.0 comps.1 false ]
+                    (== comps.length 1)
+                    [comps.0 "" false ]))))
+    (starter_span (div {  `tabindex: 0 `contenteditable: true  } (dtext "Enter text")))
+    (desc (if (> meta_struct.description.length 0)
+              (unpack_description meta_struct.description)
+              starter_span))
+    (save_button (button (dtext "Save")))
+    (monofont  "font-family: var(--main-mono-space);")
+    (close_button (button (dtext "Close")))
+    (new_arg_button (button { `style: "min-width: 30px; margin-left: 10px; margin-top: 10px; padding: 5px; "  `title: (dtext "Add New Argument") } "+"))
+    (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } options.name))
+    (description_elem (div { `id: "description_elem" `class: "juno-editable" tabindex: 0 `contenteditable: true `style: "background: var(--editor-bg-color);  min-height: 300px; line-height: 1.5em; font-size: 1.1em;  padding: 5px" } 
+                           desc))
+    (description_section (details { `open: true   }
+                                  (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Description"))
+                                  description_elem))
+    (last_usage_elem nil)
+    (refresh_usage (fn ()
+                     (progn 
+                        (= last_usage_elem nil)
+                        (-> usage_elem `replaceChildren
+                           (div { `class: "juno-editable" tabindex: 0
+                                  `style: "line-height: 1.5em; font-size: 1.0em;  padding: 5px; max-width: 500px;" }
+                                  (map (fn (arg idx total)
+                                          (progn
+                                             (log "idx: " idx total (as_lisp arg))
+                                             (defvar pe (make_pair_editor arg idx total))
+                                             (if (== idx (- total 1))
+                                                 (= last_usage_elem pe.children.0))
+                                             (-> pe `prepend (button { `style: "background: #FF000020; padding: 5px;"
+                                                                       `remove_path: (join "~" [ `usage idx ]) } "-"))
+                                             pe))
+                                       usage)
+                                  (if (== usage.length 0)
+                                      [ 
+                                       (div { } new_arg_button "Press + to add arguments") ]
+                                      new_arg_button)
+                                  ))
+                        (when last_usage_elem 
+                           (setTimeout (fn ()
+                                          (focus_to last_usage_elem)
+                                          20))))))
+    
+    (make_pair_editor (fn (arg idx total)
+                         (pair_editor arg
+                                      { `style: "border: 1px inset #ffffff;"
+                                        `placeholder_0: "ArgName"
+                                        `placeholder_1: "ArgType"
+                                        `additional_elements: [ (checkbox (+ { `checkbox: { `path: (join "~" [ idx "2" ]) }}
+                                                                             (if arg.2
+                                                                                { `value: true }
+                                                                                {}))
+                                                                          "Optional")
+                                                              ]
+                                        `path: [ idx ]
+                                        `on_change: (fn (path value)
+                                                       (progn
+                                                          (make_path path usage value)
+                                                          (cond
+                                                              (and (== path.1 "2")
+                                                                   (== value "false"))
+                                                               (set_path path usage false)
+                                                              (and (== path.1 "2")
+                                                                   (== value "true"))
+                                                              (set_path path usage true)
+                                                              (== path.1 "2")
+                                                              (set_path path usage false))))
+                                                          
+                                                         
+                                        })))
+    (usage_elem (div { `style: "min-height: 40px;" } ))
+    (usage_section (details { `open: true  }
+                            (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Usage"))
+                                 usage_elem))
+    (rendered_content_elem (div { `class: "juno-control" } "Live View"))
+    
+    (main_view (div { `class: "juno-control"  `style: "padding-top: 5px; margin-left: 5px; min-height: 50%" } 
+                    usage_section
+                    description_section))
+    (desc_mode 0) ;; mode 0 is regular mode, mode 1 is code/pre formatted
+    (build_description (fn (content acc)
+                          (let
+                             ((acc (or acc [])))
+                             (cond
+                                (and (is_array? content)
+                                     (== (quote code) content.0))
+                                (progn
+                                   (= desc_mode 1)
+                                   (build_description (rest content) acc)
+                                   (= desc_mode 0))
+                                (and (is_string? content)
+                                     (== "```" content))
+                                (progn
+                                   (= desc_mode (% (+ desc_mode 1) 2))
+                                   (push acc "%%%"))
+                                (and (is_string? content)
+                                     (starts_with? "=:" content))
+                                nil
+                                (is_string? content)
+                                (if (== desc_mode 0)
+                                    (push acc
+                                       (+ content "<br>"))
+                                    (push acc (+ content "\n")))
+                                (is_array? content)
+                                (for_each (c content)
+                                   (build_description c acc)))
+                             acc)))
+    (process_out (fn ()
+                    (let
+                       ((output (clone meta_struct)))
+                       (log "process_out: usage: " (as_lisp usage))
+                       (set_prop output
+                          `usage (for_each (arg_desc usage)
+                                    (if arg_desc.2
+                                       (+ arg_desc.0 ":?" arg_desc.1)
+                                       (+ arg_desc.0 ":" arg_desc.1))))
+                       output)))
+    (ok_grab_focus true)
+    (on_blur (fn ()
+                (= ok_grab_focus true)))
+    (on_focus (fn (e)
+                 (when ok_grab_focus
+                    (= ok_grab_focus false)
+                    (focus_to description_elem))))
+    (table_regex (new RegExp "(^[a-zA-Z0-9?]+:[a-zA-Z0-9]+[ ]*-[ ]*)(.+)"))
+                          
+    (process_current (fn (elem)
+                        (let
+                           ((content nil)
+                            (live_content nil))
+                           (log "process_current: " (== elem description_elem))
+                           (log "cursor_position: " (get_cursor_position description_elem))
+                           (cond
+                              (== elem description_elem)
+                              (progn
+                                 (= content (element_to_lisp elem))
+                                 (= desc_mode 0)
+                                 (log "Content is: " (build_description content))
+                                 (= live_content (join "" (build_description content)))
+                                 (log "Content next to cursor: " (try (-> live_content `substr (- (get_cursor_position description_elem) 2) 5)
+                                                                    (catch Error (e)
+                                                                       (log e))))
+                                 (set_prop meta_struct
+                                          `description live_content)
+                                 (log "process_current: usage: " usage)
+                                 (try 
+                                    (progn 
+                                       (log "Meta Struct: " meta_struct)
+                                       (log "as_lisp: " (pre (as_lisp content))))
+                                    (catch Error (e)
+                                       (log "ERROR: " e.message)))
+                                 
+                                 (-> rendered_content_elem
+                                    `replaceChildren 
+                                    (div { `style: "background: var(--editor-bg-color); padding: 5px;" } 
+                                         (format_help meta_struct)))
+                                 )))))
+    (sview (split_view_horizontal  main_view  rendered_content_elem  ))
+    (content_view (div { `class: "juno-control" `style: "width: calc(100% - 10px); height: calc(100% - 2px); border-bottom: 3px solid black;" } 
+                       sview.view))
+    (control_bar_elements [save_button close_button ])
+    (selection nil)
+    (on_initialize (fn (intf)
+                   (progn
+                      (when true
+                         (= initialized true)
+                         (log "on_initialize: usage: " usage)
+                         (-> sview `initialize)
+                         (set_prop options
+                            `name
+                            (+ "Meta Editor - " meta_struct.name))
+                         (set_prop title_span
+                            `innerText options.name)
+                         (attach_event_listener view
+                            `keydown
+                            (fn (e)
+                               (cond
+                                  (== e.key "Enter")
+                                  (progn
+                                     (handle_event event)
+                                     (process_entry e "down")
+                                     true)
+                                  ;(handle_event e)
+                                  ;(process_entry e))
+                                  ;(process_current e.srcElement))
+                                  
+                                  (== e.key "Escape")
+                                  (progn
+                                     (if options.on_close
+                                        (-> options `on_close self))
+                                     (destroy_control self))
+                                  else
+                                  (progn
+                                     ;(console.log "pos: " (get_cursor_position e.srcElement) (pre (as_lisp (element_to_lisp e.srcElement))) e)
+                                     (process_entry e "down")
+                                     ))))
+                         (attach_event_listener view
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (== e.key "Enter")
+                                     (progn
+                                        ;(handle_event event)
+                                        (process_entry e "up"))
+                                     else
+                                     (process_entry e "up"))
+                                  (-> rendered_content_elem
+                                     `replaceChildren (pre (JSON.stringify (element_to_lisp description_elem) "\n" 2)))
+                                  )))
+                         (attach_event_listener usage_elem
+                            `click
+                            (fn (e)
+                               (progn
+                                  (aif (getAttribute e.srcElement `remove_path)
+                                       (progn
+                                          (log "remove: " (getAttribute e.srcElement `remove_path))
+                                          (-> usage `splice (last (split_by "~" it)) 1)
+                                          (refresh_usage))))))
+                         (refresh_usage)
+                         (attach_event_listener new_arg_button
+                            `click
+                            (fn ()
+                               (progn
+                                  (push usage
+                                     ["" "" false])
+                                  (refresh_usage))))
+                         (attach_event_listener close_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (if options.on_close
+                                     (-> options `on_close self))
+                                  (destroy_control self))))
+                         
+                         (-> rendered_content_elem
+                            `replaceChildren (pre (JSON.stringify (element_to_lisp description_elem) "\n" 2)))
+                         (= selection (-> window `getSelection))
+                         (-> selection `selectAllChildren description_elem)
+                         ;(log "description_elem.children: " (element_to_lisp description_elem.children.0))
+                         ;(focus_to (get_by_id "starter_span"))
+                         ))))
+                   
+    (render (fn ()
+                content_view)))
+   {
+     control_bar: true
+     expose: [["get" process_out]]
+     })
+
+(defmacro defcontrol (name control_args allocations control_options)
+   (let
+      ((declared_allocations (each allocations first))
+       (required_allocations [(quote render)])
+       (user_allocations allocations)
+       (meta { `description: (or control_options.description "No description")
+               `tags: (or control_options.tags [`control `ui `DOM ])
+               `usage: (if (is_array? control_options.usage)
+                           (conj control_options.usage
+                                 [ "options:object" ])
+                           nil) })
+       (args (progn
+                (cond
+                   (is_array? control_args)
+                   (conj control_args [ (quote options) ])
+                   else
+                   (throw SyntaxError "defcontrol: missing/malformed control arguments - check syntax"))))
+       (control_options (if (is_object? control_options)
+                            control_options
+                            {}))
+       (control_bar? (if control_options.control_bar
+                        true)))            
+       (assert name "control name is required: check syntax for defcontrol")
+       (if (< (length (reduce (d declared_allocations)
+                         (contains? d required_allocations)))
+              (length required_allocations))
+           (throw SyntaxError "missing required declarations: must have render"))
+  ;; ok, now create the form to be returned..
+      `(defun ,#name ,#args
+          (let
+             ((self {})
+              (options (or options {}))
+              (name (name_control (or options.name ,#(from_key (desym_ref name)))))
+              (id (generate_id ,#name))
+              (initialized false)
+              (title_span (span { `class: "juno-title" } name))
+              (command_button (commands_button id))
+              (content_view (div { } "uninitialized.."))
+              (resize (fn ()
+                         (progn
+                            (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 20))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 5)))
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)
+                               (when options.on_resize
+                                  (options.on_resize self))
+                               ,#(if control_options.render_on_resize
+                                     `(do_render)
+                                     true)
+                               true))))
+              ,@user_allocations
+              (control_status (if ,#control_bar?
+                                  (div { `class: "juno-buffer-bar" }
+                                   command_button
+                                   (cond 
+                                      (is_array? options.additional_elements)
+                                      options.additional_elements
+                                      else
+                                      title_span)
+                                   ,#(if (contains? (quote control_bar_elements) declared_allocations)
+                                         (progn
+                                            (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
+                                         []))
+                                  nil))
+              (do_render (fn ()
+                            (let
+                               ((new_view (render self)))
+                               (if (and new_view
+                                        (not (== content_view new_view)))
+                                   (-> content_view `replaceChildren new_view))
+                               (if _on_render
+                                   (_on_render self)))))
+              (resize_observer (new ResizeObserver resize))
+              (view (control_frame (to_object
+                                       [[`id id]
+                                        [`events ,#control_options.events ]])
+                     (if ,#control_bar?
+                         control_status
+                         [])
+                                content_view))
+              (_on_render (fn ()
+                             ,#(if (contains? (quote on_render) declared_allocations)
+                                `(on_render self)
+                                nil)))
+                             
+              (_on_focus (fn ()                           
+                           (progn
+                            ,#(if control_bar?
+                                `(add_class "juno-focused" control_status)
+                                `[])
+                            ,#(if (contains? (quote on_focus) declared_allocations)
+                                `(on_focus self)))))
+              (_on_destroy (fn ()                                     
+                             (progn
+                              ,#(if (contains? (quote on_destroy) declared_allocations)
+                                  `(on_destroy self)
+                                  `true))))
+              (_to_json (function ()
+                           (progn
+                              ,#(if (contains? (quote to_json) declared_allocations)
+                                    `(to_json)
+                                    `[(quote ,#name) ,@control_args options]))))
+              (initialize (function ()
+                             (progn
+                                (when (and view.parentElement
+                                           (not initialized))
+                                   (= initialized true)
+                                   (-> resize_observer `observe view.parentElement)                                   
+                                   ,#(if (contains? (quote on_initialize) declared_allocations)
+                                         `(on_initialize self)
+                                         true)
+                                   (do_render))))))
+             (set_prop options
+                `id id
+                `name name)
+             ,@(when (is_array? control_options.expose)
+                  (for_each (method_set control_options.expose)
+                     (destructuring_bind (method_name method_reference)
+                        method_set
+                     `(set_prop self
+                         ,#method_name ,#method_reference))))
+             ,#(if (contains? (quote menu_items) declared_allocations)
+                   `(set_prop self
+                       `menu_items menu_items)
+                   [])
+             ;; finally set the required self options
+             (set_prop self
+                `options options
+                `name name
+                `type ,#(desym_ref name)
+                `view view
+                `resize resize                
+                `initialize initialize
+                `toJSON _to_json
+                `on_destroy _on_destroy
+                `on_focus _on_focus)
+             ;; and return the self
+             self)
+          ,#meta))
+   {
+       `description: (+ "The macro defcontrol creates a function in the current namespace that implements the specified "
+                        "control features passed to the macro.  The macro handles most of the boiler plate for a basic "
+                        "control, combining the passed allocations and options to produce a standardized control "
+                        "constructor.  The macro is similar in shape to a defun+let form with some differences.<br><br>"
+                        "Like the defun macro, the first argument provides the name of the control that it will be used " 
+                        "to construct the name and type of the control.  Also similar to defun, the second argument is "
+                        "an array containing any arguments for the control.  Note that, mandatorily, an options argument "
+                        "will be appended as the last argument of the argument list, so an empty array passed will "
+                        "cause the control only to have an options argument.<br><br>"
+                        "The next argument is a series of allocation forms that are integrated into a let allocation "
+                        "structure, and so should be in the same form as the allocation block of the let operator.  For "
+                        "example, ((render (fn () (div { } \"My View\")))) would meet the minimal requirement for a "
+                        "control to be constructed.  The caller of this macro can have as many allocation forms as needed "
+                        "to implement the required behavior of the emitted control.  To note that there are "
+                        "symbols that made available to these provided forms in the evaluation context of the form that "
+                        "can be referenced and used by the user provided forms:<br>"
+                        "self:object - The interface object returned.<br>"
+                        "content_view:Element - The control's view (not including the control_bar.  Effectively the contents of "
+                        "the control view.<br>"
+                        "do_render:function - Calls the (render) function provided to the macro.  User code can call this "
+                        "function when a redraw is required.<br>"
+                        "resize:function - A resize function to invoke if a forced resize is required.<br>"
+                        "initialized:boolean - This value is true if the function is initialized or false if it hasn't " 
+                        "yet been.<br>"
+                        "options:object - The options object passed to the control on instantiation.<br>"
+                        "<br><br>"
+                        "There are multiple functions that are called upon certain events, which allow the caller to build "
+                        "customized behavior and hook into the system when needed.  These functions are specified in the "
+                        "allocation forms provided to the macro and are all optional except for render:<br>"
+                        "render:function - This function returns the DOM structure assigned to content_view and is what is "
+                        "drawn in the control's content container.  If the function returns nil, nothing is done.  Can be "
+                        "used in conjunction with the on_render below, which acts on the already drawn view.<br>"
+                        "on_focus:function - When a focusing event occurs to the control, this function is called with the "
+                        "self object of the macro.<br>"
+                        "on_render:function - If this function is specified it will act as the render function so as to "
+                        "manipulate an already built view, via the content_view in scope symbol, which is the contents of the "
+                        "controls view.<br>"
+                        "control_bar_elements:array - If the control is specified with the control_bar control_options set to "
+                        "true, the Elements in this array will be placed into the control bar after any runtime additional_elements "
+                        "provided to the options object.<br>"
+                        "menu_items:function - A function that is called on demand that should return an array containing "
+                        "pairs of [menu_text menu_function] that implement any command functionality for the menu.<br>"
+                        "on_destroy:function - When the control receives a destroy call, this user provided function will be "
+                        "called with the self object.<br>"
+                        "on_initialize:function - Upon initialization, this function will be called with the self function. It "
+                        "should be expected that the initialization should be called only once for a control lifespan.<br>"
+                        "to_json:function - This synchronous function call can be used to provide a customization hook "
+                        "for the control.  The return value must be a structure that can be serialized into JSON form.<br><br>"
+                        "The final object, control_options is meta data and other flags for the macro:<br>"
+                        "expose:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
+                        "on the self interface and provide the API for the control.  In order for a resource in the control "
+                        "scope to be accessed, it must be specified in this option, otherwise the function remains effectively "
+                        "private to the control.<br>"
+                        "usage:array - The argument specification for the macro"
+                        "description:string - The description of the control that is registered in the Environment.<br>"
+                        "control_bar:boolean - If a control bar is to be displayed on the top of the control, set this to "
+                        "true.<br>")
+       `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
+       `tags: ["control" "define" "controls" "ui"]
+   })
+
+(create_css_entry "div.juno-control"
+   (from_style_text "overflow: scroll;
+    height: calc(100% - 10px);
+    width: calc(100% - 10px);
+    background: var(--control-bg-color);
+    color: var(--control-color);"))
+   
+(create_css_entry "div.juno-editable"
+    (from_style_text "padding: 5px;
+       caret-color: red;"))
+
+(create_css_entry "div.juno-editable:focus"
+   [["outline" "none"]]
+)
