@@ -8,6 +8,8 @@
     --highlight-color: white;
     --selected-bg-color: #0278e7;
     --selected-color: #FFFFFF;
+    --control-bg-color: hsl(40deg 13% 90%);
+    --control-color: #000000;
     --control-focused: hsl(0deg 0% 84%);
     --control-text-input-color-bg: #FFFFFF50;
     --control-unfocused-color: darkgray;

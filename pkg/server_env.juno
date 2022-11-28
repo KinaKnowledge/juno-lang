@@ -777,7 +777,8 @@
                                                (request_id (prop data `req_id))
                                                (result_type nil)
                                                (result nil))
-                                              (console.log "ws_repl_handler: -> " data)
+                                              (when (> __VERBOSITY__ 1)
+                                                 (console.log "ws_repl_handler: -> " data))
                                               (cond
                                                  (and (== command "eval")
                                                       (is_array? args)
@@ -804,8 +805,8 @@
                                                  (try
                                                     (progn
                                                        (= result (-> evaluator `evaluate args.0))
-                                                       (log "ws_repl: " namespace " <- " result)
-                                                       (log "ws_repl: encoded: " (encode_result request_id result))
+                                                       (when (> __VERBOSITY__ 1)
+                                                          (console.log "ws_repl: " namespace " <- " result))
                                                        (send_to_ws ws
                                                                    (encode_result request_id result)))
                                                     (catch Error (e)
@@ -815,7 +816,7 @@
                                                                       (encode_result request_id e)))))
                                                  (== command "close")
                                                  (progn
-                                                    (log "closing repl connection")
+                                                    (console.log "closing repl connection")
                                                     (try
                                                        (http/close_ws ws)
                                                        (catch Error (e)

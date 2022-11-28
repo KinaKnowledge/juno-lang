@@ -6,6 +6,8 @@
   --app-header-color: #E6E6E6;
   --highlight-bg-color: #FBF7ED;
   --highlight-color: #000000;
+  --control-bg-color: hsl(44deg 26% 83%);
+  --control-color: inherit;
   --control-focused: #efe5e540;
   --control-text-input-color-bg: #FFFFFF50;
   --control-unfocused-color: #0000009e;

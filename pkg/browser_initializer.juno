@@ -76,6 +76,22 @@
         "mac"
         "win"))
       
+(defun message (text)
+  (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text))
+
+(defun error_message (text)
+  (div { `style: "border-left: 5px solid red; padding: 5px;" } text))
+
+(defun log_error (message error_instance)
+  (progn
+   (log (error_message message))
+   (console.error message)
+   (when error_instance
+     (when error_instance.messasge
+       (error_message error_instance.message))
+     (console.error error_instance))))
+     
+
 
 (defun_sync value_to_dom (val options _path)
   (let 
@@ -516,10 +532,17 @@
 
 (defun unpack_description (description options)
    (let
-      ((desc (eval description))
+      ((table_regex (new RegExp "(^[a-zA-Z0-9?_*\\-]+):([a-zA-Z0-9]+)[ ]*-[ ]*(.+)"))
+       (desc (progn
+                (defvar tmp (eval description))
+                (if (and (is_object? tmp)
+                         (not (is_array? tmp)))
+                    tmp.description
+                    tmp)))
        (rr (new RegExp "<-" `g))
        (subsections [])
        (segments (split_by "<br>" desc))
+       (table_section nil)
        (current_seg 0)
        (total_segs (length segments)))
        (for_each (seg segments)
@@ -530,14 +553,28 @@
                 (map (fn (comp i)
                         (if (== 1 (% i 2))
                             (push subsections
-                               (pre comp))
+                               (if options.wrap_fn
+                                  (try
+                                     (progn
+                                        (-> options `wrap_fn comp current_seg total_segs))
+                                     (catch Error (e)
+                                        (pre "Error in wrap_fn call 1: " e.message)))
+                                  (pre comp)))
                             (push subsections
                                (if options.wrap_fn
                                   (try
                                      (-> options `wrap_fn comp current_seg total_segs)
                                      (catch Error (e)
-                                        (p "Error in wrap_fn call: " e.message)))
-                                  (p comp)))))
+                                        (p "Error in wrap_fn call 2: " e.message)))
+                                  (progn
+                                     (= table_section (scan_str table_regex comp))
+                                     (if (> (length table_section) 0)
+                                         (for_each (tbl_row table_section)
+                                            (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                                 (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
+                                         (p comp)))))))
                      (split_by "%%%" seg)))))
        (div 
           subsections))
@@ -602,12 +639,12 @@
               (if meta_obj.tags
                  [(h4 "Tags")
                   (for_each (`sym meta_obj.tags)
-                     (span { `class: "juno-tag" `style: "" } sym ))]
+                     (span { `tabindex: 0 `class: "juno-tag" `style: "" } sym ))]
                  [])
               (if meta_obj.requires
                  [(h4 "Requires")
                   (for_each (`sym (sort meta_obj.requires))
-                     (span {  `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) "")) " juno-requires") } sym ))]
+                     (span { `tabindex: 0 `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) "")) " juno-requires") } sym ))]
                  [])
               ))
       (cond
@@ -1710,7 +1747,11 @@
                                   (sleep 0.01) ;; disconnect and move to back of the event loop for the call
                                   (when (and target
                                              (is_function? target.1))
-                                    (target.1 e target.2))
+                                    (try
+                                       (target.1 e target.2)
+                                       (catch Error (e)
+                                          (log_error "Base Catch: " e.message)
+                                          (log_error e))))
                                   )))
        (setTimeout (fn ()
                      (progn
@@ -1788,7 +1829,6 @@
          (push k "Alt"))
     (when e.shiftKey
       (push k "Shift"))
-    (console.log e)
     (unless (contains? e.key [ "Shift" "Control" "Alt" "Meta" ])      
             ;; normalize to the printed key characters on the keyboard
             (push k (cond 
@@ -2187,8 +2227,8 @@
                                    (or (prop *event_routes* (compute_handler_key event_obj.source nil)) [])
                                    (or (prop *event_routes* (compute_handler_key nil event_obj.command)) []))))))
                     
-     ;(when (> handlers.length 0)
-      ;  (log "dispatch_event: " event_obj handler_key handlers))
+      (when (> __VERBOSITY__ 0)
+         (log "dispatch_event: " event_obj handler_key handlers))
       (if (> handlers.length 0)
            (for_each (handler handlers)
               (try
@@ -2363,21 +2403,6 @@
 
     
                      
-(defun message (text)
-  (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text))
-
-(defun error_message (text)
-  (div { `style: "border-left: 5px solid red; padding: 5px;" } text))
-
-(defun log_error (message error_instance)
-  (progn
-   (log (error_message message))
-   (console.error message)
-   (when error_instance
-     (when error_instance.messasge
-       (error_message error_instance.message))
-     (console.error error_instance))))
-     
 
 
 (defun load_js_file (file)
@@ -3632,6 +3657,25 @@
      tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
    })
 
+(defun set_scroll_speed (ctl value)
+   (if ctl.editor
+      (progn
+         (-> ctl.editor `setScrollSpeed (clamp value 1 10))
+         (set_prop ctl.options
+            `scroll_speed
+            (clamp value 1 10))
+         (-> ctl.editor `getScrollSpeed))
+      (progn
+         (log "set_scroll_speed: no editor for control: " ctl.name)))
+
+   {
+       description: (+ "Sets the scroll speed for the editor by taking a control with an " 
+                       "editor and a value between 1 and 10, where 10 will scroll the fastest "
+                       "and 1 will be the slowest scroll value.  Default speed is 5.  " 
+                       "Return value will be the new scroll speed value.")
+       usage: ["control:object" "value:number"]
+       tags: ["editor" "scroll" "speed"]
+   })
 
 (defun make_editor (content options)
    (let
@@ -3882,7 +3926,7 @@
                                  ;; we need to remove any keybinding that interferes with our globals and then
                                  ;; rebuild to the right scope
                                  (= orig_bindings (clone (resolve_path [ `keyBinding `$defaultHandler `commandKeyBinding ] editor)))
-                                 (defglobal *orig_key_bindings* orig_bindings)
+                                 ;(defglobal *orig_key_bindings* orig_bindings)
                                  (when options.on_save
                                     (bind_key "on_save" request_save))
                                  (bind_key "increase_font_size" increase_font_size)
@@ -4096,6 +4140,21 @@
                                                      source: options.id
                                                      args: [ { `option: "mode" `value: options.mode } ] })
                                    
+                                   
+                                   (cond
+                                      (is_number? options.scroll_speed)
+                                      (set_scroll_speed intf options.scroll_speed)
+                                      (is_number? (resolve_path [ `editor `scroll_speed ] *env_config* ))
+                                      (progn
+                                         (log "setting scroll speed: " (resolve_path [ `editor `scroll_speed ] *env_config* ))
+                                         (set_scroll_speed intf (resolve_path [ `editor `scroll_speed ] *env_config* )))
+                                      else
+                                      (set_scroll_speed intf 5))
+                                   
+                                   (set_prop options
+                                      `scroll_speed 
+                                      (-> editor `getScrollSpeed))
+                                   
                                    (console.log "initialize_editor: is this a linked_editor: " linked_editor)
                                    (when linked_editor
                                       (defvar pos (-> (prop (get_control_by_id linked_editor) `editor)
@@ -4274,19 +4333,6 @@
     (when selected_idx
         (prop (prop available selected_idx) 2))))
   
-
-
-
-(defun set_scroll_speed (ctl value)
-   (if ctl.editor
-      (-> ctl `editor) `setScrollSpeed (Math.min 1 10))
-   {
-       description: (+ "Sets the scroll speed for the editor by taking a control with an " 
-                       "editor and a value between 1 and 10, where 10 will scroll the fastest "
-                       "and 1 will be the slowest scroll value.  No return value.")
-       usage: ["control:object" "value:number"]
-       tags: ["editor" "scroll" "speed"]
-   })
 
 (defun compute_name_for_editor (title path_to_value)
    (let
@@ -4637,10 +4683,13 @@
                      (when (and view.parentElement
                                 (not initialized))
                        (= initialized true)
-                       (= parent_view view.parentElement)                                   
+                       (= parent_view view.parentElement)                          
+                       (if (eq nil options.show_timestamps)
+                           (set_show_timestamps false)
+                           (set_show_timestamps options.show_timestamps))
                        (= resize_observer (new ResizeObserver perform_resize))
                        (-> resize_observer `observe view.parentElement))))
-                       
+       
        (perform_resize (fn ()
                          (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
@@ -4648,7 +4697,17 @@
                              
                              (set_style [[ "width" (+ "" new_width "px") ]
                                          [ "height" (+ "" new_height "px") ]]
-                                        view))))
+                                        view)
+                             (when (and hide_state
+                                        (> new_height 5))
+                                (= hide_state false)
+                                (set_prop output_container
+                                   `scrollTop
+                                   1000000)
+                                (set_prop view
+                                   `scrollTop
+                                   0)))))
+       
        (add_result (fn (result command_text error_state)
                      (progn
                       (console.log "log_view: <- " result) 
@@ -4692,7 +4751,27 @@
                                 (-> (first output_container.children)
                                     `remove))
                               true)))
-                              
+       (set_show_timestamps (fn (state)
+                                      (if state
+                                         (progn
+                                            (= ts_hidden_state "")
+                                            (set_prop options
+                                               `show_timestamps true)
+                                            (when view  ;; surround in try catch in case we aren't completely ready
+                                               (try
+                                                  (apply remove_class "juno-display-none" (or (-> view `querySelectorAll ".juno-timestamp") []))
+                                                  (catch Error (e)
+                                                     nil))))
+                                              
+                                         (progn
+                                            (set_prop options
+                                               `show_timestamps false)
+                                            (= ts_hidden_state "juno-display-none")
+                                            (when view
+                                               (try
+                                                  (apply add_class "juno-display-none" (-> view `querySelectorAll ".juno-timestamp"))
+                                                  (catch Error (e)
+                                                     nil)))))))
        (menu_items (fn ()
                      [[(dtext "Clear Log")
                        (function ()
@@ -4702,19 +4781,33 @@
                          (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
                                                                                                                                         *env_config*.application.max_log_lines) })
                               (set_max_log_lines it)))]
+                      [(if (blank? ts_hidden_state)
+                           (dtext "Hide Timestamps")
+                           (dtext "Show Timestamps"))
+                       (fn ()
+                          (if (blank? ts_hidden_state)
+                              (set_show_timestamps false)
+                              (set_show_timestamps true)))]
                       [(if options.display_options.include_prototypes
                          (dtext "Hide Object Prototype Detail")
                          (dtext "Show Object Prototype Detail"))
                        (function ()
                                  (set_show_prototypes (not options.display_options.include_prototypes)))]]))
+       (hide_state nil)
+       (ts_hidden_state "")
+       (on_hide (fn ()
+                   (progn
+                      (= hide_state true))))
                       
        (on_focus (fn ()
-                   (progn                   
-                    (add_class "juno-focused" control_status)))) ;; we know that is the command bar
+                   (progn  
+                      (= hide_state false)
+                      (log "Focused!")
+                      (add_class "juno-focused" control_status)))) ;; we know that is the command bar
        (log_message (fn (`& args)
                       (progn
                        (add_result (div { `tabindex: 0 `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
-                                        (div { `timestamp: (time_in_millis) `style: "padding-right: 10px; min-width: 150px; display: inline-block; " } (formatted_date (new Date)))
+                                        (div { `class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
                                         (div { `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
                                              (for_each (v args)
                                                        (cond
@@ -4741,9 +4834,12 @@
               `name name
               `append add_result
               `log_message log_message
+              `on_hide on_hide
+              ;`on_focus on_focus
               `menu_items menu_items
               `control_bar control_status
               `output_container output_container
+              `set_show_timestamps set_show_timestamps
               `initialize initialize
               `resize perform_resize
               `type `log_view              
@@ -4755,6 +4851,7 @@
     interf))
 
 ;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
+
 (defun visual_repl (options)
   (let
       ((options (or options {}))
@@ -4786,6 +4883,9 @@
                                              (add_class "juno-button-on" show_prototype_details_button)
                                              (remove_class "juno-button-on" show_prototype_details_button)))))
        (output_control (log_view { `display_options: (or options.display_options {} )
+                                   `show_timestamps: (if options.show_timestamps
+                                                        true
+                                                        false)
                                    `additional_elements: [ control_button title_span show_prototype_details_button namespace_span  path_span location_span] `id: id }))
        (history (if (is_array? options.history)
                   options.history
@@ -5099,6 +5199,17 @@
                          (dtext "Show Object Prototype Detail"))
                        (function ()
                                  (toggle_prototype_detail))]
+                      [(if output_control.options.show_timestamps
+                         (dtext "Hide Timestamps")
+                         (dtext "Show Timestamps"))
+                       (function ()
+                                 (progn
+                                    (if output_control.options.show_timestamps
+                                       (-> output_control `set_show_timestamps false)
+                                       (-> output_control `set_show_timestamps true))
+                                    (set_prop options.display_options
+                                              `show_timestamps
+                                              output_control.options.show_timestamps)))]
                       [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                                             [theme  (fn ()
                                                                       (progn
@@ -5114,7 +5225,10 @@
                          (when (eq nil options.display_options)
                            (set_prop options
                                      `display_options
-                                     { `include_prototypes: false }))                           
+                                     { `include_prototypes: false 
+                                       `show_timestamps: output_control.options.show_timestamps 
+                                     }))
+                         
                          (if options.display_options.include_prototypes
                            (add_class "juno-button-on" show_prototype_details_button))
                          (try
@@ -5215,6 +5329,9 @@
              `clear_output: clear_output             
              `initialize: initialize
              `destroy: destroy
+             `on_hide: (fn ()
+                         (when (is_function? output_control.on_hide)
+                            (-> output_control `on_hide)))
              `type: "visual_repl"
              `resize: (fn ()
                        (-> sview `resize))
@@ -5298,7 +5415,10 @@
                                            (-> control `destroy))
                                         (when (== *last_focus* control)
                                            (== *last_focus* nil))
-                                        (default_focus)))
+                                        (default_focus))
+                                     (progn  ;; control is going to storage - call on_hide if it has it
+                                        (when (is_function? control.on_hide)
+                                           (-> control `on_hide))))
                                  (render_view)
                                  control)
                              ))
@@ -5687,7 +5807,7 @@
           (let
              ((self {})
               (options (or options {}))
-              (`name (name_control (or options.name ,#(desym_ref name))))
+              (name (name_control (or options.name ,#(from_key (desym_ref name)))))
               (id (generate_id ,#name))
               (initialized false)
               (title_span (span { `class: "juno-title" } name))
@@ -5752,7 +5872,8 @@
               (_on_destroy (fn ()                                     
                              (progn
                               ,#(if (contains? (quote on_destroy) declared_allocations)
-                                  `(on_destroy self)))))
+                                  `(on_destroy self)
+                                  `true))))
               (_to_json (function ()
                            (progn
                               ,#(if (contains? (quote to_json) declared_allocations)
@@ -5845,7 +5966,7 @@
                         "to_json:function - This synchronous function call can be used to provide a customization hook "
                         "for the control.  The return value must be a structure that can be serialized into JSON form.<br><br>"
                         "The final object, control_options is meta data and other flags for the macro:<br>"
-                        "exposes:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
+                        "expose:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
                         "on the self interface and provide the API for the control.  In order for a resource in the control "
                         "scope to be accessed, it must be specified in this option, otherwise the function remains effectively "
                         "private to the control.<br>"
@@ -6609,6 +6730,7 @@
           `append dlist)))
 
 (defglobal *building_document_index* false)
+
 (defun build_tag_index ()
    (unless *building_document_index*
       (setq *building_document_index* true)
@@ -6641,7 +6763,8 @@
          (= *tags_to_meta*
             new_db)
          (build_documentation_datalist)
-         (log (+ "build_tag_index: time to index: " (- (time_in_millis) stime) "ms  " (if is_reindex? " (throttled)" "")))
+         (if (> __VERBOSITY__ 2)
+             (log (+ "build_tag_index: time to index: " (- (time_in_millis) stime) "ms  " (if is_reindex? " (throttled)" ""))))
          (setq *building_document_index* false)))
       
    {
@@ -6659,6 +6782,7 @@
           (target nil)
           (ns nil)
           (sym nil)
+          (not_found (fn () true))
           (comps []))
          ;(log "searching for " search_text)
       ;; do we have tags?
@@ -6692,7 +6816,9 @@
                                       `name: sym
                                       `description: (+ "Undocumented: " (sub_type it))
                                   }))))))
-      (log "Results: "results_by_ns)
+      (when (> __VERBOSITY__ 0)
+         (log "search_documentation_index: results:" results_by_ns))
+      
       (try
          (= target
             (div
@@ -6709,27 +6835,41 @@
                                          (destructuring_bind (k meta_obj)
                                             pset
                                             (when k
+                                               
                                                (defvar desc "")
+                                               (defvar stype (try 
+                                                                (or (first (reduce (m (meta_for_symbol k true))
+                                                                              (when (and (== m.namespace ns_title)
+                                                                                         m.type)
+                                                                                 m.type)))
+                                                                    (progn
+                                                                       (defvar tmp (-> Environment `get_global (+ ns_title "/" k) not_found))
+                                                                       (if (== tmp not_found)
+                                                                           "undefined"
+                                                                           (sub_type tmp))))
+                                                                (catch Error (e)
+                                                                   "unknown")))
                                                (tr { `style: " vertical-align:top;" }
-                                                   (td { `class: "juno-requires" `tabindex: 0 `style: "min-width: 200px; cursor: pointer; border-bottom: 1px solid var(--main-accent-line); padding-bottom: 10px; margin-bottom: 10px; padding-right: 5px; font-weight: bold; text-align: right; vertical-align:top;" } k)
-                                                   (td { `style: "border-bottom: 1px solid var(--main-accent-line); margin-bottom: 10px;vertical-align:top;  padding-bottom: 10px; width: calc(100% - 150px);" }
+                                                   (td { `class: (+ "juno-requires " "juno-type-" (lowercase stype))
+                                                         `tabindex: 0 
+                                                         `title: stype
+                                                         `style: "line-height: 1.5em; min-width: 200px; cursor: pointer; border-bottom: 1px solid var(--main-accent-line); padding-bottom: 10px; margin-bottom: 10px; padding-right: 5px; font-weight: bold; text-align: right; vertical-align:top;" } 
+                                                       k)
+                                                   (td { `style: "line-height: 1.5em; border-bottom: 1px solid var(--main-accent-line); margin-bottom: 10px;vertical-align:top;  padding-bottom: 10px; width: calc(100% - 150px);" }
                                                        (or (and meta_obj.description
-                                                                (unpack_description meta_obj.description 
-                                                                                    { `wrap_fn: (fn (content i total)
-                                                                                                   (progn
-                                                                                                      (= desc (+ desc content))
-                                                                                                      (if (== i total)
-                                                                                                          (div { `style: "line-height: 1.5em;" }
-                                                                                                               (if (> (length desc) 150)
-                                                                                                                   (+ (-> desc `substr 0 150) "...")
-                                                                                                                   desc))
-                                                                                                          "")))
-                                                                                               
-                                                                                               
-                                                                                               }))
+                                                                (try 
+                                                                   (progn
+                                                                      (= desc (prop (unpack_description meta_obj.description) `innerText))
+                                                                      (if (> desc.length 150)
+                                                                          (= desc (+ (-> desc `substr 0 150) "...")))
+                                                                      (div { `style: "" }
+                                                                           desc))
+                                                                          
+                                                                   (catch Error (e)
+                                                                      (+ "error: " e.message " - can't unpack description"))))
                                                            "(No Description)")))))))))])))
          (catch Error (e)
-            (log "ERROR: " e.message)))
+            (log "ERROR: " e.message e)))
       (-> target_element `replaceChildren target)
       (setTimeout (fn ()
                      (focus_to target.children.0.children.0))
@@ -6742,23 +6882,23 @@
    true)
 
 (defcontrol juno_documentation_control ()
-   ((definition_view (div { `class: "juno-log-output" `style: "padding: 5px; overflow: scroll; width: calc(100% - 20px);" } "Help Introduction"))
-    (search_input (input { `type: "search" `list: "documentation_datalist" `style: "width: calc(100% - 10px); border: 0px; background: var(--editor-bg-color); color: var(--editor-text-color);" } ))
-    (search_bar_elem (div { `style: "display: inline-block; width: calc(100% - 0px);" }
+   ((definition_view (div { `class: "juno-log-output" `style: "margin-top: 15px; padding: 5px; overflow: scroll; width: calc(100% - 20px);" } "Help Introduction"))
+    (search_input (input { `type: "search" `list: "documentation_datalist" `placeholder: (dtext "Search Documentation") `style: "font-weight: bold; display: inline-block; padding: 10px; width: calc(100% - 10px); border: 0px; background: var(--editor-bg-color); color: var(--main-color);" } ))
+    (search_bar_elem (div { `style: "display: inline-block; width: calc(100% - 0px);height: 20px;" }
                           search_input))
-    (search_result_view (div { `style: "overflow: scroll; height: calc(100% - 10px); width: calc(100% - 20px); " }
-                             (div { `style: "width: 100%; text-align: center; padding: 10px; font-size: 1.2em;" } (dtext "Type Search Text and Press Enter"))))
+    (search_result_view (div { `style: "overflow: scroll; height: calc(100% - 10px);  width: calc(100% - 20px); " }
+                             (div { `style: "width: 100%; text-align: center; margin-top: 15px; padding: 10px; font-size: 1.2em;" } (dtext "Type Search Text and Press Enter"))))
     (search_view (div { `style: "display: inline-block; height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden; padding: 5px;" 
                         `class: "juno-display-none" } 
-                      (div { `style: "display: inline-block; font-weight: bold; padding: 5px; font-size: 1.2em;" }  
+                      (div { `style: "display: inline-block; margin-top: 15px; font-weight: bold; padding: 5px; font-size: 1.2em;" }  
                            (dtext "Search Results"))
                       search_result_view))
     (upper_content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden;" } 
                              search_bar_elem
                              search_view
                              definition_view))
-    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 10px); width: calc(100% - 10px); overflow: hidden;" } 
-                       upper_content_view))
+    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 15px); width: calc(100% - 10px); overflow: hidden;" } 
+                   upper_content_view))
     (view (div { `class: "juno-log-output" `style: "padding: 5px; width: calc(100% - 20px); overflow: hidden;"} 
           content_view))
     (name "Juno Documentation")
@@ -6966,6 +7106,9 @@
                                   (and (== e.key "Enter")
                                        (has_class? "juno-requires" e.srcElement))
                                   (show_documentation e.srcElement.innerText)
+                                  (and (== e.key "Enter")
+                                       (has_class? "juno-tag" e.srcElement))
+                                  (search_by_tag e.srcElement.innerText)
                                   (== e.key "Escape")
                                   (focus_to search_input))))
                          (attach_event_listener search_result_view
@@ -8040,7 +8183,7 @@
        (console.log "initializing control surface")
        ;; take in the global default theme, but don't impact the setting for the sub themes
        (set_global_theme *env_config*.application.global_theme { `suppress_set_sub_theme: true `suppress_cascade: true })
-       (defglobal $repl (visual_repl { `name: "Juno REPL" }))
+       (defglobal $repl (visual_repl { `name: "Juno REPL" `show_timestamps: true }))
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
@@ -8252,7 +8395,12 @@
                               (aif (prop *key_bindings*.active kcode)
                                    (progn
                                     (handle_event e)
-                                    (it)))                              
+                                    (try 
+                                       (it)
+                                       (catch Error (e)
+                                          (progn
+                                             (log_error (+ "Base Catch: " e.message))
+                                             (log_error e))))))
                               )))
     
     (attach_event_listener document

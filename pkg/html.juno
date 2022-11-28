@@ -255,6 +255,56 @@
    `tags: ["ui" "html" "css" "class"]
    })
 
+(defun element_to_lisp (element options)
+   (if (is_element? element)
+       (let
+          ((tag_name (if (is_function? options.tagname_for_element)
+                         (-> options `tagname_for_element element)
+                         element.tagName))
+           (elem_as_lisp (list (+ "=:" (lowercase tag_name))))
+           (acc [])
+           (nodes nil)
+           (ptype nil)
+           (val nil)
+           (attrib_list (prop element `attributes))
+           (attribs {}))
+          (for_each (attrib_num (range (length attrib_list)))
+             (progn
+                (set_prop attribs
+                   (resolve_path [ `attributes attrib_num `name ] element)
+                   (resolve_path [ `attributes attrib_num `value ] element))))
+          (push elem_as_lisp
+             attribs)
+          (= nodes element.childNodes)
+          (for_each (cnum (range (length nodes)))
+             (cond 
+                (== 3 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (resolve_path [ cnum `nodeValue] nodes))
+                (== 1 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (element_to_lisp (resolve_path [ cnum ] nodes) options))))
+          (if (is_function? options.on_element_complete)
+              (-> options `on_element_complete elem_as_lisp)
+              elem_as_lisp))
+       [ "UNKNOWN:" element ])
+   {
+     `description: (+ "Given a DOM element, returns the lisp represenation of the DOM element.<br>"
+                      "If provided with an options object, the following keys are applicable:<br>"
+                      "tagname_for_element:(fn element) - For every new element encountered in the "
+                      "provided tree, will be called with the new element.  The function should "
+                      "return a string value to be used for the tagname as opposed to the original "
+                      "element tagName value.<br>"
+                      "on_element_complete:(fn array) - Will be called with the quoted lisp form "
+                      "that was constructed.  The function can then manipulate the completed form "
+                      "prior to it being placed in the returned lisp form.  Note that this function "
+                      "is called for every completed element, not just the final return value.")
+     `usage: ["element:element"]
+     `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
+   })
+
+
+
 (defun set_disabled (`& args)
   (when (and args (> (length args) 0))
     (for_each (`elem (flatten args))
@@ -382,7 +432,7 @@
         (let
             ((type (or type "info"))
              (timer nil)
-             (view (div { `style: (+ "z-index: 5; padding: 5px; position: relative; opacity: 0; cursor: pointer; color: var(--highlight-color); background: var(--main-control-surface-accent-color); border: 1px solid #404040; display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
+             (view (div { `style: (+ "z-index: 5; box-shadow: 1px 2px 11px 2px #00000050; padding: 5px; position: relative; opacity: 0; cursor: pointer; color: var(--control-color); background: var(--control-bg-color); display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
                                      (cond
                                          (== type "error")
                                          "border-left: 5px solid var(--type-error-color);"
@@ -396,7 +446,7 @@
                       `appendChild (div { `id: "lower_right_corner" `style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )))
             
             (-> (get_by_id "lower_right_corner") `appendChild view)
-            (-> view `animate [{  `easing: `ease-in }
+            (-> view `animate [{ `easing: `ease-in }
                                { `opacity: 1    `easing: `ease-out  `offset: 0.1 }
                                { `opacity: 1 `easing: `ease-out } ] 
                            { `duration: 3000 })
@@ -1175,7 +1225,65 @@
      
     intf))
 
-
+(defun checkbox (`& args)
+   (let
+      ((options (if (and (is_object? args.0)
+                      (not (is_element? args.0)))
+                 args.0
+                 {}))
+       (args (if (> (length options) 0)
+                 (rest args)
+                 args))
+       (state options.value)
+       (check_input (input (+ { `type: "checkbox" }
+                              (if options.value
+                                 { `checked: true }
+                                 {})
+                              { `style: "padding: 5px; margin-right: 5px;" }
+                              (if (is_object? options.checkbox)
+                                  options.checkbox
+                                  {}))))
+       (view (label (+ {}
+                       (if (is_object? options.label)
+                           options.label
+                        {}))
+                    check_input
+                    args)))
+      (attach_event_listener view
+         `click
+         (fn (e)
+            (progn
+               (= state (prop check_input `checked))
+               (set_prop view
+                  `value
+                  state))))
+      (set_prop view
+         `value
+         state)
+      view)
+   {
+       `description: (+ "Creates a checkbox with a label element and "
+                        "returns the label element.  The state of the "
+                        "check box input is set to the value property "
+                        "of the label, such that when the check box input "
+                        "is checked, the value will be true, otherwise "
+                        "it will be false.  Event listeners can be "
+                        "attached as needed.<br>Example:%%%"
+                        "(defconst my_checkbox (checkbox { `value: true } \"Completed\"))\n"
+                        "(attach_event_listener my_checkbox\n"
+                        "   `click\n"
+                        "   (fn (e)\n"
+                        "      (log \"State: \" e.srcElement.value)))\n%%%"
+                        "<br>"
+                        "Options for the checkbox:<br>"
+                        "value:boolean - If true the checkbox is checked when first "
+                        "presented.<br>"
+                        "label:object - If provided, will be used for the attributes of the label element.<br>"
+                        "checkbox:object - If provided, will be used for the attributes of the checkbox input "
+                        "element.<br>")
+       `usage: ["options:?object" "label_contents:string|Element" ]
+       `tags: [ "html" "ui" "DOM" "element" "node"]
+   })
 
 (defun tabs (tab_list)
   (let

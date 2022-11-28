@@ -2030,6 +2030,19 @@ such as things that connect or use environmental resources.
 
 
 
+(defun_sync get_symbol_details_for_ns (namespace symbol_name)
+   (if (and (is_string? namespace)
+            (is_string? symbol_name))
+       (first (reduce_sync (entry (meta_for_symbol symbol_name true))
+                 (when (== entry.namespace namespace)
+                    entry)))
+       (throw TypeError "get_symbol_for_ns: invalid arguments: must both be strings"))
+   {
+       `description: "Given a namespace and a symbol name returns the details for the specific symbol in the namespace if found, or nil if not."
+       `tags: ["namespace" "symbol" "find" "meta" "details"]
+       `usage: ["namespace:string" "symbol_name:string"]
+   })
+
 
 (defun env_encode_string (text)
   (let
@@ -2897,7 +2910,17 @@ such as things that connect or use environmental resources.
             `tags:["bind" "object" "this" "context" "call"]
         })
 
-
+(defun clamp (value min max)
+   (Math.min (Math.max min value) max)
+   {
+       `description: (+ "Given a numeric value, along with minimum and maximum values for the provided value, "
+                        "the function will return the value if between the bounding values, otherwise "
+                        "the closest bounding value will be returned.  If the value is above the provided "
+                        "maximum, then the maximum will be returned.  If the value is below the minimum, then "
+                        "the minimum value is returned.")
+       `tags: ["value" "number" "min" "max" "bounds" "boundary" "range" ]
+       `usage: ["value:number" "min:number" "max:number"]
+   })
                        
 (defglobal document (new Object))
 (defun save_locally (fname data content_type)
@@ -3755,7 +3778,43 @@ such as things that connect or use environmental resources.
      `usage: ["line_number:integer" "get_line:function"]
    })
 
-
+(defmacro set_default (path value)
+  (let
+     ((real_path (cond 
+                    (and (is_string? path)
+                         (starts_with? "=:" path)
+                         (contains? "." path))
+                    (split_by "." (desym_ref path))
+                    (and (is_string? path)
+                         (contains? "." path))
+                    (split_by "." path)
+                    (and (is_string? path)
+                         (contains? "~" path))
+                    (split_by "~" path)
+                    else
+                    path)))
+     `(progn
+         (unless (is_array? ,#real_path) 
+            (throw ReferenceError "set_default: invalid path specification, needs to be an array, string or symbol."))
+         (defvar __first_val (first ,#real_path))
+         (if (contains? __first_val (list `features `build `imports `included_libraries))
+             (throw ReferenceError (+ "set_default: the path value "   "doesn't reference a default value setting")))
+         (if (resolve_path ,#real_path *env_config*)
+             (set_path ,#real_path *env_config* ,#value)
+             (make_path ,#real_path *env_config* ,#value ))
+         (resolve_path ,#real_path *env_config*)))
+  {
+    `description: (+ "Given a path to a value in the *env_config* object, and a value to set, creates or sets the value "
+                     "at the provided path position.  The path can be in the following forms:<br>"
+                     "path.to.default_value:symbol - A period delimited non-quoted symbol<br>"
+                     "[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>"
+                     "\"path.to.default_value\" - A string delimited by periods<br>"
+                     "\"path~to~default_value\" - A string delimited by the path delimiter ~<br>"
+                     "<br>"
+                     "The value returned from the macro is the new default value as set in the *env_config*.<br>")
+    `tags: ["default" "defaults" "set" "application" "editor" "repl" ]
+    `usage: ["path:symbol|string|array" "value:*"]
+  })
 
 (defun_sync keyword_mapper (token)
   (if (contains? token *formatting_rules*.keywords)

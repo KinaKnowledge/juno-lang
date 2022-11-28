@@ -12,6 +12,8 @@
   --highlight-color: #000000;
   --selected-bg-color: #0278e7;
   --selected-color: #FFFFFF;
+  --control-bg-color: inherit;
+  --control-color: inherit;
   --control-text-input-color-bg: #FFFFFF50;
   --control-text-input-color: #000000;
   --control-focused: #efe5e540;
@@ -1963,6 +1965,12 @@ span.juno-value {
   font-style: italic;
 }
 
+.juno-timestamp {
+    padding-right: 10px; 
+    min-width: 150px; 
+    display: inline-block;
+}
+
 .juno-mode {
   color: var(--mode-color);
   margin-left: 10px;
@@ -2037,7 +2045,23 @@ div.juno-help-context {
   font-family: var(--main-mono-space);
 }
 
+div.juno-control {
+    overflow: scroll;
+    height: calc(100% - 10px);
+    width: calc(100% - 10px);
+    background: var(--control-bg-color);
+    color: var(--control-color);
+}
 
+div.juno-editable {
+    padding: 5px;
+    caret-color: red;
+}
+
+div.juno-editable:focus {
+    outline: none;
+    box-shadow: 0 0 5px 2px #a0a0a052;
+}
 
 .juno-context-bar {
   padding: 3px;
