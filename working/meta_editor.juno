@@ -348,20 +348,47 @@
        (selrange nil)
        (coords (get_caret_coordinates))
        (actual_elem (-> document `elementFromPoint coords.x coords.y))
-       (pos (get_cursor_position actual_elem))
+       (pos (progn
+               (= selection (-> window `getSelection))  ;(get_cursor_position actual_elem))
+               (= selrange (-> (-> selection `getRangeAt 0) `cloneRange))
+               (if (== selrange.startContainer.nodeType 3)
+                   (progn
+                      (get_cursor_position selrange.startContainer.parentElement))
+                   selrange.endOffset)))
+                   
        (total_length (length actual_elem.innerText))
-       (next_elem (aif (-> window `getSelection)
-                       it.anchorNode.parentElement.nextSibling))
        (proper_pos (== actual_elem.parentElement root_element))
+       (insert_pre_at_point (fn ()
+                               (try
+                                  (progn
+                                     (= new_elem (pre { `style: (+ monofont "padding: 5px; border: 1px solid var(--main-accent-line); background: #FFFFFF20;padding: 3px;") } "CODE HERE"))
+                                     (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                                     (= pos selrange.startOffset)
+                                     (-> selrange `setEndBefore actual_elem.nextSibling)
+                                     (defvar remaining_text (-> selrange `toString))
+                                     (log pos "range post: " remaining_text)
+                                     (= selection (-> window `getSelection))
+                                     (-> selection `removeAllRanges)
+                                     (-> selection `addRange selrange)
+                                     (-> selection `deleteFromDocument)
+                                     (-> selection `collapseToStart)
+                                     (-> (prop root_element.children active_child_idx)
+                                         `insertAdjacentElement `afterEnd new_elem)
+                                     (-> new_elem `insertAdjacentElement `afterEnd
+                                        (div { } remaining_text))
+                                     (-> selection `selectAllChildren new_elem))
+                                  (catch Error (e)
+                                     (notify "ERROR: " e.message)))))
        (in_tree (if proper_pos
                     true
                     (progn
                        (defvar tmp actual_elem)
                        (while (and tmp
                                    tmp.parentElement)
-                          (= tmp tmp.parentElement)
-                          (if (== tmp root_element)
-                              (break)))
+                          (progn
+                             (= tmp tmp.parentElement)
+                             (if (== tmp root_element)
+                                 (break))))
                        (== tmp root_element))))
        (active_child_idx (if in_tree
                          (try 
@@ -370,9 +397,12 @@
                                (log "ERROR: " e.message)))))
        (total_children (length root_element.children))
        (priors (if (== action "down")
-                   (-> actual_elem.innerText `substr (- pos 2) 2)
+                   (if (== actual_elem.nodeType 3)
+                       (-> actual_elem.parentElement.innerText `substr (- pos 2) 2)
+                       (-> actual_elem.innerText `substr (- pos 2) 2))
                    (-> actual_elem.innerText `substr (- pos 3) 3)))
-       (inner_text (prop elem `innerText))
+       (inner_text nil)
+       (added_text nil)
        (clean_up_children (fn ()
                              (map (fn (child idx total)
                                      (if (and (blank? child.innerText)
@@ -383,14 +413,43 @@
                     root_element.children)
        (monofont  "font-family: var(--main-mono-space);"))
       (assert (is_element? root_element) "root_element must be an element")
+      (cond
+         (== actual_elem.tagName "PRE")
+         (unless (== actual_elem.parentElement root_element)
+            (notify "PRE is too deep!"))
+         (and (== action `down)
+              in_tree
+              (== actual_elem.tagName "SPAN"))
+         (try
+            (progn
+               (= selection (-> window `getSelection))
+               
+               (= inner_text actual_elem.innerText)
+               (= new_elem actual_elem.parentElement)
+               (-> actual_elem `remove)
+               (-> selection `removeAllRanges)
+               (= selrange (-> document `createRange))
+               (-> selrange `selectNodeContents new_elem)
+               (-> selection `addRange selrange)
+               (-> selection `collapseToStart)
+               (doc_exec `insertText inner_text)
+               (= actual_elem new_elem)
+               (= pos (get_cursor_position actual_elem))
+               (notify (+ "SPAN! " actual_elem.innerText)))
+            (catch Error (e)
+               (log "ERROR: " e.message))))
+      
+      ;(log action key "---------" priors actual_elem.tagName actual_elem.innerText)
+      
       (if (== actual_elem.parentElement root_element)
           (progn
-             (log (+ "POS: " pos "/" total_length) "ACI: " (+ "" active_child_idx "/" total_children) "Proper POS: " (== actual_elem.parentElement root_element) (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp actual_elem))) )
+             ;(if (== action `down) (log  (+ "POS: " pos "/" total_length) "ACI: " (+ "" active_child_idx "/" total_children) "Proper: " (== actual_elem.parentElement root_element) (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp actual_elem))) ))
              (cond
                 (and (== key "`")
                      (== action "down")
                      (not (== actual_elem.tagName "PRE"))
-                     (== priors "``"))
+                     (or (== priors "``")
+                         (== priors "\n`")))
                 (progn
                    (handle_event event)
                    ;(doc_exec "insertText" "`")
@@ -404,7 +463,9 @@
                       (== selection.anchorNode.nodeType 1)
                       (try
                          (progn
-                            (log "code_node: " (element_to_lisp selection.anchorNode) (element_to_lisp selection.focusNode)))
+                            (log "code_node: A" (element_to_lisp selection.anchorNode))
+                            (log " --> focus_node: " (element_to_lisp selection.focusNode))
+                            (insert_pre_at_point))
                          (catch Error (e)
                             (log "ERROR: " e.message)))
                       
@@ -414,9 +475,9 @@
                       (try
                          (progn
                             (doc_exec "insertHTML" "<br/>" false)
-                            (when (doc_exec "insertHTML" (+ "<pre tabindex=0 style='" monofont "padding: 5px; border: 1px solid var(--main-accent-line); background: #FFFFFF20;padding: 3px;'>CODE HERE</pre>"))
+                            (when (doc_exec "insertHTML" (+ "<pre  style='" monofont "padding: 5px; border: 1px solid var(--main-accent-line); background: #FFFFFF20;padding: 3px;'>CODE HERE</pre>"))
                                (= code_node selection.anchorNode.parentNode)
-                               (log "code_node: " (element_to_lisp code_node) "Proper POS: " (== code_node.parentElement root_element))
+                               (log "code_node: B " (element_to_lisp code_node) "Proper POS: " (== code_node.parentElement root_element))
                                (= end_node selection.anchorNode.parentNode)
                                (-> selection `selectAllChildren code_node)))
                          (catch Error (e) (log "ERROR: cannot select!" e.message)))
@@ -425,9 +486,23 @@
                       (try
                          (progn
                             (log "Inserting new PRE ELEMENT in middle: " (pre (as_lisp (element_to_lisp (prop root_element.children active_child_idx)))))
-                            (= new_elem (pre { `tabindex: 0 `style: (+ monofont "padding: 5px; border: 1px solid var(--main-accent-line); background: #FFFFFF20;padding: 3px;") } "CODE HERE"))
-                            (-> (prop root_element.children active_child_idx) `insertAdjacentElement `beforebegin new_elem)
-                            (-> selection `selectAllChildren new_elem))
+                            (= new_elem (pre { `style: (+ monofont "padding: 5px; border: 1px solid var(--main-accent-line); background: #FFFFFF20;padding: 3px;") } "CODE HERE"))
+                            (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                            (= pos selrange.startOffset)
+                            (-> selrange `setEndBefore actual_elem.nextSibling)
+                            (defvar remaining_text (-> selrange `toString))
+                            (log pos "range post: " remaining_text)
+                            (= selection (-> window `getSelection))
+                            (-> selection `removeAllRanges)
+                            (-> selection `addRange selrange)
+                            (-> selection `deleteFromDocument)
+                            (-> selection `collapseToStart)
+                            (-> (prop root_element.children active_child_idx)
+                                `insertAdjacentElement `afterEnd new_elem)
+                            (-> new_elem `insertAdjacentElement `afterEnd
+                               (div { } remaining_text))
+                            (-> selection `selectAllChildren new_elem)
+                            )
                          (catch Error (e)
                             (log "ERROR: " e.message)))))
                 
@@ -442,18 +517,17 @@
                    (or (== key "b")
                        (== key "i"))
                    (handle_event event))
-                
                 (and (== action "down")
                      (== actual_elem.tagName "PRE")
                      (== key "ArrowDown")
                      (> pos (- total_length 2)))
                 (progn
-                   (log "leaving pre")
                    (= selection (-> window `getSelection))
+                   (log "leaving pre - selection is: " selection)
                    (when selection
                       (try
                          (progn
-                            (defvar `added_text false)
+                            (= added_text false)
                             (= sel_node selection.anchorNode.parentElement)
                             (cond
                                sel_node.nextSibling
@@ -463,6 +537,7 @@
                                            (blank? sel_node.nextSibling.innerText))
                                       (try
                                          (progn
+                                            (log "making new_elem to move into")
                                             (= new_elem (div { `contenteditable: true tabindex: 0 } (br)))
                                             (-> sel_node.nextSibling `insertAdjacentElement `beforebegin new_elem)
                                             (setTimeout (fn ()
@@ -474,6 +549,22 @@
                                                               true))
                                                         1))
                                          (catch Error (e)
+                                            (log "ERROR: " e.message)))
+                                      (try
+                                         (progn
+                                            (when (blank? sel_node.nextSibling.innerText)
+                                               (setTimeout (fn ()
+                                                              (progn
+                                                                 (set_prop sel_node.nextSibling
+                                                                    `innerText
+                                                                    "-")
+                                                                 (-> selection `removeAllRanges)
+                                                                 (= selrange (-> document `createRange))
+                                                                 (-> selrange `selectNode sel_node.nextSibling)
+                                                                 (-> selection `addRange selrange)
+                                                                 )) 1))
+                                            )
+                                         (catch Error (e)
                                             (log "ERROR: " e.message)))))
                                
                                
@@ -481,6 +572,7 @@
                                (== nil sel_node.nextSibling)
                                (progn
                                   (= new_elem (div { `contenteditable: true tabindex: 0 } (br)))
+                                  (log "at end")
                                   (-> sel_node.parentElement `append new_elem)
                                   (setTimeout (fn ()
                                                  (try
@@ -493,7 +585,10 @@
                                                        true)
                                                     (catch Error (e)
                                                        (log "ERROR: " e.message))))
-                                              1))))
+                                              1))
+                               else
+                               (progn
+                                  (log "third condition!"))))
                          (catch Error (e)
                             (log "ERROR: " e.message)))))
                 (and (== action "down")
@@ -502,17 +597,12 @@
                 (progn
                    (handle_event event)
                    (clean_up_children))
-                
-                
                 (and (== action "up")
                      (not (== actual_elem.tagName "SPAN"))
                      (not (== actual_elem.tagName "PRE"))
                      (== key "Enter"))
                 (progn
                    (doc_exec "insertText" "\n" true))
-                   ;(log "clean children!")
-                   ;(clean_up_children))
-                ;(log "Up Enter! on non-span non-pre"))
                 (and (== action "up")
                      (== key "Enter")
                      (or (== actual_elem.tagName "PRE")
@@ -525,32 +615,47 @@
                    ;(log "Up Enter on Pre or Span" pos total_length (< pos (- total_length 0)))
                    )))
           (progn
-             (= selrange (-> (-> window `getSelection) `getRangeAt 0))
-             (log action "EVENT not on root element" action (+ "In tree: " in_tree) (element_to_lisp selrange.startContainer) (element_to_lisp selrange.endContainer ))
-             (cond
-                (== actual_elem root_element) ;; editing the contents of the root element directly - a no no
-                (try 
+             (when (== action `down)
+                (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                (log action "EVENT not on root element" action (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp selrange.startContainer))))
+                (cond
+                   (and (== action "down")
+                        (== actual_elem root_element) ;; editing the contents of the root element directly - a no no
+                        (== key.length 1))
+                   (try
+                      (progn
+                         (log "making a new div")
+                         ;(handle_event event)
+                         (= selection (-> window `getSelection))
+                         (doc_exec "insertHTML" (+ "<div contenteditable=true>" key "</div>" )false))
+                      (catch Error (e)
+                         (log "ERROR: " e.message)))
+                   (and (== key "Enter")
+                        (== action "down"))
                    (progn
-                      (log "making a new div")
                       (handle_event event)
-                      (= selection (-> window `getSelection))
-                      (doc_exec "insertHTML" (+ "<div contenteditable=true>" key "</div>" )false))
-                   (catch Error (e)
-                      (log "ERROR: " e.message)))
-                (and (== key "Enter")
-                     (== action "down"))
-                (progn
-                   (handle_event event)
-                   (log "inserting br")
-                   (when (== selrange.startContainer selrange.endContainer)
-                      (try 
-                         (-> selrange.startContainer `prepend (br))
-                         (catch Error (e)
-                            (log "ERROR: " e.message))))))
-                      
-             
-                    
-             ))))
+                      (log "inserting br" selrange pos selrange.startOffset selrange.endOffset  (pre (as_lisp (element_to_lisp selrange.startContainer))))
+                      (when (== selrange.startContainer selrange.endContainer)
+                         (try
+                            (cond
+                               (== selrange.startContainer.nodeType 3)
+                               (progn
+                                  ;; we need to insert a node at the point
+                                  (-> selrange `insertNode (br)))
+                               
+                               (== selrange.startContainer.nodeType 1)
+                               (progn
+                                  ;(log "node type 1 - prepending a br and moving after it.")
+                                  (handle_event event)
+                                  (= new_elem (br))
+                                  (-> selrange `insertNode new_elem)
+                                  (= selection (-> window `getSelection))
+                                  (-> selection `removeAllRanges)
+                                  (-> selrange `selectNode new_elem)
+                                  (-> selection `addRange selrange)
+                                  (-> selection `collapseToEnd)))
+                            (catch Error (e)
+                               (log "ERROR on br insertion: " e.message)))))))))))
               
 (defcontrol meta_editor ()
    ((meta_struct (or options.content
