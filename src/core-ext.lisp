@@ -1645,6 +1645,40 @@
       tags: ["array" "rotation" "shift" "left"]
       })
  
+ (defun_sync word_wrap (text ncols)
+   (let
+      ((line_length 0)
+       (words (split_by " " text))
+       (max_cols (or ncols 80))
+       (current_line [])
+       (lines []))
+      (for_each (word (or words []))
+         (cond
+            (>= (+ line_length (length word)) max_cols)
+            (progn
+               (push lines (join " " current_line))   ;; over the limit, push the current line into line
+               (= current_line [ word ])   ;; make a new line and add the word to it
+               (= line_length (+ (length word) 1))) ;; set the current line length to the word + 1 space
+            else
+            (progn
+               (push current_line word)    ;; otherwise add the word to the current line
+               (inc line_length (+ (length word) 1))))) ;;...and update our line length counter
+                    
+      
+      ;; push any remaining last line into the lines accumulator
+      (if (> current_line.length 0)
+          (push lines (join " " current_line)))
+      ;; and return lines
+      lines)
+   {
+       `description: (+ "Given a string of text and an optional column length "
+                        "returns an array of lines wrapped at or before the "
+                        "column length.  If no column length is provided, "
+                        "the default is 80.")
+       `usage: ["text:string" "ncols:?number"]
+       `tags: ["text" "string" "wrap" "format" ]
+   })
+ 
  (register_feature "core-ext")
   
  true

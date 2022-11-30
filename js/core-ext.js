@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-11-24 12:58:37
-// Version: 2022.11.24.12.58
-export const DLISP_ENV_VERSION='2022.11.24.12.58';
+// Build Time: 2022-11-30 10:44:19
+// Version: 2022.11.30.10.44
+export const DLISP_ENV_VERSION='2022.11.30.10.44';
 
 
 
@@ -2007,6 +2007,61 @@ await Environment.set_global("show",async function(thing) {
         (array_obj).push((array_obj).shift());
         return array_obj
     },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"]
+})
+};
+{
+     Environment.set_global("word_wrap",function(text,ncols) {
+        let line_length;
+        let words;
+        let max_cols;
+        let current_line;
+        let lines;
+        line_length=0;
+        words=(text).split(" ");
+        max_cols=(ncols|| 80);
+        current_line=[];
+        lines=[];
+         ( function() {
+            let __for_body__158=function(word) {
+                return   (function(){
+                    if (check_true (((line_length+  ( Environment.get_global("length"))(word))>=max_cols))) {
+                        {
+                            (lines).push((current_line).join(" "));
+                            current_line= ( function(){
+                                let __array_op_rval__160=word;
+                                 if (__array_op_rval__160 instanceof Function){
+                                    return  __array_op_rval__160() 
+                                } else {
+                                    return [__array_op_rval__160]
+                                }
+                            })();
+                            return line_length= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        }
+                    } else {
+                        {
+                            (current_line).push(word);
+                            return line_length+= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        }
+                    }
+                } )()
+            };
+            let __array__159=[],__elements__157=(words|| []);
+            let __BREAK__FLAG__=false;
+            for(let __iter__156 in __elements__157) {
+                __array__159.push( __for_body__158(__elements__157[__iter__156]));
+                if(__BREAK__FLAG__) {
+                     __array__159.pop();
+                    break;
+                    
+                }
+            }return __array__159;
+             
+        })();
+        if (check_true (((current_line && current_line.length)>0))){
+            (lines).push((current_line).join(" "))
+        };
+        return lines
+    },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"]
 })
 };
 await (await Environment.get_global("register_feature"))("core-ext");

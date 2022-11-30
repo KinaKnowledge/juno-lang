@@ -82,11 +82,35 @@
 
 
 (defmacro getAttribute (elem attrib)  ;; legacy
-  `(-> ,#elem `getAttribute ,#attrib))
+  `(-> ,#elem `getAttribute ,#attrib)
+   {
+     description: (+ "Use get_attribute<br>.Given a DOM Element and attribute text, "
+                     "returns the value of the attrbute or nil "
+                     "if not set. ")
+     usage: ["element:Element" "attrib:string" "value:string"]
+     tags: ["DOM" "attribute" "element" "set" "property"]
+     deprecated: "get_attribute"
+   })
 
 (defmacro get_attribute (elem attrib)
-  `(-> ,#elem `getAttribute ,#attrib))
+  `(-> ,#elem `getAttribute ,#attrib)
+  {
+     description: (+ "Given a DOM Element and attribute text, "
+                     "returns the value of the attrbute or nil "
+                     "if not set.")
+     usage: ["element:Element" "attrib:string" "value:string"]
+     tags: ["DOM" "attribute" "element" "set" "property"]
+   })
 
+(defmacro set_attribute (elem attrib value)
+   `(-> ,#elem `getAttribute ,#attrib ,#value)
+   {
+     description: (+ "Given a DOM Element, attribute text and value, sets "
+                     "the provided attribute to the value on the element. "
+                     "There is no return value.")
+     usage: ["element:Element" "attrib:string" "value:string"]
+     tags: ["DOM" "attribute" "element" "set" "property"]
+   })
 ;(defbinding (html/create_element (document.createElement document.createElement)))
 
 ;(defglobal html/create_element (-> document.createElement `bind document)
@@ -1284,6 +1308,94 @@
        `usage: ["options:?object" "label_contents:string|Element" ]
        `tags: [ "html" "ui" "DOM" "element" "node"]
    })
+
+(defun_sync doc_exec (command_name value show_default_ui )
+   (-> document `execCommand command_name 
+                             (if (== show_default_ui true) true false) 
+                             value)
+   {
+       `description: (+ "Executes document.execCommand with the arguments provided "
+                        "on the DOM element currently in focus.<br>"
+                        "Returns false if the command is unsupported.  The " 
+                        "show_default_ui argument defaults to false.<br>" 
+                        "<br>Note that browser support is officially deprecated for the "
+                        "execCommand method of document.")
+       `tags: ["DOM" "ui" "command" "formatting" "editing" ]
+       `resources: ["https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand"]
+       `usage:["command_name:string" "value:*" "show_default_ui:?boolean"]
+   })
+   
+(defun pair_editor (pair options)
+   (let
+      ((pair [ pair.0 pair.1 ])
+       (key_elem (input (+ { `tabindex: 0 `class: "juno-editable" }
+                           (if options.placeholder_0 
+                              { `placeholder: options.placeholder_0 }
+                              {})
+                           (if options.list_0
+                              { `list: options.list_0 }
+                              {})
+                           (if (is_array? options.path)
+                              { `path: (join "~" (conj options.path [ 0 ])) }
+                              { path: "0" })
+                           { value: (or pair.0 "") 
+                             style: "padding: 5px; flex-grow: 1; flex-basis: 100px;" } )))
+       (value_elem (input (+ { `tabindex: 0 `class: "juno-editable" }
+                             (if options.placeholder_1 
+                              { `placeholder: options.placeholder_1 }
+                              {})
+                             (if options.list_1
+                                { `list: options.list_1 }
+                                {})
+                           (if (is_array? options.path)
+                              { `path:  (join "~"  (conj options.path [ 1 ])) }
+                              { path: "1" })
+                           { value: (or pair.1 "") style: "padding: 5px; flex-grow: 2; flex-basis: 150px;" } )))
+       (view (div { `class: "juno-editable" style: (+ "display:flex; align-items: flex-end; flex-wrap: wrap; gap: 16px;"
+                                                      (if (is_string? options.style)
+                                                          options.style
+                                                          ""))
+                           }
+                  key_elem
+                  value_elem
+                  (if options.additional_elements
+                     options.additional_elements
+                     [])))
+       (handler (fn (e)
+                   (progn
+                      (defvar edited_path (get_attribute e.srcElement "path"))
+                      (if (and edited_path
+                               (is_function? options.on_change))
+                         (-> options `on_change (split_by "~" edited_path) e.srcElement.value))))))
+      (log "pair editor: " pair)
+      (attach_event_listener view
+         `keyup
+         handler)
+      (attach_event_listener view
+         `click
+         handler)
+      view))
+
+(defun dtable (row_data options)
+   (table { `style: "width: 100%" }
+          (if (is_array? options.columns)
+              (thead
+                 (for_each (colheader options.columns)
+                    (cond 
+                       (is_string? colheader)
+                       (th { `style: "padding: 5px;" }  colheader)
+                       (and (is_object? colheader)
+                            colheader.name)
+                       (th { `style: "padding: 5px;" }  colheader.name))))
+              [])
+         (tbody
+            (for_each (row (or row_data []))
+               (tr
+                  (for_each (cell row)
+                     (td { `style: "padding: 3px;" } 
+                         cell)))))))
+
+
 
 (defun tabs (tab_list)
   (let

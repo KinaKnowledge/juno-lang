@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-11-24 12:58:37
-// Version: 2022.11.24.12.58
-export const DLISP_ENV_VERSION='2022.11.24.12.58';
+// Build Time: 2022-11-30 10:44:19
+// Version: 2022.11.30.10.44
+export const DLISP_ENV_VERSION='2022.11.30.10.44';
 
 
 
@@ -3729,6 +3729,12 @@ await Environment.set_global("nth",async function(idx,collection) {
     } ()
 },{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"]
 });
+{
+     Environment.set_global("max_index",function(container) {
+        return  Math.max(0,( ( Environment.get_global("length"))(container)- 1))
+    },{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"]
+})
+};
 await Environment.set_global("hostname",async function() {
     return await Deno.hostname()
 },{ "name":"hostname","fn_args":"()","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"]
@@ -3959,16 +3965,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__272=async function(req) {
                                             {
-                                                let _expr_58549;
+                                                let _expr_32805;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_58549=await (async function(){
+                                                _expr_32805=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_58549 && _expr_58549["0"]);
-                                                req_ns=(_expr_58549 && _expr_58549["1"]);
-                                                explicit=(_expr_58549 && _expr_58549["2"]);
+                                                req_sym=(_expr_32805 && _expr_32805["0"]);
+                                                req_ns=(_expr_32805 && _expr_32805["1"]);
+                                                explicit=(_expr_32805 && _expr_32805["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4071,13 +4077,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_89079;
+                    let _expr_24284;
                     let nspace;
-                    _expr_89079=await (async function(){
+                    _expr_24284=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_89079 && _expr_89079["0"]);
-                    nspace=(_expr_89079 && _expr_89079["1"]);
+                    sym=(_expr_24284 && _expr_24284["0"]);
+                    nspace=(_expr_24284 && _expr_24284["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4983,6 +4989,25 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
     },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. "],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
 })
 };
+await Environment.set_global("set_default",async function(path,value) {
+    let real_path;
+    real_path=await (async function(){
+         return await async function(){
+            if (check_true (((path instanceof String || typeof path==='string')&& await (await Environment.get_global("starts_with?"))("=:",path)&& await (await Environment.get_global("contains?"))(".",path)))) {
+                return ((""+ await (await Environment.get_global("as_lisp"))(path))).split(".")
+            } else if (check_true (((path instanceof String || typeof path==='string')&& await (await Environment.get_global("contains?"))(".",path)))) {
+                return (path).split(".")
+            } else if (check_true (((path instanceof String || typeof path==='string')&& await (await Environment.get_global("contains?"))("~",path)))) {
+                return (path).split("~")
+            } else {
+                return path
+            }
+        } () 
+    })();
+    return ["=:progn",["=:unless",["=:is_array?",real_path],["=:throw","=:ReferenceError","set_default: invalid path specification, needs to be an array, string or symbol."]],["=:defvar","=:__first_val",["=:first",real_path]],["=:if",["=:contains?","=:__first_val",["=:list","features","build","imports","included_libraries"]],["=:throw","=:ReferenceError",["=:+","set_default: the path value ","doesn't reference a default value setting"]]],["=:if",["=:resolve_path",real_path,"=:*env_config*"],["=:set_path",real_path,"=:*env_config*",value],["=:make_path",real_path,"=:*env_config*",value]],["=:resolve_path",real_path,"=:*env_config*"]]
+},{ "eval_when":{ "compile_time":true
+},"name":"set_default","macro":true,"fn_args":"(path value)","description":["=:+","Given a path to a value in the *env_config* object, and a value to set, creates or sets the value ","at the provided path position.  The path can be in the following forms:<br>","path.to.default_value:symbol - A period delimited non-quoted symbol<br>","[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>","\"path.to.default_value\" - A string delimited by periods<br>","\"path~to~default_value\" - A string delimited by the path delimiter ~<br>","<br>","The value returned from the macro is the new default value as set in the *env_config*.<br>"],"tags":["default","defaults","set","application","editor","repl"],"usage":["path:symbol|string|array","value:*"],"requires":["is_string?","starts_with?","contains?","split_by","as_lisp"]
+});
 {
      Environment.set_global("keyword_mapper",function(token) {
         if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){

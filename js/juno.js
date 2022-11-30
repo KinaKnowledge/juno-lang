@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2022-11-24 12:58:42
-// Version: 2022.11.24.12.58
-export const DLISP_ENV_VERSION='2022.11.24.12.58';
+// Build Time: 2022-11-30 10:44:24
+// Version: 2022.11.30.10.44
+export const DLISP_ENV_VERSION='2022.11.30.10.44';
 
 
 
@@ -3479,6 +3479,7 @@ export async function init_dlisp(Environment)  {
 },"formatted_date":{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"],"requires":["date_components","join","values"]
 },"dtext":{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"]
 },"nth":{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"]
+},"max_index":{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"]
 },"hostname":{ "name":"hostname","fn_args":"()","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"]
 },"use_symbols":{ "eval_when":{ "compile_time":true
 },"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","assert","is_array?","push","current_namespace"]
@@ -3494,6 +3495,8 @@ export async function init_dlisp(Environment)  {
 },"analyze_text_line":{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"]
 },"calculate_indent_rule":{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","log","built_ins","add","last"]
 },"format_lisp_line":{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. "],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
+},"set_default":{ "eval_when":{ "compile_time":true
+},"name":"set_default","macro":true,"fn_args":"(path value)","description":["=:+","Given a path to a value in the *env_config* object, and a value to set, creates or sets the value ","at the provided path position.  The path can be in the following forms:<br>","path.to.default_value:symbol - A period delimited non-quoted symbol<br>","[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>","\"path.to.default_value\" - A string delimited by periods<br>","\"path~to~default_value\" - A string delimited by the path delimiter ~<br>","<br>","The value returned from the macro is the new default value as set in the *env_config*.<br>"],"tags":["default","defaults","set","application","editor","repl"],"usage":["path:symbol|string|array","value:*"],"requires":["is_string?","starts_with?","contains?","split_by","as_lisp"]
 },"keyword_mapper":{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"]
 },"operating_system":{ "name":"operating_system","fn_args":"()","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"]
 },"platform_architecture":{ "name":"platform_architecture","fn_args":"()","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"]
@@ -3524,7 +3527,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.24.12.58",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.30.10.44",imports:await ( async function(){
         let __obj__283=new Object();
         __obj__283["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5179,7 +5182,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.24.12.58",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2022.11.30.10.44",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -10301,7 +10304,9 @@ export async function init_dlisp(Environment)  {
             return collection[idx]
         }
     } ()
-};__obj__1["hostname"]=async function() {
+};__obj__1["max_index"]=function(container) {
+        return  Math.max(0,( ( Environment.get_global("length"))(container)- 1))
+    };__obj__1["hostname"]=async function() {
     return await Deno.hostname()
 };__obj__1["use_symbols"]=async function(namespace,symbol_list,target_namespace) {
     let acc;
@@ -10522,16 +10527,16 @@ export async function init_dlisp(Environment)  {
                                     return await (async function() {
                                         let __for_body__272=async function(req) {
                                             {
-                                                let _expr_58549;
+                                                let _expr_32805;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_58549=await (async function(){
+                                                _expr_32805=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_58549 && _expr_58549["0"]);
-                                                req_ns=(_expr_58549 && _expr_58549["1"]);
-                                                explicit=(_expr_58549 && _expr_58549["2"]);
+                                                req_sym=(_expr_32805 && _expr_32805["0"]);
+                                                req_ns=(_expr_32805 && _expr_32805["1"]);
+                                                explicit=(_expr_32805 && _expr_32805["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10634,13 +10639,13 @@ export async function init_dlisp(Environment)  {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_89079;
+                    let _expr_24284;
                     let nspace;
-                    _expr_89079=await (async function(){
+                    _expr_24284=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_89079 && _expr_89079["0"]);
-                    nspace=(_expr_89079 && _expr_89079["1"]);
+                    sym=(_expr_24284 && _expr_24284["0"]);
+                    nspace=(_expr_24284 && _expr_24284["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -11471,7 +11476,23 @@ export async function init_dlisp(Environment)  {
                 })()).join("")
             }
         }
-    };__obj__1["keyword_mapper"]=function(token) {
+    };__obj__1["set_default"]=async function(path,value) {
+    let real_path;
+    real_path=await (async function(){
+         return await async function(){
+            if (check_true (((path instanceof String || typeof path==='string')&& await (await Environment.get_global("starts_with?"))("=:",path)&& await (await Environment.get_global("contains?"))(".",path)))) {
+                return ((""+ await (await Environment.get_global("as_lisp"))(path))).split(".")
+            } else if (check_true (((path instanceof String || typeof path==='string')&& await (await Environment.get_global("contains?"))(".",path)))) {
+                return (path).split(".")
+            } else if (check_true (((path instanceof String || typeof path==='string')&& await (await Environment.get_global("contains?"))("~",path)))) {
+                return (path).split("~")
+            } else {
+                return path
+            }
+        } () 
+    })();
+    return ["=:progn",["=:unless",["=:is_array?",real_path],["=:throw","=:ReferenceError","set_default: invalid path specification, needs to be an array, string or symbol."]],["=:defvar","=:__first_val",["=:first",real_path]],["=:if",["=:contains?","=:__first_val",["=:list","features","build","imports","included_libraries"]],["=:throw","=:ReferenceError",["=:+","set_default: the path value ","doesn't reference a default value setting"]]],["=:if",["=:resolve_path",real_path,"=:*env_config*"],["=:set_path",real_path,"=:*env_config*",value],["=:make_path",real_path,"=:*env_config*",value]],["=:resolve_path",real_path,"=:*env_config*"]]
+};__obj__1["keyword_mapper"]=function(token) {
         if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){
             return "keyword"
         } else {
@@ -11681,18 +11702,18 @@ export async function init_dlisp(Environment)  {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__241=async function() {
+         let __test_condition__245=async function() {
             return current_obj
         };
-        let __body_ref__242=async function() {
+        let __body_ref__246=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__241()) {
-            await __body_ref__242();
+        while(await __test_condition__245()) {
+            await __body_ref__246();
              if(__BREAK__FLAG__) {
                  break;
                 

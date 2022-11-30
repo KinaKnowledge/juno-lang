@@ -3154,7 +3154,16 @@ such as things that connect or use environmental resources.
    "usage":["idx:string|number|array","collection:list|object"]
    })
 
-                 
+ 
+(defun_sync max_index (container)
+   (Math.max 0 (- (length container) 1))
+   {
+       description: (+ "Given a container, typically an Array or derivative, "
+                       "return the max index value, calculated as length - 1.<br>")
+       usage: ["container:array"]
+       tags: ["length" "array" "container" "max" "index" "range" "limit"]
+   })
+                
 (if_compile_time_defined `Deno
    (defun hostname ()
       (Deno.hostname)

@@ -576,7 +576,7 @@
                                                  (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
                                          (p comp)))))))
                      (split_by "%%%" seg)))))
-       (div 
+       (div { `class: "juno-editable" }
           subsections))
     {
        `usage: ["description:text"]
@@ -7224,6 +7224,1019 @@
   [["Toggle Documentation" (fn () 
                               (toggle_help_panel)) ]])
 
+(defun tag_selector (options tags)
+   (let
+      ((sorted_tag_names (sort (keys *tags_to_meta*)))
+       (tag_dlist_id (gen_id `tags))
+       (tag_dlist (datalist { `id: tag_dlist_id }
+                         (for_each (t sorted_tag_names)
+                            (option t))))
+       (tag_view (div { `style: "display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start;" }))
+       (current_tag nil)
+       (extra_space (if (is_number? options.extra_space)
+                        options.extra_space
+                        2))
+       (empty_text (or options.empty_text "name?"))
+       (tag_content (fn ()
+                       (uniq (reduce (text (each tag_view.children `value))
+                                (unless (== empty_text text)
+                                   text)))))
+       
+       (focus_to_tag (fn (tag)
+                        (try
+                           (progn
+                              (-> tag `select))
+                           (catch Error (e)
+                              (log "error: " e.message)))))
+       
+       (already_have_tag? (fn (text)
+                             (let
+                                ((found nil))
+                                (for_each (elem (or tag_view.children []))
+                                   (when (== elem.value text)
+                                      (= found elem)
+                                      (break)))
+                                found)))
+       (value_count (fn (text)
+                       (let
+                          ((count 0))
+                          (for_each (elem (or tag_view.children []))
+                             (when (== elem.value text)
+                                (inc count)))
+                          ;(log "Count is: " count text)
+                          count)))
+       (prune_empties (fn ()
+                         (for_each (t (or tag_view.children []))
+                            (if (== t.value empty_text)
+                                (-> t `remove)))))
+       (adjust_size (fn (elem)
+                       (try
+                          (if (== elem document.activeElement)
+                              (progn
+                                 (set_style [["width" (+ "" (+  extra_space elem.value.length) "ch")]] elem))
+                              (progn
+                                 (set_style [["width" (+ "" (+  2 elem.value.length) "ch")]] elem)))
+                          (catch Error (e)
+                             (log "ERROR: " e.message)))))
+       (new_tag (fn (text focus?)
+                   (aif (already_have_tag? text)
+                       (if focus? 
+                          (focus_to_tag it)
+                          false)
+                       (let
+                          ((tag (input { tabindex: 0
+                                         class: "juno-editable"
+                                         style: "padding: 5px;margin-right: 10px;"   
+                                         list: tag_dlist_id
+                                         contenteditable: true
+                                         value: text }
+                                        )))
+                          (adjust_size tag)
+                          (-> tag_view `append
+                             tag)
+                          (when focus?
+                             (sleep 0.001)
+                             (focus_to_tag tag))))))
+       
+       (view (div { `style: "position: relative;" }
+                  tag_dlist
+                  tag_view)))
+      
+      (attach_event_listener tag_view
+         `keydown
+         (fn (e)  ;; don't allow spaces in tags
+            (cond 
+               (or (== e.key "Enter")
+                   (contains? e.key "/[]{}():;.,<>|\\\\=`~"))
+               (handle_event e)
+               (and (== e.key " ")
+                    (not (== e.srcElement (last tag_view.children))))
+               (handle_event e)
+               ;; if we are at the end and we have a `blank?` ie. empty_text (default `name?`), release the focus 
+               (and (== e.key "Tab")
+                    (== e.srcElement (last tag_view.children))
+                    (== e.srcElement.value empty_text))
+               (progn
+                  (if (> (length tag_view.children) 1)
+                      (-> e.srcElement `remove)))
+               
+               ;; if we have a filled out tag, and are on the last tag, create a new one with tab or space is pressed
+               (and (or (== e.key "Tab")
+                        (== e.key " "))
+                    (not e.shiftKey)     
+                    (== e.srcElement (last tag_view.children))
+                    (> (length e.srcElement.value) 1))
+               (progn
+                  (handle_event e)
+                  (new_tag empty_text true))
+               (and (== e.key "Tab")
+                    e.shiftKey
+                    (== e.srcElement.value empty_text))
+               (progn
+                  (handle_event e)
+                  (let
+                     ((prior e.srcElement.previousSibling))
+                     (-> e.srcElement `remove)
+                     (if prior
+                        (focus_to_tag prior))))
+               (and (== e.key "Backspace")   ;; remove when tag has no content
+                    (== e.srcElement.value empty_text))
+               (let
+                  ((prior e.srcElement.previousSibling)
+                   (next e.srcElement.nextSibling))
+                  (handle_event e)
+                  (-> e.srcElement `remove)
+                  (cond
+                     prior
+                     (focus_to_tag prior)
+                     next
+                     (focus_to_tag next)
+                     (== (length tag_view.children) 0)
+                     (new_tag empty_text true))))))
+              
+               
+                    
+      
+      (attach_event_listener tag_view
+         `keyup
+         (fn (e)
+            (progn
+               (cond
+                  (and (== e.key "Backspace") 
+                       (blank? e.srcElement.value))
+                  (progn
+                     (set_prop e.srcElement `value empty_text)
+                     (focus_to_tag e.srcElement)))
+               (adjust_size e.srcElement)
+               (if (> (value_count e.srcElement.value) 1)
+                   (add_class "juno-input-error" e.srcElement )
+                   (remove_class "juno-input-error" e.srcElement))
+               (set_prop e.srcElement
+                  `value
+                  (lowercase e.srcElement.value))
+               (when options.on_change
+                  (-> options `on_change (tag_content))))))
+      
+      (attach_event_listener tag_view
+         `focusin
+         (fn (e)
+            (progn
+               (focus_to_tag e.srcElement))))
+      
+      (attach_event_listener view
+         `focusout
+         (fn (e)
+            (progn
+               (adjust_size e.srcElement)
+               (when options.on_change
+                  (-> options.on_change (tag_content))
+               ))))
+      
+      (if (and (is_array? tags)
+               (> tags.length 0))
+          (for_each (tag (or tags []))
+             (new_tag tag))
+          (new_tag empty_text))
+      ;(setTimeout (fn () (focus_to_tag tag_view.children.0)) 10)
+      view)
+   {
+     `description: (+ "Creates a simple DOM Element for creating or editing an "
+                      "array of tags (unique strings).  Uses the *tags_to_meta* "
+                      "object as a dependency to build the data list selections "
+                      "for the tags.  Given an initial array of tags, these "
+                      "provided tags will be presented, otherwise a new tag "
+                      "with the empty text will be generated and displayed as "
+                      "a means to start creating a list of tags.<br>"
+                      "Options:<br>"
+                      "empty_text:string - When a new tag is generated this "
+                      "provided text is shown.  The default is 'name?'<br>"
+                      "extra_space:number - How many characters to optionally "
+                      "pad the input elements, since the width of the elements "
+                      "are measured by the 'ch' unit.<br>"
+                      "on_change:function - When a change occurs to a tag, "
+                      "or when a tag is removed or created, this function " 
+                      "is called with an array of strings, representing the "
+                      "tag set that the user is editing.<br>")
+     `usage: ["options:object" "tags:array"]
+     `tags: ["view" "DOM" "tags" "edit" "manage" "tag" "element"]
+     })
+
+(defun_sync get_cursor_position (element)
+  (javascript | {
+                  let position = 0;
+                  const isSupported = typeof window.getSelection !== "undefined";
+                  if (isSupported) {
+                       const selection = window.getSelection();
+                       if (selection.rangeCount !== 0) {
+                              const range = window.getSelection().getRangeAt(0);
+                              const preCaretRange = range.cloneRange();
+                              preCaretRange.selectNodeContents(element);
+                              preCaretRange.setEnd(range.endContainer, range.endOffset);
+                              position = preCaretRange.toString().length;
+                              }
+                       }
+                  return position;
+                  } |))
+
+(defun_sync get_caret_coordinates ()
+   (javascript | {
+                   let x = 0,
+                   y = 0;
+                   const isSupported = typeof window.getSelection !== "undefined";
+                   if (isSupported) {
+                                      const selection = window.getSelection();
+                                      if (selection.rangeCount !== 0) {
+                                                                        const range = selection.getRangeAt(0).cloneRange();
+                                                                        range.collapse(true);
+                                                                        const rect = range.getClientRects()[0];
+                                                                        if (rect) {
+                                                                                    x = rect.left;
+                                                                                    y = rect.top;
+                                                                                    }
+                                                                        }
+                                      }
+                   return { x, y };
+                   } | ))
+
+(defun element_to_lisp (element options)
+   (if (is_element? element)
+       (let
+          ((tag_name (if (is_function? options.tagname_for_element)
+                         (-> options `tagname_for_element element)
+                         element.tagName))
+           (elem_as_lisp (list (+ "=:" (lowercase tag_name))))
+           (acc [])
+           (nodes nil)
+           (ptype nil)
+           (val nil)
+           (attrib_list (prop element `attributes))
+           (attribs {}))
+          (for_each (attrib_num (range (length attrib_list)))
+             (progn
+                (set_prop attribs
+                   (resolve_path [ `attributes attrib_num `name ] element)
+                   (resolve_path [ `attributes attrib_num `value ] element))))
+          (push elem_as_lisp
+             attribs)
+          (= nodes element.childNodes)
+          (for_each (cnum (range (length nodes)))
+             (cond 
+                (== 3 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (if (is_function? options.on_text)
+                       (-> options `on_text (resolve_path [ cnum `nodeValue] nodes) nodes)
+                       (resolve_path [ cnum `nodeValue] nodes)))
+                (== 1 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (element_to_lisp (resolve_path [ cnum ] nodes) options))))
+          (if (is_function? options.on_element_complete)
+              (-> options `on_element_complete elem_as_lisp)
+              elem_as_lisp))
+       [ "UNKNOWN:" element ])
+   {
+     `description: (+ "Given a DOM element, returns the lisp represenation of the DOM element.<br>"
+                      "If provided with an options object, the following keys are applicable:<br>"
+                      "tagname_for_element:(fn element) - For every new element encountered in the "
+                      "provided tree, will be called with the new element.  The function should "
+                      "return a string value to be used for the tagname as opposed to the original "
+                      "element tagName value.<br>"
+                      "on_text:(fn text nodes) - Will be called on a text node with the text and "
+                      "and the sibling nodes.<br>"
+                      "on_element_complete:(fn array) - Will be called with the quoted lisp form "
+                      "that was constructed.  The function can then manipulate the completed form "
+                      "prior to it being placed in the returned lisp form.  Note that this function "
+                      "is called for every completed element, not just the final return value.")
+     `usage: ["element:element"]
+     `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
+   })
+
+(defun process_edit_entry (root_element event action)
+   (let
+      ((elem event.srcElement)
+       (key event.key)
+       (new_elem nil)
+       (selection nil)
+       (code_node nil)
+       (sel_node nil)
+       (end_node nil)
+       (selrange nil)
+       (coords (get_caret_coordinates))
+       (actual_elem (-> document `elementFromPoint coords.x coords.y))
+       (pos (progn
+               (= selection (-> window `getSelection))  ;(get_cursor_position actual_elem))
+               (= selrange (-> (-> selection `getRangeAt 0) `cloneRange))
+               (if (== selrange.startContainer.nodeType 3)
+                   (progn
+                      (get_cursor_position selrange.startContainer.parentElement))
+                   selrange.endOffset)))
+                   
+       (total_length (length actual_elem.innerText))
+       (proper_pos (== actual_elem.parentElement root_element))
+       (insert_pre_at_point (fn ()
+                               (try
+                                  (progn
+                                     (= new_elem (pre "CODE HERE"))
+                                     (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                                     (= pos selrange.startOffset)
+                                     (-> selrange `setEndBefore actual_elem.nextSibling)
+                                     (defvar remaining_text (-> selrange `toString))
+                                     (log pos "range post: " remaining_text)
+                                     (= selection (-> window `getSelection))
+                                     (-> selection `removeAllRanges)
+                                     (-> selection `addRange selrange)
+                                     (-> selection `deleteFromDocument)
+                                     (-> selection `collapseToStart)
+                                     (-> (prop root_element.children active_child_idx)
+                                         `insertAdjacentElement `afterEnd new_elem)
+                                     (-> new_elem `insertAdjacentElement `afterEnd
+                                        (div { } remaining_text))
+                                     (-> selection `selectAllChildren new_elem))
+                                  (catch Error (e)
+                                     (notify "ERROR: " e.message)))))
+       (in_tree (if proper_pos
+                    true
+                    (progn
+                       (defvar tmp actual_elem)
+                       (while (and tmp
+                                   tmp.parentElement)
+                          (progn
+                             (= tmp tmp.parentElement)
+                             (if (== tmp root_element)
+                                 (break))))
+                       (== tmp root_element))))
+       (active_child_idx (if in_tree
+                         (try 
+                            (javascript | return Array.prototype.indexOf.call(root_element.children, actual_elem) |)
+                            (catch Error (e)
+                               (log "ERROR: " e.message)))))
+       (total_children (length root_element.children))
+       (priors (if (== action "down")
+                   (if (== actual_elem.nodeType 3)
+                       (-> actual_elem.parentElement.innerText `substr (- pos 2) 2)
+                       (-> actual_elem.innerText `substr (- pos 2) 2))
+                   (-> actual_elem.innerText `substr (- pos 3) 3)))
+       (inner_text nil)
+       (added_text nil)
+       (clean_up_children (fn ()
+                             (map (fn (child idx total)
+                                     (if (and (blank? child.innerText)
+                                              (and (> idx 1)
+                                                   (< idx (- total 1)))
+                                              (== child.tagName "DIV"))
+                                         (-> child `remove)))))
+                    root_element.children)
+       (monofont  "font-family: var(--main-mono-space);"))
+      (assert (is_element? root_element) "root_element must be an element")
+      (cond
+         (== actual_elem.tagName "PRE")
+         (unless (== actual_elem.parentElement root_element)
+            (notify "PRE is too deep!"))
+         (and (== action `down)
+              in_tree
+              (== actual_elem.tagName "SPAN"))
+         (try
+            (progn
+               (= selection (-> window `getSelection))
+               (= inner_text actual_elem.innerText)
+               (= new_elem actual_elem.parentElement)
+               (-> actual_elem `remove)
+               (-> selection `removeAllRanges)
+               (= selrange (-> document `createRange))
+               (-> selrange `selectNodeContents new_elem)
+               (-> selection `addRange selrange)
+               (-> selection `collapseToStart)
+               (doc_exec `insertText inner_text)
+               (= actual_elem new_elem)
+               (= pos (get_cursor_position actual_elem))
+               (notify (+ "SPAN! " actual_elem.innerText)))
+            (catch Error (e)
+               (log "ERROR: " e.message))))
+      
+      ;(log action key "---------" priors actual_elem.tagName actual_elem.innerText)
+      
+      (if (== actual_elem.parentElement root_element)
+          (progn
+             ;(if (== action `down) (log  (+ "POS: " pos "/" total_length) "ACI: " (+ "" active_child_idx "/" total_children) "Proper: " (== actual_elem.parentElement root_element) (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp actual_elem))) ))
+             (cond
+                (and (== key "`")
+                     (== action "down")
+                     (not (== actual_elem.tagName "PRE"))
+                     (or (== priors "``")
+                         (== priors "\n`")))
+                (progn
+                   (handle_event event)
+                   ;(doc_exec "insertText" "`")
+                   (= selection (-> window `getSelection))
+                   (-> selection `modify `extend `backward `character)
+                   (-> selection `modify `extend `backward `character)
+                   (-> selection `deleteFromDocument)
+                   (= selection (-> window `getSelection))
+                   (log  "inserting PRE: " selection.anchorNode.nodeType (pre (as_lisp (element_to_lisp selection.anchorNode.parentNode))))
+                   (cond
+                      (== selection.anchorNode.nodeType 1)
+                      (try
+                         (progn
+                            (log "code_node: A" (element_to_lisp selection.anchorNode))
+                            (log " --> focus_node: " (element_to_lisp selection.focusNode))
+                            (insert_pre_at_point))
+                         (catch Error (e)
+                            (log "ERROR: " e.message)))
+                      
+                      ;; at end of the document
+                      (and (== selection.anchorNode.nodeType 3)
+                           (>= active_child_idx (- total_children 1)))
+                      (try
+                         (progn
+                            (doc_exec "insertHTML" "<br/>" false)
+                            (when (doc_exec "insertHTML" (+ "<pre>CODE HERE</pre>"))
+                               (= code_node selection.anchorNode.parentNode)
+                               (log "code_node: B " (element_to_lisp code_node) "Proper POS: " (== code_node.parentElement root_element))
+                               (= end_node selection.anchorNode.parentNode)
+                               (-> selection `selectAllChildren code_node)))
+                         (catch Error (e) (log "ERROR: cannot select!" e.message)))
+                      ;; inserting in the middle
+                      (== selection.anchorNode.nodeType 3)
+                      (try
+                         (progn
+                            (log "Inserting new PRE ELEMENT in middle: " (pre (as_lisp (element_to_lisp (prop root_element.children active_child_idx)))))
+                            (= new_elem (pre  "CODE HERE"))
+                            (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                            (= pos selrange.startOffset)
+                            (-> selrange `setEndBefore actual_elem.nextSibling)
+                            (defvar remaining_text (-> selrange `toString))
+                            (log pos "range post: " remaining_text)
+                            (= selection (-> window `getSelection))
+                            (-> selection `removeAllRanges)
+                            (-> selection `addRange selrange)
+                            (-> selection `deleteFromDocument)
+                            (-> selection `collapseToStart)
+                            (-> (prop root_element.children active_child_idx)
+                                `insertAdjacentElement `afterEnd new_elem)
+                            (-> new_elem `insertAdjacentElement `afterEnd
+                               (div { } remaining_text))
+                            (-> selection `selectAllChildren new_elem)
+                            )
+                         (catch Error (e)
+                            (log "ERROR: " e.message)))))
+                
+                ;; ignore control effects in code mode
+                (and (== action "down")
+                     (== actual_elem.tagName "PRE")
+                     (or (and (== (get_operating_platform) "mac")
+                              event.metaKey)
+                         (and (== (get_operating_platform) "win")
+                              event.ctrlKey)))
+                (cond
+                   (or (== key "b")
+                       (== key "i"))
+                   (handle_event event))
+                (and (== action "down")
+                     (== actual_elem.tagName "PRE")
+                     (== key "ArrowDown")
+                     (> pos (- total_length 2)))
+                (progn
+                   (= selection (-> window `getSelection))
+                   (log "leaving pre - selection is: " selection)
+                   (when selection
+                      (try
+                         (progn
+                            (= added_text false)
+                            (= sel_node selection.anchorNode.parentElement)
+                            (cond
+                               sel_node.nextSibling
+                               (progn
+                                 ; (log "existing one - going there" (element_to_lisp sel_node.nextSibling))
+                                  (if (and (>= active_child_idx (- total_children 2))
+                                           (blank? sel_node.nextSibling.innerText))
+                                      (try
+                                         (progn
+                                            ;(log "making new_elem to move into")
+                                            (= new_elem (div { `contenteditable: true tabindex: 0 } (br)))
+                                            (-> sel_node.nextSibling `insertAdjacentElement `beforebegin new_elem)
+                                            (setTimeout (fn ()
+                                                           (progn
+                                                              (-> selection `removeAllRanges)
+                                                              (= selrange (-> document `createRange))
+                                                              (-> selrange `selectNode new_elem)
+                                                              (-> selection `addRange selrange)
+                                                              true))
+                                                        1))
+                                         (catch Error (e)
+                                            (log "ERROR: " e.message)))
+                                      (try
+                                         (progn
+                                            (when (blank? sel_node.nextSibling.innerText)
+                                               (setTimeout (fn ()
+                                                              (progn
+                                                                 (set_prop sel_node.nextSibling
+                                                                    `innerText
+                                                                    "-")
+                                                                 (-> selection `removeAllRanges)
+                                                                 (= selrange (-> document `createRange))
+                                                                 (-> selrange `selectNode sel_node.nextSibling)
+                                                                 (-> selection `addRange selrange)
+                                                                 )) 1))
+                                            )
+                                         (catch Error (e)
+                                            (log "ERROR: " e.message)))))
+                               
+                               
+                               
+                               (== nil sel_node.nextSibling)
+                               (progn
+                                  (= new_elem (div { `contenteditable: true tabindex: 0 } (br)))
+                                  (log "at end")
+                                  (-> sel_node.parentElement `append new_elem)
+                                  (setTimeout (fn ()
+                                                 (try
+                                                    (progn
+                                                       (log "making new element " sel_node.parentElement)
+                                                       (-> selection `removeAllRanges)
+                                                       (= selrange (-> document `createRange))
+                                                       (-> selrange `selectNode new_elem)
+                                                       (-> selection `addRange selrange)
+                                                       true)
+                                                    (catch Error (e)
+                                                       (log "ERROR: " e.message))))
+                                              1))
+                               else
+                               (progn
+                                  (log "third condition!"))))
+                         (catch Error (e)
+                            (log "ERROR: " e.message)))))
+                (and (== action "down")
+                     (== key "Enter")
+                     (== actual_elem.tagName "PRE"))
+                (progn
+                   (handle_event event)
+                   (clean_up_children))
+                (and (== action "up")
+                     (not (== actual_elem.tagName "SPAN"))
+                     (not (== actual_elem.tagName "PRE"))
+                     (== key "Enter"))
+                (progn
+                   (doc_exec "insertText" "\n" true))
+                (and (== action "up")
+                     (== key "Enter")
+                     (or (== actual_elem.tagName "PRE")
+                         (== actual_elem.tagName "SPAN")))
+                (progn
+                   (handle_event event)
+                   (if (< pos (- total_length 0))
+                       (doc_exec "insertHTML" "\n" false)
+                       (doc_exec "insertHTML" "\n\n" false))
+                   ;(log "Up Enter on Pre or Span" pos total_length (< pos (- total_length 0)))
+                   )))
+          (progn
+             (when (== action `down)
+                (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                ;(log action "EVENT not on root element" action (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp selrange.startContainer))))
+                (cond
+                   (and (== action "down")
+                        (== actual_elem root_element) ;; editing the contents of the root element directly - a no no
+                        (== key.length 1))
+                   (try
+                      (progn
+                         (log "making a new div")
+                         ;(handle_event event)
+                         (= selection (-> window `getSelection))
+                         (doc_exec "insertHTML" (+ "<div contenteditable=true>" key "</div>" )false))
+                      (catch Error (e)
+                         (log "ERROR: " e.message)))
+                   (and (== key "Enter")
+                        (== action "down"))
+                   (progn
+                      (handle_event event)
+                      ;(log "inserting br" selrange pos selrange.startOffset selrange.endOffset  (pre (as_lisp (element_to_lisp selrange.startContainer))))
+                      (when (== selrange.startContainer selrange.endContainer)
+                         (try
+                            (cond
+                               (== selrange.startContainer.nodeType 3)
+                               (progn
+                                  ;; we need to insert a node at the point
+                                  (-> selrange `insertNode (br)))
+                               
+                               (== selrange.startContainer.nodeType 1)
+                               (progn
+                                  ;(log "node type 1 - prepending a br and moving after it.")
+                                  (handle_event event)
+                                  (= new_elem (br))
+                                  (-> selrange `insertNode new_elem)
+                                  (= selection (-> window `getSelection))
+                                  (-> selection `removeAllRanges)
+                                  (-> selrange `selectNode new_elem)
+                                  (-> selection `addRange selrange)
+                                  (-> selection `collapseToEnd)))
+                            (catch Error (e)
+                               (log "ERROR on br insertion: " e.message)))))))))))
+
+(defcontrol meta_editor ()
+   ((meta_struct (or options.content
+                           {
+                             description: ""
+                             name: "Unnamed"
+                             type: "unknown"
+                             namespace: (current_namespace)
+                             usage: []
+                             tags: []
+                             }))
+    (usage (for_each (arg (or meta_struct.usage []))
+              (progn
+                 (defvar comps (split_by ":" arg))
+                 (cond
+                    (and (> comps.length 1)
+                         (starts_with? "?" (second comps)))
+                    [comps.0 (-> comps.1 `substr 1) true ]
+                    (> comps.length 1)
+                    [comps.0 comps.1 false ]
+                    (== comps.length 1)
+                    [comps.0 "" false ]))))
+    
+    (starter_span (div {  `tabindex: 0 `contenteditable: true  } (dtext "Enter text")))
+    (desc (if (> meta_struct.description.length 0)
+              (unpack_description meta_struct.description)
+              starter_span))
+    (name_editable (if options.allow_name_edits
+                       true
+                       true))
+    (dlist_type_id (gen_id "types"))
+    (dlist_types (datalist { `id: dlist_type_id }
+                           (option `AsyncFunction)
+                           (option `Function)
+                           (option `object)
+                           (option `string)
+                           (option `number)
+                           (option `boolean)
+                           (option `array)))
+                           
+    (symbol_type_elem (input { `class: `juno-editable `list: dlist_type_id `title: "Type" `tabindex: 0 `placeholder: "Type" `style: "font-size: 0.9em; width: 150px; padding: 5px;  font-weight: bold" `value: meta_struct.type }))
+    (save_button (button (dtext "Save")))
+    (monofont  "font-family: var(--main-mono-space);")
+    (close_button (button (dtext "Close")))
+    (new_arg_button (button { `style: "min-width: 30px; margin-left: 10px; margin-top: 10px; padding: 5px; "  `title: (dtext "Add New Argument") } "+"))
+    (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } options.name))
+    (description_elem (div { `class: "juno-editable" tabindex: 0 `contenteditable: true `style: "background: var(--editor-bg-color);  min-height: 150px; line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 10px;margin-bottom: 10px;" } 
+                           desc))
+    (description_section (details { `open: true   }
+                                  (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Description"))
+                                  description_elem))
+    (namespace_elem (span { `class: "juno-namespace" `style: "font-weight: bold;"} meta_struct.namespace))
+    (name_edit_span (span (+ {} 
+                             (if name_editable
+                                { `contenteditable: true }
+                                {})
+                             { `class: "juno-editable" `tabindex: 0 `style: "font-weight: bold;" }) 
+                          meta_struct.name))
+    (tag_selection (tag_selector { `on_change: (fn (tags)
+                                                  (progn
+                                                     (set_prop meta_struct
+                                                        `tags
+                                                        tags)
+                                                     (refresh_output))) }
+                                 meta_struct.tags))
+    (last_usage_elem nil)
+    (refresh_usage (fn ()
+                     (progn 
+                        (= last_usage_elem nil)
+                        (-> usage_elem `replaceChildren
+                           (div { 
+                                  `style: "line-height: 1.5em; font-size: 1.0em;  padding: 5px; max-width: 500px;" }
+                                  (map (fn (arg idx total)
+                                          (progn
+                                             (log "idx: " idx total (as_lisp arg))
+                                             (defvar pe (make_pair_editor arg idx total))
+                                             (if (== idx (- total 1))
+                                                 (= last_usage_elem pe.children.0))
+                                             (-> pe `prepend (button { `style: "background: #FF000020; padding: 5px;"
+                                                                       `remove_path: (join "~" [ `usage idx ]) } "-"))
+                                             pe))
+                                       usage)
+                                  (if (== usage.length 0)
+                                      [ 
+                                       (div { } new_arg_button "Press + to add arguments") ]
+                                      new_arg_button)
+                                  ))
+                        (when last_usage_elem 
+                           (setTimeout (fn ()
+                                          (focus_to last_usage_elem)
+                                          20))))))
+    
+    (make_pair_editor (fn (arg idx total)
+                         (pair_editor arg
+                                      { `style: "border: 1px inset #ffffff;"
+                                        `placeholder_0: "ArgName"
+                                        `placeholder_1: "ArgType"
+                                        `list_1: dlist_type_id
+                                        `additional_elements: [ (checkbox (+ { `checkbox: { `path: (join "~" [ idx "2" ]) }}
+                                                                             (if arg.2
+                                                                                { `value: true }
+                                                                                {}))
+                                                                          "Optional")
+                                                              ]
+                                        `path: [ idx ]
+                                        `on_change: (fn (path value)
+                                                       (progn
+                                                          
+                                                          (make_path path usage value)
+                                                          (cond
+                                                              (and (== path.1 "2")
+                                                                   (== value "false"))
+                                                               (set_path path usage false)
+                                                              (and (== path.1 "2")
+                                                                   (== value "true"))
+                                                              (set_path path usage true)
+                                                              (== path.1 "2")
+                                                              (set_path path usage false))
+                                                          (log "pe: on_change: " path usage value)
+                                                          (set_prop
+                                                             meta_struct
+                                                             `usage (map (fn (vals)
+                                                                            (if (== vals.2 true)
+                                                                                (+ vals.0 ":?" vals.1)
+                                                                                (+ vals.0 ":" vals.1)))
+                                                                            usage))
+                                                          (show_updated_help)))
+                                                          
+                                                          
+                                                         
+                                        })))
+    (usage_elem (div { `style: "min-height: 40px;" } ))
+    (usage_section (details { `open: true  }
+                            (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Usage"))
+                                 usage_elem))
+    (tag_section (details { `open: true }
+                          (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Tags"))
+                                tag_selection))
+    (rendered_content_elem (div { `class: "juno-control" } "Live View"))
+    
+    (main_view (div { `class: "juno-control"  `style: "padding-top: 5px; margin-left: 5px; min-height: 50%" } 
+                    (h3 { `style: "display: flex; justify-content: space-between; align-items: center; " } (span (span { `style: "color: var(--namespace-color); " } meta_struct.namespace ) "/" name_edit_span)
+                           symbol_type_elem)
+                    (hr { `style: "light-hr" })
+                    usage_section
+                    description_section
+                    tag_section
+                    dlist_types))
+    
+    ;; output display: how the content is rendered in the output pane (lower)
+    ;; mode 0 is the rendered display
+    ;; mode 1 is a lisp view
+    ;; mode 2 is a json view
+    ;; mode 3 is a debug mode
+    (output_display_modes [ "As Rendered" "Lisp" "JSON" "Debug" ])
+    (output_display_mode 0) 
+    (set_output_display_mode (fn (mode)
+                                (try
+                                   (progn
+                                      (= output_display_mode (clamp mode
+                                                                    0
+                                                                    (max_index output_display_modes)))
+                                      (refresh_output))
+                                   (catch Error (e)
+                                      (log_error e)))))
+                                   
+    (build_description (fn (content acc)
+                          (let
+                             ((acc (or acc [])))
+                             (assert (is_element? content) "content must be element")
+                             (try
+                                (for_each (c content.children)
+                                   (when (is_element? c)
+                                      (cond
+                                         (== c.tagName "PRE")
+                                         (progn
+                                            (push acc "<br>%%%")
+                                            (push acc c.innerText)
+                                            (push acc "\n%%%<br>"))
+                                         (== c.tagName "DIV")
+                                         (progn
+                                            (push acc c.innerText)
+                                            (push acc "<br>"))
+                                         else
+                                         (log "build_description: no handling: " (sub_type c) c.tagName c.innerText))))
+                                (catch Error (e)
+                                   (log "ERROR on build_description: " e.message)))
+                             acc)))
+    (process_out (fn ()
+                    (let
+                       ((output (clone meta_struct)))
+                       (log "process_out: usage: " (as_lisp usage))
+                       (set_prop output
+                          `usage (for_each (arg_desc usage)
+                                    (if arg_desc.2
+                                       (+ arg_desc.0 ":?" arg_desc.1)
+                                       (+ arg_desc.0 ":" arg_desc.1))))
+                       output)))
+    (ok_grab_focus true)
+    (on_blur (fn ()
+                (= ok_grab_focus true)))
+    (on_focus (fn (e)
+                 (when ok_grab_focus
+                    (= ok_grab_focus false)
+                    (focus_to description_elem))))
+    (table_regex (new RegExp "(^[a-zA-Z0-9?]+:[a-zA-Z0-9]+[ ]*-[ ]*)(.+)"))
+    (show_updated_help (fn ()
+                          (-> rendered_content_elem
+                                    `replaceChildren 
+                                    (div { `style: "background: var(--editor-bg-color); padding: 5px;" } 
+                                         (format_help meta_struct)))))
+    (process_current (fn (elem)
+                        (let
+                           ((content nil)
+                            (live_content nil))
+                           (log "process_current: " (== elem description_elem))
+                           ;(log "cursor_position: " (get_cursor_position description_elem))
+                           (cond
+                              true ;(== elem description_elem)
+                              (progn
+                                 (= live_content (join "" (build_description description_elem)))
+                                 ;; split into an array with roughly 80 column formatting for injection into source
+                                 (if (> (length live_content) 60)
+                                     (= live_content (flatten 
+                                                        (conj [ (quote +) ]
+                                                              (for_each (line (word_wrap live_content 80))
+                                                                 (+ line " " ))))))
+                                 (set_prop meta_struct
+                                          `description live_content)
+                                 ;(log "process_current: usage: " usage)
+                                 (try 
+                                    (progn 
+                                       (log "Meta Struct: " meta_struct))
+                                    (catch Error (e)
+                                       (log "ERROR: " e.message)))
+                                 
+                                 (refresh_output))))))
+    
+    (sview (split_view_horizontal  main_view  rendered_content_elem  ))
+    
+    (content_view (div { `class: "juno-control" `style: "width: calc(100% - 2px); height: calc(100% - 2px); overflow: hidden; border-bottom: 3px solid black;" } 
+                       sview.view))
+    (select_name_edit_span (fn ()
+                              (let
+                                 ((selection (-> window `getSelection))
+                                  (mrange nil))
+                                 (try
+                                    (progn
+                                       (-> selection `removeAllRanges)
+                                       (= mrange (new Range))
+                                       (-> mrange `selectNodeContents name_edit_span)
+                                       (-> selection `addRange mrange)
+                                       true)
+                                    (catch Error (e)
+                                       (log "ERROR: " e.message))))))
+    (control_bar_elements [(div { `style: "display:inline-block; float: right" } save_button close_button) ])
+    (selection nil)
+    (refresh_output (fn ()
+                       (cond
+                          (== output_display_mode 0)
+                          (show_updated_help)
+                          (== output_display_mode 1)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (as_lisp (process_out))))
+                          (== output_display_mode 2)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (JSON.stringify (process_out) "\n" 2)))
+                          (== output_display_mode 3)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (JSON.stringify (element_to_lisp description_elem) "\n" 2))))))
+    (on_initialize (fn (intf)
+                   (progn
+                      (when true
+                         (= initialized true)
+                         (log "on_initialize: usage: " usage)
+                         (-> sview `initialize)
+                         (set_prop options
+                            `name
+                            (+ "Meta Editor - " meta_struct.name))
+                         (set_prop title_span
+                            `innerText
+                             (+ name_edit_span.innerText
+                                  " - Meta Editor"))
+                         (attach_event_listener view
+                            `keydown
+                            (fn (e)
+                               (cond
+                                  (== e.key "Enter")
+                                  (progn
+                                     (handle_event event)
+                                     (process_edit_entry description_elem e "down")
+                                     true)
+                                  
+                                  (== e.key "Escape")
+                                  (progn
+                                     (if options.on_close
+                                        (-> options `on_close self))
+                                     (destroy_control self))
+                                  else
+                                  (progn
+                                     ;(console.log "pos: " (get_cursor_position e.srcElement) (pre (as_lisp (element_to_lisp e.srcElement))) e)
+                                     (process_edit_entry description_elem e "down")
+                                     ))))
+                         (attach_event_listener view
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (== e.key "Enter")
+                                     (progn
+                                        ;(handle_event event)
+                                        (process_edit_entry description_elem e "up"))
+                                     else
+                                     (process_edit_entry description_elem e "up"))
+                                  (process_current)
+                                  )))
+                         
+                         ;; cancel or manage certain key events on the name...
+                         (attach_event_listener name_edit_span
+                            `keydown
+                            (fn (e)
+                               (cond
+                                  (== e.key "Enter")
+                                  (handle_event e)
+                                  (== e.key "Escape")
+                                  (progn
+                                     (handle_event e)
+                                     (focus_to description_elem))
+                                  (== e.key " ")
+                                  (handle_event e))))
+                         (attach_event_listener name_edit_span
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (blank? name_edit_span.innerText)
+                                     (progn
+                                        (set_prop name_edit_span
+                                           `innerText
+                                           (dtext "Unnamed"))
+                                        (select_name_edit_span))
+                                     else
+                                     (set_prop meta_struct
+                                        `name
+                                        name_edit_span.innerText))
+                                  (set_prop title_span
+                                     `innerText
+                                     (+ name_edit_span.innerText
+                                  " - Meta Editor")))))
+                                  
+                         (attach_event_listener name_edit_span
+                            `focus
+                            (fn (e)
+                               (select_name_edit_span)))
+                         (attach_event_listener usage_elem
+                            `click
+                            (fn (e)
+                               (progn
+                                  (aif (getAttribute e.srcElement `remove_path)
+                                       (progn
+                                          (log "remove: " (getAttribute e.srcElement `remove_path))
+                                          (-> usage `splice (last (split_by "~" it)) 1)
+                                          (refresh_usage))))))
+                         (refresh_usage)
+                         (attach_event_listener new_arg_button
+                            `click
+                            (fn ()
+                               (progn
+                                  (push usage
+                                     ["" "" false])
+                                  (refresh_usage))))
+                         (attach_event_listener close_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (if options.on_close
+                                     (-> options `on_close self))
+                                  (destroy_control self))))
+                         (attach_event_listener symbol_type_elem
+                            `change
+                            (fn (e)
+                               (set_prop meta_struct
+                                  `type
+                                  (if (blank? symbol_type_elem.value)
+                                      (dtext "Unknown")
+                                      symbol_type_elem.value))))
+                         ;(-> rendered_content_elem
+                         ;   `replaceChildren (pre (JSON.stringify (element_to_lisp description_elem) "\n" 2)))
+                         (= selection (-> window `getSelection))
+                         (-> selection `selectAllChildren description_elem)
+                         ;(log "description_elem.children: " (element_to_lisp description_elem.children.0))
+                         ;(focus_to (get_by_id "starter_span"))
+                         ))))
+    (menu_items (fn (menu_title)
+                   (progn
+                      (log "menu_args?" menu_title)
+                      [[(dtext "Blank Menu") (fn () (notify "Blank!"))]
+                       ["Set Display Mode"
+                        [["Rendered View" (fn () (set_output_display_mode 0))]
+                         ["Lisp" (fn () (set_output_display_mode 1))]
+                         ["JSON" (fn () (set_output_display_mode 2))]]]])))
+    (render (fn ()
+                content_view)))
+   {
+     control_bar: true
+     expose: [["get" process_out]
+              ["set_output_display_mode" set_output_display_mode]]
+     })
 
 (defun handle_app_click_event (e)
   (let

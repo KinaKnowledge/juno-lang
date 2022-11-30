@@ -332,14 +332,22 @@
        `description: (+ "Executes document.execCommand with the arguments provided "
                         "on the DOM element currently in focus.<br>"
                         "Returns false if the command is unsupported.  The " 
-                        "show_default_ui argument defaults to true.<br>" 
+                        "show_default_ui argument defaults to false.<br>" 
                         "<br>Note that browser support is officially deprecated for the "
                         "execCommand method of document.")
        `tags: ["DOM" "ui" "command" "formatting" "editing" ]
        `resources: ["https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand"]
        `usage:["command_name:string" "value:*" "show_default_ui:?boolean"]
    })
-            
+   
+(defun_sync max_index (container)
+   (Math.max 0 (- (length container) 1))
+   {
+       description: (+ "Given a container, typically an Array or derivative, "
+                       "return the max index value, calculated as length - 1.<br>")
+       usage: ["container:array"]
+       tags: ["length" "array" "container" "max" "index" "range" "limit"]
+   })
 
 (defun checkbox (`& args)
    (let
@@ -506,7 +514,251 @@
       *status*
       ))
 
-(defun process_entry (root_element event action)
+(defun_sync word_wrap (text ncols)
+   (let
+      ((line_length 0)
+       (words (split_by " " text))
+       (max_cols (or ncols 80))
+       (current_line [])
+       (lines []))
+      (for_each (word (or words []))
+         (cond
+            (>= (+ line_length (length word)) max_cols)
+            (progn
+               (push lines (join " " current_line))   ;; over the limit, push the current line into line
+               (= current_line [ word ])   ;; make a new line and add the word to it
+               (= line_length (+ (length word) 1))) ;; set the current line length to the word + 1 space
+            else
+            (progn
+               (push current_line word)    ;; otherwise add the word to the current line
+               (inc line_length (+ (length word) 1))))) ;;...and update our line length counter
+                    
+      
+      ;; push any remaining last line into the lines accumulator
+      (if (> current_line.length 0)
+          (push lines (join " " current_line)))
+      ;; and return lines
+      lines)
+   {
+       `description: (+ "Given a string of text and an optional column length "
+                        "returns an array of lines wrapped at or before the "
+                        "column length.  If no column length is provided, "
+                        "the default is 80.")
+       `usage: ["text:string" "ncols:?number"]
+       `tags: ["text" "string" "wrap" "format" ]
+   })
+      
+
+(defmacro set_attribute (elem attrib value)
+   `(-> ,#elem `getAttribute ,#attrib ,#value)
+   {
+     description: (+ "Given a DOM Element, attribute text and value, sets "
+                     "the provided attribute to the value on the element. "
+                     "There is no return value.")
+     usage: ["element:Element" "attrib:string" "value:string"]
+     tags: ["DOM" "attribute" "element" "set" "property"]
+   })
+
+(defun tag_selector (options tags)
+   (let
+      ((sorted_tag_names (sort (keys *tags_to_meta*)))
+       (tag_dlist_id (gen_id `tags))
+       (tag_dlist (datalist { `id: tag_dlist_id }
+                         (for_each (t sorted_tag_names)
+                            (option t))))
+       (tag_view (div { `style: "display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start;" }))
+       (current_tag nil)
+       (extra_space (if (is_number? options.extra_space)
+                        options.extra_space
+                        2))
+       (empty_text (or options.empty_text "name?"))
+       (tag_content (fn ()
+                       (uniq (reduce (text (each tag_view.children `value))
+                                (unless (== empty_text text)
+                                   text)))))
+       
+       (focus_to_tag (fn (tag)
+                        (try
+                           (progn
+                              (-> tag `select))
+                           (catch Error (e)
+                              (log "error: " e.message)))))
+       
+       (already_have_tag? (fn (text)
+                             (let
+                                ((found nil))
+                                (for_each (elem (or tag_view.children []))
+                                   (when (== elem.value text)
+                                      (= found elem)
+                                      (break)))
+                                found)))
+       (value_count (fn (text)
+                       (let
+                          ((count 0))
+                          (for_each (elem (or tag_view.children []))
+                             (when (== elem.value text)
+                                (inc count)))
+                          ;(log "Count is: " count text)
+                          count)))
+       (prune_empties (fn ()
+                         (for_each (t (or tag_view.children []))
+                            (if (== t.value empty_text)
+                                (-> t `remove)))))
+       (adjust_size (fn (elem)
+                       (try
+                          (if (== elem document.activeElement)
+                              (progn
+                                 (set_style [["width" (+ "" (+  extra_space elem.value.length) "ch")]] elem))
+                              (progn
+                                 (set_style [["width" (+ "" (+  2 elem.value.length) "ch")]] elem)))
+                          (catch Error (e)
+                             (log "ERROR: " e.message)))))
+       (new_tag (fn (text focus?)
+                   (aif (already_have_tag? text)
+                       (if focus? 
+                          (focus_to_tag it)
+                          false)
+                       (let
+                          ((tag (input { tabindex: 0
+                                         class: "juno-editable"
+                                         style: "padding: 5px;margin-right: 10px;"   
+                                         list: tag_dlist_id
+                                         contenteditable: true
+                                         value: text }
+                                        )))
+                          (adjust_size tag)
+                          (-> tag_view `append
+                             tag)
+                          (when focus?
+                             (sleep 0.001)
+                             (focus_to_tag tag))))))
+       
+       (view (div { `style: "position: relative;" }
+                  tag_dlist
+                  tag_view)))
+      
+      (attach_event_listener tag_view
+         `keydown
+         (fn (e)  ;; don't allow spaces in tags
+            (cond 
+               (or (== e.key "Enter")
+                   (contains? e.key "/[]{}():;.,<>|\\\\=`~"))
+               (handle_event e)
+               (and (== e.key " ")
+                    (not (== e.srcElement (last tag_view.children))))
+               (handle_event e)
+               ;; if we are at the end and we have a `blank?` ie. empty_text (default `name?`), release the focus 
+               (and (== e.key "Tab")
+                    (== e.srcElement (last tag_view.children))
+                    (== e.srcElement.value empty_text))
+               (progn
+                  (if (> (length tag_view.children) 1)
+                      (-> e.srcElement `remove)))
+               
+               ;; if we have a filled out tag, and are on the last tag, create a new one with tab or space is pressed
+               (and (or (== e.key "Tab")
+                        (== e.key " "))
+                    (not e.shiftKey)     
+                    (== e.srcElement (last tag_view.children))
+                    (> (length e.srcElement.value) 1))
+               (progn
+                  (handle_event e)
+                  (new_tag empty_text true))
+               (and (== e.key "Tab")
+                    e.shiftKey
+                    (== e.srcElement.value empty_text))
+               (progn
+                  (handle_event e)
+                  (let
+                     ((prior e.srcElement.previousSibling))
+                     (-> e.srcElement `remove)
+                     (if prior
+                        (focus_to_tag prior))))
+               (and (== e.key "Backspace")   ;; remove when tag has no content
+                    (== e.srcElement.value empty_text))
+               (let
+                  ((prior e.srcElement.previousSibling)
+                   (next e.srcElement.nextSibling))
+                  (handle_event e)
+                  (-> e.srcElement `remove)
+                  (cond
+                     prior
+                     (focus_to_tag prior)
+                     next
+                     (focus_to_tag next)
+                     (== (length tag_view.children) 0)
+                     (new_tag empty_text true))))))
+              
+               
+                    
+      
+      (attach_event_listener tag_view
+         `keyup
+         (fn (e)
+            (progn
+               (cond
+                  (and (== e.key "Backspace") 
+                       (blank? e.srcElement.value))
+                  (progn
+                     (set_prop e.srcElement `value empty_text)
+                     (focus_to_tag e.srcElement)))
+               (adjust_size e.srcElement)
+               (if (> (value_count e.srcElement.value) 1)
+                   (add_class "juno-input-error" e.srcElement )
+                   (remove_class "juno-input-error" e.srcElement))
+               (set_prop e.srcElement
+                  `value
+                  (lowercase e.srcElement.value))
+               (when options.on_change
+                  (-> options `on_change (tag_content))))))
+      
+      (attach_event_listener tag_view
+         `focusin
+         (fn (e)
+            (progn
+               (focus_to_tag e.srcElement))))
+      
+      (attach_event_listener view
+         `focusout
+         (fn (e)
+            (progn
+               (adjust_size e.srcElement)
+               (when options.on_change
+                  (-> options.on_change (tag_content))
+               ))))
+      
+      (if (and (is_array? tags)
+               (> tags.length 0))
+          (for_each (tag (or tags []))
+             (new_tag tag))
+          (new_tag empty_text))
+      ;(setTimeout (fn () (focus_to_tag tag_view.children.0)) 10)
+      view)
+   {
+     `description: (+ "Creates a simple DOM Element for creating or editing an "
+                      "array of tags (unique strings).  Uses the *tags_to_meta* "
+                      "object as a dependency to build the data list selections "
+                      "for the tags.  Given an initial array of tags, these "
+                      "provided tags will be presented, otherwise a new tag "
+                      "with the empty text will be generated and displayed as "
+                      "a means to start creating a list of tags.<br>"
+                      "Options:<br>"
+                      "empty_text:string - When a new tag is generated this "
+                      "provided text is shown.  The default is 'name?'<br>"
+                      "extra_space:number - How many characters to optionally "
+                      "pad the input elements, since the width of the elements "
+                      "are measured by the 'ch' unit.<br>"
+                      "on_change:function - When a change occurs to a tag, "
+                      "or when a tag is removed or created, this function " 
+                      "is called with an array of strings, representing the "
+                      "tag set that the user is editing.<br>")
+     `usage: ["options:object" "tags:array"]
+     `tags: ["view" "DOM" "tags" "edit" "manage" "tag" "element"]
+     })
+   
+      
+
+(defun process_edit_entry (root_element event action)
    (let
       ((elem event.srcElement)
        (key event.key)
@@ -593,7 +845,6 @@
          (try
             (progn
                (= selection (-> window `getSelection))
-               
                (= inner_text actual_elem.innerText)
                (= new_elem actual_elem.parentElement)
                (-> actual_elem `remove)
@@ -848,11 +1099,11 @@
                     [comps.0 comps.1 false ]
                     (== comps.length 1)
                     [comps.0 "" false ]))))
+    
     (starter_span (div {  `tabindex: 0 `contenteditable: true  } (dtext "Enter text")))
     (desc (if (> meta_struct.description.length 0)
               (unpack_description meta_struct.description)
               starter_span))
-    (debug_mode false)
     (name_editable (if options.allow_name_edits
                        true
                        true))
@@ -866,13 +1117,13 @@
                            (option `boolean)
                            (option `array)))
                            
-    (symbol_type_elem (input { `class: `juno-editable `list: dlist_type_id `title: "Type" `tabindex: 0 `placeholder: "Type" `style: "width: 150px; padding: 5px;  font-weight: bold" `value: meta_struct.type }))
+    (symbol_type_elem (input { `class: `juno-editable `list: dlist_type_id `title: "Type" `tabindex: 0 `placeholder: "Type" `style: "font-size: 0.9em; width: 150px; padding: 5px;  font-weight: bold" `value: meta_struct.type }))
     (save_button (button (dtext "Save")))
     (monofont  "font-family: var(--main-mono-space);")
     (close_button (button (dtext "Close")))
     (new_arg_button (button { `style: "min-width: 30px; margin-left: 10px; margin-top: 10px; padding: 5px; "  `title: (dtext "Add New Argument") } "+"))
     (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } options.name))
-    (description_elem (div { `class: "juno-editable" tabindex: 0 `contenteditable: true `style: "background: var(--editor-bg-color);  min-height: 300px; line-height: 1.5em; font-size: 1.1em;  padding: 5px" } 
+    (description_elem (div { `class: "juno-editable" tabindex: 0 `contenteditable: true `style: "background: var(--editor-bg-color);  min-height: 150px; line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 10px;margin-bottom: 10px;" } 
                            desc))
     (description_section (details { `open: true   }
                                   (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Description"))
@@ -884,6 +1135,13 @@
                                 {})
                              { `class: "juno-editable" `tabindex: 0 `style: "font-weight: bold;" }) 
                           meta_struct.name))
+    (tag_selection (tag_selector { `on_change: (fn (tags)
+                                                  (progn
+                                                     (set_prop meta_struct
+                                                        `tags
+                                                        tags)
+                                                     (refresh_output))) }
+                                 meta_struct.tags))
     (last_usage_elem nil)
     (refresh_usage (fn ()
                      (progn 
@@ -954,6 +1212,9 @@
     (usage_section (details { `open: true  }
                             (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Usage"))
                                  usage_elem))
+    (tag_section (details { `open: true }
+                          (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Tags"))
+                                tag_selection))
     (rendered_content_elem (div { `class: "juno-control" } "Live View"))
     
     (main_view (div { `class: "juno-control"  `style: "padding-top: 5px; margin-left: 5px; min-height: 50%" } 
@@ -962,8 +1223,26 @@
                     (hr { `style: "light-hr" })
                     usage_section
                     description_section
+                    tag_section
                     dlist_types))
-    (desc_mode 0) ;; mode 0 is regular mode, mode 1 is code/pre formatted
+    
+    ;; output display: how the content is rendered in the output pane (lower)
+    ;; mode 0 is the rendered display
+    ;; mode 1 is a lisp view
+    ;; mode 2 is a json view
+    ;; mode 3 is a debug mode
+    (output_display_modes [ "As Rendered" "Lisp" "JSON" "Debug" ])
+    (output_display_mode 0) 
+    (set_output_display_mode (fn (mode)
+                                (try
+                                   (progn
+                                      (= output_display_mode (clamp mode
+                                                                    0
+                                                                    (max_index output_display_modes)))
+                                      (refresh_output))
+                                   (catch Error (e)
+                                      (log_error e)))))
+                                   
     (build_description (fn (content acc)
                           (let
                              ((acc (or acc [])))
@@ -1013,14 +1292,18 @@
                         (let
                            ((content nil)
                             (live_content nil))
-                           ;(log "process_current: " (== elem description_elem))
+                           (log "process_current: " (== elem description_elem))
                            ;(log "cursor_position: " (get_cursor_position description_elem))
                            (cond
                               true ;(== elem description_elem)
                               (progn
-                                 (= desc_mode 0)
                                  (= live_content (join "" (build_description description_elem)))
-                                 
+                                 ;; split into an array with roughly 80 column formatting for injection into source
+                                 (if (> (length live_content) 60)
+                                     (= live_content (flatten 
+                                                        (conj [ (quote +) ]
+                                                              (for_each (line (word_wrap live_content 80))
+                                                                 (+ line " " ))))))
                                  (set_prop meta_struct
                                           `description live_content)
                                  ;(log "process_current: usage: " usage)
@@ -1030,8 +1313,8 @@
                                     (catch Error (e)
                                        (log "ERROR: " e.message)))
                                  
-                                 (show_updated_help)
-                                 )))))
+                                 (refresh_output))))))
+    
     (sview (split_view_horizontal  main_view  rendered_content_elem  ))
     
     (content_view (div { `class: "juno-control" `style: "width: calc(100% - 2px); height: calc(100% - 2px); overflow: hidden; border-bottom: 3px solid black;" } 
@@ -1051,6 +1334,19 @@
                                        (log "ERROR: " e.message))))))
     (control_bar_elements [(div { `style: "display:inline-block; float: right" } save_button close_button) ])
     (selection nil)
+    (refresh_output (fn ()
+                       (cond
+                          (== output_display_mode 0)
+                          (show_updated_help)
+                          (== output_display_mode 1)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (as_lisp (process_out))))
+                          (== output_display_mode 2)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (JSON.stringify (process_out) "\n" 2)))
+                          (== output_display_mode 3)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (JSON.stringify (element_to_lisp description_elem) "\n" 2))))))
     (on_initialize (fn (intf)
                    (progn
                       (when true
@@ -1071,7 +1367,7 @@
                                   (== e.key "Enter")
                                   (progn
                                      (handle_event event)
-                                     (process_entry description_elem e "down")
+                                     (process_edit_entry description_elem e "down")
                                      true)
                                   
                                   (== e.key "Escape")
@@ -1082,7 +1378,7 @@
                                   else
                                   (progn
                                      ;(console.log "pos: " (get_cursor_position e.srcElement) (pre (as_lisp (element_to_lisp e.srcElement))) e)
-                                     (process_entry description_elem e "down")
+                                     (process_edit_entry description_elem e "down")
                                      ))))
                          (attach_event_listener view
                             `keyup
@@ -1092,13 +1388,11 @@
                                      (== e.key "Enter")
                                      (progn
                                         ;(handle_event event)
-                                        (process_entry description_elem e "up"))
+                                        (process_edit_entry description_elem e "up"))
                                      else
-                                     (process_entry description_elem e "up"))
-                                  (if debug_mode
-                                     (-> rendered_content_elem
-                                        `replaceChildren (pre (JSON.stringify (element_to_lisp description_elem) "\n" 2)))
-                                     (process_current description_elem)))))
+                                     (process_edit_entry description_elem e "up"))
+                                  (process_current)
+                                  )))
                          
                          ;; cancel or manage certain key events on the name...
                          (attach_event_listener name_edit_span
@@ -1176,12 +1470,20 @@
                          ;(log "description_elem.children: " (element_to_lisp description_elem.children.0))
                          ;(focus_to (get_by_id "starter_span"))
                          ))))
-                   
+    (menu_items (fn (menu_title)
+                   (progn
+                      (log "menu_args?" menu_title)
+                      [[(dtext "Blank Menu") (fn () (notify "Blank!"))]
+                       ["Set Display Mode"
+                        [["Rendered View" (fn () (set_output_display_mode 0))]
+                         ["Lisp" (fn () (set_output_display_mode 1))]
+                         ["JSON" (fn () (set_output_display_mode 2))]]]])))
     (render (fn ()
                 content_view)))
    {
      control_bar: true
-     expose: [["get" process_out]]
+     expose: [["get" process_out]
+              ["set_output_display_mode" set_output_display_mode]]
      })
 
 (defmacro defcontrol (name control_args allocations control_options)
@@ -1415,10 +1717,11 @@
 (create_css_entry ".juno-editable > pre"
    (from_style_text "font-family: var(--main-mono-space);box-shadow: 1px 1px 6px 2px #00000010; border: 1px solid var(--main-accent-line); background: #FFFFFF20;padding: 5px;"))
 
-
+(create_css_entry ".juno-tag-empty"
+   [["border" "1px dotted var(--main-accent-line-hover);"]])
 
 (create_css_entry "input.juno-editable:focus"
-[["outline" "none"]
+   [["outline" "none"]
     ["box-shadow" "1px 1px 6px 2px #00000040;"]
     ["transition" "all .1s ease-in-out"]])
 
@@ -1426,3 +1729,5 @@
    [["margin-top" "5px"]
     ["margin-bottom" "10px"]])
 
+(create_css_entry "input.juno-input-error"
+   (from_style_text "color: darkred; text-decoration: line-through"))
