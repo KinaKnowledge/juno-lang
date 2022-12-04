@@ -24,16 +24,20 @@
        tags: ["string" "text" "reverse" "modify" ]
    })
 
-(defmacro last_n_chars (n text)
-   `(-> ,#text `substr (* -1 ,#n))
+(defun_sync last_n_chars (n text)
+   (if (is_string? text)
+       (-> text `substr (* -1 n))
+       nil)
    {
        description: "For a given string, returns the last n characters as a string."
        usage: ["n:number" "text:string"]
        tags: ["string" "text" "last" "amount" "end" "tail"]
    })
 
-(defmacro last_n (n arr)
-   `(-> ,#arr `slice (* -1 ,#n))
+(defun_sync last_n (n arr)
+   (if (is_array? arr)
+       (-> arr `slice (* -1 n))
+       nil)
    {
        description: "For a given array, returns the last n elements as an array."
        usage: ["n:number" "arr:array"]
@@ -93,9 +97,9 @@
        (offset selrange.startOffset)
        (position (progn
                     (if (== selrange.startContainer.nodeType 3)
-                            (progn
-                               (get_cursor_position selrange.startContainer.parentElement))
-                            selrange.endOffset)))
+                        (progn
+                           (get_cursor_position selrange.startContainer.parentElement))
+                        selrange.endOffset)))
        (current_element selected_node)
        (path []))
       (while (and (not (eq current_element nil))
@@ -103,14 +107,13 @@
          (progn
             (prepend path current_element)
             (= current_element current_element.parentElement)))
-      ;(log (pre (as_lisp (element_to_lisp selected_node))) "pos: " position "path is: " path)
-      { dom_path: path 
-        position: position 
+      { dom_path: path
+        position: position
         pos_type: selected_node.nodeType
         pos_node: selected_node
         selection: selection
         range: selrange
-      }))
+        }))
 
 (defun_sync select_node_at_point ()
    (let
@@ -270,17 +273,18 @@
          remove_if_prior: true
          exec: (fn (point ctl event)
                   (progc
-                     (log "Heading rule fired!")
                      (let 
                         ((preceeding_text (aif (prop (get_text_around_point point) 0)
-                                               (last (split_by " " it))))
+                                               (last (split_by " " it))
+                                               ""))
                          (hash_details (first (scan_str (new RegExp "[#]+$") preceeding_text)))
                          (num_hashes (if hash_details
                                          (length (prop hash_details 0))
                                          0))
+                         ;; add one because our rule triggered so it deleted one and the space
                          (tag_name (+ "H" (clamp (+ num_hashes 1) 1 5)))
-                         (point nil))   ;; add one because our rule triggered so it deleted one and the space
-                        (log "preceeding_text: " preceeding_text hash_details num_hashes)
+                         (point nil))   
+                        
                         ;; since we have asked the editor to remove the matching text we are going to 
                         ;; remove the remaining and use that as a way to compute the Heading element we
                         ;; will add
@@ -301,15 +305,13 @@
 (defcontrol DOM_editor ()
    ((starter  (or options.content
                   (div { } "Start Typing!")))
-    (root_elem (div { `class: "juno-editable" tabindex: 0 `contenteditable: true `style: "background: var(--editor-bg-color);  min-height: 150px; line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 10px;margin-bottom: 10px;" }
+    (root_elem (div { `class: "juno-editable" tabindex: 0 `contenteditable: true `style: "background: var(--editor-bg-color);  height: calc(100% - 20px); min-height: 150px; line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 10px;margin-bottom: 10px;" }
                     (or options.content
                        starter)))
     (position_elem (div { `style: "padding: 5px;color: darkblue;" } ))
-    (insert_button (button { } "Insert PRE"))
     (depth_elem (div { `style: "padding: 5px; color: green;" } ))
     (path_elem (div { `style: "padding: 5px; " } ))
-    (status_elem (div { `style: "padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
-                      insert_button
+    (status_elem (div { `style: "padding: 5px; display: none; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
                       position_elem
                       depth_elem
                       path_elem))
@@ -318,7 +320,7 @@
                        status_elem
                        root_elem
                        debug_elem))
-    
+    (collection_timer nil)
     (key_sequence_rules { keyup: {} keydown: {} })
     (prior_text_rules { keyup: {} keydown: {} })
     (post_text_rules { keyup: {}  keydown: {} })
@@ -359,7 +361,7 @@
                                 (let
                                    ((text (get_text_around_point current_point))
                                     (on_event event.type)
-                                    (prior_text_sequence text.0)
+                                    (prior_text_sequence (or text.0 ""))
                                     (next_text_sequence text.1)
                                     (key_sequence (clone (key_history))))
                                    
@@ -368,7 +370,8 @@
                                    ;; note that this could probably be changed in the get_text_around_point function
                                    ;; but that needs to be thought through...
                                    
-                                   (when (== (-> (last_n_chars 1 text.0) `charCodeAt) 160)
+                                   (when (and (is_string? text.0)
+                                              (== (-> (last_n_chars 1 text.0) `charCodeAt) 160))
                                        (set_prop text 
                                           0
                                           (+ (chop text.0) " ")))
@@ -383,7 +386,6 @@
                                    (for_each (n [ 4 3 2 1 ])
                                       (progc
                                          (when (>= (length text.0) n) 
-                                             (log "checking: " (length text.0) n (-> (last_n_chars 1 text.0) `charCodeAt) [ on_event (last_n_chars n text.0) ] (resolve_path [ on_event (last_n_chars n text.0) ] prior_text_rules))
                                             (aif (resolve_path [ on_event (last_n_chars n text.0) ] prior_text_rules)
                                                 (when (qualify_and_run it `prior_text event)
                                                    (break)))))))))
@@ -476,11 +478,21 @@
                                    ;  (div { } (for_each (name path_comps)
                                     ;         (span {`style: "padding-right: 5px" } name))))
                                   ))
+                            (when collection_timer
+                               (clearTimeout collection_timer))
+                            (= collection_timer
+                               (setTimeout
+                                  (fn ()
+                                     (set_prop options
+                                        `content
+                                        (element_to_lisp root_elem)))
+                                  1000))
+                               
                             (-> debug_elem `replaceChildren
                                (pre (JSON.stringify (element_to_lisp root_elem) "\n" 2)))
                             ))))
-    ;(to_json (function ()
-     ;           `(DOM_editor ,#(element_to_lisp root_elem) ,#options)))
+    (to_json (function ()
+                `(DOM_editor ,#(element_to_lisp root_elem) ,#options)))
     
     (on_initialize (fn ()
                       (progc
@@ -497,16 +509,6 @@
                             (fn (e)
                                (key_down_event e)))
                          
-                         (attach_event_listener insert_button
-                            `click
-                            (fn (e)
-                               (progc
-                                  (log "Inserting!")
-                                  (when current_point
-                                     (move_to_point current_point)
-                                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch;'></pre><div ><br></div>" true)
-                                     (move_to_point current_point)
-                                     (move_point `forward `character)))))
                          (setTimeout (fn () 
                                         (if options.content
                                            (progn

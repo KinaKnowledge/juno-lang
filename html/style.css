@@ -2083,7 +2083,7 @@ span.juno-editable:focus {
    transition: all .1s ease-in-out;
 }
 
-.juno-editable > pre {
+.juno-editable  pre {
     font-family: var(--main-mono-space);
     box-shadow: 1px 1px 6px 2px #00000010; 
     border: 1px solid var(--main-accent-line); 

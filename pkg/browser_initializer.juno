@@ -532,7 +532,8 @@
 
 (defun unpack_description (description options)
    (let
-      ((table_regex (new RegExp "(^[a-zA-Z0-9?_*\\-]+):([a-zA-Z0-9]+)[ ]*-[ ]*(.+)"))
+      ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
+       (header_regex (new RegExp "^([#]{1,6})[ ]+(.+)"))
        (desc (progn
                 (defvar tmp (eval description))
                 (if (and (is_object? tmp)
@@ -543,6 +544,9 @@
        (subsections [])
        (segments (split_by "<br>" desc))
        (table_section nil)
+       (header_section nil)
+       (header_tag nil)
+       (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
        (current_seg 0)
        (total_segs (length segments)))
        (for_each (seg segments)
@@ -567,14 +571,27 @@
                                      (catch Error (e)
                                         (p "Error in wrap_fn call 2: " e.message)))
                                   (progn
-                                     (= table_section (scan_str table_regex comp))
-                                     (if (> (length table_section) 0)
-                                         (for_each (tbl_row table_section)
-                                            (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
-                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
-                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
-                                                 (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
-                                         (p comp)))))))
+                                     (cond
+                                        (progn
+                                           (= table_section (scan_str table_regex comp))
+                                           (> (length table_section) 0))
+                                        (for_each (tbl_row table_section)
+                                           (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                                (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
+                                        (progn
+                                           (= header_section (scan_str header_regex comp))
+                                           (> (length header_section) 0))
+                                        (progn
+                                           (= header_section (first header_section)) ;; pull it out of the array to make it easier to work with
+                                           (= header_tag (or (prop header_size_lookup (length (prop header_section 1)))
+                                                             "h5"))
+                                           (header_tag 
+                                            (prop header_section `2)))
+                                              
+                                        else
+                                        (p comp)))))))
                      (split_by "%%%" seg)))))
        (div { `class: "juno-editable" }
           subsections))
@@ -7510,6 +7527,7 @@
      `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
    })
 
+
 (defun process_edit_entry (root_element event action)
    (let
       ((elem event.srcElement)
@@ -7540,7 +7558,6 @@
                                      (= pos selrange.startOffset)
                                      (-> selrange `setEndBefore actual_elem.nextSibling)
                                      (defvar remaining_text (-> selrange `toString))
-                                     (log pos "range post: " remaining_text)
                                      (= selection (-> window `getSelection))
                                      (-> selection `removeAllRanges)
                                      (-> selection `addRange selrange)
@@ -7552,7 +7569,26 @@
                                         (div { } remaining_text))
                                      (-> selection `selectAllChildren new_elem))
                                   (catch Error (e)
-                                     (notify "ERROR: " e.message)))))
+                                     (notify (+ "ERROR: " e.message))))))
+       (insert_elem_at_point (fn (elem)
+                               (try
+                                  (progn
+                                     (= selrange (-> (-> window `getSelection) `getRangeAt 0))
+                                     (= pos selrange.startOffset)
+                                     (-> selrange `setEndBefore actual_elem.nextSibling)
+                                     (defvar remaining_text (-> selrange `toString))
+                                     (= selection (-> window `getSelection))
+                                     (-> selection `removeAllRanges)
+                                     (-> selection `addRange selrange)
+                                     (-> selection `deleteFromDocument)
+                                     (-> selection `collapseToStart)
+                                     (-> (prop root_element.children active_child_idx)
+                                         `insertAdjacentElement `afterEnd elem)
+                                     (-> elem `insertAdjacentElement `afterEnd
+                                        (div { } remaining_text))
+                                     (-> selection `selectAllChildren elem))
+                                  (catch Error (e)
+                                     (notify (+ "ERROR: " e.message))))))
        (in_tree (if proper_pos
                     true
                     (progn
@@ -7572,7 +7608,7 @@
        (total_children (length root_element.children))
        (priors (if (== action "down")
                    (if (== actual_elem.nodeType 3)
-                       (-> actual_elem.parentElement.innerText `substr (- pos 2) 2)
+                       (join "" (split_by "\n" (-> actual_elem.parentElement.innerText `substr (- pos 2) 2)))
                        (-> actual_elem.innerText `substr (- pos 2) 2))
                    (-> actual_elem.innerText `substr (- pos 3) 3)))
        (inner_text nil)
@@ -7614,10 +7650,37 @@
       
       ;(log action key "---------" priors actual_elem.tagName actual_elem.innerText)
       
+      
       (if (== actual_elem.parentElement root_element)
           (progn
-             ;(if (== action `down) (log  (+ "POS: " pos "/" total_length) "ACI: " (+ "" active_child_idx "/" total_children) "Proper: " (== actual_elem.parentElement root_element) (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp actual_elem))) ))
              (cond
+                (and (== key " ")
+                     (== action "down")
+                     (not (== actual_elem.tagName "PRE"))
+                     (starts_with? "#" actual_elem.innerText)
+                     (ends_with? "#" (join "" (split_by "\n" actual_elem.innerText))))
+                (progn
+                   ;; we need to find out how many # have been entered before space
+                   (let
+                      ((header_regex (new RegExp "^([#]{1,6})"))
+                       (elem_lookup [nil h1 h2 h3 h4 h5 h6])
+                       (header_fn nil)
+                       (count_text (scan_str header_regex (join "" (split_by "\n" actual_elem.innerText)))))
+                      (declare (function header_fn))
+                      (if (> (length count_text) 0)
+                          (progn
+                             (handle_event event)
+                             (= header_fn (prop elem_lookup (length (resolve_path [ 0 0 ] count_text))))
+                             (= new_elem (header_fn "HEADER"))
+                             (if (== actual_elem.nodeType 3)
+                                 (-> actual_elem.parentElement `replaceWith new_elem)
+                                 (-> actual_elem `replaceWith new_elem))
+                             (= selection (-> window `getSelection))
+                             (-> selection `removeAllRanges)
+                             (= selrange (new Range))
+                             (-> selrange `selectNodeContents new_elem)
+                             (-> selection `addRange selrange)))))
+                      
                 (and (== key "`")
                      (== action "down")
                      (not (== actual_elem.tagName "PRE"))
@@ -7631,13 +7694,11 @@
                    (-> selection `modify `extend `backward `character)
                    (-> selection `deleteFromDocument)
                    (= selection (-> window `getSelection))
-                   (log  "inserting PRE: " selection.anchorNode.nodeType (pre (as_lisp (element_to_lisp selection.anchorNode.parentNode))))
+                   ;(log  "inserting PRE: " selection.anchorNode.nodeType (pre (as_lisp (element_to_lisp selection.anchorNode.parentNode))))
                    (cond
                       (== selection.anchorNode.nodeType 1)
                       (try
                          (progn
-                            (log "code_node: A" (element_to_lisp selection.anchorNode))
-                            (log " --> focus_node: " (element_to_lisp selection.focusNode))
                             (insert_pre_at_point))
                          (catch Error (e)
                             (log "ERROR: " e.message)))
@@ -7650,7 +7711,6 @@
                             (doc_exec "insertHTML" "<br/>" false)
                             (when (doc_exec "insertHTML" (+ "<pre>CODE HERE</pre>"))
                                (= code_node selection.anchorNode.parentNode)
-                               (log "code_node: B " (element_to_lisp code_node) "Proper POS: " (== code_node.parentElement root_element))
                                (= end_node selection.anchorNode.parentNode)
                                (-> selection `selectAllChildren code_node)))
                          (catch Error (e) (log "ERROR: cannot select!" e.message)))
@@ -7658,13 +7718,11 @@
                       (== selection.anchorNode.nodeType 3)
                       (try
                          (progn
-                            (log "Inserting new PRE ELEMENT in middle: " (pre (as_lisp (element_to_lisp (prop root_element.children active_child_idx)))))
                             (= new_elem (pre  "CODE HERE"))
                             (= selrange (-> (-> window `getSelection) `getRangeAt 0))
                             (= pos selrange.startOffset)
                             (-> selrange `setEndBefore actual_elem.nextSibling)
                             (defvar remaining_text (-> selrange `toString))
-                            (log pos "range post: " remaining_text)
                             (= selection (-> window `getSelection))
                             (-> selection `removeAllRanges)
                             (-> selection `addRange selrange)
@@ -7696,7 +7754,6 @@
                      (> pos (- total_length 2)))
                 (progn
                    (= selection (-> window `getSelection))
-                   (log "leaving pre - selection is: " selection)
                    (when selection
                       (try
                          (progn
@@ -7705,12 +7762,10 @@
                             (cond
                                sel_node.nextSibling
                                (progn
-                                 ; (log "existing one - going there" (element_to_lisp sel_node.nextSibling))
                                   (if (and (>= active_child_idx (- total_children 2))
                                            (blank? sel_node.nextSibling.innerText))
                                       (try
                                          (progn
-                                            ;(log "making new_elem to move into")
                                             (= new_elem (div { `contenteditable: true tabindex: 0 } (br)))
                                             (-> sel_node.nextSibling `insertAdjacentElement `beforebegin new_elem)
                                             (setTimeout (fn ()
@@ -7745,12 +7800,10 @@
                                (== nil sel_node.nextSibling)
                                (progn
                                   (= new_elem (div { `contenteditable: true tabindex: 0 } (br)))
-                                  (log "at end")
                                   (-> sel_node.parentElement `append new_elem)
                                   (setTimeout (fn ()
                                                  (try
                                                     (progn
-                                                       (log "making new element " sel_node.parentElement)
                                                        (-> selection `removeAllRanges)
                                                        (= selrange (-> document `createRange))
                                                        (-> selrange `selectNode new_elem)
@@ -7758,10 +7811,7 @@
                                                        true)
                                                     (catch Error (e)
                                                        (log "ERROR: " e.message))))
-                                              1))
-                               else
-                               (progn
-                                  (log "third condition!"))))
+                                              1))))
                          (catch Error (e)
                             (log "ERROR: " e.message)))))
                 (and (== action "down")
@@ -7784,20 +7834,36 @@
                    (handle_event event)
                    (if (< pos (- total_length 0))
                        (doc_exec "insertHTML" "\n" false)
-                       (doc_exec "insertHTML" "\n\n" false))
-                   ;(log "Up Enter on Pre or Span" pos total_length (< pos (- total_length 0)))
-                   )))
+                       (doc_exec "insertHTML" "\n\n" false)))))
           (progn
              (when (== action `down)
                 (= selrange (-> (-> window `getSelection) `getRangeAt 0))
-                ;(log action "EVENT not on root element" action (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp selrange.startContainer))))
+                ;(log action "EVENT not on root element" action (== active_child_idx undefined) (== selrange.startContainer root_element) selrange.startContainer.innerText (+ "In tree: " in_tree) (pre (as_lisp (element_to_lisp selrange.startContainer))))
                 (cond
+                   (and (== action "down")
+                        (== active_child_idx undefined)
+                        (== selrange.startContainer root_element)
+                        (or (blank? selrange.startContainer.innerText)
+                            (== selrange.startContainer.innerText "\n"))
+                        (== key.length 1))
+                   (try
+                      (progn
+                         (handle_event event)
+                         (-> root_element `replaceChildren (= new_elem (div { } key)))
+                         (= selection (-> window `getSelection))
+                         (-> selection `removeAllRanges)
+                         (= selrange (new Range))
+                         (-> selrange `selectNodeContents new_elem)
+                         (-> selection `addRange selrange)
+                         (-> selection `collapseToEnd))
+                         
+                      (catch Error (e)
+                         (log (+ "ERROR: " e.message))))
                    (and (== action "down")
                         (== actual_elem root_element) ;; editing the contents of the root element directly - a no no
                         (== key.length 1))
                    (try
                       (progn
-                         (log "making a new div")
                          ;(handle_event event)
                          (= selection (-> window `getSelection))
                          (doc_exec "insertHTML" (+ "<div contenteditable=true>" key "</div>" )false))
@@ -7807,7 +7873,6 @@
                         (== action "down"))
                    (progn
                       (handle_event event)
-                      ;(log "inserting br" selrange pos selrange.startOffset selrange.endOffset  (pre (as_lisp (element_to_lisp selrange.startContainer))))
                       (when (== selrange.startContainer selrange.endContainer)
                          (try
                             (cond
@@ -7818,7 +7883,6 @@
                                
                                (== selrange.startContainer.nodeType 1)
                                (progn
-                                  ;(log "node type 1 - prepending a br and moving after it.")
                                   (handle_event event)
                                   (= new_elem (br))
                                   (-> selrange `insertNode new_elem)
@@ -7828,7 +7892,18 @@
                                   (-> selection `addRange selrange)
                                   (-> selection `collapseToEnd)))
                             (catch Error (e)
-                               (log "ERROR on br insertion: " e.message)))))))))))
+                               (log "ERROR on br insertion: " e.message)))))
+                   (and (== key "Backspace")
+                        (== (sub_type selrange.startContainer) "HTMLHeadingElement")
+                        (blank? (join "" (split_by "\n" selrange.startContainer.innerText))))
+                   (progn
+                      (-> selrange.startContainer `replaceWith (= new_elem (div { } (br) )))
+                      (= selection (-> window `getSelection))
+                      (-> selection `removeAllRanges)
+                      (-> selrange `selectNode new_elem)
+                      (-> selection `addRange selrange)
+                      (-> selection `collapseToStart)
+                      (log "Something else" selrange.startContainer.innerText))))))))
 
 (defcontrol meta_editor ()
    ((meta_struct (or options.content
@@ -7997,7 +8072,8 @@
                                    
     (build_description (fn (content acc)
                           (let
-                             ((acc (or acc [])))
+                             ((acc (or acc []))
+                              (hash_count nil))
                              (assert (is_element? content) "content must be element")
                              (try
                                 (for_each (c content.children)
@@ -8012,6 +8088,13 @@
                                          (progn
                                             (push acc c.innerText)
                                             (push acc "<br>"))
+                                         (== (sub_type c) "HTMLHeadingElement")
+                                         (progn
+                                            (= hash_count (parseInt (second c.tagName)))
+                                            (when (not (isNaN hash_count))
+                                               (push acc (join "" (for_each (hh (range hash_count))
+                                                                     "#")))
+                                               (push acc (+ " " c.innerText "<br>"))))
                                          else
                                          (log "build_description: no handling: " (sub_type c) c.tagName c.innerText))))
                                 (catch Error (e)
@@ -8044,8 +8127,7 @@
                         (let
                            ((content nil)
                             (live_content nil))
-                           (log "process_current: " (== elem description_elem))
-                           ;(log "cursor_position: " (get_cursor_position description_elem))
+                           
                            (cond
                               true ;(== elem description_elem)
                               (progn
@@ -8061,7 +8143,7 @@
                                  ;(log "process_current: usage: " usage)
                                  (try 
                                     (progn 
-                                       (log "Meta Struct: " meta_struct))
+                                       true) ;(log "Meta Struct: " meta_struct))
                                     (catch Error (e)
                                        (log "ERROR: " e.message)))
                                  
@@ -8229,7 +8311,8 @@
                        ["Set Display Mode"
                         [["Rendered View" (fn () (set_output_display_mode 0))]
                          ["Lisp" (fn () (set_output_display_mode 1))]
-                         ["JSON" (fn () (set_output_display_mode 2))]]]])))
+                         ["JSON" (fn () (set_output_display_mode 2))]
+                         ["Debug" (fn () (set_output_display_mode 3))]]]])))
     (render (fn ()
                 content_view)))
    {
@@ -9375,7 +9458,8 @@
                    "seedling"))
        
        (-> juno_container
-           `append page_frame.view)       
+           `append page_frame.view)
+       (-> (control_holding_tank) `add_control (juno_documentation))
        (-> page_frame `initialize))
       (progn     
        (console.log "serialized controls: " *serialized_controls*)
