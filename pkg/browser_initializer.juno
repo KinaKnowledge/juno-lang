@@ -5838,11 +5838,15 @@
                                (set_style [[ "width" (+ "" new_width "px") ]
                                            [ "height" (+ "" new_height "px") ]]
                                           view)
+                               
                                (when options.on_resize
                                   (options.on_resize self))
                                ,#(if control_options.render_on_resize
                                      `(do_render)
                                      true)
+                               ,#(if (contains? (quote on_resize) declared_allocations)
+                                     `(on_resize self)
+                                     [])
                                true))))
               ,@user_allocations
               (control_status (if ,#control_bar?
@@ -5873,7 +5877,8 @@
                      (if ,#control_bar?
                          control_status
                          [])
-                                content_view))
+                     content_view))
+              
               (_on_render (fn ()
                              ,#(if (contains? (quote on_render) declared_allocations)
                                 `(on_render self)
@@ -5886,11 +5891,13 @@
                                 `[])
                             ,#(if (contains? (quote on_focus) declared_allocations)
                                 `(on_focus self)))))
+                                  ,
               (_on_destroy (fn ()                                     
                              (progn
                               ,#(if (contains? (quote on_destroy) declared_allocations)
                                   `(on_destroy self)
                                   `true))))
+              
               (_to_json (function ()
                            (progn
                               ,#(if (contains? (quote to_json) declared_allocations)
@@ -5919,6 +5926,16 @@
                    `(set_prop self
                        `menu_items menu_items)
                    [])
+             ,#(if control_bar?
+                  `(set_prop self
+                      `show_title_bar 
+                      (fn (state)
+                         (progn
+                            (if state
+                               (remove_class "juno-display-none" control_status)
+                               (add_class "juno-display-none" control_status))
+                            (resize))))
+                  `[])
              ;; finally set the required self options
              (set_prop self
                 `options options
@@ -5955,7 +5972,7 @@
                         "the control view.<br>"
                         "do_render:function - Calls the (render) function provided to the macro.  User code can call this "
                         "function when a redraw is required.<br>"
-                        "resize:function - A resize function to invoke if a forced resize is required.<br>"
+                        "on_resize:function - A resize function to invoke if a forced resize is required.<br>"
                         "initialized:boolean - This value is true if the function is initialized or false if it hasn't " 
                         "yet been.<br>"
                         "options:object - The options object passed to the control on instantiation.<br>"
@@ -7475,13 +7492,16 @@
                    return { x, y };
                    } | ))
 
-(defun element_to_lisp (element options)
+(defun_sync element_to_lisp (element options)
    (if (is_element? element)
        (let
           ((tag_name (if (is_function? options.tagname_for_element)
                          (-> options `tagname_for_element element)
                          element.tagName))
-           (elem_as_lisp (list (+ "=:" (lowercase tag_name))))
+           (ns (if (is_string? options.use_ns)
+                   (+ options.use_ns "/")
+                   ""))
+           (elem_as_lisp (list (+ "=:" ns (lowercase tag_name))))
            (acc [])
            (nodes nil)
            (ptype nil)
@@ -7517,13 +7537,14 @@
                       "provided tree, will be called with the new element.  The function should "
                       "return a string value to be used for the tagname as opposed to the original "
                       "element tagName value.<br>"
-                      "on_text:(fn text nodes) - Will be called on a text node with the text and "
+                      "use_ns:string - Qualify the emitted tag symbols with the provided namespace.<br> "
+                      "on_text:(function text nodes) - Will be called on a text node with the text and "
                       "and the sibling nodes.<br>"
-                      "on_element_complete:(fn array) - Will be called with the quoted lisp form "
+                      "on_element_complete:(function array) - Will be called with the quoted lisp form "
                       "that was constructed.  The function can then manipulate the completed form "
                       "prior to it being placed in the returned lisp form.  Note that this function "
                       "is called for every completed element, not just the final return value.")
-     `usage: ["element:element"]
+     `usage: ["element:element" "options:object"]
      `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
    })
 
@@ -8605,9 +8626,14 @@
      `tags: [`controls `ui `global]
      })
 
-
+;; old
 (defun serialize_controls (controls)
   [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
+
+
+;; new
+(defun serialize_controls (controls)
+  [(quote quote) (JSON.parse (JSON.stringify controls))])
 
 
 

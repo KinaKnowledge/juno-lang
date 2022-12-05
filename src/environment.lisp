@@ -1889,12 +1889,15 @@
 		(== namespace "core"))
 
        ;; evaluate the inserted code... 
-       
-       (= included_globals (included_globals))
+       (try
+          (= included_globals (included_globals))
+          (catch Error (e)
+             (console.error "ERROR: "e)))
        
        ;; if not already defined by the environment itself, merge the
        ;; provided names and values into the global context.
-                                        ;(console.log "importing symbols: " (prop included_globals `symbols))
+                                        
+       (console.log "core: importing symbols: " (prop included_globals `symbols))
 
        (when (resolve_path [ `symbols `compiler ] included_globals)
          (set_prop Environment.global_ctx.scope
@@ -2037,174 +2040,174 @@
      ;; file or Lisp file...
      
      (defvar save_env
-       (fn (options)                                                  
-         (let
-             ((new_env nil)
-              (my_children nil)                               
-              (env_constructor nil)
-              (dcomps (date_components (new Date)))
-              (options (or options {}))              
-              (version_tag (if (not (blank? opts.version_tag))
-                             opts.version_tag
-                             (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
-              (build_time (formatted_date (new Date)))
-              (build_headers [])              
-              (child_env nil)
-              (want_buffer (or options.want_buffer false))
-              (comp_buffer nil)
-              (sorted_dependencies (sort_dependencies))
-              (child_export_order nil)
-	      (preserve_imports (if (and options
-					 (== options.preserve_imports false))
-					false
-				        true))
-              (include_source false)
-              (exports [])
-              (src (if (-> Environment `get_global "*env_skeleton*" nil)
-                     (clone (-> Environment `get_global "*env_skeleton*"))
-		     (reader (read_text_file  "./src/environment.lisp"))))
-              (target_insertion_path nil)  ;; where we inject our context into the source tree                               
-              (output_path nil))			       
-
-           (when (prop Environment.global_ctx.scope "*env_skeleton*")
-             (register_feature "*env_skeleton*"))
-           ;; construct our form by doing surgery on ourselves..
-           
-           (= target_insertion_path (first (findpaths (quote included_globals) src)))
-           
-           (if (not (is_array? target_insertion_path))
-             (throw EvalError "Unable to find the first included_globals symbol"))
-
-           (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
-           
-           
-           (when options.include_source
-             (= include_source true))
-           
-           (env_log namespace "cloning: # children: " (length children))                           
-	   (env_log namespace "preserve_imports: " preserve_imports)
-	   (= exports (export_symbol_set (if options.do_not_include
-                                           { do_not_include: options.do_not_include })))
-           (= child_export_order (reduce (cname sorted_dependencies.namespaces)
-                                         (unless (== cname "core")
-                                             [cname (prop children cname)])))
-	   (console.log "save_env: child_export_order: " (each child_export_order `0))
-           
-	   (= my_children
-	      (to_object
-               (reduce (child child_export_order)
+        (fn (options)
+           (let
+              ((new_env nil)
+               (my_children nil)
+               (env_constructor nil)
+               (dcomps (date_components (new Date)))
+               (options (or options {}))
+               (version_tag (if (not (blank? opts.version_tag))
+                                opts.version_tag
+                                (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ])))
+               (build_time (formatted_date (new Date)))
+               (build_headers [])
+               (child_env nil)
+               (want_buffer (or options.want_buffer false))
+               (comp_buffer nil)
+               (sorted_dependencies (sort_dependencies))
+               (child_export_order nil)
+               (preserve_imports (if (and options
+                                          (== options.preserve_imports false))
+                                     false
+                                     true))
+               (include_source false)
+               (exports [])
+               (src (if (-> Environment `get_global "*env_skeleton*" nil)
+                        (clone (-> Environment `get_global "*env_skeleton*"))
+                        (reader (read_text_file  "./src/environment.lisp"))))
+               (target_insertion_path nil)  ;; where we inject our context into the source tree
+               (output_path nil))
+              
+              (when (prop Environment.global_ctx.scope "*env_skeleton*")
+                 (register_feature "*env_skeleton*"))
+              ;; construct our form by doing surgery on ourselves..
+              
+              (= target_insertion_path (first (findpaths (quote included_globals) src)))
+              
+              (if (not (is_array? target_insertion_path))
+                  (throw EvalError "Unable to find the first included_globals symbol"))
+              
+              (= target_insertion_path (conj (chop target_insertion_path) [ 2 ])) ;; move one forward to the value position
+              
+              
+              (when options.include_source
+                 (= include_source true))
+              
+              (env_log namespace "cloning: # children: " (length children))
+              (env_log namespace "preserve_imports: " preserve_imports)
+              (= exports (export_symbol_set (if options.do_not_include
+                                                { do_not_include: options.do_not_include })))
+              (= child_export_order (reduce (cname sorted_dependencies.namespaces)
+                                       (unless (== cname "core")
+                                          [cname (prop children cname)])))
+              (console.log "save_env: child_export_order: " (each child_export_order `0))
+              
+              (= my_children
+                 (to_object
+                    (reduce (child child_export_order)
                        (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
-                         (progn
-                          (= child_env (-> child.1
-                                           `compile
-                                           (-> child.1 `export_symbol_set (+ {} ;(if options.do_not_include { do_not_include: options.do_not_include } {})
-									     { `no_compiler: true }))
-                                           { `throw_on_error: true  }))
-                          ;(= child_env (-> child.1
-                           ;                `export_symbol_set { `no_compiler: true }))
-                          [child.0  [ [(quote quotel) child.1.definitions] `(javascript ,#child_env) ]])))))
-           
-                                      
-	  
-           ;; now embed our compiled existing context into the source tree...			    
-           (set_path target_insertion_path src
-		     `(fn ()
-                        ,#(to_object
-                           [[`definitions  [(quotel quote) (if options.do_not_include
-							       (to_object
-								(reduce (defset (pairs Environment.definitions))
-									(if (not (contains? defset.0 options.do_not_include))
-									    [defset.0 defset.1])))
-							     (clone Environment.definitions))
-								]]
-			    [`declarations (clone Environment.declarations)]
-                            [`config ;(clone (prop Environment.global_ctx.scope "*env_config*")) ]
-                                           (let
-                                               ((exp_conf (clone (prop Environment.global_ctx.scope "*env_config*"))))
-                                             (when (not preserve_imports)
-                                               (set_prop exp_conf
-                                                         `imports
-                                                         {}))
-                                             (when options.features
-                                               (set_prop exp_conf
-                                                         `features
-                                                         options.features))
-                                             exp_conf) ]
-                            [`imports      (if preserve_imports
-					       (to_object
-						(for_each (imp_source (values (or (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope) {})))
-							  [ imp_source.symbol { `initializer: `(javascript "new function () { return " ,#imp_source.symbol " }")
-                                                          `symbol: imp_source.symbol
-                                                          `namespace: imp_source.namespace
-                                                          } ]))
-					     {}) ]
-                            [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
-			    [ `children_declarations `(fn () ,#(clone children_declarations)) ]
-                            [ `child_load_order (each child_export_order `0) ]
-                            [ `children    my_children ]])))
-
-           
-           
-           (= output_path (if options.want_buffer
-                            nil
-                            (or options.save_as
-                                (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope))))
-           
-           ;; if our output path is a function, call it to get an actual name...
-           (if (is_function? output_path)
-             (= output_path (output_path)))
-           
-           (if (and (not (is_string? output_path))
-                    output_path)
-             (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
-           
-           (cond
-             (or want_buffer
+                           (progn
+                              (= child_env (-> child.1
+                                               `compile
+                                               (-> child.1 `export_symbol_set (+ {} ;(if options.do_not_include { do_not_include: options.do_not_include } {})
+                                                                                 { `no_compiler: true }))
+                                               { `throw_on_error: true  }))
+                              ;(= child_env (-> child.1
+                              ;                `export_symbol_set { `no_compiler: true }))
+                              [child.0  [ [(quote quotel) child.1.definitions]  [(quote quotel) `(javascript ,#child_env) ]]])))))
+              
+              
+              
+              ;; now embed our compiled existing context into the source tree...
+              (set_path target_insertion_path src
+                 `(fn ()
+                     ,#(to_object
+                          [[`definitions  [(quotel quote) (if options.do_not_include
+                                                   (to_object
+                                                      (reduce (defset (pairs Environment.definitions))
+                                                         (if (not (contains? defset.0 options.do_not_include))
+                                                             [defset.0 defset.1])))
+                                                   (clone Environment.definitions))
+                                           ]]
+                           [`declarations (clone Environment.declarations)]
+                           [`config ;(clone (prop Environment.global_ctx.scope "*env_config*")) ]
+                            (let
+                               ((exp_conf (clone (prop Environment.global_ctx.scope "*env_config*"))))
+                               (when (not preserve_imports)
+                                  (set_prop exp_conf
+                                     `imports
+                                     {}))
+                               (when options.features
+                                  (set_prop exp_conf
+                                     `features
+                                     options.features))
+                               exp_conf) ]
+                           [`imports      (if preserve_imports
+                                              (to_object
+                                                 (for_each (imp_source (values (or (resolve_path ["*env_config*" "imports"] Environment.global_ctx.scope) {})))
+                                                    [ imp_source.symbol { `initializer: `(javascript "new function () { return " ,#imp_source.symbol " }")
+                                                                                       `symbol: imp_source.symbol
+                                                                                       `namespace: imp_source.namespace
+                                                                                       } ]))
+                                              {}) ]
+                           [`symbols      [(quote javascript) (compile (to_object exports) { `throw_on_error: true } ) ]]
+                           [ `children_declarations `(fn () ,#(clone children_declarations)) ]
+                           [ `child_load_order (each child_export_order `0) ]
+                           [ `children    my_children ]])))
+              
+              
+              
+              (= output_path (if options.want_buffer
+                                 nil
+                                 (or options.save_as
+                                    (resolve_path ["*env_config*" "export" "save_path" ] Environment.global_ctx.scope))))
+              
+              ;; if our output path is a function, call it to get an actual name...
+              (if (is_function? output_path)
+                  (= output_path (output_path)))
+              
+              (if (and (not (is_string? output_path))
+                       output_path)
+                  (throw EvalError "invalid name for target for saving the environment.  Must be a string or function"))
+              
+              (cond
+                 (or want_buffer
+                    (and output_path
+                       (ends_with? ".js" output_path)))
+                 (do
+                    (push build_headers
+                       (+ "// Build Time: " build_time))
+                    (push build_headers
+                       (+ "// Version: " version_tag))
+                    (push build_headers
+                       (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
+                    (env_log "saving to: " output_path)
+                    (compile_buffer src "init_dlisp"
+                       {
+                         `namespace: namespace
+                         `toplevel: true
+                         `include_boilerplate: false
+                         `verbose: false
+                         `bundle: true
+                         `want_buffer: want_buffer
+                         `imports: (if preserve_imports
+                                      (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope))
+                         `js_headers: [(show check_true)
+                                       (show get_next_environment_id)
+                                       (show get_outside_global)
+                                       (show subtype)
+                                       (show lisp_writer)
+                                       (show clone)
+                                       (show LispSyntaxError)]
+                         
+                         `bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
+                                             }
+                         
+                         `output_file: output_path
+                         `include_source: (or options.include_source
+                                             (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
+                         `toplevel: true
+                         `build_headers: build_headers
+                         }))
                  (and output_path
-                      (ends_with? ".js" output_path)))
-             (do
-               (push build_headers
-                     (+ "// Build Time: " build_time))
-               (push build_headers
-                     (+ "// Version: " version_tag))                                
-               (push build_headers
-                     (+ "export const DLISP_ENV_VERSION='" version_tag "';"))
-               (env_log "saving to: " output_path)
-               (compile_buffer src "init_dlisp"
-                               {
-                                `namespace: namespace
-                                `toplevel: true
-                                `include_boilerplate: false
-                                `verbose: false
-				`bundle: true
-                                `want_buffer: want_buffer
-                                `imports: (if preserve_imports
-					    (resolve_path ["*env_config*" "imports" ] Environment.global_ctx.scope))
-                                `js_headers: [(show check_true)
-                                              (show get_next_environment_id)
-                                              (show get_outside_global)
-                                              (show subtype)
-                                              (show lisp_writer)
-                                              (show clone)                                              
-                                              (show LispSyntaxError)]
-                                
-				`bundle_options: { default_namespace: (resolve_path ["*env_config*" "export" "default_namespace" ] Environment.global_ctx.scope)
-						  }
-				
-                                `output_file: output_path
-                                `include_source: (or options.include_source
-                                                     (resolve_path ["*env_config*" "export" "include_source" ] Environment.global_ctx.scope))
-                                `toplevel: true
-                                `build_headers: build_headers
-                                }))
-	     (and output_path
-		  (ends_with? ".lisp" output_path))
-	     (write_text_file output_path (JSON.stringify src nil 4))
-             else
-             src))))
-                           
-
-   
+                    (ends_with? ".lisp" output_path))
+                 (write_text_file output_path (JSON.stringify src nil 4))
+                 else
+                 src))))
+     
+     
+     
 
      
           
@@ -2391,46 +2394,47 @@
        ;; and evaluate the child
        (when (and rehydrated_children
                   (is_object? (prop included_globals `children)))
-         (console.log "env: child load order: " included_globals.child_load_order)
-         (for_each (childname (or included_globals.child_load_order []))
-	           (when (prop included_globals.children childname)
-                     (console.log "env: loading child: " childname)                     
-                     (defvar childset [ childname (prop included_globals.children childname) ])
-                     (defvar childenv (prop children childset.0))                     
-                     (defvar imported_defs childset.1.0)
-                     (when (is_object? (prop included_globals `imports))
-                       (=  imps (prop included_globals `imports))     
-                       (when imps
-                         (for_each (imp_source (values imps))
-                                   (progn               
-                                    (if (prop children imp_source.namespace)
-                                      (progn
-                                       (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
-                                                   imp_source.initializer))) ))))
-                     (try
-		      (progn 
-			(set_prop childset.1
-				  1
-				  (-> childenv `eval childset.1.1 { `throw_on_error: true }))
-			(for_each (symset childset.1.1)
-				  (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
-                                    ;; the child env is already compiled at this point
-                                    (when (prop imported_defs symset.0)
-                                      (set_path [ childset.0 `definitions symset.0 ] children
-						(prop imported_defs symset.0)))
-                                    ;; if we have an initializer for the symbol in the definition, we need to eval it and place
-                                    ;; the result scope that contains the symbol                                 
-                                    (aif (resolve_path [ childset.0 `definitions symset.0 `initializer ] children)
-					 (progn
-					   (try
-					    (set_path [ childset.0 `context `scope symset.0 ] children
-                                                      (-> childenv `eval it ))
-					    (catch Error (e)
-						   (console.error "env: unable to evaluate: symbol: " symset.0 e))))
-					 (set_path [ childset.0 `context `scope symset.0 ] children					  
-				                   symset.1)))))
-		      (catch Error (e)
-			     (console.error "env: unable to load child: " (clone childset)))))))
+          (console.log "env: child load order: " included_globals.child_load_order)
+          (for_each (childname (or included_globals.child_load_order []))
+             (when (prop included_globals.children childname)
+                (console.log "env: loading child: " childname)
+                (defvar childset [ childname (prop included_globals.children childname) ])
+                (defvar childenv (prop children childset.0))
+                (defvar imported_defs childset.1.0)
+                (when (is_object? (prop included_globals `imports))
+                   (=  imps (prop included_globals `imports))
+                   (when imps
+                      (for_each (imp_source (values imps))
+                         (progn
+                            (if (prop children imp_source.namespace)
+                                (progn
+                                   (set_global (+ "" imp_source.namespace "/" imp_source.symbol)
+                                               imp_source.initializer))) ))))
+                (try
+                   (progn
+                      (set_prop childset.1
+                         1
+                         (-> childenv `eval childset.1.1 { `throw_on_error: true }))
+                      (console.log "env: child symbols rehydrated: " childset)
+                      (for_each (symset childset.1.1)
+                         (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
+                            ;; the child env is already compiled at this point
+                            (when (prop imported_defs symset.0)
+                               (set_path [ childset.0 `definitions symset.0 ] children
+                                         (prop imported_defs symset.0)))
+                            ;; if we have an initializer for the symbol in the definition, we need to eval it and place
+                            ;; the result scope that contains the symbol
+                            (aif (resolve_path [ childset.0 `definitions symset.0 `initializer ] children)
+                                 (progn
+                                    (try
+                                       (set_path [ childset.0 `context `scope symset.0 ] children
+                                                 (-> childenv `eval it ))
+                                       (catch Error (e)
+                                          (console.error "env: unable to evaluate: symbol: " symset.0 e))))
+                                 (set_path [ childset.0 `context `scope symset.0 ] children
+                                           symset.1)))))
+                   (catch Error (e)
+                      (console.error "env: unable to load child: " (clone childset)))))))
        
      ;; call the user initializer     
        (when init 

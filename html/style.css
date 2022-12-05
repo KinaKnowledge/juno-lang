@@ -2096,6 +2096,9 @@ span.juno-editable:focus {
   margin-bottom: 10px;
 }
 
+.juno-editable div:focus {
+  outline: none;
+}
 
 .juno-context-bar {
   padding: 3px;
