@@ -12,7 +12,8 @@
        `description: (+ "This macro wraps the provided forms in a "
                         "try-catch, and returns the last value if "
                         "no errors, like progn, or if an error "
-                        "occurs, logs to the console.")
+                        "occurs, logs to the console.  Simple "
+                        "help for debugging.")
        `tags: ["debug" "error" "catch" "handler" "progn" "eval"]
        `usage: ["forms:*"]
    })
@@ -45,7 +46,7 @@
        tags: ["array" "list" "text" "last" "amount" "end" "tail"]
    })
                           
-;; verbs for our command language
+;; verbs for our editing command language
 
 (defmacro get_selection ()
    `(-> window `getSelection))
@@ -167,8 +168,7 @@
        `tags: ["point" "editor" "DOM" "selection" "select"]
    })
 
-(defun nc (node)
-   (pre (as_lisp (element_to_lisp node))))
+
 
 (defun insert_elem_at_point (elem under_root)
       (try
@@ -181,7 +181,7 @@
              (offset selrange.startOffset)
              (remaining_text nil))
             ;; extend it from the current point
-            (log "insert_elem_at_point: " (nc parent_element))
+            
             (-> selrange `setEndBefore parent_element.nextSibling)
             (= remaining_text (-> selrange `toString))
             (-> selection `deleteFromDocument)
@@ -389,6 +389,7 @@
 (defun_sync flex_row (`& args)
    (apply div { `style: "padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
           args))
+
 
 (defcontrol DOM_editor ()
    ((starter  (div { } "Start Typing!"))
@@ -687,7 +688,7 @@
                             (load_rules)
                             ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
                             ;(log "loaded rules: prior_text_rules: " prior_text_rules)
-                            ;(log "options.content: " options.content)
+                            (log "options" options)
                             
                             (attach_event_listener content_view
                                `keyup
@@ -773,6 +774,12 @@
                   (process_children (rest quoted_dom))
                   (push acc "```<br>"))
                (and tag
+                  (== tag (quote hr))
+                  (not (getf_ctx ctx `in_pre)))
+               (progn
+                  (push acc "---")
+                  (push acc "<br>"))
+               (and tag
                   (starts_with? (+ "=:" "h") tag)
                   (not (getf_ctx ctx `in_pre)))
                (progn
@@ -782,10 +789,7 @@
                   (process_children (rest quoted_dom))
                   (push acc "<br>"))
                   
-               (and tag
-                  (== tag (quote br))
-                  (not (getf_ctx ctx `in_pre)))
-               false; (push acc "<br>")
+               
                (and tag
                   (not (getf_ctx ctx `in_pre)))
                (process_children (rest quoted_dom))))
@@ -797,16 +801,384 @@
       
       
 
-(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `filename: "doc/test_1.juno" debug: true }))
+(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `filename: "doc/test_1.juno" `hide_control_bar: true debug: true }))
 
 (set_key_binding "global" "open_meta_editor"
                  {
                    `win: "Alt-M"
                    `mac: "Alt-M"
-                   `exec: (fn () (place_control `right (defglobal *ed* (DOM_editor { rules: [ `*markdown_rules* ] debug: false }))))
+                   `exec: (fn () (place_control `right (meta_editor)))
                   `description: "Opens the meta editor"
                    })
 
+(defcontrol meta_editor ()
+   ((meta_struct (or options.content
+                           {
+                             description: ""
+                             name: "Unnamed"
+                             type: "unknown"
+                             namespace: (current_namespace)
+                             usage: []
+                             tags: []
+                             }))
+    (usage (for_each (arg (or meta_struct.usage []))
+              (progn
+                 (defvar comps (split_by ":" arg))
+                 (cond
+                    (and (> comps.length 1)
+                         (starts_with? "?" (second comps)))
+                    [comps.0 (-> comps.1 `substr 1) true ]
+                    (> comps.length 1)
+                    [comps.0 comps.1 false ]
+                    (== comps.length 1)
+                    [comps.0 "" false ]))))
+    
+    (starter_span (div {  `tabindex: 0 `contenteditable: true  } (dtext "Enter text")))
+    (desc (if (> meta_struct.description.length 0)
+              (unpack_description meta_struct.description)
+              starter_span))
+    (name_editable (if options.allow_name_edits
+                       true
+                       true))
+    (dlist_type_id (gen_id "types"))
+    (dlist_types (datalist { `id: dlist_type_id }
+                           (option `AsyncFunction)
+                           (option `Function)
+                           (option `object)
+                           (option `string)
+                           (option `number)
+                           (option `boolean)
+                           (option `array)))
+    
+    (symbol_type_elem (input { `class: `juno-editable `list: dlist_type_id `title: "Type" `tabindex: 0 `placeholder: "Type" `style: "font-size: 0.9em; width: 150px; padding: 5px;  font-weight: bold" `value: meta_struct.type }))
+    (save_button (button (dtext "Save")))
+    (monofont  "font-family: var(--main-mono-space);")
+    (close_button (button (dtext "Close")))
+    (new_arg_button (button { `style: "min-width: 30px; margin-left: 10px; margin-top: 10px; padding: 5px; "  `title: (dtext "Add New Argument") } "+"))
+    (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } options.name))
+    (description_editor (DOM_editor { rules: [ `*markdown_rules* ] 
+                                      hide_control_bar: true  } ))
+    (description_section (details { `open: true   }
+                                  (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Description"))
+                                  (div { `style: "min-height: 250px; width: 100%;" } 
+                                       description_editor.view)))
+    (namespace_elem (span { `class: "juno-namespace" `style: "font-weight: bold;"} meta_struct.namespace))
+    (name_edit_span (span (+ {} 
+                             (if name_editable
+                                { `contenteditable: true }
+                                {})
+                             { `class: "juno-editable" `tabindex: 0 `style: "font-weight: bold;" }) 
+                          meta_struct.name))
+    (tag_selection (tag_selector { `on_change: (fn (tags)
+                                                  (progn
+                                                     (set_prop meta_struct
+                                                        `tags
+                                                        tags)
+                                                     (refresh_output))) }
+                                 meta_struct.tags))
+    (last_usage_elem nil)
+    (refresh_usage (fn ()
+                     (progn 
+                        (= last_usage_elem nil)
+                        (-> usage_elem `replaceChildren
+                           (div { 
+                                  `style: "line-height: 1.5em; font-size: 1.0em;  padding: 5px; max-width: 500px;" }
+                                  (map (fn (arg idx total)
+                                          (progn
+                                             (log "idx: " idx total (as_lisp arg))
+                                             (defvar pe (make_pair_editor arg idx total))
+                                             (if (== idx (- total 1))
+                                                 (= last_usage_elem pe.children.0))
+                                             (-> pe `prepend (button { `style: "background: #FF000020; padding: 5px;"
+                                                                       `remove_path: (join "~" [ `usage idx ]) } "-"))
+                                             pe))
+                                       usage)
+                                  (if (== usage.length 0)
+                                      [ 
+                                       (div { } new_arg_button "Press + to add arguments") ]
+                                      new_arg_button)
+                                  ))
+                        (when last_usage_elem 
+                           (setTimeout (fn ()
+                                          (focus_to last_usage_elem)
+                                          20))))))
+    
+    (make_pair_editor (fn (arg idx total)
+                         (pair_editor arg
+                                      { `style: "border: 1px inset #ffffff;"
+                                        `placeholder_0: "ArgName"
+                                        `placeholder_1: "ArgType"
+                                        `list_1: dlist_type_id
+                                        `additional_elements: [ (checkbox (+ { `checkbox: { `path: (join "~" [ idx "2" ]) }}
+                                                                             (if arg.2
+                                                                                { `value: true }
+                                                                                {}))
+                                                                          "Optional")
+                                                              ]
+                                        `path: [ idx ]
+                                        `on_change: (fn (path value)
+                                                       (progn
+                                                          
+                                                          (make_path path usage value)
+                                                          (cond
+                                                              (and (== path.1 "2")
+                                                                   (== value "false"))
+                                                               (set_path path usage false)
+                                                              (and (== path.1 "2")
+                                                                   (== value "true"))
+                                                              (set_path path usage true)
+                                                              (== path.1 "2")
+                                                              (set_path path usage false))
+                                                          (log "pe: on_change: " path usage value)
+                                                          (set_prop
+                                                             meta_struct
+                                                             `usage (map (fn (vals)
+                                                                            (if (== vals.2 true)
+                                                                                (+ vals.0 ":?" vals.1)
+                                                                                (+ vals.0 ":" vals.1)))
+                                                                            usage))
+                                                          (show_updated_help)))
+                                                          
+                                                          
+                                                         
+                                        })))
+    (usage_elem (div { `style: "min-height: 40px;" } ))
+    (usage_section (details { `open: true  }
+                            (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Usage"))
+                                 usage_elem))
+    (tag_section (details { `open: true }
+                          (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Tags"))
+                                tag_selection))
+    (rendered_content_elem (div { `class: "juno-control" } "Live View"))
+    
+    (main_view (div { `class: "juno-control"  `style: "padding-top: 5px; margin-left: 5px; min-height: 50%" } 
+                    (h3 { `style: "display: flex; justify-content: space-between; align-items: center; " } (span (span { `style: "color: var(--namespace-color); " } meta_struct.namespace ) "/" name_edit_span)
+                           symbol_type_elem)
+                    (hr { `style: "light-hr" })
+                    usage_section
+                    description_section
+                    tag_section
+                    dlist_types))
+    
+    ;; output display: how the content is rendered in the output pane (lower)
+    ;; mode 0 is the rendered display
+    ;; mode 1 is a lisp view
+    ;; mode 2 is a json view
+    ;; mode 3 is a debug mode
+    (output_display_modes [ "As Rendered" "Lisp" "JSON" "Debug" ])
+    (output_display_mode 0) 
+    (set_output_display_mode (fn (mode)
+                                (try
+                                   (progn
+                                      (= output_display_mode (clamp mode
+                                                                    0
+                                                                    (max_index output_display_modes)))
+                                      (refresh_output))
+                                   (catch Error (e)
+                                      (log_error e)))))
+                                   
+    
+    (process_out (fn ()
+                    (let
+                       ((output (clone meta_struct)))
+                       
+                       (set_prop output
+                          `usage (for_each (arg_desc usage)
+                                    (if arg_desc.2
+                                       (+ arg_desc.0 ":?" arg_desc.1)
+                                       (+ arg_desc.0 ":" arg_desc.1))))
+                       output)))
+    (ok_grab_focus true)
+    (on_blur (fn ()
+                (= ok_grab_focus true)))
+    (on_focus (fn (e)
+                 (when ok_grab_focus
+                    (= ok_grab_focus false)
+                    ;(focus_to description_elem)
+                    )))
+    (table_regex (new RegExp "(^[a-zA-Z0-9?]+:[a-zA-Z0-9]+[ ]*-[ ]*)(.+)"))
+    (show_updated_help (fn ()
+                          (-> rendered_content_elem
+                                    `replaceChildren 
+                                    (div { `style: "background: var(--editor-bg-color); padding: 5px;" } 
+                                         (format_help meta_struct)))))
+    (process_current (fn (elem)
+                        (let
+                           ((content nil)
+                            (live_content nil))
+                           
+                           (cond
+                              true 
+                              (progn
+                                 (= live_content (join "" (DOM_to_markdown (-> description_editor `get))))
+                                 ;; split into an array with roughly 80 column formatting for injection into source
+                                 (if (> (length live_content) 60)
+                                     (= live_content (flatten 
+                                                        (conj [ (quote +) ]
+                                                              (for_each (line (word_wrap live_content 80))
+                                                                 (+ line " " ))))))
+                                 (set_prop meta_struct
+                                          `description live_content)
+                                 ;(log "process_current: usage: " usage)
+                                 (try 
+                                    (progn 
+                                       true) ;(log "Meta Struct: " meta_struct))
+                                    (catch Error (e)
+                                       (log "ERROR: " e.message)))
+                                 
+                                 (refresh_output))))))
+    
+    (sview (split_view_horizontal  main_view  rendered_content_elem  ))
+    
+    (content_view (div { `class: "juno-control" `style: "width: calc(100% - 2px); height: calc(100% - 2px); overflow: hidden; border-bottom: 3px solid black;" } 
+                       sview.view))
+    (select_name_edit_span (fn ()
+                              (let
+                                 ((selection (-> window `getSelection))
+                                  (mrange nil))
+                                 (try
+                                    (progn
+                                       (-> selection `removeAllRanges)
+                                       (= mrange (new Range))
+                                       (-> mrange `selectNodeContents name_edit_span)
+                                       (-> selection `addRange mrange)
+                                       true)
+                                    (catch Error (e)
+                                       (log "ERROR: " e.message))))))
+    (control_bar_elements [(div { `style: "display:inline-block; float: right" } save_button close_button) ])
+    (selection nil)
+    (refresh_output (fn ()
+                       (cond
+                          (== output_display_mode 0)
+                          (show_updated_help)
+                          (== output_display_mode 1)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (as_lisp (process_out))))
+                          (== output_display_mode 2)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre (JSON.stringify (process_out) "\n" 2)))
+                          (== output_display_mode 3)
+                          (-> rendered_content_elem
+                             `replaceChildren (pre "DESCRIPTION")))))
+    (on_initialize (fn (intf)
+                   (progn
+                      (when true
+                         (= initialized true)
+                         (log "on_initialize: usage: " usage)
+                         (-> sview `initialize)
+                         (set_prop options
+                            `name
+                            (+ "Meta Editor - " meta_struct.name))
+                         (set_prop title_span
+                            `innerText
+                             (+ name_edit_span.innerText
+                                  " - Meta Editor"))
+                         
+                         (attach_event_listener view
+                            `keydown
+                            (fn (e)
+                               (cond
+                                  (== e.key "Enter")
+                                  (progn
+                                     (process_current))
+                                  (== e.key "Escape")
+                                  (progn
+                                     (if options.on_close
+                                        (-> options `on_close self))
+                                     (destroy_control self))
+                                  
+                                 
+                                     )))
+                         
+                         
+                         (-> description_editor `initialize)
+                         ;; cancel or manage certain key events on the name...
+                         (attach_event_listener name_edit_span
+                            `keydown
+                            (fn (e)
+                               (cond
+                                  (== e.key "Enter")
+                                  (handle_event e)
+                                  (== e.key "Escape")
+                                  (progn
+                                     (handle_event e)
+                                     ;(focus_to description_elem)
+                                     )
+                                  (== e.key " ")
+                                  (handle_event e))))
+                         (attach_event_listener name_edit_span
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (blank? name_edit_span.innerText)
+                                     (progn
+                                        (set_prop name_edit_span
+                                           `innerText
+                                           (dtext "Unnamed"))
+                                        (select_name_edit_span))
+                                     else
+                                     (set_prop meta_struct
+                                        `name
+                                        name_edit_span.innerText))
+                                  (set_prop title_span
+                                     `innerText
+                                     (+ name_edit_span.innerText
+                                  " - Meta Editor")))))
+                                  
+                         (attach_event_listener name_edit_span
+                            `focus
+                            (fn (e)
+                               (select_name_edit_span)))
+                         (attach_event_listener usage_elem
+                            `click
+                            (fn (e)
+                               (progn
+                                  (aif (getAttribute e.srcElement `remove_path)
+                                       (progn
+                                          (log "remove: " (getAttribute e.srcElement `remove_path))
+                                          (-> usage `splice (last (split_by "~" it)) 1)
+                                          (refresh_usage))))))
+                         (refresh_usage)
+                         (attach_event_listener new_arg_button
+                            `click
+                            (fn ()
+                               (progn
+                                  (push usage
+                                     ["" "" false])
+                                  (refresh_usage))))
+                         (attach_event_listener close_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (if options.on_close
+                                     (-> options `on_close self))
+                                  (destroy_control self))))
+                         
+                         (attach_event_listener symbol_type_elem
+                            `change
+                            (fn (e)
+                               (set_prop meta_struct
+                                  `type
+                                  (if (blank? symbol_type_elem.value)
+                                      (dtext "Unknown")
+                                      symbol_type_elem.value))))))))
+   (menu_items (fn (menu_title)
+                   (progn
+                      (log "menu_args?" menu_title)
+                      [[(dtext "Blank Menu") (fn () (notify "Blank!"))]
+                       ["Set Display Mode"
+                        [["Rendered View" (fn () (set_output_display_mode 0))]
+                         ["Lisp" (fn () (set_output_display_mode 1))]
+                         ["JSON" (fn () (set_output_display_mode 2))]
+                         ["Debug" (fn () (set_output_display_mode 3))]]]])))
+    (render (fn ()
+                content_view)))
+   {
+     control_bar: true
+     expose: [["get" process_out]
+              ["set_output_display_mode" set_output_display_mode]]
+     })
 
 
 

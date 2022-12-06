@@ -1679,6 +1679,50 @@
        `tags: ["text" "string" "wrap" "format" ]
    })
  
+ (defmacro progc (`& forms)
+   `(try
+       (progn
+          ,@forms)
+       (catch Error (e)
+          (log e.message)))
+   {
+       `description: (+ "This macro wraps the provided forms in a "
+                        "try-catch, and returns the last value if "
+                        "no errors, like progn, or if an error "
+                        "occurs, logs to the console.  Simple "
+                        "help for debugging.")
+       `tags: ["debug" "error" "catch" "handler" "progn" "eval"]
+       `usage: ["forms:*"]
+   })
+
+(defun_sync reverse_string (text)
+   (join "" (-> (split_by "" text) `reverse))
+   {
+       description: "Given a string, returns the characters in reverse order."
+       usage: ["text:string"]
+       tags: ["string" "text" "reverse" "modify" ]
+   })
+
+(defun_sync last_n_chars (n text)
+   (if (is_string? text)
+       (-> text `substr (* -1 n))
+       nil)
+   {
+       description: "For a given string, returns the last n characters as a string."
+       usage: ["n:number" "text:string"]
+       tags: ["string" "text" "last" "amount" "end" "tail"]
+   })
+
+(defun_sync last_n (n arr)
+   (if (is_array? arr)
+       (-> arr `slice (* -1 n))
+       nil)
+   {
+       description: "For a given array, returns the last n elements as an array."
+       usage: ["n:number" "arr:array"]
+       tags: ["array" "list" "text" "last" "amount" "end" "tail"]
+   })
+ 
  (register_feature "core-ext")
   
  true

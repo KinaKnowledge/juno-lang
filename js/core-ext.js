@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-12-06 06:07:08
-// Version: 2022.12.06.06.07
-export const DLISP_ENV_VERSION='2022.12.06.06.07';
+// Build Time: 2022-12-06 12:13:27
+// Version: 2022.12.06.12.13
+export const DLISP_ENV_VERSION='2022.12.06.12.13';
 
 
 
@@ -2062,6 +2062,42 @@ await Environment.set_global("show",async function(thing) {
         };
         return lines
     },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"]
+})
+};
+await Environment.set_global("progc",async function(...forms) {
+    return ["=:try",["=:progn",].concat(forms),["=:catch","=:Error",["=:e"],["=:log","=:e.message"]]]
+},{ "eval_when":{ "compile_time":true
+},"name":"progc","macro":true,"fn_args":"(\"&\" forms)","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"]
+});
+{
+     Environment.set_global("reverse_string",function(text) {
+        return ( ( function() {
+            {
+                 let __call_target__=(text).split(""), __call_method__="reverse";
+                return  __call_target__[__call_method__]()
+            } 
+        })()).join("")
+    },{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"]
+})
+};
+{
+     Environment.set_global("last_n_chars",function(n,text) {
+        if (check_true ((text instanceof String || typeof text==='string'))){
+            return  text["substr"].call(text,(-1* n))
+        } else {
+            return null
+        }
+    },{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"]
+})
+};
+{
+     Environment.set_global("last_n",function(n,arr) {
+        if (check_true ((arr instanceof Array))){
+            return  arr["slice"].call(arr,(-1* n))
+        } else {
+            return null
+        }
+    },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"]
 })
 };
 await (await Environment.get_global("register_feature"))("core-ext");

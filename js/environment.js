@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-12-06 06:07:08
-// Version: 2022.12.06.06.07
-export const DLISP_ENV_VERSION='2022.12.06.06.07';
+// Build Time: 2022-12-06 12:13:27
+// Version: 2022.12.06.12.13
+export const DLISP_ENV_VERSION='2022.12.06.12.13';
 
 
 
@@ -4585,29 +4585,29 @@ export async function init_dlisp(Environment)  {
         {
             await async function(){
                 comps[0]=await (async function(){
-                    let __array_op_rval__189=sanitizer_fn;
-                     if (__array_op_rval__189 instanceof Function){
-                        return await __array_op_rval__189((comps && comps["0"])) 
+                    let __array_op_rval__191=sanitizer_fn;
+                     if (__array_op_rval__191 instanceof Function){
+                        return await __array_op_rval__191((comps && comps["0"])) 
                     } else {
-                        return [__array_op_rval__189,(comps && comps["0"])]
+                        return [__array_op_rval__191,(comps && comps["0"])]
                     }
                 })();
                 return comps;
                 
             }();
             await (async function(){
-                 let __test_condition__190=async function() {
+                 let __test_condition__192=async function() {
                     return ((comps && comps.length)>0)
                 };
-                let __body_ref__191=async function() {
+                let __body_ref__193=async function() {
                     (acc).push((comps).shift());
                     return (acc_full).push(await (async function(){
                          return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
                     })())
                 };
                 let __BREAK__FLAG__=false;
-                while(await __test_condition__190()) {
-                    await __body_ref__191();
+                while(await __test_condition__192()) {
+                    await __body_ref__193();
                      if(__BREAK__FLAG__) {
                          break;
                         

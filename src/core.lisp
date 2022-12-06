@@ -55,8 +55,8 @@
                       "argument is a string, or is an object with a toString method defined, it is appended to the result "
                       "as expected.  Otherwise, the default string representation in the prototype chain will be used, "
                       "which may not be what is expected.<br>" 
-                      "Example: %%%(+ \"This is the result: \" (fn (v) (+ 1 2))) <- \"This is the result: async " 
-                      "function(v) {\n return (1+ 2)\n}\"%%%<\n"
+                      "Example: ```(+ \"This is the result: \" (fn (v) (+ 1 2))) <- \"This is the result: async " 
+                      "function(v) {\n return (1+ 2)\n}\"```<\n"
                       "Example: ( + \"1\" \"2\" ) <- \"12\" <br>"
                       "Example: (+ \"John\" \"Jingleheimer\") <- \"JohnJingleheimer\"<br>"
                       "Example: (+ \"An object:\" { abc: 123 }) <- \"An object: [object Object]\"<br>")
@@ -213,13 +213,13 @@
                         "expression is evaluated. If a handler for the error type or the error's prototype chain isn't "
                         "found, the exception is rethrown, for potential interception by handlers further up the stack "
                         "heirarchy.  In the following example, the specific error thrown is caught locally.  If an error "
-                        "was thrown that wasn't specifically Deno.errors.NotFound, the error would be rethrown: %%%"
+                        "was thrown that wasn't specifically Deno.errors.NotFound, the error would be rethrown: ```"
                         "(try\n"
                         "   (write_text_file \"/will/not/work.txt\" \"No permissions\")\n"
                         "   (catch Deno.errors.NotFound (e)\n"
-                        "     (+ \"CAUGHT: type: \" (subtype e) \"MESSAGE: \" e.message)))%%%"
+                        "     (+ \"CAUGHT: type: \" (subtype e) \"MESSAGE: \" e.message)))```"
                         "<- \"CAUGHT: type:  NotFound MESSAGE:  No such file or directory (os error 2), open '/will/not/work.txt'\"<br>\n"
-                        "An example of multiple catches for the same try block:%%%"
+                        "An example of multiple catches for the same try block:```"
                         "(try\n"
                         "  (throw Error \"ERROR MESSAGE\")\n"
                         "  (catch TypeError (e)\n"
@@ -229,15 +229,15 @@
                         "  (catch Error (e)\n"
                         "    (progn\n"
                         "        (log \"Caught BaseError: \" e.message)\n"
-                        "        \"ERROR 2\")))%%%"
+                        "        \"ERROR 2\")))```"
                         "<- \"ERROR 2\"<br><br>The try-catch constructs returns the last value of the try block "
-                        "or the return value from a matched catch block, otherwise there is no local return.<br>Example:%%%"
+                        "or the return value from a matched catch block, otherwise there is no local return.<br>Example:```"
                         "(let\n"
                         "   ((result (try\n"
                         "              (throw Error \"Invalid!\") ; just throw to demonstrate the catch return\n"
                         "              (catch Error (e)\n"
                         "                  e.message))))\n" 
-                        "   result)%%%"
+                        "   result)```"
                         "<- \"Invalid!\"")
         tags: ["catch" "error" "throw" "flow" "control"]
         }
@@ -266,14 +266,14 @@
                         "and have a value of undefined, so caution must be taken to not reference values in "
                         "prior to initialization.  Syntactically, all symbols allocated in let must be defined "
                         "an initial value, and so the form (let ((a)) (= a 1)) is invalid.<br>"
-                        "<br>Example:%%%"
+                        "<br>Example:```"
                         "(let\n"
                         "  ((a 2)      ; b, and f are visible at this point but b and f are undefined\n"
                         "   (f (fn ()  ; when f is called, a and b will be defined and have value\n"
                         "        (* a b)))\n"
                         "   (b 21))    ; once b's init form completes b will be set to the value 21\n"
                         "  (log \"a is: \" a \" b is: \" b)   ; first block expression - all allocatoins complete\n"
-                        "  (f))         ; last block expression, f will be called and return 42%%%"
+                        "  (f))         ; last block expression, f will be called and return 42```"
                         "<- 42<br>"
                         "Note that the above example doesn't contain an optional declaration form, "
                         "which must come after the allocations and before the block expressions.<br><br>"
@@ -284,7 +284,7 @@
                         "This same rule applies to global values: if a let rebinds a global symbol in an allocation, "
                         "the symbol referenced in the let scope will be the local value, and not the global.  This is "
                         "defined as shadowing.<br>"
-                        "Example: %%%"
+                        "Example: ```"
                         "(let\n"
                         "  ((a_binding 1))\n"
                         "  (log \"outer: a_binding: \" a_binding)\n"
@@ -297,15 +297,15 @@
                         "  a_binding)\n"
                         "out: \"outer: a_binding: \" 1 \n"
                         "out: \"inner: a_binding: \" 2 \"b_binding: \" 3\n"
-                        "out: \"outer: a_binding: \" 1 %%%<br>"
+                        "out: \"outer: a_binding: \" 1 ```<br>"
                         "Declarations can be placed after the allocation form and prior to the "
-                        "expressions comprising the block:%%%"
+                        "expressions comprising the block:```"
                         "(defun handler (options)\n"
                         "   (let\n"
                         "      ((validator options.validator)\n"
                         "       (user_input (request_user_input \"Enter your value\")))\n"
                         "      (declare (function validator))\n"
-                        "      (validator user_input)))%%%"
+                        "      (validator user_input)))```"
                         "<br>In the above the declare provides an optimization hint for the "
                         "compiler.  Without the declare, the compiler would have to insert "
                         "code that checks at runtime whether or not the options.validator value "
@@ -327,11 +327,11 @@
                         "treated as a constant.  When top-level, the metadata will indicate that the "
                         "defined symbol is a constant.  Any attempted changes to the value of the symbol "
                         "will result in a TypeError being thrown.<br>"
-                        "Example:%%%"
+                        "Example:```"
                         "(defconst ghi \"Unchanging\")\n"
                         "<- \"Unchanging\"\n\n"
                         "(= ghi \"Hi there\")\n"
-                        "<- TypeError Assignment to constant variable ghi%%%<br>")
+                        "<- TypeError Assignment to constant variable ghi```<br>")
         tags: ["allocation" "symbol" "define" "constant" "const" ] }
       { name: "while"
         usage: ["test_expression:*" "body_expression:array" ]
@@ -345,7 +345,7 @@
                         "expressions to be evaluated as part of the body expression they must be wrapped "
                         "in a progn block operator. The break operator can be used to `break out` of the "
                         "loop in addition to the test expression returning false.<br>There is no return "
-                        "value from a while loop; it should be considered undefined.<br>Example:%%%"
+                        "value from a while loop; it should be considered undefined.<br>Example:```"
                         "(let\n"
                         "  ((i 10)\n"
                         "   (count 0))\n"
@@ -355,7 +355,7 @@
                         "      (dec i)))\n"
                         "  ; note: there is no return value from while\n"
                         "  count)\n"
-                        "<- 55%%%")
+                        "<- 55```")
         tags: ["flow" "control" "loop" "break" "for_each"] 
         }
       { name: "for_each"
@@ -368,10 +368,10 @@
                         "is reached, or a (break) operator is encountered in the body "
                         "expression. Unlike while, the for_each operator is a collector, and "
                         "all values returned from the body_expression will be returned as an "
-                        "array from for_each.<br>Example:%%%"
+                        "array from for_each.<br>Example:```"
                         "(for_each (r (range 5))\n"
                         "     (* r 2))\n"
-                        "<- [0 2 4 6 8]%%%<br>")
+                        "<- [0 2 4 6 8]```<br>")
         tags: ["flow" "control" "loop" "break" "while"] }
       { name: "if"
         usage: ["test_form:*" "if_true:*" "if_false:*"]
@@ -379,13 +379,13 @@
                         "and if the result of the evaluation is true, evaluates and returns "
                         "the results of the if_true form, otherwise the if form will "
                         "evaluate and return the result of the if_false form.<br>"
-                        "Example:%%%"
+                        "Example:```"
                         "(progn\n"
                         "   (defvar name (request_user_input \"Enter your name:\"))\n"
                         "   (if (blank? name)\n"
                         "        \"No Name Entered\"\n"
                         "        (+ \"Hello \" name)))\n"
-                        "%%%")
+                        "```")
         tags: ["flow" "control" "condition" "logic" "cond" "branching"]
         }
       { name: "cond"
@@ -396,7 +396,7 @@
                         "returned.  If no expressions match, then nil is returned.  There is a special keyword "
                         "available in the cond form, else, which is syntactic sugar for true, that can be used "
                         "to always have a default value.  The else or true test expression should always be the "
-                        "final test expression otherwise a SyntaxError will result. <br>Example:%%%"
+                        "final test expression otherwise a SyntaxError will result. <br>Example:```"
                         "(let\n"
                         "  ((name (request_user_input \"Enter your first name name:\")))\n"
                         "  (cond\n"
@@ -405,7 +405,7 @@
                         "    (< (length name) 12)  ; second test\n"
                         "    (+ \"Hello there \" name \"!\")\n"
                         "    else  ; the default\n"
-                        "    (+ \"Hello there \" name \"! Your first name is long.\")))%%%<br>")
+                        "    (+ \"Hello there \" name \"! Your first name is long.\")))```<br>")
         tags: ["flow" "control" "condition" "logic" "if" "branching"] 
         }
       {
@@ -431,16 +431,16 @@
                           "function, the quoted &.  If the `& is included in the argument list of a function, all remaining run time values at "
                           "the index of the `& operator will be returned as part of the symbol following the `& operator.  This symbol should be "
                           "the last symbol in a argument list.<br>"
-                          "Example of an asynchronous function:%%%"
+                          "Example of an asynchronous function:```"
                           "(fn (a b)     ;; a and b are the arguments that are bound\n"
-                          "   (/ (+ a b) 2)) ;; the body expression that acts on the bound arguments a and b%%%<br><br>"
-                          "Example with the ampersand argument operator used in a synchronous function:%%%"
+                          "   (/ (+ a b) 2)) ;; the body expression that acts on the bound arguments a and b```<br><br>"
+                          "Example with the ampersand argument operator used in a synchronous function:```"
                           "(function (initial `& vals)\n"
                           "   (/ (+ initial (apply add vals))\n"
-                          "      (+ 1 (length vals))))%%%"
+                          "      (+ 1 (length vals))))```"
                           "<br>In the above example, add was used in the apply because the + operator isn't a true function.<br>"
                           "Arrow functions do not define their own scope and should be used as anonymous functions within let and scoped blocks.<br>"
-                          "Example:%%%"
+                          "Example:```"
                           "(let\n"
                           "  ((i 0)\n"
                           "   (my_incrementor (=> (v)\n"
@@ -449,7 +449,7 @@
                           "                     (dec i v))))\n"
                           "  (my_incrementor 4)\n"
                           "  (my_decrementor 2)\n"
-                          "  i)%%%"
+                          "  i)```"
                           "<- 2<br>"
                           "<br>"
                           "")
@@ -477,10 +477,10 @@
                          "is an optional object that provides information about the defined symbol for purposes "
                          "of help, rehydration, and other context.  The metadata object tags are arbitrary, but "
                          "depending on the type of value being referenced by the symbol, there are some "
-                         "reserved keys that are used by the system itself.<br>Example:%%%"
+                         "reserved keys that are used by the system itself.<br>Example:```"
                          "(defglobal *global_var* \"The value of the global.\"\n"
                          "           { description: \"This is a global in the current namespace\"\n"
-                         "             tags: [ `keywords `for `grouping ] }\n%%%"
+                         "             tags: [ `keywords `for `grouping ] }\n```"
                          "<br>"
                          "The key/value pairs attached to a symbol are arbitrary and "
                          "can be provided for purposes of description or use by users or programatic elements.")
@@ -515,10 +515,10 @@
                           "symbol being defined successive values until the end of the array "
                           "is reached, or a (break) operator is encountered in the body "
                           "expression. Unlike for_each, the for_with operator is not a collector, and "
-                          "there is no return value and attempting to assign the return value will not work.<br>Example:%%%"
+                          "there is no return value and attempting to assign the return value will not work.<br>Example:```"
                           "(for_with (next_val (generator instream))\n"
                           "     (log (-> text_decoder `decode next_val)))\n"
-                          "%%%<br>")
+                          "```<br>")
           tags: [`iteration `generator `loop `flow `control ]
       }
     ])
