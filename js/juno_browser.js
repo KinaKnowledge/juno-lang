@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2022-12-05 10:34:40
-// Version: 2022.12.05.10.34
-export const DLISP_ENV_VERSION='2022.12.05.10.34';
+// Build Time: 2022-12-06 06:07:15
+// Version: 2022.12.06.06.07
+export const DLISP_ENV_VERSION='2022.12.06.06.07';
 
 
 
@@ -3617,7 +3617,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","core-ext","html","build-tools","browser","http_client"],build:"2022.12.05.10.34",imports:new Object(),repl:new Object(),included_libraries:["ext-searchbox.js","ext-split.js","mode-juno.js","ext-language_tools.js","mode-json.js","mode-javascript.js","mode-css.js","mode-css.js","theme-juno_light.js","theme-earth_tones.js","theme-chrome.js","theme-crimson_editor.js","theme-cobalt.js","theme-idle_fingers.js","theme-gruvbox.js","theme-dracula.js","theme-katzenmilch.js","theme-solarized_dark.js","theme-solarized_light.js"],editor:{
+    },features:["compiler","repl","core-ext","html","build-tools","browser","http_client"],build:"2022.12.06.06.07",imports:new Object(),repl:new Object(),included_libraries:["ext-searchbox.js","ext-split.js","mode-juno.js","ext-language_tools.js","mode-json.js","mode-javascript.js","mode-css.js","mode-css.js","theme-juno_light.js","theme-earth_tones.js","theme-chrome.js","theme-crimson_editor.js","theme-cobalt.js","theme-idle_fingers.js","theme-gruvbox.js","theme-dracula.js","theme-katzenmilch.js","theme-solarized_dark.js","theme-solarized_light.js"],editor:{
         default_theme:"cobalt",font_size:14
     },application:{
         menu_timeout:2500,global_theme:"idle_fingers",max_log_lines:100
@@ -5305,7 +5305,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","core-ext","io","Deno","build-tools","http_client"],build:"2022.12.05.10.34",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["core/path"]={symbol:"path",namespace:"core",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),included_libraries:["ext-searchbox.js","ext-split.js","mode-juno.js","ext-language_tools.js","mode-json.js","mode-javascript.js","mode-css.js","mode-css.js","theme-juno_light.js","theme-earth_tones.js","theme-chrome.js","theme-crimson_editor.js","theme-cobalt.js","theme-idle_fingers.js","theme-gruvbox.js","theme-dracula.js","theme-katzenmilch.js","theme-solarized_dark.js","theme-solarized_light.js"],editor:{default_theme:"cobalt",font_size:14},application:{menu_timeout:2500,global_theme:"idle_fingers",max_log_lines:100}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","core-ext","io","Deno","build-tools","http_client"],build:"2022.12.06.06.07",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["core/path"]={symbol:"path",namespace:"core",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),included_libraries:["ext-searchbox.js","ext-split.js","mode-juno.js","ext-language_tools.js","mode-json.js","mode-javascript.js","mode-css.js","mode-css.js","theme-juno_light.js","theme-earth_tones.js","theme-chrome.js","theme-crimson_editor.js","theme-cobalt.js","theme-idle_fingers.js","theme-gruvbox.js","theme-dracula.js","theme-katzenmilch.js","theme-solarized_dark.js","theme-solarized_light.js"],editor:{default_theme:"cobalt",font_size:14},application:{menu_timeout:2500,global_theme:"idle_fingers",max_log_lines:100}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -10654,16 +10654,16 @@ export async function init_dlisp(Environment)  {
                                     return await (async function() {
                                         let __for_body__272=async function(req) {
                                             {
-                                                let _expr_790;
+                                                let _expr_8755;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_790=await (async function(){
+                                                _expr_8755=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_790 && _expr_790["0"]);
-                                                req_ns=(_expr_790 && _expr_790["1"]);
-                                                explicit=(_expr_790 && _expr_790["2"]);
+                                                req_sym=(_expr_8755 && _expr_8755["0"]);
+                                                req_ns=(_expr_8755 && _expr_8755["1"]);
+                                                explicit=(_expr_8755 && _expr_8755["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10766,13 +10766,13 @@ export async function init_dlisp(Environment)  {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_48447;
+                    let _expr_73899;
                     let nspace;
-                    _expr_48447=await (async function(){
+                    _expr_73899=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_48447 && _expr_48447["0"]);
-                    nspace=(_expr_48447 && _expr_48447["1"]);
+                    sym=(_expr_73899 && _expr_73899["0"]);
+                    nspace=(_expr_73899 && _expr_73899["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -16347,6 +16347,8 @@ export async function init_dlisp(Environment)  {
                 try_block=await (async function(){
                      return await async function(){
                         if (check_true (((tokens && tokens["1"])&& (null==(tokens && tokens["1"] && tokens["1"]["val"]))))) {
+                            return (tokens && tokens["1"])
+                        } else if (check_true (((tokens && tokens["1"] && tokens["1"]["type"])==="objlit"))) {
                             return (tokens && tokens["1"])
                         } else if (check_true ((tokens && tokens["1"]))) {
                             return (tokens && tokens["1"] && tokens["1"]["val"])

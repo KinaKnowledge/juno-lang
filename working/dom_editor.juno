@@ -124,8 +124,6 @@
          (-> selection `selectAllChildren selrange.startContainer))))
        
       
-      
-
 (defun_sync get_text_around_point (point)
    (let
       ((text [])
@@ -205,8 +203,7 @@
        tags: ["editor" "point" "cursor" "DOM" "tree" "element"]
    })
 
-(use_quoted_initializer
-(defglobal `markdown_rules
+(defparameter *markdown_rules*
    {
      reload_rules:{
          on_event: `keydown
@@ -386,7 +383,7 @@
                         
           
       }
-   }))
+   })
 
 (defun_sync flex_row (`& args)
    (apply div { `style: "padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
@@ -403,10 +400,12 @@
     (depth_elem (div { `style: "padding: 5px; color: green;" } ))
     (path_elem (div { `style: "padding: 5px; " } ))
     (key_history_elem (div { `style: "padding: 5px;" }))
+    (text_around_elem (div { `style: "padding: 5px;" }))
     (status_elem (div { `style: "border-bottom: 1px solid var(--main-accent-line-hover); padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
                       position_elem
                       depth_elem
                       path_elem
+                      text_around_elem
                       key_history_elem))
     (debug_offset_height "10px")
     (debug_elem (div { `style: (+ " padding: 5px; overflow:scroll; height: calc(100% - " debug_offset_height ");") } ))
@@ -420,6 +419,7 @@
                  }))
     (content_view (div { `style: "background: var(--control-bg-color); overflow: hidden; width: 100%; height: 100%;" }
                        sview.view))
+    (rules nil)
     (collection_timer nil)
     (key_sequence_rules { keyup: {} keydown: {} })
     (prior_text_rules { keyup: {} keydown: {} })
@@ -438,6 +438,7 @@
                                       (if rule.handle_event
                                          { `handle_event: true }
                                          {}))))
+                     (log "DOM Editor: loading rule: exec?" (is_function? rule.exec) rule) 
                      (when rule.prior_text_sequence
                         (make_path [ rule.on_event rule.prior_text_sequence ] prior_text_rules lookup_rule))
                      ;(when rule.post_text_sequence
@@ -445,11 +446,18 @@
                      (when rule.key_sequence
                         (make_path [ rule.on_event rule.key_sequence ] key_sequence_rules lookup_rule)))))
     (load_rules (fn ()
-                   (when (is_object? options.rules)
+                   (progn
+                      (cond
+                         (is_reference? options.rules)
+                         (progn
+                            (= rules (eval options.rules))
+                            (log "load_rules: post eval" rules))
+                         (is_array? options.rules)
+                         (= rules (resolve_path options.rules Environment.context.scope)))
                       (= key_sequence_rules { keyup: {} keydown: {} })
                       (= prior_text_rules { keyup: {} keydown: {} })
                       (= post_text_rules { keyup: {} keydown: {} })
-                      (for_each (pset (pairs options.rules))
+                      (for_each (pset (pairs rules))
                          (destructuring_bind (name rule)
                             pset
                             (load_rule name rule))))))
@@ -577,7 +585,7 @@
                                                    "text")))))
                             (= current_point status)
                             (= last_event_context (process_rules_for_event event))
-                            ;(log "last_event_context: " last_event_context)
+                            
                             
                             
                             (set_prop position_elem
@@ -590,6 +598,9 @@
                             (set_prop key_history_elem
                                `innerText
                                (join ":" (key_history)))
+                            (set_prop text_around_elem
+                               `innerText
+                               (join ":" (get_text_around_point status)))
                             (-> path_elem `replaceChildren
                                (div { } (for_each (name path_comps)
                                        (span {`style: "padding-right: 5px" } name))))
@@ -615,15 +626,22 @@
              
     (on_initialize (fn ()
                       (progc
+                         (log "DOM_Editor: initializing: " options.rules)
+                         (if options.content
+                             (progn
+                                (log "DOM_editor: initializing content: " (subtype options.content))
+                                (-> root_elem `replaceWith options.content)
+                                (= root_elem document_view.children.0)))
                          (load_rules)
                          (log "loaded rules: key_sequence_rules: " key_sequence_rules)
                          (log "loaded rules: prior_text_rules: " prior_text_rules)
                          ;(log "options.content: " options.content)
-                         (attach_event_listener root_elem
+                         
+                         (attach_event_listener content_view
                             `keyup
                             (fn (e) (key_up_event e)))
                          
-                         (attach_event_listener view
+                         (attach_event_listener content_view
                             `keydown
                             (fn (e)
                                (key_down_event e)))
@@ -634,10 +652,7 @@
                          (set_style [["height" "100%"]] root_elem)
                          (if options.hide_control_bar
                             (-> self `show_control_bar false))
-                         (if options.content
-                             (progn
-                                (log "DOM_editor: initializing content: " (subtype options.content))
-                                (-> root_elem `replaceWith options.content)))
+                         
                          (setTimeout (fn () 
                                         (if options.content
                                            (progn
@@ -663,7 +678,7 @@
                  {
                    `win: "Alt-M"
                    `mac: "Alt-M"
-                   `exec: (fn () (place_control `right (defglobal *ed* (DOM_editor { rules: markdown_rules debug: false }))))
+                   `exec: (fn () (place_control `right (defglobal *ed* (DOM_editor { rules: [ `*markdown_rules* ] debug: true }))))
                   `description: "Opens the meta editor"
                    })
 

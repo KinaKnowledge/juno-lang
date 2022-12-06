@@ -2387,6 +2387,10 @@
   []
   3
   "Return value from try block"]
+  ["(try { abc: 123 } (catch Error (e) (log e)))"
+  []
+  { abc: 123 }
+  "object literal in try"]
   ["(progn (defun tglobmark () \   (let \       ((is_fa? (fn (v) \                  (== v 1)))) \     (is_fa? 1))) (blank? (prop (describe `tglobmark) `requires)))"
   []
   true

@@ -2884,6 +2884,8 @@
                                (and tokens.1
                                   (eq nil tokens.1.val))
                                tokens.1
+                               (== tokens.1.type "objlit")
+                               tokens.1
                                tokens.1
                                tokens.1.val))
                  (compiled_try_block nil)

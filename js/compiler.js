@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2022-12-05 10:34:32
-// Version: 2022.12.05.10.34
-export const DLISP_ENV_VERSION='2022.12.05.10.34';
+// Build Time: 2022-12-06 06:07:08
+// Version: 2022.12.06.06.07
+export const DLISP_ENV_VERSION='2022.12.06.06.07';
 
 
 
@@ -4724,6 +4724,8 @@ export async function init_compiler(Environment) {
                 try_block=await (async function(){
                      return await async function(){
                         if (check_true (((tokens && tokens["1"])&& (null==(tokens && tokens["1"] && tokens["1"]["val"]))))) {
+                            return (tokens && tokens["1"])
+                        } else if (check_true (((tokens && tokens["1"] && tokens["1"]["type"])==="objlit"))) {
                             return (tokens && tokens["1"])
                         } else if (check_true ((tokens && tokens["1"]))) {
                             return (tokens && tokens["1"] && tokens["1"]["val"])
