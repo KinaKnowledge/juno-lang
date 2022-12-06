@@ -1388,6 +1388,22 @@
    `tags: [`compiler `system ]
    })
  
+(defun new_ctx (ctx)
+   (let
+      ((new_ctx { scope: {}
+                  parent: nil }))
+      (if ctx
+         (progn
+            (set_prop new_ctx
+                      `parent
+                      ctx)))
+      new_ctx)
+  {
+   `description: "Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier."
+   `usage: ["ctx:?object"]
+   `tags: [`compiler `system `context `ctx `setf_ctx ]
+   })
+
 (defun getf_ctx (ctx name _value)
     (if (and ctx (is_string? name))
         (cond
@@ -1406,8 +1422,8 @@
         (throw "invalid call to getf_ctx: missing argument/s"))
   {
    `description: "Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier."
-   `usage: ["tree:array" "name:string"]
-   `tags: [`compiler `system ]
+   `usage: ["ctx:object" "name:string"]
+   `tags: [`compiler `system `context `ctx `new_ctx `setf_ctx ]
    })
 
 (defun setf_ctx (ctx name value)
@@ -1420,8 +1436,8 @@
         value)
   {
    `description: "Used for compilation. Given a context structure, provides a utility function for setting a context place with value."
-   `usage: ["tree:array" "name:string" "value:*" ]
-   `tags: [`compiler `system ]
+   `usage: ["ctx:object" "name:string" "value:*" ]
+   `tags: [`compiler `system `context `ctx `new_ctx `getf_ctx ]
    })
                   
         

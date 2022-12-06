@@ -213,10 +213,11 @@
                        true)
          exec: (fn (point ctl event)
                   (progn
-                     (notify (+ "Reloading Rules!" (-> ctl `name)))
+                     (notify (+ "Reloading Markdown Rules: " ctl.name))
                      (-> ctl `reload_rules)))
          
      }
+     
      on_blank:{
          on_event: `keyup
          key_sequence: "Backspace"
@@ -438,7 +439,6 @@
                                       (if rule.handle_event
                                          { `handle_event: true }
                                          {}))))
-                     (log "DOM Editor: loading rule: exec?" (is_function? rule.exec) rule) 
                      (when rule.prior_text_sequence
                         (make_path [ rule.on_event rule.prior_text_sequence ] prior_text_rules lookup_rule))
                      ;(when rule.post_text_sequence
@@ -447,13 +447,11 @@
                         (make_path [ rule.on_event rule.key_sequence ] key_sequence_rules lookup_rule)))))
     (load_rules (fn ()
                    (progn
-                      (cond
-                         (is_reference? options.rules)
-                         (progn
-                            (= rules (eval options.rules))
-                            (log "load_rules: post eval" rules))
+                      (cond 
                          (is_array? options.rules)
-                         (= rules (resolve_path options.rules Environment.context.scope)))
+                         (= rules (resolve_path options.rules Environment.context.scope))
+                         (is_function? options.rules)
+                         (= rules (-> options `rules self)))
                       (= key_sequence_rules { keyup: {} keydown: {} })
                       (= prior_text_rules { keyup: {} keydown: {} })
                       (= post_text_rules { keyup: {} keydown: {} })
@@ -467,6 +465,25 @@
     (last_event_context nil)
     (render (fn ()
                content_view))
+    (set_filename (fn (fname)
+                     (if (is_string? fname)
+                         (progn
+                            (set_prop options
+                               `filename
+                               fname)
+                            (set_prop options
+                               `path
+                               (conj [ `filesystem ] (split_by "/" fname)))
+                            (set_prop title_span
+                               `innerText
+                               (get_editor_file_basename self)))
+                         (notify "Require a string for the filename"))))
+    (save_as (fn ()
+                (let
+                   ((fname (wait_for_file_selection true)))
+                   (when (not (blank? fname))
+                      (set_filename fname)
+                      (request_save)))))
     (on_focus (fn (self)
                 (progc
                    (focus_to root_elem)
@@ -550,6 +567,7 @@
     (key_history_length 4)
     (key_history (function ()
                     key_history_acc))
+    (is_dirty? false)
     (add_to_key_history (function (key)
                            (progn
                               (unless (contains? key (list "Shift" "Alt" "Ctrl" "Command")) ;; don't grab just the special key downs
@@ -561,6 +579,15 @@
                           (let
                              ((status (point_for root_elem))
                               (key event.key))
+                             (when (or (and (== key.length 1)
+                                            (not event.metaKey))
+                                       (or (== key "Backspace")
+                                           (== key "Enter")))
+                                (when (not is_dirty?)
+                                    (add_class "juno-needs-save" title_span))
+                                (= is_dirty? true))
+                             
+                                
                              (cond
                                (== key "Escape")
                                (progn
@@ -618,67 +645,165 @@
                             (-> debug_elem `replaceChildren
                                (pre (JSON.stringify (element_to_lisp root_elem) "\n" 2)))
                             ))))
-    ;(to_json (function ()
-     ;           `(DOM_editor (element_to_lisp root_elem) ,#options)))
+    
     (request_save (function ()
                         (progn
                            (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
-             
+    
+    (menu_items (fn ()
+                   [(if options.filename
+                        [(+ "Save " (get_editor_file_basename self)) (fn (e) (request_save))]
+                        [])
+                    ["Save as..." (fn (e) (save_as)) ]]))
+    
+    (error_state false)                   
     (on_initialize (fn ()
                       (progc
-                         (log "DOM_Editor: initializing: " options.rules)
-                         (if options.content
-                             (progn
-                                (log "DOM_editor: initializing content: " (subtype options.content))
-                                (-> root_elem `replaceWith options.content)
-                                (= root_elem document_view.children.0)))
-                         (load_rules)
-                         (log "loaded rules: key_sequence_rules: " key_sequence_rules)
-                         (log "loaded rules: prior_text_rules: " prior_text_rules)
-                         ;(log "options.content: " options.content)
-                         
-                         (attach_event_listener content_view
-                            `keyup
-                            (fn (e) (key_up_event e)))
-                         
-                         (attach_event_listener content_view
-                            `keydown
-                            (fn (e)
-                               (key_down_event e)))
-                         (set_attribute root_elem
-                            `contenteditable "true")
-                         (set_attribute root_elem
-                            `tabindex 0)
-                         (set_style [["height" "100%"]] root_elem)
-                         (if options.hide_control_bar
-                            (-> self `show_control_bar false))
-                         
-                         (setTimeout (fn () 
-                                        (if options.content
+                         (let
+                            ((remote_content nil)
+                             (extension nil))
+                            (cond
+                               options.filename
+                               (progn
+                                  (try
+                                     (progn
+                                        
+                                        (= remote_content (-> (fetch (+ "/files/" options.filename)) `text))
+                                        ;(log "remote_content: " remote_content)
+                                        (when remote_content
+                                           (= remote_content (eval (JSON.parse remote_content)))
+                                           (set_filename options.filename)
+                                           (-> root_elem `replaceWith remote_content)
+                                           (= root_elem document_view.children.0)))
+                                     (catch Error (e)
+                                        (progn
+                                           (alert_box (+ "Unable to open: " options.filename " - " e.message))
+                                           (= error_state true)))))
+                               options.content
+                               (progn
+                                  (-> root_elem `replaceWith options.content)
+                                  (= root_elem document_view.children.0)))
+                                     
+                            (load_rules)
+                            ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
+                            ;(log "loaded rules: prior_text_rules: " prior_text_rules)
+                            ;(log "options.content: " options.content)
+                            
+                            (attach_event_listener content_view
+                               `keyup
+                               (fn (e) (key_up_event e)))
+                            
+                            (attach_event_listener content_view
+                               `keydown
+                               (fn (e)
+                                  (key_down_event e)))
+                            (set_attribute root_elem
+                               `contenteditable "true")
+                            (set_attribute root_elem
+                               `tabindex 0)
+                            (set_style [["height" "100%"]] root_elem)
+                            (if options.hide_control_bar
+                               (-> self `show_control_bar false))
+                            
+                            (setTimeout (fn ()
                                            (progn
-                                              (select_element root_elem)
-                                              (collapse_to_start (get_selection)))
-                                           (select_element starter))) 100))
-                         )))
+                                              (cond
+                                                 error_state  ;; unable to initialize - so remove ourselves
+                                                 (destroy_control self)
+                                                 (or options.content
+                                                    options.filename)
+                                                 (progn
+                                                    (select_element root_elem)
+                                                    (collapse_to_start (get_selection)))
+                                                 else
+                                                 (select_element starter))))
+                                        100))))))
    {
        control_bar: true
        expose: [[`active_rules active_rules]
                 [`reload_rules load_rules]
                 [`save request_save]
+                [`editor {} ]  ;; just to indicate we are an editor type component
                 [`get (fn ()
                          (element_to_lisp root_elem)) ]
+                [`needs_save? (function ()
+                                 is_dirty?)]
                 [`on_save_complete (function (event_obj)
-                                      (log "SAVE COMPLETE: " event_obj))]
+                                      (progn
+                                         (remove_class "juno-needs-save" title_span)
+                                         (= is_dirty? false)
+                                         (log "editor: save_complete: " event_obj)))]
                 [`get_root_element (fn () root_elem)]]
    })
 
 
-;(place_control `right (DOM_editor { rules: markdown_rules content: *ed*.options.content } ))
+
+(defun DOM_to_markdown (quoted_dom _acc _ctx)
+   (let
+      ((acc (or _acc []))
+       (ctx (new_ctx _ctx))
+       (process_children (fn (children)
+                            (progn
+                               ;(log "->" children)
+                               (for_each (child (or children []))
+                                  (DOM_to_markdown child acc ctx)))))
+       (tag nil))
+      (log "DOM_to_markdown: " (getf_ctx ctx `tag) (getf_ctx ctx `in_pre))
+      (cond
+         (is_array? quoted_dom)
+         (progn
+            (= tag (if (is_reference? (first quoted_dom))
+                       (first quoted_dom)
+                       nil))
+            (if (not (eq nil ctx.parent))
+                (= ctx (new_ctx ctx)))
+            (setf_ctx ctx `tag tag)
+            (log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (rest quoted_dom))
+            (cond
+               (and tag
+                  (== tag (quote div)))
+               (progn 
+                  (process_children (rest quoted_dom))
+                  (push acc "<br>"))
+               (and tag
+                  (== tag (quote pre)))
+               (progn
+                  (setf_ctx ctx `in_pre true)
+                  (push acc "```")
+                  (process_children (rest quoted_dom))
+                  (push acc "```<br>"))
+               (and tag
+                  (starts_with? (+ "=:" "h") tag)
+                  (not (getf_ctx ctx `in_pre)))
+               (progn
+                  (push acc (join "" (for_each (r (range (int (-> tag `substr 3))))
+                                        "#")))
+                  (push acc " ")
+                  (process_children (rest quoted_dom))
+                  (push acc "<br>"))
+                  
+               (and tag
+                  (== tag (quote br))
+                  (not (getf_ctx ctx `in_pre)))
+               false; (push acc "<br>")
+               (and tag
+                  (not (getf_ctx ctx `in_pre)))
+               (process_children (rest quoted_dom))))
+         (is_string? quoted_dom)
+         (progn
+            (log "adding from " (getf_ctx ctx `tag) quoted_dom)
+            (push acc quoted_dom)))
+      acc))
+      
+      
+
+(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `filename: "doc/test_1.juno" debug: true }))
+
 (set_key_binding "global" "open_meta_editor"
                  {
                    `win: "Alt-M"
                    `mac: "Alt-M"
-                   `exec: (fn () (place_control `right (defglobal *ed* (DOM_editor { rules: [ `*markdown_rules* ] debug: true }))))
+                   `exec: (fn () (place_control `right (defglobal *ed* (DOM_editor { rules: [ `*markdown_rules* ] debug: false }))))
                   `description: "Opens the meta editor"
                    })
 

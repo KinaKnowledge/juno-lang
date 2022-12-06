@@ -5928,7 +5928,7 @@
                    [])
              ,#(if control_bar?
                   `(set_prop self
-                      `show_title_bar 
+                      `show_control_bar 
                       (fn (state)
                          (progn
                             (if state
@@ -8643,15 +8643,16 @@
    (log (dtext "Saving Application State.."))
    (set_focus_to nil)
    (defvar system_repl *system_repl*)
+   (defvar results nil)
    (= *system_repl* nil)
    
    (= *serialized_controls* (serialize_controls $root_controls))
       ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
    (console.log "*serialized_controls*: " *serialized_controls*)
-   
-   (log (dtext "Save Application State Results: ") (save_image))
-   (log (dtext "Complete"))
-   (= *system_repl* system_repl)))
+   (= results (save_image))
+   (= *system_repl* system_repl)
+   (log (dtext "Save Application State Results: ") results)
+   (log (dtext "Complete"))))
 
 (defun rehydrate_controls (container serialized_controls)
   (let
@@ -8792,8 +8793,14 @@
    {
        `description: (+ "Opens a file tree browser for selection of a file.  Once the a " 
                         "file is chosen, or the selection is cancelled via escape, then either "
-                        "the selected path is returned, or nil if cancelled or closed.")
-       `usage:[]
+                        "the selected path is returned, or nil if cancelled or closed.<br>If "
+                        "the create_mode flag is true, the behavior is modified in the "
+                        "selection control where path completions aren't automatically "
+                        "used, instead the user must press tab to complete the selection. "
+                        "This allows for the user to select a file that may not be "
+                        "present on the filesystem for purposes of creation.  By default the "
+                        "create_mode flag is set to false.")
+       `usage:["create_mode:?boolean"]
        `tags: ["UI" "DOM" "file" "editor" "select" "open"]
    })
 
