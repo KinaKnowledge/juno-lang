@@ -8354,9 +8354,9 @@
     (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } options.name))
     (description_editor (DOM_editor { rules: [ `*markdown_rules* ] 
                                       hide_control_bar: true  } ))
-    (description_section (details { `open: true   }
+    (description_section (details { `open: true  `style:"flex-grow: 1;" }
                                   (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Description"))
-                                  (div { `style: "min-height: 250px; width: 100%;" } 
+                                  (div { `style: "height: calc(100% - 30px); width: 100%;" } 
                                        description_editor.view)))
     (namespace_elem (span { `class: "juno-namespace" `style: "font-weight: bold;"} meta_struct.namespace))
     (name_edit_span (span (+ {} 
@@ -8447,8 +8447,9 @@
                                 tag_selection))
     (rendered_content_elem (div { `class: "juno-control" } "Live View"))
     
-    (main_view (div { `class: "juno-control"  `style: "padding-top: 5px; margin-left: 5px; min-height: 50%" } 
-                    (h3 { `style: "display: flex; justify-content: space-between; align-items: center; " } (span (span { `style: "color: var(--namespace-color); " } meta_struct.namespace ) "/" name_edit_span)
+    (main_view (div { `class: "juno-control"  `style: "display: flex; flex-direction: column; align-items: stretch; padding-top: 5px; margin-left: 5px; min-height: 50%" } 
+                    (h3 { `style: "display: flex; justify-content: space-between; align-items: center; " } 
+                        (span (span { `style: "color: var(--namespace-color); " } meta_struct.namespace ) "/" name_edit_span)
                            symbol_type_elem)
                     (hr { `style: "light-hr" })
                     usage_section
@@ -8472,8 +8473,20 @@
                                       (refresh_output))
                                    (catch Error (e)
                                       (log_error e)))))
-                                   
     
+    (emit_as_formatted_lisp (fn ()
+                               (let
+                                  ((out (process_out)))
+                                  (when (and (is_string? out.description)
+                                             (> out.description.length 30))
+                                     (set_prop out
+                                        `description
+                                        `(+ ,@(word_wrap out.description))))
+                                  (pretty_print out))))
+    (copy_as_formatted_lisp (fn ()
+                               (progn
+                                  (copy_text_to_clipboard (emit_as_formatted_lisp))
+                                  (notify "Copied as lisp text to clipboard"))))
     (process_out (fn ()
                     (let
                        ((output (clone meta_struct)))
@@ -8661,8 +8674,8 @@
                                       symbol_type_elem.value))))))))
    (menu_items (fn (menu_title)
                    (progn
-                      (log "menu_args?" menu_title)
-                      [[(dtext "Blank Menu") (fn () (notify "Blank!"))]
+                      ;(log "menu_args?" menu_title)
+                      [[(dtext "Copy as formatted lisp") (fn () (copy_as_formatted_lisp))]
                        ["Set Display Mode"
                         [["Rendered View" (fn () (set_output_display_mode 0))]
                          ["Lisp" (fn () (set_output_display_mode 1))]
