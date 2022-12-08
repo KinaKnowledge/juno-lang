@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-12-06 12:13:27
-// Version: 2022.12.06.12.13
-export const DLISP_ENV_VERSION='2022.12.06.12.13';
+// Build Time: 2022-12-08 10:40:23
+// Version: 2022.12.08.10.40
+export const DLISP_ENV_VERSION='2022.12.08.10.40';
 
 
 
@@ -2007,97 +2007,6 @@ await Environment.set_global("show",async function(thing) {
         (array_obj).push((array_obj).shift());
         return array_obj
     },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"]
-})
-};
-{
-     Environment.set_global("word_wrap",function(text,ncols) {
-        let line_length;
-        let words;
-        let max_cols;
-        let current_line;
-        let lines;
-        line_length=0;
-        words=(text).split(" ");
-        max_cols=(ncols|| 80);
-        current_line=[];
-        lines=[];
-         ( function() {
-            let __for_body__158=function(word) {
-                return   (function(){
-                    if (check_true (((line_length+  ( Environment.get_global("length"))(word))>=max_cols))) {
-                        {
-                            (lines).push((current_line).join(" "));
-                            current_line= ( function(){
-                                let __array_op_rval__160=word;
-                                 if (__array_op_rval__160 instanceof Function){
-                                    return  __array_op_rval__160() 
-                                } else {
-                                    return [__array_op_rval__160]
-                                }
-                            })();
-                            return line_length= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
-                        }
-                    } else {
-                        {
-                            (current_line).push(word);
-                            return line_length+= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
-                        }
-                    }
-                } )()
-            };
-            let __array__159=[],__elements__157=(words|| []);
-            let __BREAK__FLAG__=false;
-            for(let __iter__156 in __elements__157) {
-                __array__159.push( __for_body__158(__elements__157[__iter__156]));
-                if(__BREAK__FLAG__) {
-                     __array__159.pop();
-                    break;
-                    
-                }
-            }return __array__159;
-             
-        })();
-        if (check_true (((current_line && current_line.length)>0))){
-            (lines).push((current_line).join(" "))
-        };
-        return lines
-    },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"]
-})
-};
-await Environment.set_global("progc",async function(...forms) {
-    return ["=:try",["=:progn",].concat(forms),["=:catch","=:Error",["=:e"],["=:log","=:e.message"]]]
-},{ "eval_when":{ "compile_time":true
-},"name":"progc","macro":true,"fn_args":"(\"&\" forms)","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"]
-});
-{
-     Environment.set_global("reverse_string",function(text) {
-        return ( ( function() {
-            {
-                 let __call_target__=(text).split(""), __call_method__="reverse";
-                return  __call_target__[__call_method__]()
-            } 
-        })()).join("")
-    },{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"]
-})
-};
-{
-     Environment.set_global("last_n_chars",function(n,text) {
-        if (check_true ((text instanceof String || typeof text==='string'))){
-            return  text["substr"].call(text,(-1* n))
-        } else {
-            return null
-        }
-    },{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"]
-})
-};
-{
-     Environment.set_global("last_n",function(n,arr) {
-        if (check_true ((arr instanceof Array))){
-            return  arr["slice"].call(arr,(-1* n))
-        } else {
-            return null
-        }
-    },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"]
 })
 };
 await (await Environment.get_global("register_feature"))("core-ext");

@@ -3551,6 +3551,85 @@ such as things that connect or use environmental resources.
       `tags: ["object" "array" "keys" "property" "properties" "introspection" "values"]
    })
 
+(defun_sync word_wrap (text ncols)
+   (let
+      ((line_length 0)
+       (words (split_by " " text))
+       (max_cols (or ncols 80))
+       (current_line [])
+       (lines []))
+      (for_each (word (or words []))
+         (cond
+            (>= (+ line_length (length word)) max_cols)
+            (progn
+               (push lines (join " " current_line))   ;; over the limit, push the current line into line
+               (= current_line [ word ])   ;; make a new line and add the word to it
+               (= line_length (+ (length word) 1))) ;; set the current line length to the word + 1 space
+            else
+            (progn
+               (push current_line word)    ;; otherwise add the word to the current line
+               (inc line_length (+ (length word) 1))))) ;;...and update our line length counter
+                    
+      
+      ;; push any remaining last line into the lines accumulator
+      (if (> current_line.length 0)
+          (push lines (join " " current_line)))
+      ;; and return lines
+      lines)
+   {
+       `description: (+ "Given a string of text and an optional column length "
+                        "returns an array of lines wrapped at or before the "
+                        "column length.  If no column length is provided, "
+                        "the default is 80.")
+       `usage: ["text:string" "ncols:?number"]
+       `tags: ["text" "string" "wrap" "format" ]
+   })
+ 
+ (defmacro progc (`& forms)
+   `(try
+       (progn
+          ,@forms)
+       (catch Error (e)
+          (log e.message)))
+   {
+       `description: (+ "This macro wraps the provided forms in a "
+                        "try-catch, and returns the last value if "
+                        "no errors, like progn, or if an error "
+                        "occurs, logs to the console.  Simple "
+                        "help for debugging.")
+       `tags: ["debug" "error" "catch" "handler" "progn" "eval"]
+       `usage: ["forms:*"]
+   })
+
+(defun_sync reverse_string (text)
+   (join "" (-> (split_by "" text) `reverse))
+   {
+       description: "Given a string, returns the characters in reverse order."
+       usage: ["text:string"]
+       tags: ["string" "text" "reverse" "modify" ]
+   })
+
+(defun_sync last_n_chars (n text)
+   (if (is_string? text)
+       (-> text `substr (* -1 n))
+       nil)
+   {
+       description: "For a given string, returns the last n characters as a string."
+       usage: ["n:number" "text:string"]
+       tags: ["string" "text" "last" "amount" "end" "tail"]
+   })
+
+(defun_sync last_n (n arr)
+   (if (is_array? arr)
+       (-> arr `slice (* -1 n))
+       nil)
+   {
+       description: "For a given array, returns the last n elements as an array."
+       usage: ["n:number" "arr:array"]
+       tags: ["array" "list" "text" "last" "amount" "end" "tail"]
+   })
+ 
+
 (defun_sync analyze_text_line (line)
   (let
      ((delta 0)
@@ -3798,7 +3877,9 @@ such as things that connect or use environmental resources.
                       "a single integer argument representing a requested line number from "
                       "the text buffer being analyzed.  The provided get_line function should "
                       "return a string representing the line of text from the buffer containing "
-                      "the requested line. ")
+                      "the requested line. Once the string is returned, it is mandatory to update "
+                      "the line buffer with the updated indented string, otherwise the function "
+                      "will not work properly.")
      `tags: [ `formatting `indentation `text `indent ]
      `usage: ["line_number:integer" "get_line:function"]
    })
@@ -3840,6 +3921,369 @@ such as things that connect or use environmental resources.
     `tags: ["default" "defaults" "set" "application" "editor" "repl" ]
     `usage: ["path:symbol|string|array" "value:*"]
   })
+
+(defun_sync all_global_functions ()
+   (let
+      ((acc (new Set))
+       (env_a nil))
+      (for_each (ns (namespaces))
+         (progn
+            (= env_a (-> Environment `get_namespace_handle ns))
+            (for_each (pset (pairs env_a.context.scope))
+               (if (is_function? pset.1)
+                   (-> acc `add pset.0)))))
+      acc)
+   {
+       `description: "Returns a Set object of all accessible functions in the environment, including all namespaces."
+       `usage: []
+       `tags: ["global" "function" "scope" "environment"]
+   })
+(defun_sync pretty_print (in_struct report_callout)
+   (let
+      ((in_text (cond 
+                   (is_object? in_struct)
+                   (as_lisp in_struct)
+                   (is_string? in_struct)
+                   in_struct
+                   else
+                   (+ "" in_struct))) ;; bools, numbers etc, convert to string
+       (chars (split_by "" in_text))
+       (key_words (prop *formatting_rules* `keywords))
+       (block_words [ "try" "progn" "progl" "progc" "do" "let" "cond"])
+       (conditionals [ "if" "when" "unless" ])
+       (char nil)
+       (global_lookup (all_global_functions)) ;; set of the globals
+       (last_opener nil)
+       (operator nil)
+       (next_char nil)
+       (next_char_pos 0)
+       (state {})
+       (lines [])
+       (formatted_lines [])
+       (line_acc [])
+       (rule nil)
+       (cpos -1)
+       (debug_mode (if report_callout
+                       true
+                       false))
+       (closers [ ")" "]" "}"])
+       (openers [ "(" "[" "{" ])
+       (code_mode 0)
+       (string_mode 1)
+       (escape_state 0)
+       (mode code_mode)
+       (nl_suppress false)
+       (skip_for nil)
+       (depth_change 0)
+       (long_string_mode 2)
+       (report [])
+       (lpos 0)
+       (lnum 0)
+       (argnum 0)
+       (text nil)
+       (word "")
+       (word_acc [])
+       
+       (add_char_to_line (function (c)
+                            (progn
+                               (push line_acc (or c char))
+                               (= lpos line_acc.length))))
+       (next_line (function ()
+                     (progn
+                        (push lines (join "" line_acc))  ;; push it into the lines
+                        (= lnum lines.length)
+                        (= depth_change 0)
+                        (= line_acc []))))      ;; start a new line
+       (is_whitespace? (function (c)
+                          (contains? c [" " "\t" ])))
+       (indent_string nil)
+       (get_line (function (rnum)
+                   (aif (prop lines rnum)
+                        (if (ends_with? "\n" it)
+                            it
+                            (+ it "\n"))
+                        nil)))
+       (calc_next_char (function ()
+                          (when (prop chars (+ 1 cpos))  ;; something is next
+                             (= next_char_pos (+ cpos 1))
+                             (while (and    ;; while less then current pos
+                                         (prop chars next_char_pos) ;; and something is next
+                                         (is_whitespace? (prop chars next_char_pos)))
+                                (inc next_char_pos))
+                             (= next_char (prop chars next_char_pos))))))
+      ;; hairy here - 
+      ;; basic idea is that we run through the each character updating  
+      ;; various state mechanisms.
+      ;; we *try* to get a keep a sense of what operator we are on, 
+      ;; but it isn't always accurate. 
+      
+      ;; some notes:
+      ;; newlines are suppressed via the nl_suppress flag.  This is used
+      ;; to ensure that key:values don't get a return at the :, but wherever the
+      ;; next appropriate newline value should be in the value part.
+      ;; when nl_suppress is set, and skip_for is nil, it is set to two, 
+      ;; and each cycle decremented until 0, when nl_suppress is turned off and 
+      ;; skip_for is set to nil.
+      
+      ;; we keep track only of if we are in a code state, or a string state, so the modes
+      ;; are code_mode, string_mode and long_string_mode
+      
+      ;; we keep a running track of the depth change of the line in depth_change: 0 for no depth change.  
+      ;; if a closer is encoutered, we decrement depth_change for the line, 
+      ;; otherwise we increment it.  
+      ;; depth_change resets to 0 at each line
+      
+      ;; argnum is a counter that tries to keep track of the argument number we are on for a form.
+      ;; note that this isn't a stack, so when a new opener '(,[' is encountered, we reset it to 0.
+      ;; closers '(,[,{'' don't reset it. 
+      
+      
+      (while (< cpos chars.length)
+         (progn
+            (inc cpos)
+            (= char (prop chars cpos))
+            (= rule nil)
+            (when char
+               (if (and skip_for
+                        (> skip_for 0))
+                   (dec skip_for))
+               (if (== (-> char `charCodeAt) 92)
+                   (= escape_state 2)
+                   (= escape_state (Math.max 0 (- escape_state 1))))
+               (when (and (== mode code_mode)
+                          (>= cpos next_char_pos))
+                  (when (and nl_suppress
+                             (== skip_for nil))
+                     (= skip_for 2))
+                  (calc_next_char))
+               
+               (if (and (== mode code_mode)
+                        (or (is_whitespace? char)
+                            (contains? char openers)
+                            (contains? char closers)
+                            (== char ":")
+                            (== char "\n")))
+                   (progn
+                      (when (> word_acc.length 0)
+                         (= word (join "" word_acc))
+                         (if (and (or (== last_opener "(")
+                                      (== last_opener "["))
+                                  (not (starts_with? "\"" word))
+                                  (not (starts_with? "`" word)))
+                             (= operator word)))
+                      (= word_acc []))
+                   (push word_acc char))
+               (if (and (== mode code_mode)
+                        (== char "}")
+                        (not (== (last line_acc) "{"))
+                        (not (contains? (last line_acc) closers))
+                        (not (== (last line_acc) " ")))
+                   (add_char_to_line " "))
+               (if (and (== mode code_mode)
+                        (contains? char openers))
+                   (= last_opener char))
+               (if (and (== mode code_mode)
+                        (or (contains? char closers)
+                            (is_whitespace? char)))
+                   (= last_opener nil))
+               
+               (when (== skip_for 0)
+                  (= nl_suppress false)
+                  (= skip_for nil))
+               (cond
+                  (and (== mode code_mode)   ;; quote -> string_mode
+                       (== char "\""))
+                  (progn
+                     (= mode string_mode))
+                  
+                  (and (== mode code_mode)   ;; pipe -> long_string_mode
+                       (== "|" char))
+                  (progn
+                     (= mode long_string_mode))
+                  
+                  (and (== char "\"")
+                       (== mode string_mode)
+                       (== escape_state 0))
+                  (progn
+                     (= mode code_mode))
+                  
+                  (and (== char "|")
+                       (== mode long_string_mode))
+                  (progn
+                     (= mode code_mode))
+                  
+                  (and (contains? char openers)
+                       (== mode code_mode))
+                  (progn
+                     (= argnum 0))
+                  
+                  (and (== char ":")
+                       (== mode code_mode))
+                  (progn
+                     (inc argnum)
+                     (= nl_suppress true)))
+               (if (== mode code_mode)
+                   (progn
+                      (cond 
+                         (contains? char openers)
+                         (inc depth_change)
+                         (contains? char closers)
+                         (dec depth_change))
+                      (cond
+                         (and (is_whitespace? char)
+                              (contains? next_char closers)
+                              (> argnum 1)
+                              (not nl_suppress))
+                         (progn
+                            (= rule "r0!")
+                            (next_line))
+                         (and (is_whitespace? char)
+                              (and word (contains? word block_words)))
+                         (progn
+                            (= rule "rb!")
+                            (next_line))
+                         (and (is_whitespace? char)
+                              (>= argnum 1)
+                              (not (contains? (last line_acc) closers))
+                              (> depth_change -1)
+                              (< depth_change 2)
+                              (contains? operator conditionals))
+                         (progn
+                            (= rule "rC")
+                            (next_line))
+                         (and (is_whitespace? char)
+                              (< argnum 2)
+                              (< depth_change 2)
+                              (< lpos 30)
+                              (not (contains? (last line_acc) closers))
+                              (and (not (starts_with? "\"" (or word "")))
+                                   (not (starts_with? "`" (or word "")))
+                                   (> depth_change -1))
+                              (<= (- next_char_pos cpos) 1))
+                         (progn
+                            (add_char_to_line)
+                            (inc argnum)
+                            (= rule "r1+"))
+                         (and (is_whitespace? char)
+                              (== argnum 0)
+                              (and (not (starts_with? "\"" (or word "")))
+                                   (not (starts_with? "`" (or word "")))
+                                   (and word (-> global_lookup `has word))
+                                   (not (== "()" (join "" (last_n 2 line_acc))))
+                                   (> depth_change -1)))
+                         (progn
+                            (add_char_to_line)
+                            (inc argnum)
+                            (= rule "rc"))
+                         (and (is_whitespace? char)
+                              (not nl_suppress)
+                              (not (== next_char "{"))
+                              (<= (- next_char_pos cpos) 1))
+                         (progn
+                            (= rule "r2!")
+                            (next_line)
+                            (= nl_suppress true))
+                         (and (contains? char openers)
+                              (not nl_suppress)
+                              (> argnum 1))
+                         (progn
+                            (= rule "r3!")
+                            (= nl_suppress true)
+                            (next_line)
+                            (add_char_to_line)
+                            (= argnum 0))
+                         (and (contains? char openers)
+                              (> argnum 1))
+                         (progn
+                            (= rule "r3A")
+                            (add_char_to_line)
+                            (= argnum 0))
+                         (and (is_whitespace? char)
+                              (not nl_suppress)
+                              (< depth_change 0))
+                         (progn
+                            (= rule "r4!")
+                            (next_line)
+                            (= argnum 0))
+                         (and (is_whitespace? char)
+                              (not nl_suppress)
+                              (> lpos 40))
+                         (progn
+                            (= rule "r5!")
+                            (next_line)
+                            (= argnum 0))
+                         (and (== char "{" )
+                              (not (is_whitespace? (prop chars (+ 1 cpos)))))
+                         (progn
+                            (= rule "r6")
+                            (add_char_to_line)
+                            (add_char_to_line " "))
+                         
+                         (and (== char ":")
+                              (not (== " " (prop chars (+ 1 cpos)))))
+                         (progn
+                            (= rule "r7")
+                            (add_char_to_line)
+                            (add_char_to_line " "))
+                         else                          
+                         (progn
+                            (= rule "r99")
+                            (add_char_to_line))))
+                   (progn
+                      (= rule "rD")
+                      (add_char_to_line)))
+               (when debug_mode 
+                  (push report
+                     [cpos
+                      char
+                      (if (<= cpos next_char_pos)
+                          next_char
+                          "")
+                      lpos
+                      (- next_char_pos cpos)
+                      depth_change
+                      mode
+                      argnum
+                      (if (and (== mode code_mode) (is_whitespace? char)) "*" "")
+                      (if nl_suppress " NLS " "")
+                      (if skip_for skip_for "")
+                      rule
+                      word
+                      operator
+                      (join "" line_acc)
+                      ]
+                     )))))
+                          
+      
+      (when debug_mode
+         (report_callout report {
+                      `columns: ["CPOS" "CHAR" "NEXTC" "LPOS" "NCD" "DEPTHC" "MODE" "ARGNUM" "WS?" "NLS?" "SKIP_FOR" "rule" "word" "op" "Line_ACC"]
+                      }))
+      ;; this will not compile if the below is uncommented prior to the html namespace being loaded
+      ;(when debug_mode
+       ;  (log (dtable report
+        ;           {
+         ;            `columns: ["CPOS" "CHAR" "NEXTC" "LPOS" "NCD" "DEPTHC" "MODE" "ARGNUM" "WS?" "NLS?" "SKIP_FOR" "rule" "word" "op" "Line_ACC"]
+          ;           })))
+      (when (> line_acc.length 0)
+         (push lines (join "" line_acc)))
+      
+      (for_each (line_num (range lines.length))
+         (progn
+            (= text (+ "" (prop lines line_num) "\n"))
+            (if (> line_num 0)
+                (= indent_string (format_lisp_line line_num get_line))
+                (= indent_string ""))
+            (set_prop lines
+               line_num
+               (+ "" indent_string text))))
+      (join "" lines))
+   {
+     description: (+ "The pretty_print function attempts to format the presented input, provided "
+                     "either as a string or JSON. The return is a string with the formatted input.")
+     tags: ["format" "pretty" "lisp" "display" "output"]
+     usage: ["input:array|string"]
+     })
 
 (defun_sync keyword_mapper (token)
   (if (contains? token *formatting_rules*.keywords)

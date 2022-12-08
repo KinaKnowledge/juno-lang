@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-12-06 12:13:27
-// Version: 2022.12.06.12.13
-export const DLISP_ENV_VERSION='2022.12.06.12.13';
+// Build Time: 2022-12-08 10:40:23
+// Version: 2022.12.08.10.40
+export const DLISP_ENV_VERSION='2022.12.08.10.40';
 
 
 
@@ -3987,16 +3987,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_67634;
+                                                let _expr_58606;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_67634=await (async function(){
+                                                _expr_58606=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_67634 && _expr_67634["0"]);
-                                                req_ns=(_expr_67634 && _expr_67634["1"]);
-                                                explicit=(_expr_67634 && _expr_67634["2"]);
+                                                req_sym=(_expr_58606 && _expr_58606["0"]);
+                                                req_ns=(_expr_58606 && _expr_58606["1"]);
+                                                explicit=(_expr_58606 && _expr_58606["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4099,13 +4099,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_74789;
+                    let _expr_38095;
                     let nspace;
-                    _expr_74789=await (async function(){
+                    _expr_38095=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_74789 && _expr_74789["0"]);
-                    nspace=(_expr_74789 && _expr_74789["1"]);
+                    sym=(_expr_38095 && _expr_38095["0"]);
+                    nspace=(_expr_38095 && _expr_38095["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4618,6 +4618,97 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
 })
 };
 {
+     Environment.set_global("word_wrap",function(text,ncols) {
+        let line_length;
+        let words;
+        let max_cols;
+        let current_line;
+        let lines;
+        line_length=0;
+        words=(text).split(" ");
+        max_cols=(ncols|| 80);
+        current_line=[];
+        lines=[];
+         ( function() {
+            let __for_body__333=function(word) {
+                return   (function(){
+                    if (check_true (((line_length+  ( Environment.get_global("length"))(word))>=max_cols))) {
+                        {
+                            (lines).push((current_line).join(" "));
+                            current_line= ( function(){
+                                let __array_op_rval__335=word;
+                                 if (__array_op_rval__335 instanceof Function){
+                                    return  __array_op_rval__335() 
+                                } else {
+                                    return [__array_op_rval__335]
+                                }
+                            })();
+                            return line_length= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        }
+                    } else {
+                        {
+                            (current_line).push(word);
+                            return line_length+= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        }
+                    }
+                } )()
+            };
+            let __array__334=[],__elements__332=(words|| []);
+            let __BREAK__FLAG__=false;
+            for(let __iter__331 in __elements__332) {
+                __array__334.push( __for_body__333(__elements__332[__iter__331]));
+                if(__BREAK__FLAG__) {
+                     __array__334.pop();
+                    break;
+                    
+                }
+            }return __array__334;
+             
+        })();
+        if (check_true (((current_line && current_line.length)>0))){
+            (lines).push((current_line).join(" "))
+        };
+        return lines
+    },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"]
+})
+};
+await Environment.set_global("progc",async function(...forms) {
+    return ["=:try",["=:progn",].concat(forms),["=:catch","=:Error",["=:e"],["=:log","=:e.message"]]]
+},{ "eval_when":{ "compile_time":true
+},"name":"progc","macro":true,"fn_args":"(\"&\" forms)","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"]
+});
+{
+     Environment.set_global("reverse_string",function(text) {
+        return ( ( function() {
+            {
+                 let __call_target__=(text).split(""), __call_method__="reverse";
+                return  __call_target__[__call_method__]()
+            } 
+        })()).join("")
+    },{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"]
+})
+};
+{
+     Environment.set_global("last_n_chars",function(n,text) {
+        if (check_true ((text instanceof String || typeof text==='string'))){
+            return  text["substr"].call(text,(-1* n))
+        } else {
+            return null
+        }
+    },{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"]
+})
+};
+{
+     Environment.set_global("last_n",function(n,arr) {
+        if (check_true ((arr instanceof Array))){
+            return  arr["slice"].call(arr,(-1* n))
+        } else {
+            return null
+        }
+    },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"]
+})
+};
+{
      Environment.set_global("analyze_text_line",function(line) {
         let delta;
         let indent_spaces;
@@ -4640,7 +4731,7 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
         last_c=null;
         last_delim=null;
          ( function() {
-            let __for_body__333=function(c) {
+            let __for_body__338=function(c) {
                 idx+=1;
                   (function(){
                     if (check_true (((c==="\"")&& ((null==last_c)|| (last_c&&  ( Environment.get_global("not"))((92=== last_c["charCodeAt"]()))))))) {
@@ -4675,16 +4766,16 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                 } )();
                 return last_c=c
             };
-            let __array__334=[],__elements__332=(line).split("");
+            let __array__339=[],__elements__337=(line).split("");
             let __BREAK__FLAG__=false;
-            for(let __iter__331 in __elements__332) {
-                __array__334.push( __for_body__333(__elements__332[__iter__331]));
+            for(let __iter__336 in __elements__337) {
+                __array__339.push( __for_body__338(__elements__337[__iter__336]));
                 if(__BREAK__FLAG__) {
-                     __array__334.pop();
+                     __array__339.pop();
                     break;
                     
                 }
-            }return __array__334;
+            }return __array__339;
              
         })();
         if (check_true ((undefined==base_indent))){
@@ -4709,9 +4800,9 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
         remainder_pos= ( function(){
             if (check_true (((delta && delta["openers"] && delta["openers"]["length"])>0))){
                 return ( ( function(){
-                    let __targ__335=(delta && delta["openers"]);
-                    if (__targ__335){
-                         return(__targ__335)[(movement_needed- 1)]
+                    let __targ__340=(delta && delta["openers"]);
+                    if (__targ__340){
+                         return(__targ__340)[(movement_needed- 1)]
                     } 
                 })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]))
             } else {
@@ -4734,22 +4825,22 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
             };
             ;
              ( function() {
-                let __for_body__338=function(__item) {
+                let __for_body__343=function(__item) {
                     __result= __action(__item);
                     if (check_true (__result)){
                         return (__collector).push(__result)
                     }
                 };
-                let __array__339=[],__elements__337=(remainder).split(" ");
+                let __array__344=[],__elements__342=(remainder).split(" ");
                 let __BREAK__FLAG__=false;
-                for(let __iter__336 in __elements__337) {
-                    __array__339.push( __for_body__338(__elements__337[__iter__336]));
+                for(let __iter__341 in __elements__342) {
+                    __array__344.push( __for_body__343(__elements__342[__iter__341]));
                     if(__BREAK__FLAG__) {
-                         __array__339.pop();
+                         __array__344.pop();
                         break;
                         
                     }
-                }return __array__339;
+                }return __array__344;
                  
             })();
             return __collector
@@ -4876,32 +4967,32 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                 current_row=(line_number- 1);
                 prior_line= ( function(){
                     let v= ( function(){
-                        let __array_op_rval__350=get_line;
-                         if (__array_op_rval__350 instanceof Function){
-                            return  __array_op_rval__350(current_row) 
+                        let __array_op_rval__355=get_line;
+                         if (__array_op_rval__355 instanceof Function){
+                            return  __array_op_rval__355(current_row) 
                         } else {
-                            return [__array_op_rval__350,current_row]
+                            return [__array_op_rval__355,current_row]
                         }
                     })();
                     ;
                      ( function(){
-                         let __test_condition__351=function() {
+                         let __test_condition__356=function() {
                             return (((v).trim()==="")&& (current_row>0))
                         };
-                        let __body_ref__352=function() {
+                        let __body_ref__357=function() {
                             current_row-=1;
                             return v= ( function(){
-                                let __array_op_rval__353=get_line;
-                                 if (__array_op_rval__353 instanceof Function){
-                                    return  __array_op_rval__353(current_row) 
+                                let __array_op_rval__358=get_line;
+                                 if (__array_op_rval__358 instanceof Function){
+                                    return  __array_op_rval__358(current_row) 
                                 } else {
-                                    return [__array_op_rval__353,current_row]
+                                    return [__array_op_rval__358,current_row]
                                 }
                             })()
                         };
                         let __BREAK__FLAG__=false;
-                        while( __test_condition__351()) {
-                             __body_ref__352();
+                        while( __test_condition__356()) {
+                             __body_ref__357();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -4931,37 +5022,37 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                             remainder=null;
                             symbol_details=null;
                              ( function(){
-                                 let __test_condition__354=function() {
+                                 let __test_condition__359=function() {
                                     return ((movement_needed<0)&& (current_row>0))
                                 };
-                                let __body_ref__355=function() {
+                                let __body_ref__360=function() {
                                     current_row-=1;
                                     prior_line= ( function(){
-                                        let __array_op_rval__356=get_line;
-                                         if (__array_op_rval__356 instanceof Function){
-                                            return  __array_op_rval__356(current_row) 
+                                        let __array_op_rval__361=get_line;
+                                         if (__array_op_rval__361 instanceof Function){
+                                            return  __array_op_rval__361(current_row) 
                                         } else {
-                                            return [__array_op_rval__356,current_row]
+                                            return [__array_op_rval__361,current_row]
                                         }
                                     })();
                                      ( function(){
-                                         let __test_condition__357=function() {
+                                         let __test_condition__362=function() {
                                             return ((current_row>0)&& ((prior_line).trim()===""))
                                         };
-                                        let __body_ref__358=function() {
+                                        let __body_ref__363=function() {
                                             current_row-=1;
                                             return prior_line= ( function(){
-                                                let __array_op_rval__359=get_line;
-                                                 if (__array_op_rval__359 instanceof Function){
-                                                    return  __array_op_rval__359(current_row) 
+                                                let __array_op_rval__364=get_line;
+                                                 if (__array_op_rval__364 instanceof Function){
+                                                    return  __array_op_rval__364(current_row) 
                                                 } else {
-                                                    return [__array_op_rval__359,current_row]
+                                                    return [__array_op_rval__364,current_row]
                                                 }
                                             })()
                                         };
                                         let __BREAK__FLAG__=false;
-                                        while( __test_condition__357()) {
-                                             __body_ref__358();
+                                        while( __test_condition__362()) {
+                                             __body_ref__363();
                                              if(__BREAK__FLAG__) {
                                                  break;
                                                 
@@ -4973,8 +5064,8 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                                     return movement_needed=(movement_needed+ (delta && delta["delta"]))
                                 };
                                 let __BREAK__FLAG__=false;
-                                while( __test_condition__354()) {
-                                     __body_ref__355();
+                                while( __test_condition__359()) {
+                                     __body_ref__360();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -4991,24 +5082,24 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                     }
                 } )();
                 return ( ( function() {
-                    let __for_body__362=function(c) {
+                    let __for_body__367=function(c) {
                         return " "
                     };
-                    let __array__363=[],__elements__361= ( Environment.get_global("range"))( Math.max(0,(delta && delta["indent"])));
+                    let __array__368=[],__elements__366= ( Environment.get_global("range"))( Math.max(0,(delta && delta["indent"])));
                     let __BREAK__FLAG__=false;
-                    for(let __iter__360 in __elements__361) {
-                        __array__363.push( __for_body__362(__elements__361[__iter__360]));
+                    for(let __iter__365 in __elements__366) {
+                        __array__368.push( __for_body__367(__elements__366[__iter__365]));
                         if(__BREAK__FLAG__) {
-                             __array__363.pop();
+                             __array__368.pop();
                             break;
                             
                         }
-                    }return __array__363;
+                    }return __array__368;
                      
                 })()).join("")
             }
         }
-    },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. "],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
+    },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. Once the string is returned, it is mandatory to update ","the line buffer with the updated indented string, otherwise the function ","will not work properly."],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"]
 })
 };
 await Environment.set_global("set_default",async function(path,value) {
@@ -5030,6 +5121,506 @@ await Environment.set_global("set_default",async function(path,value) {
 },{ "eval_when":{ "compile_time":true
 },"name":"set_default","macro":true,"fn_args":"(path value)","description":["=:+","Given a path to a value in the *env_config* object, and a value to set, creates or sets the value ","at the provided path position.  The path can be in the following forms:<br>","path.to.default_value:symbol - A period delimited non-quoted symbol<br>","[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>","\"path.to.default_value\" - A string delimited by periods<br>","\"path~to~default_value\" - A string delimited by the path delimiter ~<br>","<br>","The value returned from the macro is the new default value as set in the *env_config*.<br>"],"tags":["default","defaults","set","application","editor","repl"],"usage":["path:symbol|string|array","value:*"],"requires":["is_string?","starts_with?","contains?","split_by","as_lisp"]
 });
+{
+     Environment.set_global("all_global_functions",function() {
+        let acc;
+        let env_a;
+        acc=new Set();
+        env_a=null;
+         ( function() {
+            let __for_body__371=function(ns) {
+                env_a= Environment["get_namespace_handle"].call(Environment,ns);
+                return  ( function() {
+                    let __for_body__375=function(pset) {
+                        if (check_true ((pset && pset["1"]) instanceof Function)){
+                            return  acc["add"].call(acc,(pset && pset["0"]))
+                        }
+                    };
+                    let __array__376=[],__elements__374= ( Environment.get_global("pairs"))((env_a && env_a["context"] && env_a["context"]["scope"]));
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__373 in __elements__374) {
+                        __array__376.push( __for_body__375(__elements__374[__iter__373]));
+                        if(__BREAK__FLAG__) {
+                             __array__376.pop();
+                            break;
+                            
+                        }
+                    }return __array__376;
+                     
+                })()
+            };
+            let __array__372=[],__elements__370= ( Environment.get_global("namespaces"))();
+            let __BREAK__FLAG__=false;
+            for(let __iter__369 in __elements__370) {
+                __array__372.push( __for_body__371(__elements__370[__iter__369]));
+                if(__BREAK__FLAG__) {
+                     __array__372.pop();
+                    break;
+                    
+                }
+            }return __array__372;
+             
+        })();
+        return acc
+    },{ "name":"all_global_functions","fn_args":"()","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"]
+})
+};
+{
+     Environment.set_global("pretty_print",function(in_struct,report_callout) {
+        let in_text;
+        let chars;
+        let key_words;
+        let block_words;
+        let conditionals;
+        let char;
+        let global_lookup;
+        let last_opener;
+        let operator;
+        let next_char;
+        let next_char_pos;
+        let state;
+        let lines;
+        let formatted_lines;
+        let line_acc;
+        let rule;
+        let cpos;
+        let debug_mode;
+        let closers;
+        let openers;
+        let code_mode;
+        let string_mode;
+        let escape_state;
+        let mode;
+        let nl_suppress;
+        let skip_for;
+        let depth_change;
+        let long_string_mode;
+        let report;
+        let lpos;
+        let lnum;
+        let argnum;
+        let text;
+        let word;
+        let word_acc;
+        let add_char_to_line;
+        let next_line;
+        let is_whitespace_ques_;
+        let indent_string;
+        let get_line;
+        let calc_next_char;
+        in_text= ( function(){
+             return   (function(){
+                if (check_true ((in_struct instanceof Object))) {
+                    return  ( Environment.get_global("as_lisp"))(in_struct)
+                } else if (check_true ((in_struct instanceof String || typeof in_struct==='string'))) {
+                    return in_struct
+                } else {
+                    return (""+ in_struct)
+                }
+            } )() 
+        })();
+        chars=(in_text).split("");
+        key_words= ( function(){
+            let __targ__377=( Environment.get_global("*formatting_rules*"));
+            if (__targ__377){
+                 return(__targ__377)["keywords"]
+            } 
+        })();
+        block_words=["try","progn","progl","progc","do","let","cond"];
+        conditionals=["if","when","unless"];
+        char=null;
+        global_lookup= ( Environment.get_global("all_global_functions"))();
+        last_opener=null;
+        operator=null;
+        next_char=null;
+        next_char_pos=0;
+        state=new Object();
+        lines=[];
+        formatted_lines=[];
+        line_acc=[];
+        rule=null;
+        cpos=-1;
+        debug_mode= ( function(){
+            if (check_true (report_callout)){
+                return true
+            } else {
+                return false
+            }
+        })();
+        closers=[")","]","}"];
+        openers=["(","[","{"];
+        code_mode=0;
+        string_mode=1;
+        escape_state=0;
+        mode=code_mode;
+        nl_suppress=false;
+        skip_for=null;
+        depth_change=0;
+        long_string_mode=2;
+        report=[];
+        lpos=0;
+        lnum=0;
+        argnum=0;
+        text=null;
+        word="";
+        word_acc=[];
+        add_char_to_line=function(c) {
+            (line_acc).push((c|| char));
+            return lpos=(line_acc && line_acc.length)
+        };
+        next_line=function() {
+            (lines).push((line_acc).join(""));
+            lnum=(lines && lines.length);
+            depth_change=0;
+            return line_acc=[]
+        };
+        is_whitespace_ques_=function(c) {
+            return  ( Environment.get_global("contains?"))(c,[" ","	"])
+        };
+        indent_string=null;
+        get_line=function(rnum) {
+            let it;
+            it=lines[rnum];
+            if (check_true (it)){
+                if (check_true ( ( Environment.get_global("ends_with?"))("\n",it))){
+                    return it
+                } else {
+                    return (it+ "\n")
+                }
+            } else {
+                return null
+            }
+        };
+        calc_next_char=function() {
+            if (check_true (chars[(1+ cpos)])){
+                {
+                    next_char_pos=(cpos+ 1);
+                     ( function(){
+                         let __test_condition__378=function() {
+                            return (chars[next_char_pos]&&  is_whitespace_ques_(chars[next_char_pos]))
+                        };
+                        let __body_ref__379=function() {
+                            return next_char_pos+=1
+                        };
+                        let __BREAK__FLAG__=false;
+                        while( __test_condition__378()) {
+                             __body_ref__379();
+                             if(__BREAK__FLAG__) {
+                                 break;
+                                
+                            }
+                        } ;
+                        
+                    })();
+                    return next_char=chars[next_char_pos]
+                }
+            }
+        };
+         ( function(){
+             let __test_condition__380=function() {
+                return (cpos<(chars && chars.length))
+            };
+            let __body_ref__381=function() {
+                cpos+=1;
+                char=chars[cpos];
+                rule=null;
+                if (check_true (char)){
+                    {
+                        if (check_true ((skip_for&& (skip_for>0)))){
+                            skip_for-=1
+                        };
+                        if (check_true (( char["charCodeAt"]()===92))){
+                            escape_state=2
+                        } else {
+                            escape_state= Math.max(0,(escape_state- 1))
+                        };
+                        if (check_true (((mode===code_mode)&& (cpos>=next_char_pos)))){
+                            {
+                                if (check_true ((nl_suppress&& (skip_for===null)))){
+                                    {
+                                        skip_for=2
+                                    }
+                                };
+                                 calc_next_char()
+                            }
+                        };
+                        if (check_true (((mode===code_mode)&& ( is_whitespace_ques_(char)||  ( Environment.get_global("contains?"))(char,openers)||  ( Environment.get_global("contains?"))(char,closers)|| (char===":")|| (char==="\n"))))){
+                            {
+                                if (check_true (((word_acc && word_acc.length)>0))){
+                                    {
+                                        word=(word_acc).join("");
+                                        if (check_true ((((last_opener==="(")|| (last_opener==="["))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",word))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",word))))){
+                                            operator=word
+                                        }
+                                    }
+                                };
+                                word_acc=[]
+                            }
+                        } else {
+                            (word_acc).push(char)
+                        };
+                        if (check_true (((mode===code_mode)&& (char==="}")&&  ( Environment.get_global("not"))(( ( Environment.get_global("last"))(line_acc)==="{"))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&&  ( Environment.get_global("not"))(( ( Environment.get_global("last"))(line_acc)===" "))))){
+                             add_char_to_line(" ")
+                        };
+                        if (check_true (((mode===code_mode)&&  ( Environment.get_global("contains?"))(char,openers)))){
+                            last_opener=char
+                        };
+                        if (check_true (((mode===code_mode)&& ( ( Environment.get_global("contains?"))(char,closers)||  is_whitespace_ques_(char))))){
+                            last_opener=null
+                        };
+                        if (check_true ((skip_for===0))){
+                            {
+                                nl_suppress=false;
+                                skip_for=null
+                            }
+                        };
+                          (function(){
+                            if (check_true (((mode===code_mode)&& (char==="\"")))) {
+                                {
+                                    return mode=string_mode
+                                }
+                            } else if (check_true (((mode===code_mode)&& ("|"===char)))) {
+                                {
+                                    return mode=long_string_mode
+                                }
+                            } else if (check_true (((char==="\"")&& (mode===string_mode)&& (escape_state===0)))) {
+                                {
+                                    return mode=code_mode
+                                }
+                            } else if (check_true (((char==="|")&& (mode===long_string_mode)))) {
+                                {
+                                    return mode=code_mode
+                                }
+                            } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&& (mode===code_mode)))) {
+                                {
+                                    return argnum=0
+                                }
+                            } else if (check_true (((char===":")&& (mode===code_mode)))) {
+                                {
+                                    argnum+=1;
+                                    return nl_suppress=true
+                                }
+                            }
+                        } )();
+                        if (check_true ((mode===code_mode))){
+                            {
+                                  (function(){
+                                    if (check_true ( ( Environment.get_global("contains?"))(char,openers))) {
+                                        return depth_change+=1
+                                    } else if (check_true ( ( Environment.get_global("contains?"))(char,closers))) {
+                                        depth_change-=1
+                                    }
+                                } )();
+                                  (function(){
+                                    if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("contains?"))(next_char,closers)&& (argnum>1)&&  ( Environment.get_global("not"))(nl_suppress)))) {
+                                        {
+                                            rule="r0!";
+                                            return  next_line()
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (word&&  ( Environment.get_global("contains?"))(word,block_words))))) {
+                                        {
+                                            rule="rb!";
+                                             next_line()
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (argnum>=1)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&& (depth_change>-1)&& (depth_change<2)&&  ( Environment.get_global("contains?"))(operator,conditionals)))) {
+                                        {
+                                            rule="rC";
+                                             next_line()
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (argnum<2)&& (depth_change<2)&& (lpos<30)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&& ( ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",(word|| "")))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",(word|| "")))&& (depth_change>-1))&& ((next_char_pos- cpos)<=1)))) {
+                                        {
+                                             add_char_to_line();
+                                            argnum+=1;
+                                            rule="r1+"
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (argnum===0)&& ( ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",(word|| "")))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",(word|| "")))&& (word&&  global_lookup["has"].call(global_lookup,word))&&  ( Environment.get_global("not"))(("()"===( ( Environment.get_global("last_n"))(2,line_acc)).join("")))&& (depth_change>-1))))) {
+                                        {
+                                             add_char_to_line();
+                                            argnum+=1;
+                                            rule="rc"
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&&  ( Environment.get_global("not"))((next_char==="{"))&& ((next_char_pos- cpos)<=1)))) {
+                                        {
+                                            rule="r2!";
+                                             next_line();
+                                            nl_suppress=true
+                                        }
+                                    } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&&  ( Environment.get_global("not"))(nl_suppress)&& (argnum>1)))) {
+                                        {
+                                            rule="r3!";
+                                            nl_suppress=true;
+                                             next_line();
+                                             add_char_to_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&& (argnum>1)))) {
+                                        {
+                                            rule="r3A";
+                                             add_char_to_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&& (depth_change<0)))) {
+                                        {
+                                            rule="r4!";
+                                             next_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&& (lpos>40)))) {
+                                        {
+                                            rule="r5!";
+                                             next_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (((char==="{")&&  ( Environment.get_global("not"))( is_whitespace_ques_(chars[(1+ cpos)]))))) {
+                                        {
+                                            rule="r6";
+                                             add_char_to_line();
+                                             add_char_to_line(" ")
+                                        }
+                                    } else if (check_true (((char===":")&&  ( Environment.get_global("not"))((" "===chars[(1+ cpos)]))))) {
+                                        {
+                                            rule="r7";
+                                             add_char_to_line();
+                                             add_char_to_line(" ")
+                                        }
+                                    } else {
+                                        {
+                                            rule="r99";
+                                             add_char_to_line()
+                                        }
+                                    }
+                                } )()
+                            }
+                        } else {
+                            {
+                                rule="rD";
+                                 add_char_to_line()
+                            }
+                        };
+                        if (check_true (debug_mode)){
+                            {
+                                return (report).push( ( function(){
+                                    let __array_op_rval__382=cpos;
+                                     if (__array_op_rval__382 instanceof Function){
+                                        return  __array_op_rval__382(char, ( function(){
+                                            if (check_true ((cpos<=next_char_pos))){
+                                                return next_char
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),lpos,(next_char_pos- cpos),depth_change,mode,argnum, ( function(){
+                                            if (check_true (((mode===code_mode)&&  is_whitespace_ques_(char)))){
+                                                return "*"
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (nl_suppress)){
+                                                return " NLS "
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (skip_for)){
+                                                return skip_for
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),rule,word,operator,(line_acc).join("")) 
+                                    } else {
+                                        return [__array_op_rval__382,char, ( function(){
+                                            if (check_true ((cpos<=next_char_pos))){
+                                                return next_char
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),lpos,(next_char_pos- cpos),depth_change,mode,argnum, ( function(){
+                                            if (check_true (((mode===code_mode)&&  is_whitespace_ques_(char)))){
+                                                return "*"
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (nl_suppress)){
+                                                return " NLS "
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (skip_for)){
+                                                return skip_for
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),rule,word,operator,(line_acc).join("")]
+                                    }
+                                })())
+                            }
+                        }
+                    }
+                }
+            };
+            let __BREAK__FLAG__=false;
+            while( __test_condition__380()) {
+                 __body_ref__381();
+                 if(__BREAK__FLAG__) {
+                     break;
+                    
+                }
+            } ;
+            
+        })();
+        if (check_true (debug_mode)){
+            {
+                 ( function(){
+                    let __array_op_rval__383=report_callout;
+                     if (__array_op_rval__383 instanceof Function){
+                        return  __array_op_rval__383(report,{
+                            columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
+                        }) 
+                    } else {
+                        return [__array_op_rval__383,report,{
+                            columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
+                        }]
+                    }
+                })()
+            }
+        };
+        if (check_true (((line_acc && line_acc.length)>0))){
+            {
+                (lines).push((line_acc).join(""))
+            }
+        };
+         ( function() {
+            let __for_body__386=function(line_num) {
+                text=(""+ lines[line_num]+ "\n");
+                if (check_true ((line_num>0))){
+                    indent_string= ( Environment.get_global("format_lisp_line"))(line_num,get_line)
+                } else {
+                    indent_string=""
+                };
+                return   (function(){
+                    lines[line_num]=(""+ indent_string+ text);
+                    return lines;
+                    
+                })()
+            };
+            let __array__387=[],__elements__385= ( Environment.get_global("range"))((lines && lines.length));
+            let __BREAK__FLAG__=false;
+            for(let __iter__384 in __elements__385) {
+                __array__387.push( __for_body__386(__elements__385[__iter__384]));
+                if(__BREAK__FLAG__) {
+                     __array__387.pop();
+                    break;
+                    
+                }
+            }return __array__387;
+             
+        })();
+        return (lines).join("")
+    },{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"]
+})
+};
 {
      Environment.set_global("keyword_mapper",function(token) {
         if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){

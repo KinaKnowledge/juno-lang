@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-12-06 12:13:27
-// Version: 2022.12.06.12.13
-export const DLISP_ENV_VERSION='2022.12.06.12.13';
+// Build Time: 2022-12-08 10:40:23
+// Version: 2022.12.08.10.40
+export const DLISP_ENV_VERSION='2022.12.08.10.40';
 
 
 
@@ -3017,8 +3017,8 @@ export async function init_dlisp(Environment)  {
                             }()
                         }
                     };
-                    let get_namespace_handle=async function(name) {
-                        return await async function(){
+                    let get_namespace_handle=function(name) {
+                        return   (function(){
                             if (check_true ((namespace===name))) {
                                 return Environment
                             } else if (check_true ((namespace==="core"))) {
@@ -3026,12 +3026,12 @@ export async function init_dlisp(Environment)  {
                                     return children[name]
                                 }
                             } else if (check_true (parent_environment)) {
-                                return await parent_environment["get_namespace_handle"].call(parent_environment,name)
+                                return  parent_environment["get_namespace_handle"].call(parent_environment,name)
                             } else {
                                 throw new Error("invalid namespace handle requested");
                                 
                             }
-                        } ()
+                        } )()
                     };
                     ;
                     let included_globals=null;

@@ -1890,7 +1890,8 @@ div.juno-floating-container {
     cursor: default;
     user-select: none;
     box-shadow: 1px 1px 6px 2px #00000080;
-    background: var(--main-bg-color);
+    background: var(--main-bg-color); 
+    color: var(--main-color);
     position: absolute;
     z-index: 10;
     min-width: 300px;

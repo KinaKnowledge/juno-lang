@@ -68,8 +68,6 @@ export function lisp_writer(obj,depth,max_depth) {
   if (obj===null) return 'null';
   if (typeof obj==='number') return obj;
   if (typeof obj==='function') {
-    //if (depth === 0) console.log("lisp_writer: <- [ function ]",obj.toString());
-    //if (obj.name) { return obj.name }    
     return "(javascript "+JSON.stringify(obj.toString())+")";
   } // technically this shouldn't be a JSON object but this is a convenience for us..
   if (obj instanceof Array) {
@@ -84,7 +82,6 @@ export function lisp_writer(obj,depth,max_depth) {
       text += lisp_writer(obj[i],depth+4,max_depth);
     }
     text += bracketStyles[bracketStyle+1];
-    //if (depth === 0) console.log("lisp_writer: <- [ array ]",text);
     return text;
   } else if (typeof obj ==='object') {
     // object {}
@@ -131,7 +128,6 @@ export function lisp_writer(obj,depth,max_depth) {
     obj = obj.replaceAll("\r",'\\r');
     obj = obj.replaceAll("\f",'\\f');
     obj = obj.replaceAll("\b",'\\b');			         
-    //obj = JSON.stringify(obj);  // encode with JSON semantics
     
     //if (depth == 0) console.log("lisp_writer: <-",'"'+obj+'"');
     

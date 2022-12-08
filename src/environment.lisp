@@ -1862,7 +1862,7 @@
                  "namespaces" (function () (+ (keys children) "core"))                
                  "current_namespace" current_namespace))
 
-     (defvar get_namespace_handle (fn (name)
+     (defvar get_namespace_handle (function (name)
                                     (progn
                                      (cond
                                        (== namespace name)

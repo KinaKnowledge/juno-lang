@@ -1132,9 +1132,9 @@
       
     (if target_control
       (progn
-              
        (if target_control.on_focus 
-          (-> target_control `on_focus))
+          (-> target_control `on_focus)
+          (focus_to target_control.view))
        (setq *last_focus* target_control)
        (setq core/$current_control *last_focus*)
        (setq *last_top_frame* (top_frame target_control))
@@ -2547,7 +2547,7 @@
                         { `style: options.style }
                         {}))
                    content)))
-    (console.log "control_frame: has_control_bar: " has_control_bar? contents)
+    ;(log "control_frame: has_control_bar: " has_control_bar? contents)
     (when (not has_control_bar?)
       (set_style [["height" "100%" ]] content))
     (when (is_array? options.events)
@@ -3301,7 +3301,7 @@
                                 `innerText
                                 (dtext "Click to highlight a control")))
                     4000)
-        (= view (div { `id: `control_tree_monitor }
+        (= view (div { `id: `control_tree_monitor  style: "background: var(--control-bg-color); color: var(--control-color);"}
                      (render_control_tree $root_controls)))
         (attach_event_listener view
                                `click
@@ -4477,6 +4477,8 @@
             
             (on_focus (fn ()
                          (progn
+                            (when (not (== *last_focus* edit_control))
+                               (focus_to edit_control.editor))
                             (setq *last_focus* edit_control)
                             (add_class "juno-focused" command_bar))))
             (split_editor (fn (dir)
@@ -5496,7 +5498,7 @@
             (on_focus (fn ()
                         (progn
                          (add_class "juno-focused" control_status ))))
-            (control_view (div { `style: "overflow: scroll; margin: 0px; padding: 0px; height: 100%; width: 100%;" }))
+            (control_view (div { `style: "overflow: scroll; margin: 0px; padding: 0px; height: 100%; width: 100%;background: var(--control-bg-color);" }))
             (show (fn ()
                       (let
                           ((root_control (if *last_focus*
@@ -5516,7 +5518,7 @@
                                        `in_tree
                                        true)
                              (set_style [["display" "block"]] view)
-                             (container_view_operation "split_right" target_control intf { `ratio: 0.8 }))
+                             (container_view_operation "split_below" target_control intf { `ratio: 0.7 }))
                             current_parent.parent
                             (progn
                              (set_style [["display" "block"]] view)
@@ -5536,7 +5538,7 @@
                             `append view)))))
                              
                           
-            (view (div { `tabindex: 0 `control_id: id `style: "display: none; overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
+            (view (div { `tabindex: 0 `control_id: id `style: "display: none;  overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                        control_status
                        control_view)))
 
@@ -9746,7 +9748,13 @@
                                        mac: "Alt-D"
                                        description: "Close (Destroy) the control in the currently focused panel."
                                        exec: (fn () (hide_control *last_focus* true true))
-                                      })
+                                      }
+                  "clear_repl_output" {
+                                        win: "Alt-Shift-K"
+                                        mac: "Command-Shift-K"
+                                        description: "Clears the system repl output pane."
+                                        exec: (fn () (-> *system_repl* `clear_output))
+                                        })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        
