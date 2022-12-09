@@ -3697,6 +3697,234 @@
        tags: ["editor" "scroll" "speed"]
    })
 
+(defmacro defcontrol (name control_args allocations control_options)
+   (let
+      ((declared_allocations (each allocations first))
+       (required_allocations [(quote render)])
+       (user_allocations allocations)
+       (cname (-> name `substr 2))
+       (meta { `description: (or control_options.description "No description")
+               `tags: (or control_options.tags [`control `ui `DOM ])
+               `usage: (if (is_array? control_options.usage)
+                           (conj control_options.usage
+                                 [ "options:object" ])
+                           nil) })
+       (args (progn
+                (cond
+                   (is_array? control_args)
+                   (conj control_args [ (quote options) ])
+                   else
+                   (throw SyntaxError (+ "defcontrol: " cname ": missing/malformed control arguments - check syntax")))))
+       (control_options (if (is_object? control_options)
+                            control_options
+                            {}))
+       (control_bar? (if control_options.control_bar
+                        true)))            
+       (assert name "control name is required: check syntax for defcontrol")
+       (if (< (length (reduce (d declared_allocations)
+                         (contains? d required_allocations)))
+              (length required_allocations))
+           (throw SyntaxError (+ "defcontrol: " cname " missing required declarations: must have render")))
+       (cond
+          (contains? (quote id) declared_allocations)
+          (throw SyntaxError (+ "defcontrol: " cname " cannot declare id - to pass a custom ID to the control, pass id in options when instantiating the control."))
+          (contains? (quote initialize) declared_allocations)
+          (throw SyntaxError (+ "defcontrol: " cname " cannot declare initialize - use on_initialize")))
+       
+  ;; ok, now create the form to be returned..
+      `(defun ,#name ,#args
+          (let
+             ((self {})
+              (options (or options {}))
+              (name (compute_name_for_control (or options.name ,#(from_key (desym_ref name)))))
+              (id (or options.id 
+                      (generate_id ,#name)))
+              (initialized false)
+              (title_span (span { `class: "juno-title" } name))
+              (command_button (commands_button id))
+              (content_view (div { } "uninitialized.."))
+              (resize (fn ()
+                         (progn
+                            (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 20))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 5)))
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)
+                               
+                               (when options.on_resize
+                                  (options.on_resize self))
+                               ,#(if control_options.render_on_resize
+                                     `(do_render)
+                                     true)
+                               ,#(if (contains? (quote on_resize) declared_allocations)
+                                     `(on_resize self)
+                                     [])
+                               true))))
+              ,@user_allocations
+              (control_status (if ,#control_bar?
+                                  (div { `class: "juno-buffer-bar" }
+                                   command_button
+                                   (cond 
+                                      (is_array? options.additional_elements)
+                                      options.additional_elements
+                                      else
+                                      title_span)
+                                   ,#(if (contains? (quote control_bar_elements) declared_allocations)
+                                         (progn
+                                            (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
+                                         []))
+                                  nil))
+              (do_render (fn ()
+                            (let
+                               ((new_view (render self)))
+                               (if (and new_view
+                                        (not (== content_view new_view)))
+                                   (-> content_view `replaceChildren new_view))
+                               (if _on_render
+                                   (_on_render self)))))
+              (resize_observer (new ResizeObserver resize))
+              (view (control_frame (to_object
+                                       [[`id id]
+                                        [`events ,#control_options.events ]])
+                     (if ,#control_bar?
+                         control_status
+                         [])
+                     content_view))
+              
+              (_on_render (fn ()
+                             ,#(if (contains? (quote on_render) declared_allocations)
+                                `(on_render self)
+                                nil)))
+                             
+              (_on_focus (fn ()                           
+                           (progn
+                            ,#(if control_bar?
+                                `(add_class "juno-focused" control_status)
+                                `[])
+                            ,#(if (contains? (quote on_focus) declared_allocations)
+                                `(on_focus self)))))
+                                  ,
+              (_on_destroy (fn ()                                     
+                             (progn
+                              ,#(if (contains? (quote on_destroy) declared_allocations)
+                                  `(on_destroy self)
+                                  `true))))
+              
+              (_to_json (function ()
+                           (progn
+                              ,#(if (contains? (quote to_json) declared_allocations)
+                                    `(to_json)
+                                    `[(quote ,#name) ,@control_args options]))))
+              (initialize (function ()
+                             (progn
+                                (when (and view.parentElement
+                                           (not initialized))
+                                   (= initialized true)
+                                   (-> resize_observer `observe view.parentElement)                                   
+                                   ,#(if (contains? (quote on_initialize) declared_allocations)
+                                         `(on_initialize self)
+                                         true)
+                                   (do_render))))))
+             (set_prop options
+                `id id
+                `name name)
+             ,@(when (is_array? control_options.expose)
+                  (for_each (method_set control_options.expose)
+                     (destructuring_bind (method_name method_reference)
+                        method_set
+                     `(set_prop self
+                         ,#method_name ,#method_reference))))
+             ,#(if (contains? (quote menu_items) declared_allocations)
+                   `(set_prop self
+                       `menu_items menu_items)
+                   [])
+             ,#(if control_bar?
+                  `(set_prop self
+                      `show_control_bar 
+                      (fn (state)
+                         (progn
+                            (if state
+                               (remove_class "juno-display-none" control_status)
+                               (add_class "juno-display-none" control_status))
+                            (resize))))
+                  `[])
+             ;; finally set the required self options
+             (set_prop self
+                `options options
+                `name name
+                `type ,#(desym_ref name)
+                `view view
+                `resize resize                
+                `initialize initialize
+                `toJSON _to_json
+                `on_destroy _on_destroy
+                `on_focus _on_focus)
+             ;; and return the self
+             self)
+          ,#meta))
+   {
+       `description: (+ "The macro defcontrol creates a function in the current namespace that implements the specified "
+                        "control features passed to the macro.  The macro handles most of the boiler plate for a basic "
+                        "control, combining the passed allocations and options to produce a standardized control "
+                        "constructor.  The macro is similar in shape to a defun+let form with some differences.<br><br>"
+                        "Like the defun macro, the first argument provides the name of the control that it will be used " 
+                        "to construct the name and type of the control.  Also similar to defun, the second argument is "
+                        "an array containing any arguments for the control.  Note that, mandatorily, an options argument "
+                        "will be appended as the last argument of the argument list, so an empty array passed will "
+                        "cause the control only to have an options argument.<br><br>"
+                        "The next argument is a series of allocation forms that are integrated into a let allocation "
+                        "structure, and so should be in the same form as the allocation block of the let operator.  For "
+                        "example, ((render (fn () (div { } \"My View\")))) would meet the minimal requirement for a "
+                        "control to be constructed.  The caller of this macro can have as many allocation forms as needed "
+                        "to implement the required behavior of the emitted control.  To note that there are "
+                        "symbols that made available to these provided forms in the evaluation context of the form that "
+                        "can be referenced and used by the user provided forms:<br>"
+                        "self:object - The interface object returned.<br>"
+                        "content_view:Element - The control's view (not including the control_bar.  Effectively the contents of "
+                        "the control view.<br>"
+                        "do_render:function - Calls the (render) function provided to the macro.  User code can call this "
+                        "function when a redraw is required.<br>"
+                        "initialized:boolean - This value is true if the function is initialized or false if it hasn't " 
+                        "yet been.<br>"
+                        "options:object - The options object passed to the control on instantiation.<br>"
+                        "<br><br>"
+                        "There are multiple functions that are called upon certain events, which allow the caller to build "
+                        "customized behavior and hook into the system when needed.  These functions are specified in the "
+                        "allocation forms provided to the macro and are all optional except for render:<br>"
+                        "render:function - This function returns the DOM structure assigned to content_view and is what is "
+                        "drawn in the control's content container.  If the function returns nil, nothing is done.  Can be "
+                        "used in conjunction with the on_render below, which acts on the already drawn view.<br>"
+                        "on_focus:function - When a focusing event occurs to the control, this function is called with the "
+                        "self object of the macro.<br>"
+                        "on_render:function - If this function is specified it will act as the render function so as to "
+                        "manipulate an already built view, via the content_view in scope symbol, which is the contents of the "
+                        "controls view.<br>"
+                        "on_resize:function - A resize function to invoke if a forced resize is required.<br>"
+                        "control_bar_elements:array - If the control is specified with the control_bar control_options set to "
+                        "true, the Elements in this array will be placed into the control bar after any runtime additional_elements "
+                        "provided to the options object.<br>"
+                        "menu_items:function - A function that is called on demand that should return an array containing "
+                        "pairs of [menu_text menu_function] that implement any command functionality for the menu.<br>"
+                        "on_destroy:function - When the control receives a destroy call, this user provided function will be "
+                        "called with the self object.<br>"
+                        "on_initialize:function - Upon initialization, this function will be called with the self function. It "
+                        "should be expected that the initialization should be called only once for a control lifespan.<br>"
+                        "to_json:function - This synchronous function call can be used to provide a customization hook "
+                        "for the control.  The return value must be a structure that can be serialized into JSON form.<br><br>"
+                        "The final object, control_options is meta data and other flags for the macro:<br>"
+                        "expose:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
+                        "on the self interface and provide the API for the control.  In order for a resource in the control "
+                        "scope to be accessed, it must be specified in this option, otherwise the function remains effectively "
+                        "private to the control.<br>"
+                        "usage:array - The argument specification for the macro"
+                        "description:string - The description of the control that is registered in the Environment.<br>"
+                        "control_bar:boolean - If a control bar is to be displayed on the top of the control, set this to "
+                        "true.<br>")
+       `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
+       `tags: ["control" "define" "controls" "ui"]
+   })
+
 (defun make_editor (content options)
    (let
       ((options (or options {
@@ -4669,20 +4897,10 @@
 
 
 
-(defun log_view (options)
-  (let
+(defcontrol log_view ()
       ((output_container (div { `class: "juno-log-output"  } ))       
        (options (or options { `display_options: { include_prototypes: false }}))
-       (title_span (span { `class: "juno-title" } (if options.title options.title "Unnamed")))
-       (control_status (div {  `class: "juno-buffer-bar" }
-                            (cond (is_array? options.additional_elements)
-                                  options.additional_elements
-                                  options.title
-                                  title_span
-                                  else
-                                  [])))
        (name (or options.name (name_control "log_view")))
-       (resize_observer nil)
        (parent_view nil)
        (set_show_prototypes (fn (state)
                                   (progn                                                                      
@@ -4690,36 +4908,64 @@
                                              `include_prototypes
                                              state)
                                    (log_message "show prototypes: " options.display_options.include_prototypes))))
-                                   
-       (check_observer (fn ()
-                         (when (not (== view.parentElement parent_view))
-                           (-> resize_observer `disconnect)
-                           (-> resize_observer `observe view.parentElement)
-                           (= parent_view view.parentElement))))
-       (id (or options.id (generate_id "log_view")))
-       (view (div { `tabindex: 0 `control_id: id `style: "overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
-                  control_status
-                  output_container))
-       (initialized false)
-       (initialize (fn ()
-                     (when (and view.parentElement
-                                (not initialized))
-                       (= initialized true)
-                       (= parent_view view.parentElement)                          
-                       (if (eq nil options.show_timestamps)
-                           (set_show_timestamps false)
-                           (set_show_timestamps options.show_timestamps))
-                       (= resize_observer (new ResizeObserver perform_resize))
-                       (-> resize_observer `observe view.parentElement))))
+       (display_modes [ `tree `juno `json ])
+       (set_display_mode (fn (mode)
+                            (progn
+                               (cond 
+                                  (is_number? mode)
+                                  (set_prop options.display_options
+                                     `display_mode
+                                     (clamp mode 0 (max_index display_modes)))
+                                  (and (is_string? mode)
+                                       (> (index_of mode display_modes) -1))
+                                  (progn
+                                     (set_prop options.display_options
+                                             `display_mode
+                                             (prop display_modes (index_of mode display_modes))))
+                                  else
+                                  (throw TypeError (+ "invalid display_mode - need string or number - got: " mode)))
+                               (log_message "set display mode: " (prop display_modes options.display_options.display_mode)))))
+                            
+       (render (fn ()
+                  ;(div { `tabindex: 0  `style: "background: white; color: var(--control-color); overflow: hidden; margin: 0px; padding: 0px; height: inherit; width: 100%;" }
+                       output_container))
+       (set_display_command_button 
+          (fn (state)
+             (progn
+                (if state
+                   (remove_class "juno-display-none" command_button)
+                   (add_class "juno-display-none" command_button)))))
+       (on_initialize (fn ()
+                      (try
+                         (progn
+                            (= parent_view view.parentElement)
+                            (when (eq nil (prop options `display_options))
+                               (set_prop options
+                                  `display_options
+                                 { include_prototypes: false display_mode: 0 }))
+                            (when (eq nil (resolve_path [ `display_options `display_mode ] options))
+                               (set_path [ `display_options `display_mode ] options 0))
+                            (if (eq nil options.display_options.show_timestamps)
+                                (set_show_timestamps false)
+                                (set_show_timestamps options.display_options.show_timestamps))
+                            
+                            (if options.hide_command_button
+                                (set_display_command_button (not options.hide_command_button)))
+                            
+                            ;(= resize_observer (new ResizeObserver perform_resize))
+                            ;(-> resize_observer `observe view.parentElement)
+                            )
+                         (catch Error (e)
+                            (notify (+ "Error: " e.message))))))
        
-       (perform_resize (fn ()
+       (on_resize (fn ()
                          (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                             
+                               ;(log "resize!"new_height )
                              (set_style [[ "width" (+ "" new_width "px") ]
                                          [ "height" (+ "" new_height "px") ]]
-                                        view)
+                                      output_container)
                              (when (and hide_state
                                         (> new_height 5))
                                 (= hide_state false)
@@ -4731,33 +4977,33 @@
                                    0)))))
        
        (add_result (fn (result command_text error_state)
-                     (progn
-                      (console.log "log_view: <- " result) 
-                      (when (not (eq nil command_text))
-                        (-> output_container
+                      (progn
+                         (assert initialized "log_view not initialized")
+                         (when (not (eq nil command_text))
+                            (-> output_container
+                               `append
+                               (if (> command_text.length 100)
+                                   (details {  class: "juno-result" }
+                                            (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
+                                            (pre { `tabindex: 0 `class: "juno-code-value" }
+                                                 (pretty_print command_text)))
+                                   (div {  class: "juno-result" }
+                                        (code { `tabindex: 0 `class: "juno-code-value" }
+                                              command_text)))))
+                         (-> output_container
                             `append
-                            (if (> command_text.length 100)
-                              (details {  class: "juno-result" }
-                                       (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
-                                       (pre { `tabindex: 0 `class: "juno-code-value" }
-                                             command_text))
-                              (div {  class: "juno-result" }
-                                   (code { `tabindex: 0 `class: "juno-code-value" }
-                                             command_text)))))
-                      (-> output_container
-                          `append
-                          (div { `class: "juno-log-message"
-                                `style: (+ " margin-top: 0px; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
-                                            (if (eq nil command_text)
-                                              "border-top: 1px solid #00000008; padding: 5px;"
-                                              "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) } 
-                               (value_to_dom result options.display_options)))
-                      (when (> output_container.children.length (or options.max_log_lines
-                                                                    *env_config*.application.max_log_lines
-                                                                    10))
-                        (-> (first output_container.children)
-                            `remove))                      
-                      (set_prop output_container
+                            (div { `class: "juno-log-message"
+                                   `style: (+ " margin-top: 0px; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
+                                              (if (eq nil command_text)
+                                                  "border-top: 1px solid #00000008; padding: 5px;"
+                                                  "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
+                              (value_to_dom result options.display_options)))
+                         (when (> output_container.children.length (or options.max_log_lines
+                                                                       *env_config*.application.max_log_lines
+                                                                       10))
+                            (-> (first output_container.children)
+                                `remove))
+                         (set_prop output_container
                                 `scrollTop
                                 1000000)
                       (set_prop view
@@ -4777,7 +5023,7 @@
                                       (if state
                                          (progn
                                             (= ts_hidden_state "")
-                                            (set_prop options
+                                            (set_prop options.display_options
                                                `show_timestamps true)
                                             (when view  ;; surround in try catch in case we aren't completely ready
                                                (try
@@ -4786,7 +5032,7 @@
                                                      nil))))
                                               
                                          (progn
-                                            (set_prop options
+                                            (set_prop options.display_options
                                                `show_timestamps false)
                                             (= ts_hidden_state "juno-display-none")
                                             (when view
@@ -4796,13 +5042,24 @@
                                                      nil)))))))
        (menu_items (fn ()
                      [[(dtext "Clear Log")
-                       (function ()
+                       (fn ()
                                  (-> output_container `replaceChildren))]
                       [(dtext "Set Max Log Lines")
                        (fn ()
                          (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
                                                                                                                                         *env_config*.application.max_log_lines) })
                               (set_max_log_lines it)))]
+                      [(+ (dtext "Display Mode") "...")
+                       [[(dtext "Tree")
+                        (fn ()
+                           (set_display_mode 0))]
+                       [(dtext "Juno")
+                        (fn ()
+                           (set_display_mode 1))]
+                       [(dtext "JSON")
+                        (fn ()
+                           (set_display_mode 2))]]]
+                           
                       [(if (blank? ts_hidden_state)
                            (dtext "Hide Timestamps")
                            (dtext "Show Timestamps"))
@@ -4813,8 +5070,8 @@
                       [(if options.display_options.include_prototypes
                          (dtext "Hide Object Prototype Detail")
                          (dtext "Show Object Prototype Detail"))
-                       (function ()
-                                 (set_show_prototypes (not options.display_options.include_prototypes)))]]))
+                       (fn ()
+                          (set_show_prototypes (not options.display_options.include_prototypes)))]]))
        (hide_state nil)
        (ts_hidden_state "")
        (on_hide (fn ()
@@ -4824,60 +5081,60 @@
        (on_focus (fn ()
                    (progn  
                       (= hide_state false)
-                      (log "Focused!")
                       (add_class "juno-focused" control_status)))) ;; we know that is the command bar
+       
        (log_message (fn (`& args)
                       (progn
-                       (add_result (div { `tabindex: 0 `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
-                                        (div { `class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
-                                        (div { `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
-                                             (for_each (v args)
-                                                       (cond
-                                                         (is_string? v)
-                                                         (div { `tabindex: 0 `class: "juno-value juno-type-string" `style: "display: inline-block; padding-left: 10px" } v)
-                                                         (is_number? v)
-                                                         (div { `tabindex: 0 `class: "juno-value juno-type-number" `style: "display: inline-block; padding-left: 10px" } v)
-                                                         (or (== v true) (== v false))
-                                                         (div { `tabindex: 0 `class: "juno-value juno-type-boolean" `style: "display: inline-block; padding-left: 10px" } v)
-                                                         else
-                                                         (div { `tabindex: 0 `class: "juno-value" `style: "display: inline-block; padding-left: 10px" } (value_to_dom v))))))
-                                   nil nil)
-                       nil)))
-                        
-       (interf {}))
-    (set_prop options
-              `id
-              id
-              `name
-              name)
-
-    (set_prop interf
-              `view view
-              `name name
-              `append add_result
-              `log_message log_message
-              `on_hide on_hide
-              ;`on_focus on_focus
-              `menu_items menu_items
-              `control_bar control_status
-              `output_container output_container
-              `set_show_timestamps set_show_timestamps
-              `initialize initialize
-              `resize perform_resize
-              `type `log_view              
-              `clear (fn ()
-                       (-> output_container `replaceChildren))
-              `options options
-              `toJSON (function ()
-                                `(log_view ,#options)))
-    interf))
+                         (defvar display_mode (or options.display_options.display_mode 0))
+                         (add_result (div { `tabindex: 0 `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
+                                          (div { `class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
+                                          (div { `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
+                                               (for_each (v args)
+                                                  (cond
+                                                     (is_string? v)
+                                                     (div { `tabindex: 0 `class: "juno-value juno-type-string" `style: "display: inline-block; padding-left: 10px" } v)
+                                                     (is_number? v)
+                                                     (div { `tabindex: 0 `class: "juno-value juno-type-number" `style: "display: inline-block; padding-left: 10px" } v)
+                                                     (or (== v true) (== v false))
+                                                     (div { `tabindex: 0 `class: "juno-value juno-type-boolean" `style: "display: inline-block; padding-left: 10px" } v)
+                                                     else
+                                                     (div { `tabindex: 0 `class: "juno-value" `style: "display: inline-block; padding-left: 10px" } 
+                                                          (cond
+                                                             (== display_mode 0)
+                                                             (value_to_dom v)
+                                                             (== display_mode 1)
+                                                             (pre (pretty_print v))
+                                                             (== display_mode 2)
+                                                             (pre (JSON.stringify v nil 2)))
+                                                             )))))
+                                     nil nil)
+                       nil))))
+    {
+        expose: [[`set_show_timestamps set_show_timestamps]
+                 [`set_show_prototypes set_show_prototypes]
+                 [`clear (function ()
+                            (-> output_container `replaceChildren))]
+                 [`set_display_command_button set_display_command_button]
+                 [`set_display_mode set_display_mode]
+                 [`display_mode (function ()
+                                   (prop display_modes options.display_options.display_mode))]
+                 [`display_modes (function ()
+                                    display_modes)]
+                 [`output_container output_container]
+                 [`control_bar control_status]
+                 [`append add_result]
+                 [`log_message log_message ]]
+        control_bar: true
+        usage: ["options:object"]
+        
+    })
 
 ;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
 
 (defun visual_repl (options)
   (let
       ((options (or options {}))
-       (name options.name)       
+       (name (compute_name_for_control (or options.name "Visual REPL")))
        (resize_observer nil)
        (id (or options.id (generate_id "repl")))
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
@@ -4886,7 +5143,7 @@
                                    "Connecting"
                                    "Browser")))
        (control_button (commands_button id));  { `title: "REPL Commands" } "⋯"))
-       (title_span (span { `class: "juno-title" } (if options.name options.name "Unnamed")))
+       (title_span (span { `class: "juno-title" } name))
        (show_prototype_details_button (button { `title: (dtext "Show Object Prototype Detail") } "P"))
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
@@ -4904,11 +5161,10 @@
                                            (if options.display_options.include_prototypes
                                              (add_class "juno-button-on" show_prototype_details_button)
                                              (remove_class "juno-button-on" show_prototype_details_button)))))
-       (output_control (log_view { `display_options: (or options.display_options {} )
-                                   `show_timestamps: (if options.show_timestamps
-                                                        true
-                                                        false)
-                                   `additional_elements: [ control_button title_span show_prototype_details_button namespace_span  path_span location_span] `id: id }))
+       (output_control (progn
+                          (log_view { `display_options: (or options.display_options { `show_timestamps: false } )
+                                                         `hide_command_button: true
+                                                         `additional_elements: [ control_button title_span show_prototype_details_button namespace_span  path_span location_span] `id: id })))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -5099,7 +5355,8 @@
                                             
        (evaluator (fn (lisp_text no_eval no_clear no_log)
                     (let
-                        ((result nil))
+                        ((result nil)
+                         (display_mode (-> output_control `display_mode)))
                       (setq error_state nil)
                       (if options.remote_repl
                          (progn
@@ -5112,6 +5369,11 @@
                                      (when e.message
                                         (notify (+ "Error: " e.message))))))
                             (console.log "remote: <-" result)
+                            (cond 
+                               (== display_mode "juno")
+                               (= result (pre (pretty_print result)))
+                               (== display_mode "JSON")
+                               (= result (pre (JSON.stringify result nil 2))))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
@@ -5135,6 +5397,11 @@
                                      (notify (+ "Error: " ex.message))
                                      (= result ex))))
                             (console.log "<-" result)
+                            (cond 
+                               (== display_mode "juno")
+                               (= result (pre (pretty_print result)))
+                               (== display_mode "JSON")
+                               (= result (pre (JSON.stringify result nil 2))))
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))
@@ -5221,17 +5488,40 @@
                          (dtext "Show Object Prototype Detail"))
                        (function ()
                                  (toggle_prototype_detail))]
-                      [(if output_control.options.show_timestamps
+                      
+                      
+                      [(if output_control.options.display_options.show_timestamps
                          (dtext "Hide Timestamps")
                          (dtext "Show Timestamps"))
                        (function ()
                                  (progn
-                                    (if output_control.options.show_timestamps
+                                    (if output_control.options.display_options.show_timestamps
                                        (-> output_control `set_show_timestamps false)
                                        (-> output_control `set_show_timestamps true))
                                     (set_prop options.display_options
                                               `show_timestamps
-                                              output_control.options.show_timestamps)))]
+                                              output_control.options.display_options.show_timestamps)))]
+                      [(dtext "Set Max Log Lines")
+                       (fn ()
+                         (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
+                                                                                                                                        *env_config*.application.max_log_lines) })
+                              (-> output_control `set_max_log_lines it)))]
+                      [(+ (dtext "Set Display Mode") "...")
+                       [[(dtext "Tree")
+                        (fn ()
+                           (progn
+                              (-> output_control `set_display_mode 0)
+                              (set_prop options.display_options `display_mode 0)))]
+                       [(dtext "Juno")
+                        (fn ()
+                           (progn
+                              (-> output_control `set_display_mode 1)
+                              (set_prop options.display_options `display_mode 1)))]
+                       [(dtext "JSON")
+                        (fn ()
+                           (progn
+                              (-> output_control `set_display_mode 2)
+                              (set_prop options.display_options `display_mode 2)))]]]
                       [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                                             [theme  (fn ()
                                                                       (progn
@@ -5244,11 +5534,13 @@
                         (progn
                          (= initialized true)
                          (console.log "repl initializing")
+                         (-> output_control `initialize)
                          (when (eq nil options.display_options)
                            (set_prop options
                                      `display_options
                                      { `include_prototypes: false 
-                                       `show_timestamps: output_control.options.show_timestamps 
+                                       `show_timestamps: output_control.options.display_options.show_timestamps 
+                                       `display_mode: (or output_control.options.display_options.display_mode 0)
                                      }))
                          
                          (if options.display_options.include_prototypes
@@ -5269,6 +5561,11 @@
                                                                  (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                                                  (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                                             "Version: " Environment.build_version   ))))
+                         
+                         ;; set the computed name
+                         (set_prop options
+                            `name
+                            name)
                          ;; become the system_repl if none is yet defined
                          (if (eq nil *system_repl*)
                              (progn
@@ -5371,7 +5668,6 @@
                                            [(quote quotel) history])
                                 `(visual_repl ,#(or options { `ratio: sview.options.ratio } ))))
              `controls: (fn () [ input_container output_control])
-             
              `output_container: output_control.view
              `log: (fn (val)
                      (-> output_control `log_message val))
@@ -5797,225 +6093,7 @@
                 (cond
                    ,@acc))))))
 
-(defmacro defcontrol (name control_args allocations control_options)
-   (let
-      ((declared_allocations (each allocations first))
-       (required_allocations [(quote render)])
-       (user_allocations allocations)
-       (meta { `description: (or control_options.description "No description")
-               `tags: (or control_options.tags [`control `ui `DOM ])
-               `usage: (if (is_array? control_options.usage)
-                           (conj control_options.usage
-                                 [ "options:object" ])
-                           nil) })
-       (args (progn
-                (cond
-                   (is_array? control_args)
-                   (conj control_args [ (quote options) ])
-                   else
-                   (throw SyntaxError "defcontrol: missing/malformed control arguments - check syntax"))))
-       (control_options (if (is_object? control_options)
-                            control_options
-                            {}))
-       (control_bar? (if control_options.control_bar
-                        true)))            
-       (assert name "control name is required: check syntax for defcontrol")
-       (if (< (length (reduce (d declared_allocations)
-                         (contains? d required_allocations)))
-              (length required_allocations))
-           (throw SyntaxError "missing required declarations: must have render"))
-  ;; ok, now create the form to be returned..
-      `(defun ,#name ,#args
-          (let
-             ((self {})
-              (options (or options {}))
-              (name (name_control (or options.name ,#(from_key (desym_ref name)))))
-              (id (generate_id ,#name))
-              (initialized false)
-              (title_span (span { `class: "juno-title" } name))
-              (command_button (commands_button id))
-              (content_view (div { } "uninitialized.."))
-              (resize (fn ()
-                         (progn
-                            (let
-                               ((new_height (- (prop view.parentElement `offsetHeight) 20))
-                                (new_width  (- (prop view.parentElement `offsetWidth) 5)))
-                               (set_style [[ "width" (+ "" new_width "px") ]
-                                           [ "height" (+ "" new_height "px") ]]
-                                          view)
-                               
-                               (when options.on_resize
-                                  (options.on_resize self))
-                               ,#(if control_options.render_on_resize
-                                     `(do_render)
-                                     true)
-                               ,#(if (contains? (quote on_resize) declared_allocations)
-                                     `(on_resize self)
-                                     [])
-                               true))))
-              ,@user_allocations
-              (control_status (if ,#control_bar?
-                                  (div { `class: "juno-buffer-bar" }
-                                   command_button
-                                   (cond 
-                                      (is_array? options.additional_elements)
-                                      options.additional_elements
-                                      else
-                                      title_span)
-                                   ,#(if (contains? (quote control_bar_elements) declared_allocations)
-                                         (progn
-                                            (prop (prop allocations (index_of (quote control_bar_elements) declared_allocations)) 1))
-                                         []))
-                                  nil))
-              (do_render (fn ()
-                            (let
-                               ((new_view (render self)))
-                               (if (and new_view
-                                        (not (== content_view new_view)))
-                                   (-> content_view `replaceChildren new_view))
-                               (if _on_render
-                                   (_on_render self)))))
-              (resize_observer (new ResizeObserver resize))
-              (view (control_frame (to_object
-                                       [[`id id]
-                                        [`events ,#control_options.events ]])
-                     (if ,#control_bar?
-                         control_status
-                         [])
-                     content_view))
-              
-              (_on_render (fn ()
-                             ,#(if (contains? (quote on_render) declared_allocations)
-                                `(on_render self)
-                                nil)))
-                             
-              (_on_focus (fn ()                           
-                           (progn
-                            ,#(if control_bar?
-                                `(add_class "juno-focused" control_status)
-                                `[])
-                            ,#(if (contains? (quote on_focus) declared_allocations)
-                                `(on_focus self)))))
-                                  ,
-              (_on_destroy (fn ()                                     
-                             (progn
-                              ,#(if (contains? (quote on_destroy) declared_allocations)
-                                  `(on_destroy self)
-                                  `true))))
-              
-              (_to_json (function ()
-                           (progn
-                              ,#(if (contains? (quote to_json) declared_allocations)
-                                    `(to_json)
-                                    `[(quote ,#name) ,@control_args options]))))
-              (initialize (function ()
-                             (progn
-                                (when (and view.parentElement
-                                           (not initialized))
-                                   (= initialized true)
-                                   (-> resize_observer `observe view.parentElement)                                   
-                                   ,#(if (contains? (quote on_initialize) declared_allocations)
-                                         `(on_initialize self)
-                                         true)
-                                   (do_render))))))
-             (set_prop options
-                `id id
-                `name name)
-             ,@(when (is_array? control_options.expose)
-                  (for_each (method_set control_options.expose)
-                     (destructuring_bind (method_name method_reference)
-                        method_set
-                     `(set_prop self
-                         ,#method_name ,#method_reference))))
-             ,#(if (contains? (quote menu_items) declared_allocations)
-                   `(set_prop self
-                       `menu_items menu_items)
-                   [])
-             ,#(if control_bar?
-                  `(set_prop self
-                      `show_control_bar 
-                      (fn (state)
-                         (progn
-                            (if state
-                               (remove_class "juno-display-none" control_status)
-                               (add_class "juno-display-none" control_status))
-                            (resize))))
-                  `[])
-             ;; finally set the required self options
-             (set_prop self
-                `options options
-                `name name
-                `type ,#(desym_ref name)
-                `view view
-                `resize resize                
-                `initialize initialize
-                `toJSON _to_json
-                `on_destroy _on_destroy
-                `on_focus _on_focus)
-             ;; and return the self
-             self)
-          ,#meta))
-   {
-       `description: (+ "The macro defcontrol creates a function in the current namespace that implements the specified "
-                        "control features passed to the macro.  The macro handles most of the boiler plate for a basic "
-                        "control, combining the passed allocations and options to produce a standardized control "
-                        "constructor.  The macro is similar in shape to a defun+let form with some differences.<br><br>"
-                        "Like the defun macro, the first argument provides the name of the control that it will be used " 
-                        "to construct the name and type of the control.  Also similar to defun, the second argument is "
-                        "an array containing any arguments for the control.  Note that, mandatorily, an options argument "
-                        "will be appended as the last argument of the argument list, so an empty array passed will "
-                        "cause the control only to have an options argument.<br><br>"
-                        "The next argument is a series of allocation forms that are integrated into a let allocation "
-                        "structure, and so should be in the same form as the allocation block of the let operator.  For "
-                        "example, ((render (fn () (div { } \"My View\")))) would meet the minimal requirement for a "
-                        "control to be constructed.  The caller of this macro can have as many allocation forms as needed "
-                        "to implement the required behavior of the emitted control.  To note that there are "
-                        "symbols that made available to these provided forms in the evaluation context of the form that "
-                        "can be referenced and used by the user provided forms:<br>"
-                        "self:object - The interface object returned.<br>"
-                        "content_view:Element - The control's view (not including the control_bar.  Effectively the contents of "
-                        "the control view.<br>"
-                        "do_render:function - Calls the (render) function provided to the macro.  User code can call this "
-                        "function when a redraw is required.<br>"
-                        "on_resize:function - A resize function to invoke if a forced resize is required.<br>"
-                        "initialized:boolean - This value is true if the function is initialized or false if it hasn't " 
-                        "yet been.<br>"
-                        "options:object - The options object passed to the control on instantiation.<br>"
-                        "<br><br>"
-                        "There are multiple functions that are called upon certain events, which allow the caller to build "
-                        "customized behavior and hook into the system when needed.  These functions are specified in the "
-                        "allocation forms provided to the macro and are all optional except for render:<br>"
-                        "render:function - This function returns the DOM structure assigned to content_view and is what is "
-                        "drawn in the control's content container.  If the function returns nil, nothing is done.  Can be "
-                        "used in conjunction with the on_render below, which acts on the already drawn view.<br>"
-                        "on_focus:function - When a focusing event occurs to the control, this function is called with the "
-                        "self object of the macro.<br>"
-                        "on_render:function - If this function is specified it will act as the render function so as to "
-                        "manipulate an already built view, via the content_view in scope symbol, which is the contents of the "
-                        "controls view.<br>"
-                        "control_bar_elements:array - If the control is specified with the control_bar control_options set to "
-                        "true, the Elements in this array will be placed into the control bar after any runtime additional_elements "
-                        "provided to the options object.<br>"
-                        "menu_items:function - A function that is called on demand that should return an array containing "
-                        "pairs of [menu_text menu_function] that implement any command functionality for the menu.<br>"
-                        "on_destroy:function - When the control receives a destroy call, this user provided function will be "
-                        "called with the self object.<br>"
-                        "on_initialize:function - Upon initialization, this function will be called with the self function. It "
-                        "should be expected that the initialization should be called only once for a control lifespan.<br>"
-                        "to_json:function - This synchronous function call can be used to provide a customization hook "
-                        "for the control.  The return value must be a structure that can be serialized into JSON form.<br><br>"
-                        "The final object, control_options is meta data and other flags for the macro:<br>"
-                        "expose:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
-                        "on the self interface and provide the API for the control.  In order for a resource in the control "
-                        "scope to be accessed, it must be specified in this option, otherwise the function remains effectively "
-                        "private to the control.<br>"
-                        "usage:array - The argument specification for the macro"
-                        "description:string - The description of the control that is registered in the Environment.<br>"
-                        "control_bar:boolean - If a control bar is to be displayed on the top of the control, set this to "
-                        "true.<br>")
-       `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
-       `tags: ["control" "define" "controls" "ui"]
-   })
+
 
 (defcontrol tree_browser ()
    ((options (or (and (is_object? options)
@@ -9659,7 +9737,7 @@
        (console.log "initializing control surface")
        ;; take in the global default theme, but don't impact the setting for the sub themes
        (set_global_theme *env_config*.application.global_theme { `suppress_set_sub_theme: true `suppress_cascade: true })
-       (defglobal $repl (visual_repl { `name: "Juno REPL" `show_timestamps: true }))
+       (defglobal $repl (visual_repl { `name: "Juno REPL"  `display_options: { `show_timestamps: true }}))
        (= scratch_editor
           (buffer_editor "*scratch*" "user" [ `*scratch* ] `juno))
 
