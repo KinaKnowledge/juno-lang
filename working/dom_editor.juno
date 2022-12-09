@@ -745,11 +745,10 @@
        (ctx (new_ctx _ctx))
        (process_children (fn (children)
                             (progn
-                               ;(log "->" children)
                                (for_each (child (or children []))
                                   (DOM_to_markdown child acc ctx)))))
        (tag nil))
-      (log "DOM_to_markdown: " (getf_ctx ctx `tag) (getf_ctx ctx `in_pre))
+      ;(log "DOM_to_markdown: " (getf_ctx ctx `tag) (getf_ctx ctx `in_pre))
       (cond
          (is_array? quoted_dom)
          (progn

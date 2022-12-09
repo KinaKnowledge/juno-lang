@@ -1,7 +1,7 @@
 // Source: base-io.lisp  
-// Build Time: 2022-12-08 11:14:44
-// Version: 2022.12.08.11.14
-export const DLISP_ENV_VERSION='2022.12.08.11.14';
+// Build Time: 2022-12-09 07:24:19
+// Version: 2022.12.09.07.24
+export const DLISP_ENV_VERSION='2022.12.09.07.24';
 
 
 
@@ -73,7 +73,7 @@ export async function initializer(Environment)  {
         body=(args && args["1"]);
         return ["=:let",[["=:watcher",["=:->","=:Deno","watchFs",location]]],["=:declare",["=:object","=:watcher"]],["=:for_with",[event_binding,"=:watcher"],["=:progn",body]]]
     },{ "eval_when":{ "compile_time":true
-},"name":"with_fs_events","macro":true,"fn_args":"((event_binding location) body)","description":["=:+","This function sets up a watcher scope for events on a filesystem. ","The symbol passed to the event_binding is bound to new events that occur ","at the provided location.  Once an event occurs, the body forms are executed."],"usage":["event_binding:symbol","location:string","body:array"],"tags":["file","filesystem","events","io","watch"]
+},"name":"with_fs_events","macro":true,"fn_args":"[(event_binding location) body]","description":["=:+","This function sets up a watcher scope for events on a filesystem. ","The symbol passed to the event_binding is bound to new events that occur ","at the provided location.  Once an event occurs, the body forms are executed."],"usage":["event_binding:symbol","location:string","body:array"],"tags":["file","filesystem","events","io","watch"]
 });
 return true
 }

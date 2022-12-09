@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2022-12-08 11:14:44
-// Version: 2022.12.08.11.14
-export const DLISP_ENV_VERSION='2022.12.08.11.14';
+// Build Time: 2022-12-09 07:24:19
+// Version: 2022.12.09.07.24
+export const DLISP_ENV_VERSION='2022.12.09.07.24';
 
 
 
@@ -4621,7 +4621,9 @@ export async function init_dlisp(Environment)  {
     }
 };
                     ;
-                    let as_lisp=lisp_writer;
+                    let as_lisp=function(obj,depth,max_depth) {
+                        return  lisp_writer(obj,depth,max_depth,Environment)
+                    };
                     ;
                     let read_lisp=reader;
                     ;

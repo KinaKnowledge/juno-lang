@@ -45,10 +45,10 @@ export function get_next_environment_id() {
 
 
 
-export function lisp_writer(obj,depth,max_depth) {
+export function lisp_writer(obj,depth,max_depth,env) {
   if (depth===undefined) depth=0;
   if (max_depth===undefined) max_depth=1502;
-  const bracketStyles=['(',')','(',')','{','}'];
+  const bracketStyles=['[',']','(',')','{','}'];
   let bracketStyle=0;
   let text='';
   let type = subtype(obj);
@@ -71,7 +71,8 @@ export function lisp_writer(obj,depth,max_depth) {
     return "(javascript "+JSON.stringify(obj.toString())+")";
   } // technically this shouldn't be a JSON object but this is a convenience for us..
   if (obj instanceof Array) {
-    if (obj.length > 0 && obj[0] instanceof String && obj[0].startsWith("=:")) {
+      
+    if (obj.length > 0 && (typeof obj[0] === 'string' || obj[0] instanceof String) && obj[0].startsWith("=:")) { // && env && (typeof env.get_global(obj[0].substr(2), null) ) === 'function') {
       bracketStyle = 2;
     }
     text += bracketStyles[bracketStyle];
@@ -79,7 +80,7 @@ export function lisp_writer(obj,depth,max_depth) {
     for (let i in obj) {
       if (i > 0) text += ' ';
       
-      text += lisp_writer(obj[i],depth+4,max_depth);
+      text += lisp_writer(obj[i],depth+4,max_depth, env);
     }
     text += bracketStyles[bracketStyle+1];
     return text;
@@ -107,9 +108,13 @@ export function lisp_writer(obj,depth,max_depth) {
     for (let i in keys) {
       if (i > 0) text+= ' ';
       if (typeof obj[keys[i]]=="symbol") {
-	text+=lisp_writer(keys[i],depth+4)+": \"<symbol>\"";
+	      text+=lisp_writer(keys[i], depth+4, max_depth, env)+": \"<symbol>\"";
       } else {
-	text+=lisp_writer(keys[i],depth+4)+":"+lisp_writer(obj[keys[i]],depth+4, max_depth)
+          if ((typeof keys[i] === 'string' || keys[i] instanceof String) && keys[i].indexOf(" ")==-1 && !keys[i].startsWith("=:")) {
+             text+=keys[i]+":"+lisp_writer(obj[keys[i]],depth+4, max_depth, env);
+          } else {
+    	     text+=lisp_writer(keys[i], depth+4, max_depth, env)+":"+lisp_writer(obj[keys[i]],depth+4, max_depth, env)
+          }
       }
     }
     text += bracketStyles[bracketStyle+1];

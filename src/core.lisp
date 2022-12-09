@@ -3797,7 +3797,8 @@ such as things that connect or use environmental resources.
             ;(log "rule 2")
             (set_prop delta
                `indent
-               (+ (last delta.openers) 2)))
+               (+ remainder_pos 2)))
+               ;(+ (last delta.openers) 2)))
          (== comps.length 0)
          (progn
            ;(log "rule 7")
@@ -3938,6 +3939,7 @@ such as things that connect or use environmental resources.
        `usage: []
        `tags: ["global" "function" "scope" "environment"]
    })
+
 (defun_sync pretty_print (in_struct report_callout)
    (let
       ((in_text (cond 
@@ -3952,7 +3954,11 @@ such as things that connect or use environmental resources.
        (block_words [ "try" "progn" "progl" "progc" "do" "let" "cond"])
        (conditionals [ "if" "when" "unless" ])
        (char nil)
-       (global_lookup (all_global_functions)) ;; set of the globals
+       (global_lookup (progn
+                         (defvar tmp (all_global_functions)) ;; set of the globals
+                         (for_each (op (or key_words []))
+                            (-> tmp `add op))
+                         tmp))
        (last_opener nil)
        (operator nil)
        (next_char nil)
@@ -4213,7 +4219,8 @@ such as things that connect or use environmental resources.
                             (next_line)
                             (= argnum 0))
                          (and (== char "{" )
-                              (not (is_whitespace? (prop chars (+ 1 cpos)))))
+                              (not (is_whitespace? (prop chars (+ 1 cpos))))
+                              (not (== (prop chars (+ 1 cpos)) "}")))
                          (progn
                             (= rule "r6")
                             (add_char_to_line)

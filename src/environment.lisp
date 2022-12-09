@@ -2219,7 +2219,8 @@
                        do_deferred_splice safe_access embed_compiled_quote))        
      
      
-     (defvar as_lisp lisp_writer)
+     (defvar as_lisp (function (obj depth max_depth)
+                        (lisp_writer obj depth max_depth Environment)))
      (defvar read_lisp reader)
      
      (set_prop Environment.global_ctx.scope

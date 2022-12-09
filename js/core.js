@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-12-08 11:14:44
-// Version: 2022.12.08.11.14
-export const DLISP_ENV_VERSION='2022.12.08.11.14';
+// Build Time: 2022-12-09 07:24:19
+// Version: 2022.12.09.07.24
+export const DLISP_ENV_VERSION='2022.12.09.07.24';
 
 
 
@@ -542,7 +542,7 @@ await Environment.set_global("define",async function(...defs) {
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"define","macro":true,"fn_args":"(\"&\" defs)","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["push","as_lisp","is_object?"]
+},"name":"define","macro":true,"fn_args":"[\"&\" defs]","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["push","as_lisp","is_object?"]
 });
 await Environment.set_global("defbinding",async function(...args) {
     let binding;
@@ -605,7 +605,7 @@ await Environment.set_global("defbinding",async function(...args) {
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"defbinding","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"]
+},"name":"defbinding","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"]
 });
 await Environment.set_global("define_env",async function(...defs) {
     let acc;
@@ -657,7 +657,7 @@ await Environment.set_global("define_env",async function(...defs) {
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"define_env","macro":true,"fn_args":"(\"&\" defs)","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["push","as_lisp","is_object?","add"]
+},"name":"define_env","macro":true,"fn_args":"[\"&\" defs]","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["push","as_lisp","is_object?","add"]
 });
 await Environment.set_global("type",async function(x) {
     return await async function(){
@@ -938,7 +938,7 @@ await Environment.set_global("reduce",async function(...args) {
     form=(args && args["1"]);
     return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:fn",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
 },{ "eval_when":{ "compile_time":true
-},"name":"reduce","macro":true,"fn_args":"((elem item_list) form)","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"]
+},"name":"reduce","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"]
 });
 await Environment.set_global("reduce_sync",async function(...args) {
     let elem;
@@ -949,11 +949,11 @@ await Environment.set_global("reduce_sync",async function(...args) {
     form=(args && args["1"]);
     return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:function",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
 },{ "eval_when":{ "compile_time":true
-},"name":"reduce_sync","macro":true,"fn_args":"((elem item_list) form)","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"]
+},"name":"reduce_sync","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"]
 });
 await Environment.set_global("is_nil?",async function(value) {
     return (null===value)
-},{ "name":"is_nil?","fn_args":"(\"value\")","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
+},{ "name":"is_nil?","fn_args":"[\"value\"]","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 });
 await Environment.set_global("is_regex?",async function(x) {
     return (await (await Environment.get_global("sub_type"))(x)==="RegExp")
@@ -1633,7 +1633,7 @@ await Environment.set_global("use_quoted_initializer",async function(...forms) {
          
     })()
 },{ "eval_when":{ "compile_time":true
-},"name":"use_quoted_initializer","macro":true,"fn_args":"(\"&\" forms)","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"]
+},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"]
 });
 {
      Environment.set_global("random_int",function(...args) {
@@ -1650,7 +1650,7 @@ await Environment.set_global("use_quoted_initializer",async function(...forms) {
             top= parseInt((args && args["0"]))
         };
         return  parseInt( ( Environment.get_global("add"))(( Math.random()* (top- bottom)),bottom))
-    },{ "name":"random_int","fn_args":"(\"&\" \"args\")","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"]
+    },{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"]
 })
 };
 {
@@ -2000,7 +2000,7 @@ await Environment.set_global("except_nil",async function(items) {
          
     })();
     return acc
-},{ "name":"except_nil","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
+},{ "name":"except_nil","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
 });
 await Environment.set_global("each",async function(items,property) {
     return await async function(){
@@ -2285,7 +2285,7 @@ await Environment.set_global("each",async function(items,property) {
                 }
             }
         }
-    },{ "name":"replace","fn_args":"(\"&\" args)","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"]
+    },{ "name":"replace","fn_args":"[\"&\" args]","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"]
 })
 };
 {
@@ -2953,7 +2953,7 @@ await Environment.set_global("describe_all",async function() {
         })();
         return ( (await Environment.get_global("add"))).apply(this,__apply_args__216)
     })()
-},{ "name":"describe_all","fn_args":"()","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"],"requires":["add","to_object","describe","symbols"]
+},{ "name":"describe_all","fn_args":"[]","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"],"requires":["add","to_object","describe","symbols"]
 });
 await Environment.set_global("is_value?",async function(val) {
     if (check_true ((val===""))){
@@ -3092,7 +3092,7 @@ await Environment.set_global("and*",async function(...vals) {
             return rval
         }
     }
-},{ "name":"and*","fn_args":"(\"&\" vals)","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["not","is_value?"]
+},{ "name":"and*","fn_args":"[\"&\" vals]","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["not","is_value?"]
 });
 await Environment.set_global("or*",async function(...vals) {
     if (check_true (((vals && vals.length)>0))){
@@ -3124,7 +3124,7 @@ await Environment.set_global("or*",async function(...vals) {
             return rval
         }
     }
-},{ "name":"or*","fn_args":"(\"&\" vals)","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["is_value?"]
+},{ "name":"or*","fn_args":"[\"&\" vals]","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["is_value?"]
 });
 await Environment.set_global("either",async function(...args) {
     let rval;
@@ -3152,7 +3152,7 @@ await Environment.set_global("either",async function(...args) {
          
     })();
     return rval
-},{ "name":"either","fn_args":"(\"&\" args)","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["not"]
+},{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["not"]
 });
 {
      Environment.set_global("sanitize_js_ref_name",function(symname) {
@@ -3338,7 +3338,7 @@ await Environment.set_global("success",await (async function(){
 await Environment.set_global("in_background",async function(...forms) {
     return ["=:new","=:Promise",["=:fn",["=:resolve","=:reject"],["=:progn",["=:resolve",true],].concat(forms)]]
 },{ "eval_when":{ "compile_time":true
-},"name":"in_background","macro":true,"fn_args":"(\"&\" forms)","description":["=:+","Given a form or forms, evaluates the forms in the background, with ","the function returning true immediately prior to starting the forms."],"usage":["forms:*"],"tags":["eval","background","promise","evaluation"]
+},"name":"in_background","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","Given a form or forms, evaluates the forms in the background, with ","the function returning true immediately prior to starting the forms."],"usage":["forms:*"],"tags":["eval","background","promise","evaluation"]
 });
 await Environment.set_global("set_compiler",async function(compiler_function) {
     await Environment["set_compiler"].call(Environment,compiler_function);
@@ -3423,7 +3423,7 @@ await Environment.set_global("export_symbols",async function(...args) {
     })();
     return (acc).push("}")
 },{ "eval_when":{ "compile_time":true
-},"name":"export_symbols","macro":true,"fn_args":"(\"&\" args)","requires":["length","is_array?","push","is_string?","starts_with?"]
+},"name":"export_symbols","macro":true,"fn_args":"[\"&\" args]","requires":["length","is_array?","push","is_string?","starts_with?"]
 });
 await Environment.set_global("register_feature",async function(feature) {
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(feature,(await Environment.get_global("*env_config*.features")))))){
@@ -3483,7 +3483,7 @@ await Environment.set_global("uniq",async function(values) {
 await Environment.set_global("time_in_millis",async function() {
     return ["=:Date.now"]
 },{ "eval_when":{ "compile_time":true
-},"name":"time_in_millis","macro":true,"fn_args":"()","usage":[],"tags":["time","milliseconds","number","integer","date"],"description":"Returns the current time in milliseconds as an integer"
+},"name":"time_in_millis","macro":true,"fn_args":"[]","usage":[],"tags":["time","milliseconds","number","integer","date"],"description":"Returns the current time in milliseconds as an integer"
 });
 await Environment.set_global("defns",async function(name,options) {
     if (check_true ((options&& (options && options["ignore_if_exists"])&& (name instanceof String || typeof name==='string')&& await (await Environment.get_global("contains?"))(name,await (await Environment.get_global("namespaces"))())))){
@@ -3661,7 +3661,7 @@ await Environment.set_global("import",async function(...args) {
         }
     } ()
 },{ "eval_when":{ "compile_time":true
-},"name":"import","macro":true,"fn_args":"(\"&\" args)","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"],"requires":["last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"]
+},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"],"requires":["last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"]
 });
 await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
@@ -3680,7 +3680,7 @@ await Environment.set_global("tzoffset",async function() {
             return await __call_target__[__call_method__]()
         } 
     })())
-},{ "name":"tzoffset","fn_args":"()","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"]
+},{ "name":"tzoffset","fn_args":"[]","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"]
 });
 await Environment.set_global("date_components",async function(date_value,date_formatter) {
     if (check_true (await (await Environment.get_global("is_date?"))(date_value))){
@@ -3759,7 +3759,7 @@ await Environment.set_global("nth",async function(idx,collection) {
 };
 await Environment.set_global("hostname",async function() {
     return await Deno.hostname()
-},{ "name":"hostname","fn_args":"()","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"]
+},{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"]
 });
 await Environment.set_global("use_symbols",async function(namespace,symbol_list,target_namespace) {
     let acc;
@@ -3987,16 +3987,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_43007;
+                                                let _expr_40806;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_43007=await (async function(){
+                                                _expr_40806=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_43007 && _expr_43007["0"]);
-                                                req_ns=(_expr_43007 && _expr_43007["1"]);
-                                                explicit=(_expr_43007 && _expr_43007["2"]);
+                                                req_sym=(_expr_40806 && _expr_40806["0"]);
+                                                req_ns=(_expr_40806 && _expr_40806["1"]);
+                                                explicit=(_expr_40806 && _expr_40806["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4099,13 +4099,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_5591;
+                    let _expr_58462;
                     let nspace;
-                    _expr_5591=await (async function(){
+                    _expr_58462=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_5591 && _expr_5591["0"]);
-                    nspace=(_expr_5591 && _expr_5591["1"]);
+                    sym=(_expr_58462 && _expr_58462["0"]);
+                    nspace=(_expr_58462 && _expr_58462["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4137,7 +4137,7 @@ await Environment.set_global("sort_dependencies",async function() {
             }
         })(),symbols:ordered
     }
-},{ "name":"sort_dependencies","fn_args":"()","requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces","contains?"]
+},{ "name":"sort_dependencies","fn_args":"[]","requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces","contains?"]
 });
 await Environment.set_global("symbols_by_namespace",async function(options) {
     let ns_handle;
@@ -4352,7 +4352,7 @@ await Environment.set_global("all_globals",async function() {
          
     })();
     return acc
-},{ "name":"all_globals","fn_args":"()","usage":[],"description":"Returns a set of all global symbols, regardless of namespace.","tags":["editor","globals","autocomplete"],"requires":["keys","resolve_path","namespaces"]
+},{ "name":"all_globals","fn_args":"[]","usage":[],"description":"Returns a set of all global symbols, regardless of namespace.","tags":["editor","globals","autocomplete"],"requires":["keys","resolve_path","namespaces"]
 });
 await Environment.set_global("process_tree_symbols",async function(tree,prefix,_ctx) {
     let is_root;
@@ -4675,7 +4675,7 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
 await Environment.set_global("progc",async function(...forms) {
     return ["=:try",["=:progn",].concat(forms),["=:catch","=:Error",["=:e"],["=:log","=:e.message"]]]
 },{ "eval_when":{ "compile_time":true
-},"name":"progc","macro":true,"fn_args":"(\"&\" forms)","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"]
+},"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"]
 });
 {
      Environment.set_global("reverse_string",function(text) {
@@ -4925,7 +4925,7 @@ await Environment.set_global("progc",async function(...forms) {
             } else if (check_true ((((delta && delta["final_type"])==="{")&& (movement_needed>0)))) {
                 {
                       (function(){
-                        delta["indent"]= ( Environment.get_global("add"))( ( Environment.get_global("last"))((delta && delta["openers"])),2);
+                        delta["indent"]=(remainder_pos+ 2);
                         return delta;
                         
                     })()
@@ -4949,7 +4949,7 @@ await Environment.set_global("progc",async function(...forms) {
             }
         } )();
         return delta
-    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","log","built_ins","add","last"]
+    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","log","built_ins"]
 })
 };
 {
@@ -5162,7 +5162,7 @@ await Environment.set_global("set_default",async function(path,value) {
              
         })();
         return acc
-    },{ "name":"all_global_functions","fn_args":"()","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"]
+    },{ "name":"all_global_functions","fn_args":"[]","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"]
 })
 };
 {
@@ -5229,7 +5229,27 @@ await Environment.set_global("set_default",async function(path,value) {
         block_words=["try","progn","progl","progc","do","let","cond"];
         conditionals=["if","when","unless"];
         char=null;
-        global_lookup= ( Environment.get_global("all_global_functions"))();
+        global_lookup= ( function(){
+            let tmp= ( Environment.get_global("all_global_functions"))();
+            ;
+             ( function() {
+                let __for_body__380=function(op) {
+                    return  tmp["add"].call(tmp,op)
+                };
+                let __array__381=[],__elements__379=(key_words|| []);
+                let __BREAK__FLAG__=false;
+                for(let __iter__378 in __elements__379) {
+                    __array__381.push( __for_body__380(__elements__379[__iter__378]));
+                    if(__BREAK__FLAG__) {
+                         __array__381.pop();
+                        break;
+                        
+                    }
+                }return __array__381;
+                 
+            })();
+            return tmp
+        })();
         last_opener=null;
         operator=null;
         next_char=null;
@@ -5296,15 +5316,15 @@ await Environment.set_global("set_default",async function(path,value) {
                 {
                     next_char_pos=(cpos+ 1);
                      ( function(){
-                         let __test_condition__378=function() {
+                         let __test_condition__382=function() {
                             return (chars[next_char_pos]&&  is_whitespace_ques_(chars[next_char_pos]))
                         };
-                        let __body_ref__379=function() {
+                        let __body_ref__383=function() {
                             return next_char_pos+=1
                         };
                         let __BREAK__FLAG__=false;
-                        while( __test_condition__378()) {
-                             __body_ref__379();
+                        while( __test_condition__382()) {
+                             __body_ref__383();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -5317,10 +5337,10 @@ await Environment.set_global("set_default",async function(path,value) {
             }
         };
          ( function(){
-             let __test_condition__380=function() {
+             let __test_condition__384=function() {
                 return (cpos<(chars && chars.length))
             };
-            let __body_ref__381=function() {
+            let __body_ref__385=function() {
                 cpos+=1;
                 char=chars[cpos];
                 rule=null;
@@ -5471,7 +5491,7 @@ await Environment.set_global("set_default",async function(path,value) {
                                              next_line();
                                             argnum=0
                                         }
-                                    } else if (check_true (((char==="{")&&  ( Environment.get_global("not"))( is_whitespace_ques_(chars[(1+ cpos)]))))) {
+                                    } else if (check_true (((char==="{")&&  ( Environment.get_global("not"))( is_whitespace_ques_(chars[(1+ cpos)]))&&  ( Environment.get_global("not"))((chars[(1+ cpos)]==="}"))))) {
                                         {
                                             rule="r6";
                                              add_char_to_line();
@@ -5500,9 +5520,9 @@ await Environment.set_global("set_default",async function(path,value) {
                         if (check_true (debug_mode)){
                             {
                                 return (report).push( ( function(){
-                                    let __array_op_rval__382=cpos;
-                                     if (__array_op_rval__382 instanceof Function){
-                                        return  __array_op_rval__382(char, ( function(){
+                                    let __array_op_rval__386=cpos;
+                                     if (__array_op_rval__386 instanceof Function){
+                                        return  __array_op_rval__386(char, ( function(){
                                             if (check_true ((cpos<=next_char_pos))){
                                                 return next_char
                                             } else {
@@ -5528,7 +5548,7 @@ await Environment.set_global("set_default",async function(path,value) {
                                             }
                                         })(),rule,word,operator,(line_acc).join("")) 
                                     } else {
-                                        return [__array_op_rval__382,char, ( function(){
+                                        return [__array_op_rval__386,char, ( function(){
                                             if (check_true ((cpos<=next_char_pos))){
                                                 return next_char
                                             } else {
@@ -5561,8 +5581,8 @@ await Environment.set_global("set_default",async function(path,value) {
                 }
             };
             let __BREAK__FLAG__=false;
-            while( __test_condition__380()) {
-                 __body_ref__381();
+            while( __test_condition__384()) {
+                 __body_ref__385();
                  if(__BREAK__FLAG__) {
                      break;
                     
@@ -5573,13 +5593,13 @@ await Environment.set_global("set_default",async function(path,value) {
         if (check_true (debug_mode)){
             {
                  ( function(){
-                    let __array_op_rval__383=report_callout;
-                     if (__array_op_rval__383 instanceof Function){
-                        return  __array_op_rval__383(report,{
+                    let __array_op_rval__387=report_callout;
+                     if (__array_op_rval__387 instanceof Function){
+                        return  __array_op_rval__387(report,{
                             columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
                         }) 
                     } else {
-                        return [__array_op_rval__383,report,{
+                        return [__array_op_rval__387,report,{
                             columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
                         }]
                     }
@@ -5592,7 +5612,7 @@ await Environment.set_global("set_default",async function(path,value) {
             }
         };
          ( function() {
-            let __for_body__386=function(line_num) {
+            let __for_body__390=function(line_num) {
                 text=(""+ lines[line_num]+ "\n");
                 if (check_true ((line_num>0))){
                     indent_string= ( Environment.get_global("format_lisp_line"))(line_num,get_line)
@@ -5605,16 +5625,16 @@ await Environment.set_global("set_default",async function(path,value) {
                     
                 })()
             };
-            let __array__387=[],__elements__385= ( Environment.get_global("range"))((lines && lines.length));
+            let __array__391=[],__elements__389= ( Environment.get_global("range"))((lines && lines.length));
             let __BREAK__FLAG__=false;
-            for(let __iter__384 in __elements__385) {
-                __array__387.push( __for_body__386(__elements__385[__iter__384]));
+            for(let __iter__388 in __elements__389) {
+                __array__391.push( __for_body__390(__elements__389[__iter__388]));
                 if(__BREAK__FLAG__) {
-                     __array__387.pop();
+                     __array__391.pop();
                     break;
                     
                 }
-            }return __array__387;
+            }return __array__391;
              
         })();
         return (lines).join("")
@@ -5634,19 +5654,19 @@ await Environment.set_global("set_default",async function(path,value) {
 {
      Environment.set_global("operating_system",function() {
         return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
-    },{ "name":"operating_system","fn_args":"()","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"]
+    },{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"]
 })
 };
 {
      Environment.set_global("platform_architecture",function() {
         return  ( Environment.get_global("resolve_path"))(["build","arch"],Deno)
-    },{ "name":"platform_architecture","fn_args":"()","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"]
+    },{ "name":"platform_architecture","fn_args":"[]","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"]
 })
 };
 {
      Environment.set_global("platform",function() {
         return Deno["build"]
-    },{ "name":"platform","fn_args":"()","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"]
+    },{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"]
 })
 };
 return true

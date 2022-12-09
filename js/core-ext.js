@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-12-08 11:14:44
-// Version: 2022.12.08.11.14
-export const DLISP_ENV_VERSION='2022.12.08.11.14';
+// Build Time: 2022-12-09 07:24:19
+// Version: 2022.12.09.07.24
+export const DLISP_ENV_VERSION='2022.12.09.07.24';
 
 
 
@@ -17,7 +17,7 @@ export async function load_core(Environment)  {
 });
 await Environment.set_global("str",async function(...args) {
     return (args).join(" ")
-},{ "name":"str","fn_args":"(\"&\" \"args\")","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["join"]
+},{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["join"]
 });
 await Environment.set_global("COPY_DATA",null);
 if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")|| (await Environment["get_global"].call(Environment,"uuid",ReferenceError)===ReferenceError))))){
@@ -128,7 +128,7 @@ await Environment.set_global("macros",async function() {
          
     })();
     return __collector
-},{ "name":"macros","fn_args":"()","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"],"requires":["push","pairs"]
+},{ "name":"macros","fn_args":"[]","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"],"requires":["push","pairs"]
 });
 await Environment.set_global("pluck",async function(fields,data) {
     return ["=:each",data,fields]
@@ -527,7 +527,7 @@ await Environment.set_global("is_date?",async function(x) {
 });
 await Environment.set_global("is_nil?",async function(value) {
     return (null===value)
-},{ "name":"is_nil?","fn_args":"(\"value\")","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
+},{ "name":"is_nil?","fn_args":"[\"value\"]","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 });
  Environment.set_global("is_object_or_function?",new Function(["obj"],"var type = typeof obj; return type === 'function' || type === 'object' && !!obj;"));
 await Environment.set_global("extend",async function(target_object,source_object) {
@@ -605,7 +605,7 @@ await Environment.set_global("no_empties",async function(items) {
         })();
         return __collector
     }
-},{ "name":"no_empties","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"],"requires":["sub_type","not","push"]
+},{ "name":"no_empties","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"],"requires":["sub_type","not","push"]
 });
 await Environment.set_global("first_with",async function(prop_list,data_value) {
     let rval;
@@ -685,7 +685,7 @@ await Environment.set_global("except_nil",async function(items) {
          
     })();
     return acc
-},{ "name":"except_nil","fn_args":"(\"items\")","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
+},{ "name":"except_nil","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
 });
 await Environment.set_global("hide",async function(value) {
     return undefined
@@ -995,7 +995,7 @@ await Environment.set_global("yesterday",async function() {
     d1=new Date();
     d2=new Date();
     return [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d1,-1)),await (await Environment.get_global("add_hours"))(await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d2,-1)),24)]
-},{ "name":"yesterday","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","add_hours"]
+},{ "name":"yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","add_hours"]
 });
 await Environment.set_global("next_sunday",async function(dval) {
     let dv=(dval|| new Date());
@@ -1022,7 +1022,7 @@ await Environment.set_global("day_before_yesterday",async function() {
             return [__array_op_rval__83,d2]
         }
     })()
-},{ "name":"day_before_yesterday","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days"]
+},{ "name":"day_before_yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days"]
 });
 await Environment.set_global("last_week",async function() {
     let d1;
@@ -1030,7 +1030,7 @@ await Environment.set_global("last_week",async function() {
     d1=new Date();
     d2=new Date();
     return [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(await (await Environment.get_global("next_sunday"))(),-14)),await (await Environment.get_global("last_sunday"))()]
-},{ "name":"last_week","fn_args":"()","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","next_sunday","last_sunday"]
+},{ "name":"last_week","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","next_sunday","last_sunday"]
 });
 await Environment.set_global("midnight-to-midnight",async function(dval) {
     let d1;
@@ -1321,7 +1321,7 @@ await Environment.set_global("measure_time",async function(...forms) {
     return ["=:let",[["=:end","=:nil"],["=:rval","=:nil"],["=:start",["=:time_in_millis"]]],["=:=","=:rval",["=:do",].concat(forms)],{ "time":["=:-",["=:time_in_millis"],"=:start"],"result":"=:rval"
 }]
 },{ "eval_when":{ "compile_time":true
-},"name":"measure_time","macro":true,"fn_args":"(\"&\" forms)","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results."
+},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results."
 });
 await Environment.set_global("compare_list_ends",async function(l1,l2) {
     let long_short;
@@ -1724,7 +1724,7 @@ await Environment.set_global("make_sort_buckets",async function() {
         }
     };
     return push_to
-},{ "name":"make_sort_buckets","fn_args":"()","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"],"requires":["push"]
+},{ "name":"make_sort_buckets","fn_args":"[]","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"],"requires":["push"]
 });
  Environment.set_global("bytes_from_int_16",new Function("x","{ let bytes = []; let i = 2; do { bytes[(1 - --i)] = x & (255); x = x>>8; } while ( i ) return bytes;}"));
  Environment.set_global("int_16_from_bytes",new Function("x","y"," { let val = 0;  val +=y; val = val << 8; val +=x; return val; }"));
@@ -1918,7 +1918,7 @@ await Environment.set_global("to_csv",async function(rows,delimiter) {
         }return __array__150;
          
     })()).join("\n")
-},{ "name":"to_csv","fn_args":"(\"rows\" delimiter)","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"],"requires":["join","map","is_string?","contains?","replace"]
+},{ "name":"to_csv","fn_args":"[\"rows\" delimiter]","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"],"requires":["join","map","is_string?","contains?","replace"]
 });
 await Environment.set_global("squeeze",async function(s) {
     return await (await Environment.get_global("replace"))(new RegExp(" ","g"),"",s)
