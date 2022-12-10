@@ -4899,7 +4899,7 @@
            edit_control)))
 
 (defcontrol log_view ()
-      ((output_container (div { `class: "juno-log-output" `style: "scroll-behavior: smooth;" } ))       
+      ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))       
        (options (or options { `display_options: { include_prototypes: false }}))
        (name (or options.name (name_control "log_view")))
        (parent_view nil)
@@ -4942,8 +4942,8 @@
                             (= parent_view view.parentElement)
                             (set_style [["display" "block"]
                                         ["background" "var(--log-result-bg-color)"]
-                                        ["height" "calc(100% - 10px);"]
-                                        ["width" "calc(100% - 10px);"]
+                                        ["height" "100%"]
+                                        ["width" "100% ;"]
                                         ] content_view)
                             
                             (when (eq nil (prop options `display_options))
