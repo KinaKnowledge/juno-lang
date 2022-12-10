@@ -35,6 +35,8 @@
   --value-modified-color: #016783;
   --matching-paren-color: #ffeb00;
   --matching-paren-outline-color: #b6a800;
+  --scrollbar-thumb-color: inherit;
+  --scrollbar-track-color: inherit;
   --type-number-color: green;
   --type-boolean-color: orange;
   --type-string-color: darkblue;
@@ -136,6 +138,15 @@ body {
   background: var(--main-bg-color, #FCFAFA);
   color: var(--main-color, #000000);
   font-size: var(--main-app-font-size);
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-color)
 }
 
 /**

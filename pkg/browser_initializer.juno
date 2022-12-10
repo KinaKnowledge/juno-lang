@@ -2566,10 +2566,10 @@
                     "juno-view-content div, and the whole contents, including the optional "
                     "buffer bar element are wrapped in a juno-view-container div.<br><br>"
                     "The options are as follows: <br><br>"
-                    "id:string:The assigned id for the control.<br>"
-                    "style:string:A string containing css styling attributes that are assigned "
+                    "id:string - The assigned id for the control.<br>"
+                    "style:string - A string containing css styling attributes that are assigned "
                     "to the juno-view-container div (the encompassing element).<br><br>"
-                    "events:array:An array of array values in the form of pairs in the "
+                    "events:array - An array of array values in the form of pairs in the "
                     "form of [event_type:string action:fn] which are attached to the "
                     "juno-view-container element.")
    `usage: ["options:object" "elements:Elements"]
@@ -3786,6 +3786,7 @@
               (resize_observer (new ResizeObserver resize))
               (view (control_frame (to_object
                                        [[`id id]
+                                        [ `style ,#(or control_options.frame_style nil)]
                                         [`events ,#control_options.events ]])
                      (if ,#control_bar?
                          control_status
@@ -3920,7 +3921,9 @@
                         "usage:array - The argument specification for the macro"
                         "description:string - The description of the control that is registered in the Environment.<br>"
                         "control_bar:boolean - If a control bar is to be displayed on the top of the control, set this to "
-                        "true.<br>")
+                        "true.<br>"
+                        "frame_style:string - Any custom style attributes to apply to the control frame.  These "
+                        "should be formatted in the CSS manner: eg.  \"overflow: hidden;\"")
        `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
        `tags: ["control" "define" "controls" "ui"]
    })
@@ -4895,10 +4898,8 @@
                          `(buffer_editor ,#title ,#namespace ,#path_to_value ,#mode ,#options)))
            edit_control)))
 
-
-
 (defcontrol log_view ()
-      ((output_container (div { `class: "juno-log-output"  } ))       
+      ((output_container (div { `class: "juno-log-output" `style: "scroll-behavior: smooth;" } ))       
        (options (or options { `display_options: { include_prototypes: false }}))
        (name (or options.name (name_control "log_view")))
        (parent_view nil)
@@ -4939,6 +4940,12 @@
                       (try
                          (progn
                             (= parent_view view.parentElement)
+                            (set_style [["display" "block"]
+                                        ["background" "var(--log-result-bg-color)"]
+                                        ["height" "calc(100% - 10px);"]
+                                        ["width" "calc(100% - 10px);"]
+                                        ] content_view)
+                            
                             (when (eq nil (prop options `display_options))
                                (set_prop options
                                   `display_options
@@ -4963,9 +4970,9 @@
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
                                ;(log "resize!"new_height )
-                             (set_style [[ "width" (+ "" new_width "px") ]
-                                         [ "height" (+ "" new_height "px") ]]
-                                      output_container)
+                             ;(set_style [[ "width" (+ "" new_width "px") ]
+                              ;           [ "height" (+ "" new_height "px") ]]
+                               ;       content_view)
                              (when (and hide_state
                                         (> new_height 5))
                                 (= hide_state false)
@@ -4979,7 +4986,9 @@
        (add_result (fn (result command_text error_state)
                       (progn
                          (assert initialized "log_view not initialized")
+                         (defvar appended_element nil)
                          (when (not (eq nil command_text))
+                           
                             (-> output_container
                                `append
                                (if (> command_text.length 100)
@@ -4988,22 +4997,26 @@
                                             (pre { `tabindex: 0 `class: "juno-code-value" }
                                                  (pretty_print command_text)))
                                    (div {  class: "juno-result" }
-                                        (code { `tabindex: 0 `class: "juno-code-value" }
+                                        (pre { `tabindex: 0 `class: "juno-code-value" }
                                               command_text)))))
-                         (-> output_container
+                        
+                            (-> output_container
                             `append
-                            (div { `class: "juno-log-message"
-                                   `style: (+ " margin-top: 0px; width: calc(100% - 10px); display: inline-block; font-family: var(--main-mono-space); "
-                                              (if (eq nil command_text)
-                                                  "border-top: 1px solid #00000008; padding: 5px;"
-                                                  "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
-                              (value_to_dom result options.display_options)))
-                         (when (> output_container.children.length (or options.max_log_lines
-                                                                       *env_config*.application.max_log_lines
-                                                                       10))
-                            (-> (first output_container.children)
-                                `remove))
-                         (set_prop output_container
+                            (= appended_element
+                               (div { `class: "juno-log-message"
+                                      `style: (+ " margin-top: 0px; flex-basis: 1; font-family: var(--main-mono-space); "
+                                                 (if (eq nil command_text)
+                                                     "border-top: 1px solid #00000008; padding: 5px;"
+                                                     "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
+                                 (value_to_dom result options.display_options))))
+                         ;(when (> appended_element.parentElement.children.length (or options.max_log_lines
+                          ;                                             *env_config*.application.max_log_lines
+                           ;                                            10))
+                        ;    (-> (first appended_element.parentElement.children)
+                         ;       `remove))
+                         
+                                           
+                         (set_prop appended_element.parentElement
                                 `scrollTop
                                 1000000)
                       (set_prop view
@@ -5086,9 +5099,9 @@
        (log_message (fn (`& args)
                       (progn
                          (defvar display_mode (or options.display_options.display_mode 0))
-                         (add_result (div { `tabindex: 0 `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
-                                          (div { `class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
-                                          (div { `style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
+                         (add_result (div { tabindex: 0 style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
+                                          (div { class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
+                                          (div { style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
                                                (for_each (v args)
                                                   (cond
                                                      (is_string? v)
@@ -5124,10 +5137,13 @@
                  [`control_bar control_status]
                  [`append add_result]
                  [`log_message log_message ]]
+        frame_style: "overflow: hidden;"
         control_bar: true
         usage: ["options:object"]
         
     })
+
+
 
 ;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
 
@@ -5138,6 +5154,7 @@
        (resize_observer nil)
        (id (or options.id (generate_id "repl")))
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
+       (display_mode_span (span { `title: (dtext "Display Mode") `class: "juno-mode" style: "float: right;"} "INIT"))
        (location_span (span { `title: "Location" `style: "float: right; display:inline-block; padding-left: 10px; padding-right: 10px;" } 
                           (if options.remote_repl
                                    "Connecting"
@@ -5164,7 +5181,7 @@
        (output_control (progn
                           (log_view { `display_options: (or options.display_options { `show_timestamps: false } )
                                                          `hide_command_button: true
-                                                         `additional_elements: [ control_button title_span show_prototype_details_button namespace_span  path_span location_span] `id: id })))
+                                                         `additional_elements: [ control_button title_span show_prototype_details_button namespace_span display_mode_span path_span location_span] `id: id })))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -5371,9 +5388,9 @@
                             (console.log "remote: <-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (pre (pretty_print result)))
+                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (pretty_print result))))
                                (== display_mode "JSON")
-                               (= result (pre (JSON.stringify result nil 2))))
+                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (JSON.stringify result nil 2)))))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
@@ -5399,9 +5416,9 @@
                             (console.log "<-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (pre (pretty_print result)))
+                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (pretty_print result))))
                                (== display_mode "JSON")
-                               (= result (pre (JSON.stringify result nil 2))))
+                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (JSON.stringify result nil 2)))))
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))
@@ -5511,17 +5528,23 @@
                         (fn ()
                            (progn
                               (-> output_control `set_display_mode 0)
-                              (set_prop options.display_options `display_mode 0)))]
+                              (set_prop options.display_options `display_mode 0)
+                              (set_prop display_mode_span
+                                 `innerText (-> output_control `display_mode))))]
                        [(dtext "Juno")
                         (fn ()
                            (progn
                               (-> output_control `set_display_mode 1)
-                              (set_prop options.display_options `display_mode 1)))]
+                              (set_prop options.display_options `display_mode 1)
+                              (set_prop display_mode_span
+                                 `innerText (-> output_control `display_mode))))]
                        [(dtext "JSON")
                         (fn ()
                            (progn
                               (-> output_control `set_display_mode 2)
-                              (set_prop options.display_options `display_mode 2)))]]]
+                              (set_prop options.display_options `display_mode 2)
+                              (set_prop display_mode_span
+                                 `innerText (-> output_control `display_mode))))]]]
                       [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                                             [theme  (fn ()
                                                                       (progn
@@ -5534,7 +5557,10 @@
                         (progn
                          (= initialized true)
                          (console.log "repl initializing")
-                         (-> output_control `initialize)
+                         (try
+                            (-> output_control `initialize)
+                            (catch Error (e)
+                               (notify e.message)))
                          (when (eq nil options.display_options)
                            (set_prop options
                                      `display_options
@@ -5566,6 +5592,11 @@
                          (set_prop options
                             `name
                             name)
+                         (log output_control.options)
+                         (setTimeout (fn ()
+                                        (set_prop display_mode_span
+                                           `innerText (-> output_control `display_mode)))
+                                     100)
                          ;; become the system_repl if none is yet defined
                          (if (eq nil *system_repl*)
                              (progn
@@ -9052,8 +9083,8 @@
      })
 
 ;; old
-(defun serialize_controls (controls)
-  [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
+;(defun serialize_controls (controls)
+;  [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
 
 
 ;; new

@@ -22,6 +22,8 @@
   --main-accent-line-hover: #00000025;
   --main-control-surface-accent-color: #efe5e540;
   --main-control-button-color: #00000020;
+  --scrollbar-thumb-color: #0000060;
+  --scrollbar-track-color: #0000030;
   --value-modified-color: #004e64;
   --matching-paren-color: #ffeb00;
   --matching-paren-outline-color: #b6a800;
