@@ -5105,7 +5105,7 @@
                                                      else
                                                      (div { `tabindex: 0 `class: "juno-value" `style: "display: inline-block; padding-left: 10px" } 
                                                           (cond
-                                                             (== display_mode 0)
+                                                             true ;(== display_mode 0)
                                                              (value_to_dom v)
                                                              (== display_mode 1)
                                                              (pre (pretty_print v))
@@ -5380,9 +5380,9 @@
                             (console.log "remote: <-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (div { `style: "overflow-x:scroll;" } (pre (pretty_print result))))
+                               (= result (div { `style: "overflow-x:auto;" } (pre (pretty_print result))))
                                (== display_mode "JSON")
-                               (= result (div { `style: "overflow-x:scroll;" } (pre (JSON.stringify result nil 2)))))
+                               (= result (div { `style: "overflow-x:auto;" } (pre (JSON.stringify result nil 2)))))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
@@ -5408,9 +5408,9 @@
                             (console.log "<-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (div { `style: "overflow-x:scroll;" } (pre (pretty_print result))))
+                               (= result (div { `style: "overflow-x:auto;" } (pre (pretty_print result))))
                                (== display_mode "JSON")
-                               (= result (div { `style: "overflow-x:scroll;" } (pre (JSON.stringify result nil 2)))))
+                               (= result (div { `style: "overflow-x:auto;" } (pre (JSON.stringify result nil 2)))))
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))

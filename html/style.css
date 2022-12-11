@@ -1757,9 +1757,9 @@ div.juno-result,
 details.juno-result {
   border-left: 3px solid #0167835e;
   border-top: 1px solid #00000020;
-  padding: 10px;
+  padding: 5px;
   margin-top: 7px;
-  width: calc(100% - 10px);
+  width: calc(100% - 13px);
   display: inline-block; 
 }
 
