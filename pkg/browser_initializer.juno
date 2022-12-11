@@ -1619,31 +1619,32 @@
 
 
 (defun process_focus_chain (e originator_container)
-  (progn
-   (handle_event e)   
-   (when e.path
-     (let
-         ((target_control nil)
-          (controls (reduce (c (current_controls))                        
-                        (when c.on_focus                          
-                          c)))
-          (focused_list (query_all ".juno-focused")))
-
-      
-       (for_each (elem e.path)
-          (progn
-           (for_each (control controls)
+   (progn
+      (handle_event e)
+      (when e.srcElement
+         (let
+            ((target_control nil)
+             (elem e.srcElement)
+             (controls (reduce (c (current_controls))
+                          (when c.on_focus
+                             c)))
+             (focused_list (query_all ".juno-focused")))
+            
+            ;; check for if we have found the target control:
+            ;; if the current element is equal to the controls view...
+            ;; we found it, otherwise move up to the parent node...
+            ;; and check again...until we can't
+            (while elem
+               (progn
+                  (for_each (control controls)
                      (when (== elem control.view)
-                       (= target_control control)
-                       (break)))
-           (when target_control
-             (break))))
-       
-       (set_focus_to target_control controls)))))
-
-
-    
-
+                        (= target_control control)
+                        (break)))
+                  (when target_control
+                     (break))
+                  (= elem elem.parentElement)))
+            
+            (set_focus_to target_control controls)))))
 
 
 (defun menu_tree (items options _path)
@@ -4955,24 +4956,15 @@
                             (if (eq nil options.display_options.show_timestamps)
                                 (set_show_timestamps false)
                                 (set_show_timestamps options.display_options.show_timestamps))
-                            
                             (if options.hide_command_button
-                                (set_display_command_button (not options.hide_command_button)))
-                            
-                            ;(= resize_observer (new ResizeObserver perform_resize))
-                            ;(-> resize_observer `observe view.parentElement)
-                            )
+                                (set_display_command_button (not options.hide_command_button))))
                          (catch Error (e)
                             (notify (+ "Error: " e.message))))))
-       
-       (on_resize (fn ()
+       ;; override the default resize (typically we use on_resize )
+       (resize (fn ()
                          (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 5))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                               ;(log "resize!"new_height )
-                             ;(set_style [[ "width" (+ "" new_width "px") ]
-                              ;           [ "height" (+ "" new_height "px") ]]
-                               ;       content_view)
                              (when (and hide_state
                                         (> new_height 5))
                                 (= hide_state false)
@@ -4995,7 +4987,7 @@
                                    (details {  class: "juno-result" }
                                             (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
                                             (pre { `tabindex: 0 `class: "juno-code-value" }
-                                                 (pretty_print command_text)))
+                                                 command_text))
                                    (div {  class: "juno-result" }
                                         (pre { `tabindex: 0 `class: "juno-code-value" }
                                               command_text)))))
@@ -5004,18 +4996,18 @@
                             `append
                             (= appended_element
                                (div { `class: "juno-log-message"
-                                      `style: (+ " margin-top: 0px; flex-basis: 1; font-family: var(--main-mono-space); "
+                                      `style: (+ " margin-top: 0px; font-family: var(--main-mono-space); "
                                                  (if (eq nil command_text)
-                                                     "border-top: 1px solid #00000008; padding: 5px;"
-                                                     "border-left: 3px solid #0167835e; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
+                                                     "border-top: 1px solid #00000020; padding: 5px;"
+                                                     "border-left: 3px solid #0167835e; padding: 5px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
                                  (value_to_dom result options.display_options))))
-                         ;(when (> appended_element.parentElement.children.length (or options.max_log_lines
-                          ;                                             *env_config*.application.max_log_lines
-                           ;                                            10))
-                        ;    (-> (first appended_element.parentElement.children)
-                         ;       `remove))
+                         (when (> appended_element.parentElement.children.length 
+                                  (or options.max_log_lines
+                                     *env_config*.application.max_log_lines
+                                     10))
+                            (-> (first appended_element.parentElement.children)
+                                `remove))
                          
-                                           
                          (set_prop appended_element.parentElement
                                 `scrollTop
                                 1000000)
@@ -5388,9 +5380,9 @@
                             (console.log "remote: <-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (pretty_print result))))
+                               (= result (div { `style: "overflow-x:scroll;" } (pre (pretty_print result))))
                                (== display_mode "JSON")
-                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (JSON.stringify result nil 2)))))
+                               (= result (div { `style: "overflow-x:scroll;" } (pre (JSON.stringify result nil 2)))))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
@@ -5416,9 +5408,9 @@
                             (console.log "<-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (pretty_print result))))
+                               (= result (div { `style: "overflow-x:scroll;" } (pre (pretty_print result))))
                                (== display_mode "JSON")
-                               (= result (div { `style: "overflow:scroll;  background: var(--editor-bg-color);" } (pre (JSON.stringify result nil 2)))))
+                               (= result (div { `style: "overflow-x:scroll;" } (pre (JSON.stringify result nil 2)))))
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))
@@ -8005,6 +7997,7 @@
       }
    })
 
+;; placeholder
 (defun wait_for_file_selection ()
    true)
    
@@ -8305,7 +8298,7 @@
                             (load_rules)
                             ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
                             ;(log "loaded rules: prior_text_rules: " prior_text_rules)
-                            (log "options" options)
+                            
                             
                             (attach_event_listener content_view
                                `keyup
@@ -8349,8 +8342,7 @@
                 [`on_save_complete (function (event_obj)
                                       (progn
                                          (remove_class "juno-needs-save" title_span)
-                                         (= is_dirty? false)
-                                         (log "editor: save_complete: " event_obj)))]
+                                         (= is_dirty? false)))]
                 [`get_root_element (fn () root_elem)]]
    })
 
@@ -8682,7 +8674,6 @@
                    (progn
                       (when true
                          (= initialized true)
-                         (log "on_initialize: usage: " usage)
                          (-> sview `initialize)
                          (set_prop options
                             `name

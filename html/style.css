@@ -1579,6 +1579,23 @@ dialog:modal {
   opacity: 50%;
 }
 
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-color);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track-color);
+}
+
 .juno-scrollbar {
     width: 10px;
     height: 10px;
@@ -1602,8 +1619,7 @@ dialog:modal {
 }
 
 .juno-view-content {
-  overflow: scroll;
-  height: calc(100% - 25px);
+  height: calc(100% - 5px);
   width: 100%;
 }
 
@@ -1740,7 +1756,7 @@ li.juno-main-menu-header {
 div.juno-result,
 details.juno-result {
   border-left: 3px solid #0167835e;
-  border-top: 1px solid #00000008;
+  border-top: 1px solid #00000020;
   padding: 10px;
   margin-top: 7px;
   width: calc(100% - 10px);
