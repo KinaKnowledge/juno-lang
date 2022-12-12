@@ -5465,6 +5465,7 @@
                     (set_prop intf
                        `editor
                        (resolve_path [ `editor_container `editor ] intf))
+                    
                     )))
        (on_blur (fn ()
                   (progn
@@ -5651,7 +5652,9 @@
     (set_prop sview
               `type
               "REPL_split")
-    
+    (set_prop output_control
+       `on_focus
+       nil)
     (set_prop options
               `id
               id)
