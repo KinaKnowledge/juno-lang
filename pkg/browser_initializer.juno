@@ -5380,9 +5380,9 @@
                             (console.log "remote: <-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (div { `style: "overflow-x:auto;" } (pre (pretty_print result))))
+                               (= result (pre (pretty_print result)))
                                (== display_mode "JSON")
-                               (= result (div { `style: "overflow-x:auto;" } (pre (JSON.stringify result nil 2)))))
+                               (= result (pre (JSON.stringify result nil 2))))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
@@ -5408,9 +5408,9 @@
                             (console.log "<-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (div { `style: "overflow-x:auto;" } (pre (pretty_print result))))
+                               (= result (pre (pretty_print result)))
                                (== display_mode "JSON")
-                               (= result (div { `style: "overflow-x:auto;" } (pre (JSON.stringify result nil 2)))))
+                               (= result (pre (JSON.stringify result nil 2))))
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))
