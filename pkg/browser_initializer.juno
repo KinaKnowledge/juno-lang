@@ -4243,23 +4243,23 @@
             
             (set_name (fn (new_name force)
                               (progn
-                                 (log "editor: " (clone options.name)  (+ "(" (last_n_chars 5 options.id) ")  setting name to: ") new_name "force:" force)
-                                 (when (not (blank? new_name))
+                                 ;; if we are not already called the new name go ahead and process the new name
+                                 (when (and (not (blank? new_name))
+                                            (not (== (get_control_by_name new_name) intf)))
                                     (set_prop options
                                        `name
                                        (if force
                                           new_name
                                           (compute_name_for_control new_name)))
-                                    (set_prop intf 
+                                    (set_prop intf
                                        `name
-                                       options.name)
-                                    (set_prop title_span
-                                       `innerText
                                        options.name)
                                     (dispatch_event { command: "editor_change"
                                                       source: options.id
                                                       args: [ { `option: "name" `value: options.name } ] }))
-                                 (log "editor: my name is now: " options.name name intf.name)
+                                 (set_prop title_span
+                                    `innerText
+                                    options.name)
                                  options.name)))
             
             (evaluate_selection (function (editor)
@@ -4520,7 +4520,7 @@
                                        is_served?)
                                   (try
                                      (progn
-                                        (log "text_editor: requesting file: " options.filename)
+                                        ;(log "text_editor: requesting file: " options.filename)
                                         (if options.create_mode
                                            (= content "")
                                            (= content (-> (fetch (+ "/files/" options.filename)) `text)))
@@ -4663,7 +4663,7 @@
                                         (setq editor
                                            (ace.edit editor_div))
                                         
-                                        (log "initialize_editor: " options.mode " options: " (clone options))
+                                        ;(log "initialize_editor: " options.mode " options: " (clone options))
                                         
                                         ;; ensure that the Ace language tools extension is loaded
                                         
@@ -4854,7 +4854,7 @@
                                            (set_scroll_speed intf options.scroll_speed)
                                            (is_number? (resolve_path [ `editor `scroll_speed ] *env_config* ))
                                            (progn
-                                              (log "setting scroll speed: " (resolve_path [ `editor `scroll_speed ] *env_config* ))
+                                              ;(log "setting scroll speed: " (resolve_path [ `editor `scroll_speed ] *env_config* ))
                                               (set_scroll_speed intf (resolve_path [ `editor `scroll_speed ] *env_config* )))
                                            else
                                            (set_scroll_speed intf 5))  ;; default scroll speed is 5
@@ -4903,7 +4903,7 @@
                                                                 (display_context_message (+ "Evaluator for this buffer is " (prop *system_repl* `name)))
                                                                 (set_evaluator_control *system_repl*)))))
                                                     100)
-                                        (log "initialize_editor: " (clone options.name) (+ ": (" (last_n_chars 5 options.id) "): initialization complete:") (clone options))
+                                        ;(log "initialize_editor: " (clone options.name) (+ ": (" (last_n_chars 5 options.id) "): initialization complete:") (clone options))
                                         intf)))))
            
            (declare (function compute_name_for_control select_evaluator)
@@ -4951,7 +4951,7 @@
                                                                 "text"
                                                                 { input: (div { value: "remove" } 
                                                                               (dtext "The contents of this editor haven't been stored. Really remove?")) }))
-                                         (log (+ "editor: " options.name ": user response: ") response)
+                                         ;(log (+ "editor: " options.name ": user response: ") response)
                                          response))))
                 `destroy: (fn ()
                              (when editor
@@ -4960,7 +4960,7 @@
                                                           (get_editors_for_path options.path)
                                                           []))
                                 (defvar my_path (clone options.path))
-                                (log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
+                                ;(log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
                                 ;(log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                                 (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                                 (-> editor `destroy)
@@ -5019,6 +5019,7 @@
                                        (when (is_string? editor_option_name)
                                           (-> editor `setOption editor_option_name value)))
                 `options: options
+                `set_evaluator_control: set_evaluator_control 
                 `on_focus: (if options.disallow_control_focus
                               nil
                               on_focus)
@@ -9966,11 +9967,14 @@
        ;; take in the global default theme, but don't impact the setting for the sub themes
        (set_global_theme *env_config*.application.global_theme { `suppress_set_sub_theme: true `suppress_cascade: true })
        (defglobal $repl (visual_repl { `name: "Juno REPL"  `display_options: { `show_timestamps: true }}))
-       (= scratch_editor
-          (text_editor { name: "*scratch*" 
-                         namespace: "user" 
-                         path: [ `*scratch* ] 
-                         mode: `juno }))
+       (try
+         (= scratch_editor
+            (text_editor { name: "*scratch*" 
+                          namespace: "user" 
+                          path: [ `*scratch* ] 
+                          mode: `juno }))
+         (catch Error (e)
+           (console.error "error on constructing scratch editor: " e)))
 
        (push *main_menu*   ;; using a wrapper function allows us to change the menu more dynamically
              [ "File" (fn ()
