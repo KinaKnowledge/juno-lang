@@ -61,9 +61,6 @@
                    ["padding-right" "5px"]])
 
 
-
-
-
 ;;(create_css_entry "span.juno-value"
  ;;                 [["display" "inline-block"]])
    
@@ -1157,8 +1154,23 @@
                                            target_control.menu_items 
                                            "control_menu"])))
       (progn
-       ;(setq *last_focus* nil)
-       ))))
+       true))))
+
+(defun controls_needing_save ()
+   (reduce (c (current_controls))
+      (when (and c.needs_save?
+                 (-> c `needs_save?))
+         c))
+  { description: (+ "Examines all current controls and returns any controls who have a needs_save? "
+                    "method that returns true.<br> ")
+    usage: []
+    tags: ["controls"
+           "control"
+           "save"
+           "dirty"
+           "editor"
+           "buffer"
+           "modified"]})
 
 (defun default_focus ()
   (let
@@ -3208,6 +3220,20 @@
                            ""))
        (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
        (dims nil)
+       (top (cond
+               (is_string? options.position.top)
+               options.position.top
+               (is_number? options.position.top)
+               (+ "" options.position.top "px")
+               else
+               (+ "" (+ 5 (random_int 10)) "px; ")))
+       (left (cond
+               (is_string? options.position.left)
+               options.position.left
+               (is_number? options.position.left)
+               (+ "" options.position.left "px;")
+               else
+               (+ "" (+ 45 (random_int 10)) "%; ")))
        (resize_mode false)
        (max_dims {
                   `width: 0
@@ -3252,8 +3278,8 @@
                                        frame)))))
                                    
        (frame (div { class: "juno-floating-container" 
-                     style: (+ "left: " (+ 50 (random_int 10)) "%; " 
-                               "top: " (+ 5 (random_int 10)) "px; "
+                     style: (+ "left: " left
+                               "top: " top
                                 (if (is_string? options.style)
                                     (+ "" options.style ";")
                                     ""))
@@ -3952,6 +3978,10 @@
    })
 
 
+
+
+
+
 (defun recalc_names_for_path (path_to_value)
    (let
       ((ctls (get_editors_for_path path_to_value)))
@@ -4460,6 +4490,9 @@
                                 else
                                 (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
             ;; position tracking 
+            (max_history_length (if (is_number? options.max_history_length)
+                                    options.max_history_length
+                                    40))
             (position_history [])
             (position_history_idx 0)
             (current_position (fn ()
@@ -4467,11 +4500,12 @@
             (set_cursor_position (fn (pos)
                                     (progn
                                        (-> editor `navigateTo pos.row pos.column)
-                                       (-> editor `scrollToLine pos.row true nil))))
+                                       (-> editor `scrollToLine pos.row true nil)
+                                       (focus_to_editor intf))))
             (update_position (function ()
                                 (when editor
                                    (defvar current_pos (-> editor `getCursorPosition))
-                                
+                                   
                                    (set_prop col_pos_span
                                       `innerText
                                       (+ "[" current_pos.row " " current_pos.column "]"))
@@ -4487,21 +4521,24 @@
                                              (= position_history_idx (- position_history.length 1))
                                              (set_disabled nav_forward_button))
                                          (defvar last_pos (prop position_history position_history_idx))
-                                         
+                                         (when (eq nil last_pos)
+                                            (log "last_pos is nil! and it shouldn't be: " position_history_idx))
                                          (if (> (Math.abs (- current_pos.row (prop last_pos `row)))
                                                 8)
                                             (progn
                                                (inc position_history_idx)
                                                (-> position_history `splice position_history_idx 0 current_pos)
                                                ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
-                                               (when (> position_history.length 40)
+                                               (when (> position_history.length max_history_length)
                                                   (take position_history)
-                                                  (= position_history_idx (clamp position_history_idx 0 position_history.length))))
-                                                  
+                                                  (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
                                             (progn
                                                (-> position_history `splice position_history_idx 1 current_pos))))
                                       (catch Error (e)
-                                         (log "ERROR on position history update: " e.message))))))
+                                         (log "ERROR " options.name  " on position history update: " e.message)))
+                                   
+                                   
+                                   )))
             (go_backward_in_position (fn ()
                                         (progn
                                            (= position_history_idx (Math.max 0 (- position_history_idx 1)))
@@ -4877,7 +4914,7 @@
                                                                         (dispatch_event { command: "editor_change"
                                                                                           source: options.id
                                                                                           args: [ val ] }))
-                                                                     (update_position)
+                                                                     ;(update_position)
                                                                      (when options.on_change
                                                                         (options.on_change editor val)))))
                                         ;; resize
@@ -5055,7 +5092,8 @@
                                          new_evaluator)
                                       (set_evaluator)))
                 `needs_save?: (fn ()
-                                is_dirty?)
+                                (and (not options.repl_mode)
+                                     is_dirty?))
                 `set_mode: set_mode
                 `get_mode: (fn ()
                               options.mode)
@@ -5128,9 +5166,6 @@
                                       (catch Error (e)
                                          (log "ERROR on init: " e.message))))) })))) 
 
-
-
-  
 
 (defun compute_name_for_editor (title path_to_value)
    (let
@@ -6108,6 +6143,8 @@
                                      `append view)))))
             (dirty_controls_interval nil)
             (num_dirties 0)
+            (num_dirties_button (button { `style: "font-size: 0.9em; font-weight: bold; padding: 4px; min-width: 25px; text-align: center; border-radius: 20px; background: #A01010; color: white; position: absolute; top: 2px; right: 20px;" }
+                                  0))
             (before_unload_listener (function (e)
                                        (progn
                                           (-> e `preventDefault)
@@ -6190,18 +6227,22 @@
                                                        (clearInterval dirty_controls_interval))
                                                     (log_error "dirty_controls_interval: stopping due to error: " e)
                                                     [])))))
+                                 (set_prop num_dirties_button
+                                    `innerText (+ "" dirties.length))
                                  (cond
                                     (and (> dirties.length 0)
                                          (== num_dirties 0))
                                      (progn
                                         (= num_dirties dirties.length)
-                                        (log "# buffer saves required: " num_dirties)
+                                        (if (not num_dirties_button.parentElement)
+                                            (-> (get_by_id "page-header") `append
+                                                     num_dirties_button))
                                         (addEventListener `beforeunload before_unload_listener { capture: true }))
                                      (and (== dirties.length 0)
                                           (> num_dirties 0))
                                      (progn
                                         (= num_dirties 0)
-                                        (log "# buffer saves required: " 0)
+                                        (-> num_dirties_button `remove)
                                         (removeEventListener `beforeunload before_unload_listener { capture: true })))))
                            2000))
 
@@ -6587,7 +6628,7 @@
                         (suffix (+ (get_suffix) addl))
                         (matched [])
                         (first_match nil)
-                        (not_matched []))                       
+                        (not_matched []))
                        (if (< pos 0)
                            []
                            (aif (ol_for_pos pos)
@@ -6601,8 +6642,6 @@
                                                 c))))))
                        (= last_matched matched)
                        (when highlight?
-                          
-                          
                           (for_each (elem not_matched)
                              (add_class "filtered-lower-opacity" elem))
                            (for_each (elem matched)
@@ -9157,7 +9196,7 @@
 
       
                                                 
-(defun app_menu(global_menu_path options)
+(defun app_menu (global_menu_path options)
   (let
       ((view nil)
        (options (either options {}))
@@ -9317,6 +9356,7 @@
                  (-> existing_header `appendChild elem)
                  else
                  (create_dom_element "span" elem))))
+    ;(-> existing_header `appendChild (span { `style: "float: right; ")
     (set_prop options
               `id
               (or options.id "app-header"))
