@@ -2926,7 +2926,7 @@ such as things that connect or use environmental resources.
             `tags:["bind" "object" "this" "context" "call"]
         })
 
-(defun clamp (value min max)
+(defun_sync clamp (value min max)
    (Math.min (Math.max min value) max)
    {
        `description: (+ "Given a numeric value, along with minimum and maximum values for the provided value, "
