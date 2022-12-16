@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2022-12-09 07:24:19
-// Version: 2022.12.09.07.24
-export const DLISP_ENV_VERSION='2022.12.09.07.24';
+// Build Time: 2022-12-16 13:34:31
+// Version: 2022.12.16.13.34
+export const DLISP_ENV_VERSION='2022.12.16.13.34';
 
 
 
@@ -3511,10 +3511,12 @@ await Environment.set_global("bind_and_call",async function(target_object,this_o
     }
 },{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["bind"]
 });
-await Environment.set_global("clamp",async function(value,min,max) {
-    return await Math.min(await Math.max(min,value),max)
-},{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"]
-});
+{
+     Environment.set_global("clamp",function(value,min,max) {
+        return  Math.min( Math.max(min,value),max)
+    },{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"]
+})
+};
 await Environment.set_global("document",new Object());
 await Environment.set_global("save_locally",async function(fname,data,content_type) {
     if (check_true (window["document"])){
@@ -3987,16 +3989,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_40806;
+                                                let _expr_76001;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_40806=await (async function(){
+                                                _expr_76001=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_40806 && _expr_40806["0"]);
-                                                req_ns=(_expr_40806 && _expr_40806["1"]);
-                                                explicit=(_expr_40806 && _expr_40806["2"]);
+                                                req_sym=(_expr_76001 && _expr_76001["0"]);
+                                                req_ns=(_expr_76001 && _expr_76001["1"]);
+                                                explicit=(_expr_76001 && _expr_76001["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4099,13 +4101,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_58462;
+                    let _expr_10478;
                     let nspace;
-                    _expr_58462=await (async function(){
+                    _expr_10478=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_58462 && _expr_58462["0"]);
-                    nspace=(_expr_58462 && _expr_58462["1"]);
+                    sym=(_expr_10478 && _expr_10478["0"]);
+                    nspace=(_expr_10478 && _expr_10478["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
