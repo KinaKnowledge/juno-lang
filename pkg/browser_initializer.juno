@@ -3790,8 +3790,12 @@
                       (generate_id ,#name)))
               (initialized false)
               (title_span (span { `class: "juno-title" } name))
+              (set_title (fn (title_text)
+                            (set_prop title_span
+                               `innerText
+                               title_text)))
               (command_button (commands_button id))
-              (content_view (div { } "uninitialized.."))
+              (content_view (div { `style: "overflow: hidden; height: 100%; width: 100%; background: var(--control-bg-color); color: var(--control-color);" } "uninitialized.."))
               (resize (fn ()
                          (progn
                             (let
@@ -4113,8 +4117,8 @@
                                  default_value)))
             (buffer_commands_button (commands_button options.id))
             (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
-            (nav_back_button (button { `title: (dtext "Go back to previous line position history") `style: "float: right" } "<"))
-            (nav_forward_button (button { `disabled: true `title: (dtext "Go forward in line position history") `style: "float: right" } ">"))
+            (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
+            (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
             ;; if we have a namespace in options use that for referencing paths 
             (nseval (if (not (blank? options.namespace))   
                         (-> Environment `get_namespace_handle options.namespace)
@@ -4364,14 +4368,16 @@
                                       (set_prop options
                                          `font_size font_size)
                                       (console.log "editor: options: " options)
-                                      (-> editor `setFontSize font_size))))
+                                      (-> editor `setFontSize font_size)
+                                      (set_cursor_position (prop position_history position_history_idx)))))
             (decrease_font_size (function ()
                                    (when font_size
                                       (= font_size (Math.max 1 (- font_size 1)))
                                       (set_prop options
                                          `font_size font_size)
                                       (console.log "editor: options: " options)
-                                      (-> editor `setFontSize font_size))))
+                                      (-> editor `setFontSize font_size)
+                                      (set_cursor_position (prop position_history position_history_idx)))))
             (select_form_root (fn ()
                                  (progn
                                     (select_to_root_form editor)
@@ -4729,6 +4735,11 @@
                                  
                                  [(dtext "Increase Font Size") increase_font_size]
                                  [(dtext "Decrease Font Size") decrease_font_size]
+                                 [(dtext "Go") 
+                                  [[(dtext "Step Backward In Position History")
+                                    go_backward_in_position]
+                                   [(dtext "Step Forward In Position History")
+                                    go_forward_in_position]]]
                                  (if (-> editor `getReadOnly)
                                      [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
                                      [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
@@ -5111,6 +5122,8 @@
                                            idx: position_history_idx
                                            history: position_history
                                          })
+                `step_backward_in_pos_history: go_backward_in_position
+                `step_forward_in_pos_history: go_forward_in_position
                 `resize: (fn ()
                             (perform_resize))
                 `bind_key: bind_key
@@ -6017,6 +6030,77 @@
              })
     intf)) 
 
+(defcontrol unsaved_controls ()
+   ((handle_button_event (fn (elem)
+                            (aif (and elem.parentElement
+                                      (-> elem.parentElement `getAttribute "for_control_id"))
+                                 (progn
+                                    (cond
+                                       (== elem.innerText (dtext "View"))
+                                       (swap_control self (get_control_by_id it))
+                                       (== elem.innerText (dtext "Close Control"))
+                                       (container_view_operation "destroy" (get_control_by_id it)))))))
+    (get_ctls (fn ()
+                 (sort (controls_needing_save)
+                       { `key: [`options `name] })))
+    (ctls (get_ctls))
+    (render (fn ()
+               (div { `style: "height: 100%; overflow: auto;" } 
+                 (dtable (for_each (control (or ctls []))
+                            [(or control.name "!") 
+                             (from_key control.type) 
+                             (or control.options.filename
+                                (and control.options.path
+                                   (as_lisp control.options.path)))
+                             (if (and control.needs_save?
+                                               (-> control `needs_save?))
+                                          (dtext "Yes")
+                                          "")
+                             (div { `for_control_id: control.options.id }
+                                      (button { `tabindex: 0 } (dtext "View"))
+                                      (button { `tabindex: 0 `style: "margin-left: 25px;" } (dtext "Close")))
+                             ])
+                         {
+                             `columns: [(dtext "Name") (dtext "Type") (dtext "Path/File") (dtext "Save Needed?") (dtext "Actions")]
+                         }))))
+    (on_destroy (fn (self)
+                   (progn
+                      (clearInterval check_timer)
+                      true)))
+    (check_timer nil)
+    (on_initialize (fn (self)
+                      (progn
+                         (= check_timer (setInterval 
+                                           (fn (v)
+                                              (progn
+                                                 (defvar new_ctls (get_ctls))
+                                                 (when (not (== (sha1 (as_lisp new_ctls))
+                                                              (sha1 (as_lisp ctls))))
+                                                     (= ctls (get_ctls))
+                                                     (set_title (+ "" (length ctls) " Unsaved Controls"))
+                                                     (if (== ctls.length 0)
+                                                         (destroy_control self)
+                                                         (do_render)))))
+                                              2500))
+                         (set_prop options
+                            `temporary true)
+                         (set_title (+ "" (length ctls) " Unsaved Controls"))
+                         (attach_event_listener view
+                            `click
+                            (fn (e)
+                               (progn
+                                  (handle_event e)
+                                  (handle_button_event e.srcElement))))
+                         self))))
+   {
+       `control_bar: true
+       `usage: []
+   })
+
+(defun toggle_unsaved_controls_table ()
+   (aif (get_control_by_name "Unsaved Controls")
+        (destroy_control it)
+        (place_control `top (unsaved_controls))))
 
 ;; singleton - if it already exists, just return the control
 ;; otherwise make it 
@@ -6143,7 +6227,9 @@
                                      `append view)))))
             (dirty_controls_interval nil)
             (num_dirties 0)
-            (num_dirties_button (button { `style: "font-size: 0.9em; font-weight: bold; padding: 4px; min-width: 25px; text-align: center; border-radius: 20px; background: #A01010; color: white; position: absolute; top: 2px; right: 20px;" }
+            (num_dirties_button (button { `id: "num_dirties_button" 
+                                          `title: (dtext "Click to list unsaved controls")
+                                          `style: "font-size: 0.9em; font-weight: bold; padding: 4px; min-width: 25px; text-align: center; border-radius: 20px; background: #A01010; color: white; position: absolute; top: 2px; right: 20px;" }
                                   0))
             (before_unload_listener (function (e)
                                        (progn
@@ -6205,11 +6291,18 @@
               (fn (e)
                  (when (== e.srcElement.tagName "BUTTON")
                     (handle_button_event e.srcElement))))
+           
+           (attach_event_listener num_dirties_button
+              `click
+              (fn (e)
+                 (toggle_unsaved_controls_table)))
+                      
            (attach_event_listener view
               `keyup
               (fn (e)
                  (when (== e.key "Escape")
                     (hide))))
+           
            (set_prop options
               `id id
               `name name)
@@ -7224,6 +7317,8 @@
        `expose: [[`set set]]
        `usage: []
    })
+
+
 
 
 (defun build_documentation_datalist ()
@@ -10207,6 +10302,22 @@
                                          description: "Next Hidden Control"
                                          exec: (fn () (next_hidden_control))
                                          }
+                 "go_backward_in_position" {
+                                       description: "Go backward in the current editor position history"
+                                       win: "Alt-BracketLeft"
+                                       mac: "Command-BracketLeft"
+                                       exec: (fn ()
+                                                (when (prop *last_focus* `step_backward_in_pos_history)
+                                                   (-> *last_focus* `step_backward_in_pos_history)))
+                                       }
+                 "go_forward_in_position" {
+                                       description: "Go forward in the current editor position history"
+                                       win: "Alt-BracketRight"
+                                       mac: "Command-BracketRight"
+                                       exec: (fn ()
+                                                (when (prop *last_focus* `step_forward_in_pos_history)
+                                                   (-> *last_focus* `step_forward_in_pos_history)))
+                                       }
                  "prior_hidden_control" { win: "Alt-Shift-Comma"
                                           mac: "Command-Shift-Comma"
                                           description: "Prior Hidden Control"
@@ -10273,6 +10384,7 @@
                                        mac: "Ctrl-Shift--"
                                        exec: nil
                                        }
+                 
                  "select_form_root" {
                                      description: "select_form_root"
                                      win: "Ctrl-Shift-Enter"
