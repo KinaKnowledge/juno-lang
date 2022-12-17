@@ -667,6 +667,26 @@
               })
    
 
+     (defun sha1 (text)
+        (if (is_string? text)
+            (let
+               ((buffer (-> (new TextEncoder "utf-8") `encode text))
+                (hash (-> crypto.subtle `digest "SHA-1" buffer))
+                (hexcodes [])
+                (view (new DataView hash)))
+               (for_each (i (range view.byteLength))
+                  (push hexcodes (-> (-> (-> view `getUint8 i)
+                                         `toString 16)
+                                     `padStart 2 `0)))
+               (join "" hexcodes))
+            (throw TypeError (+ "sha1: requires a single string as an argument - got " (subtype text))))
+        {
+          `description: "Given a text string as input, returns a SHA-1 hash digest string of the given input."
+          `usage: ["text:string"]
+          `tags: ["digest" "crypto" "hash" "comparison"]
+          })
+     
+  
     (defun remove_if (f container)
         (reduce (`v container)
             (if (not (f v)) v))
