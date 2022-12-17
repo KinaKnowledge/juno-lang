@@ -126,8 +126,8 @@
                                  default_value)))
             (buffer_commands_button (commands_button options.id))
             (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
-            (nav_back_button (button { `title: (dtext "Go back to previous line position history") `style: "float: right" } "<"))
-            (nav_forward_button (button { `disabled: true `title: (dtext "Go forward in line position history") `style: "float: right" } ">"))
+            (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
+            (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
             ;; if we have a namespace in options use that for referencing paths 
             (nseval (if (not (blank? options.namespace))   
                         (-> Environment `get_namespace_handle options.namespace)
@@ -377,14 +377,16 @@
                                       (set_prop options
                                          `font_size font_size)
                                       (console.log "editor: options: " options)
-                                      (-> editor `setFontSize font_size))))
+                                      (-> editor `setFontSize font_size)
+                                      (set_cursor_position (prop position_history position_history_idx)))))
             (decrease_font_size (function ()
                                    (when font_size
                                       (= font_size (Math.max 1 (- font_size 1)))
                                       (set_prop options
                                          `font_size font_size)
                                       (console.log "editor: options: " options)
-                                      (-> editor `setFontSize font_size))))
+                                      (-> editor `setFontSize font_size)
+                                      (set_cursor_position (prop position_history position_history_idx)))))
             (select_form_root (fn ()
                                  (progn
                                     (select_to_root_form editor)
@@ -503,6 +505,9 @@
                                 else
                                 (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
             ;; position tracking 
+            (max_history_length (if (is_number? options.max_history_length)
+                                    options.max_history_length
+                                    40))
             (position_history [])
             (position_history_idx 0)
             (current_position (fn ()
@@ -510,7 +515,8 @@
             (set_cursor_position (fn (pos)
                                     (progn
                                        (-> editor `navigateTo pos.row pos.column)
-                                       (-> editor `scrollToLine pos.row true nil))))
+                                       (-> editor `scrollToLine pos.row true nil)
+                                       (focus_to_editor intf))))
             (update_position (function ()
                                 (when editor
                                    (defvar current_pos (-> editor `getCursorPosition))
@@ -525,21 +531,29 @@
                                    ;; update it, otherwise push it onto the stack
                                    (try
                                       (progn
+                                         (when (isNaN position_history_idx)
+                                             (log "text_editor: update_position: position_history_idx isNaN!")
+                                             (= position_history_idx (- position_history.length 1))
+                                             (set_disabled nav_forward_button))
                                          (defvar last_pos (prop position_history position_history_idx))
+                                         (when (eq nil last_pos)
+                                            (log "last_pos is nil! and it shouldn't be: " position_history_idx))
                                          (if (> (Math.abs (- current_pos.row (prop last_pos `row)))
                                                 8)
                                             (progn
-                                               
                                                (inc position_history_idx)
                                                (-> position_history `splice position_history_idx 0 current_pos)
-                                               (log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
-                                               (when (> position_history.length 40)
+                                               ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
+                                               (when (> position_history.length max_history_length)
                                                   (take position_history)
-                                                  (= position_history_idx (Math.max (0 (- position_history_idx 0))))))
+                                                  (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
                                             (progn
                                                (-> position_history `splice position_history_idx 1 current_pos))))
                                       (catch Error (e)
-                                         (log "ERROR on position history update: " e.message))))))
+                                         (log "ERROR " options.name  " on position history update: " e.message)))
+                                   
+                                   
+                                   )))
             (go_backward_in_position (fn ()
                                         (progn
                                            (= position_history_idx (Math.max 0 (- position_history_idx 1)))
@@ -730,6 +744,11 @@
                                  
                                  [(dtext "Increase Font Size") increase_font_size]
                                  [(dtext "Decrease Font Size") decrease_font_size]
+                                 [(dtext "Go") 
+                                  [[(dtext "Step Backward In Position History")
+                                    go_backward_in_position]
+                                   [(dtext "Step Forward In Position History")
+                                    go_forward_in_position]]]
                                  (if (-> editor `getReadOnly)
                                      [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
                                      [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
@@ -915,7 +934,7 @@
                                                                         (dispatch_event { command: "editor_change"
                                                                                           source: options.id
                                                                                           args: [ val ] }))
-                                                                     (update_position)
+                                                                     ;(update_position)
                                                                      (when options.on_change
                                                                         (options.on_change editor val)))))
                                         ;; resize
@@ -1093,7 +1112,8 @@
                                          new_evaluator)
                                       (set_evaluator)))
                 `needs_save?: (fn ()
-                                is_dirty?)
+                                (and (not options.repl_mode)
+                                     is_dirty?))
                 `set_mode: set_mode
                 `get_mode: (fn ()
                               options.mode)
@@ -1111,6 +1131,8 @@
                                            idx: position_history_idx
                                            history: position_history
                                          })
+                `step_backward_in_pos_history: go_backward_in_position
+                `step_forward_in_pos_history: go_forward_in_position
                 `resize: (fn ()
                             (perform_resize))
                 `bind_key: bind_key

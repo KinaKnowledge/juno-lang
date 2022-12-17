@@ -688,7 +688,7 @@
                             (load_rules)
                             ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
                             ;(log "loaded rules: prior_text_rules: " prior_text_rules)
-                            (log "options" options)
+                            
                             
                             (attach_event_listener content_view
                                `keyup
@@ -732,8 +732,7 @@
                 [`on_save_complete (function (event_obj)
                                       (progn
                                          (remove_class "juno-needs-save" title_span)
-                                         (= is_dirty? false)
-                                         (log "editor: save_complete: " event_obj)))]
+                                         (= is_dirty? false)))]
                 [`get_root_element (fn () root_elem)]]
    })
 
