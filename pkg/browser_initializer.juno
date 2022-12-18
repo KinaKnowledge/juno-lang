@@ -2417,9 +2417,9 @@
                             (progn
                                (make_path pathname nseval.global_ctx.scope
                                   (-> control `get))
-                               (if (not (== (-> control `get) (resolve_path pathname nseval.global_ctx.scope)))
+                               (if (not (== (sha1 (as_lisp (-> control `get))) (sha1 (as_lisp (resolve_path pathname nseval.global_ctx.scope)))))
                                    (progn
-                                      (log "ERROR: save_event_handler: couldn't save path: values not matching: namespace: " control.options.path_namespace "path:" pathname )
+                                      (log "ERROR: save_event_handler: couldn't save path: values not matching: namespace: " control.options.namespace "path:" pathname )
                                       (throw TypeError "couldn't save to the local path - values not matching for path/namespace"))
                                    (progn
                                       (log "save_event_handler: saved local path OK: " control.options.path_namespace pathname)
@@ -8129,8 +8129,8 @@
 
 ;; verbs for our editing command language
 
-(defun get_selection ()
-   (-> window `getSelection))
+(defmacro get_selection ()
+      `(-> window `getSelection))
 
 (defun_sync get_range (selection index)
    (-> selection `getRangeAt (or index 0)))
@@ -8290,6 +8290,7 @@
          on_event: `keydown
          key_sequence: "Alt-L"
          handle_event: true
+         menu: true
          qualifier: (fn (point ctl)
                        true)
          exec: (fn (point ctl event)
@@ -8302,6 +8303,7 @@
      on_blank:{
          on_event: `keyup
          key_sequence: "Backspace"
+         menu: false
          handle_event: false
          qualifier: (fn (point ctl)
                        (progn
@@ -8317,7 +8319,7 @@
      insert_pre:{   
          ;; on_event specifies what events cause this rule to be checked
          on_event: `keyup
-         
+         menu: true
          ;; prior_text_sequences are the buffer contents prior to point that 
          ;; initiate the firing of the rule..
          prior_text_sequence: "```"    ;; when three backticks 
@@ -8346,6 +8348,7 @@
      insert_return_in_pre_down:{
          on_event: `keydown   ;; intercept the enter key in PRE tags to ignore any action on Enter
          key_sequence: "Enter"
+         menu: false
          qualifier: (fn (point ctl)   ;; we must be in a PRE tag
                         (progn
                            (point_under_element_tag? "PRE" point)))
@@ -8370,6 +8373,7 @@
                        (progn
                           false))
          handle_event: true
+         menu: false
          exec: (fn (point ctl event)
                   (progc
                      (defvar at_end ;; if we are at the end of the node, insert two newlines, otherwise just a single node
@@ -8390,6 +8394,7 @@
                        (not (point_under_element_tag? "PRE" point)))
          handle_event: true
          remove_if_prior: true
+         menu: true
          exec: (fn (point ctl event)
                   (progc
                      (let 
@@ -8428,7 +8433,7 @@
          key_sequence: "Ctrl-Alt-S"     ;; or when they control-option-p or control-alt-p
          remove_if_prior: true     ;; remove sequence from buffer if prior to point if true
          handle_event: true       ;; we don't care about handling the event
-         
+         menu: true
          ;; qualifiers specify if the rule can be executed by returning true or false.  
          ;; True to execute, false to ignore in current position or context
          qualifier: (fn (point ctl)
@@ -8449,6 +8454,7 @@
       insert_horizontal_rule:{
           on_event: `keyup
           handle_event: true
+          menu: true
           remove_if_prior: true
           prior_text_sequence: "---"    ;; when three dashes 
           qualifier: (fn (point ctl)
@@ -8501,7 +8507,8 @@
                  }))
     (content_view (div { `style: "background: var(--control-bg-color); overflow: hidden; width: 100%; height: 100%;" }
                        sview.view))
-    (rules nil)
+    (rules nil) 
+    (rules_menu [])
     (collection_timer nil)
     (key_sequence_rules { keyup: {} keydown: {} })
     (prior_text_rules { keyup: {} keydown: {} })
@@ -8522,10 +8529,25 @@
                                          {}))))
                      (when rule.prior_text_sequence
                         (make_path [ rule.on_event rule.prior_text_sequence ] prior_text_rules lookup_rule))
-                     ;(when rule.post_text_sequence
-                      ;  (make_path [ rule.on_event rule.post_text_sequence ] post_text_rules lookup_rule))
                      (when rule.key_sequence
-                        (make_path [ rule.on_event rule.key_sequence ] key_sequence_rules lookup_rule)))))
+                        (make_path [ rule.on_event rule.key_sequence ] key_sequence_rules lookup_rule))
+                     (when rule.menu
+                        (push rules_menu
+                           [(from_key name)
+                            (eval `(fn (e)
+                                      (progn
+                                         (defvar rule ,#rule)
+                                         (when (prop *last_focus* `root_elem)
+                                            (focus_to (-> *last_focus* `root_elem))
+                                            (defvar current_point (-> *last_focus* `current_point))
+                                            (log "current_point: " current_point)
+                                            (when current_point
+                                               (move_to_point current_point))
+                                            (if (is_function? rule.qualifier)
+                                                (if (rule.qualifier current_point *last_focus*)
+                                                    (rule.exec current_point *last_focus* nil))
+                                                (rule.exec current_point *last_focus* nil))))))])))))
+                                   
     (load_rules (fn ()
                    (progn
                       (cond 
@@ -8533,13 +8555,15 @@
                          (= rules (resolve_path options.rules Environment.context.scope))
                          (is_function? options.rules)
                          (= rules (-> options `rules self)))
+                      (= rules_menu [])
                       (= key_sequence_rules { keyup: {} keydown: {} })
                       (= prior_text_rules { keyup: {} keydown: {} })
                       (= post_text_rules { keyup: {} keydown: {} })
-                      (for_each (pset (pairs rules))
-                         (destructuring_bind (name rule)
-                            pset
-                            (load_rule name rule))))))
+                      (when rules
+                         (for_each (pset (pairs rules))
+                            (destructuring_bind (name rule)
+                               pset
+                               (load_rule name rule)))))))
     (active_rules (fn ()
                      prior_text_rules))
     (current_point nil)
@@ -8718,9 +8742,14 @@
                             (= collection_timer
                                (setTimeout
                                   (fn ()
-                                     (set_prop options
-                                        `content
-                                        (element_to_lisp root_elem { use_ns: `html } )))
+                                     (progn
+                                        (when (and (not options.path)
+                                                   (not options.filename))
+                                           (= is_dirty? false)
+                                           (remove_class "juno-needs-save" title_span)
+                                           (set_prop options
+                                              `content
+                                              (element_to_lisp root_elem { use_ns: `html } )))))
                                   1000))
                                
                             (-> debug_elem `replaceChildren
@@ -8730,42 +8759,117 @@
     (request_save (function ()
                         (progn
                            (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
-    
+    (nseval (if (not (blank? options.path_namespace))   
+                        (-> Environment `get_namespace_handle options.namespace)
+                        Environment))
     (menu_items (fn ()
-                   [(if options.filename
-                        [(+ "Save " (get_editor_file_basename self)) (fn (e) (request_save))]
-                        [])
-                    ["Save as..." (fn (e) (save_as)) ]]))
-    
-    (error_state false)                   
+                   (conj rules_menu
+                      [["Copy contents as Lisp Structure" (fn (e) (copy_text_to_clipboard (pretty_print (as_lisp (-> self `get)))))]
+                       (if options.filename
+                          [(+ "Save " (get_editor_file_basename self)) (fn (e) (request_save))]
+                          [])
+                       ["Save as..." (fn (e) (save_as)) ]])))
+    (set_name (fn (new_name force)
+                 (progn
+                    (when (and (not (blank? new_name))
+                               (not (== (get_control_by_name new_name) self)))
+                       (set_prop options
+                          `name
+                          (if force
+                             new_name
+                             (compute_name_for_control new_name)))
+                       (set_prop self
+                          `name
+                          options.name)
+                       (dispatch_event { command: "editor_change"
+                                         source: self.id
+                                         args: [ { `option: "name" `value: options.name } ] }))
+                    (set_prop title_span
+                       `innerText
+                       options.name)
+                    options.name)))
+    (error_state false)      
+    (on_destroy (fn ()
+                                (progn
+                                   (cond
+                                      is_dirty?
+                                      (progn
+                                         (defvar response
+                                            (request_user_input options.name
+                                                                "text"
+                                                                { input: (div { value: "remove" } 
+                                                                              (dtext "The contents of this editor haven't been stored. Really remove?")) }))
+                                         response)
+                                      else
+                                      true))))
     (on_initialize (fn ()
                       (progc
                          (let
                             ((remote_content nil)
+                             (is_fresh false)
                              (extension nil))
                             (cond
                                options.filename
                                (progn
                                   (try
                                      (progn
-                                        
-                                        (= remote_content (-> (fetch (+ "/files/" options.filename)) `text))
+                                        (= remote_content (fetch (+ "/files/" options.filename)))
+                                        (cond
+                                           (== remote_content.status 200)
+                                           (= remote_content (-> remote_content `text))
+                                           (== remote_content.status 404)
+                                           (progn
+                                              (= remote_content "")
+                                              (notify (+ "New file: " options.filename))
+                                              (= is_fresh true))
+                                           remote_content
+                                           (throw EvalError (+ "Cannot fetch the path: " options.filename ": " remote_content.statusText))
+                                           else
+                                           (throw EvalError (+ "Cannot fetch the path: " options.filename ": received nil response from the fetch operation.")))
+                                        (set_filename options.filename)
                                         ;(log "remote_content: " remote_content)
-                                        (when remote_content
+                                        (when (and remote_content (not is_fresh))
                                            (= remote_content (eval (JSON.parse remote_content)))
-                                           (set_filename options.filename)
                                            (-> root_elem `replaceWith remote_content)
                                            (= root_elem document_view.children.0)))
                                      (catch Error (e)
                                         (progn
+                                           (log "DOM_editor: cannot set remote content: " remote_content)
                                            (alert_box (+ "Unable to open: " options.filename " - " e.message))
                                            (= error_state true)))))
+                               (is_array? options.path)
+                               (progn
+                                  (defvar content (resolve_path options.path nseval.global_ctx.scope))
+                                  (if (eq nil content)
+                                      (progn
+                                         (= content (or options.content
+                                                        starter))
+                                         (= is_fresh true)
+                                         (make_path options.path nseval.global_ctx.scope root_elem))
+                                      (progn
+                                         (when (not (is_element? content))
+                                            (= content (eval content)))
+                                         (-> root_elem `replaceWith content)
+                                         (= root_elem document_view.children.0))))
                                options.content
                                (progn
-                                  (-> root_elem `replaceWith options.content)
+                                  (-> root_elem `replaceWith (if (is_element? options.content)
+                                                                 options.content
+                                                                 (eval options.content)))
                                   (= root_elem document_view.children.0)))
-                                     
-                            (load_rules)
+                            (set_name (cond 
+                                         (and (is_string? options.name)
+                                              (not (== "DOM Editor" options.name))) ;; 
+                                         options.name
+                                         (is_array? options.path)
+                                         (last options.path)
+                                         else
+                                         "Untitled"))
+                                          
+                            (try
+                               (load_rules)
+                               (catch Error (e)
+                                  (log "Error on load_rules: " e.message)))
                             ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
                             ;(log "loaded rules: prior_text_rules: " prior_text_rules)
                             
@@ -8791,22 +8895,28 @@
                                               (cond
                                                  error_state  ;; unable to initialize - so remove ourselves
                                                  (destroy_control self)
-                                                 (or options.content
-                                                    options.filename)
+                                                 (and (or options.content
+                                                          options.filename)
+                                                      (not is_fresh))
                                                  (progn
                                                     (select_element root_elem)
                                                     (collapse_to_start (get_selection)))
                                                  else
-                                                 (select_element starter))))
+                                                 (progn
+                                                    (select_element starter)))))
                                         100))))))
    {
        control_bar: true
        expose: [[`active_rules active_rules]
                 [`reload_rules load_rules]
                 [`save request_save]
+                [`current_point (fn ()
+                                   current_point) ]
                 [`editor {} ]  ;; just to indicate we are an editor type component
                 [`get (fn ()
                          (element_to_lisp root_elem)) ]
+                [`root_elem (fn ()
+                               root_elem) ]
                 [`needs_save? (function ()
                                  is_dirty?)]
                 [`on_save_complete (function (event_obj)
