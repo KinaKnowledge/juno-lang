@@ -725,34 +725,19 @@
     (let
         ((macro_name (-> quoted_form.0 `substr 2))
          (working_env (-> Environment `get_namespace_handle (current_namespace)))
-         (macro_func (-> working_env `get_global macro_name))
-         (expansion (if (and (is_function? macro_func)
-                            (resolve_path [ macro_name `eval_when `compile_time ] working_env.definitions))
-                       (apply macro_func (-> quoted_form `slice 1))
-                       quoted_form)))
-    expansion)
+         (meta (first (meta_for_symbol macro_name true))) ;; get the first namespace we find it in (should be either us or core))
+         (macro_func (-> working_env `get_global (+ meta.namespace "/" macro_name))))
+        (if (and (is_function? macro_func)
+                 (resolve_path [ `eval_when `compile_time ] meta))
+            (progn
+               (apply macro_func (-> quoted_form `slice 1)))
+            quoted_form))
    {
      `description: "Given a quoted form, will perform the macro expansion and return the expanded form."
      `usage: ["quoted_form:*"]
      `tags:["macro" "expansion" "debug" "compile" "compilation"]
    })
   
-(defmacro macroexpand_nq (form)
-    (let
-       ((macro_name (-> (prop form 0) `substr 2))
-        (macro_func (-> Environment `get_global macro_name))
-        (expansion (if (is_function? macro_func)
-                       (apply macro_func (-> form `slice 1))
-                       form)))
-      ((quote quote)
-       expansion))
-  {
-   `description: "[Deprecated] - use macroexpand.  The nq form takes a non quoted form and returns the expansion. Used primarily during early development."
-   `usage: ["form:*"]
-   `tags: ["macro" "deprecated" "expansion" "debug" "compile" "compilation"]
-   `deprecated: true
-   })
-       
 
 (defmacro check_type (thing type_name error_string)
     (if error_string
@@ -3758,7 +3743,7 @@ such as things that connect or use environmental resources.
                       `indent
                       (+ remainder_pos 3)))
                 (progn
-                   (log "rule 1B")
+                   ;(log "rule 1B")
                    (set_prop delta
                       `indent
                       (+ remainder_pos comps.0.length 2)))))
