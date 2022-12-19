@@ -2340,7 +2340,6 @@
       ((ctls (current_controls true)))
       (first (reduce (ctl ctls)
                 (when (== ctl.editor editor)
-                   (log "found ctl for editor")
                    ctl))))
    {
        `description: "Given an editor object, returns the control associated with it."
@@ -3679,7 +3678,7 @@
       s))
 
 (defun eval_selected_text_in_place (ctl options)
-   (progn
+   (progc
       (let
          ((text (-> ctl `get_selected_text))
           (editor (or ctl.editor
@@ -3688,34 +3687,48 @@
           (selection (-> ctl `get_selection))  ;; range to replace with results
           (evaluator nil)
           (result nil))
-         (= evaluator
-            (cond
-               (is_function? options.evaluator)
-               options.evaluator
-               ctl.get_evaluator
-               (-> ctl `get_evaluator)))
-         (assert (is_function? evaluator) "eval_selected_text_in_place: no evaluator found for control or in provided options.")
-         (= result (evaluator text false true true))
-         (log "result: " result)
-         (= result
-            (cond
-               (is_object? result)
-               (if options.as_json
-                  (JSON.stringify result nil 2)
-                  (+ "" (as_lisp result)))
-               (is_string? result)
-               result
-               else
-               (+ "" (as_lisp result))))
-         (try 
-            (-> (-> editor `getSession) `replace selection result)
-            (catch Error (e)
-               (progn
-                  (-> (-> editor `getSession) `replace selection text)
-                  (-> ctl `display_context_message (+ "Error on replace: " e.message))
-                  (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
-                  (log e))))
-         ))
+         (if (blank? text)
+             (progn 
+                (alert_box (dtext "Evaluate Selection")
+                           (dtext "The selection is empty.  The selection must contain a form or symbol."))
+                (focus_to_editor *last_focus*))
+             (progn
+                (= evaluator
+                   (cond
+                      (is_function? ctl.get_evaluator)
+                      (-> ctl `get_evaluator)
+                      options.evaluator_id
+                      (progn
+                         (aif (prop (get_control_by_id options.evaluator_id)
+                                    `evaluate)
+                              it
+                              nil))))
+                (if (is_function? evaluator)
+                    (progn
+                       (alert_on_error (dtext "Evaluation Error")
+                                       (= result (evaluator text false true true)))
+                       (= result
+                          (cond
+                             (is_object? result)
+                             (if options.as_json
+                                (JSON.stringify result nil 2)
+                                (+ "" (pretty_print (as_lisp result))))
+                             (is_string? result)
+                             result
+                             else
+                             (+ "" (pretty_print (as_lisp result)))))
+                       (try
+                          (-> (-> editor `getSession) `replace selection result)
+                          (catch Error (e)
+                             (progn
+                                (-> (-> editor `getSession) `replace selection text)
+                                (-> ctl `display_context_message (+ "Error on replace: " e.message))
+                                (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
+                                (log e)))))
+                    (alert_box (dtext "Evaluation Error")
+                               (+ (dtext "No evaluator found for the control")
+                                  " " 
+                                  ctl.options.name)))))))
    {
      description: (+ "Given a control with an editor, the selected text is evaluated " 
                      "using the editors evaluator.  The evaluated selection is replaced with the result."  
@@ -4201,7 +4214,7 @@
                                        `innerText 
                                        (dtext ""))))))
             (set_evaluator (fn (evaluator_function)
-                              (when evaluator_function
+                              (when (is_function? evaluator_function)
                                  (= evaluator evaluator_function)
                                  (dispatch_event { command: "editor_change"
                                                    source: options.id
@@ -4714,7 +4727,7 @@
                                                (set_prop evaluator_span
                                                   `innerText
                                                   (+ "⭢ " control.name)))))))
-            (menu_items (function ()
+            (menu_items (fn ()
                                 [(if options.path
                                   [(+ (dtext "Save to") " " (last options.path))
                                    (fn (e) (request_save))]
@@ -4731,7 +4744,7 @@
                                          (aif (select_evaluator)
                                               (progn
                                                  (set_evaluator_control it)
-                                                 (notify (+ (dtext "Evaluator set to ") it.name))))))]
+                                                 (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
                                  
                                  [(dtext "Increase Font Size") increase_font_size]
                                  [(dtext "Decrease Font Size") decrease_font_size]
@@ -5098,10 +5111,10 @@
                                    (rename_editor_group my_path))))
                 `set_evaluator: (fn (new_evaluator)
                                    (when (is_function? new_evaluator)
-                                      (set_prop options
-                                         `evaluator
-                                         new_evaluator)
-                                      (set_evaluator)))
+                                      (set_evaluator new_evaluator)))
+                `set_evaluator_control: set_evaluator_control
+                `get_evaluator: (fn ()
+                                   evaluator)
                 `needs_save?: (fn ()
                                 (and (not options.repl_mode)
                                      is_dirty?))
@@ -5116,7 +5129,7 @@
                                      (split_editor `horizontal))
                 `display_context_message: display_context_message
                 `get_evaluator: (fn ()
-                                   options.evaluator)
+                                   evaluator)
                 `get_position_detail: (fn ()
                                          { current: (-> editor `getCursorPosition)
                                            idx: position_history_idx
@@ -5177,7 +5190,7 @@
                                    (try
                                       (initialize_editor)
                                       (catch Error (e)
-                                         (log "ERROR on init: " e.message))))) })))) 
+                                         (log "ERROR on init: " e.message))))) }))))
 
 
 (defun compute_name_for_editor (title path_to_value)
@@ -6228,7 +6241,7 @@
             (dirty_controls_interval nil)
             (num_dirties 0)
             (num_dirties_button (button { `id: "num_dirties_button" 
-                                          `title: (dtext "Click to list unsaved controls")
+                                          `title: (dtext "Click to toggle unsaved controls panel")
                                           `style: "font-size: 0.9em; font-weight: bold; padding: 4px; min-width: 25px; text-align: center; border-radius: 20px; background: #A01010; color: white; position: absolute; top: 2px; right: 20px;" }
                                   0))
             (before_unload_listener (function (e)
@@ -10556,8 +10569,8 @@
        (-> (control_holding_tank) `add_control (juno_documentation))
        (-> page_frame `initialize))
       (progn     
-       (console.log "serialized controls: " *serialized_controls*)
-       (rehydrate_controls juno_container *serialized_controls*)))
+         (console.log "serialized controls: " *serialized_controls*)
+         (rehydrate_controls juno_container *serialized_controls*)))
     
     (default_focus)
     ;; setup key bindings

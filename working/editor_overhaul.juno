@@ -210,7 +210,7 @@
                                        `innerText 
                                        (dtext ""))))))
             (set_evaluator (fn (evaluator_function)
-                              (when evaluator_function
+                              (when (is_function? evaluator_function)
                                  (= evaluator evaluator_function)
                                  (dispatch_event { command: "editor_change"
                                                    source: options.id
@@ -723,7 +723,7 @@
                                                (set_prop evaluator_span
                                                   `innerText
                                                   (+ "⭢ " control.name)))))))
-            (menu_items (function ()
+            (menu_items (fn ()
                                 [(if options.path
                                   [(+ (dtext "Save to") " " (last options.path))
                                    (fn (e) (request_save))]
@@ -740,7 +740,7 @@
                                          (aif (select_evaluator)
                                               (progn
                                                  (set_evaluator_control it)
-                                                 (notify (+ (dtext "Evaluator set to ") it.name))))))]
+                                                 (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
                                  
                                  [(dtext "Increase Font Size") increase_font_size]
                                  [(dtext "Decrease Font Size") decrease_font_size]
@@ -1107,10 +1107,10 @@
                                    (rename_editor_group my_path))))
                 `set_evaluator: (fn (new_evaluator)
                                    (when (is_function? new_evaluator)
-                                      (set_prop options
-                                         `evaluator
-                                         new_evaluator)
-                                      (set_evaluator)))
+                                      (set_evaluator new_evaluator)))
+                `set_evaluator_control: set_evaluator_control
+                `get_evaluator: (fn ()
+                                   evaluator)
                 `needs_save?: (fn ()
                                 (and (not options.repl_mode)
                                      is_dirty?))
@@ -1125,7 +1125,7 @@
                                      (split_editor `horizontal))
                 `display_context_message: display_context_message
                 `get_evaluator: (fn ()
-                                   options.evaluator)
+                                   evaluator)
                 `get_position_detail: (fn ()
                                          { current: (-> editor `getCursorPosition)
                                            idx: position_history_idx
@@ -1188,4 +1188,31 @@
                                       (catch Error (e)
                                          (log "ERROR on init: " e.message))))) }))))              
   
-
+(defun select_evaluator ()
+  (let
+      ((idx -1)
+       (dups (new Set))
+       (new_name nil)
+       (selected_idx nil)
+       (available (reduce (control (flatten (control_tree $root_controls)))
+                          (when control.evaluate
+                            (if (-> dups `has (or control.name "Untitled"))
+                              (progn
+                               (= new_name (+ (or control.name "Untitled")
+                                             "-" idx))
+                               (-> dups `add new_name)
+                               [ (inc idx) new_name
+                                 control ])
+                              (progn
+                               (-> dups `add control.name)
+                               [ (inc idx) control.name control ])))))
+       (selection_box (select { }
+                              (map (fn (v)
+                                     (option { `value: v.0 } v.1))
+                                     (or available [])))))
+    (= selected_idx
+       (request_user_input (dtext "Select an available evaluator")
+                           nil
+                           { input: selection_box }))
+    (when selected_idx
+        (prop (prop available selected_idx) 2))))
