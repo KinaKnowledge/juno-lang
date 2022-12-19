@@ -1080,9 +1080,9 @@
     false
     "not instanceof"
     ]
-    [ "(fn () (let ((a [])) (push a (new Number 123)) (push a (new String (+ \"A\" 123))) a))"
+    [ "(as_lisp (eval (fn () (let ((a [])) (push a (new Number 123)) (push a (new String (+ \"A\" 123))) a))))"
     []
-    `(Number String)
+    "[Number String]"
     "compile arguments"
     ]
     [ "(fn () [ (typeof \"Alex\") (typeof 123) (typeof false) (typeof {}) (typeof []) ])"

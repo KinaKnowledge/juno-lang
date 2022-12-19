@@ -6,6 +6,14 @@ cat <<EOI | lib/juno
 (rebuild_env)
 EOI
 
+echo
+echo "Running compiler tests.."
+cat <<EOI | lib/juno
+(import "src/base-io.lisp")
+(import "tests/package.juno")
+(tests/report_tests)
+EOI
+
 cat <<EOI | lib/juno
 (import "src/base-io.lisp")
 (import "src/build-tools.lisp")
