@@ -1538,14 +1538,14 @@ button:hover {
   border: 1px inset #ffffff;
 }
 
-input {
+select,input {
   border: 1px solid var(--main-accent-line);
   background: var(--control-text-input-color-bg);
   color: var(--main-color);
   padding: 3px;
 }
 
-input:focus {
+select:focus,input:focus {
   color: var(--control-text-input-color);
   border-top: 1px solid var(--main-accent-line);
   border-left: 1px solid var(--main-accent-line);

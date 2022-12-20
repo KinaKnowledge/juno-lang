@@ -228,7 +228,23 @@
                      (-> ctl `reload_rules)))
          
      }
-     
+     get_as_wordwrap_text:{
+         on_event: `keydown
+         key_sequence: "Alt-X"
+         handle_event: true
+         menu: true
+         qualifier: (fn (point ctl)
+                       true)
+         exec: (fn (point ctl event)
+                  (progn
+                     (-> ctl `save)
+                     (sleep 0.1)
+                     (defglobal $ed_rval (for_each (line (word_wrap (join "<br>" (DOM_to_markdown  (-> ctl `get)))))
+                                            (if (ends_with? " " line)
+                                                line
+                                                (+ line " "))))
+                     (destroy_control ctl)))
+     }
      on_blank:{
          on_event: `keyup
          key_sequence: "Backspace"
@@ -688,7 +704,9 @@
     
     (request_save (function ()
                         (progn
-                           (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
+                           (if (or options.path options.filename)
+                              (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] })
+                              (-> self `on_save_complete)))))
     (nseval (if (not (blank? options.path_namespace))   
                         (-> Environment `get_namespace_handle options.namespace)
                         Environment))
@@ -877,20 +895,27 @@
             (if (not (eq nil ctx.parent))
                 (= ctx (new_ctx ctx)))
             (setf_ctx ctx `tag tag)
-            (log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (rest quoted_dom))
+            ;(log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (rest quoted_dom))
             (cond
                (and tag
                   (== tag (quote div)))
                (progn 
                   (process_children (rest quoted_dom))
-                  (push acc "<br>"))
+                  ;(push acc "<br>")
+                  )
                (and tag
                   (== tag (quote pre)))
                (progn
                   (setf_ctx ctx `in_pre true)
+                  (defvar higher_acc acc)
+                  (= acc [])
                   (push acc "```")
                   (process_children (rest quoted_dom))
-                  (push acc "```<br>"))
+                  (push acc "```<br>")
+                  (push higher_acc (join "" acc))
+                  (= acc higher_acc)
+                  ;(push acc "```<br>")
+                  )
                (and tag
                   (== tag (quote hr))
                   (not (getf_ctx ctx `in_pre)))
@@ -901,11 +926,13 @@
                   (starts_with? (+ "=:" "h") tag)
                   (not (getf_ctx ctx `in_pre)))
                (progn
+                  (defvar higher_acc acc)
+                  (= acc [])
                   (push acc (join "" (for_each (r (range (int (-> tag `substr 3))))
                                         "#")))
-                  (push acc " ")
                   (process_children (rest quoted_dom))
-                  (push acc "<br>"))
+                  (push higher_acc (join " " acc))
+                  (= acc higher_acc))
                   
                
                (and tag
@@ -913,7 +940,7 @@
                (process_children (rest quoted_dom))))
          (is_string? quoted_dom)
          (progn
-            (log "adding from " (getf_ctx ctx `tag) quoted_dom)
+            ;(log "adding from " (getf_ctx ctx `tag) quoted_dom)
             (push acc quoted_dom)))
       acc))
       

@@ -545,14 +545,14 @@
       ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
        (header_regex (new RegExp "^([#]{1,6})[ ]+(.+)"))
        (desc (progn
-                (defvar tmp (eval description))
+                (defvar tmp (eval (or description "")))
                 (if (and (is_object? tmp)
                          (not (is_array? tmp)))
                     tmp.description
                     tmp)))
        (rr (new RegExp "<-" `g))
        (subsections [])
-       (segments (split_by "<br>" desc))
+       (segments (split_by "<br>" (or desc "")))
        (table_section nil)
        (header_section nil)
        (header_tag nil)
@@ -582,9 +582,10 @@
                                         (p "Error in wrap_fn call 2: " e.message)))
                                   (progn
                                      (cond
-                                        (progn
-                                           (= table_section (scan_str table_regex comp))
-                                           (> (length table_section) 0))
+                                        (and (not options.edit_mode)
+                                                  (progn
+                                                     (= table_section (scan_str table_regex comp))
+                                                     (> (length table_section) 0)))
                                         (for_each (tbl_row table_section)
                                            (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
                                                 (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
@@ -606,7 +607,10 @@
                                         else
                                         (p comp)))))))
                      (split_by "```" seg)))))
-       (div { `class: "juno-editable" }
+       (div (+ { `class: "juno-editable" }
+               (if options.edit_mode
+                  { `contenteditable: true }
+                  {}))
           subsections))
     {
        `usage: ["description:text"]
@@ -714,7 +718,7 @@
 (defun_sync find_last_paren (editor pos)
    (try
       (let
-         ((pos  (or pos (-> editor `getCursorPosition)))
+         ((pos (or pos (-> editor `getCursorPosition)))
           (stream (indirect_new TokenIterator editor.session pos.row pos.column))
           (done false)
           (depth 0)
@@ -728,10 +732,12 @@
                                  (= t (pop comps))          
                                (cond 
                                   (or (== t ")")
-                                      (== t "]"))
+                                      (== t "]")
+                                      (== t "}"))
                                   (inc depth)
                                   (or (== t "(")
-                                      (== t "["))
+                                      (== t "[")
+                                      (== t "{"))
                                   (dec depth)))))))
           (start nil)
           (token nil))
@@ -747,7 +753,8 @@
                       (break))
                    (if (and (== token.type "keyword")
                             (or (== token.value.0 "(")
-                                (== token.value.0 "[")))
+                                (== token.value.0 "[")
+                                (== token.value.0 "{")))
                       (progn
                          (if (<= depth 0)
                              (progn
@@ -2045,6 +2052,66 @@
     tags: ["user" "input" "request" "collect" "wait" "ui" "DOM"]
     })
                  
+(defun request_user_choice (prompt choice_list options)
+   (request_user_input prompt nil
+                       {
+                           `input:(apply select (+ {}
+                                                   (if options.class
+                                                      { `class: options.class }
+                                                      {})
+                                                   (if options.style
+                                                      { `style: options.style }
+                                                      {}))
+                                     (for_each (choice choice_list)
+                                        (cond
+                                           (is_array? choice)
+                                           (option (+ { `value: choice.1 } 
+                                                      (if (and options.default_value
+                                                               (== choice.1 options.default_value))
+                                                         { `selected: true }
+                                                         {}))
+                                                   choice.0)
+                                           else
+                                           (option (+ {} 
+                                                      (if (and options.default_value
+                                                               (== choice options.default_value))
+                                                         { `selected: true }
+                                                         {}))
+                                                   choice))))
+                           `no_cancel_button: options.no_cancel_button
+                       })
+   {
+       `usage: ["prompt:text" "choice_list:array" "options:object"]
+       `description: (+ "This function will pause the flow of execution until the user " 
+                        "makes a choice, selection or input and then will return the result " 
+                        "of the user action. If the user presses cancel or presses the " 
+                        "Escape key, a return value of nil will be returned.<br>"
+                        "The choice list can be either an array of simple values, such as " 
+                        "strings or numbers, or it can be an array of 2 value arrays (pairs), "
+                        "where the first value is the presented text for the choice, and the "
+                        "second value is the value of the selection that is returned "
+                        "if selected.  Note that all values are stored in the DOM as "
+                        "strings, so if non-string numbers are required as values, <br>" 
+                        "they must be converted to their required form once returned "
+                        "from this function."
+                        "#### Example forms for the choice_list argument<br>"
+                        "A simple form:"
+                        "```[\"First Choice\" \"Second Choice\"]```"
+                        "A form with two choices:"
+                        "```[[\"First Choice\" 1] [\"Second Choice\" 2]]```"
+                        "Note that in the second example the values are numeric, but "
+                        "will be returned from the function as a string value.<br>"
+                        "#### Options<br>"
+                        "The options object can have the following keys:<br>"
+                        "default_value:string - The value default selected choice.  This should match "
+                        "a specific choice value in the choice_list array.<br>"
+                        "class:string - A class name or names to be used for the select element.<br>"
+                        "style:string - A semi-colon delimited set of CSS attributes "
+                        "to be applied to the select element.<br>"
+                        "no_cancel_button:boolean - If true the cancel button will not be displayed.<br>")
+       `tags: ["request" "user" "choice" "collect" "wait" "ui" "DOM"]
+   })
+
 (defun select_control_by_name (prompt options)
    (let
       ((no_sub_controls (not options.include_sub_controls))
@@ -3680,18 +3747,26 @@
 (defun eval_selected_text_in_place (ctl options)
    (progc
       (let
-         ((text (-> ctl `get_selected_text))
-          (editor (or ctl.editor
-                      options.editor
-                      (throw TypeError "eval_selected_text_in_place: no editor for provided control")))
-          (selection (-> ctl `get_selection))  ;; range to replace with results
+         ((text nil)
+          (pos nil)
+          (editor (cond
+                      (== ctl.type "text_editor")
+                      ctl.editor
+                      else
+                      (throw TypeError "eval_selected_text_in_place: no text editor for provided control")))
+          (selection nil)  ;; range to replace with results
           (evaluator nil)
           (result nil))
+         (= pos (-> ctl `get_selection))
+         (if (and (== pos.start.row pos.end.row)
+                  (== pos.start.column pos.end.column))
+             (select_to_current_form ctl.editor))
+         ;; we should have an actual selection now if we didn't...
+         (= selection (-> ctl `get_selection))
+         (= text (-> ctl `get_selected_text))
          (if (blank? text)
              (progn 
-                (alert_box (dtext "Evaluate Selection")
-                           (dtext "The selection is empty.  The selection must contain a form or symbol."))
-                (focus_to_editor *last_focus*))
+                (-> ctl `display_context_message (dtext "Nothing to evaluate at the cursor position")))
              (progn
                 (= evaluator
                    (cond
@@ -3707,38 +3782,99 @@
                     (progn
                        (alert_on_error (dtext "Evaluation Error")
                                        (= result (evaluator text false true true)))
-                       (= result
-                          (cond
-                             (is_object? result)
-                             (if options.as_json
-                                (JSON.stringify result nil 2)
-                                (+ "" (pretty_print (as_lisp result))))
-                             (is_string? result)
-                             result
-                             else
-                             (+ "" (pretty_print (as_lisp result)))))
-                       (try
-                          (-> (-> editor `getSession) `replace selection result)
-                          (catch Error (e)
-                             (progn
-                                (-> (-> editor `getSession) `replace selection text)
-                                (-> ctl `display_context_message (+ "Error on replace: " e.message))
-                                (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
-                                (log e)))))
+                       (if (and (eq nil result)
+                                (or options.discard_nil_values
+                                    (== "discard" (request_user_choice 
+                                                     (+ (dtext "The evaluation result is")
+                                                        " "
+                                                        (as_lisp result)
+                                                        ".  "
+                                                        (dtext "Insert or discard the result?"))
+                                                     [[(dtext "Insert") "ok"] 
+                                                      [(dtext "Discard") "discard"]]
+                                                     {
+                                                       `no_cancel_button: true
+                                                       }))))
+                           nil
+                           (progn
+                              (= result
+                                 (cond
+                                    (is_object? result)
+                                    (if options.as_json
+                                       (JSON.stringify result nil 2)
+                                       (+ "" (pretty_print (as_lisp result))))
+                                    (is_string? result)
+                                    result
+                                    else
+                                    (+ "" (pretty_print (as_lisp result)))))
+                              (try
+                                 (progn
+                                    (if options.append
+                                       (progn
+                                          (-> editor.selection `clearSelection)
+                                          (-> editor `navigateTo pos.end.row pos.end.column)
+                                          (set_prop pos.start
+                                             `row pos.end.row
+                                             `column pos.end.column)
+                                          (-> (-> editor `getSession) `replace pos result))
+                                       (-> (-> editor `getSession) `replace selection result)))
+                                 (catch Error (e)
+                                    (progn
+                                       (-> (-> editor `getSession) `replace selection text)
+                                       (-> ctl `display_context_message (+ "Error on replace: " e.message))
+                                       (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
+                                       (log e)))))))
                     (alert_box (dtext "Evaluation Error")
                                (+ (dtext "No evaluator found for the control")
-                                  " " 
+                                  " "
                                   ctl.options.name)))))))
    {
      description: (+ "Given a control with an editor, the selected text is evaluated " 
                      "using the editors evaluator.  The evaluated selection is replaced with the result."  
-                     "An optional 'evaluator' function can be passed to be used as the evaluator instead "
-                     "of the controls default evaluator.  If 'as_json' as true, then the result will be "
-                     "written as a JSON object in the editor.")
+                     "<br>#### Options<br>"
+                     "append:boolean - If true, the selected value isn't replaced but the result of the "
+                     "evaluation is placed into the editor at the cursor's position.<br>"
+                     "discard_nil_values:boolean - If true, a nil value (undefined or nil) will not be "
+                     "placed into the editor's text.  Otherwise, if a nil value is returned the user "
+                     "will be prompted to place the nil result in the buffer, or discard it.<br>"
+                     "evaluator:function - An optional 'evaluator' function can be passed to be used " 
+                     "as the evaluator instead of the controls default evaluator.<br>"
+                     "as_json:boolean - If true, the result will be placed as formatted JSON into the "
+                     "editor.  The default is to place the result in formatted Juno notation.<br>")
+                     
      usage: ["control:object" "options:?object"]
      tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
    })
 
+(defun evaluate_and_replace_at_point (options)
+   (let
+      ((ctl *last_focus*))
+      (cond
+         (== ctl.type "text_editor")
+         (progn
+            (focus_to_editor ctl)
+            (eval_selected_text_in_place ctl
+                                         (+ {} 
+                                            (if (not (eq nil options.discard_nil_values))
+                                                { discard_nil_values: options.discard_nil_values }
+                                                { discard_nil_values: true })
+                                            (if options.append
+                                                { append: true }
+                                                {}))))))
+   {
+       `description: (+ "Using the control in *last_focus*, calls the eval_selected_text_in_place function "
+                        "with the provided options.  The result of the evaluation will be placed into "
+                        "the focused editor, either as replaceement text or appended text.<br>"
+                        "#### Options<br>"
+                        "discard_nil_values:boolean - If true any nil values will not be placed into "
+                        "the editor.  If false, the user will be prompted to place nil values into "
+                        "the text.  The default is true.<br>"
+                        "append:boolean - If true, the result of the evaluation will be appended into "
+                        "the editor at the point of the cursor, or if text is selected in the editor, "
+                        "after the selection.<br>")
+       `usage: ["options:object"]
+       `tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
+   })
 (defun set_scroll_speed (ctl value)
    (if ctl.editor
       (progn
@@ -5361,9 +5497,9 @@
                               (set_prop options
                                         `max_log_lines
                                         val)
-                              (while (> output_container.children.length options.max_log_lines)
-                                (-> (first output_container.children)
-                                    `remove))
+                              ;(while (> output_container.children.length options.max_log_lines)
+                               ; (-> (first output_container.children)
+                                ;    `remove))
                               true)))
        (set_show_timestamps (fn (state)
                                       (if state
@@ -8297,6 +8433,76 @@
        tags: ["editor" "point" "cursor" "DOM" "tree" "element"]
    })
 
+
+
+(defun DOM_to_markdown (quoted_dom _acc _ctx)
+   (let
+      ((acc (or _acc []))
+       (ctx (new_ctx _ctx))
+       (process_children (fn (children)
+                            (progn
+                               (for_each (child (or children []))
+                                  (DOM_to_markdown child acc ctx)))))
+       (tag nil))
+      ;(log "DOM_to_markdown: " (getf_ctx ctx `tag) (getf_ctx ctx `in_pre))
+      (cond
+         (is_array? quoted_dom)
+         (progn
+            (= tag (if (is_reference? (first quoted_dom))
+                       (first quoted_dom)
+                       nil))
+            (if (not (eq nil ctx.parent))
+                (= ctx (new_ctx ctx)))
+            (setf_ctx ctx `tag tag)
+            ;(log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (rest quoted_dom))
+            (cond
+               (and tag
+                  (== tag (quote div)))
+               (progn 
+                  (process_children (rest quoted_dom))
+                  ;(push acc "<br>")
+                  )
+               (and tag
+                  (== tag (quote pre)))
+               (progn
+                  (setf_ctx ctx `in_pre true)
+                  (defvar higher_acc acc)
+                  (= acc [])
+                  (push acc "```")
+                  (process_children (rest quoted_dom))
+                  (push acc "```<br>")
+                  (push higher_acc (join "" acc))
+                  (= acc higher_acc)
+                  ;(push acc "```<br>")
+                  )
+               (and tag
+                  (== tag (quote hr))
+                  (not (getf_ctx ctx `in_pre)))
+               (progn
+                  (push acc "---")
+                  (push acc "<br>"))
+               (and tag
+                  (starts_with? (+ "=:" "h") tag)
+                  (not (getf_ctx ctx `in_pre)))
+               (progn
+                  (defvar higher_acc acc)
+                  (= acc [])
+                  (push acc (join "" (for_each (r (range (int (-> tag `substr 3))))
+                                        "#")))
+                  (process_children (rest quoted_dom))
+                  (push higher_acc (join " " acc))
+                  (= acc higher_acc))
+                  
+               
+               (and tag
+                  (not (getf_ctx ctx `in_pre)))
+               (process_children (rest quoted_dom))))
+         (is_string? quoted_dom)
+         (progn
+            ;(log "adding from " (getf_ctx ctx `tag) quoted_dom)
+            (push acc quoted_dom)))
+      acc))
+
 (defparameter *markdown_rules*
    {
      reload_rules:{
@@ -8312,7 +8518,23 @@
                      (-> ctl `reload_rules)))
          
      }
-     
+     get_as_wordwrap_text:{
+         on_event: `keydown
+         key_sequence: "Alt-X"
+         handle_event: true
+         menu: true
+         qualifier: (fn (point ctl)
+                       true)
+         exec: (fn (point ctl event)
+                  (progn
+                     (-> ctl `save)
+                     (sleep 0.1)
+                     (defglobal $ed_rval (for_each (line (word_wrap (join "<br>" (DOM_to_markdown  (-> ctl `get)))))
+                                            (if (ends_with? " " line)
+                                                line
+                                                (+ line " "))))
+                     (destroy_control ctl)))
+     }
      on_blank:{
          on_event: `keyup
          key_sequence: "Backspace"
@@ -8771,7 +8993,9 @@
     
     (request_save (function ()
                         (progn
-                           (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
+                           (if (or options.path options.filename)
+                              (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] })
+                              (-> self `on_save_complete)))))
     (nseval (if (not (blank? options.path_namespace))   
                         (-> Environment `get_namespace_handle options.namespace)
                         Environment))
@@ -8883,10 +9107,7 @@
                                (load_rules)
                                (catch Error (e)
                                   (log "Error on load_rules: " e.message)))
-                            ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
-                            ;(log "loaded rules: prior_text_rules: " prior_text_rules)
-                            
-                            
+                           
                             (attach_event_listener content_view
                                `keyup
                                (fn (e) (key_up_event e)))
@@ -8939,448 +9160,151 @@
                 [`get_root_element (fn () root_elem)]]
    })
 
+(defun wait_for_editor (content)
+   (if (get_control_by_name "Description Editor")
+       (alert_box (dtext "Open Editor")
+                  (dtext "There can be only one description editor open at a time."))
+       (new Promise
+          (fn (resolve reject)
+             (let
+                ((result nil)
+                 (name "Description Editor")
+                 (deditor (DOM_editor { rules: [ `*markdown_rules* ] `content: content `name: name })))
+                (defglobal $ed_rval nil)
+                (place_control `right deditor)
+                (while (and (get_control_by_id deditor.options.id)
+                            (is_nil? $ed_rval))
+                   (progn
+                      (sleep 1)))
+                (if (get_control_by_id deditor.options.id)
+                    (destroy_control deditor))
+                (resolve `(+ ,@$ed_rval)))))))
 
 
-(defun DOM_to_markdown (quoted_dom _acc _ctx)
+(defun edit_description_text (control)
    (let
-      ((acc (or _acc []))
-       (ctx (new_ctx _ctx))
-       (process_children (fn (children)
-                            (progn
-                               ;(log "->" children)
-                               (for_each (child (or children []))
-                                  (DOM_to_markdown child acc ctx)))))
-       (tag nil))
-      ;(log "DOM_to_markdown: " (getf_ctx ctx `tag) (getf_ctx ctx `in_pre))
-      (cond
-         (is_array? quoted_dom)
-         (progn
-            (= tag (if (is_reference? (first quoted_dom))
-                       (first quoted_dom)
-                       nil))
-            (if (not (eq nil ctx.parent))
-                (= ctx (new_ctx ctx)))
-            (setf_ctx ctx `tag tag)
-            (log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (rest quoted_dom))
+      ((ctl (or (and control
+                     (== control.type "text_editor"))
+                (if (== (prop *last_focus* `type) "text_editor")
+                    *last_focus*
+                    nil))))
+      (if ctl
+         (let
+            ((pos (-> ctl `get_selection))
+             (select_pos nil)
+             (parent_pos nil)
+             (editor ctl.editor)
+             (new_text nil)
+             (content nil)
+             (thing_we_are_in nil)
+             (ok_to_proceed true)
+             (error_content (div
+                              (dtext "To use the Description Text Editor, the description field must be in one of the following forms:")
+                              (br)
+                              (code "description: nil")
+                              (br)
+                              (code "description: (+ \"content\")")))
+             (text nil))
+            
+            (select_to_current_form editor)
+            (= select_pos (-> ctl `get_selection))
+            (= text (-> ctl `get_selected_text))
+            
+            (= thing_we_are_in (read_lisp text { suppress_throw_on_error: true } ))
             (cond
-               (and tag
-                  (== tag (quote div)))
-               (progn 
-                  (process_children (rest quoted_dom))
-                  (push acc "<br>"))
-               (and tag
-                  (== tag (quote pre)))
+               (is_array? thing_we_are_in)
                (progn
-                  (setf_ctx ctx `in_pre true)
-                  (push acc "```")
-                  (process_children (rest quoted_dom))
-                  (push acc "```<br>"))
-               (and tag
-                  (== tag (quote hr))
-                  (not (getf_ctx ctx `in_pre)))
-               (progn
-                  (push acc "---")
-                  (push acc "<br>"))
-               (and tag
-                  (starts_with? (+ "=:" "h") tag)
-                  (not (getf_ctx ctx `in_pre)))
-               (progn
-                  (push acc (join "" (for_each (r (range (int (-> tag `substr 3))))
-                                        "#")))
-                  (push acc " ")
-                  (process_children (rest quoted_dom))
-                  (push acc "<br>"))
+                  (= parent_pos (find_last_paren editor select_pos.start))
+                  (-> editor.selection `clearSelection)
+                  (-> editor.selection `setSelectionAnchor parent_pos.start.row parent_pos.start.column)
+                  (-> editor.selection `selectTo parent_pos.end.row (+ parent_pos.end.column 0))
+                  (= thing_we_are_in (read_lisp (-> ctl `get_selected_text) { suppress_throw_on_error: true } ))
                   
-               
-               (and tag
-                  (not (getf_ctx ctx `in_pre)))
-               (process_children (rest quoted_dom))))
-         (is_string? quoted_dom)
-         (progn
-            (log "adding from " (getf_ctx ctx `tag) quoted_dom)
-            (push acc quoted_dom)))
-      acc))
+                  (if (and (prop thing_we_are_in `description)
+                           (>= select_pos.start.row parent_pos.start.row)
+                           (<= select_pos.end.row parent_pos.end.row)
+                           (== (eval (prop thing_we_are_in `description)) (eval (read_lisp text)))
+                           )
+                      (progn
+                          (-> editor.selection `clearSelection)
+                          (-> editor.selection `setSelectionAnchor select_pos.start.row select_pos.start.column)
+                          (-> editor.selection `selectTo select_pos.end.row (+ select_pos.end.column)))
+                      (progn
+                         (= ok_to_proceed false)
+                         (alert_box (dtext "Edit Description Text")
+                                    error_content))))
+               (and (is_object? thing_we_are_in)
+                    (contains? "description:" (trim (-> editor.session `getLine pos.start.row)))
+                    (contains? "description" (keys thing_we_are_in))
+                    (== thing_we_are_in.description (quote "=:nil")))
+               (progn
+                  (-> editor `clearSelection)
+                  (-> editor `navigateTo pos.end.row pos.end.column)
+                  (= select_pos (-> editor.session `getAWordRange pos.start.row pos.end.column))
+                  (-> editor.selection `setSelectionAnchor select_pos.start.row select_pos.start.column)
+                  (-> editor.selection `selectTo select_pos.end.row (+ select_pos.end.column 0))
+                  
+                  (= text "")
+                  (= select_pos pos))
+               else
+               (progn
+                  (= ok_to_proceed false)
+                  (alert_box (dtext "Edit Description Text")
+                             error_content)))
+            (when ok_to_proceed
+               (progc
+                  (= content  (unpack_description (or (eval (read_lisp (or text ""))) "Empty") { `edit_mode: true })))
+               (-> ctl `set_read_only true)
+               (= pos (-> ctl `get_selection))
+               (= new_text (wait_for_editor content))
+               (-> ctl `set_read_only false)
+               ;(log "edit_description_text: new_text: " new_text)
+               (when (and new_text
+                          (second new_text))
+                  (= new_text (pretty_print new_text))
+                  
+                  (-> (-> editor `getSession) `replace pos new_text)
+                  (-> editor `navigateTo pos.end.row pos.end.column)
+                  ;; slow it down so we can watch the fitment..
+                  (sleep 0.3)
+                  (select_to_current_form ctl.editor)
+                  (sleep 0.2)
+                  (indent_editor_selection  ctl.editor)
+                  (sleep 0.1))))
+         (alert_box (dtext "Edit Description Text")
+                    (dtext "The control being used must be a text editor type."))))
+   { 
+     `description: (+ "This function provides an ability to edit the description text of a function "
+                      "for easier documentation.  When invoked, if not provided with a specific "
+                      "text_editor control, will use the *last_focus* control if it is a text editor "
+                      "type.   The current cursor position of the editor it is being invoked on will "
+                      "be examined, and if it meets certain criteria, the description text will be "
+                      "gathered and the description editor pane will pop up providing the user the "
+                      "ability to edit the text in a fashion more amenable for writing "
+                      "documentation.  <br>Once completed with the description edits, the user can "
+                      "press the short cut key for get_as_wordwrap_text (default is bound to Alt-X) or "
+                      "select the \"Get As Wordwrap Text\" menu item from the control menu.  This will "
+                      "close the editor and place the contents of the description editor into the "
+                      "source code in the appropriate position and form. <br>If the contents of the "
+                      "description editor are not to be saved back to the text editor, just close the "
+                      "editor, either from the menu or by pressing <br>Alt-D<br> (or the command "
+                      "currently associated with the Close Control Command).  See (show_key_bindings) "
+                      "in the REPL for a table of current globally defined key bindings. <br>#### "
+                      "Qualifying formats of the Description Field to be Edited<br>The description "
+                      "field must either have a value of nil (empty).  In this case, the description "
+                      "editor will be empty of content when opened.  In this case the field entry "
+                      "would look like:<br>```{\n   description: nil \n}```<br><br>If the description "
+                      "field is already populated with content, it will need to be in the form "
+                      "of: <br>```{\n   description: (+ \"Content Line\" \"more content\" "
+                      "\"...\")\n}```<br><br>This is the format that the Description editor will place "
+                      "into the source code when complete.<br>#### Other Notes<br>When the Description "
+                      "Editor is invoked and while the user is editing text, the text_buffer that it "
+                      "is being invoked on is placed into read only mode and so cannot be modified "
+                      "until the Description Editor is closed. ")
 
-(defcontrol meta_editor ()
-   ((meta_struct (or options.content
-                           {
-                             description: ""
-                             name: "Unnamed"
-                             type: "unknown"
-                             namespace: (current_namespace)
-                             usage: []
-                             tags: []
-                             }))
-    (usage (for_each (arg (or meta_struct.usage []))
-              (progn
-                 (defvar comps (split_by ":" arg))
-                 (cond
-                    (and (> comps.length 1)
-                         (starts_with? "?" (second comps)))
-                    [comps.0 (-> comps.1 `substr 1) true ]
-                    (> comps.length 1)
-                    [comps.0 comps.1 false ]
-                    (== comps.length 1)
-                    [comps.0 "" false ]))))
-    
-    (starter_span (div {  `tabindex: 0 `contenteditable: true  } (dtext "Enter text")))
-    (desc (if (> meta_struct.description.length 0)
-              (unpack_description meta_struct.description)
-              starter_span))
-    (name_editable (if options.allow_name_edits
-                       true
-                       true))
-    (dlist_type_id (gen_id "types"))
-    (dlist_types (datalist { `id: dlist_type_id }
-                           (option `AsyncFunction)
-                           (option `Function)
-                           (option `object)
-                           (option `string)
-                           (option `number)
-                           (option `boolean)
-                           (option `array)))
-    
-    (symbol_type_elem (input { `class: `juno-editable `list: dlist_type_id `title: "Type" `tabindex: 0 `placeholder: "Type" `style: "font-size: 0.9em; width: 150px; padding: 5px;  font-weight: bold" `value: meta_struct.type }))
-    (save_button (button (dtext "Save")))
-    (monofont  "font-family: var(--main-mono-space);")
-    (close_button (button (dtext "Close")))
-    (new_arg_button (button { `style: "min-width: 30px; margin-left: 10px; margin-top: 10px; padding: 5px; "  `title: (dtext "Add New Argument") } "+"))
-    (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } options.name))
-    (description_editor (DOM_editor { rules: [ `*markdown_rules* ] 
-                                      hide_control_bar: true  } ))
-    (description_section (details { `open: true  `style:"flex-grow: 1;" }
-                                  (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Description"))
-                                  (div { `style: "height: calc(100% - 30px); width: 100%;" } 
-                                       description_editor.view)))
-    (namespace_elem (span { `class: "juno-namespace" `style: "font-weight: bold;"} meta_struct.namespace))
-    (name_edit_span (span (+ {} 
-                             (if name_editable
-                                { `contenteditable: true }
-                                {})
-                             { `class: "juno-editable" `tabindex: 0 `style: "font-weight: bold;" }) 
-                          meta_struct.name))
-    (tag_selection (tag_selector { `on_change: (fn (tags)
-                                                  (progn
-                                                     (set_prop meta_struct
-                                                        `tags
-                                                        tags)
-                                                     (refresh_output))) }
-                                 meta_struct.tags))
-    (last_usage_elem nil)
-    (refresh_usage (fn ()
-                     (progn 
-                        (= last_usage_elem nil)
-                        (-> usage_elem `replaceChildren
-                           (div { 
-                                  `style: "line-height: 1.5em; font-size: 1.0em;  padding: 5px; max-width: 500px;" }
-                                  (map (fn (arg idx total)
-                                          (progn
-                                             (log "idx: " idx total (as_lisp arg))
-                                             (defvar pe (make_pair_editor arg idx total))
-                                             (if (== idx (- total 1))
-                                                 (= last_usage_elem pe.children.0))
-                                             (-> pe `prepend (button { `style: "background: #FF000020; padding: 5px;"
-                                                                       `remove_path: (join "~" [ `usage idx ]) } "-"))
-                                             pe))
-                                       usage)
-                                  (if (== usage.length 0)
-                                      [ 
-                                       (div { } new_arg_button "Press + to add arguments") ]
-                                      new_arg_button)
-                                  ))
-                        (when last_usage_elem 
-                           (setTimeout (fn ()
-                                          (focus_to last_usage_elem)
-                                          20))))))
-    
-    (make_pair_editor (fn (arg idx total)
-                         (pair_editor arg
-                                      { `style: "border: 1px inset #ffffff;"
-                                        `placeholder_0: "ArgName"
-                                        `placeholder_1: "ArgType"
-                                        `list_1: dlist_type_id
-                                        `additional_elements: [ (checkbox (+ { `checkbox: { `path: (join "~" [ idx "2" ]) }}
-                                                                             (if arg.2
-                                                                                { `value: true }
-                                                                                {}))
-                                                                          "Optional")
-                                                              ]
-                                        `path: [ idx ]
-                                        `on_change: (fn (path value)
-                                                       (progn
-                                                          
-                                                          (make_path path usage value)
-                                                          (cond
-                                                              (and (== path.1 "2")
-                                                                   (== value "false"))
-                                                               (set_path path usage false)
-                                                              (and (== path.1 "2")
-                                                                   (== value "true"))
-                                                              (set_path path usage true)
-                                                              (== path.1 "2")
-                                                              (set_path path usage false))
-                                                          (log "pe: on_change: " path usage value)
-                                                          (set_prop
-                                                             meta_struct
-                                                             `usage (map (fn (vals)
-                                                                            (if (== vals.2 true)
-                                                                                (+ vals.0 ":?" vals.1)
-                                                                                (+ vals.0 ":" vals.1)))
-                                                                            usage))
-                                                          (show_updated_help)))
-                                                          
-                                                          
-                                                         
-                                        })))
-    (usage_elem (div { `style: "min-height: 40px;" } ))
-    (usage_section (details { `open: true  }
-                            (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Usage"))
-                                 usage_elem))
-    (tag_section (details { `open: true }
-                          (summary { `style: "font-weight: bold; padding: 5px;" } (dtext "Tags"))
-                                tag_selection))
-    (rendered_content_elem (div { `class: "juno-control" } "Live View"))
-    
-    (main_view (div { `class: "juno-control"  `style: "display: flex; flex-direction: column; align-items: stretch; padding-top: 5px; margin-left: 5px; min-height: 50%" } 
-                    (h3 { `style: "display: flex; justify-content: space-between; align-items: center; " } 
-                        (span (span { `style: "color: var(--namespace-color); " } meta_struct.namespace ) "/" name_edit_span)
-                           symbol_type_elem)
-                    (hr { `style: "light-hr" })
-                    usage_section
-                    description_section
-                    tag_section
-                    dlist_types))
-    
-    ;; output display: how the content is rendered in the output pane (lower)
-    ;; mode 0 is the rendered display
-    ;; mode 1 is a lisp view
-    ;; mode 2 is a json view
-    ;; mode 3 is a debug mode
-    (output_display_modes [ "As Rendered" "Lisp" "JSON" "Debug" ])
-    (output_display_mode 0) 
-    (set_output_display_mode (fn (mode)
-                                (try
-                                   (progn
-                                      (= output_display_mode (clamp mode
-                                                                    0
-                                                                    (max_index output_display_modes)))
-                                      (refresh_output))
-                                   (catch Error (e)
-                                      (log_error e)))))
-    
-    (emit_as_formatted_lisp (fn ()
-                               (let
-                                  ((out (process_out)))
-                                  (when (and (is_string? out.description)
-                                             (> out.description.length 30))
-                                     (set_prop out
-                                        `description
-                                        `(+ ,@(word_wrap out.description))))
-                                  (pretty_print out))))
-    (copy_as_formatted_lisp (fn ()
-                               (progn
-                                  (copy_text_to_clipboard (emit_as_formatted_lisp))
-                                  (notify "Copied as lisp text to clipboard"))))
-    (process_out (fn ()
-                    (let
-                       ((output (clone meta_struct)))
-                       
-                       (set_prop output
-                          `usage (for_each (arg_desc usage)
-                                    (if arg_desc.2
-                                       (+ arg_desc.0 ":?" arg_desc.1)
-                                       (+ arg_desc.0 ":" arg_desc.1))))
-                       output)))
-    (ok_grab_focus true)
-    (on_blur (fn ()
-                (= ok_grab_focus true)))
-    (on_focus (fn (e)
-                 (when ok_grab_focus
-                    (= ok_grab_focus false)
-                    ;(focus_to description_elem)
-                    )))
-    (table_regex (new RegExp "(^[a-zA-Z0-9?]+:[a-zA-Z0-9]+[ ]*-[ ]*)(.+)"))
-    (show_updated_help (fn ()
-                          (-> rendered_content_elem
-                                    `replaceChildren 
-                                    (div { `style: "background: var(--editor-bg-color); padding: 5px;" } 
-                                         (format_help meta_struct)))))
-    (process_current (fn (elem)
-                        (let
-                           ((content nil)
-                            (live_content nil))
-                           
-                           (cond
-                              true 
-                              (progn
-                                 (= live_content (join "" (DOM_to_markdown (-> description_editor `get))))
-                                 ;; split into an array with roughly 80 column formatting for injection into source
-                                 (if (> (length live_content) 60)
-                                     (= live_content (flatten 
-                                                        (conj [ (quote +) ]
-                                                              (for_each (line (word_wrap live_content 80))
-                                                                 (+ line " " ))))))
-                                 (set_prop meta_struct
-                                          `description live_content)
-                                 ;(log "process_current: usage: " usage)
-                                 (try 
-                                    (progn 
-                                       true) ;(log "Meta Struct: " meta_struct))
-                                    (catch Error (e)
-                                       (log "ERROR: " e.message)))
-                                 
-                                 (refresh_output))))))
-    
-    (sview (split_view_horizontal  main_view  rendered_content_elem  ))
-    
-    (content_view (div { `class: "juno-control" `style: "width: calc(100% - 2px); height: calc(100% - 2px); overflow: hidden; border-bottom: 3px solid black;" } 
-                       sview.view))
-    (select_name_edit_span (fn ()
-                              (let
-                                 ((selection (-> window `getSelection))
-                                  (mrange nil))
-                                 (try
-                                    (progn
-                                       (-> selection `removeAllRanges)
-                                       (= mrange (new Range))
-                                       (-> mrange `selectNodeContents name_edit_span)
-                                       (-> selection `addRange mrange)
-                                       true)
-                                    (catch Error (e)
-                                       (log "ERROR: " e.message))))))
-    (control_bar_elements [(div { `style: "display:inline-block; float: right" } save_button close_button) ])
-    (selection nil)
-    (refresh_output (fn ()
-                       (cond
-                          (== output_display_mode 0)
-                          (show_updated_help)
-                          (== output_display_mode 1)
-                          (-> rendered_content_elem
-                             `replaceChildren (pre (as_lisp (process_out))))
-                          (== output_display_mode 2)
-                          (-> rendered_content_elem
-                             `replaceChildren (pre (JSON.stringify (process_out) "\n" 2)))
-                          (== output_display_mode 3)
-                          (-> rendered_content_elem
-                             `replaceChildren (pre "DESCRIPTION")))))
-    (on_initialize (fn (intf)
-                   (progn
-                      (when true
-                         (= initialized true)
-                         (-> sview `initialize)
-                         (set_prop options
-                            `name
-                            (+ "Meta Editor - " meta_struct.name))
-                         (set_prop title_span
-                            `innerText
-                             (+ name_edit_span.innerText
-                                  " - Meta Editor"))
-                         
-                         (attach_event_listener view
-                            `keydown
-                            (fn (e)
-                               (cond
-                                  (== e.key "Enter")
-                                  (progn
-                                     (process_current))
-                                  (== e.key "Escape")
-                                  (progn
-                                     (if options.on_close
-                                        (-> options `on_close self))
-                                     (destroy_control self))
-                                  
-                                 
-                                     )))
-                         
-                         
-                         (-> description_editor `initialize)
-                         ;; cancel or manage certain key events on the name...
-                         (attach_event_listener name_edit_span
-                            `keydown
-                            (fn (e)
-                               (cond
-                                  (== e.key "Enter")
-                                  (handle_event e)
-                                  (== e.key "Escape")
-                                  (progn
-                                     (handle_event e)
-                                     ;(focus_to description_elem)
-                                     )
-                                  (== e.key " ")
-                                  (handle_event e))))
-                         (attach_event_listener name_edit_span
-                            `keyup
-                            (fn (e)
-                               (progn
-                                  (cond
-                                     (blank? name_edit_span.innerText)
-                                     (progn
-                                        (set_prop name_edit_span
-                                           `innerText
-                                           (dtext "Unnamed"))
-                                        (select_name_edit_span))
-                                     else
-                                     (set_prop meta_struct
-                                        `name
-                                        name_edit_span.innerText))
-                                  (set_prop title_span
-                                     `innerText
-                                     (+ name_edit_span.innerText
-                                  " - Meta Editor")))))
-                                  
-                         (attach_event_listener name_edit_span
-                            `focus
-                            (fn (e)
-                               (select_name_edit_span)))
-                         (attach_event_listener usage_elem
-                            `click
-                            (fn (e)
-                               (progn
-                                  (aif (getAttribute e.srcElement `remove_path)
-                                       (progn
-                                          (log "remove: " (getAttribute e.srcElement `remove_path))
-                                          (-> usage `splice (last (split_by "~" it)) 1)
-                                          (refresh_usage))))))
-                         (refresh_usage)
-                         (attach_event_listener new_arg_button
-                            `click
-                            (fn ()
-                               (progn
-                                  (push usage
-                                     ["" "" false])
-                                  (refresh_usage))))
-                         (attach_event_listener close_button
-                            `click
-                            (fn (e)
-                               (progn
-                                  (if options.on_close
-                                     (-> options `on_close self))
-                                  (destroy_control self))))
-                         
-                         (attach_event_listener symbol_type_elem
-                            `change
-                            (fn (e)
-                               (set_prop meta_struct
-                                  `type
-                                  (if (blank? symbol_type_elem.value)
-                                      (dtext "Unknown")
-                                      symbol_type_elem.value))))))))
-   (menu_items (fn (menu_title)
-                   (progn
-                      ;(log "menu_args?" menu_title)
-                      [[(dtext "Copy as formatted lisp") (fn () (copy_as_formatted_lisp))]
-                       ["Set Display Mode"
-                        [["Rendered View" (fn () (set_output_display_mode 0))]
-                         ["Lisp" (fn () (set_output_display_mode 1))]
-                         ["JSON" (fn () (set_output_display_mode 2))]
-                         ["Debug" (fn () (set_output_display_mode 3))]]]])))
-    (render (fn ()
-                content_view)))
-   {
-     control_bar: true
-     expose: [["get" process_out]
-              ["set_output_display_mode" set_output_display_mode]]
-     })
+      `usage: ["control:?object"]
+      `tags: ["editor" "description" "metadata" "meta" ] })
+
 
 (defun handle_app_click_event (e)
   (let
@@ -10408,12 +10332,7 @@
                                           description: "Search Documentation"
                                           exec: (fn () 
                                                   (show_help_panel true)) }
-                 "open_meta_editor" {
-                                      `win: "Alt-M"
-                                      `mac: "Alt-M"
-                                      `exec: (fn () (place_control `right (meta_editor)))
-                                      `description: "Opens the meta editor"
-                                      }
+                 
                  
                  "save_environment" { win: "Ctrl-Shift-S"
                                       mac: "Command-Shift-S"
@@ -10475,6 +10394,26 @@
                                        description: "Close (Destroy) the control in the currently focused panel."
                                        exec: (fn () (hide_control *last_focus* true true))
                                       }
+                  "evaluate_and_replace_at_point" {
+                                                    mac: "Command-R"
+                                                    win: "Alt-R"
+                                                    description: "Evaluate the selected text, or text prior to the form and replace with the results if not nil"
+                                                    exec: (fn ()
+                                                             (evaluate_and_replace_at_point))
+                                                    }
+                  "evaluate_and_append_at_point" {
+                                                   mac: "Command-Shift-R"
+                                                   win: "Alt-R"
+                                                   description: "Evaluate the selected text, or text prior to the form and append with the results if not nil"
+                                                   exec: (fn ()
+                                                            (evaluate_and_replace_at_point { `append: true }))
+                                                   }
+                  "edit_description_text" {
+                                            win: "Alt-E"
+                                            mac: "Command-E"
+                                            description: "Edit the description text in the DOM editor"
+                                            exec: (fn () (edit_description_text))
+                                            }
                   "clear_repl_output" {
                                         win: "Alt-Shift-K"
                                         mac: "Command-Shift-K"
@@ -10529,14 +10468,7 @@
                                        win: "tab"
                                        mac: "tab"
                                        exec: nil
-                                       }
-                 "evaluate_selected_in_place" {
-                                                description: "Evaluates and then replaces the selected text with the results of the evaluation."
-                                                win: "Alt-R"
-                                                mac: "Alt-R"
-                                                exec: nil
-                                                })
-                 
+                                       })
        
        
                  
