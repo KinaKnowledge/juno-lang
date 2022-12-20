@@ -1,6 +1,646 @@
 ;; editor overhaul buffer
 
+(defun evaluate_and_replace_at_point (options)
+   (let
+      ((ctl *last_focus*))
+      (cond
+         (== ctl.type "text_editor")
+         (progn
+            (focus_to_editor ctl)
+            (eval_selected_text_in_place ctl
+                                         (+ {} 
+                                            (if (not (eq nil options.discard_nil_values))
+                                                { discard_nil_values: options.discard_nil_values }
+                                                { discard_nil_values: true })
+                                            (if options.append
+                                                { append: true }
+                                                {}))))))
+   {
+       `description: (+ "Using the control in *last_focus*, calls the eval_selected_text_in_place function "
+                        "with the provided options.  The result of the evaluation will be placed into "
+                        "the focused editor, either as replaceement text or appended text.<br>"
+                        "#### Options<br>"
+                        "discard_nil_values:boolean - If true any nil values will not be placed into "
+                        "the editor.  If false, the user will be prompted to place nil values into "
+                        "the text.  The default is true.<br>"
+                        "append:boolean - If true, the result of the evaluation will be appended into "
+                        "the editor at the point of the cursor, or if text is selected in the editor, "
+                        "after the selection.<br>")
+       `usage: ["options:object"]
+       `tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
+   })
+                                                
+(set_key_binding "global"
+                 "evaluate_and_replace_at_point"
+                 {
+                   mac: "Command-R"
+                   win: "Alt-R"
+                   description: "Evaluate the selected text, or text prior to the form and replace with the results if not nil"
+                   exec: (fn ()
+                            (evaluate_and_replace_at_point))
+                   })
 
+(set_key_binding "global"
+                 "evaluate_and_append_at_point"
+                 {
+                   mac: "Command-Shift-R"
+                   win: "Alt-R"
+                   description: "Evaluate the selected text, or text prior to the form and append with the results if not nil"
+                   exec: (fn ()
+                            (evaluate_and_replace_at_point { `append: true }))
+                   })
+
+
+(defun unpack_description (description options)
+   (let
+      ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
+       (header_regex (new RegExp "^([#]{1,6})[ ]+(.+)"))
+       (desc (progn
+                (defvar tmp (eval (or description "")))
+                (if (and (is_object? tmp)
+                         (not (is_array? tmp)))
+                    tmp.description
+                    tmp)))
+       (rr (new RegExp "<-" `g))
+       (subsections [])
+       (segments (split_by "<br>" (or desc "")))
+       (table_section nil)
+       (header_section nil)
+       (header_tag nil)
+       (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
+       (current_seg 0)
+       (total_segs (length segments)))
+       (for_each (seg segments)
+          (progn
+             (inc current_seg)
+             (when (is_string? seg)
+                (= seg (replace rr "\\u{279C}"  seg))
+                (map (fn (comp i)
+                        (if (== 1 (% i 2))
+                            (push subsections
+                               (if options.wrap_fn
+                                  (try
+                                     (progn
+                                        (-> options `wrap_fn comp current_seg total_segs))
+                                     (catch Error (e)
+                                        (pre "Error in wrap_fn call 1: " e.message)))
+                                  (pre comp)))
+                            (push subsections
+                               (if options.wrap_fn
+                                  (try
+                                     (-> options `wrap_fn comp current_seg total_segs)
+                                     (catch Error (e)
+                                        (p "Error in wrap_fn call 2: " e.message)))
+                                  (progn
+                                     (cond
+                                        (and (not options.edit_mode)
+                                                  (progn
+                                                     (= table_section (scan_str table_regex comp))
+                                                     (> (length table_section) 0)))
+                                        (for_each (tbl_row table_section)
+                                           (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                                (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
+                                        (== comp "---")
+                                        (progn
+                                           (hr))
+                                        (progn
+                                           (= header_section (scan_str header_regex comp))
+                                           (> (length header_section) 0))
+                                        (progn
+                                           (= header_section (first header_section)) ;; pull it out of the array to make it easier to work with
+                                           (= header_tag (or (prop header_size_lookup (length (prop header_section 1)))
+                                                             "h5"))
+                                           (header_tag 
+                                            (prop header_section `2)))
+                                              
+                                        else
+                                        (p comp)))))))
+                     (split_by "```" seg)))))
+       (div (+ { `class: "juno-editable" }
+               (if options.edit_mode
+                  { `contenteditable: true }
+                  {}))
+          subsections))
+    {
+       `usage: ["description:text"]
+       `description: "Given a marked up description text, builds the output format for the browser."
+       `tags: [ `usage `help `assist `formatted `markup ]
+   })
+
+(defun wait_for_editor (content)
+   (if (get_control_by_name "Description Editor")
+       (alert_box (dtext "Open Editor")
+                  (dtext "There can be only one description editor open at a time."))
+       (new Promise
+          (fn (resolve reject)
+             (let
+                ((result nil)
+                 (name "Description Editor")
+                 (deditor (DOM_editor { rules: [ `*markdown_rules* ] `content: content `name: name })))
+                (defglobal $ed_rval nil)
+                (place_control `right deditor)
+                (while (and (get_control_by_id deditor.options.id)
+                            (is_nil? $ed_rval))
+                   (progn
+                      (sleep 1)))
+                (if (get_control_by_id deditor.options.id)
+                    (destroy_control deditor))
+                (resolve `(+ ,@$ed_rval)))))))
+
+
+(defun_sync find_last_paren (editor pos)
+   (try
+      (let
+         ((pos (or pos (-> editor `getCursorPosition)))
+          (stream (indirect_new TokenIterator editor.session pos.row pos.column))
+          (done false)
+          (depth 0)
+          (t nil)
+          (comps nil)
+          (calc_depth (function (val)
+                          (progn
+                            (= comps (split_by "" val))
+                            (while (> comps.length 0)
+                              (progn
+                                 (= t (pop comps))          
+                               (cond 
+                                  (or (== t ")")
+                                      (== t "]")
+                                      (== t "}"))
+                                  (inc depth)
+                                  (or (== t "(")
+                                      (== t "[")
+                                      (== t "{"))
+                                  (dec depth)))))))
+          (start nil)
+          (token nil))
+         (while (and (not done)
+                     (not start))
+            (progn
+               (= token (-> stream `getCurrentToken))
+               (when (== token.type "keyword")
+                  (calc_depth token.value))
+               
+               (if (eq token nil)
+                   (progn
+                      (= done true)
+                      (break))
+                   (progn
+                      (if (and (== token.type "keyword")
+                               (or (== token.value.0 "(")
+                                   (== token.value.0 "[")
+                                   (== token.value.0 "{")))
+                          (progn
+                             (if (<= depth 0)
+                                 (progn
+                                    (= start { row: (-> stream `getCurrentTokenRow)
+                                                   column: (-> stream `getCurrentTokenColumn) })
+                                    (= done true)
+                                    (break)))))))
+                       
+               (= token (-> stream `stepBackward))))
+         (when start
+            (-> editor.session `getBracketRange start)))
+      (catch Error (e)
+         (progn
+            (console.error e)
+            nil))))
+
+(defun_sync select_to_current_form (editor pos)
+  (if editor
+    (let
+        ((rng (-> editor `getSelectionRange))
+         (already_selected? (if (and (== rng.start.row rng.end.row)
+                                     (== rng.start.column rng.end.column))
+                                false
+                                true))
+         (cpos (or pos 
+                   (if already_selected?
+                      (progn
+                         (-> editor `navigateTo rng.start.row rng.start.column)
+                         (-> editor `getCursorPosition))
+                      (-> editor `getCursorPosition)))))
+      (when cpos
+        (= rng (find_last_paren editor cpos))
+        (when rng
+          (-> editor.selection `clearSelection)
+          (-> editor.selection `setRange rng)))
+      rng)
+    nil)
+  {
+   description: (+ "Given an editor and an optional position { row column }, if possible, "
+                   "selects the innermost current form (expression) in the editor and "
+                   "returns the range.")
+   usage: ["editor:object" "pos:?object"]
+   tags: ["editor" "selection" "form" "lisp" "editing" ]
+   })
+
+(defun_sync select_root_form (editor pos)
+   (if (and (is_object? editor)
+            (is_object? pos))
+       (let
+          ((last_selection nil)
+           (idx 0)
+           (current_selection nil))
+          ;; start with the current position
+          (= current_selection (find_last_paren editor pos))
+          (console.log "select_start: " current_selection)
+          (while (and (< idx 1000)
+                      current_selection
+                      (or (eq nil last_selection)
+                          (not (and (== last_selection.start.column current_selection.start.column)
+                                    (== last_selection.start.row current_selection.start.row)
+                                    (== last_selection.end.column current_selection.end.column)
+                                    (== last_selection.end.row current_selection.end.row)))))
+             (progn
+                (inc idx)
+                (= last_selection current_selection)
+                (= current_selection (find_last_paren editor current_selection.start))
+                (console.log "select_root_form: idx: " idx current_selection pos)
+                ))
+          
+          (aif current_selection
+             {
+               `start_row: it.start.row
+               `start_col: it.start.column
+               `end_row: it.end.row
+               `end_col: it.end.column
+               })))
+   {
+     `usage: ["editor:object" "pos:object"]
+     `description: "Given an editor and a position, returns the determined root form for the position."
+     `tags: ["selection" "editor" "root" "form" "position"]
+     })
+
+(defun select_to_root_form (editor pos)
+   (if editor
+       (let
+          ((cpos (-> editor `getCursorPosition))
+           (pos (if pos
+                    (select_root_form editor pos)
+                     (select_root_form editor cpos))))
+          (when pos
+             (-> editor.selection `clearSelection)
+             (-> editor.selection `setSelectionAnchor pos.start_row pos.start_col)
+             (-> editor.selection `selectTo pos.end_row (+ pos.end_col 1))
+             true))
+       (throw TypeError "editor must be provided to select_to_root_form"))
+   {
+       description: (+ "Given an editor and an optional position, will select the complete form (to a depth of 0) if possible. "
+                        "If given a position object with a row and column value, the function will use that instead.  If "
+                        "succesful, the value true will be returned.  If no editor is provided, the function will throw a "
+                        "TypeError.")
+       usage: ["editor:object" "pos:?object"]
+       tags: ["editor" "selection" "form" "lisp" "editing"]
+   })
+
+
+            
+
+ 
+(defun edit_description_text_v1 ()
+   (let
+      ((ctl (if (== *last_focus*.type "text_editor")
+                *last_focus*
+                nil)))
+      (when ctl
+         (let
+            ((pos (-> ctl `get_selection))
+             (editor ctl.editor)
+             (text nil)
+             (new_text nil)
+             (content nil)
+             (empty_mode false)
+             (start_pos (clone pos))
+             (new_pos nil)
+             (end_pos nil))
+            (log "pos is: " pos)
+            (if (and (== pos.start.row pos.end.row)
+                     (== pos.start.column pos.end.column))
+                (progn
+                   (select_to_current_form ctl.editor)
+                   (= new_pos (-> ctl `get_selection))
+                   (log "new_pos is: " new_pos)
+                   (when (< new_pos.end.row pos.end.row)
+                       (= empty_mode true)
+                       (-> editor `clearSelection)
+                       (-> editor `navigateTo pos.end.row pos.end.column)
+                       (= text ""))))
+                   
+            (if (not empty_mode)
+               (= text (-> ctl `get_selected_text)))
+            (log "text is: " text)
+         
+            (= text (eval (read_lisp text)))
+            ;(log "text evaled is: " text)
+            (progc
+               (= content  (unpack_description text { `edit_mode: true })))
+            (log "content is: " content)
+            
+            (-> ctl `set_read_only true)
+            (= pos (-> ctl `get_selection))
+            (= new_text (wait_for_editor content))
+            (-> ctl `set_read_only false)
+            (log "edit_description_text: new_text: " new_text)
+            (when (and new_text
+                       (second new_text))
+               (= new_text (pretty_print new_text))
+              
+               (-> (-> editor `getSession) `replace pos new_text)
+               (-> editor `navigateTo pos.end.row pos.end.column)
+               (sleep 0.3)
+               (select_to_current_form ctl.editor)
+               (sleep 0.2)
+               (indent_editor_selection  ctl.editor)
+               (sleep 0.1)
+            )
+            
+            ;(select_to_current_form ctl.editor)
+        
+            ;(-> editor `navigateTo pos.end.row pos.end.column)
+            
+            )))
+   {
+     `description: (+ "This function provides an ability to edit the description text of a function "
+                      "for easier documentation.  When invoked, if not provided with a specific "
+                      "text_editor control, will use the *last_focus* control if it is a text editor "
+                      "type.   The current cursor position of the editor it is being invoked on will "
+                      "be examined, and if it meets certain criteria, the description text will be "
+                      "gathered and the description editor pane will pop up providing the user the "
+                      "ability to edit the text in a fashion more amenable for writing "
+                      "documentation.  <br>Once completed with the description edits, the user can "
+                      "press the short cut key for get_as_wordwrap_text (default is bound to Alt-X) or "
+                      "select the \"Get As Wordwrap Text\" menu item from the control menu.  This will "
+                      "close the editor and place the contents of the description editor into the "
+                      "source code in the appropriate position and form. <br>If the contents of the "
+                      "description editor are not to be saved back to the text editor, just close the "
+                      "editor, either from the menu or by pressing <br>Alt-D<br> (or the command "
+                      "currently associated with the Close Control Command).  See (show_key_bindings) "
+                      "in the REPL for a table of current globally defined key bindings. ")
+
+     `usage: []
+     })
+      
+
+(set_key_binding `global
+                 `set_description_text
+                 {
+                   win: "Alt-E"
+                   mac: "Command-E"
+                   description: "Edit the description text in the DOM editor"
+                   exec: (fn () (edit_description_text))
+                   })
+
+{ 
+  `description: (+ "Given a control with an editor, the selected text is evaluated using the "
+                   "editors evaluator.  The evaluated selection is replaced with the "
+                   "result.<br>#### Options<br>append:boolean - If true, the selected value isn\'t "
+                   "replaced but the result of the evaluation is placed into the editor at the "
+                   "cursor\'s position.<br>discard_nil_values:boolean - If true, a nil value "
+                   "(undefined or nil) will not be placed into the editor\'s text.  Otherwise, if a "
+                   "nil value is returned the user will be prompted to place the nil result in the "
+                   "buffer, or discard it.<br>evaluator:function - An optional \'evaluator\' function "
+                   "can be passed to be used as the evaluator instead of the controls default "
+                   "evaluator.<br>as_json:boolean - If true, the result will be placed as formatted "
+                   "JSON into the editor.  The default is to place the result in formatted Juno "
+                   "notation.<br>my_opt:test - If this is true, then cool!<br>another_thing - "
+                   "Yay!<br>#### Examples<br><br><br><br><br>```This is some fixed text.\nAnd some "
+                   "more.\nAdditional formatted code.\n```<br><br><br><br><br><br><br><br><br><br>OK "
+                   "some regular text. <br>And were back with some more items  ")
+
+
+ }
+
+             
+(defun edit_description_text ()
+   (let
+      ((ctl (if (== *last_focus*.type "text_editor")
+                *last_focus*
+                nil)))
+      (when ctl
+         (let
+            ((pos (-> ctl `get_selection))
+             (select_pos nil)
+             (parent_pos nil)
+             (editor ctl.editor)
+             (new_text nil)
+             (content nil)
+             (thing_we_are_in nil)
+             (ok_to_proceed true)
+             (error_content (div
+                              (dtext "To use the Description Text Editor, the description field must be in one of the following forms:")
+                              (br)
+                              (code "description: nil")
+                              (br)
+                              (code "description: (+ \"content\")")))
+             (text nil))
+            
+            (select_to_current_form editor)
+            (= select_pos (-> ctl `get_selection))
+            (= text (-> ctl `get_selected_text))
+            
+            (= thing_we_are_in (read_lisp text { suppress_throw_on_error: true } ))
+            (cond
+               (is_array? thing_we_are_in)
+               (progn
+                  (= parent_pos (find_last_paren editor select_pos.start))
+                  (-> editor.selection `clearSelection)
+                  (-> editor.selection `setSelectionAnchor parent_pos.start.row parent_pos.start.column)
+                  (-> editor.selection `selectTo parent_pos.end.row (+ parent_pos.end.column 0))
+                  (= thing_we_are_in (read_lisp (-> ctl `get_selected_text) { suppress_throw_on_error: true } ))
+                  
+                  (if (and (prop thing_we_are_in `description)
+                           (>= select_pos.start.row parent_pos.start.row)
+                           (<= select_pos.end.row parent_pos.end.row)
+                           (== (eval (prop thing_we_are_in `description)) (eval (read_lisp text)))
+                           )
+                      (progn
+                          (-> editor.selection `clearSelection)
+                          (-> editor.selection `setSelectionAnchor select_pos.start.row select_pos.start.column)
+                          (-> editor.selection `selectTo select_pos.end.row (+ select_pos.end.column)))
+                      (progn
+                         (= ok_to_proceed false)
+                         (alert_box (dtext "Edit Description Text")
+                                    error_content))))
+               (and (is_object? thing_we_are_in)
+                    (contains? "description:" (trim (-> editor.session `getLine pos.start.row)))
+                    (contains? "description" (keys thing_we_are_in))
+                    (== thing_we_are_in.description (quote "=:nil")))
+               (progn
+                  (-> editor `clearSelection)
+                  (-> editor `navigateTo pos.end.row pos.end.column)
+                  (= select_pos (-> editor.session `getAWordRange pos.start.row pos.end.column))
+                  (-> editor.selection `setSelectionAnchor select_pos.start.row select_pos.start.column)
+                  (-> editor.selection `selectTo select_pos.end.row (+ select_pos.end.column 0))
+                  
+                  (= text "")
+                  (= select_pos pos))
+               else
+               (progn
+                  (= ok_to_proceed false)
+                  (alert_box (dtext "Edit Description Text")
+                             error_content)))
+            (when ok_to_proceed
+               (progc
+                  (= content  (unpack_description (or (eval (read_lisp (or text ""))) "Empty") { `edit_mode: true })))
+               (-> ctl `set_read_only true)
+               (= pos (-> ctl `get_selection))
+               (= new_text (wait_for_editor content))
+               (-> ctl `set_read_only false)
+               ;(log "edit_description_text: new_text: " new_text)
+               (when (and new_text
+                          (second new_text))
+                  (= new_text (pretty_print new_text))
+                  
+                  (-> (-> editor `getSession) `replace pos new_text)
+                  (-> editor `navigateTo pos.end.row pos.end.column)
+                  (sleep 0.3)
+                  (select_to_current_form ctl.editor)
+                  (sleep 0.2)
+                  (indent_editor_selection  ctl.editor)
+                  (sleep 0.1)
+                  )
+               ))))
+   { 
+     `description: (+ "This function provides an ability to edit the description text of a function "
+                      "for easier documentation.  When invoked, if not provided with a specific "
+                      "text_editor control, will use the *last_focus* control if it is a text editor "
+                      "type.   The current cursor position of the editor it is being invoked on will "
+                      "be examined, and if it meets certain criteria, the description text will be "
+                      "gathered and the description editor pane will pop up providing the user the "
+                      "ability to edit the text in a fashion more amenable for writing "
+                      "documentation.  <br>Once completed with the description edits, the user can "
+                      "press the short cut key for get_as_wordwrap_text (default is bound to Alt-X) or "
+                      "select the \"Get As Wordwrap Text\" menu item from the control menu.  This will "
+                      "close the editor and place the contents of the description editor into the "
+                      "source code in the appropriate position and form. <br>If the contents of the "
+                      "description editor are not to be saved back to the text editor, just close the "
+                      "editor, either from the menu or by pressing <br>Alt-D<br> (or the command "
+                      "currently associated with the Close Control Command).  See (show_key_bindings) "
+                      "in the REPL for a table of current globally defined key bindings. <br>#### "
+                      "Qualifying formats of the Description Field to be Edited<br>The description "
+                      "field must either have a value of nil (empty).  In this case, the description "
+                      "editor will be empty of content when opened.  In this case the field entry "
+                      "would look like:<br>```{\n   description: nil \n}```<br><br>If the description "
+                      "field is already populated with content, it will need to be in the form "
+                      "of: <br>```{\n   description: (+ \"Content Line\" \"more content\" "
+                      "\"...\")\n}```<br><br>This is the format that the Description editor will place "
+                      "into the source code when complete.<br>#### Other Notes<br>When the Description "
+                      "Editor is invoked and while the user is editing text, the text_buffer that it "
+                      "is being invoked on is placed into read only mode and so cannot be modified "
+                      "until the Description Editor is closed. ")
+
+      `usage: ["control:?object"]
+      `tags: ["editor" "description" "metadata" "meta" ] })
+                       
+            
+        
+            
+ (edit_description_text_v1)                      
+
+(defun eval_selected_text_in_place (ctl options)
+   (progc
+      (let
+         ((text nil)
+          (pos nil)
+          (editor (cond
+                      (== ctl.type "text_editor")
+                      ctl.editor
+                      else
+                      (throw TypeError "eval_selected_text_in_place: no text editor for provided control")))
+          (selection nil)  ;; range to replace with results
+          (evaluator nil)
+          (result nil))
+         (= pos (-> ctl `get_selection))
+         (if (and (== pos.start.row pos.end.row)
+                  (== pos.start.column pos.end.column))
+             (select_to_current_form ctl.editor))
+         ;; we should have an actual selection now if we didn't...
+         (= selection (-> ctl `get_selection))
+         (= text (-> ctl `get_selected_text))
+         (if (blank? text)
+             (progn 
+                (-> ctl `display_context_message (dtext "Nothing to evaluate at the cursor position")))
+             (progn
+                (= evaluator
+                   (cond
+                      (is_function? ctl.get_evaluator)
+                      (-> ctl `get_evaluator)
+                      options.evaluator_id
+                      (progn
+                         (aif (prop (get_control_by_id options.evaluator_id)
+                                    `evaluate)
+                              it
+                              nil))))
+                (if (is_function? evaluator)
+                    (progn
+                       (alert_on_error (dtext "Evaluation Error")
+                                       (= result (evaluator text false true true)))
+                       (if (and (eq nil result)
+                                (or options.discard_nil_values
+                                    (== "discard" (request_user_choice 
+                                                     (+ (dtext "The evaluation result is")
+                                                        " "
+                                                        (as_lisp result)
+                                                        ".  "
+                                                        (dtext "Insert or discard the result?"))
+                                                     [[(dtext "Insert") "ok"] 
+                                                      [(dtext "Discard") "discard"]]
+                                                     {
+                                                       `no_cancel_button: true
+                                                       }))))
+                           nil
+                           (progn
+                              (= result
+                                 (cond
+                                    (is_object? result)
+                                    (if options.as_json
+                                       (JSON.stringify result nil 2)
+                                       (+ "" (pretty_print (as_lisp result))))
+                                    (is_string? result)
+                                    result
+                                    else
+                                    (+ "" (pretty_print (as_lisp result)))))
+                              (try
+                                 (progn
+                                    (if options.append
+                                       (progn
+                                          (-> editor.selection `clearSelection)
+                                          (-> editor `navigateTo pos.end.row pos.end.column)
+                                          (set_prop pos.start
+                                             `row pos.end.row
+                                             `column pos.end.column)
+                                          (-> (-> editor `getSession) `replace pos result))
+                                       (-> (-> editor `getSession) `replace selection result)))
+                                 (catch Error (e)
+                                    (progn
+                                       (-> (-> editor `getSession) `replace selection text)
+                                       (-> ctl `display_context_message (+ "Error on replace: " e.message))
+                                       (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
+                                       (log e)))))))
+                    (alert_box (dtext "Evaluation Error")
+                               (+ (dtext "No evaluator found for the control")
+                                  " "
+                                  ctl.options.name)))))))
+   {
+     description: (+ "Given a control with an editor, the selected text is evaluated " 
+                     "using the editors evaluator.  The evaluated selection is replaced with the result."  
+                     "<br>#### Options<br>"
+                     "append:boolean - If true, the selected value isn't replaced but the result of the "
+                     "evaluation is placed into the editor at the cursor's position.<br>"
+                     "discard_nil_values:boolean - If true, a nil value (undefined or nil) will not be "
+                     "placed into the editor's text.  Otherwise, if a nil value is returned the user "
+                     "will be prompted to place the nil result in the buffer, or discard it.<br>"
+                     "evaluator:function - An optional 'evaluator' function can be passed to be used " 
+                     "as the evaluator instead of the controls default evaluator.<br>"
+                     "as_json:boolean - If true, the result will be placed as formatted JSON into the "
+                     "editor.  The default is to place the result in formatted Juno notation.<br>")
+                     
+     usage: ["control:object" "options:?object"]
+     tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
+   })
 
 
 (defun get_primary_editor_in_group (controls)
@@ -1054,6 +1694,8 @@
                          (-> editor `getValue))
                 `get_selection: get_selection_object
                 `get_selected_text: get_selected_text
+                `get_last_bracket_match: (fn ()
+                                            last_bracket_match)
                 `is_selected?: is_selected?
                 `group_name: (fn ()
                                   options.group_name)
