@@ -334,7 +334,7 @@
          
          
          
-         (reverse (new Function "container" "{ return container.slice(0).reverse }")
+         (reverse (new Function "container" "{ return container.slice(0).reverse() }")
                   { "usage": ["container:list"] 
                    "description": "Returns a copy of the passed list as reversed.  The original is not changed." 
                    `tags: ["list" "sort" "order"] 

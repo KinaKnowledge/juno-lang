@@ -542,8 +542,83 @@
 
 (defun unpack_description (description options)
    (let
-      ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
-       (header_regex (new RegExp "^([#]{1,6})[ ]+(.+)"))
+      ((header_size_lookup [nil h1 h2 h3 h4 h5 h6])
+       (regex_list [{ name: "code"
+                       regex: (new RegExp "(`[a-zA-z0-9*?_%!\\-@\\$\\(\\)]+`)" `g)
+                       exec: (fn (value full_regex_result)
+                                (progc
+                                   (defvar rval (code {} (-> value `substr 1 (- (length value) 2))))
+                                   ;(log "code: value: " (-> value `substr 1 (- (length value) 2)) "rval: "  (as_lisp (element_to_lisp rval)))
+                                   rval))}
+                    { name: "table" 
+                      regex: (new RegExp "(^[`a-zA-Z\\(\\)0-9?_*\\-]+):([`*a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)")
+                      exec: (fn (match_text tbl_row)
+                               (progn
+                                  (when (not (blank? match_text))
+                                     (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                          (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} (process_regex tbl_row.3)))))) }
+                     { name: "header" 
+                       regex: (new RegExp "^([#]{1,6})[ ]+(.+)")
+                       exec: (fn (value full_regex_result)
+                                (progn
+                                   (defvar header_section (first full_regex_result)) ;; pull it out of the array to make it easier to work with
+                                   (defvar header_tag (or (prop header_size_lookup (length (prop full_regex_result 1)))
+                                                     h5))
+                                   (header_tag
+                                      (prop full_regex_result `2)))) }
+                     { name: "link"
+                       regex: (new RegExp "(\\\\b(https?|ftp|file):\\\\/\\\\/[-A-Z0-9+&@#\\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\\\/%=~_|])" `ig)
+                       exec: (fn (value full_regex_match)
+                                (progn
+                                   ;(log "link match: " value full_regex_match)
+                                   (if value
+                                      (a { `_target: "_blank" `href: value }
+                                         value)
+                                      "BAD LINK"))) }
+                     { name: "horizontal_line" 
+                       regex: (new RegExp "^(---[ ]*)$" `g)
+                       exec: (fn (value)
+                                (progn
+                                   (hr))) }
+                      ])
+       (pre_section nil)
+       (process_regex (fn (text_section)
+                         (let
+                            ((results [])
+                             (replacement nil)
+                             (ctext text_section)
+                             (idx ctext.length)
+                             (split_list [])
+                             (acc [])
+                             (comps nil))
+                            (for_each (cmd regex_list)
+                               (progn
+                                  (= comps (scan_str cmd.regex ctext))
+                                  (for_each (comp comps)
+                                     (push split_list 
+                                        { comp: comp
+                                          pos: comp.index
+                                          cmd: cmd
+                                           }))))
+                            ;; now we have a list of the changes to be made to the text chunk 
+                            (= split_list (reverse (sort split_list { `key: [`pos] })))
+                            (if (> split_list.length 0)
+                                (progn
+                                   (for_each (action split_list)
+                                      (progn
+                                         (defvar end_of_insert (+ action.pos action.comp.0.length)) ;; point of the ctext buffer *after* the splice
+                                         (defvar diff (- idx end_of_insert))   ;; text remaining from the end of the match to the idx point(which starts at the end of the ctext segment)
+                                         ;(log "*" action.pos end_of_insert idx)
+                                         (push acc (-> ctext `substr  end_of_insert diff)) ;; push that into our accumulator (it will be in reverse order)
+                                         (push acc (-> action.cmd `exec action.comp.0 action.comp))
+                                         (= idx action.pos)))  ;; update our tail end
+                                   ;; if we have any remaining text, push it in to the accumulator as it will have no edits
+                                   (when (> idx 0)
+                                      (push acc (-> ctext `substr 0 idx))))
+                                   (push acc text_section)) ;; nothing to update
+                            (reverse acc))))
        (desc (progn
                 (defvar tmp (eval (or description "")))
                 (if (and (is_object? tmp)
@@ -552,71 +627,28 @@
                     tmp)))
        (rr (new RegExp "<-" `g))
        (subsections [])
-       (segments (split_by "<br>" (or desc "")))
+       (segments (split_by "```" (or desc "")))
        (table_section nil)
+       (idx -1)
        (header_section nil)
        (header_tag nil)
        (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
        (current_seg 0)
        (total_segs (length segments)))
-       (for_each (seg segments)
-          (progn
-             (inc current_seg)
-             (when (is_string? seg)
-                (= seg (replace rr "\\u{279C}"  seg))
-                (map (fn (comp i)
-                        (if (== 1 (% i 2))
-                            (push subsections
-                               (if options.wrap_fn
-                                  (try
-                                     (progn
-                                        (-> options `wrap_fn comp current_seg total_segs))
-                                     (catch Error (e)
-                                        (pre "Error in wrap_fn call 1: " e.message)))
-                                  (pre comp)))
-                            (push subsections
-                               (if options.wrap_fn
-                                  (try
-                                     (-> options `wrap_fn comp current_seg total_segs)
-                                     (catch Error (e)
-                                        (p "Error in wrap_fn call 2: " e.message)))
-                                  (progn
-                                     (cond
-                                        (and (not options.edit_mode)
-                                                  (progn
-                                                     (= table_section (scan_str table_regex comp))
-                                                     (> (length table_section) 0)))
-                                        (for_each (tbl_row table_section)
-                                           (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
-                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
-                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
-                                                (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
-                                        (== comp "---")
-                                        (progn
-                                           (hr))
-                                        (progn
-                                           (= header_section (scan_str header_regex comp))
-                                           (> (length header_section) 0))
-                                        (progn
-                                           (= header_section (first header_section)) ;; pull it out of the array to make it easier to work with
-                                           (= header_tag (or (prop header_size_lookup (length (prop header_section 1)))
-                                                             "h5"))
-                                           (header_tag 
-                                            (prop header_section `2)))
-                                              
-                                        else
-                                        (p comp)))))))
-                     (split_by "```" seg)))))
-       (div (+ { `class: "juno-editable" }
+      (div (+ { `class: "juno-editable" }
                (if options.edit_mode
                   { `contenteditable: true }
                   {}))
-          subsections))
-    {
-       `usage: ["description:text"]
-       `description: "Given a marked up description text, builds the output format for the browser."
-       `tags: [ `usage `help `assist `formatted `markup ]
-   })
+           (for_each (segment segments)
+              (progn
+                 (inc idx)
+                 (if (== 1 (% idx 2))
+                     (pre segment)
+                     (for_each (section (split_by "<br>" segment))
+                        (progn
+                           ;(log (hr))
+                           ;(log "unpack_description: section: " section)
+                           (div (process_regex section))))))))))
 
 (defun format_help (meta_obj options)
    (let
@@ -1201,9 +1233,14 @@
 (defun focus_to_editor (ctl)
    (progn
       (cond
-          (and ctl (prop ctl `editor))
-          (focus_to (prop ctl `editor))
-          (prop *last_focus* `editor)
+          (and ctl 
+             (prop ctl `editor)
+             ctl.editor.focus)  
+          (progn
+             (focus_to (prop ctl `editor))
+             (= *last_focus* ctl))
+          (and (prop *last_focus* `editor)
+               (resolve_path [`editor `focus ] *last_focus*))
           (focus_to (prop *last_focus* `editor)))
       *last_focus*))
 
@@ -4165,7 +4202,27 @@
                     control.editor
                     control.options.filename
                     (== control.options.filename filename))
-            control))))
+            control)))
+   {
+   `description: (+ "Given a filename, this function returns an array of all controls that have "
+                    "the same filename as specified in the controls options object. ")
+   `usage: ["filename:string"]
+   `tags: ["groups" "control" "select" "editor" "filename" "file"]
+     })
+   
+(defun get_controls_for_group (group_name)
+   (when (is_string? group_name)
+      (reduce (control (current_controls))
+         (when (and control
+                    (is_function? control.group_name)
+                    (== (-> control `group_name) group_name))
+            control)))
+   {
+     `description: (+ "Given a group_name, this function returns an array of all controls that have "
+                      "the same group_name as returned by group_name function of the control. ")
+     `usage: ["group_name:string"]
+     `tags: ["groups" "control" "select" "editor"]
+     })
    
 
 (defun rename_editor_group (path)
@@ -8454,48 +8511,65 @@
             (if (not (eq nil ctx.parent))
                 (= ctx (new_ctx ctx)))
             (setf_ctx ctx `tag tag)
-            ;(log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (rest quoted_dom))
+            ;(log "quoted_dom: " (is_reference? (first quoted_dom)) (getf_ctx ctx `tag) (pretty_print quoted_dom))
+            
+            ;; below are the rules to encode or handle certain elements in specific ways
             (cond
                (and tag
                   (== tag (quote div)))
                (progn 
-                  (process_children (rest quoted_dom))
+                  (unless (or (blank? (prop quoted_dom 2))
+                              (and (is_string? (prop quoted_dom 2))
+                                   (blank? (trim (prop quoted_dom 2)))))
+                     ;(log "DOM to markdown: " (pretty_print quoted_dom))
+                     (push acc "<br>")
+                     (process_children (rest quoted_dom)))
                   ;(push acc "<br>")
                   )
                (and tag
                   (== tag (quote pre)))
                (progn
                   (setf_ctx ctx `in_pre true)
+                  ;(log "pre: " (pretty_print quoted_dom))
                   (defvar higher_acc acc)
                   (= acc [])
                   (push acc "```")
                   (process_children (rest quoted_dom))
                   (push acc "```<br>")
                   (push higher_acc (join "" acc))
-                  (= acc higher_acc)
-                  ;(push acc "```<br>")
-                  )
+                  (= acc higher_acc))
                (and tag
                   (== tag (quote hr))
                   (not (getf_ctx ctx `in_pre)))
                (progn
-                  (push acc "---")
-                  (push acc "<br>"))
+                  (push acc "<br>---<br>"))
                (and tag
                   (starts_with? (+ "=:" "h") tag)
                   (not (getf_ctx ctx `in_pre)))
                (progn
                   (defvar higher_acc acc)
                   (= acc [])
-                  (push acc (join "" (for_each (r (range (int (-> tag `substr 3))))
-                                        "#")))
+                  (push acc (+ "<br>" 
+                               (join "" (for_each (r (range (int (-> tag `substr 3))))
+                                           "#"))))
                   (process_children (rest quoted_dom))
+                  (push acc "<br>")
                   (push higher_acc (join " " acc))
                   (= acc higher_acc))
-                  
-               
                (and tag
+                  (== tag (quote p))
+                  (is_object? (second quoted_dom))
+                  (blank? (prop quoted_dom 2))
                   (not (getf_ctx ctx `in_pre)))
+               true ; ignore blank paragraphs 
+               (and tag
+                  (== tag (quote code))
+                  (not (getf_ctx ctx `in_pre)))
+               (progn
+                  (unless (blank? (prop quoted_dom 2))
+                     (push acc (+ "`" (prop (eval quoted_dom) `innerText) "`"))))
+             
+               else  
                (process_children (rest quoted_dom))))
          (is_string? quoted_dom)
          (progn
@@ -8529,11 +8603,41 @@
                   (progn
                      (-> ctl `save)
                      (sleep 0.1)
-                     (defglobal $ed_rval (for_each (line (word_wrap (join "<br>" (DOM_to_markdown  (-> ctl `get)))))
+                     (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
                                             (if (ends_with? " " line)
                                                 line
                                                 (+ line " "))))
                      (destroy_control ctl)))
+     }
+     get_as_markdown_text:{
+         on_event: `keydown
+         key_sequence: "Alt-R"
+         handle_event: true
+         menu: true
+         qualifier: (fn (point ctl)
+                       true)
+         exec: (fn (point ctl event)
+                  (progn
+                     (-> ctl `save)
+                     (sleep 0.1)
+                     (copy_text_to_clipboard
+                        (pretty_print
+                           (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
+                              (if (ends_with? " " line)
+                                  line
+                                  (+ line " ")))))))
+     }
+     copy_as_quoted:{
+         on_event: `keydown
+         key_sequence: "Alt-Shift-Q"
+         handle_event: true
+         menu: true
+         qualifier: (fn (point ctl)
+                       true)
+         exec: (fn (point ctl event)
+                  (progn
+                     (copy_text_to_clipboard (pretty_print (-> ctl `get)))
+                     (notify "Copied as quoted DOM to clipboard")))
      }
      on_blank:{
          on_event: `keyup
@@ -8657,13 +8761,13 @@
                         (select_node_at_point)
                         )))
      }  
-      insert_section:{   
+     insert_section:{
          ;; on_event specifies what events cause this rule to be checked
          on_event: `keydown
          
          ;; prior_text_sequences are the buffer contents prior to point that 
          ;; initiate the firing of the rule..
-         prior_text_sequence: "%SCT"    ;; when three backticks 
+         prior_text_sequence: "%SCT"    
          post_text_sequence: nil
          key_sequence: "Ctrl-Alt-S"     ;; or when they control-option-p or control-alt-p
          remove_if_prior: true     ;; remove sequence from buffer if prior to point if true
@@ -8686,7 +8790,7 @@
                      (select_node_at_point)
                      ))
      }
-      insert_horizontal_rule:{
+     insert_horizontal_rule:{
           on_event: `keyup
           handle_event: true
           menu: true
@@ -8706,6 +8810,34 @@
                         
           
       }
+     wrap_text_in_code_tag:{
+          on_event: `keydown
+          handle_event: true
+          menu: true
+          key_sequence: "Ctrl-Alt-C"
+          remove_if_prior: true
+          qualifier: (fn (point ctl)
+                        (progn
+                           (and (not (point_under_element_tag? "PRE" point))
+                                
+                                )))
+          exec: (fn (point ctl event)
+                   (progc
+                      (sleep 0.001)
+                      
+                      (defvar text (-> (get_selection) `toString))
+                      (doc_exec `insertHTML (+ "<code>" text "</code>"))
+                      (select_node_at_point)
+                      (collapse_to_end (get_selection))
+                      (move_point `forward `character)
+                      ;(doc_exec `insertHTML "<code>")
+                      ;(move_point `forward `character)
+                      ;(move_point `forward `character)
+                      ;(select_node_at_point)
+                      ))
+                        
+          
+      }
    })
 
 ;; placeholder
@@ -8716,7 +8848,7 @@
    ((starter  (div { } "Start Typing!"))
     (root_elem (div { `contenteditable: true `tabindex: 0 }
                     starter))
-    (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 5px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
+    (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 0px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
                         root_elem))
         
     (position_elem (div { `style: "padding: 5px;color: darkblue;" } ))
@@ -8724,13 +8856,17 @@
     (path_elem (div { `style: "padding: 5px; " } ))
     (key_history_elem (div { `style: "padding: 5px;" }))
     (text_around_elem (div { `style: "padding: 5px;" }))
+    (locked_span (span { `title: (dtext "Read Only?") `style: "display: inline-block; width: 20px;padding-left: 5px; padding-right: 5px;" }
+                               (if options.read_only
+                                  "RO"
+                                  "")))
     (status_elem (div { `style: "border-bottom: 1px solid var(--main-accent-line-hover); padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
                       position_elem
                       depth_elem
                       path_elem
                       text_around_elem
                       key_history_elem))
-    (debug_offset_height "10px")
+    (debug_offset_height "55px")
     (debug_elem (div { `style: (+ " padding: 5px; overflow:scroll; height: calc(100% - " debug_offset_height ");") } ))
     (debug_container_elem (div { `style: "height: calc(100% - 10px); overflow: hidden;" }
                                status_elem
@@ -8742,6 +8878,15 @@
                  }))
     (content_view (div { `style: "background: var(--control-bg-color); overflow: hidden; width: 100%; height: 100%;" }
                        sview.view))
+    (on_resize (fn (self)
+                  (progc
+                     (= debug_offset_height (+ 45 (Math.max 5 control_status.offsetHeight)))
+                     
+                     (set_style [["height" (+ "calc(100% - " debug_offset_height "px)")]] debug_elem)
+                     (if (not options.debug) 
+                         (set_style [["height" (+ "calc(100% - " control_status.offsetHeight "px)")]] document_view))
+                     )))
+                     
     (rules nil) 
     (rules_menu [])
     (collection_timer nil)
@@ -8927,10 +9072,11 @@
                                     (add_class "juno-needs-save" title_span))
                                 (= is_dirty? true))
                              
-                                
                              (cond
-                               (== key "Escape")
+                               (and options.close_on_escape 
+                                  (== key "Escape"))
                                (progn
+                                  (log "DOM Editor:Escape pressed!")
                                   (if options.on_close
                                         (-> options `on_close self))
                                      (destroy_control self))
@@ -8971,7 +9117,9 @@
                             (-> path_elem `replaceChildren
                                (div { } (for_each (name path_comps)
                                        (span {`style: "padding-right: 5px" } name))))
-                                  
+                            
+                            (set_prop view
+                               `scrollTop 0)      
                             (when collection_timer
                                (clearTimeout collection_timer))
                             (= collection_timer
@@ -8990,7 +9138,7 @@
                             (-> debug_elem `replaceChildren
                                (pre (JSON.stringify (element_to_lisp root_elem) "\n" 2)))
                             ))))
-    
+    (control_bar_elements [ locked_span ])
     (request_save (function ()
                         (progn
                            (if (or options.path options.filename)
@@ -9005,7 +9153,10 @@
                        (if options.filename
                           [(+ "Save " (get_editor_file_basename self)) (fn (e) (request_save))]
                           [])
-                       ["Save as..." (fn (e) (save_as)) ]])))
+                       ["Save as..." (fn (e) (save_as)) ]
+                       (if options.read_only
+                                [ (dtext "Allow Editing" ) (fn () (-> self `set_read_only false)) ]
+                                [ (dtext "Set Read-Only Mode") (fn () (-> self `set_read_only true)) ])])))
     (set_name (fn (new_name force)
                  (progn
                     (when (and (not (blank? new_name))
@@ -9025,6 +9176,32 @@
                        `innerText
                        options.name)
                     options.name)))
+    (saved_content nil)
+    (set_read_only (fn (read_only?)
+                              (progn
+                                 (set_prop options
+                                    `read_only
+                                    read_only?)
+                                 (if read_only?
+                                    (progc
+                                       (= saved_content (element_to_lisp root_elem))
+                                       (log (pretty_print saved_content))
+                                       (remove_attribute root_elem `contenteditable)
+                                       (set_prop locked_span
+                                          `innerText
+                                          (dtext "RO")))
+                                    (progc
+                                       (when saved_content
+                                          (log (pretty_print saved_content))
+                                          (set_prop saved_content.1
+                                             `contenteditable true)
+                                          (-> root_elem `replaceWith (eval saved_content))
+                                          (= root_elem document_view.children.0)
+                                          (focus_to root_elem)
+                                          ;(set_attribute root_elem `contenteditable true)
+                                          (set_prop locked_span
+                                             `innerText
+                                             (dtext ""))))))))
     (error_state false)      
     (on_destroy (fn ()
                                 (progn
@@ -9107,7 +9284,10 @@
                                (load_rules)
                                (catch Error (e)
                                   (log "Error on load_rules: " e.message)))
-                           
+                            ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
+                            ;(log "loaded rules: prior_text_rules: " prior_text_rules)
+                            
+                            
                             (attach_event_listener content_view
                                `keyup
                                (fn (e) (key_up_event e)))
@@ -9116,13 +9296,17 @@
                                `keydown
                                (fn (e)
                                   (key_down_event e)))
-                            (set_attribute root_elem
-                               `contenteditable "true")
+                            (if options.read_only
+                                (set_read_only true))
+                            
                             (set_attribute root_elem
                                `tabindex 0)
-                            (set_style [["height" "100%"]] root_elem)
+                            ;(set_style [["height" "100%"]] root_elem)
+                            (set_style [["overflow" "hidden"] [ "height" "calc(100% - 2px);"]] view)
                             (if options.hide_control_bar
                                (-> self `show_control_bar false))
+                            
+                           
                             
                             (setTimeout (fn ()
                                            (progn
@@ -9151,6 +9335,7 @@
                          (element_to_lisp root_elem)) ]
                 [`root_elem (fn ()
                                root_elem) ]
+                [`set_read_only  set_read_only]
                 [`needs_save? (function ()
                                  is_dirty?)]
                 [`on_save_complete (function (event_obj)
@@ -9344,18 +9529,24 @@
        (options (either options {}))
        (top_levels [])
        (menu_trees (resolve_path global_menu_path Environment.global_ctx.scope))
+       (sticky_items (each menu_trees `0))
        (id (or options.id (generate_id "app_menu")))
        (intf {})
        (menu_trees (or menu_trees []))
        (compute_top_levels (fn ()
                              (progn
-                                
                                 (defvar headers (each menu_trees `0))
-                                (if (== nil (get_control_by_name (last headers)))
-                                    (pop headers))
-                                
+                                (defvar last_focus_name (resolve_path  [ `options `name ] *last_focus*))
+                                (= headers (uniq
+                                                 (reduce (header_text headers)
+                                                    (if (or (contains? header_text sticky_items)
+                                                            (and *last_focus* 
+                                                               (== last_focus_name  header_text)))
+                                                        header_text))))
+                                ;(log "compute_top_levels: " (clone headers))
+                                ; (if (== nil (get_control_by_name (last headers)))
+                                    ;(pop headers))
                                 headers)))
-                                    
        (help_idx nil)
        (add_menu (fn (menu)
                    (let
@@ -9665,9 +9856,16 @@
        (symbol_data (if options.path
                         { `path: options.path `namespace: (or options.namespace (current_namespace)) }
                         (symbol_chooser "Select a symbol to edit" options.mode)))
+       (extension (cond 
+                     options.filename
+                     (last (split_by "." options.filename))
+                     (== options.mode "dom")
+                     "dom"
+                     else
+                     "juno"))
        (target_ns symbol_data.namespace)
        (target_env nil))
-      (console.log "new_buffer: for: " options target_ns symbol_data)
+      (log "new_buffer: for: " options target_ns extension symbol_data)
       
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
@@ -9677,10 +9875,16 @@
     (when symbol_data.path
       (cond
          (is_top_control? target_container)
-         (container_view_operation "split_right" (first (-> target_container `controls))
-                                   (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options) ))
+         (container_view_operation "split_right" 
+                                   (first (-> target_container `controls))
+                                   (if (== extension `dom)
+                                       (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                                       (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options) )))
          else
-         (swap_control target_container (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))))
+         (swap_control target_container 
+                       (if (== extension `dom)
+                           (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                           (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options )))))))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                        "split the view to the right for the new editor.  If no options are provided, the user "

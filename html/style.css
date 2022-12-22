@@ -37,6 +37,10 @@
   --matching-paren-outline-color: #b6a800;
   --scrollbar-thumb-color: inherit;
   --scrollbar-track-color: inherit;
+  --link-color: inherit;
+  --link-visited-color: inherit;
+  --link-bg-color: inherit;
+  --link-visited-bg-color: inherit;
   --type-number-color: green;
   --type-boolean-color: orange;
   --type-string-color: darkblue;
@@ -1553,6 +1557,16 @@ select:focus,input:focus {
   border-top: 1px solid var(--value-focus-color);  	      	      
 }
 
+a {
+    color: var(--link-color);
+    background: var(--link-bg-color);
+}
+
+a:visited {
+    color: var(--link-visited-color);
+    background: var(--link-visted-bg-color);
+}
+
 dialog:modal {
   height: 40%;
   width: 60%;
@@ -1570,6 +1584,8 @@ dialog:modal {
   background: var(--main-bg-color);
   box-shadow: 1px 2px 11px 2px #00000033;
 }
+
+
 
 .filtered-hidden {
   display: none;
@@ -2095,7 +2111,6 @@ div.juno-editable {
 
 div.juno-editable:focus {
     outline: none;
-    box-shadow: 0 0 5px 2px #a0a0a052;
     transition: all .1s ease-in-out;
 }
 
@@ -2123,7 +2138,13 @@ span.juno-editable:focus {
     box-shadow: 1px 1px 6px 2px #00000010; 
     border: 1px solid var(--main-accent-line); 
     background: #FFFFFF20;
+    overflow: auto;
     padding: 5px;
+}
+
+.juno-editable code {
+    background: #FFFFFF20;
+    padding: 3px;
 }
 
 .juno-editable div {

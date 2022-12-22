@@ -28,6 +28,10 @@
     --main-control-button-color: #00000020;
     --scrollbar-thumb-color: #00000040;
     --scrollbar-track-color: #00000010;
+    --link-color: #002fdc;
+    --link-visited-color: #9a00dc;
+    --link-bg-color: inherit;
+    --link-visited-bg-color: inherit;
     --value-modified-color: #016783;
     --matching-paren-color: #ffeb00;
     --matching-paren-outline-color: #b6a800;

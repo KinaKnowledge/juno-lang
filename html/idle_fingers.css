@@ -23,6 +23,10 @@
     --main-control-button-color: #FFFFFF40;
     --scrollbar-thumb-color: #FFFFFF40;
     --scrollbar-track-color: #00000010;
+    --link-color: #68d9ff;
+    --link-visited-color: #e9a5a5;
+    --link-bg-color: inherit;
+    --link-visited-bg-color: inherit;
     --value-modified-color: #4ac0e0;
     --matching-paren-color: #ffeb0042;
     --matching-paren-outline-color: #b6a800;

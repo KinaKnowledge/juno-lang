@@ -16,10 +16,11 @@
                                                 { append: true }
                                                 {}))))))
    {
-       `description: (+ "Using the control in *last_focus*, calls the eval_selected_text_in_place function "
+       `description: (+ "Using the control in `*last_focus*`, calls the eval_selected_text_in_place function "
                         "with the provided options.  The result of the evaluation will be placed into "
                         "the focused editor, either as replaceement text or appended text.<br>"
-                        "#### Options<br>"
+                        "The link is http://kinaknowledge.com."
+                        "<br>### Options<br>"
                         "discard_nil_values:boolean - If true any nil values will not be placed into "
                         "the editor.  If false, the user will be prompted to place nil values into "
                         "the text.  The default is true.<br>"
@@ -29,7 +30,18 @@
        `usage: ["options:object"]
        `tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
    })
-                                                
+{ name: "inline-link"  ;;\\\\((\\\\b(https?|ftp|file):\\\\/\\\\/[-A-Z0-9+&@#\\\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\\\/%=~_|])[ ]?[\"]?([a-z 0-9\\\\w]+)?\"]?\\)
+                       regex: (new RegExp "\\\\[([ 'a-z 0-9 \\\\-]+)\\\\][ ]?" `gi)
+                       exec: (fn (value full_regex_match)
+                                (when false 
+                                   (log "link match: " full_regex_match)
+                                   (if full_regex_match.1
+                                      (a (+ { `_target: "_blank" `href: (-> full_regex_match.2 `substr 1) }
+                                            (if full_regex_match.3
+                                               { `title: (-> full_regex_match.4 `substring 1 (- (length full_regex_match.4) 2)) }
+                                               {}))
+                                         (-> full_regex_match.1 `substring 1 (- (length full_regex_match.1) 1 )))
+                                      "BAD LINK"))) }                                                
 (set_key_binding "global"
                  "evaluate_and_replace_at_point"
                  {
@@ -50,10 +62,354 @@
                             (evaluate_and_replace_at_point { `append: true }))
                    })
 
-
 (defun unpack_description (description options)
    (let
-      ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
+      ((header_size_lookup [nil h1 h2 h3 h4 h5 h6])
+       (regex_list [{ name: "code"
+                       regex: (new RegExp "(`[a-zA-z0-9*?_%!\\-@\\$\\(\\)]+`)" `g)
+                       exec: (fn (value full_regex_result)
+                                (progc
+                                   (defvar rval (code {} (-> value `substr 1 (- (length value) 2))))
+                                   ;(log "code: value: " (-> value `substr 1 (- (length value) 2)) "rval: "  (as_lisp (element_to_lisp rval)))
+                                   rval))}
+                    { name: "table" 
+                      regex: (new RegExp "(^[`a-zA-Z\\(\\)0-9?_*\\-]+):([`*a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)")
+                      exec: (fn (match_text tbl_row)
+                               (progn
+                                  (when (not (blank? match_text))
+                                     (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                          (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} (process_regex tbl_row.3)))))) }
+                     { name: "header" 
+                       regex: (new RegExp "^([#]{1,6})[ ]+(.+)")
+                       exec: (fn (value full_regex_result)
+                                (progn
+                                   (defvar header_section (first full_regex_result)) ;; pull it out of the array to make it easier to work with
+                                   (defvar header_tag (or (prop header_size_lookup (length (prop full_regex_result 1)))
+                                                     h5))
+                                   (header_tag
+                                      (prop full_regex_result `2)))) }
+                     { name: "link"
+                       regex: (new RegExp "(\\\\b(https?|ftp|file):\\\\/\\\\/[-A-Z0-9+&@#\\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\\\/%=~_|])" `ig)
+                       exec: (fn (value full_regex_match)
+                                (progn
+                                   ;(log "link match: " value full_regex_match)
+                                   (if value
+                                      (a { `_target: "_blank" `href: value }
+                                         value)
+                                      "BAD LINK"))) }
+                     { name: "horizontal_line" 
+                       regex: (new RegExp "^(---[ ]*)$" `g)
+                       exec: (fn (value)
+                                (progn
+                                   (hr))) }
+                      ])
+       (pre_section nil)
+       (process_regex (fn (text_section)
+                         (let
+                            ((results [])
+                             (replacement nil)
+                             (ctext text_section)
+                             (idx ctext.length)
+                             (split_list [])
+                             (acc [])
+                             (comps nil))
+                            (for_each (cmd regex_list)
+                               (progn
+                                  (= comps (scan_str cmd.regex ctext))
+                                  (for_each (comp comps)
+                                     (push split_list 
+                                        { comp: comp
+                                          pos: comp.index
+                                          cmd: cmd
+                                           }))))
+                            ;; now we have a list of the changes to be made to the text chunk 
+                            (= split_list (reverse (sort split_list { `key: [`pos] })))
+                            (if (> split_list.length 0)
+                                (progn
+                                   (for_each (action split_list)
+                                      (progn
+                                         (defvar end_of_insert (+ action.pos action.comp.0.length)) ;; point of the ctext buffer *after* the splice
+                                         (defvar diff (- idx end_of_insert))   ;; text remaining from the end of the match to the idx point(which starts at the end of the ctext segment)
+                                         ;(log "*" action.pos end_of_insert idx)
+                                         (push acc (-> ctext `substr  end_of_insert diff)) ;; push that into our accumulator (it will be in reverse order)
+                                         (push acc (-> action.cmd `exec action.comp.0 action.comp))
+                                         (= idx action.pos)))  ;; update our tail end
+                                   ;; if we have any remaining text, push it in to the accumulator as it will have no edits
+                                   (when (> idx 0)
+                                      (push acc (-> ctext `substr 0 idx))))
+                                   (push acc text_section)) ;; nothing to update
+                            (reverse acc))))
+       (desc (progn
+                (defvar tmp (eval (or description "")))
+                (if (and (is_object? tmp)
+                         (not (is_array? tmp)))
+                    tmp.description
+                    tmp)))
+       (rr (new RegExp "<-" `g))
+       (subsections [])
+       (segments (split_by "```" (or desc "")))
+       (table_section nil)
+       (idx -1)
+       (header_section nil)
+       (header_tag nil)
+       (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
+       (current_seg 0)
+       (total_segs (length segments)))
+      (div (+ { `class: "juno-editable" }
+               (if options.edit_mode
+                  { `contenteditable: true }
+                  {}))
+           (for_each (segment segments)
+              (progn
+                 (inc idx)
+                 (if (== 1 (% idx 2))
+                     (pre segment)
+                     (for_each (section (split_by "<br>" segment))
+                        (progn
+                           ;(log (hr))
+                           ;(log "unpack_description: section: " section)
+                           (div (process_regex section))))))))))
+  
+ 
+    
+(defglobal `*color_index*
+   [ `#817
+    `#a35
+    `#c66
+    `#e94
+    `#ed0
+    `#9d5
+    `#4d8
+    `#2cb
+    `#0bc
+    `#09c
+    `#36b
+    `#639 ]
+   {
+     `description: (+ "<br><br>The color index  `*color_index*`  is an array of 12 colors that are in "
+                      "12-bit form and provide an easy way to provide distinct colors for data "
+                      "visualizations and other applications.   <br>From: "
+                      "https://iamkate.com/data/12-bit-rainbow/     <br>By Kate Rose Morley  "
+                      "<br><br>---<br><br>  To view them in the REPL:  ``````<br> ")
+ })
+
+(unpack_description_1 (prop *desctests* 2))
+
+     })
+
+(defglobal *desctests*
+   [ (+ "The text_editor control provides a means for editing text based buffers, and "
+                      "can either be used for editing local in-memory content or, for remote files "
+                      "when the application is served via HTTP.   The editor can be split into "
+                      "multiple views of the same content, provides theming, and color coded markup "
+                      "capabilities.  Additionally, key sequences can be used either in the scope of "
+                      "the editor, or via global scope.  It can adapt well to being a sub-control, and "
+                      "has a large number of options to enable higher fidelity between serialization "
+                      "and deserialization cycles.        <br>---<br>    This control serves as a "
+                      "wrapper around a third party library, the Ace Editor.  The control abstracts "
+                      "certain Ace editor functionality as part of the control\'s interface.     "
+                      "<br>#### Ace Editor    <br>    The underlying text editor library used for this "
+                      "control is the Ace Editor.  The documentation for this library is available "
+                      "here:  https://ace.c9.io/  .  Certain underlying functions have been elevated "
+                      "and exposed at the top level control interface for purposes of the design and "
+                      "implementation of the text_editor control.  Direct access to the Ace editor "
+                      "instance and its functionality is via the  `editor`  key in the control\'s "
+                      "interface. Since this control uses a third party library underneath, any "
+                      "underlying state not captured directly in the controls options object will be "
+                      "lost when serialized.  A project objective is to build out the interface for "
+                      "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
+                      "functionality should be expected to be able to save state and restore, unless "
+                      "otherwise noted.      <br>#### Modes   <br>    The editor operates in a \"mode\", "
+                      "which allows for specific behaviors relevant for the type and purpose of the "
+                      "content being edited.  There are several modes that are prebuilt into the "
+                      "editor: Juno/Lisp, Javascript, CSS, and plain text.  Additional modes can be "
+                      "constructed and made available to the environment that then can be utilized by "
+                      "the text_editor control.  Modes can be selected at creation time and during "
+                      "run-time.    The mode is indicated visually by the \"Current Editing Mode\" title "
+                      "bar text, located to the far right on the default title bar.  The  "
+                      "`(get_mode)`   function can be used in the control\'s interface, which is called "
+                      "with zero arguments.  The mode can be changed by the user in the control\'s "
+                      "command menu, where the user can select via the Set Edit Mode sub menu.   The "
+                      "Controls interface exposes the   `set_mode`   function, where a string that is "
+                      "equal to the mode name is given as an argument.  The names of the built-in "
+                      "modes are as follows:    ```[ `juno `javascript `text `css `json ]```<br>   "
+                      "Each element in the array can be used to supply set_mode.  Presently, the only "
+                      "custom mode is Juno, which calls back into the Lisp environment for context    "
+                      " <br>### Launch Options   <br>    Options provided to the function allow for "
+                      "modification of behaviors and specific functionality to be enabled or disabled "
+                      "at the time of the controls creation.  " )
+    (+ "The color index  `*color_index*`  is an array of 12 colors that are in "
+                      "12-bit form and provide an easy way to provide distinct colors for data "
+                      "visualizations and other applications.   From:  "
+                      "https://iamkate.com/data/12-bit-rainbow/     By Kate Rose Morley   <br>---<br> "
+                      " To view them in the REPL:  ``````<br>   ")
+     (+ "Given a control with an editor, the selected text is evaluated using the "
+                   "editors evaluator.  The evaluated selection is replaced with the "
+                   "result.<br>#### Options<br>append:boolean - If true, the selected value isn\'t "
+                   "replaced but the result of the evaluation is placed into the editor at the "
+                   "cursor\'s position.<br>discard_nil_values:boolean - If true, a nil value "
+                   "(undefined or nil) will not be placed into the editor\'s text.  Otherwise, if a "
+                   "nil value is returned the user will be prompted to place the nil result in the "
+                   "buffer, or discard it.<br>evaluator:function - An optional \'evaluator\' function "
+                   "can be passed to be used as the evaluator instead of the controls default "
+                   "evaluator.<br>as_json:boolean - If true, the result will be placed as formatted "
+                   "JSON into the editor.  The default is to place the result in formatted Juno "
+                   "notation.<br>my_opt:test - If this is true, then cool!<br>another_thing - "
+                   "Yay!<br>#### Examples<br><br><br><br><br>```This is some fixed text.\nAnd some "
+                   "more.\nAdditional formatted code.\n```<br><br><br><br><br><br><br><br><br><br>OK "
+                   "some regular text. <br>And were back with some more items  ")])
+     
+(defun new_buffer (options)
+  (let
+      ((options (cond
+                   (is_array? options)
+                   { `path: options `mode: "juno"}
+                   (is_object? options)
+                   (+ (if options.filename
+                          {}
+                          { `mode: `juno })
+                      options)  ;; if options has mode specified and we don't have a filename, it will override the default juno mode
+                   (is_string? options)
+                   { `path: [ options ] `mode: "juno" }
+                   else
+                   { `mode: "juno" }))
+       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (symbol_data (if options.path
+                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                        (symbol_chooser "Select a symbol to edit" options.mode)))
+       (extension (cond 
+                     options.filename
+                     (last (split_by "." options.filename))
+                     (== options.mode "dom")
+                     "dom"
+                     else
+                     "juno"))
+       (target_ns symbol_data.namespace)
+       (target_env nil))
+      (log "new_buffer: for: " options target_ns extension symbol_data)
+      
+    (when target_ns
+      (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+    (when (and target_env (not (resolve_path symbol_data.path target_env.global_ctx.scope)))
+       (console.log "new_buffer: target symbol doesn't exist: creating it")
+       (set_path symbol_data.path target_env.global_ctx.scope ""))
+    (when symbol_data.path
+      (cond
+         (is_top_control? target_container)
+         (container_view_operation "split_right" 
+                                   (first (-> target_container `controls))
+                                   (if (== extension `dom)
+                                       (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                                       (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options) )))
+         else
+         (swap_control target_container 
+                       (if (== extension `dom)
+                           (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                           (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options )))))))
+  {
+      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
+                       "split the view to the right for the new editor.  If no options are provided, the user "
+                       "will be prompted for a symbol to edit.  Options can be: <br>"
+                       "string: is considered a symbol name and the function will open or create the " 
+                       "specified symbol in the current namespace global context.<br>"
+                       "array: is considered a path to access, and if the path is present will open the path.  If not, "
+                       "will attempt to create the final value in the path as a string for editing.<br>"
+                       "object: if an object, the object can contain:<br>"
+                       "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
+                       "it will create it.<br>"
+                       "  namespace: string: the namespace to use for accessing the provided path.<br>"
+                       "  mode: the mode to open the editor in. The default mode is Juno.<br>")
+      `tags: ["editor" "edit" "buffer" "control"]
+      `usage: ["options:object?"]
+  })
+
+(defun edit_file (options)
+   (let
+      ((options (cond 
+                   (and (is_object? options)
+                        options.filename)
+                   options
+                   (and (is_object? options)
+                        options.create_mode)
+                   (+ {} 
+                      options
+                      { filename: (wait_for_file_selection true) })
+                   else
+                    (progn
+                       {
+                           filename: (wait_for_file_selection)
+                       })))
+       (symbol_path (cond
+                       (is_array? options.path)
+                       options.path
+                       (is_string? options.filename)
+                       (conj ["filesystem"] (split_by "/" options.filename))))
+       (rval nil)
+       
+       (data_to_save (or options.initial_data ""))
+       (acc []))
+      (if (eq options.filename nil)
+          (return nil))
+      (if (eq nil extension)
+          (log (+ "edit_file: extension for " options.filename "is nil: assuming .juno")))
+      
+      (assert (and symbol_path options.filename) "Invalid options to edit_file")
+      
+      ;; if we are given a create mode, make the shell of a file
+      (if (and options.create_mode
+               (> (length data_to_save) 0) )
+         (try
+            (progn
+               (= rval (http/send_files "/save_file" (http/data_to_file options.filename data_to_save "text/plain")))
+               (if (and rval
+                        (== rval.rval "OK"))
+                   (log "Created empty file: " options.filename)
+                   (throw Error rval.message)))
+            (catch Error (e)
+               (progn
+                  (alert_box (dtext "Unable to Create File")
+                             (+ "" options.filename ": "
+                                e.message))
+                  (set_prop options
+                             `filename
+                             nil)))))
+            
+      (if (eq options.filename nil)
+          (return nil))
+      
+      (if (and (starts_with? "filesystem" symbol_path)
+               (eq nil (resolve_path symbol_path Environment.global_ctx.scope)))
+          (progn
+             (for_each (comp (chop symbol_path))
+                (progn
+                   (push acc comp)
+                   (set_path acc Environment.global_ctx.scope {})))
+             (push acc (last symbol_path))
+             (set_path acc Environment.global_ctx.scope "")))
+      (set_prop options
+         `path
+         symbol_path)
+      (alert_on_error "File Open Error"
+                      (new_buffer options)))
+   {
+       `description: (+ "If provided an options object with a filename key and file path value, "
+                        "the function will attempt to fetch and present that file for editing. "
+                        "If an error is encountered, the error will be presented to the user "
+                        "in a popup window and nil returned.  If called with no options, the "
+                        "function will prompt the user to select a file via a file_tree_browser "
+                        "control.  If create_mode is true in the options, then a new file "
+                        "creation will be attempted and an editor returned for that.  If a "
+                        "new file cannot be created, the user will be warned and nil will "
+                        "be returned.")
+       `usage: ["options:object"]
+       `tags: ["DOM" "ui" "file" "edit" "open"]
+   })
+
+(defun unpack_description_old (description options)
+   (let
+      ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([*a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
        (header_regex (new RegExp "^([#]{1,6})[ ]+(.+)"))
        (desc (progn
                 (defvar tmp (eval (or description "")))
@@ -77,6 +433,7 @@
                 (= seg (replace rr "\\u{279C}"  seg))
                 (map (fn (comp i)
                         (if (== 1 (% i 2))
+                            ;; this is when we are in pre section
                             (push subsections
                                (if options.wrap_fn
                                   (try
@@ -85,38 +442,43 @@
                                      (catch Error (e)
                                         (pre "Error in wrap_fn call 1: " e.message)))
                                   (pre comp)))
-                            (push subsections
-                               (if options.wrap_fn
-                                  (try
-                                     (-> options `wrap_fn comp current_seg total_segs)
-                                     (catch Error (e)
-                                        (p "Error in wrap_fn call 2: " e.message)))
-                                  (progn
-                                     (cond
-                                        (and (not options.edit_mode)
-                                                  (progn
-                                                     (= table_section (scan_str table_regex comp))
-                                                     (> (length table_section) 0)))
-                                        (for_each (tbl_row table_section)
-                                           (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
-                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
-                                                (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
-                                                (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
-                                        (== comp "---")
-                                        (progn
-                                           (hr))
-                                        (progn
-                                           (= header_section (scan_str header_regex comp))
-                                           (> (length header_section) 0))
-                                        (progn
-                                           (= header_section (first header_section)) ;; pull it out of the array to make it easier to work with
-                                           (= header_tag (or (prop header_size_lookup (length (prop header_section 1)))
-                                                             "h5"))
-                                           (header_tag 
-                                            (prop header_section `2)))
-                                              
-                                        else
-                                        (p comp)))))))
+                            (progn
+                               ;; do any replacements/wrapping here 
+                               (push subsections
+                                  (if options.wrap_fn
+                                     (try
+                                        (-> options `wrap_fn comp current_seg total_segs)
+                                        (catch Error (e)
+                                           (p "Error in wrap_fn call 2: " e.message)))
+                                     (progn
+                                        
+                                        (cond
+                                           (and (not options.edit_mode)
+                                                (progn
+                                                   (= table_section (scan_str table_regex comp))
+                                                   (> (length table_section) 0)))
+                                           (for_each (tbl_row table_section)
+                                              (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                                   (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                                   (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                                   (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
+                                           (== comp "---")
+                                           (progn
+                                              (hr))
+                                           (progn
+                                              (= header_section (scan_str header_regex comp))
+                                              (> (length header_section) 0))
+                                           (progn
+                                              (= header_section (first header_section)) ;; pull it out of the array to make it easier to work with
+                                              (= header_tag (or (prop header_size_lookup (length (prop header_section 1)))
+                                                                "h5"))
+                                              (header_tag
+                                                 (prop header_section `2)))
+                                           
+                                           (not (blank? comp))
+                                           (p comp)
+                                           else
+                                           [])))))))
                      (split_by "```" seg)))))
        (div (+ { `class: "juno-editable" }
                (if options.edit_mode
@@ -300,89 +662,7 @@
             
 
  
-(defun edit_description_text_v1 ()
-   (let
-      ((ctl (if (== *last_focus*.type "text_editor")
-                *last_focus*
-                nil)))
-      (when ctl
-         (let
-            ((pos (-> ctl `get_selection))
-             (editor ctl.editor)
-             (text nil)
-             (new_text nil)
-             (content nil)
-             (empty_mode false)
-             (start_pos (clone pos))
-             (new_pos nil)
-             (end_pos nil))
-            (log "pos is: " pos)
-            (if (and (== pos.start.row pos.end.row)
-                     (== pos.start.column pos.end.column))
-                (progn
-                   (select_to_current_form ctl.editor)
-                   (= new_pos (-> ctl `get_selection))
-                   (log "new_pos is: " new_pos)
-                   (when (< new_pos.end.row pos.end.row)
-                       (= empty_mode true)
-                       (-> editor `clearSelection)
-                       (-> editor `navigateTo pos.end.row pos.end.column)
-                       (= text ""))))
-                   
-            (if (not empty_mode)
-               (= text (-> ctl `get_selected_text)))
-            (log "text is: " text)
-         
-            (= text (eval (read_lisp text)))
-            ;(log "text evaled is: " text)
-            (progc
-               (= content  (unpack_description text { `edit_mode: true })))
-            (log "content is: " content)
-            
-            (-> ctl `set_read_only true)
-            (= pos (-> ctl `get_selection))
-            (= new_text (wait_for_editor content))
-            (-> ctl `set_read_only false)
-            (log "edit_description_text: new_text: " new_text)
-            (when (and new_text
-                       (second new_text))
-               (= new_text (pretty_print new_text))
-              
-               (-> (-> editor `getSession) `replace pos new_text)
-               (-> editor `navigateTo pos.end.row pos.end.column)
-               (sleep 0.3)
-               (select_to_current_form ctl.editor)
-               (sleep 0.2)
-               (indent_editor_selection  ctl.editor)
-               (sleep 0.1)
-            )
-            
-            ;(select_to_current_form ctl.editor)
-        
-            ;(-> editor `navigateTo pos.end.row pos.end.column)
-            
-            )))
-   {
-     `description: (+ "This function provides an ability to edit the description text of a function "
-                      "for easier documentation.  When invoked, if not provided with a specific "
-                      "text_editor control, will use the *last_focus* control if it is a text editor "
-                      "type.   The current cursor position of the editor it is being invoked on will "
-                      "be examined, and if it meets certain criteria, the description text will be "
-                      "gathered and the description editor pane will pop up providing the user the "
-                      "ability to edit the text in a fashion more amenable for writing "
-                      "documentation.  <br>Once completed with the description edits, the user can "
-                      "press the short cut key for get_as_wordwrap_text (default is bound to Alt-X) or "
-                      "select the \"Get As Wordwrap Text\" menu item from the control menu.  This will "
-                      "close the editor and place the contents of the description editor into the "
-                      "source code in the appropriate position and form. <br>If the contents of the "
-                      "description editor are not to be saved back to the text editor, just close the "
-                      "editor, either from the menu or by pressing <br>Alt-D<br> (or the command "
-                      "currently associated with the Close Control Command).  See (show_key_bindings) "
-                      "in the REPL for a table of current globally defined key bindings. ")
 
-     `usage: []
-     })
-      
 
 (set_key_binding `global
                  `set_description_text
@@ -414,12 +694,14 @@
  }
 
              
-(defun edit_description_text ()
+(defun edit_description_text (control)
    (let
-      ((ctl (if (== *last_focus*.type "text_editor")
-                *last_focus*
-                nil)))
-      (when ctl
+      ((ctl (or (and control
+                     (== control.type "text_editor"))
+                (if (== *last_focus*.type "text_editor")
+                    *last_focus*
+                    nil))))
+      (if ctl
          (let
             ((pos (-> ctl `get_selection))
              (select_pos nil)
@@ -490,47 +772,52 @@
                (= new_text (wait_for_editor content))
                (-> ctl `set_read_only false)
                ;(log "edit_description_text: new_text: " new_text)
-               (when (and new_text
-                          (second new_text))
-                  (= new_text (pretty_print new_text))
-                  
-                  (-> (-> editor `getSession) `replace pos new_text)
-                  (-> editor `navigateTo pos.end.row pos.end.column)
-                  (sleep 0.3)
-                  (select_to_current_form ctl.editor)
-                  (sleep 0.2)
-                  (indent_editor_selection  ctl.editor)
-                  (sleep 0.1)
-                  )
-               ))))
+               (progc
+                  (when (and new_text
+                             (second new_text))
+                     (= new_text (pretty_print new_text))
+                     
+                     (-> (-> editor `getSession) `replace pos new_text)
+                     (sleep 0.1)
+                     ;(-> editor `navigateTo pos.start.row pos.start.column)
+                     ;; slow it down so we can watch the fitment..
+                     (sleep 0.3)
+                     (select_to_current_form ctl.editor)
+                     (sleep 0.3)
+                     (indent_editor_selection  ctl.editor)
+                     (sleep 0.1)))))
+         (alert_box (dtext "Edit Description Text")
+                    (dtext "The control being used must be a text editor type."))))
    { 
-     `description: (+ "This function provides an ability to edit the description text of a function "
-                      "for easier documentation.  When invoked, if not provided with a specific "
-                      "text_editor control, will use the *last_focus* control if it is a text editor "
-                      "type.   The current cursor position of the editor it is being invoked on will "
-                      "be examined, and if it meets certain criteria, the description text will be "
-                      "gathered and the description editor pane will pop up providing the user the "
-                      "ability to edit the text in a fashion more amenable for writing "
-                      "documentation.  <br>Once completed with the description edits, the user can "
-                      "press the short cut key for get_as_wordwrap_text (default is bound to Alt-X) or "
-                      "select the \"Get As Wordwrap Text\" menu item from the control menu.  This will "
-                      "close the editor and place the contents of the description editor into the "
-                      "source code in the appropriate position and form. <br>If the contents of the "
+     `description: (+ "<br><br>This function provides an ability to edit the description text of a "
+                      "function for easier documentation.  When invoked, if not provided with a "
+                      "specific text_editor control, will use the `*last_focus*` control if it is a "
+                      "text editor type.   The current cursor position of the editor it is being "
+                      "invoked on will be examined, and if it meets certain criteria, the description "
+                      "text will be gathered and the description editor pane will pop up providing the "
+                      "user the ability to edit the text in a fashion more amenable for writing "
+                      "documentation.   <br>Once completed with the description edits, the user can "
+                      "press the short cut key for `get_as_wordwrap_text` (default is bound to Alt-X) "
+                      "or select the \"Get As Wordwrap Text\" menu item from the control menu.  This "
+                      "will close the editor and place the contents of the description editor into the "
+                      "source code in the appropriate position and form.  If the contents of the "
                       "description editor are not to be saved back to the text editor, just close the "
-                      "editor, either from the menu or by pressing <br>Alt-D<br> (or the command "
-                      "currently associated with the Close Control Command).  See (show_key_bindings) "
-                      "in the REPL for a table of current globally defined key bindings. <br>#### "
-                      "Qualifying formats of the Description Field to be Edited<br>The description "
-                      "field must either have a value of nil (empty).  In this case, the description "
-                      "editor will be empty of content when opened.  In this case the field entry "
-                      "would look like:<br>```{\n   description: nil \n}```<br><br>If the description "
-                      "field is already populated with content, it will need to be in the form "
-                      "of: <br>```{\n   description: (+ \"Content Line\" \"more content\" "
-                      "\"...\")\n}```<br><br>This is the format that the Description editor will place "
-                      "into the source code when complete.<br>#### Other Notes<br>When the Description "
-                      "Editor is invoked and while the user is editing text, the text_buffer that it "
-                      "is being invoked on is placed into read only mode and so cannot be modified "
-                      "until the Description Editor is closed. ")
+                      "editor, either from the menu or by pressing  `Alt-D`  (or the command currently "
+                      "associated with the Close Control Command).  See `(show_key_bindings)` in the "
+                      "REPL for a table of current globally defined key bindings.<br><br>#### "
+                      "Qualifying formats of the Description Field to be Edited  <br><br> The "
+                      "description field must either have a value of nil (empty).  In this case, the "
+                      "description editor will be empty of content when opened.  In this case the "
+                      "field entry would look like: ```{\n   description: nil \n}```<br><br> If the "
+                      "description field is already populated with content, it will need to be in the "
+                      "form of:  ```{\n  description: (+ \"Content Line\" \"more content\" "
+                      "\"...\")\n}```<br><br> This is the format that the Description editor will place "
+                      "into the source code when complete.<br><br>---<br><br><br>#### Other Notes "
+                      "<br><br> When the Description Editor is invoked and while the user is editing "
+                      "text, the text_editor that it is being invoked on is placed into read only mode "
+                      "and so cannot be modified until the Description Editor is closed. ")
+
+
 
       `usage: ["control:?object"]
       `tags: ["editor" "description" "metadata" "meta" ] })
@@ -749,10 +1036,10 @@
         it
         (let
            ((options (+ {}  ;; default is an empty code editing buffer for lisp
-                         { mode: "juno" 
-                           id: (generate_id "text_editor")   ;; id can be provided and will overide this generated ID 
-                           content: "" }
-                         (if (is_object? options)
+                        { mode: "juno"
+                          id: (generate_id "text_editor")   ;; id can be provided and will overide this generated ID
+                          content: "" }
+                        (if (is_object? options)
                             options
                             (progn
                                (notify "Invalid options object provided to editor - check config")))))
@@ -768,16 +1055,16 @@
             (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
             (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
             (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
-            ;; if we have a namespace in options use that for referencing paths 
-            (nseval (if (not (blank? options.namespace))   
+            ;; if we have a namespace in options use that for referencing paths
+            (nseval (if (not (blank? options.namespace))
                         (-> Environment `get_namespace_handle options.namespace)
-                        Environment))  
+                        Environment))
             (is_dirty? false)
             (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
-            (locked_span (span { `title: (dtext "Read Only?") `style: "display: inline-block; width: 20px;padding-left: 5px; padding-right: 5px;" } 
+            (locked_span (span { `title: (dtext "Read Only?") `style: "display: inline-block; width: 20px;padding-left: 5px; padding-right: 5px;" }
                                (if options.read_only
-                                        "RO"
-                                        "")))
+                                  "RO"
+                                  "")))
             (mode "-")
             (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
             (title_span (span { `class: "juno-title" } options.name))
@@ -844,10 +1131,10 @@
                                  (-> editor `setReadOnly read_only?)
                                  (if read_only?
                                     (set_prop locked_span
-                                       `innerText 
+                                       `innerText
                                        (dtext "RO"))
                                     (set_prop locked_span
-                                       `innerText 
+                                       `innerText
                                        (dtext ""))))))
             (set_evaluator (fn (evaluator_function)
                               (when (is_function? evaluator_function)
@@ -922,40 +1209,40 @@
                                 (options.on_theme_set theme_name)))))
             
             (set_overscroll (fn (state)
-                                    (if state
-                                       (progn
-                                          (-> editor `setOption `scrollPastEnd true)
-                                          (set_prop options
-                                             `overscroll
-                                             true)
-                                          true)
-                                       (progn
-                                          (-> editor `setOption `scrollPastEnd false)
-                                          (set_prop options
-                                             `overscroll
-                                             false)
-                                          false))))
+                               (if state
+                                  (progn
+                                     (-> editor `setOption `scrollPastEnd true)
+                                     (set_prop options
+                                        `overscroll
+                                        true)
+                                     true)
+                                  (progn
+                                     (-> editor `setOption `scrollPastEnd false)
+                                     (set_prop options
+                                        `overscroll
+                                        false)
+                                     false))))
             
             (set_name (fn (new_name force)
-                              (progn
-                                 ;; if we are not already called the new name go ahead and process the new name
-                                 (when (and (not (blank? new_name))
-                                            (not (== (get_control_by_name new_name) intf)))
-                                    (set_prop options
-                                       `name
-                                       (if force
-                                          new_name
-                                          (compute_name_for_control new_name)))
-                                    (set_prop intf
-                                       `name
-                                       options.name)
-                                    (dispatch_event { command: "editor_change"
-                                                      source: options.id
-                                                      args: [ { `option: "name" `value: options.name } ] }))
-                                 (set_prop title_span
-                                    `innerText
-                                    options.name)
-                                 options.name)))
+                         (progn
+                            ;; if we are not already called the new name go ahead and process the new name
+                            (when (and (not (blank? new_name))
+                                       (not (== (get_control_by_name new_name) intf)))
+                               (set_prop options
+                                  `name
+                                  (if force
+                                     new_name
+                                     (compute_name_for_control new_name)))
+                               (set_prop intf
+                                  `name
+                                  options.name)
+                               (dispatch_event { command: "editor_change"
+                                                 source: options.id
+                                                 args: [ { `option: "name" `value: options.name } ] }))
+                            (set_prop title_span
+                               `innerText
+                               options.name)
+                            options.name)))
             
             (evaluate_selection (function (editor)
                                    (let
@@ -1046,7 +1333,7 @@
             (get_selected_text (function ()
                                   (-> editor `getSelectedText)))
             (get_selection_object (function ()
-                              (-> editor.selection `getRange)))
+                                     (-> editor.selection `getRange)))
             (get_lines (function (from to)
                           (-> editor.selection `getLines from to)))
             (is_selected? (function ()
@@ -1056,7 +1343,7 @@
                                           (== rng.start.column rng.end.column))))))
             (last_bracket_match nil)
             (active_lisp_operator nil) ;; the last active lisp operator
-           
+            
             (find_active_lisp_operator (function ()
                                           (let
                                              ((new_op nil)
@@ -1131,27 +1418,27 @@
             (split_editor (fn (dir)
                              (let
                                 ((new_editor nil))
-                             (cond
-                                (== dir "vertical")
-                                (progn
-                                   (= new_editor (clone_text_editor_control intf))
-                                   (alert_on_error "Unable to split"
-                                                   (container_view_operation "split_right" intf new_editor)))
-                                (== dir "horizontal")
-                                (progn
-                                   (= new_editor (clone_text_editor_control intf))
-                                   (alert_on_error "Unable to split"
-                                                   (container_view_operation "split_below" intf new_editor)))
-                                else
-                                (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
-            ;; position tracking 
+                                (cond
+                                   (== dir "vertical")
+                                   (progn
+                                      (= new_editor (clone_text_editor_control intf))
+                                      (alert_on_error "Unable to split"
+                                                      (container_view_operation "split_right" intf new_editor)))
+                                   (== dir "horizontal")
+                                   (progn
+                                      (= new_editor (clone_text_editor_control intf))
+                                      (alert_on_error "Unable to split"
+                                                      (container_view_operation "split_below" intf new_editor)))
+                                   else
+                                   (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
+            ;; position tracking
             (max_history_length (if (is_number? options.max_history_length)
                                     options.max_history_length
                                     40))
             (position_history [])
             (position_history_idx 0)
             (current_position (fn ()
-                                  (-> editor `getCursorPosition)))
+                                 (-> editor `getCursorPosition)))
             (set_cursor_position (fn (pos)
                                     (progn
                                        (-> editor `navigateTo pos.row pos.column)
@@ -1166,29 +1453,29 @@
                                       (+ "[" current_pos.row " " current_pos.column "]"))
                                    (set_prop options `cursor_position current_pos)
                                    
-                                   ;; record our position history so we can go back 
-                                   ;; if we are less then 8 rows difference, then 
+                                   ;; record our position history so we can go back
+                                   ;; if we are less then 8 rows difference, then
                                    ;; update it, otherwise push it onto the stack
                                    (try
                                       (progn
                                          (when (isNaN position_history_idx)
-                                             (log "text_editor: update_position: position_history_idx isNaN!")
-                                             (= position_history_idx (- position_history.length 1))
-                                             (set_disabled nav_forward_button))
+                                            (log "text_editor: update_position: position_history_idx isNaN!")
+                                            (= position_history_idx (- position_history.length 1))
+                                            (set_disabled nav_forward_button))
                                          (defvar last_pos (prop position_history position_history_idx))
                                          (when (eq nil last_pos)
                                             (log "last_pos is nil! and it shouldn't be: " position_history_idx))
                                          (if (> (Math.abs (- current_pos.row (prop last_pos `row)))
                                                 8)
-                                            (progn
-                                               (inc position_history_idx)
-                                               (-> position_history `splice position_history_idx 0 current_pos)
-                                               ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
-                                               (when (> position_history.length max_history_length)
-                                                  (take position_history)
-                                                  (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
-                                            (progn
-                                               (-> position_history `splice position_history_idx 1 current_pos))))
+                                             (progn
+                                                (inc position_history_idx)
+                                                (-> position_history `splice position_history_idx 0 current_pos)
+                                                ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
+                                                (when (> position_history.length max_history_length)
+                                                   (take position_history)
+                                                   (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
+                                             (progn
+                                                (-> position_history `splice position_history_idx 1 current_pos))))
                                       (catch Error (e)
                                          (log "ERROR " options.name  " on position history update: " e.message)))
                                    
@@ -1200,12 +1487,12 @@
                                            (set_enabled nav_forward_button)
                                            (set_cursor_position (prop position_history position_history_idx)))))
             (go_forward_in_position (fn ()
-                                        (progn
-                                           (= position_history_idx (Math.min (- position_history.length 1) (+ position_history_idx 1)))
-                                           (when (== position_history_idx (- position_history.length 1))
-                                              (set_disabled nav_forward_button))
-                                           (set_cursor_position (prop position_history position_history_idx)))))
-                                           
+                                       (progn
+                                          (= position_history_idx (Math.min (- position_history.length 1) (+ position_history_idx 1)))
+                                          (when (== position_history_idx (- position_history.length 1))
+                                             (set_disabled nav_forward_button))
+                                          (set_cursor_position (prop position_history position_history_idx)))))
+            
             (on_focus (fn ()
                          (progn
                             (when (not (== *last_focus* intf))
@@ -1253,10 +1540,10 @@
             (linked_editor_name nil)
             (linked_editor nil)
             (data_type nil)
-            (data_type_defaults { String: "" 
-                                     array:[] 
-                                     object: {} })
-            ;; based on the contents of the options object set the editor's content 
+            (data_type_defaults { String: ""
+                                  array:[]
+                                  object: {} })
+            ;; based on the contents of the options object set the editor's content
             (set_content (fn ()
                             (let
                                ((content nil))
@@ -1282,22 +1569,22 @@
                                                (-> editor `setValue "")
                                                (= content "")
                                                (display_context_message (+ "NOTICE: unable to fetch file: " options.filename " (editor set to local value)"))))
-                                        (set_prop options 
+                                        (set_prop options
                                            `path
                                            (conj [ `filesystem ] (split_by "/" options.filename))))
-                                        
+                                     
                                      (catch Error (e)
                                         (progn
                                            (-> editor `setValue "")
                                            (= content content)
                                            (display_context_message (+ "ERROR on fetching: " options.filename " (editor set to local value)  " e.message))
                                            (log "Error on fetching file: " options.filename ": " e)
-                                           (set_prop options 
+                                           (set_prop options
                                               `path
                                               (conj [ `filesystem ] (split_by "/" options.filename))))))
                                   
                                   ;; if we are given a filename, but we are not online we can't edit it
-                                  ;; if we have previous content we can edit off line, but with a notice to the user 
+                                  ;; if we have previous content we can edit off line, but with a notice to the user
                                   (and (is_string? options.filename)
                                        options.content)
                                   (progn
@@ -1310,17 +1597,17 @@
                                                      (br)
                                                      (dtext "Information loss could occur if this editor's contents are subsequently saved to the server.")
                                                      (dtext "Be careful!")))
-                                     (set_prop options 
-                                           `path
-                                           (conj [ `filesystem ] (split_by "/" options.filename)))
+                                     (set_prop options
+                                        `path
+                                        (conj [ `filesystem ] (split_by "/" options.filename)))
                                      (display_context_message (+ "Warning: Cached value of an online file")))
                                   (is_array? options.path)
                                   (progn
                                      (= content (resolve_path options.path nseval.global_ctx.scope))
                                      (when (eq nil content)
-                                        (= content (or options.content 
+                                        (= content (or options.content
                                                        (and options.data_type
-                                                            (prop data_type_defaults options.data_type))
+                                                          (prop data_type_defaults options.data_type))
                                                        ""))
                                         (make_path options.path nseval.global_ctx.scope content)
                                         (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content))))
@@ -1342,7 +1629,7 @@
                                (set_prop options
                                   `data_type
                                   data_type)
-                               ;; at this point content should be loaded and displayed and 
+                               ;; at this point content should be loaded and displayed and
                                ;; data_type should be properly set for the content that
                                ;; is being edited
                                options)))
@@ -1364,44 +1651,44 @@
                                                   `innerText
                                                   (+ "⭢ " control.name)))))))
             (menu_items (fn ()
-                                [(if options.path
-                                  [(+ (dtext "Save to") " " (last options.path))
-                                   (fn (e) (request_save))]
-                                  [])
-                                 [(dtext "Split Vertically") 
-                                  (fn (e)
-                                     (split_editor `vertical)) ]
-                                 [(dtext "Split Horizontally")
-                                  (fn (e)
-                                     (split_editor `horizontal))]
-                                 [(dtext "Select Evaluator")
-                                   (fn (e)
-                                      (progn
-                                         (aif (select_evaluator)
-                                              (progn
-                                                 (set_evaluator_control it)
-                                                 (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
-                                 
-                                 [(dtext "Increase Font Size") increase_font_size]
-                                 [(dtext "Decrease Font Size") decrease_font_size]
-                                 [(dtext "Go") 
-                                  [[(dtext "Step Backward In Position History")
-                                    go_backward_in_position]
-                                   [(dtext "Step Forward In Position History")
-                                    go_forward_in_position]]]
-                                 (if (-> editor `getReadOnly)
-                                     [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
-                                     [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
-                                 [(dtext "Set Edit Mode")
-                                  [["Juno" (fn () (-> intf `set_mode "juno"))]
-                                   ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
-                                   ["Text" (fn () (-> intf `set_mode "text"))]
-                                   ["CSS" (fn () (-> intf `set_mode "css"))]
-                                   ["JSON" (fn () (-> intf `set_mode "json"))]]]
-                                 [(dtext "Set Editor Theme") 
-                                  (for_each (theme *editor_themes*)
-                                         [theme  (fn () (-> intf `set_theme theme))])]]))
-
+                           [(if options.path
+                                [(+ (dtext "Save to") " " (last options.path))
+                                 (fn (e) (request_save))]
+                                [])
+                            [(dtext "Split Vertically")
+                             (fn (e)
+                                (split_editor `vertical)) ]
+                            [(dtext "Split Horizontally")
+                             (fn (e)
+                                (split_editor `horizontal))]
+                            [(dtext "Select Evaluator")
+                             (fn (e)
+                                (progn
+                                   (aif (select_evaluator)
+                                        (progn
+                                           (set_evaluator_control it)
+                                           (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
+                            
+                            [(dtext "Increase Font Size") increase_font_size]
+                            [(dtext "Decrease Font Size") decrease_font_size]
+                            [(dtext "Go")
+                             [[(dtext "Step Backward In Position History")
+                               go_backward_in_position]
+                              [(dtext "Step Forward In Position History")
+                               go_forward_in_position]]]
+                            (if (-> editor `getReadOnly)
+                                [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
+                                [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
+                            [(dtext "Set Edit Mode")
+                             [["Juno" (fn () (-> intf `set_mode "juno"))]
+                              ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
+                              ["Text" (fn () (-> intf `set_mode "text"))]
+                              ["CSS" (fn () (-> intf `set_mode "css"))]
+                              ["JSON" (fn () (-> intf `set_mode "json"))]]]
+                            [(dtext "Set Editor Theme")
+                             (for_each (theme *editor_themes*)
+                                [theme  (fn () (-> intf `set_theme theme))])]]))
+            
             ;; main initialization routine
             (initialize_editor (fn ()
                                   (when (not initialized)
@@ -1446,8 +1733,8 @@
                                                  (set_prop options
                                                     `clone_with_editor_id
                                                     primary))))
-                                           
-                                           
+                                        
+                                        
                                         ;; are we a cloned editor?
                                         
                                         (when options.clone_with_editor_id
@@ -1461,7 +1748,7 @@
                                                  (= linked_editor control_to_clone.options.id)
                                                  (= linked_editor_name control_to_clone.options.name)
                                                  (-> editor `setSession new_session))))
-
+                                        
                                         ;; behavior setup for the actual editor component
                                         (when options.on_focus
                                            (-> editor `on `focus options.on_focus))
@@ -1520,8 +1807,8 @@
                                         ;; get the content from the specified source or path
                                         (if (not linked_editor)
                                             (set_content))
-                                               
-                                        (cond 
+                                        
+                                        (cond
                                            (and options.clone_with_editor_id
                                               (get_control_by_id options.clone_with_editor_id))
                                            (progn
@@ -1533,13 +1820,13 @@
                                            (eq nil options.group_name)
                                            (set_prop options
                                               `group_name
-                                              (or options.group_name 
-                                                          options.name
-                                                          (and (is_array? options.path)
-                                                               (last options.path))
-                                                          (and (is_string? options.filename)
-                                                               (last (split_by "/" options.filename)))
-                                                          "Untitled Buffer")))
+                                              (or options.group_name
+                                                 options.name
+                                                 (and (is_array? options.path)
+                                                      (last options.path))
+                                                 (and (is_string? options.filename)
+                                                      (last (split_by "/" options.filename)))
+                                                 "Untitled Buffer")))
                                         
                                         (set_name options.group_name)
                                         
@@ -1680,7 +1967,7 @@
            (if (not (is_symbol? `$ace_editor))
                (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
            
-           (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]] 
+           (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]]
                       editor_div )
            
            (= resize_observer (new ResizeObserver perform_resize))
@@ -1694,11 +1981,9 @@
                          (-> editor `getValue))
                 `get_selection: get_selection_object
                 `get_selected_text: get_selected_text
-                `get_last_bracket_match: (fn ()
-                                            last_bracket_match)
                 `is_selected?: is_selected?
                 `group_name: (fn ()
-                                  options.group_name)
+                                options.group_name)
                 `type: `text_editor
                 `can_hide?: (fn ()
                                (progn
@@ -1720,7 +2005,7 @@
                                          (defvar response
                                             (request_user_input options.name
                                                                 "text"
-                                                                { input: (div { value: "remove" } 
+                                                                { input: (div { value: "remove" }
                                                                               (dtext "The contents of this editor haven't been stored. Really remove?")) }))
                                          ;(log (+ "editor: " options.name ": user response: ") response)
                                          response))))
@@ -1743,7 +2028,7 @@
                                    `group_name
                                    nil
                                    `filename
-                                   nil)   
+                                   nil)
                                 (= intf nil)
                                 (when my_path
                                    (rename_editor_group my_path))))
@@ -1754,8 +2039,8 @@
                 `get_evaluator: (fn ()
                                    evaluator)
                 `needs_save?: (fn ()
-                                (and (not options.repl_mode)
-                                     is_dirty?))
+                                 (and (not options.repl_mode)
+                                      is_dirty?))
                 `set_mode: set_mode
                 `get_mode: (fn ()
                               options.mode)
@@ -1764,15 +2049,15 @@
                 `split_vertical: (fn ()
                                     (split_editor `vertical))
                 `split_horizontal: (fn ()
-                                     (split_editor `horizontal))
+                                      (split_editor `horizontal))
                 `display_context_message: display_context_message
                 `get_evaluator: (fn ()
                                    evaluator)
                 `get_position_detail: (fn ()
                                          { current: (-> editor `getCursorPosition)
-                                           idx: position_history_idx
-                                           history: position_history
-                                         })
+                                                   idx: position_history_idx
+                                                   history: position_history
+                                                   })
                 `step_backward_in_pos_history: go_backward_in_position
                 `step_forward_in_pos_history: go_forward_in_position
                 `resize: (fn ()
@@ -1796,7 +2081,7 @@
                                        (when (is_string? editor_option_name)
                                           (-> editor `setOption editor_option_name value)))
                 `options: options
-                `set_evaluator_control: set_evaluator_control 
+                `set_evaluator_control: set_evaluator_control
                 `on_focus: (if options.disallow_control_focus
                               nil
                               on_focus)
@@ -1812,7 +2097,7 @@
                                   (progn
                                      (= linked_editor nil)
                                      (delete_prop options
-                                                  `clone_with_editor_id)
+                                        `clone_with_editor_id)
                                      options))
                 
                 `toJSON: (function ()
@@ -1820,7 +2105,7 @@
                                (set_prop options
                                   `content
                                   (-> editor `getValue))
-                            `(text_editor ,#options)))
+                               `(text_editor ,#options)))
                 `initialize: (fn ()
                                 (when view.parentElement
                                    (console.log "editor: performing initialization")
@@ -1828,7 +2113,49 @@
                                    (try
                                       (initialize_editor)
                                       (catch Error (e)
-                                         (log "ERROR on init: " e.message))))) }))))              
+                                         (log "ERROR on init: " e.message))))) })))
+   {
+     `description: (+ "<br><br>The text_editor control provides a means for editing text based "
+                      "buffers, and can either be used for editing local in-memory content or, for "
+                      "remote files when the application is served via HTTP.   The editor can be split "
+                      "into multiple views of the same content, provides theming, and color coded "
+                      "markup capabilities.  Additionally, key sequences can be used either in the "
+                      "scope of the editor, or via global scope.  It can adapt well to being a "
+                      "sub-control, and has a large number of options to enable higher fidelity "
+                      "between serialization and deserialization cycles.   <br><br>---<br><br> This "
+                      "control serves as a wrapper around a third party library, the Ace Editor.  The "
+                      "control abstracts certain Ace editor functionality as part of the control\'s "
+                      "interface. <br><br>#### Ace Editor   <br><br>  The underlying text editor "
+                      "library used for this control is the Ace Editor.  The documentation for this "
+                      "library is available here:  https://ace.c9.io/.  Certain underlying functions "
+                      "have been elevated and exposed at the top level control interface for purposes "
+                      "of the design and implementation of the text_editor control.  Direct access to "
+                      "the Ace editor instance and its functionality is via the `editor` key in the "
+                      "control\'s interface. Since this control uses a third party library underneath, "
+                      "any underlying state not captured directly in the controls options object will "
+                      "be lost when serialized.  A project objective is to build out the interface for "
+                      "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
+                      "functionality should be expected to be able to save state and restore, unless "
+                      "otherwise noted.<br><br>#### Modes <br><br> The editor operates in a \"mode\", "
+                      "which allows for specific behaviors relevant for the type and purpose of the "
+                      "content being edited.  There are several modes that are prebuilt into the "
+                      "editor: Juno/Lisp, Javascript, CSS, and plain text.  Additional modes can be "
+                      "constructed and made available to the environment that then can be utilized by "
+                      "the text_editor control.  Modes can be selected at creation time and during "
+                      "run-time.    The mode is indicated visually by the \"Current Editing Mode\" title "
+                      "bar text, located to the far right on the default title bar.  The  `(get_mode)` "
+                      " function can be used in the control\'s interface, which is called with zero "
+                      "arguments.    <br> The mode can be changed by the user in the control\'s command "
+                      "menu, where the user can select via the Set Edit Mode sub menu.   The Controls "
+                      "interface exposes the  `set_mode`  function, where a string that is equal to "
+                      "the mode name is given as an argument.  The names of the built-in modes are as "
+                      "follows: ```[ `juno `javascript `text `css `json ]```<br><br> Each element in "
+                      "the array can be used to supply `set_mode`.  Presently, the only custom mode is "
+                      "Juno, which calls back into the Lisp environment for context <br><br>### Launch "
+                      "Options   <br><br>Options provided to the function allow for modification of "
+                      "behaviors and specific functionality to be enabled or disabled at the time of "
+                      "the controls creation.  ")
+     })
   
 (defun select_evaluator ()
   (let
