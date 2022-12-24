@@ -554,11 +554,14 @@
                       regex: (new RegExp "(^[`a-zA-Z\\(\\)0-9?_*\\-]+):([`*a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)")
                       exec: (fn (match_text tbl_row)
                                (progn
-                                  (when (not (blank? match_text))
-                                     (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
-                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
-                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
-                                          (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} (process_regex tbl_row.3)))))) }
+                                  ;(log "table: " match_text)
+                                  (if options.edit_mode
+                                     [(+ tbl_row.1 ":" tbl_row.2 "-") (process_regex tbl_row.3)]
+                                     (when (not (blank? match_text))
+                                        (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                             (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                             (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                             (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} (process_regex tbl_row.3))))))) }
                      { name: "header" 
                        regex: (new RegExp "^([#]{1,6})[ ]+(.+)")
                        exec: (fn (value full_regex_result)
@@ -590,9 +593,14 @@
                              (replacement nil)
                              (ctext text_section)
                              (idx ctext.length)
+                             (overlap_key nil)
+                             (overlap_struct nil)
                              (split_list [])
+                             (action_list [])
+                             (overlaps {})
                              (acc [])
                              (comps nil))
+                            ;(log "process_regex: -> " text_section)
                             (for_each (cmd regex_list)
                                (progn
                                   (= comps (scan_str cmd.regex ctext))
@@ -600,10 +608,40 @@
                                      (push split_list 
                                         { comp: comp
                                           pos: comp.index
+                                          length: comp.0.length
                                           cmd: cmd
                                            }))))
                             ;; now we have a list of the changes to be made to the text chunk 
-                            (= split_list (reverse (sort split_list { `key: [`pos] })))
+                            ;(log "split_list: " split_list)
+                            (for_each (r1 split_list)
+                               (for_each (r2 split_list)
+                                  (unless (== r1 r2)
+                                      (if (> r1.length r2.length)
+                                          (= overlap_struct [[r1.pos (+ r1.pos r1.length)] [r2.pos (+ r2.pos r2.length)]])
+                                          (= overlap_struct [[r2.pos (+ r2.pos r2.length)] [r1.pos (+ r1.pos r1.length)]]))
+                                      (unless (prop overlaps (as_lisp overlap_struct))
+                                         (when (apply range_overlap? overlap_struct)
+                                            (set_prop overlaps
+                                               (as_lisp overlap_struct)
+                                               { 
+                                                 parent: (if (> r1.length r2.length)
+                                                             r1
+                                                             r2)
+                                                 child: (if (> r1.length r2.length)
+                                                             r2
+                                                             r1)
+                                                 }))))))
+                            (= action_list (reduce (action split_list)
+                                              (progn
+                                                 (defvar remove false)
+                                                 (for_each (v (values overlaps))
+                                                    (if (and (== action.pos v.child.pos)
+                                                             (== action.length v.child.length))
+                                                       (= remove true)))
+                                                 (unless remove
+                                                    action))))
+                                              
+                            (= split_list (reverse (sort action_list { `key: [`pos] })))
                             (if (> split_list.length 0)
                                 (progn
                                    (for_each (action split_list)
@@ -616,18 +654,28 @@
                                          (= idx action.pos)))  ;; update our tail end
                                    ;; if we have any remaining text, push it in to the accumulator as it will have no edits
                                    (when (> idx 0)
+                                      ;(log "idx is greater than 0: " idx (-> ctext `substr 0 idx))
                                       (push acc (-> ctext `substr 0 idx))))
                                    (push acc text_section)) ;; nothing to update
                             (reverse acc))))
        (desc (progn
                 (defvar tmp (eval (or description "")))
-                (if (and (is_object? tmp)
-                         (not (is_array? tmp)))
-                    tmp.description
-                    tmp)))
+                (cond 
+                   (is_element? tmp)
+                   tmp
+                   (and (is_object? tmp)
+                        (not (is_array? tmp))
+                        (is_string? tmp.description))
+                   tmp.description
+                   (is_string? tmp)
+                   tmp
+                   else  ;; not for us
+                   tmp)))
        (rr (new RegExp "<-" `g))
        (subsections [])
-       (segments (split_by "```" (or desc "")))
+       (segments (if (is_string? desc)
+                     (split_by "```" desc)
+                     []))
        (table_section nil)
        (idx -1)
        (header_section nil)
@@ -635,20 +683,38 @@
        (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
        (current_seg 0)
        (total_segs (length segments)))
-      (div (+ { `class: "juno-editable" }
-               (if options.edit_mode
-                  { `contenteditable: true }
-                  {}))
-           (for_each (segment segments)
-              (progn
-                 (inc idx)
-                 (if (== 1 (% idx 2))
-                     (pre segment)
-                     (for_each (section (split_by "<br>" segment))
-                        (progn
-                           ;(log (hr))
-                           ;(log "unpack_description: section: " section)
-                           (div (process_regex section))))))))))
+      (if (is_string? desc)
+         (div (+ { `class: "juno-editable" }
+                 (if options.edit_mode
+                    { `contenteditable: true }
+                    {}))
+              (for_each (segment segments)
+                 (progn
+                    (inc idx)
+                    (if (== 1 (% idx 2))
+                        (pre segment)
+                        (for_each (section (split_by "<br>" segment))
+                           (progn
+                              ;(log (hr))
+                              ;(log "unpack_description: section: " section)
+                              (div (process_regex section))))))))
+         desc))
+   {
+     ;usage: ["text:string" "options:object"]
+     description: (+ "<br><br>Provided a text string as a primary argument, the function will convert "
+                     "the text content to a DOM element structure based on a set of default rules, or "
+                     "user provided rules.  A DOM element will be returned which can be placed in the "
+                     "DOM.<br><br>#### Options   <br><br>This function takes the following "
+                     "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
+                     "editable; a `contenteditable` attribute will be placed in element "
+                     "returned.<br>regex_list:array -If provided, each segment of text that is not "
+                     "allocated to a `PRE` element will be evaluated by the regex rules.  When a "
+                     "match is found, the associated exec function of the rule will be called with "
+                     "the form `(fn (value full_regex_result))` where the `value` is the matched text "
+                     "value, and the `full_regex_result` is the full returned regex structure from "
+                     "the `scan_str` function.  The return value of the function, typically an "
+                     "Element type will replace the matched text.    ")
+     })
 
 (defun format_help (meta_obj options)
    (let
@@ -832,6 +898,8 @@
      `tags: ["controls" "active" "tree" "ui"]
      })
 
+
+
 (defun all_editor_controls ()
    (reduce (ctl (current_controls))
       (when ctl.editor
@@ -894,6 +962,26 @@
                       "retain their current settings as they are instantiated with.")
      `tags: ["themes" "environment" "color" "settings"]
      `usage: ["theme_name:string" "options:object"] })
+
+(defun_sync control_name (control)
+   (when control
+      (prop control.options `name))
+   { 
+     `usage: ["control:object"]
+     `description: (+ "Returns the name of the given control, or nil " 
+                      "if the control or the control's name is nil")
+     `tags: ["control" "name"]    `
+   })
+
+(defun_sync control_id (control)
+   (when control
+      (prop control.options `id))
+   { 
+     `usage: ["control:object"]
+     `description: (+ "Returns the id of the given control, or nil " 
+                      "if the control or the control's name is nil")
+     `tags: ["control" "name"]    `
+   })
 
 (defun get_control_by_id (id)
   (let
@@ -4306,10 +4394,10 @@
         it
         (let
            ((options (+ {}  ;; default is an empty code editing buffer for lisp
-                         { mode: "juno" 
-                           id: (generate_id "text_editor")   ;; id can be provided and will overide this generated ID 
-                           content: "" }
-                         (if (is_object? options)
+                        { mode: "juno"
+                          id: (generate_id "text_editor")   ;; id can be provided and will overide this generated ID
+                          content: "" }
+                        (if (is_object? options)
                             options
                             (progn
                                (notify "Invalid options object provided to editor - check config")))))
@@ -4325,16 +4413,16 @@
             (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
             (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
             (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
-            ;; if we have a namespace in options use that for referencing paths 
-            (nseval (if (not (blank? options.namespace))   
+            ;; if we have a namespace in options use that for referencing paths
+            (nseval (if (not (blank? options.namespace))
                         (-> Environment `get_namespace_handle options.namespace)
-                        Environment))  
+                        Environment))
             (is_dirty? false)
             (col_pos_span (span { `title: "Position (Row Column)" `style: "float: right;margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } "[0 0]"))
-            (locked_span (span { `title: (dtext "Read Only?") `style: "display: inline-block; width: 20px;padding-left: 5px; padding-right: 5px;" } 
+            (locked_span (span { `title: (dtext "Read Only?") `style: "display: inline-block; width: 20px;padding-left: 5px; padding-right: 5px;" }
                                (if options.read_only
-                                        "RO"
-                                        "")))
+                                  "RO"
+                                  "")))
             (mode "-")
             (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
             (title_span (span { `class: "juno-title" } options.name))
@@ -4401,10 +4489,10 @@
                                  (-> editor `setReadOnly read_only?)
                                  (if read_only?
                                     (set_prop locked_span
-                                       `innerText 
+                                       `innerText
                                        (dtext "RO"))
                                     (set_prop locked_span
-                                       `innerText 
+                                       `innerText
                                        (dtext ""))))))
             (set_evaluator (fn (evaluator_function)
                               (when (is_function? evaluator_function)
@@ -4479,40 +4567,40 @@
                                 (options.on_theme_set theme_name)))))
             
             (set_overscroll (fn (state)
-                                    (if state
-                                       (progn
-                                          (-> editor `setOption `scrollPastEnd true)
-                                          (set_prop options
-                                             `overscroll
-                                             true)
-                                          true)
-                                       (progn
-                                          (-> editor `setOption `scrollPastEnd false)
-                                          (set_prop options
-                                             `overscroll
-                                             false)
-                                          false))))
+                               (if state
+                                  (progn
+                                     (-> editor `setOption `scrollPastEnd true)
+                                     (set_prop options
+                                        `overscroll
+                                        true)
+                                     true)
+                                  (progn
+                                     (-> editor `setOption `scrollPastEnd false)
+                                     (set_prop options
+                                        `overscroll
+                                        false)
+                                     false))))
             
             (set_name (fn (new_name force)
-                              (progn
-                                 ;; if we are not already called the new name go ahead and process the new name
-                                 (when (and (not (blank? new_name))
-                                            (not (== (get_control_by_name new_name) intf)))
-                                    (set_prop options
-                                       `name
-                                       (if force
-                                          new_name
-                                          (compute_name_for_control new_name)))
-                                    (set_prop intf
-                                       `name
-                                       options.name)
-                                    (dispatch_event { command: "editor_change"
-                                                      source: options.id
-                                                      args: [ { `option: "name" `value: options.name } ] }))
-                                 (set_prop title_span
-                                    `innerText
-                                    options.name)
-                                 options.name)))
+                         (progn
+                            ;; if we are not already called the new name go ahead and process the new name
+                            (when (and (not (blank? new_name))
+                                       (not (== (get_control_by_name new_name) intf)))
+                               (set_prop options
+                                  `name
+                                  (if force
+                                     new_name
+                                     (compute_name_for_control new_name)))
+                               (set_prop intf
+                                  `name
+                                  options.name)
+                               (dispatch_event { command: "editor_change"
+                                                 source: options.id
+                                                 args: [ { `option: "name" `value: options.name } ] }))
+                            (set_prop title_span
+                               `innerText
+                               options.name)
+                            options.name)))
             
             (evaluate_selection (function (editor)
                                    (let
@@ -4603,7 +4691,7 @@
             (get_selected_text (function ()
                                   (-> editor `getSelectedText)))
             (get_selection_object (function ()
-                              (-> editor.selection `getRange)))
+                                     (-> editor.selection `getRange)))
             (get_lines (function (from to)
                           (-> editor.selection `getLines from to)))
             (is_selected? (function ()
@@ -4613,7 +4701,7 @@
                                           (== rng.start.column rng.end.column))))))
             (last_bracket_match nil)
             (active_lisp_operator nil) ;; the last active lisp operator
-           
+            
             (find_active_lisp_operator (function ()
                                           (let
                                              ((new_op nil)
@@ -4688,27 +4776,27 @@
             (split_editor (fn (dir)
                              (let
                                 ((new_editor nil))
-                             (cond
-                                (== dir "vertical")
-                                (progn
-                                   (= new_editor (clone_text_editor_control intf))
-                                   (alert_on_error "Unable to split"
-                                                   (container_view_operation "split_right" intf new_editor)))
-                                (== dir "horizontal")
-                                (progn
-                                   (= new_editor (clone_text_editor_control intf))
-                                   (alert_on_error "Unable to split"
-                                                   (container_view_operation "split_below" intf new_editor)))
-                                else
-                                (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
-            ;; position tracking 
+                                (cond
+                                   (== dir "vertical")
+                                   (progn
+                                      (= new_editor (clone_text_editor_control intf))
+                                      (alert_on_error "Unable to split"
+                                                      (container_view_operation "split_right" intf new_editor)))
+                                   (== dir "horizontal")
+                                   (progn
+                                      (= new_editor (clone_text_editor_control intf))
+                                      (alert_on_error "Unable to split"
+                                                      (container_view_operation "split_below" intf new_editor)))
+                                   else
+                                   (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
+            ;; position tracking
             (max_history_length (if (is_number? options.max_history_length)
                                     options.max_history_length
                                     40))
             (position_history [])
             (position_history_idx 0)
             (current_position (fn ()
-                                  (-> editor `getCursorPosition)))
+                                 (-> editor `getCursorPosition)))
             (set_cursor_position (fn (pos)
                                     (progn
                                        (-> editor `navigateTo pos.row pos.column)
@@ -4723,29 +4811,29 @@
                                       (+ "[" current_pos.row " " current_pos.column "]"))
                                    (set_prop options `cursor_position current_pos)
                                    
-                                   ;; record our position history so we can go back 
-                                   ;; if we are less then 8 rows difference, then 
+                                   ;; record our position history so we can go back
+                                   ;; if we are less then 8 rows difference, then
                                    ;; update it, otherwise push it onto the stack
                                    (try
                                       (progn
                                          (when (isNaN position_history_idx)
-                                             (log "text_editor: update_position: position_history_idx isNaN!")
-                                             (= position_history_idx (- position_history.length 1))
-                                             (set_disabled nav_forward_button))
+                                            (log "text_editor: update_position: position_history_idx isNaN!")
+                                            (= position_history_idx (- position_history.length 1))
+                                            (set_disabled nav_forward_button))
                                          (defvar last_pos (prop position_history position_history_idx))
                                          (when (eq nil last_pos)
                                             (log "last_pos is nil! and it shouldn't be: " position_history_idx))
                                          (if (> (Math.abs (- current_pos.row (prop last_pos `row)))
                                                 8)
-                                            (progn
-                                               (inc position_history_idx)
-                                               (-> position_history `splice position_history_idx 0 current_pos)
-                                               ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
-                                               (when (> position_history.length max_history_length)
-                                                  (take position_history)
-                                                  (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
-                                            (progn
-                                               (-> position_history `splice position_history_idx 1 current_pos))))
+                                             (progn
+                                                (inc position_history_idx)
+                                                (-> position_history `splice position_history_idx 0 current_pos)
+                                                ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
+                                                (when (> position_history.length max_history_length)
+                                                   (take position_history)
+                                                   (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
+                                             (progn
+                                                (-> position_history `splice position_history_idx 1 current_pos))))
                                       (catch Error (e)
                                          (log "ERROR " options.name  " on position history update: " e.message)))
                                    
@@ -4757,12 +4845,12 @@
                                            (set_enabled nav_forward_button)
                                            (set_cursor_position (prop position_history position_history_idx)))))
             (go_forward_in_position (fn ()
-                                        (progn
-                                           (= position_history_idx (Math.min (- position_history.length 1) (+ position_history_idx 1)))
-                                           (when (== position_history_idx (- position_history.length 1))
-                                              (set_disabled nav_forward_button))
-                                           (set_cursor_position (prop position_history position_history_idx)))))
-                                           
+                                       (progn
+                                          (= position_history_idx (Math.min (- position_history.length 1) (+ position_history_idx 1)))
+                                          (when (== position_history_idx (- position_history.length 1))
+                                             (set_disabled nav_forward_button))
+                                          (set_cursor_position (prop position_history position_history_idx)))))
+            
             (on_focus (fn ()
                          (progn
                             (when (not (== *last_focus* intf))
@@ -4810,10 +4898,10 @@
             (linked_editor_name nil)
             (linked_editor nil)
             (data_type nil)
-            (data_type_defaults { String: "" 
-                                     array:[] 
-                                     object: {} })
-            ;; based on the contents of the options object set the editor's content 
+            (data_type_defaults { String: ""
+                                  array:[]
+                                  object: {} })
+            ;; based on the contents of the options object set the editor's content
             (set_content (fn ()
                             (let
                                ((content nil))
@@ -4839,22 +4927,22 @@
                                                (-> editor `setValue "")
                                                (= content "")
                                                (display_context_message (+ "NOTICE: unable to fetch file: " options.filename " (editor set to local value)"))))
-                                        (set_prop options 
+                                        (set_prop options
                                            `path
                                            (conj [ `filesystem ] (split_by "/" options.filename))))
-                                        
+                                     
                                      (catch Error (e)
                                         (progn
                                            (-> editor `setValue "")
                                            (= content content)
                                            (display_context_message (+ "ERROR on fetching: " options.filename " (editor set to local value)  " e.message))
                                            (log "Error on fetching file: " options.filename ": " e)
-                                           (set_prop options 
+                                           (set_prop options
                                               `path
                                               (conj [ `filesystem ] (split_by "/" options.filename))))))
                                   
                                   ;; if we are given a filename, but we are not online we can't edit it
-                                  ;; if we have previous content we can edit off line, but with a notice to the user 
+                                  ;; if we have previous content we can edit off line, but with a notice to the user
                                   (and (is_string? options.filename)
                                        options.content)
                                   (progn
@@ -4867,17 +4955,17 @@
                                                      (br)
                                                      (dtext "Information loss could occur if this editor's contents are subsequently saved to the server.")
                                                      (dtext "Be careful!")))
-                                     (set_prop options 
-                                           `path
-                                           (conj [ `filesystem ] (split_by "/" options.filename)))
+                                     (set_prop options
+                                        `path
+                                        (conj [ `filesystem ] (split_by "/" options.filename)))
                                      (display_context_message (+ "Warning: Cached value of an online file")))
                                   (is_array? options.path)
                                   (progn
                                      (= content (resolve_path options.path nseval.global_ctx.scope))
                                      (when (eq nil content)
-                                        (= content (or options.content 
+                                        (= content (or options.content
                                                        (and options.data_type
-                                                            (prop data_type_defaults options.data_type))
+                                                          (prop data_type_defaults options.data_type))
                                                        ""))
                                         (make_path options.path nseval.global_ctx.scope content)
                                         (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content))))
@@ -4899,7 +4987,7 @@
                                (set_prop options
                                   `data_type
                                   data_type)
-                               ;; at this point content should be loaded and displayed and 
+                               ;; at this point content should be loaded and displayed and
                                ;; data_type should be properly set for the content that
                                ;; is being edited
                                options)))
@@ -4921,44 +5009,44 @@
                                                   `innerText
                                                   (+ "⭢ " control.name)))))))
             (menu_items (fn ()
-                                [(if options.path
-                                  [(+ (dtext "Save to") " " (last options.path))
-                                   (fn (e) (request_save))]
-                                  [])
-                                 [(dtext "Split Vertically") 
-                                  (fn (e)
-                                     (split_editor `vertical)) ]
-                                 [(dtext "Split Horizontally")
-                                  (fn (e)
-                                     (split_editor `horizontal))]
-                                 [(dtext "Select Evaluator")
-                                   (fn (e)
-                                      (progn
-                                         (aif (select_evaluator)
-                                              (progn
-                                                 (set_evaluator_control it)
-                                                 (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
-                                 
-                                 [(dtext "Increase Font Size") increase_font_size]
-                                 [(dtext "Decrease Font Size") decrease_font_size]
-                                 [(dtext "Go") 
-                                  [[(dtext "Step Backward In Position History")
-                                    go_backward_in_position]
-                                   [(dtext "Step Forward In Position History")
-                                    go_forward_in_position]]]
-                                 (if (-> editor `getReadOnly)
-                                     [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
-                                     [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
-                                 [(dtext "Set Edit Mode")
-                                  [["Juno" (fn () (-> intf `set_mode "juno"))]
-                                   ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
-                                   ["Text" (fn () (-> intf `set_mode "text"))]
-                                   ["CSS" (fn () (-> intf `set_mode "css"))]
-                                   ["JSON" (fn () (-> intf `set_mode "json"))]]]
-                                 [(dtext "Set Editor Theme") 
-                                  (for_each (theme *editor_themes*)
-                                         [theme  (fn () (-> intf `set_theme theme))])]]))
-
+                           [(if options.path
+                                [(+ (dtext "Save to") " " (last options.path))
+                                 (fn (e) (request_save))]
+                                [])
+                            [(dtext "Split Vertically")
+                             (fn (e)
+                                (split_editor `vertical)) ]
+                            [(dtext "Split Horizontally")
+                             (fn (e)
+                                (split_editor `horizontal))]
+                            [(dtext "Select Evaluator")
+                             (fn (e)
+                                (progn
+                                   (aif (select_evaluator)
+                                        (progn
+                                           (set_evaluator_control it)
+                                           (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
+                            
+                            [(dtext "Increase Font Size") increase_font_size]
+                            [(dtext "Decrease Font Size") decrease_font_size]
+                            [(dtext "Go")
+                             [[(dtext "Step Backward In Position History")
+                               go_backward_in_position]
+                              [(dtext "Step Forward In Position History")
+                               go_forward_in_position]]]
+                            (if (-> editor `getReadOnly)
+                                [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
+                                [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
+                            [(dtext "Set Edit Mode")
+                             [["Juno" (fn () (-> intf `set_mode "juno"))]
+                              ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
+                              ["Text" (fn () (-> intf `set_mode "text"))]
+                              ["CSS" (fn () (-> intf `set_mode "css"))]
+                              ["JSON" (fn () (-> intf `set_mode "json"))]]]
+                            [(dtext "Set Editor Theme")
+                             (for_each (theme *editor_themes*)
+                                [theme  (fn () (-> intf `set_theme theme))])]]))
+            
             ;; main initialization routine
             (initialize_editor (fn ()
                                   (when (not initialized)
@@ -5003,8 +5091,8 @@
                                                  (set_prop options
                                                     `clone_with_editor_id
                                                     primary))))
-                                           
-                                           
+                                        
+                                        
                                         ;; are we a cloned editor?
                                         
                                         (when options.clone_with_editor_id
@@ -5018,7 +5106,7 @@
                                                  (= linked_editor control_to_clone.options.id)
                                                  (= linked_editor_name control_to_clone.options.name)
                                                  (-> editor `setSession new_session))))
-
+                                        
                                         ;; behavior setup for the actual editor component
                                         (when options.on_focus
                                            (-> editor `on `focus options.on_focus))
@@ -5077,8 +5165,8 @@
                                         ;; get the content from the specified source or path
                                         (if (not linked_editor)
                                             (set_content))
-                                               
-                                        (cond 
+                                        
+                                        (cond
                                            (and options.clone_with_editor_id
                                               (get_control_by_id options.clone_with_editor_id))
                                            (progn
@@ -5090,13 +5178,13 @@
                                            (eq nil options.group_name)
                                            (set_prop options
                                               `group_name
-                                              (or options.group_name 
-                                                          options.name
-                                                          (and (is_array? options.path)
-                                                               (last options.path))
-                                                          (and (is_string? options.filename)
-                                                               (last (split_by "/" options.filename)))
-                                                          "Untitled Buffer")))
+                                              (or options.group_name
+                                                 options.name
+                                                 (and (is_array? options.path)
+                                                      (last options.path))
+                                                 (and (is_string? options.filename)
+                                                      (last (split_by "/" options.filename)))
+                                                 "Untitled Buffer")))
                                         
                                         (set_name options.group_name)
                                         
@@ -5237,7 +5325,7 @@
            (if (not (is_symbol? `$ace_editor))
                (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
            
-           (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]] 
+           (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]]
                       editor_div )
            
            (= resize_observer (new ResizeObserver perform_resize))
@@ -5253,7 +5341,7 @@
                 `get_selected_text: get_selected_text
                 `is_selected?: is_selected?
                 `group_name: (fn ()
-                                  options.group_name)
+                                options.group_name)
                 `type: `text_editor
                 `can_hide?: (fn ()
                                (progn
@@ -5275,7 +5363,7 @@
                                          (defvar response
                                             (request_user_input options.name
                                                                 "text"
-                                                                { input: (div { value: "remove" } 
+                                                                { input: (div { value: "remove" }
                                                                               (dtext "The contents of this editor haven't been stored. Really remove?")) }))
                                          ;(log (+ "editor: " options.name ": user response: ") response)
                                          response))))
@@ -5298,7 +5386,7 @@
                                    `group_name
                                    nil
                                    `filename
-                                   nil)   
+                                   nil)
                                 (= intf nil)
                                 (when my_path
                                    (rename_editor_group my_path))))
@@ -5309,8 +5397,8 @@
                 `get_evaluator: (fn ()
                                    evaluator)
                 `needs_save?: (fn ()
-                                (and (not options.repl_mode)
-                                     is_dirty?))
+                                 (and (not options.repl_mode)
+                                      is_dirty?))
                 `set_mode: set_mode
                 `get_mode: (fn ()
                               options.mode)
@@ -5319,15 +5407,15 @@
                 `split_vertical: (fn ()
                                     (split_editor `vertical))
                 `split_horizontal: (fn ()
-                                     (split_editor `horizontal))
+                                      (split_editor `horizontal))
                 `display_context_message: display_context_message
                 `get_evaluator: (fn ()
                                    evaluator)
                 `get_position_detail: (fn ()
                                          { current: (-> editor `getCursorPosition)
-                                           idx: position_history_idx
-                                           history: position_history
-                                         })
+                                                   idx: position_history_idx
+                                                   history: position_history
+                                                   })
                 `step_backward_in_pos_history: go_backward_in_position
                 `step_forward_in_pos_history: go_forward_in_position
                 `resize: (fn ()
@@ -5351,7 +5439,7 @@
                                        (when (is_string? editor_option_name)
                                           (-> editor `setOption editor_option_name value)))
                 `options: options
-                `set_evaluator_control: set_evaluator_control 
+                `set_evaluator_control: set_evaluator_control
                 `on_focus: (if options.disallow_control_focus
                               nil
                               on_focus)
@@ -5367,7 +5455,7 @@
                                   (progn
                                      (= linked_editor nil)
                                      (delete_prop options
-                                                  `clone_with_editor_id)
+                                        `clone_with_editor_id)
                                      options))
                 
                 `toJSON: (function ()
@@ -5375,7 +5463,7 @@
                                (set_prop options
                                   `content
                                   (-> editor `getValue))
-                            `(text_editor ,#options)))
+                               `(text_editor ,#options)))
                 `initialize: (fn ()
                                 (when view.parentElement
                                    (console.log "editor: performing initialization")
@@ -5383,7 +5471,118 @@
                                    (try
                                       (initialize_editor)
                                       (catch Error (e)
-                                         (log "ERROR on init: " e.message))))) }))))
+                                         (log "ERROR on init: " e.message))))) })))
+   {
+     `description: (+ "<br><br>The text_editor control provides a means for editing text based "
+                      "buffers, and can either be used for editing local in-memory content or, for "
+                      "remote files when the application is served via HTTP.   The editor can be split "
+                      "into multiple views of the same content, provides theming, and color coded "
+                      "markup capabilities.  Additionally, key sequences can be used either in the "
+                      "scope of the editor, or via global scope.  It can adapt well to being a "
+                      "sub-control, and has a large number of options to enable higher fidelity "
+                      "between serialization and deserialization cycles.   <br><br>#### Example Usage "
+                      "<br>```(text_editor \n   { mode: `juno\n     on_change: (function (editor val)\n  "
+                      "            (progn\n                      (log (+ (control_name editor) \": "
+                      "change: \" val))))\n     name: \"Test Editor\"\n     evaluator_id: (control_id "
+                      "*system_repl*)\n     on_initialized: (fn (control)\n                      (notify "
+                      "(+ (control_name control) \": initialized!\")))\n   })```<br><br><br>---<br><br> "
+                      "This control serves as a wrapper around a third party library, the Ace Editor.  "
+                      "The control abstracts certain Ace editor functionality as part of the control\'s "
+                      "interface. <br><br>#### Ace Editor            <br><br>  The underlying text "
+                      "editor library used for this control is the BSD licensed Ace Editor.  The "
+                      "documentation for this library is available here: "
+                      "https://github.com/ajaxorg/ace.  Certain underlying functions have been "
+                      "elevated and exposed at the top level control interface for purposes of the "
+                      "design and implementation of the text_editor control.  Direct access to the Ace "
+                      "editor instance and its functionality is via the `editor` key in the control\'s "
+                      "interface. Since this control uses a third party library underneath, any "
+                      "underlying state not captured directly in the controls options object will be "
+                      "lost when serialized.  A project objective is to build out the interface for "
+                      "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
+                      "functionality should be expected to be able to save state and restore, unless "
+                      "otherwise noted.<br><br>#### Modes            <br><br> The editor can be set to "
+                      "operate in a certain \"mode\" state. Changing the editing mode enables certain "
+                      "functionalities to be \"turned on\", and which is specifically relevant for the "
+                      "type and purpose of the content being edited.  There are several modes that are "
+                      "prebuilt into the editor: Juno/Lisp, Javascript, CSS, and plain text.  Each of "
+                      "these modes provide specific features such as syntax highlighting, suggestion "
+                      "rules, and active formatting rules. <br>Modes can be selected at creation time "
+                      "and during run-time.    The mode is indicated visually by the \"Current Editing "
+                      "Mode\" title bar text, located to the far right on the default title bar.  The  "
+                      "`(get_mode)`  function can be used in the control\'s interface, which is called "
+                      "with zero arguments.    <br> The mode can be changed by the user in the "
+                      "control\'s command menu, where the user can select via the Set Edit Mode sub "
+                      "menu.   The Controls interface exposes the  `set_mode`  function, where a "
+                      "string that is equal to the mode name is given as an argument.  The names of "
+                      "the built-in modes are as follows: ```[ `juno `javascript `text `css `json "
+                      "]```<br><br> Each element in the array can be used to "
+                      "supply `set_mode`.  <br>Additional modes can be constructed and made available "
+                      "to the environment that then can be utilized by the text_editor "
+                      "control. Presently, the only custom mode is `juno`, which calls back into the "
+                      "Lisp environment for context.   The other modes are standard ACE editor modes "
+                      "for their respective content type.  In this environments file structure, mode "
+                      "files are found named `js_lib/mode-*`, where all relevant mode-code is found "
+                      "with the \"mode-\" prefix.   <br>Mode details can be found on the Ace website, "
+                      "https://ace.c9.io/.  <br><br>#### Split Panels         <br><br>Editors can be "
+                      "split into multiple views of the same content.  Changes to the content are "
+                      "propagated to each view, which is linked to the same content.  This means that "
+                      "all changes in one will be reflected in the other editor.  Cursor positions and "
+                      "display area can be independent to allow for simultaneous editing of a single "
+                      "file in multiple panels.   The mechanism by which this occurs is a shared "
+                      "underlying Ace  `Session`  instance.  There are some special characteristics of "
+                      "the multi-pane mode.<br>When there are multiple panels open to the same editor, "
+                      "and one of the editor panels is hidden, it will not be stored in the holding "
+                      "tank, and will be disposed.  Like other controls, when there is only one "
+                      "instance open, the control will behave in the standard form.  When hidden, the "
+                      "control will be stored, not destroyed.  <br>Additionally, in the multiple-panel "
+                      "mode, if the buffer is unsaved, the closing control will not ask if you want to "
+                      "save the content, but will instead close.  Once the final view into the content "
+                      "is reached, and the editor contained unsaved material, the user will be "
+                      "prompted if they want to save or store the contents of the editor.<br>The "
+                      "interface command `split_window` allows for programmatic control over this "
+                      "functionality.  <br><br>### Launch Options              <br><br>Options "
+                      "provided to the function allow for modification of behaviors and specific "
+                      "functionality to be enabled or disabled at the time of the controls creation.  "
+                      " The anything placed in the options object will be serialized when the "
+                      "environment is saved, and so it is important to make sure that values must be "
+                      "able to represent themselves in JSON form.   <br>clone_with_editor_id:string - "
+                      "When present, the created editor instance will share an editing session with "
+                      "the editor with the given id.  The given editor must be a text_editor "
+                      "control.   <br>mode:string - Specifies which mode the editor should start in.  "
+                      "For this to take effect, the mode must be a defined Ace editor mode (see Modes "
+                      "above).  If not provided, the mode is determined by the filename if "
+                      "possible.<br>on_mode_set:function - If present, this function is called with "
+                      "the mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string - "
+                      "Specifies the specific ID of the editor.  This is generally not required, since "
+                      "controls should establish their own IDs, except when being rehydrated, they "
+                      "will need to keep the ID they had prior to serialization.<br>namespace:string - "
+                      "Specifies the namespace that the buffer should operate in, and reference.  If "
+                      "not specified, the current namespace is used.  This is necessary if the path "
+                      "being edited is in a different namespace than the current evaluation "
+                      "namespace.<br>read_only:boolean - If specified as true, the buffer will start "
+                      "in read only mode, and will not allow changes to the editor\'s "
+                      "content,.<br>control_bar:Element - When specified, uses the element provided "
+                      "with this option as the control bar as opposed to the default control "
+                      "bar.  <br>on_theme_set:function - If present, this function will be called with "
+                      "the new theme name when a new editor theme is set. <br>overscroll:boolean - If "
+                      "true, the editor view will scroll past the final line, allowing for the final "
+                      "line to be displayed in the middle regions of the view.   The default is true, "
+                      "and this options must be explicitly set to false to disable.<br>filename:string "
+                      "- When present, the remote file is retrieved via fetch.  The filename should "
+                      "contains the relative path of the file under the root directory of the served "
+                      "content.  The URL constructed to get the file is /files/filename where filename "
+                      "is a path, such as /src/repl.lisp.  In this example, the final URL requested "
+                      "would be of the form: `/files/src/repl.lisp`.  This option is meant to be used "
+                      "in with `server_env.juno` package, which provides the HTTP-based services used "
+                      "to facilitate editing the file tree of the environment.  If the path and the "
+                      "filename are both provided in options. the filename is checked prior to the "
+                      "path.  If this option is present, the path is is set by splitting the filename "
+                      "by \"/\" and prepending the `filesystem symbol such that the "
+                      "path `/src/repl.lisp` will set a path of `[ \"filesystem\" \"src\" \"repl.lisp\" "
+                      "]`.  <br><br> ")
+
+
+     })
 
 
 (defun compute_name_for_editor (title path_to_value)
@@ -5508,11 +5707,18 @@
                                 (set_prop view
                                    `scrollTop
                                    0)))))
-       
+       (content_height 0)
        (add_result (fn (result command_text error_state)
                       (progn
                          (assert initialized "log_view not initialized")
                          (defvar appended_element nil)
+                         ;; unless we are at the bottom do the scroll
+                         (unless (== options.smooth_scroll_mode false)
+                            (when (< output_container.scrollTop (- content_height 350))
+                               (set_style [[`scroll-behavior `default]] output_container)
+                               (set_prop output_container `scrollTop content_height))
+                            (set_style [[`scroll-behavior `smooth]] output_container))
+                            
                          (when (not (eq nil command_text))
                            
                             (-> output_container
@@ -5542,13 +5748,14 @@
                             (-> (first appended_element.parentElement.children)
                                 `remove))
                          
+                         (= content_height (sum (each output_container.children `offsetHeight)))
                          (set_prop appended_element.parentElement
                                 `scrollTop
-                                1000000)
-                      (set_prop view
-                                `scrollTop
-                                0)
-                      result)))
+                                content_height)
+                         (set_prop view
+                            `scrollTop
+                            0)
+                         result)))
        (set_max_log_lines (fn (val)
                             (when (is_number? val)
                               (set_prop options
@@ -5559,26 +5766,37 @@
                                 ;    `remove))
                               true)))
        (set_show_timestamps (fn (state)
-                                      (if state
-                                         (progn
-                                            (= ts_hidden_state "")
-                                            (set_prop options.display_options
-                                               `show_timestamps true)
-                                            (when view  ;; surround in try catch in case we aren't completely ready
-                                               (try
-                                                  (apply remove_class "juno-display-none" (or (-> view `querySelectorAll ".juno-timestamp") []))
-                                                  (catch Error (e)
-                                                     nil))))
-                                              
-                                         (progn
-                                            (set_prop options.display_options
-                                               `show_timestamps false)
-                                            (= ts_hidden_state "juno-display-none")
-                                            (when view
-                                               (try
-                                                  (apply add_class "juno-display-none" (-> view `querySelectorAll ".juno-timestamp"))
-                                                  (catch Error (e)
-                                                     nil)))))))
+                               (if state
+                                  (progn
+                                     (= ts_hidden_state "")
+                                     (set_prop options.display_options
+                                        `show_timestamps true)
+                                     (when view  ;; surround in try catch in case we aren't completely ready
+                                        (try
+                                           (apply remove_class "juno-display-none" (or (-> view `querySelectorAll ".juno-timestamp") []))
+                                           (catch Error (e)
+                                              nil))))
+                                  
+                                  (progn
+                                     (set_prop options.display_options
+                                        `show_timestamps false)
+                                     (= ts_hidden_state "juno-display-none")
+                                     (when view
+                                        (try
+                                           (apply add_class "juno-display-none" (-> view `querySelectorAll ".juno-timestamp"))
+                                           (catch Error (e)
+                                              nil)))))))
+       (set_smooth_scroll_mode (fn (state)
+                                  (if state
+                                     (progn
+                                        (set_prop options
+                                           `smooth_scroll_mode true)
+                                        (set_style [[`scroll-behavior `smooth]] output_container))
+                                     (progn
+                                        (set_prop options
+                                           `smooth_scroll_mode false)
+                                        (set_style [[`scroll-behavior `default]] output_container)))))
+                                        
        (menu_items (fn ()
                      [[(dtext "Clear Log")
                        (fn ()
@@ -5606,6 +5824,13 @@
                           (if (blank? ts_hidden_state)
                               (set_show_timestamps false)
                               (set_show_timestamps true)))]
+                      (if (== options.smooth_scroll_mode false)
+                          [(dtext "Turn On Smooth Scrolling")
+                           (fn ()
+                              (set_smooth_scroll_mode true))]
+                          [(dtext "Turn Off Smooth Scrolling")
+                            (fn ()
+                               (set_smooth_scroll_mode false))])
                       [(if options.display_options.include_prototypes
                          (dtext "Hide Object Prototype Detail")
                          (dtext "Show Object Prototype Detail"))
@@ -5666,6 +5891,7 @@
                                    (prop display_modes options.display_options.display_mode))]
                  [`display_modes (function ()
                                     display_modes)]
+                 [`set_smooth_scroll_mode set_smooth_scroll_mode]
                  [`output_container output_container]
                  [`control_bar control_status]
                  [`append add_result]
@@ -6071,6 +6297,13 @@
                               (set_prop options.display_options `display_mode 2)
                               (set_prop display_mode_span
                                  `innerText (-> output_control `display_mode))))]]]
+                      (if (== output_control.options.smooth_scroll_mode false)
+                          [(dtext "Turn On Smooth Scrolling")
+                           (fn ()
+                              (-> output_control `set_smooth_scroll_mode true))]
+                          [(dtext "Turn Off Smooth Scrolling")
+                            (fn ()
+                               (-> output_control `set_smooth_scroll_mode false))])
                       [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                                             [theme  (fn ()
                                                                       (progn
@@ -8844,6 +9077,110 @@
 (defun wait_for_file_selection ()
    true)
    
+
+(defun wrap_in_resizable (elem)
+   (let
+      ((move_state nil)
+       (just_enable (== (get_attribute elem.parentElement "initializer") "wrap_in_resizable"))
+       (expander_elem (if just_enable
+                          elem.parentElement.children.1
+                          (div { `style: "position: absolute; right: 0px; bottom: -10px; width: 15px; height: 15px; cursor: nwse-resize; background: tranparent;" }
+                           "")))
+                          
+       (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
+       (dims nil)
+       (resize_mode false)
+       (elem_dims {
+           `width: elem.offsetWidth
+           `height: elem.offsetHeight
+       })
+       (initial_ratio (/ elem.offsetWidth elem.offsetHeight))
+       (max_dims {
+                  `width: 0
+                  `height: 0
+                  })
+       (body_element nil)
+       
+       (block_on (fn (e)
+                    (progn
+                       (= dims (-> frame `getBoundingClientRect))
+                       (= body_element (get_by_id "body"))
+                       (= max_dims {
+                                     `width: (prop body_element `offsetWidth)
+                                     `height: (prop body_element `offsetHeight) })
+                       (-> body_element `appendChild full_block)
+                       (= move_state {
+                                       mx: e.pageX
+                                       my: e.pageY
+                                       fx: dims.right
+                                       fy: dims.top
+                                       w: dims.width
+                                       h: dims.height
+                                       }))))
+       
+       (end_drag (fn (e)
+                    (progn
+                       (= move_state nil)
+                       (= resize_mode false)
+                       (if (is_function? elem.resize)
+                           (-> elem `resize))
+                       (-> full_block `remove))))       
+       (handle_drag (fn (e)
+                      (when (and move_state
+                                 (== e.buttons 1))
+                         (when resize_mode
+                            (set_style [["height" (+ "" (Math.min (- max_dims.height 30) (+ dims.height (- e.pageY move_state.my))) "px")]]
+                                       frame)
+                            (set_style [["width" (+ "" (* initial_ratio frame.offsetHeight) "px") ]] frame)
+                            (set_style [["height" (+ "" frame.offsetHeight "px")]
+                                        ["width" (+ "" frame.offsetWidth "px") ]] elem)
+                            ))))
+                                   
+       (frame (if just_enable
+                  elem.parentElement
+                  (div { `initializer: "wrap_in_resizable" `class: "juno-shadow-on-hover" `style: (+ "padding: 0px;position: relative; display: inline-block; border: 1px solid transparent; width:" elem_dims.width "px; height: " elem_dims.height "px;") }))))
+      
+     
+      (attach_event_listener expander_elem
+         `mousedown
+         (fn (e)
+            (progn
+               (= resize_mode true)
+               (block_on e))))
+      
+      
+      (attach_event_listener full_block
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mousemove
+                             handle_drag)
+      (attach_event_listener full_block
+                             `mousemove
+                             handle_drag)
+      
+      ;; if we have a control, initialize it if it needs it since it is 
+      ;; now mounted on the DOM
+      (set_style [["position" "relative"]
+                  ["display" "inline-block"]] frame)
+      (unless just_enable
+         (-> elem `replaceWith frame)
+         (-> frame `append elem)
+         (-> frame `append expander_elem))
+      true)
+   {
+     `description: (+ "<br><br>Given an element, will wrap it in a resizable element that preserves "
+                      "aspect ratio. The provided element will be replaced with the wrapped element.  "
+                      "The element will have a transparent handle on the lower right side that when "
+                      "hovered over, will indicate that the element can be resized.  ")
+
+       `usage: ["element:Element"]
+       `tags: ["DOM" "element" "UI" "resize" ]
+   })
+
 (defcontrol DOM_editor ()
    ((starter  (div { } "Start Typing!"))
     (root_elem (div { `contenteditable: true `tabindex: 0 }
@@ -8860,7 +9197,7 @@
                                (if options.read_only
                                   "RO"
                                   "")))
-    (status_elem (div { `style: "border-bottom: 1px solid var(--main-accent-line-hover); padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
+    (status_elem (div { `style: "max-height: 40px; overflow: auto; border-bottom: 1px solid var(--main-accent-line-hover); padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
                       position_elem
                       depth_elem
                       path_elem
@@ -8974,7 +9311,7 @@
                    (focus_to root_elem)
                    (when current_point
                       (move_to_point current_point)))))
-                      
+    
                
     (process_rules_for_event (fn (event)
                                 (let
@@ -9136,7 +9473,7 @@
                                   1000))
                                
                             (-> debug_elem `replaceChildren
-                               (pre (JSON.stringify (element_to_lisp root_elem) "\n" 2)))
+                               (pre (pretty_print (element_to_lisp root_elem))))
                             ))))
     (control_bar_elements [ locked_span ])
     (request_save (function ()
@@ -9176,6 +9513,23 @@
                        `innerText
                        options.name)
                     options.name)))
+    (check_for_unhandled_elements (fn (elem)
+                                     (let
+                                        ((elem_type nil))
+                                        (cond
+                                           (is_element? elem)
+                                           (progn
+                                              (= elem_type elem.tagName)
+                                              (cond
+                                                 (and (== elem_type "IMG")
+                                                      (not (get_attribute elem "_handled")))
+                                                 (progn
+                                                    (set_attribute elem "_handled" "true")
+                                                    (wrap_in_resizable elem))
+                                                 else
+                                                 (when (> elem.children.length 0)
+                                                    (for_each (c elem.children)
+                                                       (check_for_unhandled_elements c)))))))))
     (saved_content nil)
     (set_read_only (fn (read_only?)
                               (progn
@@ -9197,6 +9551,7 @@
                                              `contenteditable true)
                                           (-> root_elem `replaceWith (eval saved_content))
                                           (= root_elem document_view.children.0)
+                                          (check_for_unhandled_elements root_elem)
                                           (focus_to root_elem)
                                           ;(set_attribute root_elem `contenteditable true)
                                           (set_prop locked_span
@@ -9204,7 +9559,7 @@
                                              (dtext ""))))))))
     (error_state false)      
     (on_destroy (fn ()
-                                (progn
+                                                   (progn
                                    (cond
                                       is_dirty?
                                       (progn
@@ -9221,6 +9576,7 @@
                          (let
                             ((remote_content nil)
                              (is_fresh false)
+                             (load_error false)
                              (extension nil))
                             (cond
                                options.filename
@@ -9230,12 +9586,29 @@
                                         (= remote_content (fetch (+ "/files/" options.filename)))
                                         (cond
                                            (== remote_content.status 200)
-                                           (= remote_content (-> remote_content `text))
+                                           (progn
+                                              (= remote_content (-> remote_content `text))
+                                              (when options.on_load
+                                                 (try
+                                                    (= remote_content (-> options `on_load remote_content self))
+                                                    (catch Error (e)
+                                                       (progn
+                                                          (alert_box "Invalid Content"
+                                                                     (+ "Cannot mount content: " e.message))
+                                                          (= load_error true))))))
                                            (== remote_content.status 404)
                                            (progn
                                               (= remote_content "")
                                               (notify (+ "New file: " options.filename))
-                                              (= is_fresh true))
+                                              (= is_fresh true)
+                                              (when options.on_load
+                                                 (try
+                                                    (= remote_content (-> options `on_load nil self))
+                                                    (catch Error (e)
+                                                       (progn
+                                                          (alert_box "Invalid Content"
+                                                                     (+ "Cannot mount content: " e.message))
+                                                          (= load_error true))))))
                                            remote_content
                                            (throw EvalError (+ "Cannot fetch the path: " options.filename ": " remote_content.statusText))
                                            else
@@ -9267,13 +9640,16 @@
                                          (= root_elem document_view.children.0))))
                                options.content
                                (progn
-                                  (-> root_elem `replaceWith (if (is_element? options.content)
-                                                                 options.content
-                                                                 (eval options.content)))
-                                  (= root_elem document_view.children.0)))
-                            (set_name (cond 
+                                  (defvar tmp (if (is_element? options.content)
+                                                  options.content
+                                                  (eval options.content)))
+                                  (when (is_element? tmp)
+                                     (-> root_elem `replaceWith tmp)
+                                     (= root_elem document_view.children.0))))
+                            
+                            (set_name (cond
                                          (and (is_string? options.name)
-                                              (not (== "DOM Editor" options.name))) ;; 
+                                              (not (== "DOM Editor" options.name))) ;;
                                          options.name
                                          (is_array? options.path)
                                          (last options.path)
@@ -9299,14 +9675,27 @@
                             (if options.read_only
                                 (set_read_only true))
                             
-                            (set_attribute root_elem
-                               `tabindex 0)
+                            (attach_event_listener content_view
+                               `paste
+                               (fn (e)
+                                  (progc
+                                     (log "new paste event: " 
+                                        (object_methods e.clipboardData)
+                                        e.clipboardData.types)
+                                     (setTimeout (fn ()
+                                                    (check_for_unhandled_elements root_elem))
+                                                 50))))
+                                  
+                            
+                            (progc
+                               (set_attribute root_elem
+                                  `tabindex 0))
                             ;(set_style [["height" "100%"]] root_elem)
                             (set_style [["overflow" "hidden"] [ "height" "calc(100% - 2px);"]] view)
                             (if options.hide_control_bar
                                (-> self `show_control_bar false))
                             
-                           
+                            (check_for_unhandled_elements root_elem)
                             
                             (setTimeout (fn ()
                                            (progn

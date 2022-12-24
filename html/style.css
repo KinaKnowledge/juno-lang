@@ -2206,6 +2206,15 @@ input.juno-input-error {
    text-decoration: line-through;
 }
 
+.juno-shadow-on-hover {
+    border: 1px solid transparent;
+}
+
+.juno-shadow-on-hover:hover {
+    box-shadow: 2px 3px 8px 0px #00000040;
+    border-color: var(--main-accent-line-hover);
+}
+
 @keyframes slide-in {
     0% {
         margin-top:-6px;

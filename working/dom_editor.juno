@@ -124,7 +124,21 @@
         pos_node: selected_node
         selection: selection
         range: selrange
-        }))
+        })
+   {
+     `description: (div { contenteditable: "true"
+                          tabindex: "0" }
+                     (div {} "Given a reference to a placed DOM element, returns an object that contains the contextual details of the current cursor position and selection.")
+                     (div {} (h4 {} "Layout of Return Object"))
+                     (pre { style: "min-height: 2.4ch;" }
+                          (span { style: "font-size: 15.4px;" }
+                                "{ dom_path: path\n  position: position\n  pos_type: selected_node.nodeType\n  pos_node: selected_node\n  selection: selection\n  range: selrange\n}"))
+                     (div {} (br {})) (div {} (br {})))
+
+     `usage: ["element:Element"]
+     `tags: ["DOM" "UI" "editor"]
+
+   })
 
 (defun_sync select_node_at_point ()
    (let
@@ -224,7 +238,7 @@
                        true)
          exec: (fn (point ctl event)
                   (progn
-                     (notify (+ "Reloading Markdown Rules: " ctl.name))
+                     (notify (+ "Reloading Rules: " ctl.name))
                      (-> ctl `reload_rules)))
          
      }
@@ -498,7 +512,7 @@
                                (if options.read_only
                                   "RO"
                                   "")))
-    (status_elem (div { `style: "border-bottom: 1px solid var(--main-accent-line-hover); padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
+    (status_elem (div { `style: "max-height: 40px; overflow: auto; border-bottom: 1px solid var(--main-accent-line-hover); padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
                       position_elem
                       depth_elem
                       path_elem
@@ -612,7 +626,7 @@
                    (focus_to root_elem)
                    (when current_point
                       (move_to_point current_point)))))
-                      
+    
                
     (process_rules_for_event (fn (event)
                                 (let
@@ -774,7 +788,7 @@
                                   1000))
                                
                             (-> debug_elem `replaceChildren
-                               (pre (JSON.stringify (element_to_lisp root_elem) "\n" 2)))
+                               (pre (pretty_print (element_to_lisp root_elem))))
                             ))))
     (control_bar_elements [ locked_span ])
     (request_save (function ()
@@ -814,6 +828,23 @@
                        `innerText
                        options.name)
                     options.name)))
+    (check_for_unhandled_elements (fn (elem)
+                                     (let
+                                        ((elem_type nil))
+                                        (cond
+                                           (is_element? elem)
+                                           (progn
+                                              (= elem_type elem.tagName)
+                                              (cond
+                                                 (and (== elem_type "IMG")
+                                                      (not (get_attribute elem "_handled")))
+                                                 (progn
+                                                    (set_attribute elem "_handled" "true")
+                                                    (wrap_in_resizable elem))
+                                                 else
+                                                 (when (> elem.children.length 0)
+                                                    (for_each (c elem.children)
+                                                       (check_for_unhandled_elements c)))))))))
     (saved_content nil)
     (set_read_only (fn (read_only?)
                               (progn
@@ -835,6 +866,7 @@
                                              `contenteditable true)
                                           (-> root_elem `replaceWith (eval saved_content))
                                           (= root_elem document_view.children.0)
+                                          (check_for_unhandled_elements root_elem)
                                           (focus_to root_elem)
                                           ;(set_attribute root_elem `contenteditable true)
                                           (set_prop locked_span
@@ -842,7 +874,7 @@
                                              (dtext ""))))))))
     (error_state false)      
     (on_destroy (fn ()
-                                (progn
+                                                   (progn
                                    (cond
                                       is_dirty?
                                       (progn
@@ -859,6 +891,7 @@
                          (let
                             ((remote_content nil)
                              (is_fresh false)
+                             (load_error false)
                              (extension nil))
                             (cond
                                options.filename
@@ -868,12 +901,29 @@
                                         (= remote_content (fetch (+ "/files/" options.filename)))
                                         (cond
                                            (== remote_content.status 200)
-                                           (= remote_content (-> remote_content `text))
+                                           (progn
+                                              (= remote_content (-> remote_content `text))
+                                              (when options.on_load
+                                                 (try
+                                                    (= remote_content (-> options `on_load remote_content self))
+                                                    (catch Error (e)
+                                                       (progn
+                                                          (alert_box "Invalid Content"
+                                                                     (+ "Cannot mount content: " e.message))
+                                                          (= load_error true))))))
                                            (== remote_content.status 404)
                                            (progn
                                               (= remote_content "")
                                               (notify (+ "New file: " options.filename))
-                                              (= is_fresh true))
+                                              (= is_fresh true)
+                                              (when options.on_load
+                                                 (try
+                                                    (= remote_content (-> options `on_load nil self))
+                                                    (catch Error (e)
+                                                       (progn
+                                                          (alert_box "Invalid Content"
+                                                                     (+ "Cannot mount content: " e.message))
+                                                          (= load_error true))))))
                                            remote_content
                                            (throw EvalError (+ "Cannot fetch the path: " options.filename ": " remote_content.statusText))
                                            else
@@ -905,13 +955,16 @@
                                          (= root_elem document_view.children.0))))
                                options.content
                                (progn
-                                  (-> root_elem `replaceWith (if (is_element? options.content)
-                                                                 options.content
-                                                                 (eval options.content)))
-                                  (= root_elem document_view.children.0)))
-                            (set_name (cond 
+                                  (defvar tmp (if (is_element? options.content)
+                                                  options.content
+                                                  (eval options.content)))
+                                  (when (is_element? tmp)
+                                     (-> root_elem `replaceWith tmp)
+                                     (= root_elem document_view.children.0))))
+                            
+                            (set_name (cond
                                          (and (is_string? options.name)
-                                              (not (== "DOM Editor" options.name))) ;; 
+                                              (not (== "DOM Editor" options.name))) ;;
                                          options.name
                                          (is_array? options.path)
                                          (last options.path)
@@ -937,14 +990,27 @@
                             (if options.read_only
                                 (set_read_only true))
                             
-                            (set_attribute root_elem
-                               `tabindex 0)
+                            (attach_event_listener content_view
+                               `paste
+                               (fn (e)
+                                  (progc
+                                     (log "new paste event: " 
+                                        (object_methods e.clipboardData)
+                                        e.clipboardData.types)
+                                     (setTimeout (fn ()
+                                                    (check_for_unhandled_elements root_elem))
+                                                 50))))
+                                  
+                            
+                            (progc
+                               (set_attribute root_elem
+                                  `tabindex 0))
                             ;(set_style [["height" "100%"]] root_elem)
                             (set_style [["overflow" "hidden"] [ "height" "calc(100% - 2px);"]] view)
                             (if options.hide_control_bar
                                (-> self `show_control_bar false))
                             
-                           
+                            (check_for_unhandled_elements root_elem)
                             
                             (setTimeout (fn ()
                                            (progn
@@ -983,6 +1049,117 @@
                 [`get_root_element (fn () root_elem)]]
    })
 
+
+
+
+(defun wrap_in_resizable (elem)
+   (let
+      ((move_state nil)
+       (just_enable (== (get_attribute elem.parentElement "initializer") "wrap_in_resizable"))
+       (expander_elem (if just_enable
+                          elem.parentElement.children.1
+                          (div { `style: "position: absolute; right: 0px; bottom: -10px; width: 15px; height: 15px; cursor: nwse-resize; background: tranparent;" }
+                           "")))
+                          
+       (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
+       (dims nil)
+       (resize_mode false)
+       (elem_dims {
+           `width: elem.offsetWidth
+           `height: elem.offsetHeight
+       })
+       (initial_ratio (/ elem.offsetWidth elem.offsetHeight))
+       (max_dims {
+                  `width: 0
+                  `height: 0
+                  })
+       (body_element nil)
+       
+       (block_on (fn (e)
+                    (progn
+                       (= dims (-> frame `getBoundingClientRect))
+                       (= body_element (get_by_id "body"))
+                       (= max_dims {
+                                     `width: (prop body_element `offsetWidth)
+                                     `height: (prop body_element `offsetHeight) })
+                       (-> body_element `appendChild full_block)
+                       (= move_state {
+                                       mx: e.pageX
+                                       my: e.pageY
+                                       fx: dims.right
+                                       fy: dims.top
+                                       w: dims.width
+                                       h: dims.height
+                                       }))))
+       
+       (end_drag (fn (e)
+                    (progn
+                       (= move_state nil)
+                       (= resize_mode false)
+                       (if (is_function? elem.resize)
+                           (-> elem `resize))
+                       (-> full_block `remove))))       
+       (handle_drag (fn (e)
+                      (when (and move_state
+                                 (== e.buttons 1))
+                         (when resize_mode
+                            (set_style [["height" (+ "" (Math.min (- max_dims.height 30) (+ dims.height (- e.pageY move_state.my))) "px")]]
+                                       frame)
+                            (set_style [["width" (+ "" (* initial_ratio frame.offsetHeight) "px") ]] frame)
+                            (set_style [["height" (+ "" frame.offsetHeight "px")]
+                                        ["width" (+ "" frame.offsetWidth "px") ]] elem)
+                            ))))
+                                   
+       (frame (if just_enable
+                  elem.parentElement
+                  (div { `initializer: "wrap_in_resizable" `class: "juno-shadow-on-hover" `style: (+ "padding: 0px;position: relative; display: inline-block; border: 1px solid transparent; width:" elem_dims.width "px; height: " elem_dims.height "px;") }))))
+      
+     
+      (attach_event_listener expander_elem
+         `mousedown
+         (fn (e)
+            (progn
+               (= resize_mode true)
+               (block_on e))))
+      
+      
+      (attach_event_listener full_block
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mousemove
+                             handle_drag)
+      (attach_event_listener full_block
+                             `mousemove
+                             handle_drag)
+      
+      ;; if we have a control, initialize it if it needs it since it is 
+      ;; now mounted on the DOM
+      (set_style [["position" "relative"]
+                  ["display" "inline-block"]] frame)
+      (unless just_enable
+         (-> elem `replaceWith frame)
+         (-> frame `append elem)
+         (-> frame `append expander_elem))
+      true)
+   {
+     `description: (+ "<br><br>Given an element, will wrap it in a resizable element that preserves "
+                      "aspect ratio. The provided element will be replaced with the wrapped element.  "
+                      "The element will have a transparent handle on the lower right side that when "
+                      "hovered over, will indicate that the element can be resized.  ")
+
+       `usage: ["element:Element"]
+       `tags: ["DOM" "element" "UI" "resize" ]
+   })
+   
+(create_css_entry ".juno-shadow-on-hover:hover"
+   (from_style_text "box-shadow: 2px 3px 8px 0px #00000040;border-color: var(--main-accent-line-hover);"))      
+
+(create_css_entry ".juno-shadow-on-hover"
+   (from_style_text "border: 1px solid transparent;"))      
 
 
 (defun DOM_to_markdown (quoted_dom _acc _ctx)
@@ -1044,7 +1221,7 @@
                   (= acc [])
                   (push acc (+ "<br>" 
                                (join "" (for_each (r (range (int (-> tag `substr 3))))
-                                           "#"))))
+                                                                                      "#"))))
                   (process_children (rest quoted_dom))
                   (push acc "<br>")
                   (push higher_acc (join " " acc))
@@ -1079,5 +1256,20 @@
 (place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `filename: "working/looper.lisp" `hide_control_bar: false debug: true }))
 
 
+(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `path: [ `*dom_buf* ] `hide_control_bar: false debug: true }))
 
+(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `path: [ `*dom_buf* ] `hide_control_bar: false debug: true }))
 
+(defcontrol markdown_editor (options)
+   ((content nil)
+    (editor nil)
+    (load_content (fn (pathname)
+                     
+    (on_initialize (fn (self)
+                      (let
+                         ()
+                         (cond
+                            options.filename
+                            ()
+                         
+   

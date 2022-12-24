@@ -62,6 +62,10 @@
                             (evaluate_and_replace_at_point { `append: true }))
                    })
 
+
+
+
+
 (defun unpack_description (description options)
    (let
       ((header_size_lookup [nil h1 h2 h3 h4 h5 h6])
@@ -76,11 +80,14 @@
                       regex: (new RegExp "(^[`a-zA-Z\\(\\)0-9?_*\\-]+):([`*a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)")
                       exec: (fn (match_text tbl_row)
                                (progn
-                                  (when (not (blank? match_text))
-                                     (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
-                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
-                                          (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
-                                          (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} (process_regex tbl_row.3)))))) }
+                                  ;(log "table: " match_text)
+                                  (if options.edit_mode
+                                     [(+ tbl_row.1 ":" tbl_row.2 "-") (process_regex tbl_row.3)]
+                                     (when (not (blank? match_text))
+                                        (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
+                                             (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
+                                             (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
+                                             (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} (process_regex tbl_row.3))))))) }
                      { name: "header" 
                        regex: (new RegExp "^([#]{1,6})[ ]+(.+)")
                        exec: (fn (value full_regex_result)
@@ -112,9 +119,14 @@
                              (replacement nil)
                              (ctext text_section)
                              (idx ctext.length)
+                             (overlap_key nil)
+                             (overlap_struct nil)
                              (split_list [])
+                             (action_list [])
+                             (overlaps {})
                              (acc [])
                              (comps nil))
+                            ;(log "process_regex: -> " text_section)
                             (for_each (cmd regex_list)
                                (progn
                                   (= comps (scan_str cmd.regex ctext))
@@ -122,10 +134,40 @@
                                      (push split_list 
                                         { comp: comp
                                           pos: comp.index
+                                          length: comp.0.length
                                           cmd: cmd
                                            }))))
                             ;; now we have a list of the changes to be made to the text chunk 
-                            (= split_list (reverse (sort split_list { `key: [`pos] })))
+                            ;(log "split_list: " split_list)
+                            (for_each (r1 split_list)
+                               (for_each (r2 split_list)
+                                  (unless (== r1 r2)
+                                      (if (> r1.length r2.length)
+                                          (= overlap_struct [[r1.pos (+ r1.pos r1.length)] [r2.pos (+ r2.pos r2.length)]])
+                                          (= overlap_struct [[r2.pos (+ r2.pos r2.length)] [r1.pos (+ r1.pos r1.length)]]))
+                                      (unless (prop overlaps (as_lisp overlap_struct))
+                                         (when (apply range_overlap? overlap_struct)
+                                            (set_prop overlaps
+                                               (as_lisp overlap_struct)
+                                               { 
+                                                 parent: (if (> r1.length r2.length)
+                                                             r1
+                                                             r2)
+                                                 child: (if (> r1.length r2.length)
+                                                             r2
+                                                             r1)
+                                                 }))))))
+                            (= action_list (reduce (action split_list)
+                                              (progn
+                                                 (defvar remove false)
+                                                 (for_each (v (values overlaps))
+                                                    (if (and (== action.pos v.child.pos)
+                                                             (== action.length v.child.length))
+                                                       (= remove true)))
+                                                 (unless remove
+                                                    action))))
+                                              
+                            (= split_list (reverse (sort action_list { `key: [`pos] })))
                             (if (> split_list.length 0)
                                 (progn
                                    (for_each (action split_list)
@@ -138,18 +180,28 @@
                                          (= idx action.pos)))  ;; update our tail end
                                    ;; if we have any remaining text, push it in to the accumulator as it will have no edits
                                    (when (> idx 0)
+                                      ;(log "idx is greater than 0: " idx (-> ctext `substr 0 idx))
                                       (push acc (-> ctext `substr 0 idx))))
                                    (push acc text_section)) ;; nothing to update
                             (reverse acc))))
        (desc (progn
                 (defvar tmp (eval (or description "")))
-                (if (and (is_object? tmp)
-                         (not (is_array? tmp)))
-                    tmp.description
-                    tmp)))
+                (cond 
+                   (is_element? tmp)
+                   tmp
+                   (and (is_object? tmp)
+                        (not (is_array? tmp))
+                        (is_string? tmp.description))
+                   tmp.description
+                   (is_string? tmp)
+                   tmp
+                   else  ;; not for us
+                   tmp)))
        (rr (new RegExp "<-" `g))
        (subsections [])
-       (segments (split_by "```" (or desc "")))
+       (segments (if (is_string? desc)
+                     (split_by "```" desc)
+                     []))
        (table_section nil)
        (idx -1)
        (header_section nil)
@@ -157,20 +209,38 @@
        (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
        (current_seg 0)
        (total_segs (length segments)))
-      (div (+ { `class: "juno-editable" }
-               (if options.edit_mode
-                  { `contenteditable: true }
-                  {}))
-           (for_each (segment segments)
-              (progn
-                 (inc idx)
-                 (if (== 1 (% idx 2))
-                     (pre segment)
-                     (for_each (section (split_by "<br>" segment))
-                        (progn
-                           ;(log (hr))
-                           ;(log "unpack_description: section: " section)
-                           (div (process_regex section))))))))))
+      (if (is_string? desc)
+         (div (+ { `class: "juno-editable" }
+                 (if options.edit_mode
+                    { `contenteditable: true }
+                    {}))
+              (for_each (segment segments)
+                 (progn
+                    (inc idx)
+                    (if (== 1 (% idx 2))
+                        (pre segment)
+                        (for_each (section (split_by "<br>" segment))
+                           (progn
+                              ;(log (hr))
+                              ;(log "unpack_description: section: " section)
+                              (div (process_regex section))))))))
+         desc))
+   {
+     ;usage: ["text:string" "options:object"]
+     description: (+ "<br><br>Provided a text string as a primary argument, the function will convert "
+                     "the text content to a DOM element structure based on a set of default rules, or "
+                     "user provided rules.  A DOM element will be returned which can be placed in the "
+                     "DOM.<br><br>#### Options   <br><br>This function takes the following "
+                     "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
+                     "editable; a `contenteditable` attribute will be placed in element "
+                     "returned.<br>regex_list:array -If provided, each segment of text that is not "
+                     "allocated to a `PRE` element will be evaluated by the regex rules.  When a "
+                     "match is found, the associated exec function of the rule will be called with "
+                     "the form `(fn (value full_regex_result))` where the `value` is the matched text "
+                     "value, and the `full_regex_result` is the full returned regex structure from "
+                     "the `scan_str` function.  The return value of the function, typically an "
+                     "Element type will replace the matched text.    ")
+     })
   
  
     
@@ -195,7 +265,7 @@
                       "<br><br>---<br><br>  To view them in the REPL:  ``````<br> ")
  })
 
-(unpack_description_1 (prop *desctests* 2))
+(unpack_description (prop *desctests* 0))
 
      })
 
@@ -252,14 +322,34 @@
                    "cursor\'s position.<br>discard_nil_values:boolean - If true, a nil value "
                    "(undefined or nil) will not be placed into the editor\'s text.  Otherwise, if a "
                    "nil value is returned the user will be prompted to place the nil result in the "
-                   "buffer, or discard it.<br>evaluator:function - An optional \'evaluator\' function "
+                   "buffer, or discard it.<br>evaluator:function - An optional `evaluator` function "
                    "can be passed to be used as the evaluator instead of the controls default "
                    "evaluator.<br>as_json:boolean - If true, the result will be placed as formatted "
                    "JSON into the editor.  The default is to place the result in formatted Juno "
                    "notation.<br>my_opt:test - If this is true, then cool!<br>another_thing - "
                    "Yay!<br>#### Examples<br><br><br><br><br>```This is some fixed text.\nAnd some "
                    "more.\nAdditional formatted code.\n```<br><br><br><br><br><br><br><br><br><br>OK "
-                   "some regular text. <br>And were back with some more items  ")])
+                   "some regular text. <br>And were back with some more items  ")
+     (+ "<br><br>Provided a text string as a primary argument, the function will convert "
+                     "the text content to a DOM element structure based on a set of default rules, or "
+                     "user provided rules.  A DOM element will be returned which can be placed in the "
+                     "DOM.<br><br>#### Options   <br><br>This function takes the following "
+                     "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
+                     "editable; a `contenteditable` attribute will be placed in element "
+                     "returned.<br>regex_list:array -If provided, each segment of text that is not "
+                     "allocated to a `PRE` element will be evaluated by the regex rules.  When a "
+                     "match is found, the associated exec function of the rule will be called with "
+                     "the form `(fn (value full_regex_result))` where the `value` is the matched text "
+                     "value, and the `full_regex_result` is the full returned regex structure from "
+                     "the `scan_str` function.  The return value of the function, typically an "
+                     "Element type will replace the matched text.    ")
+     (+ "<br><br>Provided a text string as a primary argument, the function will convert "
+                     "the text content to a DOM element structure based on a set of default rules, or "
+                     "user provided rules.  A DOM element will be returned which can be placed in the "
+                     "DOM.<br><br>#### Options   <br><br>This function takes the following "
+                     "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
+                     "editable; a `contenteditable` attribute will be placed in element "
+                     "returned.")])
      
 (defun new_buffer (options)
   (let
@@ -289,7 +379,7 @@
        (target_ns symbol_data.namespace)
        (target_env nil))
       (log "new_buffer: for: " options target_ns extension symbol_data)
-      
+     
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
     (when (and target_env (not (resolve_path symbol_data.path target_env.global_ctx.scope)))
@@ -305,8 +395,12 @@
                                        (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options) )))
          else
          (swap_control target_container 
-                       (if (== extension `dom)
-                           (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                       (cond 
+                          (== extension `dom)
+                          (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                          ;(== extesion `md)
+                          ;(mark_dow)
+                          else
                            (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options )))))))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
@@ -407,89 +501,7 @@
        `tags: ["DOM" "ui" "file" "edit" "open"]
    })
 
-(defun unpack_description_old (description options)
-   (let
-      ((table_regex (new RegExp "(^[a-zA-Z\\(\\)0-9?_*\\-]+):([*a-z\\(\\) A-Z0-9]+)[ ]*-[ ]*(.+)"))
-       (header_regex (new RegExp "^([#]{1,6})[ ]+(.+)"))
-       (desc (progn
-                (defvar tmp (eval (or description "")))
-                (if (and (is_object? tmp)
-                         (not (is_array? tmp)))
-                    tmp.description
-                    tmp)))
-       (rr (new RegExp "<-" `g))
-       (subsections [])
-       (segments (split_by "<br>" (or desc "")))
-       (table_section nil)
-       (header_section nil)
-       (header_tag nil)
-       (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
-       (current_seg 0)
-       (total_segs (length segments)))
-       (for_each (seg segments)
-          (progn
-             (inc current_seg)
-             (when (is_string? seg)
-                (= seg (replace rr "\\u{279C}"  seg))
-                (map (fn (comp i)
-                        (if (== 1 (% i 2))
-                            ;; this is when we are in pre section
-                            (push subsections
-                               (if options.wrap_fn
-                                  (try
-                                     (progn
-                                        (-> options `wrap_fn comp current_seg total_segs))
-                                     (catch Error (e)
-                                        (pre "Error in wrap_fn call 1: " e.message)))
-                                  (pre comp)))
-                            (progn
-                               ;; do any replacements/wrapping here 
-                               (push subsections
-                                  (if options.wrap_fn
-                                     (try
-                                        (-> options `wrap_fn comp current_seg total_segs)
-                                        (catch Error (e)
-                                           (p "Error in wrap_fn call 2: " e.message)))
-                                     (progn
-                                        
-                                        (cond
-                                           (and (not options.edit_mode)
-                                                (progn
-                                                   (= table_section (scan_str table_regex comp))
-                                                   (> (length table_section) 0)))
-                                           (for_each (tbl_row table_section)
-                                              (div { `style: "display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 1px solid var(--main-accent-line);" }
-                                                   (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.1)
-                                                   (div { `style: "align-self: flex-start; font-weight: bold; padding: 5px; flex-grow: 0; flex-basis: 100px;" } tbl_row.2)
-                                                   (div { `style: "align-self: flex-start; padding: 5px; flex-grow: 1; flex-basis: 400px;"} tbl_row.3)))
-                                           (== comp "---")
-                                           (progn
-                                              (hr))
-                                           (progn
-                                              (= header_section (scan_str header_regex comp))
-                                              (> (length header_section) 0))
-                                           (progn
-                                              (= header_section (first header_section)) ;; pull it out of the array to make it easier to work with
-                                              (= header_tag (or (prop header_size_lookup (length (prop header_section 1)))
-                                                                "h5"))
-                                              (header_tag
-                                                 (prop header_section `2)))
-                                           
-                                           (not (blank? comp))
-                                           (p comp)
-                                           else
-                                           [])))))))
-                     (split_by "```" seg)))))
-       (div (+ { `class: "juno-editable" }
-               (if options.edit_mode
-                  { `contenteditable: true }
-                  {}))
-          subsections))
-    {
-       `usage: ["description:text"]
-       `description: "Given a marked up description text, builds the output format for the browser."
-       `tags: [ `usage `help `assist `formatted `markup ]
-   })
+
 
 (defun wait_for_editor (content)
    (if (get_control_by_name "Description Editor")
@@ -2122,39 +2134,108 @@
                       "markup capabilities.  Additionally, key sequences can be used either in the "
                       "scope of the editor, or via global scope.  It can adapt well to being a "
                       "sub-control, and has a large number of options to enable higher fidelity "
-                      "between serialization and deserialization cycles.   <br><br>---<br><br> This "
-                      "control serves as a wrapper around a third party library, the Ace Editor.  The "
-                      "control abstracts certain Ace editor functionality as part of the control\'s "
-                      "interface. <br><br>#### Ace Editor   <br><br>  The underlying text editor "
-                      "library used for this control is the Ace Editor.  The documentation for this "
-                      "library is available here:  https://ace.c9.io/.  Certain underlying functions "
-                      "have been elevated and exposed at the top level control interface for purposes "
-                      "of the design and implementation of the text_editor control.  Direct access to "
-                      "the Ace editor instance and its functionality is via the `editor` key in the "
-                      "control\'s interface. Since this control uses a third party library underneath, "
-                      "any underlying state not captured directly in the controls options object will "
-                      "be lost when serialized.  A project objective is to build out the interface for "
+                      "between serialization and deserialization cycles.   <br><br>#### Example Usage "
+                      "<br>```(text_editor \n   { mode: `juno\n     on_change: (function (editor val)\n  "
+                      "            (progn\n                      (log (+ (control_name editor) \": "
+                      "change: \" val))))\n     name: \"Test Editor\"\n     evaluator_id: (control_id "
+                      "*system_repl*)\n     on_initialized: (fn (control)\n                      (notify "
+                      "(+ (control_name control) \": initialized!\")))\n   })```<br><br><br>---<br><br> "
+                      "This control serves as a wrapper around a third party library, the Ace Editor.  "
+                      "The control abstracts certain Ace editor functionality as part of the control\'s "
+                      "interface. <br><br>#### Ace Editor            <br><br>  The underlying text "
+                      "editor library used for this control is the BSD licensed Ace Editor.  The "
+                      "documentation for this library is available here: "
+                      "https://github.com/ajaxorg/ace.  Certain underlying functions have been "
+                      "elevated and exposed at the top level control interface for purposes of the "
+                      "design and implementation of the text_editor control.  Direct access to the Ace "
+                      "editor instance and its functionality is via the `editor` key in the control\'s "
+                      "interface. Since this control uses a third party library underneath, any "
+                      "underlying state not captured directly in the controls options object will be "
+                      "lost when serialized.  A project objective is to build out the interface for "
                       "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
                       "functionality should be expected to be able to save state and restore, unless "
-                      "otherwise noted.<br><br>#### Modes <br><br> The editor operates in a \"mode\", "
-                      "which allows for specific behaviors relevant for the type and purpose of the "
-                      "content being edited.  There are several modes that are prebuilt into the "
-                      "editor: Juno/Lisp, Javascript, CSS, and plain text.  Additional modes can be "
-                      "constructed and made available to the environment that then can be utilized by "
-                      "the text_editor control.  Modes can be selected at creation time and during "
-                      "run-time.    The mode is indicated visually by the \"Current Editing Mode\" title "
-                      "bar text, located to the far right on the default title bar.  The  `(get_mode)` "
-                      " function can be used in the control\'s interface, which is called with zero "
-                      "arguments.    <br> The mode can be changed by the user in the control\'s command "
-                      "menu, where the user can select via the Set Edit Mode sub menu.   The Controls "
-                      "interface exposes the  `set_mode`  function, where a string that is equal to "
-                      "the mode name is given as an argument.  The names of the built-in modes are as "
-                      "follows: ```[ `juno `javascript `text `css `json ]```<br><br> Each element in "
-                      "the array can be used to supply `set_mode`.  Presently, the only custom mode is "
-                      "Juno, which calls back into the Lisp environment for context <br><br>### Launch "
-                      "Options   <br><br>Options provided to the function allow for modification of "
-                      "behaviors and specific functionality to be enabled or disabled at the time of "
-                      "the controls creation.  ")
+                      "otherwise noted.<br><br>#### Modes            <br><br> The editor can be set to "
+                      "operate in a certain \"mode\" state. Changing the editing mode enables certain "
+                      "functionalities to be \"turned on\", and which is specifically relevant for the "
+                      "type and purpose of the content being edited.  There are several modes that are "
+                      "prebuilt into the editor: Juno/Lisp, Javascript, CSS, and plain text.  Each of "
+                      "these modes provide specific features such as syntax highlighting, suggestion "
+                      "rules, and active formatting rules. <br>Modes can be selected at creation time "
+                      "and during run-time.    The mode is indicated visually by the \"Current Editing "
+                      "Mode\" title bar text, located to the far right on the default title bar.  The  "
+                      "`(get_mode)`  function can be used in the control\'s interface, which is called "
+                      "with zero arguments.    <br> The mode can be changed by the user in the "
+                      "control\'s command menu, where the user can select via the Set Edit Mode sub "
+                      "menu.   The Controls interface exposes the  `set_mode`  function, where a "
+                      "string that is equal to the mode name is given as an argument.  The names of "
+                      "the built-in modes are as follows: ```[ `juno `javascript `text `css `json "
+                      "]```<br><br> Each element in the array can be used to "
+                      "supply `set_mode`.  <br>Additional modes can be constructed and made available "
+                      "to the environment that then can be utilized by the text_editor "
+                      "control. Presently, the only custom mode is `juno`, which calls back into the "
+                      "Lisp environment for context.   The other modes are standard ACE editor modes "
+                      "for their respective content type.  In this environments file structure, mode "
+                      "files are found named `js_lib/mode-*`, where all relevant mode-code is found "
+                      "with the \"mode-\" prefix.   <br>Mode details can be found on the Ace website, "
+                      "https://ace.c9.io/.  <br><br>#### Split Panels         <br><br>Editors can be "
+                      "split into multiple views of the same content.  Changes to the content are "
+                      "propagated to each view, which is linked to the same content.  This means that "
+                      "all changes in one will be reflected in the other editor.  Cursor positions and "
+                      "display area can be independent to allow for simultaneous editing of a single "
+                      "file in multiple panels.   The mechanism by which this occurs is a shared "
+                      "underlying Ace  `Session`  instance.  There are some special characteristics of "
+                      "the multi-pane mode.<br>When there are multiple panels open to the same editor, "
+                      "and one of the editor panels is hidden, it will not be stored in the holding "
+                      "tank, and will be disposed.  Like other controls, when there is only one "
+                      "instance open, the control will behave in the standard form.  When hidden, the "
+                      "control will be stored, not destroyed.  <br>Additionally, in the multiple-panel "
+                      "mode, if the buffer is unsaved, the closing control will not ask if you want to "
+                      "save the content, but will instead close.  Once the final view into the content "
+                      "is reached, and the editor contained unsaved material, the user will be "
+                      "prompted if they want to save or store the contents of the editor.<br>The "
+                      "interface command `split_window` allows for programmatic control over this "
+                      "functionality.  <br><br>### Launch Options              <br><br>Options "
+                      "provided to the function allow for modification of behaviors and specific "
+                      "functionality to be enabled or disabled at the time of the controls creation.  "
+                      " The anything placed in the options object will be serialized when the "
+                      "environment is saved, and so it is important to make sure that values must be "
+                      "able to represent themselves in JSON form.   <br>clone_with_editor_id:string - "
+                      "When present, the created editor instance will share an editing session with "
+                      "the editor with the given id.  The given editor must be a text_editor "
+                      "control.   <br>mode:string - Specifies which mode the editor should start in.  "
+                      "For this to take effect, the mode must be a defined Ace editor mode (see Modes "
+                      "above).  If not provided, the mode is determined by the filename if "
+                      "possible.<br>on_mode_set:function - If present, this function is called with "
+                      "the mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string - "
+                      "Specifies the specific ID of the editor.  This is generally not required, since "
+                      "controls should establish their own IDs, except when being rehydrated, they "
+                      "will need to keep the ID they had prior to serialization.<br>namespace:string - "
+                      "Specifies the namespace that the buffer should operate in, and reference.  If "
+                      "not specified, the current namespace is used.  This is necessary if the path "
+                      "being edited is in a different namespace than the current evaluation "
+                      "namespace.<br>read_only:boolean - If specified as true, the buffer will start "
+                      "in read only mode, and will not allow changes to the editor\'s "
+                      "content,.<br>control_bar:Element - When specified, uses the element provided "
+                      "with this option as the control bar as opposed to the default control "
+                      "bar.  <br>on_theme_set:function - If present, this function will be called with "
+                      "the new theme name when a new editor theme is set. <br>overscroll:boolean - If "
+                      "true, the editor view will scroll past the final line, allowing for the final "
+                      "line to be displayed in the middle regions of the view.   The default is true, "
+                      "and this options must be explicitly set to false to disable.<br>filename:string "
+                      "- When present, the remote file is retrieved via fetch.  The filename should "
+                      "contains the relative path of the file under the root directory of the served "
+                      "content.  The URL constructed to get the file is /files/filename where filename "
+                      "is a path, such as /src/repl.lisp.  In this example, the final URL requested "
+                      "would be of the form: `/files/src/repl.lisp`.  This option is meant to be used "
+                      "in with `server_env.juno` package, which provides the HTTP-based services used "
+                      "to facilitate editing the file tree of the environment.  If the path and the "
+                      "filename are both provided in options. the filename is checked prior to the "
+                      "path.  If this option is present, the path is is set by splitting the filename "
+                      "by \"/\" and prepending the `filesystem symbol such that the "
+                      "path `/src/repl.lisp` will set a path of `[ \"filesystem\" \"src\" \"repl.lisp\" "
+                      "]`.  <br><br> ")
+
+
      })
   
 (defun select_evaluator ()
