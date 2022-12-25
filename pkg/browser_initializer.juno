@@ -6000,69 +6000,71 @@
        (repl_ws nil)
        (request_id 0)
        (requests {})
-       (open_remote_evaluator (fn ()
-                                 (if options.remote_repl
-                                    (progn
-                                       (= repl_ws
-                                          (http/create_websocket options.remote_repl
-                                                            {
-                                                              `on_message: (fn (event)
-                                                                             (try
-                                                                                (let
-                                                                                   ((data nil)
-                                                                                    (pdata nil)
-                                                                                    (resolver nil))
-                                                                                   
-                                                                                   (try 
-                                                                                      (= data (JSON.parse event.data))
-                                                                                      (catch Error (e)
-                                                                                         (progn
-                                                                                            (clog "Unable to parse json data: " e.message)
-                                                                                            (= data event.data))))
-                                                                                   ;(clog "<-" event.data)
-                                                                                   (cond
-                                                                                      (and (is_object? data)
-                                                                                           data.req_id)
-                                                                                      (progn
-                                                                                         (if (prop requests data.req_id)
-                                                                                             (progn
-                                                                                                (= pdata (prop requests data.req_id))
-                                                                                                (remove_prop requests data.req_id)
-                                                                                                (clearTimeout (third pdata)) ;; remove the timeout
-                                                                                                (if (== data.rval "OK")
-                                                                                                    (progn
-                                                                                                       (= resolver (first pdata))
-                                                                                                       (resolver data nil))
-                                                                                                    (progn
-                                                                                                       (= resolver (first pdata)) ;; we will resolve the promise and handle the error in our remote eval result function.
-                                                                                                       (resolver data true))))
-                                                                                             (progn
-                                                                                                ;; received a request but it is not tied to a request we made, could be a log message
-                                                                                                (if (== data.rval "OK")
-                                                                                                    (clog data.result)
-                                                                                                    (clog data.message)))))
-                                                                                      (and (is_object? data)
-                                                                                           data.result)
-                                                                                      (clog "[message]:" data.result)
-                                                                                      else
-                                                                                      (clog data)))
-                                                                                (catch Error (e)
-                                                                                   (clog "Unable to process received message: " e.message))))
-                                                              `on_open: (fn (event)
-                                                                           (progn
-                                                                              (clog (+ "Connected to Remote REPL: " options.remote_repl))
-                                                                              (try 
-                                                                                 (set_prop location_span
-                                                                                    `innerText (prop (send_wait "(hostname)") `result))
-                                                                                 (catch Error (e)
-                                                                                    (clog "Unable to determine remote hostname: " e)))))
-                                                              `on_close: (fn (event)
-                                                                            (clog "Interface is now closed"))
-                                                              `on_error: (fn (event)
-                                                                            (clog "Error on WS:" event))
-                                                            }))
-                                       (defglobal *repl_ws* repl_ws)
-                                       ))))
+       (open_remote_evaluator 
+          (fn ()
+             (if options.remote_repl
+                (progn
+                   (= repl_ws
+                      (http/create_websocket
+                         options.remote_repl
+                         {
+                           `on_message: (fn (event)
+                                           (try
+                                              (let
+                                                 ((data nil)
+                                                  (pdata nil)
+                                                  (resolver nil))
+                                                 
+                                                 (try
+                                                    (= data (JSON.parse event.data))
+                                                    (catch Error (e)
+                                                       (progn
+                                                          (clog "Unable to parse json data: " e.message)
+                                                          (= data event.data))))
+                                                 ;(clog "<-" event.data)
+                                                 (cond
+                                                    (and (is_object? data)
+                                                         data.req_id)
+                                                    (progn
+                                                       (if (prop requests data.req_id)
+                                                           (progn
+                                                              (= pdata (prop requests data.req_id))
+                                                              (remove_prop requests data.req_id)
+                                                              (clearTimeout (third pdata)) ;; remove the timeout
+                                                              (if (== data.rval "OK")
+                                                                  (progn
+                                                                     (= resolver (first pdata))
+                                                                     (resolver data nil))
+                                                                  (progn
+                                                                     (= resolver (first pdata)) ;; we will resolve the promise and handle the error in our remote eval result function.
+                                                                     (resolver data true))))
+                                                           (progn
+                                                              ;; received a request but it is not tied to a request we made, could be a log message
+                                                              (if (== data.rval "OK")
+                                                                  (clog data.result)
+                                                                  (clog data.message)))))
+                                                    (and (is_object? data)
+                                                         data.result)
+                                                    (clog "[message]:" data.result)
+                                                    else
+                                                    (clog data)))
+                                              (catch Error (e)
+                                                 (clog "Unable to process received message: " e.message))))
+                           `on_open: (fn (event)
+                                        (progn
+                                           (clog (+ "Connected to Remote REPL: " options.remote_repl))
+                                           (try
+                                              (set_prop location_span
+                                                 `innerText (prop (send_wait "(hostname)") `result))
+                                              (catch Error (e)
+                                                 (clog "Unable to determine remote hostname: " e)))))
+                           `on_close: (fn (event)
+                                         (clog "Interface is now closed"))
+                           `on_error: (fn (event)
+                                         (clog "Error on WS:" event))
+                           }))
+                   (defglobal *repl_ws* repl_ws)
+                   ))))
        (send_wait (fn (lisp_text)
                      (let
                         ((rval nil))
@@ -6142,18 +6144,21 @@
                                      (= error_state true)
                                      (when e.message
                                         (notify (+ "Error: " e.message))))))
-                            (console.log "remote: <-" result)
-                            (cond 
-                               (== display_mode "juno")
-                               (= result (pre (pretty_print result)))
-                               (== display_mode "JSON")
-                               (= result (pre (JSON.stringify result nil 2))))
+                            ;(console.log "remote: <-" result)
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
                                   (or result.namespace "Unknown!")))
+                            (cond 
+                               (== display_mode "juno")
+                               (= result (pre (pretty_print (process_remote_eval_result result))))
+                               (== display_mode "json")
+                               (= result (pre (JSON.stringify (process_remote_eval_result result) nil 2)))
+                               else
+                               (= result (process_remote_eval_result result)))
+                            
                             (unless no_log
-                               (-> output_control `append (process_remote_eval_result result) lisp_text error_state))
+                               (-> output_control `append result lisp_text error_state))
                             (if (and (not error_state)
                                      (not no_log)
                                      (not no_clear))
@@ -6174,7 +6179,7 @@
                             (cond 
                                (== display_mode "juno")
                                (= result (pre (pretty_print result)))
-                               (== display_mode "JSON")
+                               (== display_mode "json")
                                (= result (pre (JSON.stringify result nil 2))))
                             (set_prop namespace_span
                                `innerText
