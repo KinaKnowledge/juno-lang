@@ -7951,10 +7951,12 @@
                              search_bar_elem
                              search_view
                              definition_view))
-    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 15px); width: calc(100% - 10px); overflow: hidden;" } 
+    (content_view (div { `class: "juno-log-output" `style: "padding: 5px;height: calc(100% - 35px); width: calc(100% - 10px); overflow: hidden;" } 
                    upper_content_view))
-    (view (div { `class: "juno-log-output" `style: "padding: 5px; width: calc(100% - 20px); overflow: hidden;"} 
-          content_view))
+    (on_resize (fn (self)
+                  (progn
+                     (defvar bh search_bar_elem.offsetHeight)
+                     (set_style [["height" (+ "calc(100% - " bh "px") ]] content_view))))
     (name "Juno Documentation")
     (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } (dtext "Documentation")))
     (pin_button (button { } (dtext "Pin")))
