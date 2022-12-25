@@ -128,6 +128,8 @@
     })
 
 
+
+                
 (defun serve_using_handler (server handler options)
    (let
       ((state (+ { `run_server: true `request_count: 0 }
@@ -144,50 +146,60 @@
                                (== command "status")
                                (clone state)
                                else
-                               (clone state)))))
+                               (clone state))))
+       (handle_connection (fn (connection)
+                             (new Promise (fn (resolve)
+                                             (progn
+                                                (log "handle_connection: new connection")
+                                                (resolve true)
+                                                (try
+                                                   (handler connection state)
+                                                   (catch Error (e)
+                                                      (progn
+                                                         (if options.on_error
+                                                            (options.on_error server connection state)
+                                                            nil))))))))))
+      
       (new Promise
-           (fn (resolve)
-              (progn
-                 (resolve control_function)
-                 (try
-                    (while state.run_server
-                       (for_with (connection server)
-                          (no_await
-                             (try
-                                (handler connection state)
-                                (catch Error (e)
-                                   (progn
-                                      (if options.on_error
-                                         (options.on_error server connection state)
-                                         nil)))))))
-                    (catch Error (e)
-                       (if (== state.run_server false)
-                           true ;; expected
-                           (progn
-                              (if options.on_connection_error
-                                 (-> options `on_connection_error e)
-                                 (console.error (formatted_date (new Date)) " serve_using_handler: error: " e)))))))))) ;; otherwise this is a real error to deal with
+         (fn (resolve)
+            (progn
+               (resolve control_function)
+               (let
+                  ((connection nil))
+                  (while state.run_server
+                     (try
+                        (progn
+                           (= connection (-> server `accept))
+                           (handle_connection connection))
+                        (catch Error (e)
+                           (if (== state.run_server false)
+                               true ;; expected
+                               (progn
+                                  (if options.on_connection_error
+                                     (-> options `on_connection_error e)
+                                     (console.error (formatted_date (new Date)) " serve_using_handler: error: " e))))))))))))
+   
    {
-       description: (+ "Given a Listener object, a handler function (see default_handler) "
-                       "and an optional options object, sets up service controller for "
-                       "the provided handler.  A control_function is returned, which can "
-                       "be used to command the state of the service handler.  The control "
-                       "function takes a single command string:<br>"
-                       "stop:string - stops the listener and turns off the server. "
-                       "status - returns a status object representing the state of the "
-                       "operation of the service.  If the status function is "
-                       "called without an argument, the current state is returned. <br><br>"
-                       "The serve_using_handler function returns a control function immediately " 
-                       "but the service will be running using the handler in a yield loop "
-                       "for new requests.  Options: <br>"
-                       "on_response:function - A function called with the request_event and " 
-                       "response_object for logging purposes: (on_response request_event response_event). <br>"
-                       "on_error:function: A function called when an error is encountered that ")
-       usage: ["server:Listener" "handler:function" "options:object"]
-       tags: ["server" "http" "network" "io"]
-   })
-                
-                       
+     description: (+ "Given a Listener object, a handler function (see default_handler) "
+                     "and an optional options object, sets up service controller for "
+                     "the provided handler.  A control_function is returned, which can "
+                     "be used to command the state of the service handler.  The control "
+                     "function takes a single command string:<br>"
+                     "stop:string - stops the listener and turns off the server. "
+                     "status - returns a status object representing the state of the "
+                     "operation of the service.  If the status function is "
+                     "called without an argument, the current state is returned. <br><br>"
+                     "The serve_using_handler function returns a control function immediately "
+                     "but the service will be running using the handler in a yield loop "
+                     "for new requests.  Options: <br>"
+                     "on_response:function - A function called with the request_event and "
+                     "response_object for logging purposes: (on_response request_event response_event). <br>"
+                     "on_error:function: A function called when an error is encountered that ")
+     usage: ["server:Listener" "handler:function" "options:object"]
+     tags: ["server" "http" "network" "io"]
+     })
+
+                   
 (defun find_matching_route (method pathname)
    (if (and (is_string? method)
             (is_string? pathname))
@@ -892,6 +904,8 @@
    (env_bank (or options.port 56432)
              (or options.base_directory "./")
              options)))
+
+
 
 
 (register_feature "http_server")
