@@ -3182,8 +3182,8 @@ such as things that connect or use environmental resources.
                (throw "nill namespace provided to use_symbols"))
        (nspace_handle nil)
        (decs nil))
-    (assert (is_string? nspace))
-    (assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
+    ;(assert (is_string? nspace))
+    ;(assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
     (setq nspace_handle
           (-> Environment `get_namespace_handle nspace))
     

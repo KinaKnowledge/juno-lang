@@ -7104,12 +7104,15 @@
                   | )
       true))
 
+
+
+
 (defun next_hidden_control (backward?)
    (let
       ((candidates (holding_tank_controls))
        (cmd (if backward? 
-                first
-                last))
+                last
+                first))
        (new_ctl nil))
    (if (> candidates.length 0)
       (progn 

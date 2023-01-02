@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2023-01-02 07:56:22
-// Version: 2023.01.02.07.56
-export const DLISP_ENV_VERSION='2023.01.02.07.56';
+// Build Time: 2023-01-02 12:05:00
+// Version: 2023.01.02.12.05
+export const DLISP_ENV_VERSION='2023.01.02.12.05';
 
 
 
@@ -3485,7 +3485,7 @@ export async function init_dlisp(Environment)  {
 },"max_index":{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"source_name":"core.lisp"
 },"hostname":{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"source_name":"core.lisp"
 },"use_symbols":{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","assert","is_array?","push","current_namespace"],"source_name":"core.lisp"
+},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","push","current_namespace"],"source_name":"core.lisp"
 },"use_unique_symbols":{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","length"],"source_name":"core.lisp"
 },"decomp_symbol":{ "name":"decomp_symbol","fn_args":"(quoted_sym)","requires":["split_by","first","each","describe"],"source_name":"core.lisp"
 },"sort_dependencies":{ "name":"sort_dependencies","fn_args":"[]","requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces","contains?"],"source_name":"core.lisp"
@@ -3541,7 +3541,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.02.07.56",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.02.12.04",imports:await ( async function(){
         let __obj__283=new Object();
         __obj__283["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5196,7 +5196,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.02.07.56",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.02.12.04",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -10514,8 +10514,6 @@ export async function init_dlisp(Environment)  {
     })();
     nspace_handle=null;
     decs=null;
-    await (await Environment.get_global("assert"))((nspace instanceof String || typeof nspace==='string'));
-    await (await Environment.get_global("assert"))((symbol_list instanceof Array),"invalid symbol list provided to use_symbols");
     nspace_handle=await Environment["get_namespace_handle"].call(Environment,nspace);
     await (async function() {
         let __for_body__255=async function(sym) {
@@ -10710,16 +10708,16 @@ export async function init_dlisp(Environment)  {
                                     return await (async function() {
                                         let __for_body__271=async function(req) {
                                             {
-                                                let _expr_95445;
+                                                let _expr_38498;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_95445=await (async function(){
+                                                _expr_38498=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_95445 && _expr_95445["0"]);
-                                                req_ns=(_expr_95445 && _expr_95445["1"]);
-                                                explicit=(_expr_95445 && _expr_95445["2"]);
+                                                req_sym=(_expr_38498 && _expr_38498["0"]);
+                                                req_ns=(_expr_38498 && _expr_38498["1"]);
+                                                explicit=(_expr_38498 && _expr_38498["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10822,13 +10820,13 @@ export async function init_dlisp(Environment)  {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_3124;
+                    let _expr_64270;
                     let nspace;
-                    _expr_3124=await (async function(){
+                    _expr_64270=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_3124 && _expr_3124["0"]);
-                    nspace=(_expr_3124 && _expr_3124["1"]);
+                    sym=(_expr_64270 && _expr_64270["0"]);
+                    nspace=(_expr_64270 && _expr_64270["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

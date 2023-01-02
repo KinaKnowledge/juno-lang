@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-02 07:56:13
-// Version: 2023.01.02.07.56
-export const DLISP_ENV_VERSION='2023.01.02.07.56';
+// Build Time: 2023-01-02 12:04:51
+// Version: 2023.01.02.12.04
+export const DLISP_ENV_VERSION='2023.01.02.12.04';
 
 
 
@@ -3758,8 +3758,6 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
     })();
     nspace_handle=null;
     decs=null;
-    await (await Environment.get_global("assert"))((nspace instanceof String || typeof nspace==='string'));
-    await (await Environment.get_global("assert"))((symbol_list instanceof Array),"invalid symbol list provided to use_symbols");
     nspace_handle=await Environment["get_namespace_handle"].call(Environment,nspace);
     await (async function() {
         let __for_body__255=async function(sym) {
@@ -3845,7 +3843,7 @@ await Environment.set_global("use_symbols",async function(namespace,symbol_list,
     })();
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","assert","is_array?","push","current_namespace"],"source_name":"core.lisp"
+},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","push","current_namespace"],"source_name":"core.lisp"
 });
 await Environment.set_global("use_unique_symbols",async function(namespace) {
     if (check_true ((namespace instanceof String || typeof namespace==='string'))){
@@ -3961,16 +3959,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__271=async function(req) {
                                             {
-                                                let _expr_95445;
+                                                let _expr_38498;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_95445=await (async function(){
+                                                _expr_38498=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_95445 && _expr_95445["0"]);
-                                                req_ns=(_expr_95445 && _expr_95445["1"]);
-                                                explicit=(_expr_95445 && _expr_95445["2"]);
+                                                req_sym=(_expr_38498 && _expr_38498["0"]);
+                                                req_ns=(_expr_38498 && _expr_38498["1"]);
+                                                explicit=(_expr_38498 && _expr_38498["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4073,13 +4071,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_3124;
+                    let _expr_64270;
                     let nspace;
-                    _expr_3124=await (async function(){
+                    _expr_64270=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_3124 && _expr_3124["0"]);
-                    nspace=(_expr_3124 && _expr_3124["1"]);
+                    sym=(_expr_64270 && _expr_64270["0"]);
+                    nspace=(_expr_64270 && _expr_64270["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

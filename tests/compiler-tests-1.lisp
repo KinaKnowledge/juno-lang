@@ -284,7 +284,7 @@
      ]
  ["(defconst my_constant 123) (describe `my_constant)"
   []
-  `{"namespace":"tests" "name":"my_constant" "type":"Number" "constant":true}
+  `{"namespace":"tests" "name":"my_constant" "type":"Number" requires:[] source_name:"anonymous" "constant":true}
   "global constant definition is mark as a constant" ]
  ["(undefine `my_constant) (defconst my_constant 123) (undefine `my_constant) (describe `my_constant)"
   []
@@ -1120,7 +1120,7 @@
                 {`eval_when:{ `compile_time: true }})
             (describe `when2))"
     []
-    `{"namespace":"tests" "name":"when2" "type":"AsyncFunction" "eval_when":{"compile_time":true}}
+    `{"namespace":"tests" "name":"when2" "type":"AsyncFunction" "eval_when":{"compile_time":true} "source_name":"anonymous"}
     "register compile time function"
     ]
     [ "(when2 (> 4 0) \"positive number\")"
@@ -2204,7 +2204,7 @@
   "defconst in local scope creates a const allocation."]
  [ "(compile `(progn (defconst my_new_constant 123)))"
   []
-  "{return await Environment.set_global(\"my_new_constant\",123,null,true)}"
+  "{return await Environment.set_global(\"my_new_constant\",123,{requires:[],source_name:\"anonymous\"},true)}"
   "defconst in top-level progn compiles to set global scope"]
   [ "(contains? \"defun\" (progn (declare (namespace core)) (keys Environment.context.scope)))"
   []
@@ -2391,7 +2391,7 @@
   []
   { abc: 123 }
   "object literal in try"]
-  ["(progn (defun tglobmark () \   (let \       ((is_fa? (fn (v) \                  (== v 1)))) \     (is_fa? 1))) (blank? (prop (describe `tglobmark) `requires)))"
+  ["(progn (defun tglobmark () \   (let \       ((is_fa? (fn (v) \                  (== v 1)))) \     (is_fa? 1))) (== 0 (length (prop (describe `tglobmark) `requires))))"
   []
   true
   "ensure symbols with invalid js are not marked as global dependencies by the compiler"]
