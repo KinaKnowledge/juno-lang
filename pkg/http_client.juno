@@ -312,16 +312,24 @@
 (defun load (filename)
    (if (and (is_string? filename)
             (not (blank? filename)))
-       (eval (read_lisp (fetch_text (+ "/files/" filename)))
-             { source_name: filename } ))
+       (let
+          ((evaluator (-> Environment `get_namespace_handle (current_namespace))))
+          (assert evaluator "load cannot get current namespace evaluator")
+          (-> evaluator `evaluate (fetch_text (+ "/files/" filename))
+              nil
+             { source_name: filename } )))
    {
        `description: (+ "Compile and load the contents of the specified lisp " 
-                        "filename (including path) into the Lisp environment. " 
+                        "filename (including path) into the Lisp environment. "
+                        "Non-qualified symbols will be loaded by default into "
+                        "the current namespace.  Otherwise, if qualified they "
+                        "will be loaded to the specified namespace.<br>"
                         "The file contents are expected to be Lisp source code " 
                         "in text format.")
        `tags: [ `compile `read `io `file `input ]
        `usage: ["filename:string"]
    })
+
                         
 (register_feature "http_client")
 (load_pends "http")

@@ -827,8 +827,8 @@
                                                (result_type nil)
                                                (evaluator (get_evaluator_for_ns ws.namespace))
                                                (result nil))
-                                              (when (> __VERBOSITY__ 1)
-                                                 (console.log "ws_repl_handler: -> " data))
+                                              (when (> __VERBOSITY__ 0)
+                                                 (console.log "ws_repl_handler: -> " result))
                                               (cond
                                                  (and (== command "eval")
                                                       (is_array? args)
@@ -859,8 +859,8 @@
                                                  (try
                                                     (progn
                                                        (= result (-> evaluator `evaluate args.0))
-                                                       (when (> __VERBOSITY__ 1)
-                                                          (console.log "ws_repl: " namespace " <- " result))
+                                                       (when (> __VERBOSITY__ 0)
+                                                          (console.log "ws_repl_handler: " namespace " <- " result))
                                                        (send_to_ws ws
                                                                    (encode_remote_result request_id result evaluator.namespace)))
                                                     (catch Error (e)
