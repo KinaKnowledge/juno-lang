@@ -1,4 +1,6 @@
-;; Browser Environment Kickstart for Juno
+;; Browser Environment Kickstart for Juno 
+;; To be run on the server, not in the browser
+
 ;; author: anygren
 
 ;; Go to core since this is a branch-off...
@@ -18,13 +20,11 @@
 (defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
 (defglobal core/*global_themes* { juno_light: (read_text_file "html/juno_light.css")
-                                 earth_tones: (read_text_file "html/earth_tones.css")
-                                 cobalt: (read_text_file "html/cobalt.css")
-                                 idle_fingers: (read_text_file "html/idle_fingers.css")})
+                                  earth_tones: (read_text_file "html/earth_tones.css")
+                                  cobalt: (read_text_file "html/cobalt.css")
+                                  idle_fingers: (read_text_file "html/idle_fingers.css")})
 (defglobal core/browser_initializer ((quote quote) (read_text_file "pkg/browser_initializer.juno")))
 (defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
-
-
 
 
 ;; Make sure we have the ability to produce a file..
@@ -52,7 +52,8 @@
 
 (defglobal core/*env_template* (btoa (read_text_file  "./src/environment.lisp")))
 
-;; everything loaded above this line is what will be preserved.....
+;; everything loaded above this line is what will be preserved...
+;; capture the core symbols and place into the *core_symbols* library
 ;; -----------------------------------------------------------
 
 (defglobal *core_symbols* (core/symbols))
@@ -65,21 +66,25 @@
 ;; Set the new environments default namespace 
 (set_path [ `export `default_namespace ] *env_config* "user")
 
-
-       
-
+;; build the no includes list to only include symbols listed in the *core_symbols* library:
 (progn
- 
   (defvar no_includes (reduce (`sym (core/symbols))
 			      (if (not (contains? sym *core_symbols*))
 				  sym
 				  nil)))
-  (defglobal included_libs ["ext-searchbox.js" "ext-split.js" "mode-juno.js" "ext-language_tools.js" "mode-json.js" "mode-javascript.js" "mode-css.js" "mode-css.js"
-                            "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js" "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
-                            "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js" "theme-solarized_dark.js" "theme-solarized_light.js"])
-
   
+  ;; add in external libraries for modes and themes..
+  (defglobal included_libs ["ext-searchbox.js" "ext-split.js" "ext-language_tools.js" 
+                            "mode-juno.js" "mode-json.js" "mode-javascript.js" "mode-css.js" 
+                            "mode-css.js" "mode-sh.js" "mode-plain_text.js"
+                            "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js"
+                            "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
+                            "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js" 
+                            "theme-solarized_dark.js" "theme-solarized_light.js"])
+
   (set_path [ `included_libraries ] *env_config* included_libs)
+  
+  ;; setup the theme defaults if not previously set..
   (when (eq nil (prop *env_config* `editor))
     (set_prop *env_config*
               `editor
@@ -96,28 +101,27 @@
                 max_log_lines: 100
                }))
   
+  ;; make sure not to add references that will not be available in the browser environment
   
   (setq no_includes
 	(conj no_includes
 	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file" "Deno.readTextFile" "Deno.writeTextFile"]))
   ;; print them out 
-;  (console.log "NOT INCLUDING: ")
- ; (console.table (sort no_includes))
+  
+  ; (console.log "NOT INCLUDING: ")
+  ; (console.table (sort no_includes))
 
   ;; save the image 
 
-  
   (core/save_env { save_as: "js/juno_browser.js"		   
-		   preserve_imports: false
+                   preserve_imports: false
                    features: [ "compiler" "repl" "core-ext" "html" "build-tools" "browser" "http_client" ]
-		   do_not_include: no_includes })
+                   do_not_include: no_includes })
   
   (console.log "building standalone starter.html file..")
 
-  
   (defglobal env {})
 
-  
   (let
       ((js_resource (read_text_file "js/juno_browser.js"))              
        (doctext nil)       
@@ -148,12 +152,9 @@
                                  (html/script { `id: id `type: "text/javascript" `charset: "utf-8" }
                                               lib))))
                  
-                                
         (html/body { style: "height: 100vh; overflow: hidden;" }
-                   (html/header { `id: "page_header"  style: "background: #F3F3F3; display: flex;" }
-                               )
-                   (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
-                   ))))
+                   (html/header { `id: "page_header"  style: "background: #F3F3F3; display: flex;" })
+                   (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )))))
    
     (write_text_file "environments/starter.html"
                      doctext)

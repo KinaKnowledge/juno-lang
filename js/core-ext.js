@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2022-12-25 06:54:40
-// Version: 2022.12.25.06.54
-export const DLISP_ENV_VERSION='2022.12.25.06.54';
+// Build Time: 2023-01-02 07:56:13
+// Version: 2023.01.02.07.56
+export const DLISP_ENV_VERSION='2023.01.02.07.56';
 
 
 
@@ -13,32 +13,34 @@ export async function load_core(Environment)  {
     await Environment.set_global("if_undefined",async function(value,replacer) {
         return ["=:if",["=:==","=:undefined",value],replacer,value]
     },{ "eval_when":{ "compile_time":true
-},"name":"if_undefined","macro":true,"fn_args":"(value replacer)","description":"If the first value is undefined, return the second value","usage":["value:*","replacer:*"]
+},"name":"if_undefined","macro":true,"fn_args":"(value replacer)","description":"If the first value is undefined, return the second value","usage":["value:*","replacer:*"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("str",async function(...args) {
     return (args).join(" ")
-},{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["join"]
+},{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["join"],"source_name":"core-ext.lisp"
 });
-await Environment.set_global("COPY_DATA",null);
+await Environment.set_global("COPY_DATA",null,{
+    requires:[],source_name:"core-ext.lisp"
+});
 if (check_true (await (await Environment.get_global("not"))(((typeof "uuid"==="undefined")|| (await Environment["get_global"].call(Environment,"uuid",ReferenceError)===ReferenceError))))){
     await Environment.set_global("uuid",(await Environment.get_global("uuid")),{
-        description:"Generates and returns a string that is a newly generated uuid.",usage:[],tags:["id","unique","crypto"],requires:["uuid"]
+        description:"Generates and returns a string that is a newly generated uuid.",usage:[],tags:["id","unique","crypto"],requires:["uuid"],source_name:"core-ext.lisp"
     })
 };
 await Environment.set_global("on_nil",async function(nil_form,value) {
     return ["=:let",[["=:v",value]],["=:if",["=:eq","=:v","=:nil"],nil_form,"=:v"]]
 },{ "eval_when":{ "compile_time":true
-},"name":"on_nil","macro":true,"fn_args":"(nil_form value)","usage":["nil_form:form","value:*"],"description":"If the value argument is not nil or not undefined, return the value, otherwise evaluate the provided nil_form and return the results of the evaluation of the nil_form.","tags":["condition","nil","eval","undefined"]
+},"name":"on_nil","macro":true,"fn_args":"(nil_form value)","usage":["nil_form:form","value:*"],"description":"If the value argument is not nil or not undefined, return the value, otherwise evaluate the provided nil_form and return the results of the evaluation of the nil_form.","tags":["condition","nil","eval","undefined"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("on_empty",async function(on_empty_form,value) {
     return ["=:let",[["=:v",value]],["=:if",["=:or",["=:eq","=:v","=:nil"],["=:and",["=:is_array?","=:v"],["=:==",0,["=:length","=:v"]]],["=:and",["=:is_object?","=:v"],["=:==",["=:length","=:v"],0]]],on_empty_form,"=:v"]]
 },{ "eval_when":{ "compile_time":true
-},"name":"on_empty","macro":true,"fn_args":"(on_empty_form value)","usage":["empty_form:form","value:*"],"description":"If the value argument is not an empty array, an empty object, nil or undefined, return the value, otherwise evaluate the provided empty_form and return the results of the evaluation of the empty_form.","tags":["condition","empty","list","array","object","eval","undefined"]
+},"name":"on_empty","macro":true,"fn_args":"(on_empty_form value)","usage":["empty_form:form","value:*"],"description":"If the value argument is not an empty array, an empty object, nil or undefined, return the value, otherwise evaluate the provided empty_form and return the results of the evaluation of the empty_form.","tags":["condition","empty","list","array","object","eval","undefined"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("sum",async function(vals) {
     return ["=:apply","=:add",vals]
 },{ "eval_when":{ "compile_time":true
-},"name":"sum","macro":true,"fn_args":"(vals)","description":["=:+","Given an array of values, add up the contents of the array in an applied add operation.  ","If these are numbers, they will be added arithmetically.  ","If given strings, they will be joined together (appended). ","If given a first value of an array, all subsequent values will be added into the array. ","If given an array of objects, all the keys/values will be merged and a single object retuned."],"usage":["vals:array"],"tags":["add","join","summation","numbers"]
+},"name":"sum","macro":true,"fn_args":"(vals)","description":["=:+","Given an array of values, add up the contents of the array in an applied add operation.  ","If these are numbers, they will be added arithmetically.  ","If given strings, they will be joined together (appended). ","If given a first value of an array, all subsequent values will be added into the array. ","If given an array of objects, all the keys/values will be merged and a single object retuned."],"usage":["vals:array"],"tags":["add","join","summation","numbers"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("options_and_args",async function(arg_array) {
     return await async function(){
@@ -61,7 +63,7 @@ await Environment.set_global("options_and_args",async function(arg_array) {
             return [null,arg_array]
         }
     } ()
-},{ "name":"options_and_args","fn_args":"(arg_array)","usage":["arg_array:array"],"tags":["arguments","options"],"description":["=:+","Given an array of values, returns an array containing two values.  ","If the value at position 0 in the provided array is an non nil object, ","it will be in the position 0 of the returned value and the remaining ","values will be in position 1 of the returned array.","If the value at position 0 in the provided array is not an object type,","the value in position 0 of the returned array will be nil and ","all values will be placed in the returned array in position 1."],"requires":["is_array?","type","slice","null"]
+},{ "name":"options_and_args","fn_args":"(arg_array)","usage":["arg_array:array"],"tags":["arguments","options"],"description":["=:+","Given an array of values, returns an array containing two values.  ","If the value at position 0 in the provided array is an non nil object, ","it will be in the position 0 of the returned value and the remaining ","values will be in position 1 of the returned array.","If the value at position 0 in the provided array is not an object type,","the value in position 0 of the returned array will be nil and ","all values will be placed in the returned array in position 1."],"requires":["is_array?","type","slice","null"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("enum",async function(value_list) {
     let e=new Object();
@@ -90,11 +92,11 @@ await Environment.set_global("enum",async function(value_list) {
          
     })();
     return e
-},{ "name":"enum","fn_args":"(value_list)","usage":["value_list:array"],"description":"Given a list of string values, returns an object with each value in the list corresponding to a numerical value.","tags":["enumeration","values"],"requires":["assert","is_array?"]
+},{ "name":"enum","fn_args":"(value_list)","usage":["value_list:array"],"description":"Given a list of string values, returns an object with each value in the list corresponding to a numerical value.","tags":["enumeration","values"],"requires":["assert","is_array?"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("gen_id",async function(prefix) {
     return (""+ prefix+ "_"+ await Date.now())
-},{ "name":"gen_id","fn_args":"(prefix)","usage":["prefix:string"],"tags":["web","html","identification"],"description":"Given a prefix returns a element safe unique id"
+},{ "name":"gen_id","fn_args":"(prefix)","usage":["prefix:string"],"tags":["web","html","identification"],"description":"Given a prefix returns a element safe unique id","requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("macros",async function() {
     let __collector;
@@ -128,12 +130,12 @@ await Environment.set_global("macros",async function() {
          
     })();
     return __collector
-},{ "name":"macros","fn_args":"[]","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"],"requires":["push","pairs"]
+},{ "name":"macros","fn_args":"[]","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"],"requires":["push","pairs"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("pluck",async function(fields,data) {
     return ["=:each",data,fields]
 },{ "eval_when":{ "compile_time":true
-},"name":"pluck","macro":true,"fn_args":"(fields data)","description":"Similar to the 'each' commmand, given the set of desired fields as a first argument, and the data as the second argument, return only the specified fields from the supplied list of data","usage":["fields:string|array","data:array"],"tags":["list","each","filter","only","object"]
+},"name":"pluck","macro":true,"fn_args":"(fields data)","description":"Similar to the 'each' commmand, given the set of desired fields as a first argument, and the data as the second argument, return only the specified fields from the supplied list of data","usage":["fields:string|array","data:array"],"tags":["list","each","filter","only","object"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("objects_from_list",async function(key_path,objects) {
     let obj;
@@ -179,7 +181,7 @@ await Environment.set_global("objects_from_list",async function(key_path,objects
         })();
         return obj
     }
-},{ "name":"objects_from_list","fn_args":"(key_path objects)","usage":["key_path:string|array","objects:array"],"description":"Given a path (string or array), and an array of object values, the function returns a new object with keys named via the value at the given path, and the object as the value.","tags":["list","object","conversion","transform"],"requires":["is_array?","resolve_path"]
+},{ "name":"objects_from_list","fn_args":"(key_path objects)","usage":["key_path:string|array","objects:array"],"description":"Given a path (string or array), and an array of object values, the function returns a new object with keys named via the value at the given path, and the object as the value.","tags":["list","object","conversion","transform"],"requires":["is_array?","resolve_path"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("pairs_from_list",async function(value_list,size) {
     let container;
@@ -218,7 +220,7 @@ await Environment.set_global("pairs_from_list",async function(value_list,size) {
         (container).push(pset)
     };
     return container
-},{ "name":"pairs_from_list","fn_args":"(value_list size)","usage":["value:list","size?:number"],"description":"Given a list, segment the passed list into sub list (default in pairs) or as otherwise specified in the optional size","tags":["list","pairs","collect"],"requires":["push","length"]
+},{ "name":"pairs_from_list","fn_args":"(value_list size)","usage":["value:list","size?:number"],"description":"Given a list, segment the passed list into sub list (default in pairs) or as otherwise specified in the optional size","tags":["list","pairs","collect"],"requires":["push","length"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("reorder_keys",async function(key_list,obj) {
     let objkeys;
@@ -237,7 +239,7 @@ await Environment.set_global("reorder_keys",async function(key_list,obj) {
              return await (await Environment.get_global("interlace"))(key_list,values) 
         })()))
     }
-},{ "name":"reorder_keys","fn_args":"(key_list obj)","description":"Given a list of keys, returns a new object that has the keys in the order of the provided key list.","usage":["key_list:array","obj:object"],"tags":["list","object","key","order"],"requires":["keys","nth","to_object","pairs_from_list","interlace"]
+},{ "name":"reorder_keys","fn_args":"(key_list obj)","description":"Given a list of keys, returns a new object that has the keys in the order of the provided key list.","usage":["key_list:array","obj:object"],"tags":["list","object","key","order"],"requires":["keys","nth","to_object","pairs_from_list","interlace"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("only",async function(fields,data) {
     return await async function(){
@@ -251,7 +253,7 @@ await Environment.set_global("only",async function(fields,data) {
             return data
         }
     } ()
-},{ "name":"only","fn_args":"(fields data)","usage":["fields:array","data:array|object"],"description":"Given an array of objects, or a single object, return objects only containing the specified keys and the corresponging value.","tags":["pluck","filter","select","object","each","list","objects","keys"],"requires":["is_array?","map","reorder_keys","is_object?"]
+},{ "name":"only","fn_args":"(fields data)","usage":["fields:array","data:array|object"],"description":"Given an array of objects, or a single object, return objects only containing the specified keys and the corresponging value.","tags":["pluck","filter","select","object","each","list","objects","keys"],"requires":["is_array?","map","reorder_keys","is_object?"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("sleep",async function(seconds) {
     return new Promise(async function(resolve) {
@@ -266,7 +268,7 @@ await Environment.set_global("sleep",async function(seconds) {
             })()
         },(seconds* 1000))
     })
-},{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function."
+},{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function.","requires":[],"source_name":"core-ext.lisp"
 });
 null;
 await Environment.set_global("from_universal_time",async function(seconds) {
@@ -276,12 +278,12 @@ await Environment.set_global("from_universal_time",async function(seconds) {
     ue=(seconds- 2208988800);
     await d["setUTCSeconds"].call(d,ue);
     return d
-},{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"]
+},{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("+=",async function(symbol,...args) {
     return ["=:=",].concat(symbol,[["=:+",symbol,].concat(args)])
 },{ "eval_when":{ "compile_time":true
-},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"]
+},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("minmax",async function(container) {
     let value_found=false;
@@ -328,7 +330,7 @@ await Environment.set_global("minmax",async function(container) {
     } else {
         return null
     }
-},{ "name":"minmax","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the smallest and the largest values found in the provided array. ","tags":["list","number","range","value"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"]
+},{ "name":"minmax","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the smallest and the largest values found in the provided array. ","tags":["list","number","range","value"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("minmax_index",async function(container) {
     let value_found=false;
@@ -392,7 +394,7 @@ await Environment.set_global("minmax_index",async function(container) {
     } else {
         return null
     }
-},{ "name":"minmax_index","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the indexes of the smallest and the largest values found in the provided array.","tags":["list","number","range","value","index"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"]
+},{ "name":"minmax_index","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the indexes of the smallest and the largest values found in the provided array.","tags":["list","number","range","value","index"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("invert_pairs",async function(value) {
     if (check_true ((value instanceof Array))){
@@ -410,11 +412,11 @@ await Environment.set_global("invert_pairs",async function(value) {
         throw new Error("invert_pairs passed a non-array value");
         
     }
-},{ "name":"invert_pairs","fn_args":"(value)","description":"Given an array value containing pairs of value, as in [[1 2] [3 4]], invert the positions to be: [[2 1] [4 3]]","usage":["value:array"],"tags":["array","list","invert","flip","reverse","swap"],"requires":["is_array?","map"]
+},{ "name":"invert_pairs","fn_args":"(value)","description":"Given an array value containing pairs of value, as in [[1 2] [3 4]], invert the positions to be: [[2 1] [4 3]]","usage":["value:array"],"tags":["array","list","invert","flip","reverse","swap"],"requires":["is_array?","map"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("noop",async function(val) {
     return val
-},{ "name":"noop","fn_args":"(val)","usage":["val:*"],"description":"No operation, just returns the value.  To be used as a placeholder operation, such as in apply_operator_list.","tags":["apply","value"]
+},{ "name":"noop","fn_args":"(val)","usage":["val:*"],"description":"No operation, just returns the value.  To be used as a placeholder operation, such as in apply_operator_list.","tags":["apply","value"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("apply_list_to_list",async function(operator,list1,list2) {
     return await (await Environment.get_global("map"))(async function(val,idx) {
@@ -427,7 +429,7 @@ await Environment.set_global("apply_list_to_list",async function(operator,list1,
             }
         })()
     },list2)
-},{ "name":"apply_list_to_list","fn_args":"(operator list1 list2)","usage":["operator:function","modifier_list:array","target_list:array"],"description":["=:+","Given an operator (function), a list of values to be applied (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the operator function with ","each value from the target list with the values from the modifier list. The operator function is called ","with <code>(operator source_value modifer_value)</code>."],"tags":["map","list","array","apply","range","index"],"requires":["map","length"]
+},{ "name":"apply_list_to_list","fn_args":"(operator list1 list2)","usage":["operator:function","modifier_list:array","target_list:array"],"description":["=:+","Given an operator (function), a list of values to be applied (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the operator function with ","each value from the target list with the values from the modifier list. The operator function is called ","with <code>(operator source_value modifer_value)</code>."],"tags":["map","list","array","apply","range","index"],"requires":["map","length"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("apply_operator_list",async function(modifier_list,target_list) {
     return await (await Environment.get_global("map"))(async function(val,idx) {
@@ -442,7 +444,7 @@ await Environment.set_global("apply_operator_list",async function(modifier_list,
             }
         })()
     },target_list)
-},{ "name":"apply_operator_list","fn_args":"(modifier_list target_list)","usage":["operator_list:array","target_list:array"],"description":["=:+","<p>Note: Deprecated.Given a list containing quoted functions (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the relative index of the modifier functions with ","the value from the relative index from the target list. The modifiers are applied in the following form: ","<code>(modifier_function target_value)</code>.</p>","<p>If the modifer_list is shorter than the target list, the modifer_list index cycles back to 0 (modulus).</p>"],"tags":["map","list","array","apply","range","index"],"example":["=:quote",["=:apply_operator_list",["first","+"],["John","Smith"]]],"deprecated":true,"requires":["map","length"]
+},{ "name":"apply_operator_list","fn_args":"(modifier_list target_list)","usage":["operator_list:array","target_list:array"],"description":["=:+","<p>Note: Deprecated.Given a list containing quoted functions (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the relative index of the modifier functions with ","the value from the relative index from the target list. The modifiers are applied in the following form: ","<code>(modifier_function target_value)</code>.</p>","<p>If the modifer_list is shorter than the target list, the modifer_list index cycles back to 0 (modulus).</p>"],"tags":["map","list","array","apply","range","index"],"example":["=:quote",["=:apply_operator_list",["first","+"],["John","Smith"]]],"deprecated":true,"requires":["map","length"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("range_overlap?",async function(range_a,range_b) {
     return (((range_a && range_a["0"])<=(range_a && range_a["1"]))&& ((range_b && range_b["0"])<=(range_b && range_b["1"]))&& await (async function(){
@@ -452,7 +454,7 @@ await Environment.set_global("range_overlap?",async function(range_a,range_b) {
             return false
         }
     })())
-},{ "name":"range_overlap?","fn_args":"(range_a range_b)","description":"Given two ranges in the form of [low_val high_val], returns true if they overlap, otherwise false.  The results are undefined if the range values are not ordered from low to high.","usage":["range_a:array","range_b:array"],"tags":["range","iteration","loop"]
+},{ "name":"range_overlap?","fn_args":"(range_a range_b)","description":"Given two ranges in the form of [low_val high_val], returns true if they overlap, otherwise false.  The results are undefined if the range values are not ordered from low to high.","usage":["range_a:array","range_b:array"],"tags":["range","iteration","loop"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("remaining_in_range",async function(value,check_range) {
     return await async function(){
@@ -462,11 +464,11 @@ await Environment.set_global("remaining_in_range",async function(value,check_ran
             return null
         }
     } ()
-},{ "name":"remaining_in_range","fn_args":"(value check_range)","usage":["value:number","check_range:array"],"description":"Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn't in range, the function will return nil.","tags":["range","iteration","loop"]
+},{ "name":"remaining_in_range","fn_args":"(value check_range)","usage":["value:number","check_range:array"],"description":"Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn't in range, the function will return nil.","tags":["range","iteration","loop"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("form_id",async function(name) {
     return await (await Environment.get_global("replace"))(new RegExp("W","g"),"_",await (await Environment.get_global("replace"))(new RegExp("[+?':]","g"),"sssymss1",await (await Environment.get_global("replace"))("!","sexcs1",await (await Environment.get_global("replace"))("<","slts1",await (await Environment.get_global("replace"))(">","sgts1",(await (await Environment.get_global("split"))((name).toLowerCase()," ")).join("_"))))))
-},{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms.","requires":["replace","join","split","lowercase"]
+},{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms.","requires":["replace","join","split","lowercase"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("from_key",async function(value,sep_ques_,ignore_ques_) {
     if (check_true ((value instanceof String || typeof value==='string'))){
@@ -490,11 +492,11 @@ await Environment.set_global("from_key",async function(value,sep_ques_,ignore_qu
     } else {
         return value
     }
-},{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","dtext","join","map","split_by"]
+},{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","dtext","join","map","split_by"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("from_key1",async function(v) {
     return await (await Environment.get_global("from_key"))(v)
-},{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"],"requires":["from_key"]
+},{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"],"requires":["from_key"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("to_key",async function(value,sep_ques_,ignore_ques_) {
     if (check_true ((value instanceof String || typeof value==='string'))){
@@ -519,17 +521,19 @@ await Environment.set_global("to_key",async function(value,sep_ques_,ignore_ques
             return value
         }
     }
-},{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","map","lowercase","split_by","join"]
+},{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","map","lowercase","split_by","join"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("is_date?",async function(x) {
     return (await (await Environment.get_global("sub_type"))(x)==="Date")
-},{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"]
+},{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("is_nil?",async function(value) {
     return (null===value)
-},{ "name":"is_nil?","fn_args":"[\"value\"]","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
+},{ "name":"is_nil?","fn_args":"[\"value\"]","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":[],"source_name":"core-ext.lisp"
 });
- Environment.set_global("is_object_or_function?",new Function(["obj"],"var type = typeof obj; return type === 'function' || type === 'object' && !!obj;"));
+ Environment.set_global("is_object_or_function?",new Function(["obj"],"var type = typeof obj; return type === 'function' || type === 'object' && !!obj;"),{
+    requires:[],source_name:"core-ext.lisp"
+});
 await Environment.set_global("extend",async function(target_object,source_object) {
     if (check_true (((target_object instanceof Object)&& (source_object instanceof Object)))){
         {
@@ -558,7 +562,7 @@ await Environment.set_global("extend",async function(target_object,source_object
     } else {
         return target_object
     }
-},{ "name":"extend","fn_args":"(target_object source_object)","description":"Given a target object and a source object, add the keys and values of the source object to the target object.","usage":["target_object:object","source_object:object"],"tags":["object","extension","keys","add","values"],"requires":["is_object?","pairs"]
+},{ "name":"extend","fn_args":"(target_object source_object)","description":"Given a target object and a source object, add the keys and values of the source object to the target object.","usage":["target_object:object","source_object:object"],"tags":["object","extension","keys","add","values"],"requires":["is_object?","pairs"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("no_empties",async function(items) {
     let item_type=await (await Environment.get_global("sub_type"))(items);
@@ -605,7 +609,7 @@ await Environment.set_global("no_empties",async function(items) {
         })();
         return __collector
     }
-},{ "name":"no_empties","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"],"requires":["sub_type","not","push"]
+},{ "name":"no_empties","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"],"requires":["sub_type","not","push"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("first_with",async function(prop_list,data_value) {
     let rval;
@@ -640,7 +644,7 @@ await Environment.set_global("first_with",async function(prop_list,data_value) {
     } else {
         return null
     }
-},{ "name":"first_with","fn_args":"(prop_list data_value)","usage":["property_list:array","data:object|array"],"description":"Given a list of properties or indexes and a data value, sequentially looks through the property list and returns the first non-null result.","tags":["list","array","index","properties","search","find"],"requires":["not"]
+},{ "name":"first_with","fn_args":"(prop_list data_value)","usage":["property_list:array","data:object|array"],"description":"Given a list of properties or indexes and a data value, sequentially looks through the property list and returns the first non-null result.","tags":["list","array","index","properties","search","find"],"requires":["not"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("fixed",async function(v,p) {
     if (check_true (p)){
@@ -658,7 +662,7 @@ await Environment.set_global("fixed",async function(v,p) {
             } 
         })()
     }
-},{ "name":"fixed","fn_args":"(v p)","description":"Given a floating point value and an optional precision value, return a string corresponding to the desired precision.  If precision is left out, defaults to 3.","usage":["value:number","precision?:number"],"tags":["format","conversion"]
+},{ "name":"fixed","fn_args":"(v p)","description":"Given a floating point value and an optional precision value, return a string corresponding to the desired precision.  If precision is left out, defaults to 3.","usage":["value:number","precision?:number"],"tags":["format","conversion"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("except_nil",async function(items) {
     let acc=[];
@@ -685,11 +689,11 @@ await Environment.set_global("except_nil",async function(items) {
          
     })();
     return acc
-},{ "name":"except_nil","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"]
+},{ "name":"except_nil","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("hide",async function(value) {
     return undefined
-},{ "name":"hide","fn_args":"(value)"
+},{ "name":"hide","fn_args":"(value)","requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("array_to_object",async function(input_array) {
     let count;
@@ -743,7 +747,7 @@ await Environment.set_global("array_to_object",async function(input_array) {
         
     })();
     return output
-},{ "name":"array_to_object","fn_args":"(input_array)","usage":["list_to_process:array"],"tags":["list","array","object","convert"],"description":"Takes the provided list and returns an object with the even indexed items as keys and odd indexed items as values.","requires":["length","take","type","add"]
+},{ "name":"array_to_object","fn_args":"(input_array)","usage":["list_to_process:array"],"tags":["list","array","object","convert"],"description":"Takes the provided list and returns an object with the even indexed items as keys and odd indexed items as values.","requires":["length","take","type","add"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("split_text_in_array",async function(split_element,input_array) {
     let output=[];
@@ -773,7 +777,7 @@ await Environment.set_global("split_text_in_array",async function(split_element,
          
     })();
     return output
-},{ "name":"split_text_in_array","fn_args":"(split_element input_array)","usage":["split_element:text","input_array:array"],"tags":["text","string","split","separate","parse"],"description":"Takes the provided array, and split_element, and returns an array of arrays which contain the split text strings of the input list.","requires":["is_string?","push","split","null"]
+},{ "name":"split_text_in_array","fn_args":"(split_element input_array)","usage":["split_element:text","input_array:array"],"tags":["text","string","split","separate","parse"],"description":"Takes the provided array, and split_element, and returns an array of arrays which contain the split text strings of the input list.","requires":["is_string?","push","split","null"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("words_and_quotes",async function(text) {
     if (check_true (await (await Environment.get_global("not"))((text==null)))){
@@ -787,7 +791,7 @@ await Environment.set_global("words_and_quotes",async function(text) {
     } else {
         return []
     }
-},{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"],"requires":["not","map","join","no_empties","split_by","trim"]
+},{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"],"requires":["not","map","join","no_empties","split_by","trim"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("split_words",async function(text_string) {
     return await (await Environment.get_global("no_empties"))(await (async function(){
@@ -806,7 +810,7 @@ await Environment.set_global("split_words",async function(text_string) {
             }
         },await (await Environment.get_global("words_and_quotes"))(text_string)) 
     })())
-},{ "name":"split_words","fn_args":"(text_string)","description":"Like words and quotes, splits the text string into words and quoted words, but the unquoted words are split by spaces.  Both the unquoted words and the quoted words inhabit their own array.","usage":["text:string"],"tags":["text","string","split","separate","words","parse"],"requires":["no_empties","map","split_by","trim","words_and_quotes"]
+},{ "name":"split_words","fn_args":"(text_string)","description":"Like words and quotes, splits the text string into words and quoted words, but the unquoted words are split by spaces.  Both the unquoted words and the quoted words inhabit their own array.","usage":["text:string"],"tags":["text","string","split","separate","words","parse"],"requires":["no_empties","map","split_by","trim","words_and_quotes"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("from_style_text",async function(text) {
     let semi_reg;
@@ -826,7 +830,7 @@ await Environment.set_global("from_style_text",async function(text) {
             })())) 
         })()) 
     })())
-},{ "name":"from_style_text","fn_args":"(text)","usage":["text:string"],"description":"Given a string or text in the format of an Element style attribute: \"css_attrib:value; css_attrib2:value\", split into pairs containing attribute name and value.","tags":["text","css","style","pairs","string","array","list","ui","html"],"requires":["no_empties","map","trim","split_by","replace","flatten","words_and_quotes"]
+},{ "name":"from_style_text","fn_args":"(text)","usage":["text:string"],"description":"Given a string or text in the format of an Element style attribute: \"css_attrib:value; css_attrib2:value\", split into pairs containing attribute name and value.","tags":["text","css","style","pairs","string","array","list","ui","html"],"requires":["no_empties","map","trim","split_by","replace","flatten","words_and_quotes"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("sha1",async function(text) {
     if (check_true ((text instanceof String || typeof text==='string'))){
@@ -876,7 +880,7 @@ await Environment.set_global("sha1",async function(text) {
         throw new TypeError(("sha1: requires a single string as an argument - got "+ await subtype(text)));
         
     }
-},{ "name":"sha1","fn_args":"(text)","description":"Given a text string as input, returns a SHA-1 hash digest string of the given input.","usage":["text:string"],"tags":["digest","crypto","hash","comparison"],"requires":["is_string?","push","range","join"]
+},{ "name":"sha1","fn_args":"(text)","description":"Given a text string as input, returns a SHA-1 hash digest string of the given input.","usage":["text:string"],"tags":["digest","crypto","hash","comparison"],"requires":["is_string?","push","range","join"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("remove_if",async function(f,container) {
     let __collector;
@@ -917,7 +921,7 @@ await Environment.set_global("remove_if",async function(f,container) {
          
     })();
     return __collector
-},{ "name":"remove_if","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","filter","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will excluded from the returned array.  Opposite of filter.","requires":["not","push"]
+},{ "name":"remove_if","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","filter","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will excluded from the returned array.  Opposite of filter.","requires":["not","push"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("filter",async function(f,container) {
     let __collector;
@@ -958,7 +962,7 @@ await Environment.set_global("filter",async function(f,container) {
          
     })();
     return __collector
-},{ "name":"filter","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","reject","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will included in the returned array, otherwise it will not.  Opposite of reject.","requires":["push"]
+},{ "name":"filter","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","reject","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will included in the returned array, otherwise it will not.  Opposite of reject.","requires":["push"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("max_value",async function(v) {
     let m;
@@ -986,7 +990,7 @@ await Environment.set_global("max_value",async function(v) {
          
     })();
     return m
-},{ "name":"max_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the largest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["not","sub_type"]
+},{ "name":"max_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the largest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["not","sub_type"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("min_value",async function(v) {
     let m;
@@ -1018,26 +1022,26 @@ await Environment.set_global("min_value",async function(v) {
     } else {
         return m
     }
-},{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["MAX_SAFE_INTEGER","not","sub_type"]
+},{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["MAX_SAFE_INTEGER","not","sub_type"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("add_days",async function(date_obj,num_days) {
     await date_obj["setDate"].call(date_obj,await (await Environment.get_global("add"))(await date_obj["getDate"](),num_days));
     return date_obj
-},{ "name":"add_days","fn_args":"(date_obj num_days)","usage":["date_obj:Date","num_days:number"],"description":"Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","days","add"],"requires":["add"]
+},{ "name":"add_days","fn_args":"(date_obj num_days)","usage":["date_obj:Date","num_days:number"],"description":"Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","days","add"],"requires":["add"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("day_of_week",async function(dval) {
     return await dval["getDay"]()
-},{ "name":"day_of_week","fn_args":"(dval)","description":"Given a date object, returns the day of the week for that date object","usage":["date:Date"],"tags":["time","week","date","day"]
+},{ "name":"day_of_week","fn_args":"(dval)","description":"Given a date object, returns the day of the week for that date object","usage":["date:Date"],"tags":["time","week","date","day"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("add_hours",async function(date_obj,hours) {
     await date_obj["setHours"].call(date_obj,hours);
     return date_obj
-},{ "name":"add_hours","fn_args":"(date_obj hours)","usage":["date_obj:Date","hours:number"],"description":"Given a date object and the number of hours (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","hours","add"]
+},{ "name":"add_hours","fn_args":"(date_obj hours)","usage":["date_obj:Date","hours:number"],"description":"Given a date object and the number of hours (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","hours","add"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("clear_time",async function(date_obj) {
     await date_obj["setHours"].call(date_obj,0,0,0,0);
     return date_obj
-},{ "name":"clear_time","fn_args":"(date_obj)","usage":["date_obj:Date"],"description":"Given a date object, modifies the date object by clearing the time value and leaving the date value.  Returns the date object.","tags":["date","time","duration","midnight","add"]
+},{ "name":"clear_time","fn_args":"(date_obj)","usage":["date_obj:Date"],"description":"Given a date object, modifies the date object by clearing the time value and leaving the date value.  Returns the date object.","tags":["date","time","duration","midnight","add"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("yesterday",async function() {
     let d1;
@@ -1045,19 +1049,19 @@ await Environment.set_global("yesterday",async function() {
     d1=new Date();
     d2=new Date();
     return [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d1,-1)),await (await Environment.get_global("add_hours"))(await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(d2,-1)),24)]
-},{ "name":"yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","add_hours"]
+},{ "name":"yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","add_hours"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("next_sunday",async function(dval) {
     let dv=(dval|| new Date());
     ;
     return await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(dv,(7- await (await Environment.get_global("day_of_week"))(dv))))
-},{ "name":"next_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date.","tags":["time","date","range","next","week","24"],"requires":["clear_time","add_days","day_of_week"]
+},{ "name":"next_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date.","tags":["time","date","range","next","week","24"],"requires":["clear_time","add_days","day_of_week"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("last_sunday",async function(dval) {
     let dv=(dval|| new Date());
     ;
     return await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(dv,(-1* await (await Environment.get_global("day_of_week"))(dv))))
-},{ "name":"last_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date.","tags":["time","date","range","prior","week","24"],"requires":["clear_time","add_days","day_of_week"]
+},{ "name":"last_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date.","tags":["time","date","range","prior","week","24"],"requires":["clear_time","add_days","day_of_week"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("day_before_yesterday",async function() {
     let d1;
@@ -1072,7 +1076,7 @@ await Environment.set_global("day_before_yesterday",async function() {
             return [__array_op_rval__87,d2]
         }
     })()
-},{ "name":"day_before_yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days"]
+},{ "name":"day_before_yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("last_week",async function() {
     let d1;
@@ -1080,7 +1084,7 @@ await Environment.set_global("last_week",async function() {
     d1=new Date();
     d2=new Date();
     return [await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(await (await Environment.get_global("next_sunday"))(),-14)),await (await Environment.get_global("last_sunday"))()]
-},{ "name":"last_week","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","next_sunday","last_sunday"]
+},{ "name":"last_week","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","next_sunday","last_sunday"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("midnight-to-midnight",async function(dval) {
     let d1;
@@ -1095,7 +1099,7 @@ await Environment.set_global("midnight-to-midnight",async function(dval) {
             return [__array_op_rval__88,await (await Environment.get_global("add_hours"))(d2,24)]
         }
     })()
-},{ "name":"midnight-to-midnight","fn_args":"(dval)","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":["val:Date"],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_hours"]
+},{ "name":"midnight-to-midnight","fn_args":"(dval)","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":["val:Date"],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_hours"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("date_to_string",async function(date_val,str_layout) {
     let split_regex;
@@ -1219,15 +1223,15 @@ await Environment.set_global("date_to_string",async function(date_val,str_layout
         }return __array__98;
          
     })()).join("")
-},{ "name":"date_to_string","fn_args":"(date_val str_layout)","description":["=:+","Given a date value and a formatted template string, return a string representation of the date based on the formatted template string.","<br>","E.g. (date_to_string (new Date) \"yyyy-MM-dd HH:mm:ss\")<br>","<table>","<tr><td>","yyyy","</td><td>","Four position formatted year, e.g. 2021","</td></tr>","<tr><td>","yy","</td><td>","Two position formatted year, e.g. 21","</td></tr>","<tr><td>","dd","</td><td>","Two position formatted day of month, e.g. 03","</td></tr>","<tr><td>","d","</td><td>","1 position numeric day of month, e.g. 3","</td></tr>","<tr><td>","MM","</td><td>","Two position formatted month number, e.g. 06","</td></tr>","<tr><td>","M","</td><td>","One or two position formatted month number, e.g. 6 or 10","</td></tr>","<tr><td>","HH","</td><td>","Two position formatted 24 hour number, e.g. 08","</td></tr>","<tr><td>","H","</td><td>","One position formatted 24 hour, e.g 8","</td></tr>","<tr><td>","hh","</td><td>","Two position formatted 12 hour clock, e.g. 08","</td></tr>","<tr><td>","h","</td><td>","One position formatted 12 hour clock, e.g 8","</td></tr>","<tr><td>","mm","</td><td>","Minutes with 2 position width, eg. 05","</td></tr>","<tr><td>","m","</td><td>","Minutes with 1 or 2 positions, e.g 5 or 15.","</td></tr>","<tr><td>","ss","</td><td>","Seconds with 2 positions, e.g 03 or 25.","</td></tr>","<tr><td>","s","</td><td>","Seconds with 1 or 2 positions, e.g 3 or 25.","</td></tr>","<tr><td>","sss","</td><td>","Milliseconds with 3 digits, such as 092 or 562.","</td></tr>","<tr><td>","TZ","</td><td>","Include timezone abbreviated, e.g. GMT+1.","</td></tr>","<tr><td>","D","</td><td>","Weekday abbreviated to 1 position, such as T for Tuesday or Thursday, or W for Wednesday (in certain locales)","</td></tr>","<tr><td>","DD","</td><td>","Weekday shortened to 3 positions, such as Fri for Friday.","</td></tr>","<tr><td>","DDD","</td><td>","Full name of weekday, such as Saturday.","</td></tr>","</table>"],"usage":["date_val:Date","formatted_string:string"],"tags":["time","date","string","text","format","formatted"],"requires":["is_string?","split_by","push","date_components","join"]
+},{ "name":"date_to_string","fn_args":"(date_val str_layout)","description":["=:+","Given a date value and a formatted template string, return a string representation of the date based on the formatted template string.","<br>","E.g. (date_to_string (new Date) \"yyyy-MM-dd HH:mm:ss\")<br>","<table>","<tr><td>","yyyy","</td><td>","Four position formatted year, e.g. 2021","</td></tr>","<tr><td>","yy","</td><td>","Two position formatted year, e.g. 21","</td></tr>","<tr><td>","dd","</td><td>","Two position formatted day of month, e.g. 03","</td></tr>","<tr><td>","d","</td><td>","1 position numeric day of month, e.g. 3","</td></tr>","<tr><td>","MM","</td><td>","Two position formatted month number, e.g. 06","</td></tr>","<tr><td>","M","</td><td>","One or two position formatted month number, e.g. 6 or 10","</td></tr>","<tr><td>","HH","</td><td>","Two position formatted 24 hour number, e.g. 08","</td></tr>","<tr><td>","H","</td><td>","One position formatted 24 hour, e.g 8","</td></tr>","<tr><td>","hh","</td><td>","Two position formatted 12 hour clock, e.g. 08","</td></tr>","<tr><td>","h","</td><td>","One position formatted 12 hour clock, e.g 8","</td></tr>","<tr><td>","mm","</td><td>","Minutes with 2 position width, eg. 05","</td></tr>","<tr><td>","m","</td><td>","Minutes with 1 or 2 positions, e.g 5 or 15.","</td></tr>","<tr><td>","ss","</td><td>","Seconds with 2 positions, e.g 03 or 25.","</td></tr>","<tr><td>","s","</td><td>","Seconds with 1 or 2 positions, e.g 3 or 25.","</td></tr>","<tr><td>","sss","</td><td>","Milliseconds with 3 digits, such as 092 or 562.","</td></tr>","<tr><td>","TZ","</td><td>","Include timezone abbreviated, e.g. GMT+1.","</td></tr>","<tr><td>","D","</td><td>","Weekday abbreviated to 1 position, such as T for Tuesday or Thursday, or W for Wednesday (in certain locales)","</td></tr>","<tr><td>","DD","</td><td>","Weekday shortened to 3 positions, such as Fri for Friday.","</td></tr>","<tr><td>","DDD","</td><td>","Full name of weekday, such as Saturday.","</td></tr>","</table>"],"usage":["date_val:Date","formatted_string:string"],"tags":["time","date","string","text","format","formatted"],"requires":["is_string?","split_by","push","date_components","join"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("is_even?",async function(x) {
     return (0===(x% 2))
-},{ "name":"is_even?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an even number, return true, else returns false.","tags":["list","filter","modulus","odd","number"]
+},{ "name":"is_even?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an even number, return true, else returns false.","tags":["list","filter","modulus","odd","number"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("is_odd?",async function(x) {
     return (1===(x% 2))
-},{ "name":"is_odd?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an odd number, return true, else returns false.","tags":["list","filter","modulus","even","number"]
+},{ "name":"is_odd?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an odd number, return true, else returns false.","tags":["list","filter","modulus","even","number"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("set_path_value",async function(root,path,value) {
     if (check_true ((path instanceof Array))){
@@ -1250,7 +1254,7 @@ await Environment.set_global("set_path_value",async function(root,path,value) {
             return root
         }
     }
-},{ "name":"set_path_value","fn_args":"(root path value)","description":"Given an object (the root), a path array, and a value to set, sets the value at the path point in the root object.","usage":["root:object","path:list","value:*"],"tags":["object","path","resolve","assign"],"requires":["is_array?","last","resolve_path","chop"]
+},{ "name":"set_path_value","fn_args":"(root path value)","description":"Given an object (the root), a path array, and a value to set, sets the value at the path point in the root object.","usage":["root:object","path:list","value:*"],"tags":["object","path","resolve","assign"],"requires":["is_array?","last","resolve_path","chop"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("has_items?",async function(value) {
     if (check_true ((await (await Environment.get_global("not"))((null===value))&& (await (await Environment.get_global("length"))(value)>0)))){
@@ -1258,12 +1262,14 @@ await Environment.set_global("has_items?",async function(value) {
     } else {
         return false
     }
-},{ "name":"has_items?","fn_args":"(value)","usage":["value:list"],"description":"Returns true if the list provided has a length greater than one, or false if the list is 0 or nil","tags":["list","values","contains"],"requires":["not","length"]
+},{ "name":"has_items?","fn_args":"(value)","usage":["value:list"],"description":"Returns true if the list provided has a length greater than one, or false if the list is 0 or nil","tags":["list","values","contains"],"requires":["not","length"],"source_name":"core-ext.lisp"
 });
- Environment.set_global("match_all_js",new Function("regex_str","search_string","let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_string)) !== null) {rval.push(m);  if (m.index === regex.lastIndex) {  regex.lastIndex++; }  } return rval;"));
+ Environment.set_global("match_all_js",new Function("regex_str","search_string","let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_string)) !== null) {rval.push(m);  if (m.index === regex.lastIndex) {  regex.lastIndex++; }  } return rval;"),{
+    requires:[],source_name:"core-ext.lisp"
+});
 await Environment.set_global("match_all",async function(regex_str,search_string) {
     return await (await Environment.get_global("match_all_js"))(regex_str,search_string)
-},{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"]
+},{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"],"source_name":"core-ext.lisp"
 });
 {
      Environment.set_global("chop_front",function(container,amount) {
@@ -1278,7 +1284,7 @@ await Environment.set_global("match_all",async function(regex_str,search_string)
                 
             }
         } )()
-    },{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"]
+    },{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"],"source_name":"core-ext.lisp"
 })
 };
 [];
@@ -1288,7 +1294,7 @@ await Environment.set_global("compile_lisp",async function(text) {
     } else {
         return text
     }
-},{ "name":"compile_lisp","fn_args":"(text)","usage":["text:string"],"description":"Given an input string of lisp text, returns a JSON structure ready for evaluation.","requires":["reader"]
+},{ "name":"compile_lisp","fn_args":"(text)","usage":["text:string"],"description":"Given an input string of lisp text, returns a JSON structure ready for evaluation.","requires":["reader"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("has_the_keys?",async function(key_list,obj) {
     let is_fit;
@@ -1314,7 +1320,7 @@ await Environment.set_global("has_the_keys?",async function(key_list,obj) {
     }
 },{ "name":"has_the_keys?","fn_args":"(key_list obj)","usage":["key_list:list","object_to_check:object"],"description":"Given a provided key_list, validate that each listed key or dotted-path-notation value exist in the object.","example":[[["=:quotem",["=:has_the_keys?",["type","values.sub_transaction_id"],{ "type":"Transaction","group":"Receivables","values":{ "sub_transaction_id":1242424
 }
-}]],true]],"requires":["resolve_path"]
+}]],true]],"requires":["resolve_path"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("demarked_number",async function(value,separator,precision,no_show_sign) {
     let abs_value;
@@ -1365,13 +1371,13 @@ await Environment.set_global("demarked_number",async function(value,separator,pr
             return await __call_target__[__call_method__].call(__call_target__,prec)
         } 
     })()))
-},{ "name":"demarked_number","fn_args":"(value separator precision no_show_sign)","usage":["value:number","separator:string","precision:number","no_show_sign:boolean"],"description":["=:+","Given a numeric value, a separator string, such as \",\" and a precision value ","for the fractional-part or mantissa of the value, the demarked_number function will return a string with a formatted value. ","Default value for precision is 2 if not provided.","If no_show_sign is true, there will be no negative sign returned, which can be useful for alternative formatting.  See compile_format."],"tags":["format","conversion","currency"],"requires":["reverse","split","length","not","range","join","chop_front"]
+},{ "name":"demarked_number","fn_args":"(value separator precision no_show_sign)","usage":["value:number","separator:string","precision:number","no_show_sign:boolean"],"description":["=:+","Given a numeric value, a separator string, such as \",\" and a precision value ","for the fractional-part or mantissa of the value, the demarked_number function will return a string with a formatted value. ","Default value for precision is 2 if not provided.","If no_show_sign is true, there will be no negative sign returned, which can be useful for alternative formatting.  See compile_format."],"tags":["format","conversion","currency"],"requires":["reverse","split","length","not","range","join","chop_front"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("measure_time",async function(...forms) {
     return ["=:let",[["=:end","=:nil"],["=:rval","=:nil"],["=:start",["=:time_in_millis"]]],["=:=","=:rval",["=:do",].concat(forms)],{ "time":["=:-",["=:time_in_millis"],"=:start"],"result":"=:rval"
 }]
 },{ "eval_when":{ "compile_time":true
-},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results."
+},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results.","requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("compare_list_ends",async function(l1,l2) {
     let long_short;
@@ -1403,10 +1409,10 @@ await Environment.set_global("compare_list_ends",async function(l1,l2) {
     } else {
         return false
     }
-},{ "name":"compare_list_ends","fn_args":"(l1 l2)","usage":["array1:array","array2:array"],"tags":["comparision","values","list","array"],"description":"Compares the ends of the provided flat arrays, where the shortest list must match completely the tail end of the longer list. Returns true if the comparison matches, false if they don't.","requires":["length","reverse","map"]
+},{ "name":"compare_list_ends","fn_args":"(l1 l2)","usage":["array1:array","array2:array"],"tags":["comparision","values","list","array"],"description":"Compares the ends of the provided flat arrays, where the shortest list must match completely the tail end of the longer list. Returns true if the comparison matches, false if they don't.","requires":["length","reverse","map"],"source_name":"core-ext.lisp"
 });
  Environment.set_global("hsv_to_rgb",new Function("h","s","v","{\n        var r, g, b, i, f, p, q, t;\n        if (arguments.length === 1) {\n            s = h.s, v = h.v, h = h.h;\n        }\n        i = Math.floor(h * 6);\n        f = h * 6 - i;\n        p = v * (1 - s);\n        q = v * (1 - f * s);\n        t = v * (1 - (1 - f) * s);\n        switch (i % 6) {\n            case 0: r = v, g = t, b = p; break;\n            case 1: r = q, g = v, b = p; break;\n            case 2: r = p, g = v, b = t; break;\n            case 3: r = p, g = q, b = v; break;\n            case 4: r = t, g = p, b = v; break;\n            case 5: r = v, g = p, b = q; break;\n        }\n        return {\n            r: r,\n            g: g,\n            b: b\n        }\n    }"),{
-    usage:["hsv_values:array"],description:("Takes an array with three values corresponding to hue, saturation and brightness. "+ "Each value should be between 0 and 1.  "+ "The function returns an array with three values corresponding to red, green and blue."),tags:["colors","graphics","rgb","conversion"]
+    usage:["hsv_values:array"],description:("Takes an array with three values corresponding to hue, saturation and brightness. "+ "Each value should be between 0 and 1.  "+ "The function returns an array with three values corresponding to red, green and blue."),tags:["colors","graphics","rgb","conversion"],source_name:"core-ext.lisp"
 });
 await Environment.set_global("rgb_to_text",async function(rgb) {
     return (await (async function() {
@@ -1436,7 +1442,7 @@ await Environment.set_global("rgb_to_text",async function(rgb) {
         }return __array__111;
          
     })()).join("")
-},{ "name":"rgb_to_text","fn_args":"(rgb)","usage":["rgb_values:array"],"description":["=:+","Given an array with 3 values ranging from 0 to 1, corresponding to the \"red\",\"green\",\"blue\" values of the described color, ","the function returns a string in the form of FFFFFF."],"tags":["colors","graphics"],"requires":["join","length"]
+},{ "name":"rgb_to_text","fn_args":"(rgb)","usage":["rgb_values:array"],"description":["=:+","Given an array with 3 values ranging from 0 to 1, corresponding to the \"red\",\"green\",\"blue\" values of the described color, ","the function returns a string in the form of FFFFFF."],"tags":["colors","graphics"],"requires":["join","length"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("text_to_rgb",async function(rgb_string) {
     if (check_true (rgb_string)){
@@ -1461,7 +1467,7 @@ await Environment.set_global("text_to_rgb",async function(rgb_string) {
     } else {
         return null
     }
-},{ "name":"text_to_rgb","fn_args":"(rgb_string)","usage":["rgb_string:string"],"description":"Given an RGB hex color string in the form of \"FFFFFF\", returns an array containing [ red green blue ] in the set [ 0 1 ].","tags":["colors","graphics"],"requires":["join","nth"]
+},{ "name":"text_to_rgb","fn_args":"(rgb_string)","usage":["rgb_string:string"],"description":"Given an RGB hex color string in the form of \"FFFFFF\", returns an array containing [ red green blue ] in the set [ 0 1 ].","tags":["colors","graphics"],"requires":["join","nth"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("rgb_to_hsv",async function(rgb) {
     if (check_true (rgb)){
@@ -1526,7 +1532,7 @@ await Environment.set_global("rgb_to_hsv",async function(rgb) {
             })()
         }
     }
-},{ "name":"rgb_to_hsv","fn_args":"(rgb)","description":["=:+","Takes an array with three values corresponding to red, green and blue: [red green blue].","Each value should be between 0 and 1 (i.e the set [0 1]) ","The function returns an array with three values corresponding to [hue saturation value] in the set [0 1]."],"usage":["rgb_values:array"],"tags":["colors","graphics","rgb","conversion","hsv"]
+},{ "name":"rgb_to_hsv","fn_args":"(rgb)","description":["=:+","Takes an array with three values corresponding to red, green and blue: [red green blue].","Each value should be between 0 and 1 (i.e the set [0 1]) ","The function returns an array with three values corresponding to [hue saturation value] in the set [0 1]."],"usage":["rgb_values:array"],"tags":["colors","graphics","rgb","conversion","hsv"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("tint_rgb",async function(rgb,tint_factor) {
     if (check_true ((rgb&& tint_factor))){
@@ -1550,7 +1556,7 @@ await Environment.set_global("tint_rgb",async function(rgb,tint_factor) {
     } else {
         return rgb
     }
-},{ "name":"tint_rgb","fn_args":"(rgb tint_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["add"]
+},{ "name":"tint_rgb","fn_args":"(rgb tint_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["add"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("shade_rgb",async function(rgb,shade_factor) {
     if (check_true ((rgb&& shade_factor))){
@@ -1574,7 +1580,7 @@ await Environment.set_global("shade_rgb",async function(rgb,shade_factor) {
     } else {
         return rgb
     }
-},{ "name":"shade_rgb","fn_args":"(rgb shade_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"]
+},{ "name":"shade_rgb","fn_args":"(rgb shade_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("modify_color_ts",async function(rgb,factor) {
     if (check_true ((0<=factor))){
@@ -1582,19 +1588,19 @@ await Environment.set_global("modify_color_ts",async function(rgb,factor) {
     } else {
         return await (await Environment.get_global("shade_rgb"))(rgb,await Math.abs(factor))
     }
-},{ "name":"modify_color_ts","fn_args":"(rgb factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided factor to the color and return the result as an rgb array.","The provided factor should be in the range -1 to 1: -1 to 0 applies shade to the color and 0 to 1 applies tinting to the color."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["tint_rgb","shade_rgb"]
+},{ "name":"modify_color_ts","fn_args":"(rgb factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided factor to the color and return the result as an rgb array.","The provided factor should be in the range -1 to 1: -1 to 0 applies shade to the color and 0 to 1 applies tinting to the color."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["tint_rgb","shade_rgb"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("is_lower?",async function(v) {
     let c=await v["charCodeAt"].call(v,0);
     ;
     return ((c>96)&& (c<123))
-},{ "name":"is_lower?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is a lowercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"]
+},{ "name":"is_lower?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is a lowercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("is_upper?",async function(v) {
     let c=await v["charCodeAt"].call(v,0);
     ;
     return ((c>64)&& (c<91))
-},{ "name":"is_upper?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is an uppercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"]
+},{ "name":"is_upper?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is an uppercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("camel_case_to_lower",async function(val) {
     let last_upper=0;
@@ -1639,7 +1645,7 @@ await Environment.set_global("camel_case_to_lower",async function(val) {
             } ()
         },await (await Environment.get_global("split"))(val,"")) 
     })()).join("")
-},{ "name":"camel_case_to_lower","fn_args":"(val)","usage":[],"description":"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.","tags":["text","string","conversion","lowercase","uppercase"],"requires":["join","map","is_upper?","lowercase","is_lower?","split"]
+},{ "name":"camel_case_to_lower","fn_args":"(val)","usage":[],"description":"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.","tags":["text","string","conversion","lowercase","uppercase"],"requires":["join","map","is_upper?","lowercase","is_lower?","split"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("scan_list",async function(regex,container) {
     let expr=regex;
@@ -1687,7 +1693,7 @@ await Environment.set_global("scan_list",async function(regex,container) {
          
     })();
     return results
-},{ "name":"scan_list","fn_args":"(regex container)","description":["=:+","Scans a list for the provided regex expression and returns the indexes in the list where it is found.  ","The provided regex expression can be a plain string or a RegExp object."],"usage":["regex:string","container:list"],"tags":["search","index","list","regex","array","string"],"requires":["not","sub_type","is_string?","push"]
+},{ "name":"scan_list","fn_args":"(regex container)","description":["=:+","Scans a list for the provided regex expression and returns the indexes in the list where it is found.  ","The provided regex expression can be a plain string or a RegExp object."],"usage":["regex:string","container:list"],"tags":["search","index","list","regex","array","string"],"requires":["not","sub_type","is_string?","push"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("gather_up_prop",async function(key,values) {
     return await async function(){
@@ -1707,11 +1713,11 @@ await Environment.set_global("gather_up_prop",async function(key,values) {
             return values[key]
         }
     } ()
-},{ "name":"gather_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return all the values associated with the provided key.","tags":["key","property","objects","iteration"],"requires":["is_array?","no_empties","map","gather_up_prop","is_object?"]
+},{ "name":"gather_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return all the values associated with the provided key.","tags":["key","property","objects","iteration"],"requires":["is_array?","no_empties","map","gather_up_prop","is_object?"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("sum_up_prop",async function(key,values) {
     return await (await Environment.get_global("sum"))(await (await Environment.get_global("flatten"))(await (await Environment.get_global("gather_up_prop"))(key,values)))
-},{ "name":"sum_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return the total sum amount of the given key.","tags":["sum","key","property","objects","iteration"],"requires":["sum","flatten","gather_up_prop"]
+},{ "name":"sum_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return the total sum amount of the given key.","tags":["sum","key","property","objects","iteration"],"requires":["sum","flatten","gather_up_prop"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("scan_for",async function(non_nil_prop,list_of_objects) {
     let rval=null;
@@ -1739,7 +1745,7 @@ await Environment.set_global("scan_for",async function(non_nil_prop,list_of_obje
          
     })();
     return rval
-},{ "name":"scan_for","fn_args":"(non_nil_prop list_of_objects)","description":"Given a property name and a list of objects, find the first object with the non-nil property value specified by non_nil_prop. Returns the value of the non-nil property.","usage":["non_nil_prop:string","list_of_objects:array"],"tags":["find","scan","object","list","array","value"]
+},{ "name":"scan_for","fn_args":"(non_nil_prop list_of_objects)","description":"Given a property name and a list of objects, find the first object with the non-nil property value specified by non_nil_prop. Returns the value of the non-nil property.","usage":["non_nil_prop:string","list_of_objects:array"],"tags":["find","scan","object","list","array","value"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("make_sort_buckets",async function() {
     let buckets;
@@ -1774,10 +1780,14 @@ await Environment.set_global("make_sort_buckets",async function() {
         }
     };
     return push_to
-},{ "name":"make_sort_buckets","fn_args":"[]","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"],"requires":["push"]
+},{ "name":"make_sort_buckets","fn_args":"[]","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"],"requires":["push"],"source_name":"core-ext.lisp"
 });
- Environment.set_global("bytes_from_int_16",new Function("x","{ let bytes = []; let i = 2; do { bytes[(1 - --i)] = x & (255); x = x>>8; } while ( i ) return bytes;}"));
- Environment.set_global("int_16_from_bytes",new Function("x","y"," { let val = 0;  val +=y; val = val << 8; val +=x; return val; }"));
+ Environment.set_global("bytes_from_int_16",new Function("x","{ let bytes = []; let i = 2; do { bytes[(1 - --i)] = x & (255); x = x>>8; } while ( i ) return bytes;}"),{
+    requires:[],source_name:"core-ext.lisp"
+});
+ Environment.set_global("int_16_from_bytes",new Function("x","y"," { let val = 0;  val +=y; val = val << 8; val +=x; return val; }"),{
+    requires:[],source_name:"core-ext.lisp"
+});
 await Environment.set_global("truncate",async function(len,value,trailer) {
     trailer=(trailer|| "");
     return await async function(){
@@ -1793,7 +1803,7 @@ await Environment.set_global("truncate",async function(len,value,trailer) {
             return value
         }
     } ()
-},{ "name":"truncate","fn_args":"(len value trailer)","description":["=:+","Given a length and a string or an array, return the value ","with a length no more than then the provided value. If ","the value is a string an optional trailer string can be ","provided that will be appeneded to the truncated string."],"usage":["len:number","value:array|string","trailer:string?"],"tags":["array","string","length","max","min"],"requires":["is_string?","add","is_array?"]
+},{ "name":"truncate","fn_args":"(len value trailer)","description":["=:+","Given a length and a string or an array, return the value ","with a length no more than then the provided value. If ","the value is a string an optional trailer string can be ","provided that will be appeneded to the truncated string."],"usage":["len:number","value:array|string","trailer:string?"],"tags":["array","string","length","max","min"],"requires":["is_string?","add","is_array?"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("parse_csv",async function(csv_data,options) {
     let lbuffer;
@@ -1933,7 +1943,7 @@ await Environment.set_global("parse_csv",async function(csv_data,options) {
         }return __array__136;
          
     })()
-},{ "name":"parse_csv","fn_args":"(csv_data options)","description":["=:+","Given a text file of CSV data and an optional options value, parse and return a JSON structure of the CSV data as nested arrays.","<br>","Options can contain the following values:<br>","<table><tr><td>separator</td><td>A text value for the separator to use.  ","The default is a comma.</td></tr><tr><td>interruptions</td><td>If set to true, ","will pause regularly during processing for 1/10th of a second to allow other event queue activities to occur.</td>","</tr><tr><td>notifier</td><td>If interruptions is true, notifier will be triggered with ","the progress of work as a percentage of completion (0 - 1), the current count and the total rows.</td></tr></table>"],"usage":["csv_data:string","options:object?"],"tags":["parse","list","values","table","tabular","csv"],"requires":["is_array?","is_string?","split_by","replace","sleep","reverse","scan_str","push","length"]
+},{ "name":"parse_csv","fn_args":"(csv_data options)","description":["=:+","Given a text file of CSV data and an optional options value, parse and return a JSON structure of the CSV data as nested arrays.","<br>","Options can contain the following values:<br>","<table><tr><td>separator</td><td>A text value for the separator to use.  ","The default is a comma.</td></tr><tr><td>interruptions</td><td>If set to true, ","will pause regularly during processing for 1/10th of a second to allow other event queue activities to occur.</td>","</tr><tr><td>notifier</td><td>If interruptions is true, notifier will be triggered with ","the progress of work as a percentage of completion (0 - 1), the current count and the total rows.</td></tr></table>"],"usage":["csv_data:string","options:object?"],"tags":["parse","list","values","table","tabular","csv"],"requires":["is_array?","is_string?","split_by","replace","sleep","reverse","scan_str","push","length"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("to_csv",async function(rows,delimiter) {
     let quote_quoter=new RegExp("\"","g");
@@ -1968,11 +1978,11 @@ await Environment.set_global("to_csv",async function(rows,delimiter) {
         }return __array__154;
          
     })()).join("\n")
-},{ "name":"to_csv","fn_args":"[\"rows\" delimiter]","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"],"requires":["join","map","is_string?","contains?","replace"]
+},{ "name":"to_csv","fn_args":"[\"rows\" delimiter]","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"],"requires":["join","map","is_string?","contains?","replace"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("squeeze",async function(s) {
     return await (await Environment.get_global("replace"))(new RegExp(" ","g"),"",s)
-},{ "name":"squeeze","fn_args":"(s)","usage":["string_value:string"],"description":"Returns a string that has all spaces removed from the supplied string value.","tags":["text","space","trim","remove"],"requires":["replace"]
+},{ "name":"squeeze","fn_args":"(s)","usage":["string_value:string"],"description":"Returns a string that has all spaces removed from the supplied string value.","tags":["text","space","trim","remove"],"requires":["replace"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("ensure_keys",async function(keylist,obj,default_value) {
     default_value=await (async function(){
@@ -2012,10 +2022,10 @@ await Environment.set_global("ensure_keys",async function(keylist,obj,default_va
          
     })();
     return obj
-},{ "name":"ensure_keys","fn_args":"(keylist obj default_value)","description":["=:+","Given a list of key values, an object (or nil) and an optional default value to be ","assigned each key, ensures that the object returned has the specified keys (if not already set) set to either ","the specified default value, or nil."],"usage":["keylist","obj:object","default_value:*?"],"tags":["object","keys","values","required","key"]
+},{ "name":"ensure_keys","fn_args":"(keylist obj default_value)","description":["=:+","Given a list of key values, an object (or nil) and an optional default value to be ","assigned each key, ensures that the object returned has the specified keys (if not already set) set to either ","the specified default value, or nil."],"usage":["keylist","obj:object","default_value:*?"],"tags":["object","keys","values","required","key"],"requires":[],"source_name":"core-ext.lisp"
 });
  Environment.set_global("show_time_in_words",new Function("seconds","options","options=options||{}\n        if (options['longForm']==null) {\n            if (seconds<2) return \"now\";\n            if (seconds<61) return parseInt(seconds)+\" secs\";\n            if ((seconds>61)&&(seconds<120)) return \"1 min\";\n            if (seconds<3601) {\n                // less than an hour\n                return parseInt(seconds/60)+\" mins\";\n            }\n        } else if (options['longForm']==true) {\n            if (seconds<61) return parseInt(seconds)+\" seconds\";\n            if ((seconds>61)&&(seconds<120)) return \"1 minute\";\n            if (seconds<3601) {\n                // less than an hour\n                return parseInt(seconds / 60) + \" minutes\";\n            }\n        }\n\n        if (seconds<86400) {\n            return parseInt(seconds/3600)+\" hours\";\n        }\n        if (seconds<172801) {\n            return parseInt(seconds/86400)+\" day\";\n        }\n        if (seconds < 31536000) {\n            return parseInt(seconds/86400)+\" days\";\n        }\n        if (seconds < (2 * 31536000)) {\n            return \"1 year\";\n        }\n        return parseInt(seconds/31536000)+\" years\";\n "),{
-    description:("Given an integer value representing seconds of a time duration, return a string "+ "representing the time in words, such as 2 mins.  If the key longForm is set to "+ "true in options return full words instead of contracted forms.  For example min vs. minute."),usage:["seconds:integer","options:object"],tags:["time","date","format","string","elapsed"]
+    description:("Given an integer value representing seconds of a time duration, return a string "+ "representing the time in words, such as 2 mins.  If the key longForm is set to "+ "true in options return full words instead of contracted forms.  For example min vs. minute."),usage:["seconds:integer","options:object"],tags:["time","date","format","string","elapsed"],source_name:"core-ext.lisp"
 });
 await Environment.set_global("ago",async function(dval) {
     return await (await Environment.get_global("show_time_in_words"))(((await (async function() {
@@ -2024,7 +2034,7 @@ await Environment.set_global("ago",async function(dval) {
             return await __call_target__[__call_method__]()
         } 
     })()- await dval["getTime"]())/ 1000))
-},{ "name":"ago","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"]
+},{ "name":"ago","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("lifespan",async function(dval) {
     return await (await Environment.get_global("show_time_in_words"))(((await dval["getTime"]()- await (async function() {
@@ -2033,7 +2043,7 @@ await Environment.set_global("lifespan",async function(dval) {
             return await __call_target__[__call_method__]()
         } 
     })())/ 1000))
-},{ "name":"lifespan","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time until the specified date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"]
+},{ "name":"lifespan","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time until the specified date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("show",async function(thing) {
     return await async function(){
@@ -2043,20 +2053,20 @@ await Environment.set_global("show",async function(thing) {
             return thing
         }
     } ()
-},{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"]
+},{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"],"source_name":"core-ext.lisp"
 });
 {
      Environment.set_global("rotate_right",function(array_obj) {
         (array_obj).unshift((array_obj).pop());
         return array_obj
-    },{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"]
+    },{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"],"source_name":"core-ext.lisp"
 })
 };
 {
      Environment.set_global("rotate_left",function(array_obj) {
         (array_obj).push((array_obj).shift());
         return array_obj
-    },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"]
+    },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"source_name":"core-ext.lisp"
 })
 };
 await (await Environment.get_global("register_feature"))("core-ext");

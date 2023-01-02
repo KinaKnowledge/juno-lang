@@ -309,6 +309,20 @@
      `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message" "close"]
    })
 
+(defun load (filename)
+   (if (and (is_string? filename)
+            (not (blank? filename)))
+       (eval (read_lisp (fetch_text (+ "/files/" filename)))
+             { source_name: filename } ))
+   {
+       `description: (+ "Compile and load the contents of the specified lisp " 
+                        "filename (including path) into the Lisp environment. " 
+                        "The file contents are expected to be Lisp source code " 
+                        "in text format.")
+       `tags: [ `compile `read `io `file `input ]
+       `usage: ["filename:string"]
+   })
+                        
 (register_feature "http_client")
 (load_pends "http")
 true

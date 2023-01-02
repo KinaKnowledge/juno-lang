@@ -84,6 +84,8 @@ export function lisp_writer(obj,depth,max_depth,env) {
     }
     text += bracketStyles[bracketStyle+1];
     return text;
+  } else if (obj instanceof RegExp) {
+    return "(new RegExp "+JSON.stringify(obj.source)+" `"+obj.flags+")";
   } else if (typeof obj ==='object') {
     // object {}
     if (obj.constructor && obj.constructor.name !== "Object") {

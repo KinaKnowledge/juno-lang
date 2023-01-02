@@ -714,6 +714,69 @@
          (console.log "------"))))
       
 
+
+
+(defun encode_remote_result (request_id result namespace options)
+   (let
+      ((obj {
+              `req_id: request_id
+              `namespace: namespace
+              `rval: "OK"
+              `result_type: (sub_type result)
+              }))
+      (cond
+         (is_error? result)
+         (set_prop obj
+            `rval "FAIL"
+            `message result.message
+            `result (cond
+                       result.details
+                       result.details
+                       (is_string? result.stack)
+                       (split_by "\n" result.stack)
+                       else
+                       nil)
+            `error_type (sub_type result))
+         (is_regex? result)
+         (progn
+            (set_prop obj
+               `result (as_lisp result)
+               `needs_read true))
+         (is_function? result)
+         (progn
+            (set_prop obj
+               `result (+ {
+                            body: (-> result `toString)
+                            }
+                         (fn_signature result))))
+         
+         (is_function? result.toJSON)
+         (progn
+            (set_prop obj
+               `result (try
+                          (JSON.stringify result)
+                          (catch Error (e)
+                             (progn
+                                (console.log "encode_remote_result: cannot stringify the result" e.message)
+                                result)))
+               
+               `needs_eval true))
+         else
+         (set_prop obj
+            `result (as_lisp result)
+            `needs_eval (if options.needs_eval
+                           true
+                           false)
+            `needs_read (if options.needs_read
+                           true
+                           false)))
+      obj))
+
+(defglobal *ws_counter* 0)
+
+(defglobal $active_websockets
+   {})
+
 (defun create_ws_repl_handler (options)
    (let
       ((namespace nil)
@@ -723,58 +786,32 @@
                                    (= namespace ns)
                                    env)))
        (evaluator nil)
-       (encode_result (fn (request_id result)
-                         (let
-                            ((obj {
-                                    `req_id: request_id
-                                    `namespace: namespace
-                                    `rval: "OK"
-                                    `result_type: (sub_type result)
-                                    }))
-                            (cond
-                               (is_function? result)
-                               (progn
-                                  (set_prop obj
-                                     `result (+ {
-                                                  body: (-> result `toString)
-                                                  }
-                                                 (fn_signature result))))
-                               (is_function? result.toJSON)
-                               (progn
-                                  (set_prop obj
-                                     `result (try 
-                                                (JSON.stringify result)
-                                                (catch Error (e)
-                                                   (progn
-                                                      (console.log "encode_result: cannot stringify the result" e.message)
-                                                      result)))
-                                                      
-                                     `needs_eval true))
-                               (is_error? result)
-                               (set_prop obj
-                                  `rval "FAIL"
-                                  `message result.message
-                                  `result (cond 
-                                            result.details
-                                            result.details
-                                            (is_string? result.stack)
-                                            (split_by "\n" result.stack)
-                                            else
-                                            nil)
-                                  `error_type (sub_type result))
-                               else
-                               (set_prop obj
-                                  `result result))
-                            obj)))
-                                     
-                            
        (send_to_ws http/send_to_ws))
       (websocket_handler {
                            `on_open: (fn (ws event parameters)
                                         (try
                                            (progn
+                                              
+                                              (set_prop ws
+                                                 `ws_id (inc *ws_counter*)
+                                                 `namespace (or options.namespace "user")
+                                                 `log (fn (args)
+                                                         (send_to_ws 
+                                                            ws
+                                                            {
+                                                               `req_id: nil
+                                                               `result: (if (is_array? args)
+                                                                            (as_lisp args)
+                                                                            (as_lisp [ args ]))
+                                                               `needs_read: true
+                                                               `is_log: true
+                                                             })))
+                                              (set_prop $active_websockets
+                                                 ws.ws_id
+                                                 ws)
                                               (console.log "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
-                                              (= evaluator (get_evaluator_for_ns (or options.namespace "user")))
+                                              ;(= evaluator (get_evaluator_for_ns ws.namespace))
+                                              
                                               (send_to_ws ws
                                                        { config: *env_config*
                                                          namespace: namespace
@@ -788,6 +825,7 @@
                                                (args (prop data `args))
                                                (request_id (prop data `req_id))
                                                (result_type nil)
+                                               (evaluator (get_evaluator_for_ns ws.namespace))
                                                (result nil))
                                               (when (> __VERBOSITY__ 1)
                                                  (console.log "ws_repl_handler: -> " data))
@@ -803,13 +841,17 @@
                                                        (if (is_reference? cmd.1)
                                                            (progn
                                                               (= evaluator (get_evaluator_for_ns (desym_ref cmd.1)))
+                                                              (when evaluator
+                                                                 (set_prop ws
+                                                                    `namespace
+                                                                    (desym_ref cmd.1)))
                                                               (send_to_ws ws
-                                                                 (encode_result request_id evaluator.namespace)))
+                                                                 (encode_remote_result request_id ws.namespace evaluator.namespace)))
                                                            (send_to_ws ws 
-                                                                 (encode_result request_id "Malformed namespace change request. See use_ns syntax"))))
+                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace ))))
                                                     (catch Error (e)
                                                        (send_to_ws ws
-                                                          (encode_result request_id e))))
+                                                          (encode_remote_result request_id e evaluator.namespace))))
                                                                   
                                                        
                                                  (and (== command "eval")
@@ -820,12 +862,12 @@
                                                        (when (> __VERBOSITY__ 1)
                                                           (console.log "ws_repl: " namespace " <- " result))
                                                        (send_to_ws ws
-                                                                   (encode_result request_id result)))
+                                                                   (encode_remote_result request_id result evaluator.namespace)))
                                                     (catch Error (e)
                                                        (progn
                                                           (console.error "ws_repl_handler: error on eval: " e.message)
                                                           (send_to_ws ws
-                                                                      (encode_result request_id e)))))
+                                                                      (encode_remote_result request_id e evaluator.namespace)))))
                                                  (== command "close")
                                                  (progn
                                                     (console.log "closing repl connection")
@@ -837,7 +879,11 @@
                            `on_error: (fn (ws error)
                                          (log "error on websocket: " error))
                            `on_close: (fn (ws event)
-                                         (log "websocket closed"))
+                                         (progn
+                                            (when ws.ws_id
+                                               (remove_prop $active_websockets
+                                                  ws.ws_id))
+                                            (log "websocket closed")))
                            })))
 
 (defglobal ws_repl_handler
@@ -871,6 +917,7 @@
                      (save_file_handler base_directory))
      (add_http_route "GET" "/connect_repl"
                      ws_repl_handler)
+     (add_http_route "GET" "/pkg" (file_spooler (+ base_directory "/pkg")))
       (if (eq nil options)
           (= options {}))
       (set_prop options

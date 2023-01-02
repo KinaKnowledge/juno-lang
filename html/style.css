@@ -1735,6 +1735,7 @@ li.juno-main-menu-header {
   width: 100%;
   cursor: default;
   white-space: nowrap;
+  overflow: hidden;
   padding-top: 2px;
   padding-bottom: 2px;
   color: var(--control-unfocused-color);

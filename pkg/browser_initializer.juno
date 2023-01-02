@@ -71,7 +71,13 @@
 (defun get_operating_platform ()
     (if (contains? "Macintosh" navigator.userAgent)
         "mac"
-        "win"))
+        "win")
+    {
+        `usage: []
+        `description: (+ "If the browser is running on a Macintosh system, " 
+                         "will return mac, otherwise it will return win")
+        `tags: ["os" "system" "platform" "architecture" "host" "navigator" ]
+    })
       
 (defun message (text)
   (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text))
@@ -774,9 +780,10 @@
                      (span { `tabindex: 0 `class: "juno-tag" `style: "" } sym ))]
                  [])
               (if meta_obj.requires
-                 [(h4 "Requires")
-                  (for_each (`sym (sort meta_obj.requires))
-                     (span { `tabindex: 0 `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) "")) " juno-requires") } sym ))]
+                 [(h3 "Requires")
+                  (div {  } 
+                       (for_each (`sym (sort meta_obj.requires))
+                          (span { `tabindex: 0 `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) "")) " juno-requires") `style: "display: inline-block;" } sym )))]
                  [])
               ))
       (cond
@@ -1809,13 +1816,37 @@
       ((options (either options { `flat_index: 0 }))
        (path (either _path []))
        (disappear_timer nil)
-       (min_width (+ "min-width: " (or options.min_width 300) "px;"))
+       (os (get_operating_platform))
+       (command_map { "Command": "⌘"
+                      "Ctrl": (if (== os "mac")
+                                     "⌃"
+                                     "Ctrl")
+                      "Alt": (if (== os "mac")
+                                 "⌥"
+                                 "Alt")
+                      "Shift": "⇧" 
+                      "Backslash": (String.fromCharCode 92)
+                      "Escape": "Esc"
+                      "Slash": "/"
+                      })
+       (compress_keycodes (fn (keycode)
+                             (join " or " (map compress_keycode (split_by "|" keycode)))))
+       (compress_keycode (fn (keycode)
+                            (join "-" 
+                               (for_each (c (split_by "-" keycode))
+                                  (aif (prop command_map c)
+                                       it
+                                       c)))))
+                               
+       (min_width (+ "min-width: " (or options.min_width 350) "px;"))
        (id (either options.id "cmenu"))  
        (active_menu_item nil)
        (menu_element
-        (fn (idx text `& args)
+        (fn (idx menu_details `& args)
           (let
-              ((view (li {  `class: "pure-list-item"                                         
+              ((text menu_details.text)
+               (kcode (or menu_details.keycode ""))
+               (view (li {  `class: "pure-list-item"                                         
                           `style: (+ (if (> args.length 0)
                                          "position: relative;"
                                          "")
@@ -1829,7 +1860,8 @@
                              `style: ""
                              }
                             (if (== args.length 0)
-                              (span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                              [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
+                               (span { `class: "juno-menu-submenu" } kcode)]
                               [(span { `path: (join "~" (conj path idx)) `class: "juno-menu-text" } text)
                                (span { `class: "juno-menu-submenu" } "❯")]))
                          args))
@@ -1889,19 +1921,66 @@
                      
            (map (fn (item idx)
                   (let
-                      ((text (if (is_function? item.0)
-                               (item.0)
-                               item.0)))
-                    (set_prop options
-                              `flat_index
-                              (+ 1 options.flat_index))                     
+                      ((menu_details {})
+                       (struct (if (is_function? item.0)
+                                   (item.0)
+                                   item.0)))
+                      (cond 
+                         (is_string? struct)
+                         (progn
+                            (set_prop menu_details
+                               `text struct)
+                            (aif (resolve_path [ `global (to_key struct) ] *key_bindings*)
+                                 (progn
+                                    (set_prop menu_details
+                                       `keycode (prop it os))
+                                    (set_prop menu_details
+                                       `exec (prop it `exec)))))
+                         (and (is_object? struct)
+                              (is_array? struct.path))
+                         (progn
+                            (if (resolve_path struct.path *key_bindings*)
+                                 (progn
+                                    (defvar detail (resolve_path struct.path *key_bindings*))
+                                    (set_prop menu_details
+                                       `text (or struct.text
+                                                detail.description)
+                                       `keycode (prop detail os)
+                                       `exec detail.exec))
+                                 (set_prop menu_details
+                                         `text (or (prop struct `text)
+                                                   (+ "No Menu Text Found " idx)))))
+                         (is_object? struct)
+                         (progn
+                            (aif (and struct.text
+                                      (resolve_path [ `global (to_key struct.text) ] *key_bindings*))
+                                 (set_prop menu_details
+                                    `text struct.text
+                                    `keycode (prop it os)
+                                    `exec it.exec)
+                                 (set_prop menu_details
+                                       `text (or struct.text
+                                                (+ "No Menu Text Found " idx)))))
+                         else
+                         (set_prop menu_details
+                            `text (+ "No Menu Text Found " idx)))
+                      
+                      (set_prop options
+                         `flat_index
+                         (+ 1 options.flat_index))
+                    (when menu_details.keycode
+                       (set_prop menu_details
+                                 `keycode 
+                                 (compress_keycodes menu_details.keycode)))
                     (cond
                       (is_array? item.1)
-                      (menu_element options.flat_index text (menu_tree item.1 options (conj path [ idx 1])))
-                      (and (== text "--") (eq nil item.1))
+                      (menu_element options.flat_index menu_details (menu_tree item.1 options (conj path [ idx 1])))
+                      (and (== menu_details.text "--") (eq nil item.1))
                       (hr { `class: "LightHR" })
                       (is_function? item.1)
-                      (menu_element idx text)
+                      (menu_element idx menu_details)
+                      (is_string? item.1)
+                      (menu_element idx menu_details)
                       else
                       [])))
                 items)))
@@ -4538,9 +4617,24 @@
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
                                                            `enableBasicAutocompletion: true }))
+                               (== options.mode "sh")
+                               (progn
+                                  (-> editor.session `setMode "ace/mode/sh")
+                                  (-> editor `setOptions {
+                                                           `enableLiveAutocompletion: true
+                                                           `enableBasicAutocompletion: true }))
                                options.mode
                                (progn
                                   (-> editor.session `setMode options.mode)
+                                  (-> editor `setOptions {
+                                                           `enableLiveAutocompletion: true
+                                                           `enableBasicAutocompletion: true }))
+                               else
+                               (progn
+                                  (set_prop options
+                                     `mode
+                                     `text)
+                                  (-> editor.session `setMode "ace/mode/text")
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
                                                            `enableBasicAutocompletion: true })))
@@ -4613,7 +4707,7 @@
                                               (display_context_message (dtext "Please highlight text to evaluate")))
                                           (try
                                              (progn
-                                                (= rval (evaluator copytext nil (not options.repl_mode)))
+                                                (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
                                                       (progn
@@ -5042,7 +5136,8 @@
                               ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
                               ["Text" (fn () (-> intf `set_mode "text"))]
                               ["CSS" (fn () (-> intf `set_mode "css"))]
-                              ["JSON" (fn () (-> intf `set_mode "json"))]]]
+                              ["JSON" (fn () (-> intf `set_mode "json"))]
+                              ["Shell" (fn () (-> intf `set_mode "sh"))]]]
                             [(dtext "Set Editor Theme")
                              (for_each (theme *editor_themes*)
                                 [theme  (fn () (-> intf `set_theme theme))])]]))
@@ -5482,13 +5577,13 @@
                       "sub-control, and has a large number of options to enable higher fidelity "
                       "between serialization and deserialization cycles.   <br><br>#### Example Usage "
                       "<br>```(text_editor \n   { mode: `juno\n     on_change: (function (editor val)\n  "
-                      "            (progn\n                      (log (+ (control_name editor) \": "
+                      "           (progn\n                      (log (+ (control_name editor) \": "
                       "change: \" val))))\n     name: \"Test Editor\"\n     evaluator_id: (control_id "
                       "*system_repl*)\n     on_initialized: (fn (control)\n                      (notify "
                       "(+ (control_name control) \": initialized!\")))\n   })```<br><br><br>---<br><br> "
                       "This control serves as a wrapper around a third party library, the Ace Editor.  "
                       "The control abstracts certain Ace editor functionality as part of the control\'s "
-                      "interface. <br><br>#### Ace Editor            <br><br>  The underlying text "
+                      "interface. <br><br>#### Ace Editor             <br><br>  The underlying text "
                       "editor library used for this control is the BSD licensed Ace Editor.  The "
                       "documentation for this library is available here: "
                       "https://github.com/ajaxorg/ace.  Certain underlying functions have been "
@@ -5500,8 +5595,8 @@
                       "lost when serialized.  A project objective is to build out the interface for "
                       "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
                       "functionality should be expected to be able to save state and restore, unless "
-                      "otherwise noted.<br><br>#### Modes            <br><br> The editor can be set to "
-                      "operate in a certain \"mode\" state. Changing the editing mode enables certain "
+                      "otherwise noted.<br><br>#### Modes             <br><br> The editor can be set "
+                      "to operate in a certain \"mode\" state. Changing the editing mode enables certain "
                       "functionalities to be \"turned on\", and which is specifically relevant for the "
                       "type and purpose of the content being edited.  There are several modes that are "
                       "prebuilt into the editor: Juno/Lisp, Javascript, CSS, and plain text.  Each of "
@@ -5523,7 +5618,7 @@
                       "for their respective content type.  In this environments file structure, mode "
                       "files are found named `js_lib/mode-*`, where all relevant mode-code is found "
                       "with the \"mode-\" prefix.   <br>Mode details can be found on the Ace website, "
-                      "https://ace.c9.io/.  <br><br>#### Split Panels         <br><br>Editors can be "
+                      "https://ace.c9.io/.  <br><br>#### Split Panels          <br><br>Editors can be "
                       "split into multiple views of the same content.  Changes to the content are "
                       "propagated to each view, which is linked to the same content.  This means that "
                       "all changes in one will be reflected in the other editor.  Cursor positions and "
@@ -5540,35 +5635,35 @@
                       "is reached, and the editor contained unsaved material, the user will be "
                       "prompted if they want to save or store the contents of the editor.<br>The "
                       "interface command `split_window` allows for programmatic control over this "
-                      "functionality.  <br><br>### Launch Options              <br><br>Options "
+                      "functionality.  <br><br>### Launch Options               <br><br>Options "
                       "provided to the function allow for modification of behaviors and specific "
                       "functionality to be enabled or disabled at the time of the controls creation.  "
                       " The anything placed in the options object will be serialized when the "
                       "environment is saved, and so it is important to make sure that values must be "
-                      "able to represent themselves in JSON form.   <br>clone_with_editor_id:string - "
-                      "When present, the created editor instance will share an editing session with "
+                      "able to represent themselves in JSON form.   <br>clone_with_editor_id:string "
+                      "-When present, the created editor instance will share an editing session with "
                       "the editor with the given id.  The given editor must be a text_editor "
-                      "control.   <br>mode:string - Specifies which mode the editor should start in.  "
+                      "control.   <br>mode:string -Specifies which mode the editor should start in.  "
                       "For this to take effect, the mode must be a defined Ace editor mode (see Modes "
                       "above).  If not provided, the mode is determined by the filename if "
-                      "possible.<br>on_mode_set:function - If present, this function is called with "
-                      "the mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string - "
-                      "Specifies the specific ID of the editor.  This is generally not required, since "
-                      "controls should establish their own IDs, except when being rehydrated, they "
-                      "will need to keep the ID they had prior to serialization.<br>namespace:string - "
-                      "Specifies the namespace that the buffer should operate in, and reference.  If "
-                      "not specified, the current namespace is used.  This is necessary if the path "
-                      "being edited is in a different namespace than the current evaluation "
-                      "namespace.<br>read_only:boolean - If specified as true, the buffer will start "
-                      "in read only mode, and will not allow changes to the editor\'s "
-                      "content,.<br>control_bar:Element - When specified, uses the element provided "
-                      "with this option as the control bar as opposed to the default control "
-                      "bar.  <br>on_theme_set:function - If present, this function will be called with "
-                      "the new theme name when a new editor theme is set. <br>overscroll:boolean - If "
+                      "possible.<br>on_mode_set:function -If present, this function is called with the "
+                      "mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string "
+                      "-Specifies the specific ID of the editor.  This is generally not required, "
+                      "since controls should establish their own IDs, except when being rehydrated, "
+                      "they will need to keep the ID they had prior to "
+                      "serialization.<br>namespace:string -Specifies the namespace that the buffer "
+                      "should operate in, and reference.  If not specified, the current namespace is "
+                      "used.  This is necessary if the path being edited is in a different namespace "
+                      "than the current evaluation namespace.<br>read_only:boolean -If specified as "
+                      "true, the buffer will start in read only mode, and will not allow changes to "
+                      "the editor\'s content,.<br>control_bar:Element -When specified, uses the element "
+                      "provided with this option as the control bar as opposed to the default control "
+                      "bar.  <br>on_theme_set:function -If present, this function will be called with "
+                      "the new theme name when a new editor theme is set. <br>overscroll:boolean -If "
                       "true, the editor view will scroll past the final line, allowing for the final "
                       "line to be displayed in the middle regions of the view.   The default is true, "
                       "and this options must be explicitly set to false to disable.<br>filename:string "
-                      "- When present, the remote file is retrieved via fetch.  The filename should "
+                      "-When present, the remote file is retrieved via fetch.  The filename should "
                       "contains the relative path of the file under the root directory of the served "
                       "content.  The URL constructed to get the file is /files/filename where filename "
                       "is a path, such as /src/repl.lisp.  In this example, the final URL requested "
@@ -5579,7 +5674,17 @@
                       "path.  If this option is present, the path is is set by splitting the filename "
                       "by \"/\" and prepending the `filesystem symbol such that the "
                       "path `/src/repl.lisp` will set a path of `[ \"filesystem\" \"src\" \"repl.lisp\" "
-                      "]`.  <br><br> ")
+                      "]`.  <br>repl_mode:boolean - When set to true, this places the editor into a "
+                      "\"REPL\" mode, where when Control-Enter is pressed, the entire editor contents "
+                      "will be submitted to the evaluator, if possible.  If no errors are received "
+                      "from the evaluator for the submitted text, the contents of the editor will be "
+                      "cleared, and placed in the command history structure.  If an error is returned, "
+                      "the editor contents are not cleared so as to allow for correction of any "
+                      "problems or issues before resubmission.   Note that when placed in REPL mode, "
+                      "the editor doesn\'t signal or track if the contents need saving.  The default "
+                      "for this option is false.<br>max_history_length:number - When in repl_mode, "
+                      "sets the max number of command history stored until the editor is pruned. ")
+
 
 
      })
@@ -5904,7 +6009,46 @@
     })
 
 
-
+(defun process_remote_eval_result (result display_mode)
+   (if (is_object? result)
+       (try
+          (let
+             ((is_system_error? (== "FAIL" result.rval))
+              (is_compiler_error? (and (resolve_path [ `result 0 `error ] result)
+                                       (resolve_path [ `result 0 `message ] result))))
+             (cond
+                is_system_error?
+                (progn
+                   (div { `style: "border-left: 5px solid red; padding: 5px;" }
+                        (+ result.result_type ": " result.message)
+                        (value_to_dom result)))
+                is_compiler_error?
+                (progn
+                   (notify (+ "Error: " is_compiler_error?))
+                   (div { `style: "border-left: 5px solid red; padding: 5px;" }
+                        (if (== (length result.result) 1)
+                            (value_to_dom result.result.0)
+                            (value_to_dom result.result))))
+                
+                (ends_with? "unction" result.result_type)
+                (remote_function_to_dom result.result)
+                (and result.needs_eval
+                   (== display_mode `juno))
+                (as_lisp (read_lisp result.result))
+                (and result.needs_read
+                   (== display_mode `juno))
+                (as_lisp (read_lisp result.result))
+                result.needs_eval  ;; if json form returned and is a local compile
+                (eval_struct (JSON.parse result.result))
+                result.needs_read  ;; if juno form returned and is a local compile `
+                (eval_struct (read_lisp result.result))
+                (is_string? result.result)
+                (read_lisp result.result)
+                else
+                result.result))
+          (catch Error (e)
+             (list e.message result)))
+       result))
 ;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
 
 (defun visual_repl (options)
@@ -5948,6 +6092,7 @@
        (clog (fn (`& args)
                (progn
                   (apply console.log args)
+                 
                   (-> intf `log (apply div { `style: "display: flex;" }
                                        (for_each (val args)
                                           (div { `style: "padding-right: 10px" } (value_to_dom val)))))
@@ -6044,6 +6189,10 @@
                                                                   (clog data.result)
                                                                   (clog data.message)))))
                                                     (and (is_object? data)
+                                                         data.result
+                                                         data.is_log)
+                                                    (clog (pretty_print (read_lisp data.result)))
+                                                    (and (is_object? data)
                                                          data.result)
                                                     (clog "[message]:" data.result)
                                                     else
@@ -6098,38 +6247,9 @@
                                 (log (+ "Error on send_wait: " e))))
                        rval)))
                                                 
-       (process_remote_eval_result (fn (result)
-                                      (if (is_object? result)
-                                          (try
-                                             (let
-                                                ((is_system_error? (== "FAIL" result.rval))
-                                                 (is_compiler_error? (and (resolve_path [ `result 0 `error ] result)
-                                                                          (resolve_path [ `result 0 `message ] result))))
-                                                (cond
-                                                   is_system_error?
-                                                   (progn
-                                                      (div { `style: "border-left: 5px solid red; padding: 5px;" } 
-                                                           (+ result.result_type ": " result.message)
-                                                           (value_to_dom result)))
-                                                   is_compiler_error?
-                                                   (progn
-                                                      (notify (+ "Error: " is_compiler_error?))
-                                                      (div { `style: "border-left: 5px solid red; padding: 5px;" }
-                                                           (if (== (length result.result) 1)
-                                                               (value_to_dom result.result.0)
-                                                               (value_to_dom result.result))))
-                                                   
-                                                   (ends_with? "unction" result.result_type)
-                                                   (remote_function_to_dom result.result)
-                                                   result.needs_eval
-                                                   (eval_struct (JSON.parse result.result))
-                                                   else
-                                                   result.result))
-                                             (catch Error (e)
-                                                (list e.message result)))
-                                          result)))
+       
 
-       (evaluator (fn (lisp_text no_eval no_clear no_log)
+       (evaluator (fn (lisp_text no_eval no_clear no_log options)
                     (let
                         ((result nil)
                          (display_mode (-> output_control `display_mode)))
@@ -6143,19 +6263,19 @@
                                   (do
                                      (= error_state true)
                                      (when e.message
-                                        (notify (+ "Error: " e.message))))))
-                            ;(console.log "remote: <-" result)
+                                        (notify (+ "Remote Error: " e.message))))))
+                            (console.log "remote: <-" result)
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
                                   (or result.namespace "Unknown!")))
                             (cond 
                                (== display_mode "juno")
-                               (= result (pre (pretty_print (process_remote_eval_result result))))
+                               (= result (pre (pretty_print (process_remote_eval_result result display_mode))))
                                (== display_mode "json")
-                               (= result (pre (JSON.stringify (process_remote_eval_result result) nil 2)))
+                               (= result (pre (JSON.stringify (process_remote_eval_result result display_mode) nil 2)))
                                else
-                               (= result (process_remote_eval_result result)))
+                               (= result (process_remote_eval_result result display_mode)))
                             
                             (unless no_log
                                (-> output_control `append result lisp_text error_state))
@@ -6169,7 +6289,7 @@
                             (try
                                (= result (if no_eval
                                              lisp_text
-                                             (-> current_env `evaluate lisp_text {} { `throw_on_error: true })))
+                                             (-> current_env `evaluate lisp_text {} (+ { `throw_on_error: true } (if options options {})))))
                                (catch Error (ex)
                                   (do
                                      (= error_state true)
@@ -6250,6 +6370,20 @@
                                   (log "remote_repl: couldn't close the socket: " e.message))))
                            
                         (-> input_container `destroy)))))
+       (modes { `tree: 0 `juno: 1 `json: 2 } )
+       (set_display_mode (fn (mode)
+                            (let
+                               ((modenum (cond
+                                            (is_string? mode)
+                                            (or (prop modes (lowercase mode)) 0)
+                                            (is_number? mode)
+                                            mode
+                                            else 
+                                            0)))
+                               (-> output_control `set_display_mode modenum)
+                               (set_prop options.display_options `display_mode modenum)
+                               (set_prop display_mode_span
+                                  `innerText (-> output_control `display_mode)))))
        (menu_items (fn ()
                      [[(dtext "Clear Output Log")
                        (function ()
@@ -6282,26 +6416,14 @@
                               (-> output_control `set_max_log_lines it)))]
                       [(+ (dtext "Set Display Mode") "...")
                        [[(dtext "Tree")
-                        (fn ()
-                           (progn
-                              (-> output_control `set_display_mode 0)
-                              (set_prop options.display_options `display_mode 0)
-                              (set_prop display_mode_span
-                                 `innerText (-> output_control `display_mode))))]
-                       [(dtext "Juno")
-                        (fn ()
-                           (progn
-                              (-> output_control `set_display_mode 1)
-                              (set_prop options.display_options `display_mode 1)
-                              (set_prop display_mode_span
-                                 `innerText (-> output_control `display_mode))))]
-                       [(dtext "JSON")
-                        (fn ()
-                           (progn
-                              (-> output_control `set_display_mode 2)
-                              (set_prop options.display_options `display_mode 2)
-                              (set_prop display_mode_span
-                                 `innerText (-> output_control `display_mode))))]]]
+                         (fn ()
+                            (set_display_mode `tree))]
+                        [(dtext "Juno")
+                         (fn ()
+                            (set_display_mode `juno))]
+                        [(dtext "JSON")
+                         (fn ()
+                            (set_display_mode `json))]]]
                       (if (== output_control.options.smooth_scroll_mode false)
                           [(dtext "Turn On Smooth Scrolling")
                            (fn ()
@@ -6442,6 +6564,7 @@
              `clear_history: (function ()
                                        (clear_history))
              `clear_output: clear_output             
+             `set_display_mode: set_display_mode
              `initialize: initialize
              `destroy: destroy
              `on_hide: (fn ()
@@ -6469,10 +6592,38 @@
                      (-> output_control `log_message val))
              `log_error: (fn (error_message error)
                             (-> output_control `log_error error_message error))
-             `evaluate: (fn (lisp_text no_eval no_clear no_log)
-                          (evaluator lisp_text no_eval no_clear no_log))
+             `evaluate: (fn (lisp_text no_eval no_clear no_log options)
+                          (evaluator lisp_text no_eval no_clear no_log options))
              })
     intf)) 
+
+(defun set_repl_display_mode (mode ctl)
+   (if (is_string? mode)
+       (progn
+          (cond
+             (and (is_control? ctl)
+                  (is_function? ctl.set_display_mode))
+             (-> ctl `set_display_mode mode)
+             (and *last_focus*
+                (is_function? (prop *last_focus* `set_display_mode)))
+             (-> *last_focus* `set_display_mode mode)
+             else
+             (throw EvalError "invalid control for mode set"))
+          mode)
+       (throw TypeError "invalid mode specified - must be a string"))
+   {
+     `description: (+ "<br><br>Given a mode and an optional target REPL control (or any control that "
+                      "has the `set_display_mode` interface method) will set the output display mode "
+                      "to the provided mode.<br>Valid mode values are "
+                      "either:```tree\njuno\njson```<br><br>If no control argument is given, the control "
+                      "that `*last_focus*` is pointing at is used, if it supports the "
+                      "`set_display_mode` interface method.<br>The function will return the given mode "
+                      "if successful, or throw an error when the mode is not a valid string, or the "
+                      "control doesn\'t support the operation. ")
+     `usage: ["mode:string" "ctl:?object"]
+     `tags: ["REPL" "display" "mode" "output" "format"]
+   })
+
 
 (defcontrol unsaved_controls ()
    ((handle_button_event (fn (elem)
@@ -7813,7 +7964,14 @@
                                      []))
                               (assert (prop new_db tag) (+ "Error: tag " tag " should be a place in new_db"))
                               (push (prop new_db tag)
-                                    (+ "" ns "/" name)))))))))
+                                    (+ "" ns "/" name)))))))
+               ;; add direct links for each global, even if they refer to themself, so they are searchable
+               (for_each (name (keys env.context.scope))
+                  (progn
+                     (if (eq nil (prop new_db name))
+                         (set_prop new_db name []))
+                     (push (prop new_db name)
+                           (+ "" ns "/" name))))))
          (= *tags_to_meta*
             new_db)
          (build_documentation_datalist)
@@ -7955,10 +8113,10 @@
                    upper_content_view))
     (on_resize (fn (self)
                   (progn
-                     (defvar bh search_bar_elem.offsetHeight)
-                     (set_style [["height" (+ "calc(100% - " bh "px") ]] content_view))))
+                     (set_style [["height" (+ "calc(100% - " search_bar_elem.offsetHeight "px") ]] content_view))))
     (name "Juno Documentation")
     (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } (dtext "Documentation")))
+    (back_button (button { `disabled: true } (+ "<" " " (dtext "Go Back"))))
     (pin_button (button { } (dtext "Pin")))
     (history_button (button { } (dtext "History")))
     (pinned? (fn ()
@@ -7968,14 +8126,17 @@
     (history_max_length 15)
     (current_symbol nil)
     (handle_click (fn (e)
-                     (cond
-                        (has_class? "juno-requires"  e.srcElement)
-                        (progn
-                           (show_documentation e.srcElement.value))
-                        (has_class? "juno-tag" e.srcElement)
-                        (progn
-                           (-> self `search_by_tag e.srcElement.innerText)))))
-    (control_bar_elements [pin_button history_button])
+                     (progn
+                        (log "requires: " e.srcElement.innerText)
+                        (cond
+                           (has_class? "juno-requires"  e.srcElement)
+                           (progn
+                              
+                              (show_documentation e.srcElement.innerText))
+                           (has_class? "juno-tag" e.srcElement)
+                           (progn
+                              (-> self `search_by_tag e.srcElement.innerText))))))
+    (control_bar_elements [back_button pin_button history_button])
     (render_command_elem (fn (command)
                             (let
                                ((results (describe command true)))
@@ -8015,12 +8176,12 @@
                              (num_found_in_history_view 0)
                              (dup_remover {})
                              (new_view nil))
+                            
                             ;; deal with recording the history 
                             (when first_arg
                                ;; if there is anything in the history view that matches it, remove it so we can put it back on top
                                (remove_all_priors first_arg)
                                (= num_found_in_history_view (length (to_array (-> history_content_view `querySelectorAll (+ "[command='" first_arg "']")))))
-                               
                                (push history
                                   first_arg)
                                (if (pinned?)
@@ -8034,14 +8195,24 @@
                                (aif (last history_content_view.children)
                                     (-> it `remove)))
                             
-                            
+                            (if (> history.length 1)
+                               (set_enabled back_button)
+                               (set_disabled back_button))
+                            ;(log "message_receiver: history: " history "first_arg: " first_arg)
                             (when (or (and force first_arg)
                                       (and first_arg
                                          (not (pinned?))))
                                (= current_symbol first_arg)
                                (-> definition_view `replaceChildren
                                   (render_help current_symbol))))))
-    
+    (go_back (fn ()
+                (when (> history.length 1)
+                   (pop history)
+                   (defvar hist_item (pop history))
+                   (when hist_item
+                      (message_receiver { `args: [ hist_item ] })))))
+             
+                   
     (handler_function_id (gen_id "hid"))
     (history_mode? (fn ()
                       (has_class? "juno-button-on" history_button)))
@@ -8155,6 +8326,10 @@
                                   (if (> (length search_input.value) 0)
                                       (enable_search)
                                       (hide_search_view)))))
+                         (attach_event_listener back_button
+                            `click
+                            (fn (e)
+                               (go_back)))
                          (attach_event_listener view`
                             `keyup
                             (fn (e)
@@ -8172,6 +8347,7 @@
                             (fn (e)
                                (when (has_class? "juno-requires" e.srcElement)
                                   (show_documentation e.srcElement.innerText))))
+                         
                          (build_tag_index)
                          (= reindex_timer
                             (setInterval build_tag_index 60000))
@@ -10587,7 +10763,10 @@
                   ["Juno Remote REPL" (fn (e) (new_juno_repl { `remote_repl: (+ "ws://" window.location.host "/connect_repl") }))]
                   [])
                ["--" nil]
-               ["Juno Lisp Editor" (fn (e) (new_buffer { `type: "juno" }))]
+               [{ text: "Juno Lisp Editor" 
+                  path: [ `global `open_new_buffer ]
+                  }
+                  (fn (e) (new_buffer { `type: "juno" }))]
                ["Javascript Editor" (fn (e) (new_buffer { `type: "javascript" })) ]
                ["CSS Editor" (fn (e) (new_buffer { `type: "css" })) ]
                ["Text Editor" (fn (e) (new_buffer { `type: "text" })) ]
@@ -10598,21 +10777,31 @@
     (if (resolve_path [ `get ] *last_focus*) 
         ["--" nil]
         [])
-    (if (and is_served?
+    (cond
+       (and is_served?
              *last_focus*
              (resolve_path [ `options `filename ] *last_focus*))
-        [(+ (dtext "Close ") (get_editor_file_basename *last_focus*))
-         (fn () (close_file *last_focus*)) ]
+        [{ text: (+ (dtext "Close ") (get_editor_file_basename *last_focus*)) 
+           path: [ `global `close_control ] } 
+           (fn () (close_file *last_focus*)) ]
+        (and *last_focus*
+             (resolve_path [ `options `name ] *last_focus*))
+        [{ text: (+ (dtext "Close ") (resolve_path [ `options `name ] *last_focus*))
+           path: [ `global `close_control ] }
+           (fn () 
+              (hide_control *last_focus* true true)) ]
+        else
         [])
     (if (and *last_focus*
              is_served?
              (is_function? (prop *last_focus* `get)) ;; does it have a get method for the text
              (prop *last_focus* `name))  ;; and a name to identify it
-        [(+ (dtext "Save") " "
-            (or (aif (resolve_path [ `options `filename ] *last_focus*)
-                     (last (split_by "/" it)))
-                (resolve_path [ `options `name ] *last_focus*)
-                ""))
+        [{ text: (+ (dtext "Save") " "
+                    (or (aif (resolve_path [ `options `filename ] *last_focus*)
+                             (last (split_by "/" it)))
+                        (resolve_path [ `options `name ] *last_focus*)
+                        ""))
+           path: [ `global `save_file ] }
          (fn (e) (save_active_buffer))]
         [])
     (if (and *last_focus*
@@ -10638,7 +10827,7 @@
        ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
                               [theme_name (fn ()
                                              (set_global_theme theme_name))])]
-       [])])
+       [])]);
 
 (defun gen_layout_menu ()
    (let

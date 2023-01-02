@@ -1,5 +1,5 @@
 ;; Browser Based Workspace
-;; Sets up the basic environment
+;; Sets up the basic environment in Browser 
 ;; Initialize a simple REPL from which to start working
 
 
@@ -44,15 +44,16 @@
        (current_env Environment)
        (error_state nil)
        (initialized false)
-       (evaluator (fn (lisp_text no_eval)
+       (evaluator (fn (lisp_text no_eval options)
                     (let
                         ((result nil))
                       (setq error_state nil)
-                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))                      
+                      (setq current_env (-> Environment `get_namespace_handle (current_namespace)))
+                      (log "evaluator: options: " options)
                       (try
                         (= result (if no_eval
                                     lisp_text
-                                    (-> current_env `evaluate lisp_text)))
+                                    (-> current_env `evaluate lisp_text nil options)))
                         (catch Error (ex)
                           (do
                             (= error_state true)
@@ -81,7 +82,6 @@
                                       (is_function? result)
                                       (html/code { `style: " color: var(--type-function-color);" } "Function: "
                                                  (if result.name result.name "anonymous"))
-                                      
                                       (and (is_array? result)
                                            (instanceof result.0 Error))
                                       (html/pre { `style: " color: var(--type-array-color);" } "ERROR: "
@@ -98,7 +98,6 @@
                                            result.0.error)
                                       (html/pre { `style: " color: var(--type-error-color);" }                                                 
                                                 (JSON.stringify result nil 3 ))
-                                           
                                       else
                                       (html/pre { `style: "" } (JSON.stringify result nil 3 )))))
                       (set_prop output_container
@@ -114,7 +113,8 @@
        (perform_resize (fn ()
                          (progn
                           ;(console.log "repl: resize: " (prop juno_container.parentElement `offsetWidth))
-                          (html/set_style [["width" (+ "" (- (prop juno_container.parentElement `offsetWidth) 2) "px")]] juno_container)
+                          (html/set_style [["width" (+ "" (- (prop juno_container.parentElement `offsetWidth) 2) "px")]] 
+                                          juno_container)
                           )))
        (initialize (fn ()
                      (progn
@@ -129,9 +129,6 @@
                                               (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                          "Environment Version: " Environment.build_version   )) true)                         
                          (evaluator (html/div "Namespace: " (current_namespace)) true)))))))
-    
-    
-    
     {
      `view: juno_container
      `input_container: input_container
@@ -139,8 +136,8 @@
      `output_container: output_container
      `log: (fn (val)
              (evaluator val true))
-     `evaluate: (fn (lisp_text)
-                  (evaluator lisp_text))
+     `evaluate: (fn (lisp_text options)
+                  (evaluator lisp_text nil options))
      }))
      
 ;; easy page header access
@@ -253,8 +250,8 @@
   (let
       ((pkg (-> Environment `evaluate "core/html_package")))
     (console.log "system initializer: initializing packaged html_package")
-    (-> Environment `evaluate pkg)
-    
+    (-> Environment `evaluate pkg nil { `source_name: "pkg/html.juno" })
+
     ;(eval (reader (clone browser_repl_package)))
     (undefine `browser_repl_package)
     (undefine `rlog)
@@ -294,8 +291,8 @@
                  (rlog (html/div "Bootstrapping new image.."))                 
                  (-> repl `evaluate |
                      (use_unique_symbols "html")
-                     (evaluate browser_initializer)
-                     | )
+                     (evaluate browser_initializer { `source_name: "pkg/browser_initializer.juno" })
+                     | { `source_name: "pkg/browser_initializer.juno" })
                  (-> repl `evaluate | (save_image) | )
                  (rlog (html/div "Complete..Open the newly created html file to use.")))))
             100)

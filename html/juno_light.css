@@ -3,7 +3,7 @@
 :root {
     --main-bg-color: hsl(40deg 13% 90%);
     --main-color: #000000;
-    --header-bg-color: hsl(40deg 13% 90%);
+    --header-bg-color: hsl(43deg 14% 93%);;
     --highlight-bg-color: #404040;
     --highlight-color: white;
     --selected-bg-color: #0278e7;
@@ -17,7 +17,7 @@
     --control-disabled-color: #cad2d3;
     --control-readonly-color: #777;
     --button-hover-bg-color: #00000030;
-    --app-header-color: #084693;
+    --app-header-color: black;
     --namespace-color: #976464;
     --log-message-bg-color: inherit;
     --log-result-bg-color: inherit;
@@ -60,7 +60,7 @@
     "Ubuntu Mono",
     Menlo, Monaco, Consolas,
     monospace;
-    --editor-bg-color: #f6f3f1;
+    --editor-bg-color: hsl(43deg 14% 93%);
     --editor-text-color: #363636;
     --editor-gutter-bg-color: #e0e0e0;
     --editor-gutter-color: #333;

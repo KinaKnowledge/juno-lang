@@ -26,7 +26,9 @@
 ;;               buffer is considered anonymous.  This provided value is included
 ;;               in any errors thrown during the process of reading
 ;;               the file.
-
+;; symbol_receiver - function that if present will be called prior to returning
+;;               the processed structure which will contain an object with 
+;;               symbol information within it.
 
 
 (defglobal `reader
@@ -41,8 +43,9 @@
             ((`output_structure [])
              (`idx -1)
              (`error_collector [])
+             (`symbol_collector {})
              (`throw_on_error (not opts.suppress_throw_on_error))
-             (`line_number 1)
+             (`line_number 0)
              (`column_number 0)
              (`source_name (if opts.source_name
                                opts.source_name
@@ -66,6 +69,27 @@
              (`in_single_quote 4)
              (`reading_object false)
              (`mode in_code)  ;; start out in code
+             (`symbol_start nil)
+             (`last_final_column_num 0)
+             (`symbol_receiver (if (is_function? opts.symbol_receiver)
+                                   opts.symbol_receiver))
+             (`add_symbol (fn (symbol)
+                             ;; since called when a symbol is already read, we have... 
+                             ;; to subtract the length of the symbol to get the start col
+                             (when (not (ends_with? ":" symbol))
+                                (let
+                                   ((ccol (if (== column_number 0)
+                                              (- last_final_column_num symbol.length) ;; use the previous column number since we just had a line feed
+                                              (- column_number symbol.length)))
+                                    (cline (if (== column_number 0)
+                                               (- line_number 1)
+                                               line_number))
+                                    (real_sym (first (split_by "." symbol))))
+                                   (if (eq nil (prop symbol_collector real_sym))
+                                       (set_prop symbol_collector
+                                          real_sym [[cline ccol]])
+                                       (push (prop symbol_collector real_sym)
+                                             [cline ccol]))))))
              (`local_text (fn ()
                              (let
                                 ((`start (Math.max 0 (- idx 10)))
@@ -261,7 +285,9 @@
                                            (== backtick_mode 1)
                                            word
                                            else
-                                           (+ (quotel "=:") word))) ;; since not in quotes, return a reference
+                                           (progn
+                                              (when symbol_receiver (add_symbol word))
+                                              (+ (quotel "=:") word)))) ;; since not in quotes, return a symbol
                                      (is_number? word_as_number)
                                      word_as_number
                                      else
@@ -300,6 +326,7 @@
                                       (= next_c (get_char (+ idx 1)))
                                       (when (== c "\n")
                                          (inc line_number)
+                                         (= last_final_column_num column_number)
                                          (= column_number 0))
                                       
                                       (when debugmode
@@ -355,11 +382,9 @@
                                             (push word_acc c)
                                             (push word_acc c))
                                          
-                                         ;; DISABLED: condition where we have an escaped backslash - we need to store it
-                                         (and
-                                            (> mode 0)
-                                            (== escape_mode 1)
-                                            (== 92 (-> c `charCodeAt 0)))
+                                         (and (> mode 0)
+                                              (== escape_mode 1)
+                                              (== 92 (-> c `charCodeAt 0)))
                                          (do
                                             (push word_acc c))
                                          
@@ -587,7 +612,9 @@
             ;(log output_structure)
             (when debugmode
                (console.log "read<-" (clone output_structure)))
-           
+            (when opts.symbol_receiver
+               (opts.symbol_receiver { `source_name: source_name
+                                       `symbols: symbol_collector }))
             (if (and (is_array? output_structure)
                      (> (length output_structure) 1))
                 (do
@@ -596,5 +623,47 @@
                    ;(console.log "read (multiple forms) <-" output_structure)
                    (first [output_structure]))
                 ;(when opts.debug (console.log "read<-" (first output_structure)))
-                (first output_structure))))))
+                (first output_structure)))))
+   {
+     `description: (+ "<br><br>The reader function is responsible for reading text based input in Juno "
+                      "notation form or serialized JSON and producing a JSON output structure that can "
+                      "be read by the compiler.  <br>Text, provided as a string, is parsed by the "
+                      "reader.  It can contain one or more valid lisp forms or expressions.  If there "
+                      "are multiple expressions at the top level, the entire series of expressions "
+                      "are wrapped in an implicit `progn` (`iprogn`) structure in the returned JSON "
+                      "form.\n<br>Binding symbols are signified in the emitted JSON structure as "
+                      "strings, indicated by a `=:` prefix.  Comments within the Juno notation are "
+                      "removed and do not appear in the JSON output structure.<br><br>#### Options and "
+                      "Environmental Settings    <br><br>If the global `__VERBOSITY__` setting is set "
+                      "to 7 or above, the reader will log to the console a character by character "
+                      "representation of the internal read state.  <br>The first argument to the "
+                      "reader is expected to be a string, containing the text to be read and "
+                      "processed.  The second argument is an optional object that contains parameters "
+                      "for modifying the behavior of the reader.<br><br>#### Options "
+                      "<br><br>source_name:string - a string that represents the source location (file "
+                      "path, uri) of the text buffer being passed.  Otherwise the text buffer is "
+                      "considered anonymous.  This provided value is included in any errors thrown "
+                      "during the process of reading the file.<br>symbol_receiver:function -a "
+                      "provided function that if present will be called with a single argument "
+                      "containing an object with symbol locations within it.  The provided function "
+                      "will be called prior to the reader returning the processed structure which will "
+                      "contain an object with symbol information within it.   <br>The function will "
+                      "receive a single argument with the following structure:```{ \n  source_name: "
+                      "options.source_name\n  symbols: {\n    symbol_a:[[line_offset column_offset]\n    "
+                      "         [line_offset column_offset]]\n    symbol_b:[[line_offset "
+                      "column_offset]] \n}```<br><br>suppress_throw_on_error:boolean -If true, when an "
+                      "error is encountered an exception will not be thrown, as is the default "
+                      "behavior.  The reader will try to slog onward, however parsing may be impacted "
+                      "depending on the error encountered.<br>on_error:function -If "
+                      "suppress_throw_on_error is true, this function can be provided as a callback, "
+                      "which will receive a single argument with the error information as an object "
+                      "containing the details of the problem.  <br>The object will be contain the "
+                      "following structure:```{\n  message: \"Error message text\"\n  position: \"line: ### "
+                      "column: ###\"\n  pos: { line: line_number column: column_number }\n  depth: depth "
+                      "in tree\n  local_text: \"The text immediately surrounding the error\"\n "
+                      "source_name: options.source_name\n  type: \"Error Type\"\n}```<br> ")
+
+     `usage:["text:string" "options:?object"]
+     `tags: ["reader" "juno" "read" "lisp" "input" "eval" "evaluate" "parse"]
+     })
 

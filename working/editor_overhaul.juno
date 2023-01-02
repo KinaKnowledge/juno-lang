@@ -70,7 +70,7 @@
    (let
       ((header_size_lookup [nil h1 h2 h3 h4 h5 h6])
        (regex_list [{ name: "code"
-                       regex: (new RegExp "(`[a-zA-z0-9*?_%!\\-@\\$\\(\\)]+`)" `g)
+                       regex: (new RegExp "(`[a-z A-z0-9*?_%!\\-@\\$\\(\\)]+`)" `g)
                        exec: (fn (value full_regex_result)
                                 (progc
                                    (defvar rval (code {} (-> value `substr 1 (- (length value) 2))))
@@ -1192,9 +1192,24 @@
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
                                                            `enableBasicAutocompletion: true }))
+                               (== options.mode "sh")
+                               (progn
+                                  (-> editor.session `setMode "ace/mode/sh")
+                                  (-> editor `setOptions {
+                                                           `enableLiveAutocompletion: true
+                                                           `enableBasicAutocompletion: true }))
                                options.mode
                                (progn
                                   (-> editor.session `setMode options.mode)
+                                  (-> editor `setOptions {
+                                                           `enableLiveAutocompletion: true
+                                                           `enableBasicAutocompletion: true }))
+                               else
+                               (progn
+                                  (set_prop options
+                                     `mode
+                                     `text)
+                                  (-> editor.session `setMode "ace/mode/text")
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
                                                            `enableBasicAutocompletion: true })))
@@ -1267,7 +1282,7 @@
                                               (display_context_message (dtext "Please highlight text to evaluate")))
                                           (try
                                              (progn
-                                                (= rval (evaluator copytext nil (not options.repl_mode)))
+                                                (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
                                                       (progn
@@ -1696,7 +1711,8 @@
                               ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
                               ["Text" (fn () (-> intf `set_mode "text"))]
                               ["CSS" (fn () (-> intf `set_mode "css"))]
-                              ["JSON" (fn () (-> intf `set_mode "json"))]]]
+                              ["JSON" (fn () (-> intf `set_mode "json"))]
+                              ["Shell" (fn () (-> intf `set_mode "sh"))]]]
                             [(dtext "Set Editor Theme")
                              (for_each (theme *editor_themes*)
                                 [theme  (fn () (-> intf `set_theme theme))])]]))
@@ -2136,13 +2152,13 @@
                       "sub-control, and has a large number of options to enable higher fidelity "
                       "between serialization and deserialization cycles.   <br><br>#### Example Usage "
                       "<br>```(text_editor \n   { mode: `juno\n     on_change: (function (editor val)\n  "
-                      "            (progn\n                      (log (+ (control_name editor) \": "
+                      "           (progn\n                      (log (+ (control_name editor) \": "
                       "change: \" val))))\n     name: \"Test Editor\"\n     evaluator_id: (control_id "
                       "*system_repl*)\n     on_initialized: (fn (control)\n                      (notify "
                       "(+ (control_name control) \": initialized!\")))\n   })```<br><br><br>---<br><br> "
                       "This control serves as a wrapper around a third party library, the Ace Editor.  "
                       "The control abstracts certain Ace editor functionality as part of the control\'s "
-                      "interface. <br><br>#### Ace Editor            <br><br>  The underlying text "
+                      "interface. <br><br>#### Ace Editor             <br><br>  The underlying text "
                       "editor library used for this control is the BSD licensed Ace Editor.  The "
                       "documentation for this library is available here: "
                       "https://github.com/ajaxorg/ace.  Certain underlying functions have been "
@@ -2154,8 +2170,8 @@
                       "lost when serialized.  A project objective is to build out the interface for "
                       "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
                       "functionality should be expected to be able to save state and restore, unless "
-                      "otherwise noted.<br><br>#### Modes            <br><br> The editor can be set to "
-                      "operate in a certain \"mode\" state. Changing the editing mode enables certain "
+                      "otherwise noted.<br><br>#### Modes             <br><br> The editor can be set "
+                      "to operate in a certain \"mode\" state. Changing the editing mode enables certain "
                       "functionalities to be \"turned on\", and which is specifically relevant for the "
                       "type and purpose of the content being edited.  There are several modes that are "
                       "prebuilt into the editor: Juno/Lisp, Javascript, CSS, and plain text.  Each of "
@@ -2177,7 +2193,7 @@
                       "for their respective content type.  In this environments file structure, mode "
                       "files are found named `js_lib/mode-*`, where all relevant mode-code is found "
                       "with the \"mode-\" prefix.   <br>Mode details can be found on the Ace website, "
-                      "https://ace.c9.io/.  <br><br>#### Split Panels         <br><br>Editors can be "
+                      "https://ace.c9.io/.  <br><br>#### Split Panels          <br><br>Editors can be "
                       "split into multiple views of the same content.  Changes to the content are "
                       "propagated to each view, which is linked to the same content.  This means that "
                       "all changes in one will be reflected in the other editor.  Cursor positions and "
@@ -2194,35 +2210,35 @@
                       "is reached, and the editor contained unsaved material, the user will be "
                       "prompted if they want to save or store the contents of the editor.<br>The "
                       "interface command `split_window` allows for programmatic control over this "
-                      "functionality.  <br><br>### Launch Options              <br><br>Options "
+                      "functionality.  <br><br>### Launch Options               <br><br>Options "
                       "provided to the function allow for modification of behaviors and specific "
                       "functionality to be enabled or disabled at the time of the controls creation.  "
                       " The anything placed in the options object will be serialized when the "
                       "environment is saved, and so it is important to make sure that values must be "
-                      "able to represent themselves in JSON form.   <br>clone_with_editor_id:string - "
-                      "When present, the created editor instance will share an editing session with "
+                      "able to represent themselves in JSON form.   <br>clone_with_editor_id:string "
+                      "-When present, the created editor instance will share an editing session with "
                       "the editor with the given id.  The given editor must be a text_editor "
-                      "control.   <br>mode:string - Specifies which mode the editor should start in.  "
+                      "control.   <br>mode:string -Specifies which mode the editor should start in.  "
                       "For this to take effect, the mode must be a defined Ace editor mode (see Modes "
                       "above).  If not provided, the mode is determined by the filename if "
-                      "possible.<br>on_mode_set:function - If present, this function is called with "
-                      "the mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string - "
-                      "Specifies the specific ID of the editor.  This is generally not required, since "
-                      "controls should establish their own IDs, except when being rehydrated, they "
-                      "will need to keep the ID they had prior to serialization.<br>namespace:string - "
-                      "Specifies the namespace that the buffer should operate in, and reference.  If "
-                      "not specified, the current namespace is used.  This is necessary if the path "
-                      "being edited is in a different namespace than the current evaluation "
-                      "namespace.<br>read_only:boolean - If specified as true, the buffer will start "
-                      "in read only mode, and will not allow changes to the editor\'s "
-                      "content,.<br>control_bar:Element - When specified, uses the element provided "
-                      "with this option as the control bar as opposed to the default control "
-                      "bar.  <br>on_theme_set:function - If present, this function will be called with "
-                      "the new theme name when a new editor theme is set. <br>overscroll:boolean - If "
+                      "possible.<br>on_mode_set:function -If present, this function is called with the "
+                      "mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string "
+                      "-Specifies the specific ID of the editor.  This is generally not required, "
+                      "since controls should establish their own IDs, except when being rehydrated, "
+                      "they will need to keep the ID they had prior to "
+                      "serialization.<br>namespace:string -Specifies the namespace that the buffer "
+                      "should operate in, and reference.  If not specified, the current namespace is "
+                      "used.  This is necessary if the path being edited is in a different namespace "
+                      "than the current evaluation namespace.<br>read_only:boolean -If specified as "
+                      "true, the buffer will start in read only mode, and will not allow changes to "
+                      "the editor\'s content,.<br>control_bar:Element -When specified, uses the element "
+                      "provided with this option as the control bar as opposed to the default control "
+                      "bar.  <br>on_theme_set:function -If present, this function will be called with "
+                      "the new theme name when a new editor theme is set. <br>overscroll:boolean -If "
                       "true, the editor view will scroll past the final line, allowing for the final "
                       "line to be displayed in the middle regions of the view.   The default is true, "
                       "and this options must be explicitly set to false to disable.<br>filename:string "
-                      "- When present, the remote file is retrieved via fetch.  The filename should "
+                      "-When present, the remote file is retrieved via fetch.  The filename should "
                       "contains the relative path of the file under the root directory of the served "
                       "content.  The URL constructed to get the file is /files/filename where filename "
                       "is a path, such as /src/repl.lisp.  In this example, the final URL requested "
@@ -2233,7 +2249,17 @@
                       "path.  If this option is present, the path is is set by splitting the filename "
                       "by \"/\" and prepending the `filesystem symbol such that the "
                       "path `/src/repl.lisp` will set a path of `[ \"filesystem\" \"src\" \"repl.lisp\" "
-                      "]`.  <br><br> ")
+                      "]`.  <br>repl_mode:boolean - When set to true, this places the editor into a "
+                      "\"REPL\" mode, where when Control-Enter is pressed, the entire editor contents "
+                      "will be submitted to the evaluator, if possible.  If no errors are received "
+                      "from the evaluator for the submitted text, the contents of the editor will be "
+                      "cleared, and placed in the command history structure.  If an error is returned, "
+                      "the editor contents are not cleared so as to allow for correction of any "
+                      "problems or issues before resubmission.   Note that when placed in REPL mode, "
+                      "the editor doesn\'t signal or track if the contents need saving.  The default "
+                      "for this option is false.<br>max_history_length:number - When in repl_mode, "
+                      "sets the max number of command history stored until the editor is pruned. ")
+
 
 
      })
