@@ -4148,16 +4148,23 @@
                                `innerText
                                title_text)))
               (command_button (commands_button id))
+              (_parent_view nil)
+              (check_observer (fn ()
+                         (when (and _parent_view
+                                    (not (== view.parentElement _parent_view)))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= _parent_view view.parentElement))))
               (content_view (div { `style: "overflow: hidden; height: 100%; width: 100%; background: var(--control-bg-color); color: var(--control-color);" } "uninitialized.."))
               (resize (fn ()
-                         (progn
+                         (when view.parentElement
                             (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 20))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 5)))
                                (set_style [[ "width" (+ "" new_width "px") ]
                                            [ "height" (+ "" new_height "px") ]]
                                           view)
-                               
+                               (check_observer)
                                (when options.on_resize
                                   (options.on_resize self))
                                ,#(if control_options.render_on_resize
@@ -4228,6 +4235,7 @@
                                 (when (and view.parentElement
                                            (not initialized))
                                    (= initialized true)
+                                   (= _parent_view view.parentElement)
                                    (-> resize_observer `observe view.parentElement)                                   
                                    ,#(if (contains? (quote on_initialize) declared_allocations)
                                          `(on_initialize self)
@@ -6220,6 +6228,7 @@
                         (assert (and (instanceof repl_ws WebSocket)
                                      (== repl_ws.readyState repl_ws.OPEN))
                                 "Websocket is not open")
+                        ;(clog "ws-> ")
                        (try
                           (= rval (new Promise 
                                        (fn (resolve reject)
@@ -6241,7 +6250,9 @@
                                                                    `req_id: request_id
                                                                    `args: [ lisp_text ] })
                                                 (catch Error (e)
-                                                   (clog "ERROR on send_to_ws: " e)))
+                                                   (progn
+                                                      (notify (+ "send_wait: error: " e.message))
+                                                      (clog "ERROR on send_to_ws: " e))))
                                              true))))
                              (catch Error (e)
                                 (log (+ "Error on send_wait: " e))))
@@ -6249,7 +6260,7 @@
                                                 
        
 
-       (evaluator (fn (lisp_text no_eval no_clear no_log options)
+       (evaluator (fn (lisp_text no_eval no_clear no_log opts)
                     (let
                         ((result nil)
                          (display_mode (-> output_control `display_mode)))
@@ -6289,7 +6300,7 @@
                             (try
                                (= result (if no_eval
                                              lisp_text
-                                             (-> current_env `evaluate lisp_text {} (+ { `throw_on_error: true } (if options options {})))))
+                                             (-> current_env `evaluate lisp_text {} (+ { `throw_on_error: true } (if opts opts {})))))
                                (catch Error (ex)
                                   (do
                                      (= error_state true)
@@ -8405,6 +8416,7 @@
             (-> ctl_holding `has_control? (juno_documentation))
             (progn
                ((fn () (place_control `right (juno_documentation))))
+               (cascade_resize)
                (when (not focus_to_help?)
                   (setTimeout (fn ()
                                  (progn
@@ -8414,6 +8426,7 @@
             else
             (progn
                (defvar ctl (juno_documentation))
+               (log "initialized new juno_documentation")
                ((fn () (place_control `right ctl)))
                (when (not focus_to_help?)
                   (setTimeout (fn ()
