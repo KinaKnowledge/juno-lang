@@ -57,7 +57,8 @@
     (let
         ((opts (if (and (is_object? args.0)
                         (not (== (args.0.type) "element"))
-                        (not args.0.children))
+                        (not args.0.children)
+                        (not (is_array? args.0)))
                  args.0
                  nil))
          (content (if opts
@@ -132,7 +133,6 @@
 
   (defun serialize_document (root_element)
     (progn
-     (debug)
      (+ "<!doctype html>"       
         root_element)))
     
