@@ -6183,7 +6183,8 @@
                                                        (progn
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
-                                                 ;(clog "<-" event.data)
+                                                 (if options.debug
+                                                    (clog "remote: <-" data))
                                                  (cond
                                                     (and (is_object? data)
                                                          data.req_id)
@@ -6211,7 +6212,8 @@
                                                     (clog (pretty_print (read_lisp data.result)))
                                                     (and (is_object? data)
                                                          data.result)
-                                                    (clog "[message]:" data.result)
+                                                    (progn
+                                                       (-> output_control `log_message (process_remote_eval_result data (-> output_control `display_mode))))
                                                     else
                                                     (clog data)))
                                               (catch Error (e)
@@ -6301,8 +6303,6 @@
                                      (= error_state true)
                                      (when e.message
                                         (notify (+ "Remote Error: " e.message))))))
-                            (if options.debug
-                               (log "remote: <-" result))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
