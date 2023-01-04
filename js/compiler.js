@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-01-04 10:43:18
-// Version: 2023.01.04.10.43
-export const DLISP_ENV_VERSION='2023.01.04.10.43';
+// Build Time: 2023-01-04 11:59:40
+// Version: 2023.01.04.11.59
+export const DLISP_ENV_VERSION='2023.01.04.11.59';
 
 
 
@@ -1430,8 +1430,18 @@ return await (async function() {
                                 return ref_type
                             } else if (check_true ((ref_type==="array"))) {
                                 return []
+                            } else if (check_true ((((comps && comps.length)===1)&& (ref_type instanceof Object)))) {
+                                {
+                                    let v=ref_type[(comps && comps["0"])];
+                                    ;
+                                    if (check_true (v)){
+                                        return v
+                                    } else {
+                                        return ref_type
+                                    }
+                                }
                             } else if (check_true ((ref_type instanceof Object))) {
-                                return await (await Environment.get_global("resolve_path"))(comps,ref_type)
+                                return (await (await Environment.get_global("resolve_path"))(comps,ref_type)|| ref_type)
                             } else if (check_true (((typeof ref_type==="object")&& await contains_ques_((comps && comps["0"]),await Object["keys"].call(Object,ref_type))))) {
                                 {
                                     await (async function(){
