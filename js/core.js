@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-04 06:42:04
-// Version: 2023.01.04.06.42
-export const DLISP_ENV_VERSION='2023.01.04.06.42';
+// Build Time: 2023-01-04 10:43:18
+// Version: 2023.01.04.10.43
+export const DLISP_ENV_VERSION='2023.01.04.10.43';
 
 
 
@@ -425,7 +425,7 @@ await Environment.set_global("do_deferred_splice",async function(tree) {
                     };
                     let __BREAK__FLAG__=false;
                     while(await __test_condition__17()) {
-                        await __body_ref__18();
+                         await __body_ref__18();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -999,7 +999,7 @@ await Environment.set_global("is_reference?",async function(val) {
                     };
                     let __BREAK__FLAG__=false;
                     while( __test_condition__55()) {
-                         __body_ref__56();
+                          __body_ref__56();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -1035,33 +1035,29 @@ await Environment.set_global("object_methods",async function(obj) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__62=async function() {
-            return current_obj
-        };
-        let __body_ref__63=async function() {
+         let __body_ref__63=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__62()) {
-            await __body_ref__63();
-             if(__BREAK__FLAG__) {
-                 break;
-                
-            }
-        } ;
-        
-    })();
-    return await (async function() {
-        {
-             let __call_target__=await Array.from(await properties["keys"]()), __call_method__="filter";
-            return await __call_target__[__call_method__].call(__call_target__,async function(item) {
-                return item instanceof Function
-            })
-        } 
-    })()
+        while(current_obj) { await __body_ref__63();
+         if(__BREAK__FLAG__) {
+             break;
+            
+        }
+    } ;
+    
+})();
+return await (async function() {
+    {
+         let __call_target__=await Array.from(await properties["keys"]()), __call_method__="filter";
+        return await __call_target__[__call_method__].call(__call_target__,async function(item) {
+            return item instanceof Function
+        })
+    } 
+})()
 },{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"],"source_name":"core.lisp"
 });
 await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
@@ -2541,7 +2537,7 @@ await Environment.set_global("safe_access_2",async function(token,ctx,sanitizer_
                 };
                 let __BREAK__FLAG__=false;
                 while(await __test_condition__185()) {
-                    await __body_ref__186();
+                     await __body_ref__186();
                      if(__BREAK__FLAG__) {
                          break;
                         
@@ -2595,7 +2591,7 @@ await Environment.set_global("safe_access",async function(token,ctx,sanitizer_fn
                 };
                 let __BREAK__FLAG__=false;
                 while(await __test_condition__189()) {
-                    await __body_ref__190();
+                     await __body_ref__190();
                      if(__BREAK__FLAG__) {
                          break;
                         
@@ -3401,33 +3397,29 @@ await Environment.set_global("object_methods",async function(obj) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__247=async function() {
-            return current_obj
-        };
-        let __body_ref__248=async function() {
+         let __body_ref__248=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__247()) {
-            await __body_ref__248();
-             if(__BREAK__FLAG__) {
-                 break;
-                
-            }
-        } ;
-        
-    })();
-    return await (async function() {
-        {
-             let __call_target__=await Array.from(await properties["keys"]()), __call_method__="filter";
-            return await __call_target__[__call_method__].call(__call_target__,async function(item) {
-                return item instanceof Function
-            })
-        } 
-    })()
+        while(current_obj) { await __body_ref__248();
+         if(__BREAK__FLAG__) {
+             break;
+            
+        }
+    } ;
+    
+})();
+return await (async function() {
+    {
+         let __call_target__=await Array.from(await properties["keys"]()), __call_method__="filter";
+        return await __call_target__[__call_method__].call(__call_target__,async function(item) {
+            return item instanceof Function
+        })
+    } 
+})()
 },{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"],"source_name":"core.lisp"
 });
 await Environment.set_global("uniq",async function(values) {
@@ -3950,16 +3942,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_98747;
+                                                let _expr_1333;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_98747=await (async function(){
+                                                _expr_1333=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_98747 && _expr_98747["0"]);
-                                                req_ns=(_expr_98747 && _expr_98747["1"]);
-                                                explicit=(_expr_98747 && _expr_98747["2"]);
+                                                req_sym=(_expr_1333 && _expr_1333["0"]);
+                                                req_ns=(_expr_1333 && _expr_1333["1"]);
+                                                explicit=(_expr_1333 && _expr_1333["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4062,13 +4054,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_39313;
+                    let _expr_75483;
                     let nspace;
-                    _expr_39313=await (async function(){
+                    _expr_75483=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_39313 && _expr_39313["0"]);
-                    nspace=(_expr_39313 && _expr_39313["1"]);
+                    sym=(_expr_75483 && _expr_75483["0"]);
+                    nspace=(_expr_75483 && _expr_75483["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4487,10 +4479,7 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                 prototypes=[];
                 properties= ( Environment.get_global("first"))(prototypes);
                  ( function(){
-                     let __test_condition__316=function() {
-                        return current_obj
-                    };
-                    let __body_ref__317=function() {
+                     let __body_ref__317=function() {
                         properties=new Set();
                         (prototypes).push(properties);
                          ( function() {
@@ -4512,42 +4501,41 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
                         return current_obj= Object.getPrototypeOf(current_obj)
                     };
                     let __BREAK__FLAG__=false;
-                    while( __test_condition__316()) {
-                         __body_ref__317();
-                         if(__BREAK__FLAG__) {
-                             break;
-                            
-                        }
-                    } ;
-                    
-                })();
-                return  ( Environment.get_global("flatten"))( ( function() {
-                    let __for_body__324=function(s) {
-                        return  ( function() {
-                            {
-                                 let __call_target__= Array.from(s), __call_method__="sort";
-                                return  __call_target__[__call_method__]()
-                            } 
-                        })()
-                    };
-                    let __array__325=[],__elements__323=prototypes;
-                    let __BREAK__FLAG__=false;
-                    for(let __iter__322 in __elements__323) {
-                        __array__325.push( __for_body__324(__elements__323[__iter__322]));
-                        if(__BREAK__FLAG__) {
-                             __array__325.pop();
-                            break;
-                            
-                        }
-                    }return __array__325;
-                     
-                })())
-            }
-        } else {
-            throw new TypeError("keys*: invalid object as argument");
-            
+                    while(current_obj) {  __body_ref__317();
+                     if(__BREAK__FLAG__) {
+                         break;
+                        
+                    }
+                } ;
+                
+            })();
+            return  ( Environment.get_global("flatten"))( ( function() {
+                let __for_body__324=function(s) {
+                    return  ( function() {
+                        {
+                             let __call_target__= Array.from(s), __call_method__="sort";
+                            return  __call_target__[__call_method__]()
+                        } 
+                    })()
+                };
+                let __array__325=[],__elements__323=prototypes;
+                let __BREAK__FLAG__=false;
+                for(let __iter__322 in __elements__323) {
+                    __array__325.push( __for_body__324(__elements__323[__iter__322]));
+                    if(__BREAK__FLAG__) {
+                         __array__325.pop();
+                        break;
+                        
+                    }
+                }return __array__325;
+                 
+            })())
         }
-    },{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"source_name":"core.lisp"
+    } else {
+        throw new TypeError("keys*: invalid object as argument");
+        
+    }
+},{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"source_name":"core.lisp"
 })
 };
 {
@@ -4954,7 +4942,7 @@ await Environment.set_global("progc",async function(...forms) {
                         };
                         let __BREAK__FLAG__=false;
                         while( __test_condition__356()) {
-                             __body_ref__357();
+                              __body_ref__357();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -5014,7 +5002,7 @@ await Environment.set_global("progc",async function(...forms) {
                                         };
                                         let __BREAK__FLAG__=false;
                                         while( __test_condition__362()) {
-                                             __body_ref__363();
+                                              __body_ref__363();
                                              if(__BREAK__FLAG__) {
                                                  break;
                                                 
@@ -5027,7 +5015,7 @@ await Environment.set_global("progc",async function(...forms) {
                                 };
                                 let __BREAK__FLAG__=false;
                                 while( __test_condition__359()) {
-                                     __body_ref__360();
+                                      __body_ref__360();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -5286,7 +5274,7 @@ await Environment.set_global("set_default",async function(path,value) {
                         };
                         let __BREAK__FLAG__=false;
                         while( __test_condition__382()) {
-                             __body_ref__383();
+                              __body_ref__383();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -5544,7 +5532,7 @@ await Environment.set_global("set_default",async function(path,value) {
             };
             let __BREAK__FLAG__=false;
             while( __test_condition__384()) {
-                 __body_ref__385();
+                  __body_ref__385();
                  if(__BREAK__FLAG__) {
                      break;
                     
