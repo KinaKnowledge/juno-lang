@@ -776,15 +776,22 @@
                                          (and (is_function? ref_type)
                                               (is_ambiguous? root_ctx ref_name))
                                          ref_type
-                                         
+                                        
                                          (is_array? ref_type)
                                          ref_type
                                          
                                          (== ref_type "array")
                                          []
-                                         
+                                         (and (== comps.length 1)
+                                              (is_object? ref_type))
+                                         (progn
+                                            (defvar v (prop ref_type comps.0))
+                                            (if v
+                                                v
+                                               ref_type))
                                          (is_object? ref_type)
-                                         (resolve_path comps ref_type)
+                                         (or (resolve_path comps ref_type)
+                                             ref_type)
                                          
                                          (and (== (typeof ref_type) "object")
                                               (contains? comps.0 (-> Object `keys ref_type)))
@@ -796,6 +803,7 @@
                                          
                                          (== ref_type "objliteral")
                                          ref_type
+                                         
                                          
                                          
                                          else
