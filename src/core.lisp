@@ -2365,61 +2365,77 @@ such as things that connect or use environmental resources.
     }))
 
 
-(defun compiler_source_chain (cpath tree sources)
-      (if (and (is_array? cpath)
-               tree)
-          (let
-              ((sources (or sources []))
-               (source nil))
-            (= cpath (chop cpath))
-            (= source (as_lisp (resolve_path cpath tree)))
-            (if (> source.length 80)
-                (= source (+ (-> source `substr 0 80) "...")))
-            ;(console.log "compiler_source_chain: cpath: " cpath "source: " source "tree: " tree sources)
-            (when (not (blank? source))
-              (push sources source))
-            (if (and (> cpath.length 0)
-                     (< sources.length 2))
-                (compiler_source_chain cpath tree sources))
-            sources)))
-            
+(defun tokenize_lisp (quoted_source)
+   (let
+      ((current_env (-> Environment `get_namespace_handle (current_namespace))))
+   (compiler quoted_source
+      { `only_tokens: true 
+        `env: current_env
+      }))
+   {
+     `description: (+ "Given a quoted source, returns the compilation tokens for the source, prior "
+                      "to the actual compilation step.  Any functions that are specified as "
+                      "compile_time for eval_when, such as macros, will be expanded and the results of "
+                      "the expansions will be in the returned token form. ")
+     `usage: ["quoted_source:*"]
+     `tags: ["compilation" "compiler" "tokenize" "token" "tokens" "precompiler"]
+   })
 
-(defun compiler_syntax_validation (validator_key tokens errors ctx tree)
-  (let
-      ((validation_results nil)
-       (syntax_error nil)
-       (cpath nil)
-       (rules (prop *compiler_syntax_rules* validator_key)))
-    (if rules
-        (if_compile_time_defined `validate_form_structure
-          (do
-            ;(console.log "compiler_syntax_validation: " validator_key " -> tokens: " tokens "tree: " tree)
-            ;(debug)
-            (= validation_results (validate_form_structure rules [ tokens ]))
-            (= cpath (cond
-                         (is_array? tokens)
-                         (chop tokens.0.path)
-                         (is_object? tokens)
-                         tokens.path))
-            ;(console.log "compiler_syntax_validation: <- " validation_results)
-            (when (not validation_results.all_passed)
-               (for_each (`problem (or validation_results.invalid []))
-                  (push errors  {     `error: "SyntaxError"
-                                       `message:  problem
-                                      `source_name: (getf_ctx ctx "__SOURCE_NAME__")
-                                      `form: (first (compiler_source_chain cpath tree))
-                                      `parent_forms: (rest (compiler_source_chain cpath tree))
-                                      `invalid: true
-                                   }))
-               (= syntax_error (new SyntaxError "invalid syntax"))
-               (set_prop syntax_error
-                    `handled true)
-               ;(console.error "ERROR: " syntax_error)
-               (throw syntax_error)
-               ))))
-        ;(console.log "compiler_syntax_validation: no rules for: " validator_key " -> tokens: " tokens "tree: " tree )
+(defun detokenize (token)
+   (let
+      ((rval nil))
+      (cond
+         (is_array? token)
+         (for_each (`t token)
+            (detokenize t))
+         (and (is_object? token)
+              (== token.type "objlit")
+              (== token.val.name "{}"))
+         {}
+         (and (is_object? token)
+              (== token.type "objlit"))
+         (progn
+            (= rval (new Object))
+            (for_each (t token.val)
+               (set_prop rval
+                  t.val.0.name
+                  (detokenize t.val.1)))
+            rval)
         
-    validation_results))
+         (and (is_object? token)
+              (== token.type "literal"))
+         (detokenize token.val)
+         
+         (and (is_object? token)
+              (== token.type "arr")
+              token.source
+              (== token.val.0.type "special")
+              token.val.0.ref)
+         (progn
+            [token.val.0.val token.val.1])
+          (and (is_object? token)
+              ;(== token.type "num")
+              token.ref)
+         (+ "=:" token.name)
+         (and (is_object? token)
+              (== token.type "arr"))
+         (progn
+            (detokenize token.val))
+         (and (is_object? token)
+              token.ref)
+         (progn
+            token.val)
+         (is_object? token)
+         (detokenize token.val)
+         else
+         (progn
+            token)))
+   {
+     `description: (+ "Converts the provided compiler tokens to a JSON structure representing "
+                      "the original source tree. ")
+     `usage: ["token_structure:object|array"]
+     `tags: ["compilation" "compiler" "tokenize" "token" "tokens" "precompiler"]
+   })
 
 
 

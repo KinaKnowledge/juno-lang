@@ -5111,7 +5111,11 @@
                         else
                         (do
                            ;; we have tokenized and processed the input tree, now compile...
+                           ;; if we have a call out for this call it, as this is useful
+                           ;; for collection of the processed source in case of compilation errors
                            
+                           (if opts.on_final_token_assembly
+                              (-> opts `on_final_token_assembly final_token_assembly))
                            (= assembly (compile final_token_assembly
                                           root_ctx
                                           0))

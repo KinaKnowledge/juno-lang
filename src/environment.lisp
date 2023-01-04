@@ -1448,6 +1448,7 @@
                                            (compiled nil)
                                            (error_data nil)
                                            (requires nil)
+                                           (precompiled_assembly nil)
                                            (result nil))
                                           ;;(debug)
                                           ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
@@ -1464,6 +1465,8 @@
                                                                `formatted_output: true
                                                                `source_name: opts.source_name
                                                                `throw_on_error: opts.throw_on_error
+                                                               `on_final_token_assembly: (fn (val)
+                                                                                            (= precompiled_assembly val))
                                                                `error_report: (or opts.error_report nil)
                                                                `quiet_mode: (or opts.quiet_mode false) }))
                                                 (catch Error (`e)
@@ -1617,12 +1620,25 @@
                                                             compiled.1)))
                                                    (catch Error (e)
                                                       (do
+                                                         (when (== (sub_type e) "SyntaxError")
+                                                             (defvar details
+                                                                {
+                                                                  `error: e.name
+                                                                  `message: e.message
+                                                                  `expanded_source: (pretty_print (detokenize precompiled_assembly))
+                                                                  `compiled: compiled.1 
+                                                                  })
+                                                             (log "Syntax Error: " details)
+                                                             (set_prop e
+                                                                `details
+                                                                details))
+                                                             
                                                          (when (or opts.log_errors
                                                                    (> Environment.context.scope.__VERBOSITY__  4))
                                                             (if e.details
                                                                (env_log "caught error: " e.details)
                                                                (env_log "caught error: " e.name e.message e)))
-                                                         (if (and (== (sub_type e) "SyntaxError")
+                                                         (if (and false (== (sub_type e) "SyntaxError")
                                                                   (or opts.log_errors
                                                                      (> Environment.context.scope.__VERBOSITY__  4)))
                                                              (console.log compiled.1))

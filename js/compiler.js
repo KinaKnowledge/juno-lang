@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-01-02 12:04:51
-// Version: 2023.01.02.12.04
-export const DLISP_ENV_VERSION='2023.01.02.12.04';
+// Build Time: 2023-01-04 06:42:04
+// Version: 2023.01.04.06.42
+export const DLISP_ENV_VERSION='2023.01.04.06.42';
 
 
 
@@ -206,18 +206,18 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __test_condition__244=async function() {
+         let __test_condition__247=async function() {
             return current_obj
         };
-        let __body_ref__245=async function() {
+        let __body_ref__248=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__244()) {
-            await __body_ref__245();
+        while(await __test_condition__247()) {
+            await __body_ref__248();
              if(__BREAK__FLAG__) {
                  break;
                 
@@ -8715,6 +8715,9 @@ export async function init_compiler(Environment) {
                                 }
                             } else {
                                 {
+                                    if (check_true ((opts && opts["on_final_token_assembly"]))){
+                                        await opts["on_final_token_assembly"].call(opts,final_token_assembly)
+                                    };
                                     assembly=await (async function(){
                                          return await compile(final_token_assembly,root_ctx,0) 
                                     })();

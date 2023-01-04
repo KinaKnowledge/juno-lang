@@ -752,6 +752,7 @@
          
          (is_function? result.toJSON)
          (progn
+            (log request_id "Encoding result in JSON: " )
             (set_prop obj
                `result (try
                           (JSON.stringify result)
@@ -760,16 +761,19 @@
                                 (console.log "encode_remote_result: cannot stringify the result" e.message)
                                 result)))
                
-               `needs_eval true))
+               `needs_eval true)
+            (log request_id "Encoded to JSON: " obj))
          else
-         (set_prop obj
-            `result (as_lisp result)
-            `needs_eval (if options.needs_eval
-                           true
-                           false)
-            `needs_read (if options.needs_read
-                           true
-                           false)))
+         (progn
+            (log "encoding the result to JSON: " obj)
+            (set_prop obj
+               `result (JSON.stringify result)
+               `needs_eval (if options.needs_eval
+                              true
+                              false)
+               `needs_read (if options.needs_read
+                              true
+                              false))))
       obj))
 
 (defglobal *ws_counter* 0)
