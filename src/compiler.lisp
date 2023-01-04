@@ -3813,6 +3813,7 @@
                        (`ctx (new_ctx ctx))
                        (`preamble (calling_preamble ctx))
                        (`test_condition tokens.1)
+                       (`complex_test? (not test_condition.ref))
                        (`test_condition_ref (gen_temp_name "test_condition"))
                        (`body tokens.2)
                        (`body_ref (gen_temp_name "body_ref"))
@@ -3824,16 +3825,21 @@
                                break_out
                                true)
                       
-                      (if test_condition.ref
-                         (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.name nil ctx) ctx))
+                      ;(compile (build_fn_with_assignment test_condition_ref test_condition.name nil ctx) ctx))
+                      (when complex_test?
                          (push prebuild (compile (build_fn_with_assignment test_condition_ref test_condition.val nil ctx) ctx)))
                       
                       (push prebuild (compile (build_fn_with_assignment body_ref body.val nil ctx) ctx))
                       
+                      
                       (for_each (`t [ "let" " " break_out "=" "false" ";"])
                          (push prebuild t))
-                      (for_each (`t [ "while" "(" preamble.0 " " test_condition_ref "()" ")" " " "{"  preamble.0 " " body_ref "()" ";" " " "if" "(" break_out ")" " " "{" " " "break" ";" "}" "}" " " "" ";"])
-                         (push prebuild t))
+                      
+                      (if complex_test?
+                         (for_each (`t [ "while" "(" preamble.0 " " test_condition_ref "()" ")" " " "{" " " preamble.0 " " body_ref "()" ";" " " "if" "(" break_out ")" " " "{" " " "break" ";" "}" "}" " " "" ";"])
+                            (push prebuild t))
+                         (for_each (`t [ "while" "(" (compile test_condition ctx) ")" " {" " " preamble.0 " " body_ref "()" ";" " " "if" "(" break_out ")" " " "{" " " "break" ";" "}" "}" " " "" ";"])
+                            (push prebuild t)))
                       (for_each (`t [ preamble.0 " " "(" preamble.1 " " "function" "()" "{" " " prebuild "}" ")" "()" ])
                          (push acc t))
                       acc)))
