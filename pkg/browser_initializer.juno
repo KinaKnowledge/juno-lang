@@ -5585,13 +5585,13 @@
                       "sub-control, and has a large number of options to enable higher fidelity "
                       "between serialization and deserialization cycles.   <br><br>#### Example Usage "
                       "<br>```(text_editor \n   { mode: `juno\n     on_change: (function (editor val)\n  "
-                      "           (progn\n                      (log (+ (control_name editor) \": "
-                      "change: \" val))))\n     name: \"Test Editor\"\n     evaluator_id: (control_id "
+                      "          (progn\n                      (log (+ (control_name editor) \": change: "
+                      "\" val))))\n     name: \"Test Editor\"\n     evaluator_id: (control_id "
                       "*system_repl*)\n     on_initialized: (fn (control)\n                      (notify "
                       "(+ (control_name control) \": initialized!\")))\n   })```<br><br><br>---<br><br> "
                       "This control serves as a wrapper around a third party library, the Ace Editor.  "
                       "The control abstracts certain Ace editor functionality as part of the control\'s "
-                      "interface. <br><br>#### Ace Editor             <br><br>  The underlying text "
+                      "interface. <br><br>#### Ace Editor              <br><br>  The underlying text "
                       "editor library used for this control is the BSD licensed Ace Editor.  The "
                       "documentation for this library is available here: "
                       "https://github.com/ajaxorg/ace.  Certain underlying functions have been "
@@ -5603,7 +5603,7 @@
                       "lost when serialized.  A project objective is to build out the interface for "
                       "this control toward a more idiomatic and \"lisp-like\" interface.   The exposed "
                       "functionality should be expected to be able to save state and restore, unless "
-                      "otherwise noted.<br><br>#### Modes             <br><br> The editor can be set "
+                      "otherwise noted.<br><br>#### Modes              <br><br> The editor can be set "
                       "to operate in a certain \"mode\" state. Changing the editing mode enables certain "
                       "functionalities to be \"turned on\", and which is specifically relevant for the "
                       "type and purpose of the content being edited.  There are several modes that are "
@@ -5626,7 +5626,7 @@
                       "for their respective content type.  In this environments file structure, mode "
                       "files are found named `js_lib/mode-*`, where all relevant mode-code is found "
                       "with the \"mode-\" prefix.   <br>Mode details can be found on the Ace website, "
-                      "https://ace.c9.io/.  <br><br>#### Split Panels          <br><br>Editors can be "
+                      "https://ace.c9.io/.  <br><br>#### Split Panels           <br><br>Editors can be "
                       "split into multiple views of the same content.  Changes to the content are "
                       "propagated to each view, which is linked to the same content.  This means that "
                       "all changes in one will be reflected in the other editor.  Cursor positions and "
@@ -5643,7 +5643,7 @@
                       "is reached, and the editor contained unsaved material, the user will be "
                       "prompted if they want to save or store the contents of the editor.<br>The "
                       "interface command `split_window` allows for programmatic control over this "
-                      "functionality.  <br><br>### Launch Options               <br><br>Options "
+                      "functionality.  <br><br>### Launch Options                <br><br>Options "
                       "provided to the function allow for modification of behaviors and specific "
                       "functionality to be enabled or disabled at the time of the controls creation.  "
                       " The anything placed in the options object will be serialized when the "
@@ -5655,17 +5655,25 @@
                       "For this to take effect, the mode must be a defined Ace editor mode (see Modes "
                       "above).  If not provided, the mode is determined by the filename if "
                       "possible.<br>on_mode_set:function -If present, this function is called with the "
-                      "mode `(on_mode_set mode_name)` when the mode is changed. <br>id:string "
-                      "-Specifies the specific ID of the editor.  This is generally not required, "
-                      "since controls should establish their own IDs, except when being rehydrated, "
-                      "they will need to keep the ID they had prior to "
-                      "serialization.<br>namespace:string -Specifies the namespace that the buffer "
-                      "should operate in, and reference.  If not specified, the current namespace is "
-                      "used.  This is necessary if the path being edited is in a different namespace "
-                      "than the current evaluation namespace.<br>read_only:boolean -If specified as "
-                      "true, the buffer will start in read only mode, and will not allow changes to "
-                      "the editor\'s content,.<br>control_bar:Element -When specified, uses the element "
-                      "provided with this option as the control bar as opposed to the default control "
+                      "mode `(on_mode_set mode_name)` when the mode is changed. <br>on_save:function - "
+                      "Called after a document has been saved successfully.  Since an edit session can "
+                      "be shared between multiple controls that display different views, saving is "
+                      "handled in a centralized way through a shared function, the  "
+                      "`save_event_handler` function.  This external function receives a request and "
+                      "then alerts all the editor with the same `basename`, which is set in the "
+                      "options object by the control by calling their `save_complete` functions.  If "
+                      "the editor has an `on_save` function in the options, then that function will be "
+                      "called when the save successfully completes.<br>id:string -Specifies the "
+                      "specific ID of the editor.  This is generally not required, since controls "
+                      "should establish their own IDs, except when being rehydrated, they will need to "
+                      "keep the ID they had prior to serialization.<br>namespace:string -Specifies the "
+                      "namespace that the buffer should operate in, and reference.  If not specified, "
+                      "the current namespace is used.  This is necessary if the path being edited is "
+                      "in a different namespace than the current evaluation "
+                      "namespace.<br>read_only:boolean -If specified as true, the buffer will start in "
+                      "read only mode, and will not allow changes to the editor\'s "
+                      "content,.<br>control_bar:Element -When specified, uses the element provided "
+                      "with this option as the control bar as opposed to the default control "
                       "bar.  <br>on_theme_set:function -If present, this function will be called with "
                       "the new theme name when a new editor theme is set. <br>overscroll:boolean -If "
                       "true, the editor view will scroll past the final line, allowing for the final "
@@ -5682,7 +5690,7 @@
                       "path.  If this option is present, the path is is set by splitting the filename "
                       "by \"/\" and prepending the `filesystem symbol such that the "
                       "path `/src/repl.lisp` will set a path of `[ \"filesystem\" \"src\" \"repl.lisp\" "
-                      "]`.  <br>repl_mode:boolean - When set to true, this places the editor into a "
+                      "]`.  <br>repl_mode:boolean -When set to true, this places the editor into a "
                       "\"REPL\" mode, where when Control-Enter is pressed, the entire editor contents "
                       "will be submitted to the evaluator, if possible.  If no errors are received "
                       "from the evaluator for the submitted text, the contents of the editor will be "
@@ -5690,11 +5698,11 @@
                       "the editor contents are not cleared so as to allow for correction of any "
                       "problems or issues before resubmission.   Note that when placed in REPL mode, "
                       "the editor doesn\'t signal or track if the contents need saving.  The default "
-                      "for this option is false.<br>max_history_length:number - When in repl_mode, "
-                      "sets the max number of command history stored until the editor is pruned. ")
-
-
-
+                      "for this option is false.<br>max_history_length:number - The editor keeps track "
+                      "of cursor jumps that are larger than 8 rows and stores them in a history array "
+                      "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
+                      "and `go_forward_in_position` functions in the text_editor closure move an index "
+                      "back and forth between the stored positions.   ")
      })
 
 
@@ -6153,6 +6161,7 @@
        (repl_ws nil)
        (request_id 0)
        (requests {})
+       (reopen_button nil)
        (open_remote_evaluator 
           (fn ()
              (if options.remote_repl
@@ -6210,19 +6219,36 @@
                            `on_open: (fn (event)
                                         (progn
                                            (clog (+ "Connected to Remote REPL: " options.remote_repl))
+                                           (when reopen_button
+                                              (set_disabled reopen_button)
+                                              (set_prop reopen_button
+                                                 `innerHTML
+                                                 (dtext "Reconnected")))
                                            (try
                                               (set_prop location_span
                                                  `innerText (prop (send_wait "(hostname)") `result))
                                               (catch Error (e)
                                                  (clog "Unable to determine remote hostname: " e)))))
                            `on_close: (fn (event)
-                                         (clog "Interface is now closed"))
+                                         (progn
+                                            (clog "Interface is now closed")
+                                            (= reopen_button (button { `tabindex: 0 } (dtext "Reconnect")))
+                                            (attach_event_listener reopen_button
+                                               `click
+                                               (fn (e)
+                                                  (progn
+                                                     (set_disabled reopen_button )
+                                                     (open_remote_evaluator))))
+                                            (clog reopen_button)))
                            `on_error: (fn (event)
-                                         (clog "Error on WS:" event))
+                                         (progn
+                                            (when reopen_button
+                                               (set_enabled reopen_button))
+                                            (clog "Error on WS:" event)))
                            }))
                    (defglobal *repl_ws* repl_ws)
                    ))))
-       (send_wait (fn (lisp_text)
+       (send_wait (fn (lisp_text opts)
                      (let
                         ((rval nil))
                         (assert (and (instanceof repl_ws WebSocket)
@@ -6275,7 +6301,8 @@
                                      (= error_state true)
                                      (when e.message
                                         (notify (+ "Remote Error: " e.message))))))
-                            (console.log "remote: <-" result)
+                            (if options.debug
+                               (log "remote: <-" result))
                             (when (is_object? result)
                                (set_prop namespace_span
                                   `innerText
@@ -6304,8 +6331,18 @@
                                (catch Error (ex)
                                   (do
                                      (= error_state true)
-                                     (notify (+ "Error: " ex.message))
-                                     (= result ex))))
+                                     (console.error "ERROR: " ex)
+                                     (notify (+ (sub_type ex) ": " ex.message))
+                                     (when  ex.details
+                                        (log "Caught error: " ex.details)
+                                        (when (and ex.details.expanded_source
+                                                   (== display_mode "tree"))
+                                           (set_prop ex.details
+                                              `expanded_source
+                                              (pre ex.details.expanded_source)
+                                              `compiled
+                                              (pre ex.details.compiled))))
+                                        (= result ex.details))))
                             (console.log "<-" result)
                             (cond 
                                (== display_mode "juno")
@@ -11117,6 +11154,16 @@
                                      description: "New Juno Buffer"
                                      exec: (fn () (new_buffer { type: "juno" }))
                                     }
+                 "juno_remote_repl" { win: "Alt-Shift-2"
+                                     mac: "Command-Shift-2"
+                                     description: "Juno Remote Repl"
+                                     exec: (fn (e) (new_juno_repl { `remote_repl: (+ "ws://" window.location.host "/connect_repl") }))
+                                    }
+                 "juno_repl" { win: "Alt-Shift-1"
+                               mac: "Command-Shift-1"
+                               description: "Juno REPL"
+                               exec: (fn (e) (new_juno_repl))
+                               }
                  "save_file" { win: "Ctrl-S"
                                mac: "Command-S"
                                description: "Save File"
