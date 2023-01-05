@@ -1252,13 +1252,14 @@
                      (reduce (c (current_controls))                        
                         (when c.on_focus                          
                           c)))))
-    
+    ;(debug)
     (for_each (control controls)
                  (when (and (or (eq nil target_control)
                                 (not (== target_control control)))
                             (is_function? control.on_blur))
                    (-> control `on_blur)))
     
+    (console.log "set_focus_to: called with: " target_control)
     ;; remove any focus class markers
     (when (> focused_list.length 0)
       (= focused_list (map (fn (v) v) focused_list))       
@@ -1419,7 +1420,6 @@
         (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
              (is_function? position_details_target.parent.set_content))
         (progn
-            (debug)
             (-> holding_tank `remove_control position_details_new.child.options.id)
             (-> holding_tank `add_control position_details_target.child)
             (-> position_details_target.parent `set_content 
@@ -1807,7 +1807,7 @@
                   (when target_control
                      (break))
                   (= elem elem.parentElement)))
-            
+            (console.log "process_focus_chain: setting focus to: " target_control)
             (set_focus_to target_control controls)))))
 
 
@@ -2747,7 +2747,7 @@
               (= assignment_to it)              
               (try
                 (progn
-                 (debug)
+                 ;(debug)
                  (cond
                    (or (== assignment_to "global")
                        (== assignment_to "script"))
@@ -2770,7 +2770,7 @@
 
 (defun embed_js_orig (name js_text) 
   (progn
-   (debug)
+   ;(debug)
    (-> (page_header) `append (html/script { `id: name `type: "text/javascript" `charset: "utf-8" }
                                      (javascript js_text)))   
    (eval `(defglobal ,#name (html/get_by_id ,#name)
@@ -2780,7 +2780,7 @@
 
 (defun embed_js (name js_text) 
   (progn
-   (debug)
+   ;(debug)
    (eval `(-> (page_header) `append (html/script { `id: name `type: "text/javascript" `charset: "utf-8" }
                                      (javascript ,#js_text))))
    (eval `(defglobal ,#name (html/get_by_id ,#name)
@@ -4956,7 +4956,9 @@
             (on_focus (fn ()
                          (progn
                             (when (not (== *last_focus* intf))
-                               (focus_to intf.editor))
+                               (setTimeout (fn ()
+                                              (focus_to intf.editor))
+                                           10))
                             (setq *last_focus* intf)
                             (add_class "juno-focused" control_bar))))
             
@@ -5703,6 +5705,10 @@
                       "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
                       "and `go_forward_in_position` functions in the text_editor closure move an index "
                       "back and forth between the stored positions.   ")
+
+
+
+
      })
 
 
@@ -6085,6 +6091,26 @@
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
        (error_state nil)
+       (reopen_button (button { `title: (dtext "Connect/Disconnect") `class: "juno-button-on" style: "float: right;" `tabindex: 0 `disabled: true }
+                              "-"))
+       (set_reopen_button_state (fn (state)
+                                   (cond
+                                      (== state 2) ;; allow reconnect
+                                      (progn
+                                         (set_enabled reopen_button)
+                                         (set_attribute reopen_button `title "Reconnect")
+                                         (remove_class "juno-button-on" reopen_button))
+                                      (== state 1) ;; connecting
+                                      (progn
+                                         (set_disabled reopen_button)
+                                         (add_class "juno-button-on" reopen_button))
+                                      else ;; connected state
+                                      (progn
+                                         (set_attribute reopen_button `title "Disconnect")
+                                         (set_enabled reopen_button)
+                                         ;(remove_class "juno-button-on" reopen_button)
+                                         ))))
+       
        (remote_command_timeout 120000) ;; 2 minute default
        (initialized false)       
        (intf nil)       
@@ -6101,7 +6127,15 @@
        (output_control (progn
                           (log_view { `display_options: (or options.display_options { `show_timestamps: false } )
                                                          `hide_command_button: true
-                                                         `additional_elements: [ control_button title_span show_prototype_details_button namespace_span display_mode_span path_span location_span] `id: id })))
+                                                         `additional_elements: [ control_button 
+                                                                                 title_span 
+                                                                                 show_prototype_details_button 
+                                                                                 namespace_span 
+                                                                                 path_span
+                                                                                 display_mode_span 
+                                                                                 location_span
+                                                                                 (if options.remote_repl reopen_button [])] 
+                                                         `id: id })))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -6161,7 +6195,7 @@
        (repl_ws nil)
        (request_id 0)
        (requests {})
-       (reopen_button nil)
+       (remote_host nil)
        (open_remote_evaluator 
           (fn ()
              (if options.remote_repl
@@ -6221,35 +6255,30 @@
                            `on_open: (fn (event)
                                         (progn
                                            (clog (+ "Connected to Remote REPL: " options.remote_repl))
-                                           (when reopen_button
-                                              (set_disabled reopen_button)
-                                              (set_prop reopen_button
-                                                 `innerHTML
-                                                 (dtext "Reconnected")))
+                                           (set_reopen_button_state 0)
                                            (try
-                                              (set_prop location_span
-                                                 `innerText (prop (send_wait "(hostname)") `result))
+                                              (progn
+                                                 (= remote_host (prop (send_wait "(hostname)") `result))
+                                                 (cond 
+                                                    (is_string? remote_host)
+                                                    (progn
+                                                       (= remote_host (chop_front (chop remote_host)))
+                                                       (set_prop location_span
+                                                          `innerHTML remote_host))
+                                                    else
+                                                    (clog "ERROR: received invalid response for hostname: " remote_host)))
                                               (catch Error (e)
                                                  (clog "Unable to determine remote hostname: " e)))))
                            `on_close: (fn (event)
                                          (progn
                                             (clog "Interface is now closed")
-                                            (= reopen_button (button { `tabindex: 0 } (dtext "Reconnect")))
-                                            (attach_event_listener reopen_button
-                                               `click
-                                               (fn (e)
-                                                  (progn
-                                                     (set_disabled reopen_button )
-                                                     (open_remote_evaluator))))
-                                            (clog reopen_button)))
+                                            (set_reopen_button_state 2)))
                            `on_error: (fn (event)
                                          (progn
-                                            (when reopen_button
-                                               (set_enabled reopen_button))
+                                            (set_reopen_button_state 2)
                                             (clog "Error on WS:" event)))
                            }))
-                   (defglobal *repl_ws* repl_ws)
-                   ))))
+                   (defglobal *repl_ws* repl_ws)))))
        (send_wait (fn (lisp_text opts)
                      (let
                         ((rval nil))
@@ -6521,7 +6550,23 @@
                                                                  (html/span { `style: "font-weight: bold; display: inline-block;" } "Juno REPL")
                                                                  (html/span { `style: "display: inline-block; margin-left: 10px;" }
                                                                             "Version: " Environment.build_version   ))))
-                         
+                         (set_prop reopen_button
+                            `innerHTML
+                            "&#9211;")
+                         (attach_event_listener reopen_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  ;(clog "repl readyState: " (prop repl_ws `readyState))
+                                  (cond
+                                     (== (prop repl_ws `readyState) 1)
+                                     (progn 
+                                        (-> repl_ws `close))
+                                     else
+                                     (progn
+                                        (set_reopen_button_state 1)
+                                        (open_remote_evaluator))))))
+                        
                          ;; set the computed name
                          (set_prop options
                             `name
@@ -6614,6 +6659,8 @@
              `clear_output: clear_output             
              `set_display_mode: set_display_mode
              `initialize: initialize
+             `websocket: (function ()
+                            repl_ws)
              `destroy: destroy
              `on_hide: (fn ()
                          (when (is_function? output_control.on_hide)

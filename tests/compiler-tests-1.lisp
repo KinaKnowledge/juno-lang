@@ -681,9 +681,9 @@
     [20]
     11 "while with local inc and break"]
    [ "(defglobal *my_test_var* [ 1 2 ])
-              (while *my_test_var*.length
-                 (pop *my_test_var*))
-              *my_test_var*.length"
+      (while *my_test_var*.length
+             (pop *my_test_var*))
+      *my_test_var*.length"
     []
     0 "while with global reference"]
     ["(fn ()
