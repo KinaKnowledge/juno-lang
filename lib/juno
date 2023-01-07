@@ -98,7 +98,7 @@ EOF
 
 elif [ -n "$MAIN_SWITCH" ]; then
     if [ "$PLATFORM" == "deno" ]; then
-	 rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --allow-all "$STARTUP"
+	 rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --unstable --allow-all "$STARTUP"
     elif [ "$PLATFORM" == "node" ]; then
 	rlwrap -c -r -m -q'"' -M .clj node $MAIN_SWITCH "$STARTUP"
     else
