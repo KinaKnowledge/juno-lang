@@ -644,6 +644,15 @@
      `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message"]
      })
 
+(defun send_object (ws val)
+   (http/send_to_ws ws
+                 { req_id: nil
+                   namespace: (current_namespace)
+                   rval: "OK"
+                   result_type: "object"
+                   result: (JSON.stringify val)
+                   needs_eval: true } ))
+
 (defun close_ws (ws)
    (-> ws `close)
    {
@@ -721,6 +730,7 @@
       ((obj {
               `req_id: request_id
               `namespace: namespace
+              `ws_id: options.ws_id
               `rval: "OK"
               `result_type: (sub_type result)
               }))
@@ -817,8 +827,8 @@
                                               ;(= evaluator (get_evaluator_for_ns ws.namespace))
                                               
                                               (send_to_ws ws
-                                                       { config: *env_config*
-                                                         namespace: namespace
+                                                       { ws_id: ws.ws_id
+                                                         namespace: ws.namespace
                                                          }))
                                            (catch Error (e)
                                               (console.log "ws_repl_handler: cannot send to client: " e.message))))
@@ -850,12 +860,12 @@
                                                                     `namespace
                                                                     (desym_ref cmd.1)))
                                                               (send_to_ws ws
-                                                                 (encode_remote_result request_id ws.namespace evaluator.namespace)))
+                                                                 (encode_remote_result request_id ws.namespace evaluator.namespace { ws_id: ws_id } )))
                                                            (send_to_ws ws 
-                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace ))))
+                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace { ws_id: ws_id }))))
                                                     (catch Error (e)
                                                        (send_to_ws ws
-                                                          (encode_remote_result request_id e evaluator.namespace))))
+                                                          (encode_remote_result request_id e evaluator.namespace { ws_id: ws_id }))))
                                                                   
                                                        
                                                  (and (== command "eval")
@@ -866,12 +876,12 @@
                                                        (when (> __VERBOSITY__ 0)
                                                           (console.log "ws_repl_handler: " namespace " <- " result))
                                                        (send_to_ws ws
-                                                                   (encode_remote_result request_id result evaluator.namespace)))
+                                                                   (encode_remote_result request_id result evaluator.namespace { ws_id: ws_id })))
                                                     (catch Error (e)
                                                        (progn
                                                           (console.error "ws_repl_handler: error on eval: " e.message)
                                                           (send_to_ws ws
-                                                                      (encode_remote_result request_id e evaluator.namespace)))))
+                                                                      (encode_remote_result request_id e evaluator.namespace { ws_id: ws_id })))))
                                                  (== command "close")
                                                  (progn
                                                     (console.log "closing repl connection")

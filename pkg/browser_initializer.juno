@@ -5760,44 +5760,44 @@
        
 
 (defcontrol log_view ()
-      ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))       
-       (options (or options { `display_options: { include_prototypes: false }}))
-       (name (or options.name (name_control "log_view")))
-       (parent_view nil)
-       (set_show_prototypes (fn (state)
-                                  (progn                                                                      
-                                   (set_prop options.display_options
-                                             `include_prototypes
-                                             state)
-                                   (log_message "show prototypes: " options.display_options.include_prototypes))))
-       (display_modes [ `tree `juno `json ])
-       (set_display_mode (fn (mode)
+   ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))
+    (options (or options { `display_options: { include_prototypes: false }}))
+    (name (or options.name (name_control "log_view")))
+    (parent_view nil)
+    (set_show_prototypes (fn (state)
                             (progn
-                               (cond 
-                                  (is_number? mode)
+                               (set_prop options.display_options
+                                  `include_prototypes
+                                  state)
+                               (log_message "show prototypes: " options.display_options.include_prototypes))))
+    (display_modes [ `tree `juno `json ])
+    (set_display_mode (fn (mode)
+                         (progn
+                            (cond
+                               (is_number? mode)
+                               (set_prop options.display_options
+                                  `display_mode
+                                  (clamp mode 0 (max_index display_modes)))
+                               (and (is_string? mode)
+                                    (> (index_of mode display_modes) -1))
+                               (progn
                                   (set_prop options.display_options
                                      `display_mode
-                                     (clamp mode 0 (max_index display_modes)))
-                                  (and (is_string? mode)
-                                       (> (index_of mode display_modes) -1))
-                                  (progn
-                                     (set_prop options.display_options
-                                             `display_mode
-                                             (prop display_modes (index_of mode display_modes))))
-                                  else
-                                  (throw TypeError (+ "invalid display_mode - need string or number - got: " mode)))
-                               (log_message "set display mode: " (prop display_modes options.display_options.display_mode)))))
-                            
-       (render (fn ()
-                  ;(div { `tabindex: 0  `style: "background: white; color: var(--control-color); overflow: hidden; margin: 0px; padding: 0px; height: inherit; width: 100%;" }
-                       output_container))
-       (set_display_command_button 
-          (fn (state)
-             (progn
-                (if state
-                   (remove_class "juno-display-none" command_button)
-                   (add_class "juno-display-none" command_button)))))
-       (on_initialize (fn ()
+                                     (prop display_modes (index_of mode display_modes))))
+                               else
+                               (throw TypeError (+ "invalid display_mode - need string or number - got: " mode)))
+                            (log_message "set display mode: " (prop display_modes options.display_options.display_mode)))))
+    
+    (render (fn ()
+               ;(div { `tabindex: 0  `style: "background: white; color: var(--control-color); overflow: hidden; margin: 0px; padding: 0px; height: inherit; width: 100%;" }
+               output_container))
+    (set_display_command_button
+       (fn (state)
+          (progn
+             (if state
+                (remove_class "juno-display-none" command_button)
+                (add_class "juno-display-none" command_button)))))
+    (on_initialize (fn ()
                       (try
                          (progn
                             (= parent_view view.parentElement)
@@ -5810,225 +5810,226 @@
                             (when (eq nil (prop options `display_options))
                                (set_prop options
                                   `display_options
-                                 { include_prototypes: false display_mode: 0 }))
+                                  { include_prototypes: false display_mode: 0 }))
                             (when (eq nil (resolve_path [ `display_options `display_mode ] options))
                                (set_path [ `display_options `display_mode ] options 0))
                             (if (eq nil options.display_options.show_timestamps)
                                 (set_show_timestamps false)
                                 (set_show_timestamps options.display_options.show_timestamps))
                             (if options.hide_command_button
-                                (set_display_command_button (not options.hide_command_button))))
+                               (set_display_command_button (not options.hide_command_button))))
                          (catch Error (e)
                             (notify (+ "Error: " e.message))))))
-       ;; override the default resize (typically we use on_resize )
-       (resize (fn ()
-                         (let
-                               ((new_height (- (prop view.parentElement `offsetHeight) 5))
-                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                             (when (and hide_state
-                                        (> new_height 5))
-                                (= hide_state false)
-                                (set_prop output_container
-                                   `scrollTop
-                                   1000000)
-                                (set_prop view
-                                   `scrollTop
-                                   0)))))
-       (content_height 0)
-       (add_result (fn (result command_text error_state)
-                      (progn
-                         (assert initialized "log_view not initialized")
-                         (defvar appended_element nil)
-                         ;; unless we are at the bottom do the scroll
-                         (unless (== options.smooth_scroll_mode false)
-                            (when (< output_container.scrollTop (- content_height 350))
-                               (set_style [[`scroll-behavior `default]] output_container)
-                               (set_prop output_container `scrollTop content_height))
-                            (set_style [[`scroll-behavior `smooth]] output_container))
-                            
-                         (when (not (eq nil command_text))
-                           
-                            (-> output_container
-                               `append
-                               (if (> command_text.length 100)
-                                   (details {  class: "juno-result" }
-                                            (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
-                                            (pre { `tabindex: 0 `class: "juno-code-value" }
-                                                 command_text))
-                                   (div {  class: "juno-result" }
-                                        (pre { `tabindex: 0 `class: "juno-code-value" }
-                                              command_text)))))
-                        
-                            (-> output_container
-                            `append
-                            (= appended_element
-                               (div { `class: "juno-log-message"
-                                      `style: (+ " margin-top: 0px; font-family: var(--main-mono-space); "
-                                                 (if (eq nil command_text)
-                                                     "border-top: 1px solid #00000020; padding: 5px;"
-                                                     "border-left: 3px solid #0167835e; padding: 5px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
-                                 (value_to_dom result options.display_options))))
-                         (when (> appended_element.parentElement.children.length 
-                                  (or options.max_log_lines
-                                     *env_config*.application.max_log_lines
-                                     10))
-                            (-> (first appended_element.parentElement.children)
-                                `remove))
+    ;; override the default resize (typically we use on_resize )
+    (resize (fn ()
+               (let
+                  ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                   (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                  (when (and hide_state
+                             (> new_height 5))
+                     (= hide_state false)
+                     (set_prop output_container
+                        `scrollTop
+                        1000000)
+                     (set_prop view
+                        `scrollTop
+                        0)))))
+    (content_height 0)
+    (add_result (fn (result command_text error_state)
+                   (progn
+                      (assert initialized "log_view not initialized")
+                      (defvar appended_element nil)
+                      ;; unless we are at the bottom do the scroll
+                      (unless (== options.smooth_scroll_mode false)
+                         (when (< output_container.scrollTop (- content_height 350))
+                            (set_style [[`scroll-behavior `default]] output_container)
+                            (set_prop output_container `scrollTop content_height))
+                         (set_style [[`scroll-behavior `smooth]] output_container))
+                      
+                      (when (not (eq nil command_text))
                          
-                         (= content_height (sum (each output_container.children `offsetHeight)))
-                         (set_prop appended_element.parentElement
-                                `scrollTop
-                                content_height)
-                         (set_prop view
-                            `scrollTop
-                            0)
-                         result)))
-       (set_max_log_lines (fn (val)
-                            (when (is_number? val)
-                              (set_prop options
-                                        `max_log_lines
-                                        val)
-                              ;(while (> output_container.children.length options.max_log_lines)
-                               ; (-> (first output_container.children)
-                                ;    `remove))
-                              true)))
-       (set_show_timestamps (fn (state)
+                         (-> output_container
+                            `append
+                            (if (> command_text.length 100)
+                                (details {  class: "juno-result" }
+                                         (summary { `tabindex: 0 `class: "juno-code-value" } (+ (-> command_text `substr 0 100) "..."))
+                                         (pre { `tabindex: 0 `class: "juno-code-value" }
+                                              command_text))
+                                (div {  class: "juno-result" }
+                                     (pre { `tabindex: 0 `class: "juno-code-value" }
+                                          command_text)))))
+                      
+                      (-> output_container
+                         `append
+                         (= appended_element
+                            (div { `class: "juno-log-message"
+                                   `style: (+ " margin-top: 0px; font-family: var(--main-mono-space); "
+                                              (if (eq nil command_text)
+                                                  "border-top: 1px solid #00000020; padding: 5px;"
+                                                  "border-left: 3px solid #0167835e; padding: 5px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
+                              (value_to_dom result options.display_options))))
+                      (when (> appended_element.parentElement.children.length
+                               (or options.max_log_lines
+                                  *env_config*.application.max_log_lines
+                                  10))
+                         (-> (first appended_element.parentElement.children)
+                             `remove))
+                      
+                      (= content_height (sum (each output_container.children `offsetHeight)))
+                      (setTimeout (fn ()
+                                     (set_prop appended_element.parentElement
+                                        `scrollTop
+                                        (+ content_height 240)))
+                                  10)
+                      (set_prop view
+                         `scrollTop
+                         0)
+                      result)))
+    (set_max_log_lines (fn (val)
+                          (when (is_number? val)
+                             (set_prop options
+                                `max_log_lines
+                                val)
+                             ;(while (> output_container.children.length options.max_log_lines)
+                             ; (-> (first output_container.children)
+                             ;    `remove))
+                             true)))
+    (set_show_timestamps (fn (state)
+                            (if state
+                               (progn
+                                  (= ts_hidden_state "")
+                                  (set_prop options.display_options
+                                     `show_timestamps true)
+                                  (when view  ;; surround in try catch in case we aren't completely ready
+                                     (try
+                                        (apply remove_class "juno-display-none" (or (-> view `querySelectorAll ".juno-timestamp") []))
+                                        (catch Error (e)
+                                           nil))))
+                               
+                               (progn
+                                  (set_prop options.display_options
+                                     `show_timestamps false)
+                                  (= ts_hidden_state "juno-display-none")
+                                  (when view
+                                     (try
+                                        (apply add_class "juno-display-none" (-> view `querySelectorAll ".juno-timestamp"))
+                                        (catch Error (e)
+                                           nil)))))))
+    (set_smooth_scroll_mode (fn (state)
                                (if state
                                   (progn
-                                     (= ts_hidden_state "")
-                                     (set_prop options.display_options
-                                        `show_timestamps true)
-                                     (when view  ;; surround in try catch in case we aren't completely ready
-                                        (try
-                                           (apply remove_class "juno-display-none" (or (-> view `querySelectorAll ".juno-timestamp") []))
-                                           (catch Error (e)
-                                              nil))))
-                                  
+                                     (set_prop options
+                                        `smooth_scroll_mode true)
+                                     (set_style [[`scroll-behavior `smooth]] output_container))
                                   (progn
-                                     (set_prop options.display_options
-                                        `show_timestamps false)
-                                     (= ts_hidden_state "juno-display-none")
-                                     (when view
-                                        (try
-                                           (apply add_class "juno-display-none" (-> view `querySelectorAll ".juno-timestamp"))
-                                           (catch Error (e)
-                                              nil)))))))
-       (set_smooth_scroll_mode (fn (state)
-                                  (if state
-                                     (progn
-                                        (set_prop options
-                                           `smooth_scroll_mode true)
-                                        (set_style [[`scroll-behavior `smooth]] output_container))
-                                     (progn
-                                        (set_prop options
-                                           `smooth_scroll_mode false)
-                                        (set_style [[`scroll-behavior `default]] output_container)))))
-                                        
-       (menu_items (fn ()
-                     [[(dtext "Clear Log")
+                                     (set_prop options
+                                        `smooth_scroll_mode false)
+                                     (set_style [[`scroll-behavior `default]] output_container)))))
+    
+    (menu_items (fn ()
+                   [[(dtext "Clear Log")
+                     (fn ()
+                        (-> output_container `replaceChildren))]
+                    [(dtext "Set Max Log Lines")
+                     (fn ()
+                        (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
+                                                           *env_config*.application.max_log_lines) })
+                             (set_max_log_lines it)))]
+                    [(+ (dtext "Display Mode") "...")
+                     [[(dtext "Tree")
                        (fn ()
-                                 (-> output_container `replaceChildren))]
-                      [(dtext "Set Max Log Lines")
+                          (set_display_mode 0))]
+                      [(dtext "Juno")
                        (fn ()
-                         (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
-                                                                                                                                        *env_config*.application.max_log_lines) })
-                              (set_max_log_lines it)))]
-                      [(+ (dtext "Display Mode") "...")
-                       [[(dtext "Tree")
-                        (fn ()
-                           (set_display_mode 0))]
-                       [(dtext "Juno")
-                        (fn ()
-                           (set_display_mode 1))]
-                       [(dtext "JSON")
-                        (fn ()
-                           (set_display_mode 2))]]]
-                           
-                      [(if (blank? ts_hidden_state)
-                           (dtext "Hide Timestamps")
-                           (dtext "Show Timestamps"))
+                          (set_display_mode 1))]
+                      [(dtext "JSON")
                        (fn ()
-                          (if (blank? ts_hidden_state)
-                              (set_show_timestamps false)
-                              (set_show_timestamps true)))]
-                      (if (== options.smooth_scroll_mode false)
-                          [(dtext "Turn On Smooth Scrolling")
-                           (fn ()
-                              (set_smooth_scroll_mode true))]
-                          [(dtext "Turn Off Smooth Scrolling")
-                            (fn ()
-                               (set_smooth_scroll_mode false))])
-                      [(if options.display_options.include_prototypes
+                          (set_display_mode 2))]]]
+                    
+                    [(if (blank? ts_hidden_state)
+                         (dtext "Hide Timestamps")
+                         (dtext "Show Timestamps"))
+                     (fn ()
+                        (if (blank? ts_hidden_state)
+                            (set_show_timestamps false)
+                            (set_show_timestamps true)))]
+                    (if (== options.smooth_scroll_mode false)
+                        [(dtext "Turn On Smooth Scrolling")
+                         (fn ()
+                            (set_smooth_scroll_mode true))]
+                        [(dtext "Turn Off Smooth Scrolling")
+                         (fn ()
+                            (set_smooth_scroll_mode false))])
+                    [(if options.display_options.include_prototypes
                          (dtext "Hide Object Prototype Detail")
                          (dtext "Show Object Prototype Detail"))
-                       (fn ()
-                          (set_show_prototypes (not options.display_options.include_prototypes)))]]))
-       (hide_state nil)
-       (ts_hidden_state "")
-       (on_hide (fn ()
-                   (progn
-                      (= hide_state true))))
-                      
-       (on_focus (fn ()
-                   (progn  
-                      (= hide_state false)
-                      (add_class "juno-focused" control_status)))) ;; we know that is the command bar
-       
-       (log_message (fn (highlight_color `& args)
-                      (progn
-                         (defvar display_mode (or options.display_options.display_mode 0))
-                         (add_result (div { tabindex: 0 style: (+ "display: flex; justify-content: flex-start; align-items: flex-start; " (if (is_string? highlight_color) (+ "background: " highlight_color) "")) }
-                                          (div { class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
-                                          (div { style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
-                                               (for_each (v args)
-                                                  (cond
-                                                     (is_string? v)
-                                                     (div { `tabindex: 0 `class: "juno-value juno-type-string" `style: "display: inline-block; padding-left: 10px" } v)
-                                                     (is_number? v)
-                                                     (div { `tabindex: 0 `class: "juno-value juno-type-number" `style: "display: inline-block; padding-left: 10px" } v)
-                                                     (or (== v true) (== v false))
-                                                     (div { `tabindex: 0 `class: "juno-value juno-type-boolean" `style: "display: inline-block; padding-left: 10px" } v)
-                                                     else
-                                                     (div { `tabindex: 0 `class: "juno-value" `style: "display: inline-block; padding-left: 10px" } 
-                                                          (cond
-                                                             true ;(== display_mode 0)
-                                                             (value_to_dom v)
-                                                             (== display_mode 1)
-                                                             (pre (pretty_print v))
-                                                             (== display_mode 2)
-                                                             (pre (JSON.stringify v nil 2)))
-                                                             )))))
-                                     nil nil)
+                     (fn ()
+                        (set_show_prototypes (not options.display_options.include_prototypes)))]]))
+    (hide_state nil)
+    (ts_hidden_state "")
+    (on_hide (fn ()
+                (progn
+                   (= hide_state true))))
+    
+    (on_focus (fn ()
+                 (progn
+                    (= hide_state false)
+                    (add_class "juno-focused" control_status)))) ;; we know that is the command bar
+    
+    (log_message (fn (highlight_color `& args)
+                    (progn
+                       (defvar display_mode (or options.display_options.display_mode 0))
+                       (add_result (div { tabindex: 0 style: (+ "display: flex; justify-content: flex-start; align-items: flex-start; " (if (is_string? highlight_color) (+ "background: " highlight_color) "")) }
+                                        (div { class: (+ "juno-timestamp " ts_hidden_state) `timestamp: (time_in_millis)  } (formatted_date (new Date)))
+                                        (div { style: "display: flex; justify-content: flex-start; align-items: flex-start; " }
+                                             (for_each (v args)
+                                                (cond
+                                                   (is_string? v)
+                                                   (div { `tabindex: 0 `class: "juno-value juno-type-string" `style: "display: inline-block; padding-left: 10px" } v)
+                                                   (is_number? v)
+                                                   (div { `tabindex: 0 `class: "juno-value juno-type-number" `style: "display: inline-block; padding-left: 10px" } v)
+                                                   (or (== v true) (== v false))
+                                                   (div { `tabindex: 0 `class: "juno-value juno-type-boolean" `style: "display: inline-block; padding-left: 10px" } v)
+                                                   else
+                                                   (div { `tabindex: 0 `class: "juno-value" `style: "display: inline-block; padding-left: 10px" }
+                                                        (cond
+                                                           true ;(== display_mode 0)
+                                                           (value_to_dom v)
+                                                           (== display_mode 1)
+                                                           (pre (pretty_print v))
+                                                           (== display_mode 2)
+                                                           (pre (JSON.stringify v nil 2))))))))
+                                   nil nil)
                        nil)))
-       (log_standard (fn (`& args)
-                        (try 
-                           (apply log_message nil args)
-                           (catch Error (e)
-                              (log "Error: " e.message)))))
-       (log_problem (fn (error_message error_instance)
-                     (log_message "#FF404010" error_message error_instance))))
-    {
-        expose: [[`set_show_timestamps set_show_timestamps]
-                 [`set_show_prototypes set_show_prototypes]
-                 [`clear (function ()
-                            (-> output_container `replaceChildren))]
-                 [`set_display_command_button set_display_command_button]
-                 [`set_display_mode set_display_mode]
-                 [`display_mode (function ()
-                                   (prop display_modes options.display_options.display_mode))]
-                 [`display_modes (function ()
-                                    display_modes)]
-                 [`set_smooth_scroll_mode set_smooth_scroll_mode]
-                 [`output_container output_container]
-                 [`control_bar control_status]
-                 [`append add_result]
-                 [`log_message log_standard ]
-                 [`log_error log_problem ]]
-        frame_style: "overflow: hidden;"
-        control_bar: true
-        usage: ["options:object"]
-        
-    })
+    (log_standard (fn (`& args)
+                     (try
+                        (apply log_message nil args)
+                        (catch Error (e)
+                           (log "Error: " e.message)))))
+    (log_problem (fn (error_message error_instance)
+                    (log_message "#FF404010" error_message error_instance))))
+   {
+     expose: [[`set_show_timestamps set_show_timestamps]
+              [`set_show_prototypes set_show_prototypes]
+              [`clear (function ()
+                         (-> output_container `replaceChildren))]
+              [`set_display_command_button set_display_command_button]
+              [`set_display_mode set_display_mode]
+              [`display_mode (function ()
+                                (prop display_modes options.display_options.display_mode))]
+              [`display_modes (function ()
+                                 display_modes)]
+              [`set_smooth_scroll_mode set_smooth_scroll_mode]
+              [`output_container output_container]
+              [`control_bar control_status]
+              [`append add_result]
+              [`log_message log_standard ]
+              [`log_error log_problem ]]
+     frame_style: "overflow: hidden;"
+     control_bar: true
+     usage: ["options:object"]
+     
+     })
 
 
 (defun process_remote_eval_result (result display_mode)
@@ -6073,6 +6074,152 @@
        result))
 ;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
 
+(defun create_remote_evaluator(options)
+   (let
+      ((repl_ws nil)
+       (url (or options.url (+ "ws://" window.location.host "/connect_repl")))
+       (name (or options.name "remote"))
+       (remote_command_timeout (or options.timeout 120000)) ;; 2 minute default
+       (requests {})
+       (active_ns nil)
+       (on_message (or options.on_message
+                       (fn (message)
+                          (log (+ name ": message: ") message))))
+       (request_id 0)
+       (send_wait (fn (lisp_text opts)
+                     (let
+                        ((rval nil))
+                        (assert (and (instanceof repl_ws WebSocket)
+                                     (== repl_ws.readyState repl_ws.OPEN))
+                                "Websocket is not open")
+                        ;(clog "ws-> ")
+                       (try
+                          (= rval (new Promise 
+                                       (fn (resolve reject)
+                                          (let
+                                             ((my_request_id (inc request_id))
+                                              (timer nil))
+                                             (= timer (setTimeout (fn ()
+                                                                     (progn
+                                                                        (log "timeout occurred")
+                                                                        (reject { `rval: "FAIL" `message: (+ "Timeout on request id: " my_request_id) })))
+                                                                  remote_command_timeout))
+                                             ;; set the request id in request object, and then wait to resolve the promise until results are returned, or a timeout occurs
+                                             (set_prop requests
+                                                my_request_id
+                                                (list resolve reject timer))
+                                             (try 
+                                                (http/send_to_ws repl_ws
+                                                                 { `command: "eval"
+                                                                   `req_id: request_id
+                                                                   `args: [ lisp_text ] })
+                                                (catch Error (e)
+                                                   (progn
+                                                      (notify (+ "send_wait: error: " e.message))
+                                                      (log "ERROR on send_to_ws: " e))))
+                                             true))))
+                             (catch Error (e)
+                                (log (+ "Error on send_wait: " e))))
+                       rval)))
+       (setup_connection
+          (fn ()
+             (http/create_websocket
+                url
+                {
+                  `on_message: (fn (event)
+                                  (try
+                                     (let
+                                        ((data nil)
+                                         (pdata nil)
+                                         (resolver nil))
+                                        
+                                        (try
+                                           (= data (JSON.parse event.data))
+                                           (catch Error (e)
+                                              (progn
+                                                 (log "Unable to parse json data: " e.message)
+                                                 (= data event.data))))
+                                        (if options.debug
+                                           (log (+ name ": <-")  data))
+                                        (if (and (is_object? data)
+                                                 data.ws_id)
+                                            (set_prop intf
+                                               `ws_id
+                                               data.ws_id))
+                                        (cond
+                                           (and (is_object? data)
+                                                data.req_id)
+                                           (progn
+                                              (if (prop requests data.req_id)
+                                                  (progn
+                                                     (= pdata (prop requests data.req_id))
+                                                     (remove_prop requests data.req_id)
+                                                     (clearTimeout (third pdata)) ;; remove the timeout
+                                                     (if (== data.rval "OK")
+                                                         (progn
+                                                            (= resolver (first pdata))
+                                                            (resolver data nil))
+                                                         (progn
+                                                            (= resolver (first pdata)) ;; we will resolve the promise and handle the error in our remote eval result function.
+                                                            (resolver data true))))
+                                                  (progn
+                                                     ;; received a request but it is not tied to a request we made, could be a log message
+                                                     (if (== data.rval "OK")
+                                                         (on_message data)))))
+                                           (and (is_object? data)
+                                                data.result)
+                                           (progn
+                                              (on_message data))
+                                           else
+                                           (if options.debug
+                                              (log (+ "" name ": unknown response: ")  data))))
+                                     (catch Error (e)
+                                        (log "Unable to process received message: " e.message))))
+                  `on_open: (fn (event)
+                               (progn
+                                  (defvar ns_change_result nil)
+                                  (if options.debug
+                                     (log (+ "Connected to Remote REPL: " options.remote_repl)))
+                                  (try
+                                     (when active_ns
+                                        (= ns_change_result (prop (send_wait (+ "(use_ns " active_ns ")")) `result))
+                                        (if ns_change_result
+                                           (= active_ns ns_change_result)
+                                           (log (+ "Namespace set to: " (JSON.parse active_ns)))
+                                           (log "Unable to set namespace")))
+                                     (catch Error (e)
+                                        (log "Unable to determine remote hostname: " e)))))
+                  `on_close: (fn (event)
+                                (progn
+                                   (if options.on_close
+                                      (options.on_close event intf)
+                                      (log (+ name ": socket closed")))))
+                  `on_error: (fn (event)
+                                (progn
+                                   (if options.on_error
+                                      (options.on_error event intf)
+                                      (log (+ name ": error on WS:" event)))))
+                  })))
+       (intf {}))
+      (= repl_ws (setup_connection))
+      (= intf
+         {
+           evaluate: (fn (val) (process_remote_eval_result (send_wait val) `tree))
+           url: (fn ()
+                   url)
+           on_message: on_message
+           eval: (fn (quoted_lisp)
+                    (process_remote_eval_result (send_wait (as_lisp quoted_lisp)) `tree))
+           ws: repl_ws
+           close: (fn ()
+                     (-> repl_ws `close))
+           open?: (fn ()
+                     (== (prop repl_ws `readyState) 1))
+           state: (fn ()
+                     (prop repl_ws `readyState))
+           connect: setup_connection
+        })))
+
 (defun visual_repl (options)
   (let
       ((options (or options {}))
@@ -6086,7 +6233,7 @@
                                    "Connecting"
                                    "Browser")))
        (control_button (commands_button id));  { `title: "REPL Commands" } "⋯"))
-       (title_span (span { `class: "juno-title" } name))
+       (title_span (span { `class: "juno-title"  `style: "cursor: pointer;"} name))
        (show_prototype_details_button (button { `title: (dtext "Show Object Prototype Detail") } "P"))
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
@@ -6139,7 +6286,34 @@
        (history (if (is_array? options.history)
                   options.history
                   []))
-       (clog (fn (`& args)
+       (rename (fn (new_name)
+                  (if (is_string? new_name)
+                      (cond
+                         (get_control_by_name new_name)
+                         (throw Error (+ "control with name '" new_name "' already exists"))
+                         else
+                         (try
+                            (progn
+                               (set_prop options `name
+                                  new_name)
+                               (set_prop title_span
+                                  `innerHTML
+                                  new_name)
+                               (set_prop intf
+                                  `name
+                                  new_name)
+                               (= name new_name)
+                               (dispatch_event { command: "control_name_change"
+                                                 source: options.id
+                                                 args: [ { `option: "name" `value: name } ] }))
+                            (catch Error (e)
+                               (progn
+                                  (log  (+ "Unable to rename: " e.message)))))))))
+      (prompt_rename (fn ()
+                        (aif (request_user_input (+ (dtext "Rename") ": " intf.name)
+                                            `text)
+                             (rename it))))
+      (clog (fn (`& args)
                (progn
                   (apply console.log args)
                  
@@ -6254,6 +6428,7 @@
                                                  (clog "Unable to process received message: " e.message))))
                            `on_open: (fn (event)
                                         (progn
+                                           (defvar active_ns nil)
                                            (clog (+ "Connected to Remote REPL: " options.remote_repl))
                                            (set_reopen_button_state 0)
                                            (try
@@ -6266,7 +6441,11 @@
                                                        (set_prop location_span
                                                           `innerHTML remote_host))
                                                     else
-                                                    (clog "ERROR: received invalid response for hostname: " remote_host)))
+                                                    (clog "ERROR: received invalid response for hostname: " remote_host))
+                                                 (= active_ns (prop (send_wait (+ "(use_ns " namespace_span.innerText ")")) `result))
+                                                 (if active_ns 
+                                                    (clog (+ "Namespace set to: " (JSON.parse active_ns)))
+                                                    (clog "Unable to set namespace")))
                                               (catch Error (e)
                                                  (clog "Unable to determine remote hostname: " e)))))
                            `on_close: (fn (event)
@@ -6468,6 +6647,8 @@
                       [(dtext "Clear REPL History")
                        (function ()
                                  (clear_history))]
+                      [(dtext "Rename")
+                       prompt_rename ]
                       [(if options.display_options.include_prototypes
                          (dtext "Hide Object Prototype Detail")
                          (dtext "Show Object Prototype Detail"))
@@ -6566,7 +6747,9 @@
                                      (progn
                                         (set_reopen_button_state 1)
                                         (open_remote_evaluator))))))
-                        
+                         (attach_event_listener title_span
+                            `click
+                            prompt_rename)
                          ;; set the computed name
                          (set_prop options
                             `name
@@ -6661,6 +6844,7 @@
              `initialize: initialize
              `websocket: (function ()
                             repl_ws)
+             `rename: rename
              `destroy: destroy
              `on_hide: (fn ()
                          (when (is_function? output_control.on_hide)
@@ -10604,7 +10788,26 @@
                        "currently focused control.")
        tags: [ "REPL" "create" "new" "control"]
    })
-   
+ 
+(defun rename_control (old_name new_name)
+   (cond 
+      (is_string? old_name)
+      (aif (get_control_by_name old_name)
+            (if (is_function? it.rename)
+                (-> it `rename new_name)
+                (throw EvalError (+ "Control " old_name " doesn't have a rename method"))))
+      (is_control? old_name)
+      (if (-> old_name `rename)
+          (-> old_name `rename new_name)
+          (throw EvalError (+ "Control " old_name.options.name " doesn't have a rename method"))))
+   {
+       `description: (+ "Given a control or a name of a control, and a new name, " 
+                        "renames the given control to the new name.  If the control "
+                        "cannot be renamed, will throw an EvalError indicating that "
+                        "it couldn't be renamed.")
+       `usage: ["old:string|object" "new_name:string"]
+       `tags: [`controls `name `rename `control `id ]
+   })  
 
 (defun wait_for_file_selection (create_mode) 
    (new Promise (fn (resolve reject)

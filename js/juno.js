@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2023-01-05 07:00:29
-// Version: 2023.01.05.07.00
-export const DLISP_ENV_VERSION='2023.01.05.07.00';
+// Build Time: 2023-01-08 12:41:24
+// Version: 2023.01.08.12.41
+export const DLISP_ENV_VERSION='2023.01.08.12.41';
 
 
 
@@ -3561,7 +3561,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false
-    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.05.07.00",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.08.12.41",imports:await ( async function(){
         let __obj__284=new Object();
         __obj__284["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5236,7 +5236,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.05.07.00",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false},features:["compiler","repl","io","Deno","build-tools","*env_skeleton*"],build:"2023.01.08.12.41",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object()};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -10735,16 +10735,16 @@ return await (async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_87475;
+                                                let _expr_28317;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_87475=await (async function(){
+                                                _expr_28317=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_87475 && _expr_87475["0"]);
-                                                req_ns=(_expr_87475 && _expr_87475["1"]);
-                                                explicit=(_expr_87475 && _expr_87475["2"]);
+                                                req_sym=(_expr_28317 && _expr_28317["0"]);
+                                                req_ns=(_expr_28317 && _expr_28317["1"]);
+                                                explicit=(_expr_28317 && _expr_28317["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -10847,13 +10847,13 @@ return await (async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_69422;
+                    let _expr_23321;
                     let nspace;
-                    _expr_69422=await (async function(){
+                    _expr_23321=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_69422 && _expr_69422["0"]);
-                    nspace=(_expr_69422 && _expr_69422["1"]);
+                    sym=(_expr_23321 && _expr_23321["0"]);
+                    nspace=(_expr_23321 && _expr_23321["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

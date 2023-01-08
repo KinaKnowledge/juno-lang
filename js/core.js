@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-05 07:00:20
-// Version: 2023.01.05.07.00
-export const DLISP_ENV_VERSION='2023.01.05.07.00';
+// Build Time: 2023-01-08 12:41:15
+// Version: 2023.01.08.12.41
+export const DLISP_ENV_VERSION='2023.01.08.12.41';
 
 
 
@@ -3942,16 +3942,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_87475;
+                                                let _expr_28317;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_87475=await (async function(){
+                                                _expr_28317=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_87475 && _expr_87475["0"]);
-                                                req_ns=(_expr_87475 && _expr_87475["1"]);
-                                                explicit=(_expr_87475 && _expr_87475["2"]);
+                                                req_sym=(_expr_28317 && _expr_28317["0"]);
+                                                req_ns=(_expr_28317 && _expr_28317["1"]);
+                                                explicit=(_expr_28317 && _expr_28317["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4054,13 +4054,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_69422;
+                    let _expr_23321;
                     let nspace;
-                    _expr_69422=await (async function(){
+                    _expr_23321=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_69422 && _expr_69422["0"]);
-                    nspace=(_expr_69422 && _expr_69422["1"]);
+                    sym=(_expr_23321 && _expr_23321["0"]);
+                    nspace=(_expr_23321 && _expr_23321["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
