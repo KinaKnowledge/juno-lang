@@ -14,7 +14,11 @@ For Deno:
 2. Import the save_env package which, upon import kick off the save process:
 `(import "pkg/save_env.juno")`
 3. The consolidated JS file will be written, which can be started up by calling from the command line:
-`lib/juno js/juno.js`
+```
+lib/juno js/juno.js`
+```
 
 To build a full executable from the consolidated image call the compile function from the command line:
-`lib/juno --compile my_binary_name js/juno.js`
+```
+lib/juno --compile my_binary_name js/juno.js
+```
