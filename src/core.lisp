@@ -1540,8 +1540,9 @@
   })  
 
 
-(defun map_range (n from_range to_range)
-  (let
+
+(defun_sync map_range (n from_range to_range)
+     (let
       ()
     (declare (number to_range.0 to_range.1 from_range.0 from_range.1))
     (+ to_range.0
