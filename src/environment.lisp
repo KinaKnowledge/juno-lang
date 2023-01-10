@@ -1913,7 +1913,7 @@
             ;; if not already defined by the environment itself, merge the
             ;; provided names and values into the global context.
             
-            (console.log "core: importing symbols: " (prop included_globals `symbols))
+            ;(console.log "core: importing symbols: " (prop included_globals `symbols))
             
             (when (resolve_path [ `symbols `compiler ] included_globals)
                (set_prop Environment.global_ctx.scope
@@ -2411,10 +2411,10 @@
             ;; and evaluate the child
             (when (and rehydrated_children
                        (is_object? (prop included_globals `children)))
-               (console.log "env: child load order: " included_globals.child_load_order)
+               ;(console.log "env: child load order: " included_globals.child_load_order)
                (for_each (childname (or included_globals.child_load_order []))
                   (when (prop included_globals.children childname)
-                     (console.log "env: loading child: " childname)
+                     ;(console.log "env: loading namespace: " childname)
                      (defvar childset [ childname (prop included_globals.children childname) ])
                      (defvar childenv (prop children childset.0))
                      (defvar imported_defs childset.1.0)
@@ -2432,7 +2432,7 @@
                            (set_prop childset.1
                               1
                               (-> childenv `eval childset.1.1 { `throw_on_error: true }))
-                           (console.log "env: child symbols rehydrated: " childset)
+                           ;(console.log "env: child symbols rehydrated: " childset)
                            (for_each (symset childset.1.1)
                               (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point
@@ -2451,7 +2451,7 @@
                                       (set_path [ childset.0 `context `scope symset.0 ] children
                                                 symset.1)))))
                         (catch Error (e)
-                           (console.error "env: unable to load child: " (clone childset)))))))
+                           (console.error "env: unable to load namespace: " (clone childset)))))))
             
             ;; call the user initializer
             (when init
