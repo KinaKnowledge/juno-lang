@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-01-08 12:41:15
-// Version: 2023.01.08.12.41
-export const DLISP_ENV_VERSION='2023.01.08.12.41';
+// Build Time: 2023-01-10 06:42:02
+// Version: 2023.01.10.06.42
+export const DLISP_ENV_VERSION='2023.01.10.06.42';
 
 
 
@@ -271,15 +271,17 @@ await Environment.set_global("sleep",async function(seconds) {
 },{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function.","requires":[],"source_name":"core-ext.lisp"
 });
 null;
-await Environment.set_global("from_universal_time",async function(seconds) {
-    let d;
-    let ue;
-    d=new Date(0);
-    ue=(seconds- 2208988800);
-    await d["setUTCSeconds"].call(d,ue);
-    return d
-},{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"source_name":"core-ext.lisp"
-});
+{
+     Environment.set_global("from_universal_time",function(seconds) {
+        let d;
+        let ue;
+        d=new Date(0);
+        ue=(seconds- 2208988800);
+         d["setUTCSeconds"].call(d,ue);
+        return d
+    },{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"source_name":"core-ext.lisp"
+})
+};
 await Environment.set_global("+=",async function(symbol,...args) {
     return ["=:=",].concat(symbol,[["=:+",symbol,].concat(args)])
 },{ "eval_when":{ "compile_time":true
@@ -2067,6 +2069,73 @@ await Environment.set_global("show",async function(thing) {
         (array_obj).push((array_obj).shift());
         return array_obj
     },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"source_name":"core-ext.lisp"
+})
+};
+{
+     Environment.set_global("interpolate",function(from,to,steps) {
+        let cur;
+        let step_size;
+        let tmp;
+        let acc;
+        cur=from;
+        step_size=1;
+        tmp=0;
+        acc=[];
+         ( Environment.get_global("assert"))(( ( Environment.get_global("is_number?"))(from)&&  ( Environment.get_global("is_number?"))(to)&&  ( Environment.get_global("is_number?"))(steps)),"interpolate: all arguments must be numbers");
+         ( Environment.get_global("assert"))(( Math.abs((from- to))>0),"interpolate: from and to numbers cannot be the same");
+         ( Environment.get_global("assert"))((steps>1),"interpolate: steps must be greater than 1");
+        step_size=((to- from)/ (steps- 1));
+        if (check_true ((to>from))){
+            {
+                 ( function(){
+                     let __test_condition__160=function() {
+                        return (cur<=to)
+                    };
+                    let __body_ref__161=function() {
+                        (acc).push(cur);
+                        return cur=(cur+ step_size)
+                    };
+                    let __BREAK__FLAG__=false;
+                    while( __test_condition__160()) {
+                          __body_ref__161();
+                         if(__BREAK__FLAG__) {
+                             break;
+                            
+                        }
+                    } ;
+                    
+                })();
+                if (check_true (((acc && acc.length)<steps))){
+                    (acc).push(to)
+                }
+            }
+        } else {
+            {
+                 ( function(){
+                     let __test_condition__162=function() {
+                        return (cur>=to)
+                    };
+                    let __body_ref__163=function() {
+                        (acc).push(cur);
+                        return cur=(cur+ step_size)
+                    };
+                    let __BREAK__FLAG__=false;
+                    while( __test_condition__162()) {
+                          __body_ref__163();
+                         if(__BREAK__FLAG__) {
+                             break;
+                            
+                        }
+                    } ;
+                    
+                })();
+                if (check_true (((acc && acc.length)<steps))){
+                    (acc).push(to)
+                }
+            }
+        };
+        return acc
+    },{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"source_name":"core-ext.lisp"
 })
 };
 await (await Environment.get_global("register_feature"))("core-ext");

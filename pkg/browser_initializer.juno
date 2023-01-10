@@ -6393,6 +6393,11 @@
                                                           (= data event.data))))
                                                  (if options.debug
                                                     (clog "remote: <-" data))
+                                                 (if (and (is_object? data)
+                                                          data.ws_id)
+                                                     (set_prop intf
+                                                        `ws_id
+                                                        data.ws_id))
                                                  (cond
                                                     (and (is_object? data)
                                                          data.req_id)

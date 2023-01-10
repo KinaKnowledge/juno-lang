@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-08 12:41:15
-// Version: 2023.01.08.12.41
-export const DLISP_ENV_VERSION='2023.01.08.12.41';
+// Build Time: 2023-01-10 06:42:02
+// Version: 2023.01.10.06.42
+export const DLISP_ENV_VERSION='2023.01.10.06.42';
 
 
 
@@ -1325,11 +1325,13 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
 },{ "eval_when":{ "compile_time":true
 },"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"],"requires":[],"source_name":"core.lisp"
 });
-await Environment.set_global("map_range",async function(n,from_range,to_range) {
-    ;
-    return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
-},{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("map_range",function(n,from_range,to_range) {
+        ;
+        return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
+    },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"source_name":"core.lisp"
+})
+};
 {
      Environment.set_global("range_inc",function(start,end,step) {
         if (check_true (end)){
@@ -1379,12 +1381,8 @@ await Environment.set_global("color_for_number",async function(num,saturation,br
     rgb=null;
     v=color_key[pos];
     ;
-    h=await (async function(){
-         return await (await Environment.get_global("map_range"))((360% (28* h)),[0,360],[0,1]) 
-    })();
-    v=await (async function(){
-         return await (await Environment.get_global("map_range"))([v,[0,7],[0.92,1]]) 
-    })();
+    h=await (await Environment.get_global("map_range"))((360% (28* h)),[0,360],[0,1]);
+    v=await (await Environment.get_global("map_range"))([v,[0,7],[0.92,1]]);
     rgb=await (async function(){
          return await (await Environment.get_global("HSV_to_RGB"))(h,saturation,brightness) 
     })();
@@ -3942,16 +3940,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_28317;
+                                                let _expr_15267;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_28317=await (async function(){
+                                                _expr_15267=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_28317 && _expr_28317["0"]);
-                                                req_ns=(_expr_28317 && _expr_28317["1"]);
-                                                explicit=(_expr_28317 && _expr_28317["2"]);
+                                                req_sym=(_expr_15267 && _expr_15267["0"]);
+                                                req_ns=(_expr_15267 && _expr_15267["1"]);
+                                                explicit=(_expr_15267 && _expr_15267["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4054,13 +4052,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_23321;
+                    let _expr_32432;
                     let nspace;
-                    _expr_23321=await (async function(){
+                    _expr_32432=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_23321 && _expr_23321["0"]);
-                    nspace=(_expr_23321 && _expr_23321["1"]);
+                    sym=(_expr_32432 && _expr_32432["0"]);
+                    nspace=(_expr_32432 && _expr_32432["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
