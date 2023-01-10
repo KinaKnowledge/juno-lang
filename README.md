@@ -10,8 +10,6 @@ Getting Started
 ### 
 
 
-
-
 ## About Juno
 
 Juno as a Lisp straddles two worlds.  It is built to easily leverage Javascript environments and libraries with the composability and expressiveness of Lisp.  Javascript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, generators and the like.  Juno doesn't have different language constructs, and this makes it easy to access and work with Javascript libraries and functions.  In fact you can inline javascript code as part of your Lisp forms.
@@ -76,7 +74,7 @@ JSON is a simple, structured, well supported format for structuring data.  Usefu
 
 ### Juno Notation
 
-Nobody wants to sit and write JSON all day, because it is tedious and inefficient.  It is better to use a more human friendly and readable format, the Juno notation, which is a simple modification to JSON in which commas are considered whitespace (like Clojure), the semicolon prefixes comments, parenthesis and brackets are interchangable by default, and the | operator signifies a long string |.  The reader, which itself is written in Juno notation, parses this form into a JSON structure.
+Nobody wants to sit and write JSON all day because it is tedious and inefficient.  It is better to use a more human friendly and readable format.  The Juno notation is a simple modification to JSON. In this notation commas are considered whitespace (like Clojure), the semicolon prefixes comments, parenthesis and brackets are interchangable by default, and the | operator signifies a long string |.  The reader, which itself is written in Juno notation, parses this form into a JSON structure.
 
 | Notation | Meaning         | In JSON
 | -------- | --------------- | -------
