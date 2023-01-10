@@ -241,8 +241,7 @@
         nil)
 
 
-    
-    (defun from_universal_time (seconds)
+    (defun_sync from_universal_time (seconds)
       (let
           ((d (new Date 0))
            (ue (- seconds 2208988800)))
@@ -254,7 +253,6 @@
         `usage: ["seconds:number"]
         `tags: ["date" "time" "universal" "1900"]
       })
-    
     
     
     
@@ -1665,6 +1663,41 @@
       tags: ["array" "rotation" "shift" "left"]
       })
  
+ 
+ (defun_sync interpolate (from to steps)
+   (let
+      ((cur from)
+       (step_size 1.0)
+       (tmp 0)
+       (acc []))
+      (assert (and (is_number? from) (is_number? to) (is_number? steps))
+              "interpolate: all arguments must be numbers")
+      (assert (> (Math.abs (- from to)) 0) "interpolate: from and to numbers cannot be the same")
+      (assert (> steps 1) "interpolate: steps must be greater than 1")
+      (= step_size (/ (- to from) (- steps 1)))
+      (if (> to from)
+          (progn
+             (while (<= cur to)
+                (progn
+                   (push acc cur)
+                   (= cur (+ cur step_size))))
+             (if (< acc.length steps)
+                 (push acc to)))
+          (progn
+             (while (>= cur to)
+                (progn
+                   (push acc cur)
+                   (= cur (+ cur step_size))))
+             (if (< acc.length steps)
+                 (push acc to))))
+      acc)
+      
+      
+   {
+       `description: "Returns an array of length steps which has ascending or descending values inclusive of from and to."
+       `usage: ["from:number" "to:number" "steps:number"]
+       `tags: ["range" "interpolation" "fill"]
+   })
  
  (register_feature "core-ext")
   
