@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-01-10 06:42:02
-// Version: 2023.01.10.06.42
-export const DLISP_ENV_VERSION='2023.01.10.06.42';
+// Build Time: 2023-01-10 14:02:53
+// Version: 2023.01.10.14.02
+export const DLISP_ENV_VERSION='2023.01.10.14.02';
 
 
 
@@ -3079,7 +3079,6 @@ export async function init_dlisp(Environment)  {
                                     }
                                 }
                             };
-                            await console.log("core: importing symbols: ",included_globals["symbols"]);
                             if (check_true (await resolve_path(["symbols","compiler"],included_globals))){
                                 {
                                     await async function(){
@@ -5006,12 +5005,10 @@ export async function init_dlisp(Environment)  {
                             };
                             if (check_true ((rehydrated_children&& (included_globals["children"] instanceof Object)))){
                                 {
-                                    await console.log("env: child load order: ",included_globals.child_load_order);
                                     await (async function() {
                                         let __for_body__366=async function(childname) {
                                             if (check_true (included_globals.children[childname])){
                                                 {
-                                                    await console.log("env: loading child: ",childname);
                                                     let childset=await (async function(){
                                                         let __array_op_rval__368=childname;
                                                          if (__array_op_rval__368 instanceof Function){
@@ -5062,7 +5059,6 @@ export async function init_dlisp(Environment)  {
                                                             return childset['1'];
                                                             
                                                         }();
-                                                        await console.log("env: child symbols rehydrated: ",childset);
                                                         return await (async function() {
                                                             let __for_body__377=async function(symset) {
                                                                 if (check_true ((null==await resolve_path(await (async function(){
@@ -5146,7 +5142,7 @@ export async function init_dlisp(Environment)  {
                                                         if (__exception__373 instanceof Error) {
                                                             let e=__exception__373;
                                                             {
-                                                                return await console.error("env: unable to load child: ",await (async function(){
+                                                                return await console.error("env: unable to load namespace: ",await (async function(){
                                                                      return await clone(childset) 
                                                                 })())
                                                             }

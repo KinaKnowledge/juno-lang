@@ -21,7 +21,7 @@ cat <<EOI | lib/juno
 EOI
 
 echo "verifying juno.js"
-cat <<EOI | lib/juno js/juno
+cat <<EOI | lib/juno js/juno.js
   *env_config*
 EOI
 

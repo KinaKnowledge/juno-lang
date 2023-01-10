@@ -966,8 +966,11 @@
              (or options.base_directory "./")
              options)))
 
-
-
+(defun serve_site (service_path port file_root options)
+   (let
+      ((server (create_http_server port {})))
+      (add_http_route "GET" service_path (file_spooler file_root))
+      (serve_using_handler server default_handler options)))
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")
