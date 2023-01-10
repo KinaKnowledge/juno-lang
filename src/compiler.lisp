@@ -4435,6 +4435,7 @@
                        (`token nil)
                        (`preamble (calling_preamble ctx))
                        (`key nil)
+                       (`output_val nil)
                        (`tmp_name nil)
                        (`ctx (new_ctx ctx))
                        (`kvpair nil)
@@ -4494,7 +4495,15 @@
                                (do
                                   (inc idx)
                                   (= kvpair (prop tokens.val idx))
-                                  (for_each (`t [tmp_name "[" "\"" (cl_encode_string (get_val kvpair.val.0 ctx)) "\"" "]" "=" (compile_wrapper_fn kvpair.val.1 ctx) ";"])
+                                  (= output_val (or (compile_wrapper_fn kvpair.val.1 ctx) "null"))
+                                  ;;(if (== kvpair.val.0 "streams")
+                                  (try 
+                                     (+ "" output_val)  ;; detect if this is a special object, such as a module, which are hard to directly detect
+                                     (catch Error (e)
+                                        (progn
+                                           ;(console.log "kvpair:val:"  (cl_encode_string (get_val kvpair.val.0 ctx)) "=" output_val)
+                                           (= output_val "null"))))
+                                  (for_each (`t [tmp_name "[" "\"" (cl_encode_string (get_val kvpair.val.0 ctx)) "\"" "]" "=" output_val ";"])
                                      (push acc t))))
                             
                             (for_each (`t ["return" " " tmp_name ";" "}" ")" "()"])
