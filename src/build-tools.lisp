@@ -37,7 +37,7 @@
        (compiled nil) ; holds the compilation output
        (invalid_js_ref_chars "+?-%&^#!*[]~{}|")
        (invalid_js_ref_chars_regex (new RegExp "[\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+"))
-       (boilerplate "var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");")
+       (boilerplate "const { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import(\"./lisp_writer.js\");")
        (compiled_js nil))
       
       ;; check the export name for being valid...

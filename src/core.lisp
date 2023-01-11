@@ -3054,7 +3054,7 @@ such as things that connect or use environmental resources.
 	
 	else
 	(throw EvalError "invalid extension: needs to be .lisp, .js, .json or .juno")))
-  { `description: (+ "Load the contents of the specified source file (including path) into the Lisp environment "
+  { `description: (+ "Dynamically load the contents of the specified source file (including path) into the Lisp environment "
 		     "in the current namespace.<br>"
 		     "If the file is a Lisp source, it will be evaluated as part of the load and the final result returned."
 		     "If the file is a JS source, it will be loaded into the environment and a handle returned."
@@ -3064,9 +3064,13 @@ such as things that connect or use environmental resources.
 		     ".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type."
 		     "Examples:<br>"
 		     "Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>"
-		     "JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\"")
+		     "JS/TS Remote: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\")<br>"
+             "JS/TS Local: (import (logger) \"/absolute/path/to/library.js\")<br>"
+             "<br>"
+             "Note that this is a dynamic import. ")
+             
 		     
-   `tags: [`compile `read `io `file `get `fetch `load ]
+   `tags: [`compile `read `io `file `get `fetch `load `dynamic_import ]
    `usage: ["binding_symbols:array" "filename:string"] 
    })
 

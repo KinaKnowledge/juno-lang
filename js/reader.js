@@ -1,12 +1,12 @@
 // Source: reader.lisp  
-// Build Time: 2023-01-10 14:02:53
-// Version: 2023.01.10.14.02
-export const DLISP_ENV_VERSION='2023.01.10.14.02';
+// Build Time: 2023-01-11 17:31:47
+// Version: 2023.01.11.17.31
+export const DLISP_ENV_VERSION='2023.01.11.17.31';
 
 
 
 
-var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
+const { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function initializer(Environment) {
   return await Environment.set_global("reader",async function(text,opts) {
     return await async function(){

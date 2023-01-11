@@ -1,12 +1,12 @@
 // Source: core.lisp  
-// Build Time: 2023-01-10 14:02:53
-// Version: 2023.01.10.14.02
-export const DLISP_ENV_VERSION='2023.01.10.14.02';
+// Build Time: 2023-01-11 17:31:47
+// Version: 2023.01.11.17.31
+export const DLISP_ENV_VERSION='2023.01.11.17.31';
 
 
 
 
-var { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
+const { get_next_environment_id, check_true, get_outside_global, subtype, lisp_writer, clone, LispSyntaxError } = await import("./lisp_writer.js");
 export async function environment_boot(Environment)  {
 {
     await Environment.set_global("special_definitions",await (async function(){
@@ -3614,7 +3614,7 @@ await Environment.set_global("import",async function(...args) {
         }
     } ()
 },{ "eval_when":{ "compile_time":true
-},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\""],"tags":["compile","read","io","file","get","fetch","load"],"usage":["binding_symbols:array","filename:string"],"requires":["last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"],"source_name":"core.lisp"
+},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Dynamically load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS Remote: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\")<br>","JS/TS Local: (import (logger) \"/absolute/path/to/library.js\")<br>","<br>","Note that this is a dynamic import. "],"tags":["compile","read","io","file","get","fetch","load","dynamic_import"],"usage":["binding_symbols:array","filename:string"],"requires":["last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"],"source_name":"core.lisp"
 });
 await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
@@ -3940,16 +3940,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_24820;
+                                                let _expr_68280;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_24820=await (async function(){
+                                                _expr_68280=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_24820 && _expr_24820["0"]);
-                                                req_ns=(_expr_24820 && _expr_24820["1"]);
-                                                explicit=(_expr_24820 && _expr_24820["2"]);
+                                                req_sym=(_expr_68280 && _expr_68280["0"]);
+                                                req_ns=(_expr_68280 && _expr_68280["1"]);
+                                                explicit=(_expr_68280 && _expr_68280["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4052,13 +4052,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_15574;
+                    let _expr_71021;
                     let nspace;
-                    _expr_15574=await (async function(){
+                    _expr_71021=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_15574 && _expr_15574["0"]);
-                    nspace=(_expr_15574 && _expr_15574["1"]);
+                    sym=(_expr_71021 && _expr_71021["0"]);
+                    nspace=(_expr_71021 && _expr_71021["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

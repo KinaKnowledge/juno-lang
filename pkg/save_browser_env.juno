@@ -80,7 +80,8 @@
                             "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js"
                             "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
                             "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js" 
-                            "theme-solarized_dark.js" "theme-solarized_light.js"])
+                            "theme-solarized_dark.js" "theme-solarized_light.js"
+                            "lz-string.js"])
 
   (set_path [ `included_libraries ] *env_config* included_libs)
   

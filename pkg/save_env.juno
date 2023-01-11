@@ -1,4 +1,35 @@
 ;; 
+(declare (namespace "core"))
+(if_compile_time_defined `Deno
+   (defun core/save_environment (options)
+      (let
+         ((my_namespace (current_namespace)))
+         (when options.initializer
+            (assert (is_function? options.initializer) "initializer option must be a function"))
+         (set_namespace "core")
+         (when (not (contains? "io" *env_config*.features))
+            (import "src/base-io.lisp"))
+         (when (not (contains? "build-tools" *env_config*.features))
+            (import "src/build-tools.lisp"))
+         
+         (if options.default_namespace
+            (set_path [ `export `default_namespace ] *env_config* options.default_namespace)
+            (set_path [ `export `default_namespace ] *env_config* "user"))
+         (if options.initializer
+            (defglobal core/*initializer* options.initializer)
+            (defun core/*initializer* () (progn (repl nil nil { `use_console: true }))))
+         
+         (core/save_env { 
+                          save_as: options.save_as
+                          do_not_include: options.do_not_include
+                          include_source: options.include_source
+                          })
+         (set_namespace my_namespace))))
+            
+;(save_environment { `initializer: (fn () (http/start))         
+         
+         
+   
 
 (if_compile_time_defined `Deno
   (progn

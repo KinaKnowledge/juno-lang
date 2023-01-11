@@ -1,4 +1,4 @@
-// lisp_writer
+// lisp_writer and compression utilities
 // converts JSON based to the DLisp representation
 
 export function check_true(val) {
@@ -184,4 +184,3 @@ export function clone(src,depth) {
 	  return src;
 	}
 }
-

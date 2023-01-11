@@ -1615,9 +1615,12 @@
                                   ;; if we are given a filename, but we are not online we can't edit it
                                   ;; if we have previous content we can edit off line, but with a notice to the user
                                   (and (is_string? options.filename)
-                                       options.content)
+                                       (or options.content options.content_compressed))
                                   (progn
-                                     (-> editor `setValue options.content -1)
+                                     (if (and (is_symbol? `LZString)
+                                              options.content_compressed)
+                                         (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed -1))
+                                         (-> editor `setValue options.content -1))
                                      (= content options.content)
                                      (alert_box "Warning: Using cached content"
                                                 (div { `style: "" }
@@ -2132,9 +2135,13 @@
                 
                 `toJSON: (function ()
                             (progn
-                               (set_prop options
-                                  `content
-                                  (-> editor `getValue))
+                               (if (is_symbol? `LZString)
+                                   (set_prop options
+                                      `content_compressed
+                                      (LZString.compressToBase64 (-> editor `getValue)))
+                                   (set_prop options
+                                      `content
+                                      (-> editor `getValue)))
                                `(text_editor ,#options)))
                 `initialize: (fn ()
                                 (when view.parentElement

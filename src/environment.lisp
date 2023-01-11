@@ -56,6 +56,8 @@
 
 ;; We need some global types since Javascript eval() isn't used in Juno
 
+
+
 (set_prop globalThis
    `subtype subtype
    `check_true check_true
@@ -2040,7 +2042,11 @@
                            [symset.0
                             [(quote quotel) "placeholder"]])
                         
-                        
+                        (is_regex? symset.1)
+                        [symset.0  `(javascript ,#(+ "/" (+ symset.1.source) "/" symset.1.flags))]
+                        (is_date? symset.1)
+                        [symset.0  `(javascript ,#(+ "new Date(\"" (+ (-> symset.1 `toJSON) "\")")))]
+                        ;[symset.0  `(new RegExp ,#(+ symset.1.source) ,#symset.1.flags)]
                         (== nil symset.1)
                         [symset.0 (quote nil)]
                         (== undefined symset.1)
