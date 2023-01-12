@@ -1244,52 +1244,57 @@
    `tags: [ `control `controls `position `heirarchy `path]
    })
 
+(defparameter *focus_suppress_timer* nil)
 
 (defun set_focus_to (target_control _controls)
-  (let
-      ((focused_list (query_all ".juno-focused"))
-       (controls (or _controls
-                     (reduce (c (current_controls))                        
-                        (when c.on_focus                          
-                          c)))))
-    ;(debug)
-    (for_each (control controls)
-                 (when (and (or (eq nil target_control)
-                                (not (== target_control control)))
-                            (is_function? control.on_blur))
-                   (-> control `on_blur)))
-    
-    (console.log "set_focus_to: called with: " target_control)
-    ;; remove any focus class markers
-    (when (> focused_list.length 0)
-      (= focused_list (map (fn (v) v) focused_list))       
-      (apply remove_class "juno-focused" focused_list))
-    (for_each (control controls)
-                 (when (and (or (eq nil target_control)
-                                (not (== target_control control)))
-                            (is_function? control.on_blur))
-                   (-> control `on_blur)))
-    (when (not (== *last_focus* target_control))
-      (when (and *last_focus*
-                 (prop *last_focus* `menu_items))
-        (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
-                                                "Control"))))
-      
-    (if target_control
-      (progn
-       (if target_control.on_focus 
-          (-> target_control `on_focus)
-          (focus_to target_control.view))
-       (setq *last_focus* target_control)
-       (setq core/$current_control *last_focus*)
-       (setq *last_top_frame* (top_frame target_control))
-       (when target_control.menu_items
-         (-> *app_menu_control* `add_menu [ (or target_control.name
-                                                "Control")
-                                           target_control.menu_items 
-                                           "control_menu"])))
-      (progn
-       true))))
+   (unless *focus_suppress_timer*
+      (= *focus_suppress_timer* (setTimeout (fn ()
+                                               (= *focus_suppress_timer* nil))
+                                            50))
+      (let
+         ((focused_list (query_all ".juno-focused"))
+          (controls (or _controls
+                        (reduce (c (current_controls))
+                           (when c.on_focus
+                              c)))))
+         ;(debug)
+         (for_each (control controls)
+            (when (and (or (eq nil target_control)
+                           (not (== target_control control)))
+                       (is_function? control.on_blur))
+               (-> control `on_blur)))
+         
+         (console.log "set_focus_to: called with: " target_control.options.name)
+         ;; remove any focus class markers
+         (when (> focused_list.length 0)
+            (= focused_list (map (fn (v) v) focused_list))
+            (apply remove_class "juno-focused" focused_list))
+         (for_each (control controls)
+            (when (and (or (eq nil target_control)
+                           (not (== target_control control)))
+                       (is_function? control.on_blur))
+               (-> control `on_blur)))
+         (when (not (== *last_focus* target_control))
+            (when (and *last_focus*
+                       (prop *last_focus* `menu_items))
+               (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
+                                                       "Control"))))
+         
+         (if target_control
+            (progn
+               (if target_control.on_focus
+                  (-> target_control `on_focus)
+                  (focus_to target_control.view))
+               (setq *last_focus* target_control)
+               (setq core/$current_control *last_focus*)
+               (setq *last_top_frame* (top_frame target_control))
+               (when target_control.menu_items
+                  (-> *app_menu_control* `add_menu [ (or target_control.name
+                                                         "Control")
+                                                    target_control.menu_items
+                                                    "control_menu"])))
+            (progn
+               true)))))
 
 (defun controls_needing_save ()
    (reduce (c (current_controls))
@@ -1748,7 +1753,13 @@
             (when confirmed   
                (swap_control control swap_target)
                (if destroy?
-                  (container_view_operation "destroy" control nil { `suppress_destroy_confirm: true } ))))
+                  (try
+                     (container_view_operation "destroy" control nil { `suppress_destroy_confirm: true } )
+                     (catch Error (e)
+                        (progn
+                           (log_error "hide_control: " e.message)
+                           (console.error "hide_control: " e)
+                           (notify e.message)))))))
          control
           (progn
              (container_view_operation (if destroy? "destroy" "hide") control nil)
@@ -1807,7 +1818,7 @@
                   (when target_control
                      (break))
                   (= elem elem.parentElement)))
-            (console.log "process_focus_chain: setting focus to: " target_control)
+            (console.log "process_focus_chain: setting focus to: " target_control.options.name)
             (set_focus_to target_control controls)))))
 
 
@@ -10650,33 +10661,62 @@
      `tags: [`controls `ui `global]
      })
 
-;; old
-;(defun serialize_controls (controls)
-;  [(quote quote) [(quote quote) (JSON.parse (JSON.stringify controls))]])
 
 
-;; new
 (defun serialize_controls (controls)
-  [(quote quote) (JSON.parse (JSON.stringify controls))])
+  [(quote quote) (JSON.parse (JSON.stringify controls))]
+  {
+    `description: (+ "<br><br>Given an array of controls, serializes their state to JSON form such "
+                     "that their state can be stored.<br>As an example, given the current "
+                     "`$root_controls` array, will produce a JSON form:```(serialize_controls "
+                     "$root_controls)```<br><br>The returned structure can then be rehydrated using "
+                     "the `rehydrate_controls` function.<br><br> ")
+    `usage: ["controls:array"]
+    `tags: ["controls" "storage" "serialize" "serialization" "dehydration" "save" "state" "application"]
+  })
 
 
 
-(defun save_control_image ()
-  (progn
-
-   (log (dtext "Saving Application State.."))
-   (set_focus_to nil)
-   (defvar system_repl *system_repl*)
-   (defvar results nil)
-   (= *system_repl* nil)
-   
-   (= *serialized_controls* (serialize_controls $root_controls))
-      ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
-   (console.log "*serialized_controls*: " *serialized_controls*)
-   (= results (save_image))
-   (= *system_repl* system_repl)
-   (log (dtext "Save Application State Results: ") results)
-   (log (dtext "Complete"))))
+(defun save_control_image (validate_name?)
+  (let
+     ((save_as_name *env_config*.export.save_prefix))
+     (when validate_name?
+        (aif (request_user_input (+ (dtext "Enter a name for the saved image.")
+                                    " "
+                                    (dtext "The file will be saved with this prefix and an .html extension."))
+                                 `text
+                                 { `default_value: save_as_name })
+                (= save_as_name it)))
+     
+     (when (blank? save_as_name)
+        (notify (dtext "Cancelled Save Operation"))
+        (return 0))
+     
+     (log (dtext "Saving Application State to: ") save_as_name)
+     (try
+        (progn
+           (set_focus_to nil)
+           (defvar system_repl *system_repl*)
+           (defvar results nil)
+           (= *system_repl* nil)
+           
+           (= *serialized_controls* (serialize_controls $root_controls))
+           ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
+           (console.log "*serialized_controls*: " *serialized_controls*)
+           (= results (save_image { `save_as: save_as_name } ))
+           (= *system_repl* system_repl)
+           (log (dtext "Save Application State Results: ") results)
+           (log (dtext "Complete"))
+           (when (and is_served? validate_name?)
+              (-> window `open (+ "/env/" save_as_name ".html") save_as_name))
+           results)
+        (catch Error (e)
+           (progn
+              (if validate_name?
+                 (alert_box "Save Image Problem" e.message))
+              (console.error "Cannot save image: " e)
+              (log_error "ERROR on save: " e.message))))))
+                 
 
 (defun rehydrate_controls (container serialized_controls)
   (let
@@ -10691,7 +10731,14 @@
        (push $root_controls
              control)
        (when control.initialize
-         (-> control `initialize))))))
+         (-> control `initialize)))))
+  {
+    description: (+ "<br>Given a DOM element and a JSON structure of serialized controls as produced "
+                    "through the `serialize_controls` function, this function will instantiate them "
+                    "from their saved state into the DOM structure. ")
+    usage: ["conainer:Element" "serialize_controls:array"]
+    tags:  ["controls" "storage" "serialize" "serialization" "rehydration" "restore" "state" "application"]
+  })
 
 
 
@@ -10721,6 +10768,7 @@
                    else
                    { `mode: "juno" }))
        (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (new_control nil)
        (symbol_data (if options.path
                         { `path: options.path `namespace: (or options.namespace (current_namespace)) }
                         (symbol_chooser "Select a symbol to edit" options.mode)))
@@ -10740,19 +10788,22 @@
     (when (and target_env (not (resolve_path symbol_data.path target_env.global_ctx.scope)))
        (console.log "new_buffer: target symbol doesn't exist: creating it")
        (set_path symbol_data.path target_env.global_ctx.scope ""))
+    
     (when symbol_data.path
+       (= new_control
+          (if (== extension `dom)
+              (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+              (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
       (cond
          (is_top_control? target_container)
          (container_view_operation "split_right" 
                                    (first (-> target_container `controls))
-                                   (if (== extension `dom)
-                                       (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-                                       (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options) )))
+                                   new_control)
          else
          (swap_control target_container 
-                       (if (== extension `dom)
-                           (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-                           (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options )))))))
+                       new_control))
+      (sleep 0.1)
+      (set_focus_to new_control)))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                        "split the view to the right for the new editor.  If no options are provided, the user "
@@ -11130,7 +11181,7 @@
           [(dtext "Local File") (fn (e) (handle_save_file *last_focus*))]]]
         [])
     ["--" nil]
-    ["Save Environment" (fn (e) (save_control_image)) ]
+    ["Save Environment" (fn (e) (save_control_image true)) ]
     (if is_served?
        ["Generate Starter Environment" build_starter_environment]
        [])
@@ -11451,7 +11502,7 @@
                  "save_environment" { win: "Ctrl-Shift-S"
                                       mac: "Command-Shift-S"
                                       description: "Saves the current state of the application"
-                                      exec: (fn () (save_control_image))
+                                      exec: (fn () (save_control_image true))
                                      } 
                  "next_hidden_control" { win: "Alt-Shift-Period"
                                          mac: "Command-Shift-Period"
@@ -11618,6 +11669,7 @@
          (console.log "serialized controls: " *serialized_controls*)
          (rehydrate_controls juno_container *serialized_controls*)))
     
+    (sleep 0.1)
     (default_focus)
     ;; setup key bindings
     (set_prop *key_bindings*
