@@ -234,21 +234,23 @@
    })
 
 (defun add_class (class_name `& elems)
-  (do
-    (defvar `effected [])
+  (progn
+    (defvar effected [])
     (= elems (flatten elems))
     (when (and (not (eq nil elems))
                (> elems.length 0))
       (= elems (if (or (instanceof elems.0 NodeList)
                        (instanceof elems.0 HTMLCollection)
-                       (is_array? elems.0))
+                       (and (is_array? elems.0)
+                            (> elems.0.length 0)))
                  elems.0
                  elems))
-      (for_each (`e elems)
-                (do
-                  (when e.classList
-                    (push effected e)
-                    (-> e.classList `add class_name)))))
+      (when (> (length elems) 0)
+         (for_each (`e elems)
+            (do
+               (when e.classList
+                  (push effected e)
+                  (-> e.classList `add class_name))))))
     effected)
   {
    `usage: ["class_name:string" "element:Element" "element?:Element"]
