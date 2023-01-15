@@ -145,7 +145,7 @@
 (defun core/page_header ()
   (first (html/query_all "head")))
 
-(defglobal core/*env_skeleton* (reader (atob (clone *env_template*))))
+(defglobal core/*env_skeleton* (reader (LZString.decompressFromBase64 (clone *env_template*))))
 
 (defun core/read_text_file (file)
   (console.log "reading text file stub called"))
@@ -293,6 +293,7 @@
                      (use_unique_symbols "html")
                      (evaluate (LZString.decompressFromBase64 browser_initializer) { `source_name: "pkg/browser_initializer.juno" })
                      | { `source_name: "pkg/browser_initializer.juno" })
+                 (undefine `browser_initializer) ;; no longer needed in text form, remove to save space
                  (-> repl `evaluate | (save_image) | )
                  (rlog (html/div "Complete..Open the newly created html file to use.")))))
             100)

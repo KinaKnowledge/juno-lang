@@ -79,9 +79,26 @@
       `tags: [`compile `read `io `file ]
       `usage: ["filename:string"] 
       })
-
-
-
+   
+   (defun save_file (filename array_buffer)
+      (let
+         ((buffer nil)
+          (bytes_written 0)
+          (outfile nil))
+         (assert (is_string? filename) "save_file: file must be a string!")
+         (= buffer (new Uint8Array array_buffer))
+         (= outfile (-> Deno `open filename { truncate: true create: true write: true }))
+         (while (< bytes_written buffer.length)
+            (inc bytes_written
+               (-> outfile `write (-> buffer `subarray bytes_written))))
+         bytes_written)
+      {
+        `description: (+ "<br><br>Given an pathname as a string, either relative or absolute, and an "
+                         "`array_buffer`, writes the provided array buffer as an unsigned 8 bit integer "
+                         "array to the target path.  Returns the total amount of bytes written. ")
+        `tags: ["io" "save" "write" "binary"]
+        `usage: ["filename:string" "array_buffer:ArrayBuffer"]
+      })
 
    (defmacro with_fs_events ((event_binding location) body)
      `(let

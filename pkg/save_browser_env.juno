@@ -14,8 +14,8 @@
   (delete_namespace "tests"))
 
 ;(import "doc/help.lisp")
-(import "pkg/logo.juno")
-(import "working/lz-string.juno")
+;(import "pkg/logo.juno")
+(import "pkg/lz-string.juno")
 
 (defglobal core/html_package ((quote quote) (env_encode_string (read_text_file "pkg/html.juno"))))
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
@@ -53,7 +53,7 @@
  ;; import the http client package into the image..
 (import "pkg/http_client.juno")
 
-(defglobal core/*env_template* (btoa (read_text_file  "./src/environment.lisp")))
+(defglobal core/*env_template* (LZString.compressToBase64 (read_text_file  "./src/environment.lisp")))
 
 ;; everything loaded above this line is what will be preserved...
 ;; capture the core symbols and place into the *core_symbols* library

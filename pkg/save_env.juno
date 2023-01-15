@@ -19,9 +19,12 @@
                (set_path [ `export `default_namespace ] *env_config* options.default_namespace)
                (set_path [ `export `default_namespace ] *env_config* "user"))
             
-            (if options.initializer
-               (defglobal core/*initializer* options.initializer)
-               (defun core/*initializer* () (progn (repl nil nil { `use_console: true }))))
+            ;(if options.initializer
+             ;  (defglobal core/*initializer* options.initializer))
+            
+            (if options.on_environment_ready
+               (defglobal core/*on_environment_ready* options.on_environment_ready)
+               (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true }))))
             
             (core/save_env {
                              save_as: options.save_as
@@ -68,7 +71,11 @@
      (set_path [ `export `default_namespace ] *env_config* "user")
      
      
-     (defun core/*initializer* () (progn (repl nil nil { `use_console: true })))
+     ;          (defglobal core/*initializer* options.initializer))
+            
+    
+     (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true })))
+     ;(defun core/*initializer* () (progn (repl nil nil { `use_console: true })))
      (= rval (core/save_env))
      (set_namespace my_namespace)
      rval))

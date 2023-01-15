@@ -2120,6 +2120,9 @@
                         (reduce (child child_export_order)
                            (if (resolve_path [ child.0 "serialize_with_image" ] children_declarations)
                                (progn
+                                  (env_log "checking " namespace "checking for: " (+ child.0"/*on_serialization*"))
+                                  (when (is_symbol? (+ child.0"/*on_serialization*"))
+                                     (-> child.1 `evaluate (+ "(" child.0 "/*on_serialization*)")))
                                   (= child_env (-> child.1
                                                    `compile
                                                    (-> child.1 `export_symbol_set (+ {} ;(if options.do_not_include { do_not_include: options.do_not_include } {})
@@ -2394,7 +2397,10 @@
          
          
          (when (== namespace "core")
+            ;(console.log "core: rehydrated_children: " rehydrated_children)
             
+            (defvar env_ready (prop Environment.global_ctx.scope "*on_environment_ready*"))
+                                        
             (for_each (symname (keys Environment.definitions))
                (progn
                   (aif (and (not (and included_globals
@@ -2412,7 +2418,8 @@
             
             (when sys_init
                (eval sys_init))
-            
+            ;(when included_globals
+               ;(console.log "about to rehydrate children.." included_globals.child_load_order))
             ;; once the namespaces are created, set any static imports they have
             ;; and evaluate the child
             (when (and rehydrated_children
@@ -2459,19 +2466,25 @@
                         (catch Error (e)
                            (console.error "env: unable to load namespace: " (clone childset)))))))
             
+            
             ;; call the user initializer
             (when init
                (eval init))
             
+            
             ;; we will have deferred initializations of the namespaces
             ;; if there were any children in the export, so do these now
             
-            (for_each (child children)
+            (debug)
+            (for_each (child (values children))
                (progn
                   (-> child `evaluate_local
-                     (+ "(progn (debug) (console.log \"child running initialization..\" *namespace*) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))")
+                     (+ "(try (progn (debug) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval (prop Environment.global_ctx.scope `*system_initializer*))) (if (prop Environment.global_ctx.scope `*initializer*) (eval  (prop Environment.global_ctx.scope `*initializer*)))) (catch Error (e) (progn (console.error *namespace* \"ERROR on initialization:\" e))))")
                      nil
-                     { log_errors: true }))))
+                     { log_errors: true })))
+            ;(console.log "core: initialized children, starting env_ready if exists")
+            (when env_ready
+               (eval env_ready)))
          
          
          Environment)))

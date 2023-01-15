@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-01-15 07:03:49
-// Version: 2023.01.15.07.03
-export const DLISP_ENV_VERSION='2023.01.15.07.03';
+// Build Time: 2023-01-15 12:19:19
+// Version: 2023.01.15.12.19
+export const DLISP_ENV_VERSION='2023.01.15.12.19';
 
 
 
@@ -3609,6 +3609,12 @@ export async function init_dlisp(Environment)  {
                                     }
                                 })(),children_declarations))){
                                     {
+                                        await env_log("checking ",namespace,"checking for: ",await add(child['0'],"/*on_serialization*"));
+                                        if (check_true (await not(((typeof await add(child['0'],"/*on_serialization*")==="undefined")|| (await Environment["get_global"].call(Environment,await add(child['0'],"/*on_serialization*"),ReferenceError)===ReferenceError))))){
+                                            {
+                                                await child['1']["evaluate"].call(child['1'],("("+ child['0']+ "/*on_serialization*)"))
+                                            }
+                                        };
                                         child_env=await child['1']["compile"].call(child['1'],await child['1']["export_symbol_set"].call(child['1'],await add(new Object(),{
                                             no_compiler:true
                                         })),{
@@ -4980,6 +4986,8 @@ export async function init_dlisp(Environment)  {
                     };
                     if (check_true ((namespace==="core"))){
                         {
+                            let env_ready=Environment.global_ctx.scope["*on_environment_ready*"];
+                            ;
                             await (async function() {
                                 let __for_body__361=async function(symname) {
                                     {
@@ -5208,13 +5216,15 @@ export async function init_dlisp(Environment)  {
                                     }(),null))
                                 }
                             };
+                            debugger;
+                            ;
                             await (async function() {
                                 let __for_body__389=async function(child) {
-                                    return await child["evaluate_local"].call(child,("(progn (debug) (console.log \"child running initialization..\" *namespace*) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval *system_initializer*)) (if (prop Environment.global_ctx.scope `*initializer*) (eval *initializer*)))"),null,{
+                                    return await child["evaluate_local"].call(child,("(try (progn (debug) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval (prop Environment.global_ctx.scope `*system_initializer*))) (if (prop Environment.global_ctx.scope `*initializer*) (eval  (prop Environment.global_ctx.scope `*initializer*)))) (catch Error (e) (progn (console.error *namespace* \"ERROR on initialization:\" e))))"),null,{
                                         log_errors:true
                                     })
                                 };
-                                let __array__390=[],__elements__388=children;
+                                let __array__390=[],__elements__388=await values(children);
                                 let __BREAK__FLAG__=false;
                                 for(let __iter__387 in __elements__388) {
                                     __array__390.push(await __for_body__389(__elements__388[__iter__387]));
@@ -5225,7 +5235,14 @@ export async function init_dlisp(Environment)  {
                                     }
                                 }return __array__390;
                                  
-                            })()
+                            })();
+                            if (check_true (env_ready)){
+                                {
+                                    (await Environment.eval(await async function(){
+                                        return env_ready
+                                    }(),null))
+                                }
+                            }
                         }
                     };
                     return Environment

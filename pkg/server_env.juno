@@ -727,6 +727,8 @@
          (console.log "Assembled JS: " assembled_js)
          (console.log "------"))))
       
+(defglobal *http_routes_state* nil)
+
 
 
 
@@ -982,6 +984,16 @@
       ((server (create_http_server port {})))
       (add_http_route "GET" service_path (file_spooler file_root))
       (serve_using_handler server default_handler options)))
+
+(defun *on_serialization* ()
+   (progn
+      (console.log "http: running preserialization")
+      (= *http_routes* (reader (as_lisp *http_routes*)))))
+
+;
+;(defun *initializer* ()
+;   (progn
+;      (http/start)))
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")

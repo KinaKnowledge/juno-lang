@@ -6565,7 +6565,7 @@
                                      (console.error "ERROR: " ex)
                                      (notify (+ (sub_type ex) ": " ex.message))
                                      (when  ex.details
-                                        (log "Caught error: " ex.details)
+                                        ;(log "Caught error: " ex.details)
                                         (when (and ex.details.expanded_source
                                                    (== display_mode "tree"))
                                            (set_prop ex.details
