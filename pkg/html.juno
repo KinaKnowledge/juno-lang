@@ -6,8 +6,11 @@
 ;; (c) 2022 Kina
 ;; Author: Alex Nygren
 
+(console.log "HTML Package: " (namespaces) (contains? "html" (namespaces)))
+
 (when (contains? "html" (namespaces))
   (delete_namespace `html))
+
 (create_namespace `html { `serialize_with_image: false })
 
 

@@ -1,39 +1,62 @@
 ;; 
 (declare (namespace "core"))
 (if_compile_time_defined `Deno
-   (defun core/save_environment (options)
-      (let
-         ((my_namespace (current_namespace)))
-         (when options.initializer
-            (assert (is_function? options.initializer) "initializer option must be a function"))
-         (set_namespace "core")
-         (when (not (contains? "io" *env_config*.features))
-            (import "src/base-io.lisp"))
-         (when (not (contains? "build-tools" *env_config*.features))
-            (import "src/build-tools.lisp"))
-         
-         (if options.default_namespace
-            (set_path [ `export `default_namespace ] *env_config* options.default_namespace)
-            (set_path [ `export `default_namespace ] *env_config* "user"))
-         (if options.initializer
-            (defglobal core/*initializer* options.initializer)
-            (defun core/*initializer* () (progn (repl nil nil { `use_console: true }))))
-         
-         (core/save_env { 
-                          save_as: options.save_as
-                          do_not_include: options.do_not_include
-                          include_source: options.include_source
-                          })
-         (set_namespace my_namespace))))
+   (progn
+      (defglobal *env_skeleton*  (reader (read_text_file "./src/environment.lisp")))
+      (defun save_environment (options)
+         (let
+            ((my_namespace (current_namespace))
+             (rval nil))
+            (when options.initializer
+               (assert (is_function? options.initializer) "initializer option must be a function"))
+            (set_namespace "core")
+            (when (not (contains? "io" *env_config*.features))
+               (import "src/base-io.lisp"))
+            (when (not (contains? "build-tools" *env_config*.features))
+               (import "src/build-tools.lisp"))
+            
+            (if options.default_namespace
+               (set_path [ `export `default_namespace ] *env_config* options.default_namespace)
+               (set_path [ `export `default_namespace ] *env_config* "user"))
+            
+            (if options.initializer
+               (defglobal core/*initializer* options.initializer)
+               (defun core/*initializer* () (progn (repl nil nil { `use_console: true }))))
+            
+            (core/save_env {
+                             save_as: options.save_as
+                             do_not_include: options.do_not_include
+                             include_source: options.include_source
+                             })
+            (set_namespace my_namespace))
+         {
+           `description: (+ "The `save_environment` function is a server-side convenience function "
+                            "that wraps the lower level `save_env` function.  The function checks that the "
+                            "`build-tools` and the `base-io` feature have been installed in the image, sets "
+                            "up the initializer call for the core environment and then calls the `save_env` "
+                            "function to save the namespace.  The `save_env` call return value is returned "
+                            "from this function.<br>#### Options <br><br>save_as:string - If provided, the "
+                            "emitted image state file will be written with this name, as opposed to the "
+                            "value located at the path "
+                            "`*env_config*.export.save_path`.<br>do_not_include:array - Any symbols that "
+                            "shoudn\'t be included in the image can be listed here.  <br><br>  ")
+           `usage: ["options:object"]
+           `tags: ["state" "save" "image" "export" "environment" "dehydrate" "serialize" ]
+         })
+      (log "The function save_environment has been installed in the core namespace.")
+      (log "See description for details.")))
             
 ;(save_environment { `initializer: (fn () (http/start))         
          
-         
+
    
 
 (if_compile_time_defined `Deno
-  (progn
+  (let
+     ((my_namespace (current_namespace))
+      (rval nil))
      (declare (namespace "core"))
+     
      (set_namespace "core")
      (when (contains? "tests" (namespaces))
         (delete_namespace "tests"))
@@ -43,8 +66,10 @@
         (import "src/build-tools.lisp"))
      
      (set_path [ `export `default_namespace ] *env_config* "user")
-     (defglobal core/*env_skeleton*  (reader (read_text_file "./src/environment.lisp")))
+     
      
      (defun core/*initializer* () (progn (repl nil nil { `use_console: true })))
-     (core/save_env)))
+     (= rval (core/save_env))
+     (set_namespace my_namespace)
+     rval))
      

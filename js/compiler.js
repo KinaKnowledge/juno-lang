@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-01-12 10:00:18
-// Version: 2023.01.12.10.00
-export const DLISP_ENV_VERSION='2023.01.12.10.00';
+// Build Time: 2023-01-15 07:03:49
+// Version: 2023.01.15.07.03
+export const DLISP_ENV_VERSION='2023.01.15.07.03';
 
 
 
@@ -206,14 +206,14 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __body_ref__248=async function() {
+         let __body_ref__247=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(current_obj) { await __body_ref__248();
+        while(current_obj) { await __body_ref__247();
          if(__BREAK__FLAG__) {
              break;
             
@@ -1529,47 +1529,64 @@ return await (async function() {
             tokenize_object=async function(obj,ctx,_path) {
                 let ser=null;
                 ;
-                try {
-                    ser=await JSON.stringify(obj)
-                } catch (__exception__47) {
-                    if (__exception__47 instanceof TypeError) {
-                        let e=__exception__47;
+                return await async function(){
+                    if (check_true (false)) {
                         {
-                            {
-                                await console.warn("compiler: cannot tokenize: ",obj,e);
-                                ser=""
-                            }
+                            let rval=await tokenize(await (async function(){
+                                 return ["=:quote",await (async function(){
+                                     return await (await Environment.get_global("read_lisp"))(await (await Environment.get_global("as_lisp"))(obj)) 
+                                })()] 
+                            })(),ctx,(_path|| (await Environment.get_global("path"))));
+                            ;
+                            await console.log("tokenized regex: ",rval);
+                            return rval
                         }
-                    } else throw __exception__47;
-                    
-                };
-                _path=(_path|| []);
-                if (check_true ((ser==="{}"))){
-                    {
-                        return {
-                            type:"object",ref:false,val:"{}",name:"{}",__token__:true,path:_path
+                    } else {
+                        {
+                            try {
+                                ser=await JSON.stringify(obj)
+                            } catch (__exception__47) {
+                                if (__exception__47 instanceof TypeError) {
+                                    let e=__exception__47;
+                                    {
+                                        {
+                                            await console.warn("compiler: cannot tokenize: ",obj,e);
+                                            ser="{}"
+                                        }
+                                    }
+                                } else throw __exception__47;
+                                
+                            };
+                            _path=(_path|| []);
+                            if (check_true ((ser==="{}"))){
+                                {
+                                    return {
+                                        type:"object",ref:false,val:"{}",name:"{}",__token__:true,path:_path
+                                    }
+                                }
+                            } else {
+                                return await (async function() {
+                                    let __for_body__50=async function(pset) {
+                                        return {
+                                            type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+ await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
+                                        }
+                                    };
+                                    let __array__51=[],__elements__49=await (await Environment.get_global("pairs"))(obj);
+                                    let __BREAK__FLAG__=false;
+                                    for(let __iter__48 in __elements__49) {
+                                        __array__51.push(await __for_body__50(__elements__49[__iter__48]));
+                                        if(__BREAK__FLAG__) {
+                                             __array__51.pop();
+                                            break;
+                                            
+                                        }
+                                    }return __array__51;
+                                     
+                                })()
+                            }
                         }
                     }
-                } else {
-                    return await (async function() {
-                        let __for_body__50=async function(pset) {
-                            return {
-                                type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+ await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
-                            }
-                        };
-                        let __array__51=[],__elements__49=await (await Environment.get_global("pairs"))(obj);
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__48 in __elements__49) {
-                            __array__51.push(await __for_body__50(__elements__49[__iter__48]));
-                            if(__BREAK__FLAG__) {
-                                 __array__51.pop();
-                                break;
-                                
-                            }
-                        }return __array__51;
-                         
-                    })()
-                }
+                } ()
             };
             tokenize_quote=async function(args,_path) {
                 return await async function(){
@@ -4659,9 +4676,21 @@ return await (async function() {
                          return(__targ__269)["type"]
                     } 
                 })()|| await (await Environment.get_global("get_outside_global"))(target_type)|| UnknownType);
-                (acc).unshift({
-                    ctype:target_return_type
-                });
+                await async function(){
+                    if (check_true (await get_declarations(ctx,target_type))) {
+                        return (acc).unshift({
+                            ctype:await get_declarations(ctx,target_type)
+                        })
+                    } else if (check_true ((((tokens && tokens["1"] && tokens["1"]["name"])==="Function")|| ((tokens && tokens["1"] && tokens["1"]["name"])==="AsyncFunction")))) {
+                        (acc).unshift({
+                            ctype:target_return_type
+                        })
+                    } else if (check_true (false)) {
+                        (acc).unshift({
+                            ctype:UnknownType
+                        })
+                    }
+                } ();
                 return acc
             };
             compile_val_mod=async function(tokens,ctx) {
@@ -8901,5 +8930,5 @@ return await (async function() {
     }
 }
 },{
-    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set"],source_name:"compiler.lisp"
+    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","read_lisp","path","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","warn","make_set"],source_name:"compiler.lisp"
 })} 

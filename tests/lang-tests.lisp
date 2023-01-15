@@ -18,7 +18,7 @@
  { ev: "abc", place: "the_place", restis: [ [ "rest1" ], [ "rest2" ] ] } 
  "destructuring bind nested and rest"]
 
-
+  
 
  ]
 

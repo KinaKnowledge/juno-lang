@@ -15,16 +15,18 @@
 
 ;(import "doc/help.lisp")
 (import "pkg/logo.juno")
+(import "working/lz-string.juno")
 
-
-(defglobal core/html_package ((quote quote) (read_text_file "pkg/html.juno")))
+(defglobal core/html_package ((quote quote) (env_encode_string (read_text_file "pkg/html.juno"))))
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
 (defglobal core/*global_themes* { juno_light: (read_text_file "html/juno_light.css")
                                   earth_tones: (read_text_file "html/earth_tones.css")
                                   cobalt: (read_text_file "html/cobalt.css")
                                   idle_fingers: (read_text_file "html/idle_fingers.css")})
-(defglobal core/browser_initializer ((quote quote) (read_text_file "pkg/browser_initializer.juno")))
+(defglobal core/browser_initializer ((quote quote) (LZString.compressToBase64 (read_text_file "pkg/browser_initializer.juno"))))
 (defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
+
+
 
 
 ;; Make sure we have the ability to produce a file..
@@ -39,7 +41,8 @@
 (defun core/*system_initializer* ()
   (let
       ((pkg (-> Environment `evaluate "core/html_package")))
-    (console.log "system initializer: initializing packaged html_package")
+    (console.log "system initializer: namespaces:" (namespaces))
+    (console.log "system initializer: " *namespace*  "initializing packaged html_package")
     (-> Environment `evaluate pkg)
     (console.log "initializing browser_repl_package")
     (eval (reader (clone browser_repl_package)))
@@ -106,19 +109,23 @@
   
   (setq no_includes
 	(conj no_includes
-	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file" "Deno.readTextFile" "Deno.writeTextFile"]))
+	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file" "Deno.readTextFile" "Deno.writeTextFile" "readline_mod"]))
   ;; print them out 
   
-  ; (console.log "NOT INCLUDING: ")
-  ; (console.table (sort no_includes))
+   ;(console.log "NOT INCLUDING: ")
+   ;(console.table (sort no_includes))
 
   ;; save the image 
-
-  (core/save_env { save_as: "js/juno_browser.js"		   
-                   preserve_imports: false
-                   features: [ "compiler" "repl" "core-ext" "html" "build-tools" "browser" "http_client" ]
-                   do_not_include: no_includes })
-  
+  (try
+     (core/save_env { save_as: "js/juno_browser.js"
+                      preserve_imports: false
+                      features: [ "compiler" "repl" "core-ext" "html" "build-tools" "browser" "http_client" ]
+                      do_not_include: no_includes })
+     (catch Error (e)
+        (progn
+           (console.log "ERROR received from save_env the environment:" e)
+           (throw e))))
+     
   (console.log "building standalone starter.html file..")
 
   (defglobal env {})

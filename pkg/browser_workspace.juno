@@ -291,7 +291,7 @@
                  (rlog (html/div "Bootstrapping new image.."))                 
                  (-> repl `evaluate |
                      (use_unique_symbols "html")
-                     (evaluate browser_initializer { `source_name: "pkg/browser_initializer.juno" })
+                     (evaluate (LZString.decompressFromBase64 browser_initializer) { `source_name: "pkg/browser_initializer.juno" })
                      | { `source_name: "pkg/browser_initializer.juno" })
                  (-> repl `evaluate | (save_image) | )
                  (rlog (html/div "Complete..Open the newly created html file to use.")))))

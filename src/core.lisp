@@ -737,7 +737,15 @@
      `usage: ["quoted_form:*"]
      `tags:["macro" "expansion" "debug" "compile" "compilation"]
    })
-  
+ 
+(defun macroexpand_all (quoted_form)
+   (detokenize (tokenize_lisp quoted_form))
+   {
+     `description: (+ "Given a quoted form, will recursively expand all macros in the quoted form "
+                      "and return the expanded form structure")
+     `usage: ["quoted_form:*"]
+     `tags:["macro" "expansion" "debug" "compile" "compilation"]
+   }) 
 
 (defmacro check_type (thing type_name error_string)
     (if error_string
@@ -2355,7 +2363,9 @@ such as things that connect or use environmental resources.
       })
 
 
-(use_quoted_initializer
+
+
+;(use_quoted_initializer
  (defglobal *compiler_syntax_rules*
    { 
     `compile_let:  [ [[0 1 `val] (list is_array?) "let allocation section"]
@@ -2363,7 +2373,7 @@ such as things that connect or use environmental resources.
     `compile_cond: [ [[0] (list (fn (v) (== (% (length (rest v)) 2) 0))) "cond: odd number of arguments" ]]
     `compile_assignment: [[[0 1] (list (fn (v) (not (== v undefined)))) "assignment is missing target and values"]
                           [[0 2] (list (fn (v) (not (== v undefined)))) "assignment is missing value"]]
-    }))
+    })
 
 
 (defun tokenize_lisp (quoted_source)
@@ -3042,13 +3052,18 @@ such as things that connect or use environmental resources.
 	   (is_array? target_symbols)
 	   (progn
 	     (push acc
-		   `(defglobal ,#target_symbols.0 (dynamic_import ,#filespec)))
+		   `(defglobal ,#target_symbols.0 (dynamic_import ,#filespec)
+                       {
+                         `is_import: true
+                         `initializer: `(import ,@args)
+                         }))
 	     (push acc
 		   `(set_path [ `imports (+ ,#(current_namespace) "/" (desym ,#target_symbols.0)) ] *env_config* (to_object [[`symbol (desym ,#target_symbols.0) ] [ `namespace ,#(current_namespace) ] [ `location ,#filespec ]])))
 	     (push acc
 		   `(when (prop ,#target_symbols.0 `initializer)
 		      (-> ,#target_symbols.0 `initializer Environment)))
 	     (push acc target_symbols.0)
+         ;(console.log "import: acc is: " (as_lisp acc))
 	   `(iprogn
 	      ,@acc))))
 	

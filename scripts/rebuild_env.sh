@@ -17,6 +17,7 @@ EOI
 cat <<EOI | lib/juno
 (import "src/base-io.lisp")
 (import "src/build-tools.lisp")
+(import "pkg/server_env.juno")
 (import "working/save_env.lisp")
 EOI
 

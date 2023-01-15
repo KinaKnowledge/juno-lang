@@ -43,6 +43,7 @@
         { `type: "application/json" }))
 
 
+
 (defun add_http_route (method path_specifier route_handler)
    (if (and (is_string? method)
             (is_string? path_specifier)
@@ -663,24 +664,27 @@
      })
 
 (defun websocket_handler (options)
-   (progn
+   (let
+      ((options options))
       (assert (and (is_object? options)
                    options.on_open
                    options.on_close
                    options.on_message
                    options.on_error)
               "Invalid options provided to the websocket_handler: options must be an object with on_open, on_close, on_message and on_error functions.")
+      ;(console.log "websocket_handler: options: " options)
       (fn (parameters request_event)
          (let
-            ((returned_response nil))
+            ((returned_response nil)
+             (options options))
             (declare (local socket response)
                      (object socket response))
             (try
                (progn
-                  (console.log "websocket_handler: received open request")
+                 ;
                   ;; embed js since the compiler doesn't have a construct for multiple return values.
                   (javascript | let { socket, response } = Deno.upgradeWebSocket(request_event.request) | )
-                  (console.log "websocket_handler: new socket: " response socket)
+                 
                   (= returned_response response)
                   (set_prop socket
                      `onopen
@@ -763,7 +767,7 @@
          
          (is_function? result.toJSON)
          (progn
-            (log request_id "Encoding result in JSON: " )
+            ;(log request_id "Encoding result in JSON: " )
             (set_prop obj
                `result (try
                           (JSON.stringify result)
@@ -772,11 +776,9 @@
                                 (console.log "encode_remote_result: cannot stringify the result" e.message)
                                 result)))
                
-               `needs_eval true)
-            (log request_id "Encoded to JSON: " obj))
+               `needs_eval true))
          else
          (progn
-            (log "encoding the result to JSON: " obj)
             (set_prop obj
                `result (JSON.stringify result)
                `needs_eval (if options.needs_eval
@@ -789,7 +791,7 @@
 
 (defglobal *ws_counter* 0)
 
-(defglobal $active_websockets
+(defparameter *active_websockets*
    {})
 
 (defun create_ws_repl_handler (options)
@@ -801,7 +803,9 @@
                                    (= namespace ns)
                                    env)))
        (evaluator nil)
+       (options options)
        (send_to_ws http/send_to_ws))
+      ;(console.log "create_ws_repl_handler: options: " options)
       (websocket_handler {
                            `on_open: (fn (ws event parameters)
                                         (try
@@ -821,7 +825,7 @@
                                                                `needs_read: true
                                                                `is_log: true
                                                              })))
-                                              (set_prop $active_websockets
+                                              (set_prop *active_websockets*
                                                  ws.ws_id
                                                  ws)
                                               (console.log "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
@@ -896,13 +900,19 @@
                            `on_close: (fn (ws event)
                                          (progn
                                             (when ws.ws_id
-                                               (remove_prop $active_websockets
+                                               (remove_prop *active_websockets*
                                                   ws.ws_id))
                                             (log "websocket closed")))
                            })))
 
+
+
 (defglobal ws_repl_handler
-   (create_ws_repl_handler { `namespace: "user" }))
+   (create_ws_repl_handler { `namespace: "user" })
+   {
+       `initializer: `(create_ws_repl_handler { `namespace: "user" })
+   })
+   
 
 (defun env_bank (port base_directory options)
    (let
