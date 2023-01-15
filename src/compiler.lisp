@@ -615,6 +615,7 @@
                                                ;global
                                                (== symname name)
                                                name)))
+                                     
                                      ;; put together the return structure..
                                      ;; what type of thing is it? a string description...
                                      {   `type: (cond (is_array? name)
@@ -874,20 +875,32 @@
              (`tokenize_object (fn (obj ctx _path)
                                   (do
                                      (defvar ser nil)
-                                     (try
-                                        (= ser (JSON.stringify obj))
-                                        (catch TypeError (e)
-                                           (do
-                                              (console.warn "compiler: cannot tokenize: ", obj, e)
-                                              (= ser ""))))
-                                     
-                                     (= _path (or _path []))
-                                     (if  (== ser "{}")
-                                         (do
-                                            { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true  `path: _path})
-                                         (for_each (`pset (pairs obj))
-                                            (do
-                                               {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))
+                                     (cond
+                                        false ;(is_regex? obj))
+                                        (progn
+                                           (defvar rval (tokenize [(quote quote) (read_lisp (as_lisp obj))] ctx (or _path path)))
+                                           (console.log "tokenized regex: " rval)
+                                           rval)
+                                        else
+                                        (progn
+                                           (try
+                                              (= ser (JSON.stringify obj))
+                                              ;(= ser (JSON.stringify obj))
+                                              (catch TypeError (e)
+                                                 (do
+                                                    (console.warn "compiler: cannot tokenize: ", obj, e)
+                                                    (= ser "{}")
+                                                    ;(throw e)
+                                                    )))
+                                           
+                                           (= _path (or _path []))
+                                           (if  (== ser "{}")
+                                               (do
+                                                  ;(console.log "substiting " ser "an empty object for " obj)
+                                                  { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true  `path: _path})
+                                               (for_each (`pset (pairs obj))
+                                                  (do
+                                                     {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))))
              
              (`tokenize_quote (fn (args _path)
                                  (do
@@ -2814,8 +2827,22 @@
                                               `type)
                                         (get_outside_global target_type)
                                         UnknownType))
-                                 (prepend acc
-                                    { `ctype: target_return_type })
+                                 (cond
+                                    (get_declarations ctx target_type)
+                                    (prepend acc
+                                       { `ctype: (get_declarations ctx target_type) })
+                                    
+                                    (or (== tokens.1.name "Function") 
+                                        (== tokens.1.name "AsyncFunction"))
+                                    (prepend acc
+                                       { `ctype: target_return_type })
+                                    
+                                    false
+                                     (prepend acc 
+                                        { `ctype: UnknownType }))
+                                 
+                                 ;(console.log "compiler: new: " tokens.1.name ": " (first acc))
+                                 
                                  acc)))
              
              
@@ -4449,7 +4476,7 @@
                       ;; scan the keys to ensure that they are valid
                       ;; if not we will have to build the object from setters
                       ;; vs literals
-                      
+                      ;(console.log "comp obj literal: " tokens)
                       (for_each (`token (or tokens.val []))
                          (when (and (== token.type "keyval")
                                     (check_invalid_js_ref token.name))
@@ -4496,12 +4523,13 @@
                                   (inc idx)
                                   (= kvpair (prop tokens.val idx))
                                   (= output_val (or (compile_wrapper_fn kvpair.val.1 ctx) "null"))
+                                  ;(console.log "kvpair:val:"  (cl_encode_string (get_val kvpair.val.0 ctx)) "=" output_val)
                                   ;;(if (== kvpair.val.0 "streams")
                                   (try 
                                      (+ "" output_val)  ;; detect if this is a special object, such as a module, which are hard to directly detect
                                      (catch Error (e)
                                         (progn
-                                           ;(console.log "kvpair:val:"  (cl_encode_string (get_val kvpair.val.0 ctx)) "=" output_val)
+                                           
                                            (= output_val "null"))))
                                   (for_each (`t [tmp_name "[" "\"" (cl_encode_string (get_val kvpair.val.0 ctx)) "\"" "]" "=" output_val ";"])
                                      (push acc t))))
