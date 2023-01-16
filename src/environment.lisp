@@ -1241,30 +1241,39 @@
                                        (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))
                                 else
                                 ;; it's on us...
-                                (do
-                                   (defvar comps (get_object_path (if (== 1 namespace_identity.length)
-                                                                      namespace_identity.0
-                                                                      namespace_identity.1)))
-                                   (set_prop Environment.global_ctx.scope
-                                      comps.0
-                                      value)
-                                   (if (and (is_object? meta)
-                                            (not (is_array? meta)))
-                                       (do
+                                (try 
+                                   (progn
+                                      (defvar comps (get_object_path (if (== 1 namespace_identity.length)
+                                                                         namespace_identity.0
+                                                                         namespace_identity.1)))
+                                      (set_prop Environment.global_ctx.scope
+                                         comps.0
+                                         value)
+                                      (if (and (is_object? meta)
+                                               (not (is_array? meta)))
+                                          (do
+                                             (when is_constant
+                                                (set_prop meta
+                                                   `constant
+                                                   true))
+                                             (set_prop Environment.definitions
+                                                comps.0
+                                                meta))
                                           (when is_constant
-                                             (set_prop meta
-                                                `constant
-                                                true))
-                                          (set_prop Environment.definitions
-                                             comps.0
-                                             meta))
-                                       (when is_constant
-                                          (set_prop Environment.definitions
-                                             comps.0
-                                             {
-                                               `constant: true
-                                               })))
-                                   (prop Environment.global_ctx.scope comps.0))))))
+                                             (set_prop Environment.definitions
+                                                comps.0
+                                                {
+                                                  `constant: true
+                                                  })))
+                                      (prop Environment.global_ctx.scope comps.0))
+                                   (catch Error (e)
+                                      (progn
+                                         (defvar message (+ "Error: set_global: " *namespace* "symbol name: " refname ": " e.message))
+                                         (console.error message())
+                                         (set_prop e
+                                            `message
+                                            message)
+                                         (throw e))))))))
                     
                     (get_global
                        (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps contained_req)

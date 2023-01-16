@@ -47,6 +47,7 @@
            `tags: ["state" "save" "image" "export" "environment" "dehydrate" "serialize" ]
          })
       (log "The function save_environment has been installed in the core namespace.")
+      (log "To save the current environment call (save_environment) with the default options.")
       (log "See description for details.")))
             
 ;(save_environment { `initializer: (fn () (http/start))         
@@ -55,28 +56,32 @@
    
 
 (if_compile_time_defined `Deno
-  (let
-     ((my_namespace (current_namespace))
-      (rval nil))
-     (declare (namespace "core"))
-     
-     (set_namespace "core")
-     (when (contains? "tests" (namespaces))
-        (delete_namespace "tests"))
-     (when (not (contains? "io" *env_config*.features))
-        (import "src/base-io.lisp"))
-     (when (not (contains? "build-tools" *env_config*.features))
-        (import "src/build-tools.lisp"))
-     
-     (set_path [ `export `default_namespace ] *env_config* "user")
-     
-     
-     ;          (defglobal core/*initializer* options.initializer))
-            
-    
-     (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true })))
-     ;(defun core/*initializer* () (progn (repl nil nil { `use_console: true })))
-     (= rval (core/save_env))
-     (set_namespace my_namespace)
-     rval))
+   (if false
+      (let
+         ((my_namespace (current_namespace))
+          (rval nil))
+         (declare (namespace "core"))
+         
+         (set_namespace "core")
+         (when (contains? "tests" (namespaces))
+            (delete_namespace "tests"))
+         (when (not (contains? "io" *env_config*.features))
+            (import "src/base-io.lisp"))
+         (when (not (contains? "build-tools" *env_config*.features))
+            (import "src/build-tools.lisp"))
+         
+         (set_path [ `export `default_namespace ] *env_config* "user")
+         
+         
+         ;          (defglobal core/*initializer* options.initializer))
+         
+         
+         (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true })))
+         ;(defun core/*initializer* () (progn (repl nil nil { `use_console: true })))
+         (= rval (core/save_env))
+         (set_namespace my_namespace)
+         rval)
+      (progn
+         (log "Auto save on import is disabled.")
+         true)))
      
