@@ -244,11 +244,18 @@
    `tags: [ `help `info `information `assist `documentation `docs ]
    })
 
-(defglobal ? help
-  {
-   `description: "Alias for the help command.  See help."
-   `usage: ["topic_or_name:string|symbol?"]
-   `tags: [ `help `info `information `assist `documentation `docs]
+(defmacro ? (symname)
+   `(let
+       ((results (describe ,#(if (starts_with? "=:" symname)
+                                 (-> symname `substr 2)
+                                 symname) true)))
+       (for_each (`meta_obj (or results []))
+          (help meta_obj)
+          ))
+   {
+       `description: "Given a quoted symbol as an argument, the function returns a formatted manual page for the provided symbol."
+       `usage: ["name:quoted_symbol"]
+       `tags:["help" "assistance" "man" "usage" "info"]
    })
 
 (console.log "\nHelp loaded. Enter (help) for more information.")

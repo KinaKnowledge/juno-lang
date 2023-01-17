@@ -1,10 +1,8 @@
 ;; 
 
 (declare (namespace "core"))
-(console.log "loading save_env")
 
-(if (contains? "sys" (namespaces))
-    (defglobal $sys_defined true))
+
 
 (if_compile_time_defined `Deno
    (progn
@@ -45,7 +43,7 @@
                                            do_not_include: options.do_not_include
                                            include_source: options.include_source
                                            }))
-            
+            (console.log "save_environment: options: " options "sys available: " (contains? "sys" (namespaces)) (namespaces))
             (when (and (contains? "sys" (namespaces))
                        options.compile)
                   (= comp_rval

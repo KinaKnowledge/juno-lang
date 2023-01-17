@@ -972,10 +972,20 @@
                        
       
 
+(when (eq nil (resolve_path [ `http_services `port ] *env_config*))
+   (unless (prop *env_config* `http_services)
+      (set_prop *env_config* `http_services {
+                                              `listen_on_start: false
+                                              }))
+   (set_path [ `http_services `port ] *env_config* 56432))
+   
+      
+    
+
 
 (defun start (options)
   (progn   
-   (env_bank (or options.port 56432)
+   (env_bank (or options.port (resolve_path [ `http_services `port ] *env_config*))
              (or options.base_directory "./")
              options)))
 
@@ -990,10 +1000,12 @@
       (console.log "http: running preserialization")
       (= *http_routes* (reader (as_lisp *http_routes*)))))
 
+
 ;
-;(defun *initializer* ()
-;   (progn
-;      (http/start)))
+(defun *initializer* ()
+   (progn
+      (if (resolve_path [ `http_services `listen_on_start ] *env_config*)
+          (http/start))))
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")

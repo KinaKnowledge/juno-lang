@@ -25,6 +25,13 @@ To export Lisp images to a consolidated javascript file which contains the curre
 ```
 lib/juno js/juno.js`
 ```
+
+or:
+```
+deno run js/juno.js
+```
+
+
 5. Optionally, to build a full executable from the consolidated image built in step 4, call the compile function from the command line:
 ```
 lib/juno --compile my_binary_name js/juno.js

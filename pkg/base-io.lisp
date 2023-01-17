@@ -1,5 +1,6 @@
 ;; Base IO - Establishes baseline input/output functions in the Core Namespace
 
+
 (declare (namespace `core))
 
 (if_compile_time_defined `document

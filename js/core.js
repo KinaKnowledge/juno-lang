@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-16 13:04:23
-// Version: 2023.01.16.13.04
-export const DLISP_ENV_VERSION='2023.01.16.13.04';
+// Build Time: 2023-01-17 12:46:00
+// Version: 2023.01.17.12.46
+export const DLISP_ENV_VERSION='2023.01.17.12.46';
 
 
 
@@ -3710,6 +3710,28 @@ await Environment.set_global("nth",async function(idx,collection) {
     },{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"source_name":"core.lisp"
 })
 };
+{
+     Environment.set_global("decode_text",function(buffer) {
+        return  ( function() {
+            {
+                 let __call_target__=new TextDecoder(), __call_method__="decode";
+                return  __call_target__[__call_method__].call(__call_target__,buffer)
+            } 
+        })()
+    },{ "name":"decode_text","fn_args":"(buffer)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("encode_text",function(text) {
+        return  ( function() {
+            {
+                 let __call_target__=new TextEncoder(), __call_method__="encode";
+                return  __call_target__[__call_method__].call(__call_target__,text)
+            } 
+        })()
+    },{ "name":"encode_text","fn_args":"(text)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("hostname",async function() {
     return await Deno.hostname()
 },{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"source_name":"core.lisp"
@@ -3938,16 +3960,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__273=async function(req) {
                                             {
-                                                let _expr_95244;
+                                                let _expr_36123;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_95244=await (async function(){
+                                                _expr_36123=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_95244 && _expr_95244["0"]);
-                                                req_ns=(_expr_95244 && _expr_95244["1"]);
-                                                explicit=(_expr_95244 && _expr_95244["2"]);
+                                                req_sym=(_expr_36123 && _expr_36123["0"]);
+                                                req_ns=(_expr_36123 && _expr_36123["1"]);
+                                                explicit=(_expr_36123 && _expr_36123["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4050,13 +4072,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_6107;
+                    let _expr_63431;
                     let nspace;
-                    _expr_6107=await (async function(){
+                    _expr_63431=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_6107 && _expr_6107["0"]);
-                    nspace=(_expr_6107 && _expr_6107["1"]);
+                    sym=(_expr_63431 && _expr_63431["0"]);
+                    nspace=(_expr_63431 && _expr_63431["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -5598,10 +5620,11 @@ await Environment.set_global("set_default",async function(path,value) {
 })
 };
 {
-     Environment.set_global("operating_system",function() {
-        return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
-    },{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"source_name":"core.lisp"
-})
+    {
+         Environment.set_global("operating_system",function() {
+            return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
+        },{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"source_name":"core.lisp"
+    })
 };
 {
      Environment.set_global("platform_architecture",function() {
@@ -5613,6 +5636,55 @@ await Environment.set_global("set_default",async function(path,value) {
      Environment.set_global("platform",function() {
         return Deno["build"]
     },{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("exit",function(return_code) {
+        return  Deno.exit(return_code)
+    },{ "name":"exit","fn_args":"(return_code)","description":"Exits the system and returns the provided integer return code","usage":["return_code:?number"],"tags":["exit","quit","return","leave"],"requires":[],"source_name":"core.lisp"
+})
+};
+await Environment.set_global("permissions",async function() {
+    let perms;
+    perms=["run","env","write","read","net","ffi","sys"];
+    return await (await Environment.get_global("to_object"))(await (async function() {
+        let __for_body__394=async function(p) {
+            return await (async function(){
+                let __array_op_rval__397=p;
+                 if (__array_op_rval__397 instanceof Function){
+                    return await __array_op_rval__397(await (async function(){
+                        let __targ__396=await Deno.permissions.query({
+                            name:p
+                        });
+                        if (__targ__396){
+                             return(__targ__396)["state"]
+                        } 
+                    })()) 
+                } else {
+                    return [__array_op_rval__397,await (async function(){
+                        let __targ__396=await Deno.permissions.query({
+                            name:p
+                        });
+                        if (__targ__396){
+                             return(__targ__396)["state"]
+                        } 
+                    })()]
+                }
+            })()
+        };
+        let __array__395=[],__elements__393=perms;
+        let __BREAK__FLAG__=false;
+        for(let __iter__392 in __elements__393) {
+            __array__395.push(await __for_body__394(__elements__393[__iter__392]));
+            if(__BREAK__FLAG__) {
+                 __array__395.pop();
+                break;
+                
+            }
+        }return __array__395;
+         
+    })())
+},{ "name":"permissions","fn_args":"[]","requires":["to_object"],"source_name":"core.lisp"
 })
 };
 return true

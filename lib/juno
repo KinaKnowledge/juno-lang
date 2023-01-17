@@ -8,15 +8,6 @@ if [ -z "$RLWRAP_EDITOR" ]; then
 fi
 
 
-if [ !  -d "./js" ] && [ -d "../src" ]; then
-   cd ..
-fi
-
-if [ ! -d "./js" ]; then
-    echo "`basename $0`: not in the top level folder for Juno. Currently: `pwd`" >&2
-    exit 1
-fi
-
 # Default JS engine is Deno 
 PLATFORM=deno
 MYNAME=`basename $0`

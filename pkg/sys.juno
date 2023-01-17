@@ -93,11 +93,16 @@
                ((perms (permissions))
                 (options (or options {
                                        }))
-                (perm_flags (reduce (p (or options.permissions (pairs (permissions))))
-                               (destructuring_bind (name status)
-                                  p
-                                  (when (== status "granted")
-                                     (+ "--allow-" name)))))
+                (perm_flags (cond
+                               (is_array? options.permissions)
+                               (for_each (p options.permissions)
+                                  (+ "--allow-" p))
+                               else
+                               (reduce (p (pairs (permissions)))
+                                  (destructuring_bind (name status)
+                                     p
+                                     (when (== status "granted")
+                                        (+ "--allow-" name))))))
                 (emit_file (cond
                                       options.emit_as
                                       options.emit_as
@@ -141,7 +146,32 @@
                         `success: false
                         `stderr: "Invalid permissions: require run permissions, evaluate (sys/request) to request access at the console."
                         `stdout: ""
-                        }))))
+                        })))
+            {
+              description: (+ "The compile_executable function generates a stand-alone executable from "
+                              "a source javascript file.  This can be useful for bundling and distributing "
+                              "into a single runtime the application logic and all dependencies.  The output "
+                              "varies on the options object provided.  If no options are provided, the "
+                              "`*env_config*` object is referenced for default locations and names, and the "
+                              "current permission set is used for the emitted binary.  If successful, an "
+                              "object is returned with `sucess` set to `true` and an `emitted` key indicating "
+                              "where the binary was written.<br><br>#### Options <br><br>emit_as:string - A "
+                              "path name to the location to which to write the binary executable file.  By "
+                              "default this value is sourced from `*env_config*.exports.save_executable`.  If "
+                              "that is not present, then the file is emitted in the current directory with the "
+                              "form `juno.{*env_config*.build}`.  <br>permissions:array - A list of "
+                              "permissions to be allowed in the emitted executable file.  The current "
+                              "permissions can be accessed with the `(permissions)` function.  Include only "
+                              "the key names, such as `read` or `net` that you wish to retain in the emitted "
+                              "binary.<br>additional_args:array - A list of command line arguments to be "
+                              "passed to the Deno compile command.<br>source:string - The source file to be "
+                              "used as the bundled image.  By default this value is taken from "
+                              "`*env_config*.exports.save_path` <br>target:string - The target architecture to "
+                              "emit as.  See `deno compile --help` to see the full list of values "
+                              "available.<br> ")
+              usage: ["options:object"]
+              tags: ["compile" "build" "image" "save" "executable" "export" ]
+              })
 
       (defglobal core/compile_executable
          compile_executable)
