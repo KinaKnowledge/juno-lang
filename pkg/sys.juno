@@ -88,6 +88,65 @@
            `tags: ["permissions" "run" "process" "subproces"]
            })
       
+      (defun compile_executable (options)
+            (let
+               ((perms (permissions))
+                (options (or options {
+                                       }))
+                (perm_flags (reduce (p (or options.permissions (pairs (permissions))))
+                               (destructuring_bind (name status)
+                                  p
+                                  (when (== status "granted")
+                                     (+ "--allow-" name)))))
+                (emit_file (cond
+                                      options.emit_as
+                                      options.emit_as
+                                      (resolve_path [ `export `save_executable ] *env_config*)
+                                      (resolve_path [ `export `save_executable ] *env_config*)
+                                      else
+                                      (+ "juno." *env_config*.build)))
+                (command (join " "
+                               (flatten
+                                  ["deno compile"
+                                   perm_flags
+                                   (if (is_array? options.additional_args)
+                                       options.additional_args
+                                       [])
+                                   "-o"
+                                   emit_file
+                                   (if (and (is_string? options.target)
+                                            (not (blank? options.target)))
+                                       ["-t" options.target]
+                                       [])
+                                   (cond
+                                      (is_string? options.source)
+                                      options.source
+                                      (resolve_path [ `export `save_path ] *env_config*)
+                                      (resolve_path [ `export `save_path ] *env_config*)
+                                      else
+                                      (throw TypeError "compile_executable: cannot resolve the source option: check env_config or provide source in options"))])))
+                (result nil))
+               
+               (if (== perms.run "granted")
+                   (progn
+                      (= result (system command))
+                      (if result.success
+                         {
+                             success: true
+                             emitted: emit_file
+                         }
+                         result))
+                   (progn
+                      {
+                        `success: false
+                        `stderr: "Invalid permissions: require run permissions, evaluate (sys/request) to request access at the console."
+                        `stdout: ""
+                        }))))
+
+      (defglobal core/compile_executable
+         compile_executable)
+      (unless (resolve_path [ `export `save_executable ] *env_config*)
+         (set_path [ `export `save_executable ] *env_config* "bin/juno"))
       (register_feature "system")
       true)
    (progn
