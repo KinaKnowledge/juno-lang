@@ -12,6 +12,7 @@
 (defglobal *lz_string_contents* (read_text_file "working/lz-string-mod.js"))
 
 
-(defglobal LZString (eval (eval `(function () (javascript ,#(+ " {" *lz_string_contents* "}"))))))
+(use_quoted_initializer
+   (defglobal LZString (eval (eval `(function () (javascript ,#(+ " {" *lz_string_contents* "}")))))))
    
 
