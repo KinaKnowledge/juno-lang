@@ -1,0 +1,99 @@
+;; *scratch* buffer
+
+(when (not (contains? "sys" (namespaces)))
+   (create_namespace `sys))
+
+(declare (namespace `sys))
+
+(if_compile_time_defined `Deno
+   (progn
+      (let
+         ((status (Deno.permissions.query { name: "run" })))
+         (unless (== status.state "granted")
+            (warn "sys namespace requires run permissions which are not active.")
+            (warn "Evaluate (sys/request) to request.")))
+      
+      (defun exec (command options)
+         (let
+            ((arg_set (cond
+                         (is_string? command)
+                         (split_by " " command)
+                         (is_array? command)
+                         command
+                         else
+                         (throw TypeError "system: invalid command format: must be string or array")))
+             (options (cond
+                         (is_object? options)
+                         options
+                         (eq nil options)
+                         {}
+                         else
+                         (throw TypeError "system: options must be an object if provided")))
+             (process_info nil))
+            (= process_info (Deno.run (+ {
+                                           cmd: arg_set
+                                           stdout: "piped"
+                                           stderr: "piped"
+                                           }
+                                        options)))
+            process_info)
+         {
+           `description: (+ "The exec function spawns a subprocess using the `Deno.run` facility.  "
+                            "The command and the arguments to execute is provided as a string or an array of "
+                            "strings (which form the command), and returns a `Process` object which contains "
+                            "details about the spawned process, including process id, resource id, `stdout`, "
+                            "`stderr` and `stdin` streams.  <br>For more details on this command see the "
+                            "documentation for Deno.run and Deno.Process.<br>Example:```(text_decode (-> "
+                            "(sys/exec \"uptime\") `output))```<br><br> ")
+           `usage: ["command:string|array" "options:object"]
+           `tags: ["exec" "run" "process" "subprocess" "command"]
+           
+           })
+      
+      (defun system (command)
+         (let
+            ((result (exec command))
+             (status (-> result `status))
+             (rval nil))
+            (= rval
+               (+ {
+                    stdout: (aif (-> result `output)
+                                 (decode_text it)
+                                 nil)
+                    stderr: (aif (-> result `stderrOutput)
+                                 (decode_text it))
+                    }
+                 status))
+            (-> result `close)
+            rval)
+         {
+           `description: (+ "Given a command string or an array with the command and arguments, the "
+                            "system function calls the sys/exec function with the command, collects the "
+                            "results and returns a serializable object.  This facility provides a simple "
+                            "mechanism for running external commands and collecting the return values prior "
+                            "to further operations.  The returned simple object contains:<br>stdout:string - "
+                            "The standard output that the evaluated command returned. <br>stderr:string - "
+                            "Any error output that was produced by the executed command.<br>success:boolean "
+                            "- If the command returned 0, then success will be 0.  <br>code:integer - The "
+                            "return code of the process.<br>")
+           `usage: ["command:string|array"]
+           `tags: ["exec" "run" "process" "subprocess" "command"]
+           })
+      
+      (defun request ()
+         (Deno.permissions.request { name: "run" })
+         {
+           `description: "Requests 'run' permissions from the virtual machine."
+           `usage: []
+           `tags: ["permissions" "run" "process" "subproces"]
+           })
+      
+      (register_feature "system")
+      true)
+   (progn
+      (warn "The sys module requires a Deno runtime.")
+      (delete_namespace "sys")
+      
+      false))
+
+
