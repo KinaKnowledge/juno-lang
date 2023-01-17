@@ -3200,7 +3200,25 @@ such as things that connect or use environmental resources.
        usage: ["container:array"]
        tags: ["length" "array" "container" "max" "index" "range" "limit"]
    })
-                
+ 
+
+(defun_sync decode_text (buffer)
+   (-> (new TextDecoder) `decode buffer)
+   {
+       `description: "Given a source buffer, such as a Uint8Array, decode into utf-8 text."
+       `usage: ["buffer:ArrayBuffer"]
+       `tags: ["decode" "encode" "string" "array" "text"]
+   })
+
+(defun_sync encode_text (text)
+   (-> (new TextEncoder) `encode text)
+   {
+       `description: "Given a source buffer, such as a Uint8Array, decode into utf-8 text."
+       `usage: ["buffer:ArrayBuffer"]
+       `tags: ["decode" "encode" "string" "array" "text"]
+   })
+                       
+               
 (if_compile_time_defined `Deno
    (defun hostname ()
       (Deno.hostname)
@@ -4318,29 +4336,46 @@ such as things that connect or use environmental resources.
     "keyword"
     "identifier"))
 
-(defun_sync operating_system ()
-   (resolve_path [ `build `os ] Deno)
-   {
-       `description: "Returns a text string of the operating system name: darwin, linux, windows"
-       `usage: []
-       `tags: ["os" "environment" "build" "platform" "env" ]
-   })
-
-(defun_sync platform_architecture ()
-   (resolve_path [ `build `arch ] Deno)
-   {
-       `description: "Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64."
-       `usage: []
-       `tags: ["os" "platform" "architecture" "hardware" "type" "build" ]
-   })
-
-(defun_sync platform ()
-   (prop Deno `build)
-   {
-       `description: "Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  "
-       `usage: []
-       `tags: ["os" "platform" "architecture" "hardware" "type" "build"]
-   })
+(if_compile_time_defined `Deno
+   (progn
+      (defun_sync operating_system ()
+         (resolve_path [ `build `os ] Deno)
+         {
+           `description: "Returns a text string of the operating system name: darwin, linux, windows"
+           `usage: []
+           `tags: ["os" "environment" "build" "platform" "env" ]
+           })
+      
+      (defun_sync platform_architecture ()
+         (resolve_path [ `build `arch ] Deno)
+         {
+           `description: "Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64."
+           `usage: []
+           `tags: ["os" "platform" "architecture" "hardware" "type" "build" ]
+           })
+      
+      (defun_sync platform ()
+         (prop Deno `build)
+         {
+           `description: "Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  "
+           `usage: []
+           `tags: ["os" "platform" "architecture" "hardware" "type" "build"]
+           })
+      (defun_sync exit (return_code)
+         (Deno.exit return_code)
+         {
+             description: "Exits the system and returns the provided integer return code"
+             usage: ["return_code:?number"]
+             tags: ["exit" "quit" "return" "leave"]
+         })
+      (defun permissions ()
+         (let
+            ((perms [ `run `env `write `read `net `ffi `sys ]))
+            (to_object
+               (for_each (p perms)
+                  [ p
+                     (prop (Deno.permissions.query { name: p })
+                           `state) ]))))))
 
 
 true
