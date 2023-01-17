@@ -1,12 +1,25 @@
 ;; 
+
 (declare (namespace "core"))
+(console.log "loading save_env")
+
+(if (contains? "sys" (namespaces))
+    (defglobal $sys_defined true))
+
 (if_compile_time_defined `Deno
    (progn
       (defglobal *env_skeleton*  (reader (read_text_file "./src/environment.lisp")))
+         
       (defun save_environment (options)
          (let
             ((my_namespace (current_namespace))
-             (rval nil))
+             (emit_path (if (and options options.save_as)
+                            (split_by "/" options.save_as)
+                            nil))
+             (comp_rval nil)
+             (rval {}))
+            (declare (function compile_executable)
+                     (global compile_executable))
             (when options.initializer
                (assert (is_function? options.initializer) "initializer option must be a function"))
             (set_namespace "core")
@@ -26,12 +39,33 @@
                (defglobal core/*on_environment_ready* options.on_environment_ready)
                (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true }))))
             
-            (core/save_env {
-                             save_as: options.save_as
-                             do_not_include: options.do_not_include
-                             include_source: options.include_source
-                             })
-            (set_namespace my_namespace))
+            (set_prop rval
+                      `js (core/save_env {
+                                           save_as: options.save_as
+                                           do_not_include: options.do_not_include
+                                           include_source: options.include_source
+                                           }))
+            
+            (when (and (contains? "sys" (namespaces))
+                       options.compile)
+                  (= comp_rval
+                     (compile_executable (+ {
+                                              emit_as: options.emit_as
+                                              source: options.save_as
+                                              additional_args: options.additional_args
+                                              target: options.target }
+                                           (if options.permissions
+                                              { permissions: options.permissions }
+                                              {} ))))
+                  (set_prop rval
+                     `exec: comp_rval.emitted
+                     `comp_success: comp_rval.success)
+                  (if (not comp_rval.success)
+                      `comp_error: comp_rval.stderr))
+                 
+            
+            (set_namespace my_namespace)
+            rval)
          {
            `description: (+ "The `save_environment` function is a server-side convenience function "
                             "that wraps the lower level `save_env` function.  The function checks that the "
@@ -47,6 +81,9 @@
            `tags: ["state" "save" "image" "export" "environment" "dehydrate" "serialize" ]
          })
       (log "The function save_environment has been installed in the core namespace.")
+      (if (is_symbol? `core/compile_executable)
+          (log "The compile_executable is available")
+          (log "Note that the compile_executable function is not available due to the sys package not being loaded."))
       (log "To save the current environment call (save_environment) with the default options.")
       (log "See description for details.")))
             
@@ -72,9 +109,7 @@
          
          (set_path [ `export `default_namespace ] *env_config* "user")
          
-         
-         ;          (defglobal core/*initializer* options.initializer))
-         
+
          
          (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true })))
          ;(defun core/*initializer* () (progn (repl nil nil { `use_console: true })))
