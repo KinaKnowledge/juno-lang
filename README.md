@@ -4,10 +4,42 @@ Juno
 Juno is a self-hosted Lisp dialect that compiles to Javascript.  It combines fast execution and ease of use with features such as a macro facility modeled on Common Lisp and the ability to save and restore the running image.  Juno provides a Lisp computing environment for Javascript platforms: the browser, Deno or Node (ala V8), or similar, without requiring any dependencies except the Javascript container itself.
 
 ### Links
-[Latest Release](releases) | [Documentation/API](docs)
+[Latest Release](releases) | [Documentation/API](doc)
 
-Getting Started
-### 
+### Quick Start Instructions
+
+After cloning the repository, or downloading a release, to get started with the command line, make sure you have Deno installed, which is a dependency for running Juno at this point.
+
+From the project root directory run the init script:
+```
+lib/juno js/juno.js
+```
+
+Or, directly run it from Deno:
+```
+deno run js/juno.js
+```
+The above will load into the REPL with a ready to go environment.
+
+The init script `lib/juno` can be invoked without an image, which will load an empty environment with only the core symbols and an empty `user` namespace:
+```
+lib/juno 
+```
+
+The `bin/` directory contains any compiled executables.  To make a compiled executable for you operating platform from the currently running image:
+```
+shell$ lib/juno js/juno.js
+
+Juno 2023.01.18.12.50  (c) 2022, Kina, LLC
+[user] λ-> (sys/compile_executable)
+{ success: true, emitted: "bin/juno" }
+[user] λ-> (exit)
+
+shell$ bin/juno
+```
+For more information on building images and compilation, see [Building Images](doc/building_images.md).
+
+
 
 
 ## About Juno
@@ -114,7 +146,13 @@ Saving "images" of the Lisp environment has been around for a while. Juno shares
   - Add a Domain Specific Language that makes working with the model or information easier
   - Deliver the model and information via HTML and/or JSON services.
   - Perhaps you just have a browser.  Build your data structure, save it off from time to time as an HTML file.  When you are ready to work on it again, open the HTML file again.
-  - Save your browser based environment image to javascript. Import it into a server model seamlessly??
+  - Save your browser based environment image to javascript
+
+
+
+
+  
+  . Import it into a server model seamlessly??
   
 Next: need to run it?  Move it to the server and start it.
 
