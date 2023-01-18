@@ -8,11 +8,27 @@
 ;
 ; LZ-based compression algorithm, version 1.4.4
 
+(declare (namespace core))
 
-(defglobal *lz_string_contents* (read_text_file "working/lz-string-mod.js"))
 
 
-(use_quoted_initializer
-   (defglobal LZString (eval (eval `(function () (javascript ,#(+ " {" *lz_string_contents* "}")))))))
+
+(defglobal *lz_string_contents* (read_text_file "js_lib/lz-string-mod.js"))
+   
+
+
+;(use_quoted_initializer
+;  (defglobal LZString (eval (eval `(function () 
+ ;                                         (javascript ,#(+ " {" *lz_string_contents* "}")))))))
+
+(defglobal LZString (eval (eval `(function () (javascript ,#(+ " {" *lz_string_contents* "}")))))
+   {
+       `initializer: `(eval (function () (javascript ,#(+ " {" (-> Environment `get_global `*lz_string_contents*) "}"))))
+   })
+
+
+
+
+
    
 
