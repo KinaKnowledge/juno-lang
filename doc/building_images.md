@@ -31,6 +31,7 @@ or:
 deno run js/juno.js
 ```
 
+When called with the lib/juno script, full permissions are granted.  By calling from Deno directly, as in the second example above, the permissions can be specified using the --allow-* flags in Deno.
 
 5. Optionally, to build a full executable from the consolidated image built in step 4, call the compile function from the command line:
 ```
@@ -38,6 +39,28 @@ lib/juno --compile my_binary_name js/juno.js
 ```
 
 This will emit a binary executable named `my_binary_name`.  The binary will be compatible with the system architecture that it is compiled on.
+
+Alternatively, to build an executable from within Juno, make sure the `sys` package is loaded. The feature `system` will be present in `*env_config*.features` if it is.  To load it:
+```
+(import "pkg/sys.juno")
+```
+
+Then type:
+```
+(sys/compile_executable { `emit_as: "bin/my_binary_name" })
+```
+Note that this will compile with all permissions that are currently allowed.  To restrict permissions to a specific allowances:
+
+```
+(sys/compile_executable { `emit_as: "bin/file_reader" `permissions: [ "read" ] })
+```
+In this case, when the executable is started, only the `read` value will have the `granted` value.
+
+The `save_environment` call can also emit an exported image as an executable by including the `compile` flag:
+```
+(save_environment { `compile: true `emit_as: "bin/my_executable" })
+```
+
 
 ##### Some Examples:
 
