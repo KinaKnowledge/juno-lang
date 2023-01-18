@@ -15,6 +15,7 @@
                             (split_by "/" options.save_as)
                             nil))
              (comp_rval nil)
+             (comp_exec nil)
              (rval {}))
             (declare (function compile_executable)
                      (global compile_executable))
@@ -46,20 +47,21 @@
             (console.log "save_environment: options: " options "sys available: " (contains? "sys" (namespaces)) (namespaces))
             (when (and (contains? "sys" (namespaces))
                        options.compile)
-                  (= comp_rval
-                     (compile_executable (+ {
-                                              emit_as: options.emit_as
-                                              source: options.save_as
-                                              additional_args: options.additional_args
-                                              target: options.target }
-                                           (if options.permissions
-                                              { permissions: options.permissions }
-                                              {} ))))
-                  (set_prop rval
-                     `exec: comp_rval.emitted
-                     `comp_success: comp_rval.success)
-                  (if (not comp_rval.success)
-                      `comp_error: comp_rval.stderr))
+               (= comp_exec (-> (-> Environment `get_namespace_handle "sys") `get_global "compile_executable"))
+               (= comp_rval
+                  (comp_exec (+ {
+                                  emit_as: options.emit_as
+                                  source: options.save_as
+                                  additional_args: options.additional_args
+                                  target: options.target }
+                               (if options.permissions
+                                  { permissions: options.permissions }
+                                  {} ))))
+               (set_prop rval
+                  `exec: comp_rval.emitted
+                  `comp_success: comp_rval.success)
+               (if (not comp_rval.success)
+                   `comp_error: comp_rval.stderr))
                  
             
             (set_namespace my_namespace)
