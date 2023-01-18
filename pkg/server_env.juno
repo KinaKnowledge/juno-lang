@@ -4,15 +4,17 @@
 ;; requires Deno
 
 
-(import "pkg/base-io.lisp")
-;(import (conversion) "https://deno.land/std@0.160.0/streams/conversion.ts")
+
+
 
 (when (not (contains? "http" (namespaces)))
   (create_namespace `http))
 
 
-(declare (namespace `http))
+(declare (namespace http))
 
+(import "pkg/base-io.lisp")
+(import "pkg/lz-string.juno")
 
 ;; A list of routes to be checked
 ;; they are of the form [regex_match route_handler_function]
@@ -478,6 +480,8 @@
        `tags: ["http" "route_handler" "file" "spool"]
    })
 
+
+
 ;; Add a simple file service
 
 (defparameter *http_file_server*
@@ -487,7 +491,29 @@
        `base_directory: nil
    })
 
+(defmacro content_spooler (content_function content_type)
+   `(fn (request_parameters request_event)
+       (let
+          ((content_function ,#content_function)
+           (content_type ,#content_type))
+          (try
+            (progn
+               (new Response (new Blob [(content_function request_parameters request_event)]
+                                           { `type: content_type })))
+                   
+             (catch Error (e)
+                (progn
+                   (new Response "500 Internal Server Error" { status: 500 }))))))
+   {
+     `description: (+ "Creates an HTTP content streamer for a lambda. The macro returns a "
+                      "function that can be used as a route handler.  To do so, add the returned "
+                      "function with a request method and service path to *http_routes*.  Use the "
+                      "add_http_route function to do so.  <br>The lambda is called with the arguments "
+                      "(request_parameters request_event). ")
 
+       `usage: ["content_function:function" "content_type:string"]
+       `tags: ["http" "route_handler" "file" "spool" "content" ]
+   })
 
 (defun http_file_server (port base_directory options)
    (if (and (is_number? port)
@@ -662,6 +688,8 @@
      `usage: ["ws:WebSocket"]
      `tags: ["socket" "websocket" "connection" "uri" "url" "events" "messages" "message" "close"]
      })
+
+
 
 (defun websocket_handler (options)
    (let
@@ -945,6 +973,7 @@
      (add_http_route "GET" "/connect_repl"
                      ws_repl_handler)
      (add_http_route "GET" "/pkg" (file_spooler (+ base_directory "/pkg")))
+     
       (if (eq nil options)
           (= options {}))
       (set_prop options
@@ -981,7 +1010,18 @@
    
       
     
-
+(defun enable_ui ()
+   (progn
+      (declare (string *user_interface*)
+               (global *user_interface*)
+               (object LZString)
+               (global LZString))
+      (unless (is_symbol? `*user_interface*)
+         (defglobal `*user_interface*
+            (-> LZString `compressToBase64 (read_text_file "./environments/a1.html"))))
+   (add_http_route "GET" "/ui" (content_spooler (fn ()
+                                                   (-> LZString `decompressFromBase64 *user_interface*))
+                                                "text/html"))))
 
 (defun start (options)
   (progn   

@@ -31,6 +31,7 @@ cat <<EOI | lib/juno
     (import "pkg/lz-string.juno")
     (import "pkg/sys.juno")
     (import "pkg/save_env.juno")
+    (log "loaded: " (namespaces) *env_config*)
     (save_environment { compile: true emit_as: "bin/build.tmp" } )
     (exit 0))
   (catch Error (e)
