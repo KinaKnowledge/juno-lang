@@ -2091,9 +2091,12 @@ such as things that connect or use environmental resources.
 
 
 (defun_sync fn_signature (f)
-    (if (is_function? f)
+    (if (or (is_function? f)
+            (is_string? f))
         (let
-            ((sig (trim (first (split_by "{" (replace "\n" "" (-> f `toString))))))
+            ((sig (trim (first (split_by "{" (replace "\n" "" (if (is_function? f)
+                                                                  (-> f `toString)
+                                                                  f))))))
              (arg_text nil)
              (comps nil)
              (descriptor nil)
@@ -2144,8 +2147,10 @@ such as things that connect or use environmental resources.
     {
       `description: (+ "For a given function as an argument, returns an object with a " 
                        "type key containing the function type (async, sync) and an args "
-                       "key with an array for the arguments")
-      `usage: ["f:function"]
+                       "key with an array for the arguments.  Note that a string value which "
+                       "is the result of a function serialized with the function's "
+                       "toString() method can also be passed.")
+      `usage: ["f:function|string"]
       `tags: ["function" "signature" "arity" "inspect"]
     })
  
