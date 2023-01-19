@@ -31,7 +31,8 @@
 ;; the global pointer to the control which has focus
 ;; nil if there are no focus points or values.
 
-(defparameter core/is_served? (not (blank? (resolve_path [ `location `hostname ] window))))
+(defparameter core/is_served? (and (not (blank? (resolve_path [ `location `hostname ] window)))
+                                   (== (prop (fetch "/files") `status) 200)))
 (defparameter filesystem {})
 (defparameter *last_focus* nil)
 (defparameter *last_top_frame* nil)
@@ -5407,6 +5408,7 @@
                                                  (handle_event e)
                                                  (go_forward_in_position))))
                                         
+                                        (-> editor `on `click (function (val) (update_position)))
                                         (attach_event_listener nav_back_button
                                            `click
                                            (fn (e)
@@ -5723,10 +5725,6 @@
                       "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
                       "and `go_forward_in_position` functions in the text_editor closure move an index "
                       "back and forth between the stored positions.   ")
-
-
-
-
      })
 
 
@@ -5898,7 +5896,7 @@
                                      (set_prop appended_element.parentElement
                                         `scrollTop
                                         (+ content_height 240)))
-                                  10)
+                                  100)
                       (set_prop view
                          `scrollTop
                          0)
@@ -6056,13 +6054,56 @@
           (let
              ((is_system_error? (== "FAIL" result.rval))
               (is_compiler_error? (and (resolve_path [ `result 0 `error ] result)
-                                       (resolve_path [ `result 0 `message ] result))))
+                                       (resolve_path [ `result 0 `message ] result)))
+              (process_tree (fn (quoted_lisp)
+                               (cond
+                                  (and (is_array? quoted_lisp)
+                                       (== quoted_lisp.0 (quote javascript)))
+                                  (progn 
+                                     
+                                     (if (== display_mode `tree)
+                                         `(remote_function_to_dom
+                                             ,#(set_prop (fn_signature quoted_lisp.1)
+                                                         `body
+                                                         quoted_lisp.1))
+                                         quoted_lisp))
+                                  (is_array? quoted_lisp)
+                                  (for_each (val quoted_lisp)
+                                     (process_tree val))
+                                  (is_object? quoted_lisp)
+                                  (to_object
+                                     (for_each (val (pairs quoted_lisp))
+                                        [val.0 (process_tree val.1)]))
+                                  else
+                                  quoted_lisp))))
+             
+             ;(log "process_remote_eval_result: "  is_system_error? "display_mode: " display_mode ": result: " result)
              (cond
-                is_system_error?
+                (and (or (== display_mode `juno)
+                         (== display_mode `json))
+                     (contains? result.result_type ["Function" "AsyncFunction"]))
+                `(javascript ,#result.result.body)
+                    
+                (or (== display_mode `juno)
+                    (== display_mode `json))
+                (process_tree (if (is_string? result.result)
+                                  (read_lisp result.result)
+                                  result.result))
+                (and is_system_error?
+                   (is_array? result.result))
+                (progn
+                   (log "system_error: array")
+                   (for_each (r result.result)
+                      (div { `style: "border-left: 5px solid red; padding: 5px;" }
+                           (+ r.error ": " r.message)
+                           (value_to_dom r))))
+                (and is_system_error?
+                   (is_object? result))
                 (progn
                    (div { `style: "border-left: 5px solid red; padding: 5px;" }
                         (+ result.result_type ": " result.message)
                         (value_to_dom result)))
+                
                 is_compiler_error?
                 (progn
                    (notify (+ "Error: " is_compiler_error?))
@@ -6072,171 +6113,205 @@
                             (value_to_dom result.result))))
                 
                 (ends_with? "unction" result.result_type)
-                (remote_function_to_dom result.result)
+                (progn
+                   (remote_function_to_dom result.result))
                 (and result.needs_eval
                    (== display_mode `juno))
                 (as_lisp (read_lisp result.result))
                 (and result.needs_read
                    (== display_mode `juno))
                 (as_lisp (read_lisp result.result))
-                result.needs_eval  ;; if json form returned and is a local compile
-                (eval_struct (JSON.parse result.result))
+                ;result.needs_eval  ;; if json form returned and is a local compile
+                ;(eval_struct (read_lisp result.result))
                 result.needs_read  ;; if juno form returned and is a local compile `
                 (eval_struct (read_lisp result.result))
                 (is_string? result.result)
-                (read_lisp result.result)
+                (eval_struct (process_tree (read_lisp result.result)))
                 else
                 result.result))
           (catch Error (e)
              (list e.message result)))
        result))
-;(new_juno_repl { `remote_repl: "ws://localhost:56432/connect_repl" })
+
 
 (defun create_remote_evaluator(options)
-   (let
-      ((repl_ws nil)
-       (url (or options.url (+ "ws://" window.location.host "/connect_repl")))
-       (name (or options.name "remote"))
-       (remote_command_timeout (or options.timeout 120000)) ;; 2 minute default
-       (requests {})
-       (active_ns nil)
-       (on_message (or options.on_message
-                       (fn (message)
-                          (log (+ name ": message: ") message))))
-       (request_id 0)
-       (send_wait (fn (lisp_text opts)
-                     (let
-                        ((rval nil))
-                        (assert (and (instanceof repl_ws WebSocket)
-                                     (== repl_ws.readyState repl_ws.OPEN))
-                                "Websocket is not open")
-                        ;(clog "ws-> ")
-                       (try
-                          (= rval (new Promise 
-                                       (fn (resolve reject)
+   (new Promise 
+      (fn (resolve_fn reject_fn)
+        (let
+           ((repl_ws nil)
+            (url (or options.url (+ "ws://" window.location.host "/connect_repl")))
+            (name (or options.name "remote"))
+            (remote_command_timeout (or options.timeout 120000)) ;; 2 minute default
+            (requests {})
+            (process_mode `eval)
+            (active_ns nil)
+            (on_message (or options.on_message
+                            (fn (message)
+                               (log (+ name ": message: ") message))))
+            (request_id 0)
+            (is_initial_open? true)
+            (send_wait (fn (lisp_text opts)
+                          (let
+                             ((rval nil))
+                             (assert (and (instanceof repl_ws WebSocket)
+                                          (== repl_ws.readyState repl_ws.OPEN))
+                                     "Websocket is not open")
+                             ;(clog "ws-> ")
+                             (try
+                                (= rval (new Promise
+                                             (fn (resolve reject)
+                                                (let
+                                                   ((my_request_id (inc request_id))
+                                                    (timer nil))
+                                                   (= timer (setTimeout (fn ()
+                                                                           (progn
+                                                                              (log "timeout occurred")
+                                                                              (reject { `rval: "FAIL" `message: (+ "Timeout on request id: " my_request_id) })))
+                                                                        remote_command_timeout))
+                                                   ;; set the request id in request object, and then wait to resolve the promise until results are returned, or a timeout occurs
+                                                   (set_prop requests
+                                                      my_request_id
+                                                      (list resolve reject timer))
+                                                   (try
+                                                      (http/send_to_ws repl_ws
+                                                                       { `command: "eval"
+                                                                         `req_id: request_id
+                                                                         `args: [ lisp_text ] })
+                                                      (catch Error (e)
+                                                         (progn
+                                                            (notify (+ "send_wait: error: " e.message))
+                                                            (log "ERROR on send_to_ws: " e))))
+                                                   true))))
+                                (catch Error (e)
+                                   (log (+ "Error on send_wait: " e))))
+                             rval)))
+            (process_result (fn (result)
+                               (cond
+                                  (== process_mode "display")
+                                  (process_remote_eval_result result `tree)
+                                  (== process_mode "eval")
+                                  (eval_struct (process_remote_eval_result result `juno))
+                                  (== process_mode "quoted")
+                                  (process_remote_eval_result result `juno))))
+            (setup_connection
+               (fn ()
+                  (http/create_websocket
+                     url
+                     {
+                       `on_message: (fn (event)
+                                       (try
                                           (let
-                                             ((my_request_id (inc request_id))
-                                              (timer nil))
-                                             (= timer (setTimeout (fn ()
-                                                                     (progn
-                                                                        (log "timeout occurred")
-                                                                        (reject { `rval: "FAIL" `message: (+ "Timeout on request id: " my_request_id) })))
-                                                                  remote_command_timeout))
-                                             ;; set the request id in request object, and then wait to resolve the promise until results are returned, or a timeout occurs
-                                             (set_prop requests
-                                                my_request_id
-                                                (list resolve reject timer))
-                                             (try 
-                                                (http/send_to_ws repl_ws
-                                                                 { `command: "eval"
-                                                                   `req_id: request_id
-                                                                   `args: [ lisp_text ] })
+                                             ((data nil)
+                                              (pdata nil)
+                                              (resolver nil))
+                                             
+                                             (try
+                                                (= data (JSON.parse event.data))
                                                 (catch Error (e)
                                                    (progn
-                                                      (notify (+ "send_wait: error: " e.message))
-                                                      (log "ERROR on send_to_ws: " e))))
-                                             true))))
-                             (catch Error (e)
-                                (log (+ "Error on send_wait: " e))))
-                       rval)))
-       (setup_connection
-          (fn ()
-             (http/create_websocket
-                url
-                {
-                  `on_message: (fn (event)
-                                  (try
-                                     (let
-                                        ((data nil)
-                                         (pdata nil)
-                                         (resolver nil))
-                                        
-                                        (try
-                                           (= data (JSON.parse event.data))
-                                           (catch Error (e)
-                                              (progn
-                                                 (log "Unable to parse json data: " e.message)
-                                                 (= data event.data))))
-                                        (if options.debug
-                                           (log (+ name ": <-")  data))
-                                        (if (and (is_object? data)
-                                                 data.ws_id)
-                                            (set_prop intf
-                                               `ws_id
-                                               data.ws_id))
-                                        (cond
-                                           (and (is_object? data)
-                                                data.req_id)
-                                           (progn
-                                              (if (prop requests data.req_id)
-                                                  (progn
-                                                     (= pdata (prop requests data.req_id))
-                                                     (remove_prop requests data.req_id)
-                                                     (clearTimeout (third pdata)) ;; remove the timeout
-                                                     (if (== data.rval "OK")
-                                                         (progn
-                                                            (= resolver (first pdata))
-                                                            (resolver data nil))
-                                                         (progn
-                                                            (= resolver (first pdata)) ;; we will resolve the promise and handle the error in our remote eval result function.
-                                                            (resolver data true))))
-                                                  (progn
-                                                     ;; received a request but it is not tied to a request we made, could be a log message
-                                                     (if (== data.rval "OK")
-                                                         (on_message data)))))
-                                           (and (is_object? data)
-                                                data.result)
-                                           (progn
-                                              (on_message data))
-                                           else
-                                           (if options.debug
-                                              (log (+ "" name ": unknown response: ")  data))))
-                                     (catch Error (e)
-                                        (log "Unable to process received message: " e.message))))
-                  `on_open: (fn (event)
-                               (progn
-                                  (defvar ns_change_result nil)
-                                  (if options.debug
-                                     (log (+ "Connected to Remote REPL: " options.remote_repl)))
-                                  (try
-                                     (when active_ns
-                                        (= ns_change_result (prop (send_wait (+ "(use_ns " active_ns ")")) `result))
-                                        (if ns_change_result
-                                           (= active_ns ns_change_result)
-                                           (log (+ "Namespace set to: " (JSON.parse active_ns)))
-                                           (log "Unable to set namespace")))
-                                     (catch Error (e)
-                                        (log "Unable to determine remote hostname: " e)))))
-                  `on_close: (fn (event)
-                                (progn
-                                   (if options.on_close
-                                      (options.on_close event intf)
-                                      (log (+ name ": socket closed")))))
-                  `on_error: (fn (event)
-                                (progn
-                                   (if options.on_error
-                                      (options.on_error event intf)
-                                      (log (+ name ": error on WS:" event)))))
-                  })))
-       (intf {}))
-      (= repl_ws (setup_connection))
-      (= intf
-         {
-           evaluate: (fn (val) (process_remote_eval_result (send_wait val) `tree))
-           url: (fn ()
-                   url)
-           on_message: on_message
-           eval: (fn (quoted_lisp)
-                    (process_remote_eval_result (send_wait (as_lisp quoted_lisp)) `tree))
-           ws: repl_ws
-           close: (fn ()
-                     (-> repl_ws `close))
-           open?: (fn ()
-                     (== (prop repl_ws `readyState) 1))
-           state: (fn ()
-                     (prop repl_ws `readyState))
-           connect: setup_connection
-        })))
+                                                      (log "Unable to parse json data: " e.message)
+                                                      (= data event.data))))
+                                             (if options.debug
+                                                (log (+ name ": <-")  data))
+                                             (if (and (is_object? data)
+                                                      data.ws_id)
+                                                 (set_prop intf
+                                                    `ws_id
+                                                    data.ws_id))
+                                             (cond
+                                                (and (is_object? data)
+                                                     data.req_id)
+                                                (progn
+                                                   (if (prop requests data.req_id)
+                                                       (progn
+                                                          (= pdata (prop requests data.req_id))
+                                                          (remove_prop requests data.req_id)
+                                                          (clearTimeout (third pdata)) ;; remove the timeout
+                                                          (if (== data.rval "OK")
+                                                              (progn
+                                                                 (= resolver (first pdata))
+                                                                 (resolver data nil))
+                                                              (progn
+                                                                 (= resolver (first pdata)) ;; we will resolve the promise and handle the error in our remote eval result function.
+                                                                 (resolver data true))))
+                                                       (progn
+                                                          ;; received a request but it is not tied to a request we made, could be a log message
+                                                          (if (== data.rval "OK")
+                                                              (on_message data)))))
+                                                (and (is_object? data)
+                                                     data.result)
+                                                (progn
+                                                   (on_message data))
+                                                else
+                                                (if options.debug
+                                                   (log (+ "" name ": unknown response: ")  data))))
+                                          (catch Error (e)
+                                             (log "Unable to process received message: " e.message))))
+                       `on_open: (fn (event)
+                                    (progn
+                                       (defvar ns_change_result nil)
+                                       (if options.debug
+                                          (log (+ "Connected to Remote REPL: " options.remote_repl)))
+                                       (try
+                                          (when active_ns
+                                             (= ns_change_result (prop (send_wait (+ "(use_ns " active_ns ")")) `result))
+                                             (if ns_change_result
+                                                (= active_ns ns_change_result)
+                                                (log (+ "Namespace set to: " (JSON.parse active_ns)))
+                                                (log "Unable to set namespace")))
+                                          (catch Error (e)
+                                             (log "Unable to set to active namespace: " e)))
+                                       (when is_initial_open?
+                                          (= is_initial_open? false)
+                                          (resolve_fn intf))))
+                       
+                       `on_close: (fn (event)
+                                     (progn
+                                        (if options.on_close
+                                           (options.on_close event intf)
+                                           (log (+ name ": socket closed")))))
+                       `on_error: (fn (event)
+                                     (progn
+                                        (if options.on_error
+                                           (options.on_error event intf)
+                                           (log (+ name ": error on WS:" event)))))
+                       })))
+           (intf {}))
+        (= repl_ws (setup_connection))
+        (= intf
+           {
+             process_mode: (function ()
+                              process_mode)
+             set_process_mode: (function (mode)
+                                  (cond
+                                     (== mode `display)
+                                     (= process_mode `display)
+                                     (== mode `eval)
+                                     (= process_mode `eval)
+                                     (== mode `quoted)
+                                     (= process_mode `quoted)
+                                     else
+                                     (throw Error "invalid return mode")))
+             evaluate: (fn (val)
+                          (progn
+                             (defvar result (send_wait val))
+                             (process_result result)))
+             url: (fn ()
+                     url)
+             on_message: on_message
+             eval: (fn (quoted_lisp)
+                      (progn
+                         (defvar result (send_wait (as_lisp quoted_lisp)))
+                         (process_result result)))
+             ws: repl_ws
+             close: (fn ()
+                       (-> repl_ws `close))
+             open?: (fn ()
+                       (== (prop repl_ws `readyState) 1))
+             state: (fn ()
+                       (prop repl_ws `readyState))
+             connect: setup_connection
+             })))))
 
 (defun visual_repl (options)
   (let
@@ -6522,6 +6597,7 @@
        (evaluator (fn (lisp_text no_eval no_clear no_log opts)
                     (let
                         ((result nil)
+                         (processed_result nil)
                          (display_mode (-> output_control `display_mode)))
                       (setq error_state nil)
                       (if options.remote_repl
@@ -6540,18 +6616,33 @@
                                   (or result.namespace "Unknown!")))
                             (cond 
                                (== display_mode "juno")
-                               (= result (pre (pretty_print (process_remote_eval_result result display_mode))))
+                               (= processed_result (pre (pretty_print (process_remote_eval_result result display_mode))))
                                (== display_mode "json")
-                               (= result (pre (JSON.stringify (process_remote_eval_result result display_mode) nil 2)))
+                               (= processed_result (pre (JSON.stringify (process_remote_eval_result result display_mode) nil 2)))
                                else
-                               (= result (process_remote_eval_result result display_mode)))
+                               (= processed_result (process_remote_eval_result result display_mode)))
+                            ;; set the results to be returned to the caller 
+                            ;; they will not be dressed up in Elements if tree mode
+                            (when (and (is_object? result)
+                                       (is_string? result.result))
+                               (set_prop result
+                                  `result
+                                  (read_lisp result.result)))
                             
                             (unless no_log
-                               (-> output_control `append result lisp_text error_state))
+                               (-> output_control `append processed_result lisp_text error_state))
                             (if (and (not error_state)
                                      (not no_log)
                                      (not no_clear))
-                                (-> input_container `set "")))
+                                (-> input_container `set ""))
+                            (= result
+                               (cond
+                                  (is_array? result)
+                                  result
+                                  (is_object? result)
+                                  result.result
+                                  else
+                                  result)))
                             
                          (progn
                             (setq current_env (-> Environment `get_namespace_handle (current_namespace)))
@@ -6565,7 +6656,7 @@
                                      (console.error "ERROR: " ex)
                                      (notify (+ (sub_type ex) ": " ex.message))
                                      (when  ex.details
-                                        ;(log "Caught error: " ex.details)
+                                        (log "Caught error: " ex.details)
                                         (when (and ex.details.expanded_source
                                                    (== display_mode "tree"))
                                            (set_prop ex.details
@@ -6589,6 +6680,7 @@
                                      (not no_log)
                                      (not no_clear))
                                 (-> input_container `set ""))))
+                            
                       result)))
                              
        (input_container (text_editor 
@@ -10585,13 +10677,53 @@
     intf))
 
 
-(defun build_starter_environment ()
+(defun build_starter_environment (opts)
   (if is_served?
-    (progn
-     (log "building starter environment")
-     (floating_div (iframe { width: 500 height: 300
-                   `style: "width: 90%; min-width: 500px; overflow: scroll; border: 0px solid transparent;"
-                   src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )))))
+    (let
+       ((remote_connection nil)
+        (remote_id nil)
+        (kickstart_result nil)
+        (opt (or opts {})))
+       (try
+          (= remote_connection (create_remote_evaluator))
+          (catch Error (e)
+             (progn
+                (alert_box (dtext "Error")
+                           (dtext "The system cannot establish a control connection to the host.")))))
+       (if (eq nil remote_connection)
+           (return nil))
+       (unless (-> remote_connection `open?)
+          (progn
+             (alert_box (dtext "Error")
+                        (dtext "Unable to establish a control connection: connection is closed."))
+             (return nil)))
+       ;; build a new core environment...
+       ;(-> remote_connection `evaluate (as_lisp `(progn ;; build up our kick starter environment from the skeleton
+        ;                                            (defglobal *kcs* (clone *env_skeleton*))
+         ;                                           (console.log "cloned environment")
+          ;                                          (map (fn (v) (set_path v *kcs* ,#(version_tag)))
+           ;                                              (findpaths (quote DLISP_ENV_VERSION) *kcs*))
+            ;;                                        (console.log "setup version")
+              ;                                      (defglobal *kcs* (eval *kcs*))
+               ;                                     (defglobal *export_env* (*kcs*))
+                ;                                    (console.log "Validating and setting compiler for " *export_env*)
+                 ;                                   (if *export_env* 
+                  ;;                                     (-> *export_env* `set_compiler compiler)
+                    ;                                   (console.error "ERROR: *export_env* didn't generate!")))))
+       ;; validate the environment..
+       
+       (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.sh"))))
+       (when kickstart_result.success
+          (for_each (v (split_by "\n" kickstart_result.stdout))
+             (log v))
+          (log "Wrote the generator..starting build")
+          (log "Removing temporary environment: " (-> remote_connection `evaluate "(undefine `*export_env*)"))
+          (-> remote_connection `close)
+          (log "building starter environment")
+          (floating_div (iframe { width: 500 height: 300
+                                  `style: "width: 90%; min-width: 500px; overflow: scroll; border: 0px solid transparent;"
+                                  src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} ))))))
+    
 
 
 (defun controls_by_parent ()
@@ -10677,9 +10809,12 @@
 
 
 
-(defun save_control_image (validate_name?)
+(defun save_control_image (validate_name? options)
   (let
-     ((save_as_name *env_config*.export.save_prefix))
+     ((save_as_name *env_config*.export.save_prefix)
+      (options (if (is_object? options)
+                   options
+                   {})))
      (when validate_name?
         (aif (request_user_input (+ (dtext "Enter a name for the saved image.")
                                     " "
@@ -10703,7 +10838,7 @@
            (= *serialized_controls* (serialize_controls $root_controls))
            ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
            (console.log "*serialized_controls*: " *serialized_controls*)
-           (= results (save_image { `save_as: save_as_name } ))
+           (= results (save_image (+ { `save_as: save_as_name } options)))
            (= *system_repl* system_repl)
            (log (dtext "Save Application State Results: ") results)
            (log (dtext "Complete"))
@@ -10912,6 +11047,28 @@
    })
 
 
+(defun file_status (file_path)
+   (if (is_string? file_path)
+       (let
+          ((comps (split_by "/" file_path))
+           (fname (pop comps))
+           (parent_path (progn
+                           (defvar tmp (join "/" comps))
+                           (if (blank? tmp)
+                               "/"
+                               tmp)))
+           (results (http/list_files parent_path)))
+         (or (first (reduce (r results)
+                       (if (== r.name fname)
+                           r)))
+             nil))
+       (throw TypeError "file_status: requires a file_path argument as a string"))
+   {
+     `description: "Given a path to a file, if the file exists, returns the details, otherwise nil."
+     usage: ["file_path:string"]
+     tags: ["io" "file" "status" "exist"]
+     })
+          
 
 (defun edit_file (options)
    (let
@@ -10991,7 +11148,24 @@
        `tags: ["DOM" "ui" "file" "edit" "open"]
    })
        
-
+(defun new_file (filename)
+   (cond 
+      (and (is_string? filename) (file_status filename))
+      (throw Error "new_file: filename already exists!")
+      (is_string? filename)
+      (edit_file { `filename: filename `create_mode: true })
+      else
+      (edit_file { `create_mode: true }))
+   {
+     description: (+ "The function `new_file` creates a new file and opens it up for "
+                     "editing.  If provided with a filename it will directly create that file if it "
+                     "doesn\'t already exist.  If it already exists, it will throw an error stating "
+                     "that the file already exists.  If not filename is provided, it will open up a "
+                     "prompt for the file to be selected by the user prior to the create and open "
+                     "steps.  ")
+     usage: ["filename:?string"]
+     tags: ["DOM" "ui" "file" "edit" "open" "create"]
+     })
 
   
 ;; control behavior for unsaved controls in remote mode
@@ -11122,7 +11296,7 @@
 
 (defun gen_file_menu ()
    [["New..." [(if is_served?
-                   ["File" (fn (e) (edit_file { `create_mode: true }))]
+                   ["Server File" new_file]
                    [])
                ["Juno REPL" (fn (e) (new_juno_repl))]
                (if is_served? 
@@ -11181,11 +11355,15 @@
           [(dtext "Local File") (fn (e) (handle_save_file *last_focus*))]]]
         [])
     ["--" nil]
-    ["Save Environment" (fn (e) (save_control_image true)) ]
-    (if is_served?
-       ["Generate Starter Environment" build_starter_environment]
-       [])
-    ["Load File Into Environment" (fn (e) (-> resource_loader_button `click)) ]
+    [(+ (dtext "Browser Environment") "...")
+     [(if is_served?
+        [(dtext "Bundle Application To Host") (fn (e) (save_control_image true)) ]
+        [])
+     [(dtext "Bundle Application Locally") (fn (e) (save_control_image true { save_locally: true })) ]
+     (if is_served?
+        [(dtext "Generate Starter Application") build_starter_environment]
+        [])
+     [(dtext "Import Local File") (fn (e) (-> resource_loader_button `click)) ]]]
     (if *global_themes*
        ["--" nil]
        [])
@@ -11486,6 +11664,11 @@
                                mac: "Command-O"
                                description: "Open File"
                                exec: (fn () (edit_file))
+                              }
+                 "server_file" { win: "Ctrl-N"
+                               mac: "Command-N"
+                               description: "New File"
+                               exec: (fn () (new_file))
                               }
                  "toggle_documentation" { win: "Shift-Escape"
                                         mac: "Shift-Escape"

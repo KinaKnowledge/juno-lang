@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-01-18 11:02:27
-// Version: 2023.01.18.11.02
-export const DLISP_ENV_VERSION='2023.01.18.11.02';
+// Build Time: 2023-01-19 17:52:06
+// Version: 2023.01.19.17.52
+export const DLISP_ENV_VERSION='2023.01.19.17.52';
 
 
 
@@ -2138,6 +2138,38 @@ await Environment.set_global("show",async function(thing) {
     },{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"source_name":"core-ext.lisp"
 })
 };
+await Environment.set_global("unload_core_ext",async function() {
+    let count;
+    let core_handle;
+    count=0;
+    core_handle=await Environment["get_namespace_handle"].call(Environment,"core");
+    await (async function() {
+        let __for_body__166=async function(def) {
+            if (check_true (((def && def["source_name"])==="src/core-ext.lisp"))){
+                {
+                    console.log(("(undefine `"+ (def && def.name)+ ")"));
+                    if (check_true (await core_handle["evaluate_local"].call(core_handle,("(undefine `"+ (def && def.name)+ ")")))){
+                        return count+=1
+                    }
+                }
+            }
+        };
+        let __array__167=[],__elements__165=(core_handle && core_handle["definitions"]);
+        let __BREAK__FLAG__=false;
+        for(let __iter__164 in __elements__165) {
+            __array__167.push(await __for_body__166(__elements__165[__iter__164]));
+            if(__BREAK__FLAG__) {
+                 __array__167.pop();
+                break;
+                
+            }
+        }return __array__167;
+         
+    })();
+    console.log(("removed "+ count+ " definitions."));
+    return count
+},{ "name":"unload_core_ext","fn_args":"[]","requires":["log"],"source_name":"core-ext.lisp"
+});
 await (await Environment.get_global("register_feature"))("core-ext");
 return true
 }

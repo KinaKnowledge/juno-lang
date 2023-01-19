@@ -1699,6 +1699,19 @@
        `tags: ["range" "interpolation" "fill"]
    })
  
+ (defun unload_core_ext ()
+   (let
+      ((count 0)
+       (core_handle (-> Environment `get_namespace_handle `core)))
+      (for_each (def core_handle.definitions)
+         (progn
+            (when (== def.source_name "src/core-ext.lisp")
+               (log (+ "(undefine `" def.name ")"))
+               (if (-> core_handle `evaluate_local (+ "(undefine `" def.name ")")) 
+                   (inc count)))))
+      (log (+ "removed " count " definitions."))
+      count))
+ 
  (register_feature "core-ext")
   
  true

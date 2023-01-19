@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-18 11:02:27
-// Version: 2023.01.18.11.02
-export const DLISP_ENV_VERSION='2023.01.18.11.02';
+// Build Time: 2023-01-19 17:52:06
+// Version: 2023.01.19.17.52
+export const DLISP_ENV_VERSION='2023.01.19.17.52';
 
 
 
@@ -2363,7 +2363,7 @@ await Environment.set_global("cl_encode_string",async function(text) {
 });
 {
      Environment.set_global("fn_signature",function(f) {
-        if (check_true (f instanceof Function)){
+        if (check_true ((f instanceof Function|| (f instanceof String || typeof f==='string')))){
             {
                 let sig;
                 let arg_text;
@@ -2374,7 +2374,13 @@ await Environment.set_global("cl_encode_string",async function(text) {
                 let extends_class;
                 let keyword_idx;
                 let args;
-                sig=( ( Environment.get_global("first"))(( ( Environment.get_global("replace"))("\n","", f["toString"]())).split("{"))).trim();
+                sig=( ( Environment.get_global("first"))(( ( Environment.get_global("replace"))("\n","", ( function(){
+                    if (check_true (f instanceof Function)){
+                        return  f["toString"]()
+                    } else {
+                        return f
+                    }
+                })())).split("{"))).trim();
                 arg_text=null;
                 comps=null;
                 descriptor=null;
@@ -2453,7 +2459,7 @@ await Environment.set_global("cl_encode_string",async function(text) {
             throw new TypeError("non-function supplied to fn_signature");
             
         }
-    },{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments"],"usage":["f:function"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"source_name":"core.lisp"
+    },{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments.  Note that a string value which ","is the result of a function serialized with the function's ","toString() method can also be passed."],"usage":["f:function|string"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","is_string?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"source_name":"core.lisp"
 })
 };
 await Environment.set_global("path_to_js_syntax",async function(comps) {
@@ -3960,16 +3966,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__273=async function(req) {
                                             {
-                                                let _expr_6863;
+                                                let _expr_50722;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_6863=await (async function(){
+                                                _expr_50722=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_6863 && _expr_6863["0"]);
-                                                req_ns=(_expr_6863 && _expr_6863["1"]);
-                                                explicit=(_expr_6863 && _expr_6863["2"]);
+                                                req_sym=(_expr_50722 && _expr_50722["0"]);
+                                                req_ns=(_expr_50722 && _expr_50722["1"]);
+                                                explicit=(_expr_50722 && _expr_50722["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4072,13 +4078,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_72872;
+                    let _expr_73821;
                     let nspace;
-                    _expr_72872=await (async function(){
+                    _expr_73821=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_72872 && _expr_72872["0"]);
-                    nspace=(_expr_72872 && _expr_72872["1"]);
+                    sym=(_expr_73821 && _expr_73821["0"]);
+                    nspace=(_expr_73821 && _expr_73821["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

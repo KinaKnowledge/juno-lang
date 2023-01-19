@@ -3,9 +3,23 @@
 # For the command line REPL we use rlwrap..not required, but
 # it certainly adds a lot of convenience
 
+if [ -z `which deno` ]; then 
+  echo "$0: cannot find the deno command, which this init script requires."
+  exit 1
+fi
+
+RLWRAP="rlwrap"
+
+if [ -z `which rlwrap` ]; then
+  echo "rlwrap isn't installed, which this init script uses when available for " 
+  echo "history and readline convenience."
+  RLWRAP=""
+fi
+
 if [ -z "$RLWRAP_EDITOR" ]; then
   export RLWRAP_EDITOR=/opt/local/bin/emacs
 fi
+
 
 
 # Default JS engine is Deno 
@@ -18,18 +32,11 @@ ADDR=""
 MAIN_MODE="run"
 GET_PLATFORM=""
 for ARG in $@; do
-    if [ "$ARG" == "--platform" ]; then
-	GET_PLATFORM="true"
-	PLATFORM=""
-    elif [ -z "$PLATFORM" ] && [ "$GET_PLATFORM" == "true" ]; then
-	GET_PLATFORM=""
-	PLATFORM=$ARG
-	STARTUP="./js/startup_$PLATFORM.js"
-    elif [[ "$ARG" == -* ]]; then
+    if [[ "$ARG" == -* ]]; then
 	if [ -z "$MAIN_SWITCH" ]; then
 	    MAIN_SWITCH=$ARG
 	    if [ "$MAIN_SWITCH" == "--compile" ]; then
-		MAIN_MODE="compile"
+		   MAIN_MODE="compile"
 	    fi
 	fi	
     elif [ "$MAIN_SWITCH" == "--compile" ] && [ -z "$COMP_OUT" ]; then
@@ -89,7 +96,11 @@ EOF
 
 elif [ -n "$MAIN_SWITCH" ]; then
     if [ "$PLATFORM" == "deno" ]; then
-	 rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --unstable --allow-all "$STARTUP"
+     if [ -z "$RLWRAP" ]; then
+       deno run $MAIN_SWITCH --unstable --allow-all "$STARTUP"
+     else
+	   rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --unstable --allow-all "$STARTUP"
+	 fi
     elif [ "$PLATFORM" == "node" ]; then
 	rlwrap -c -r -m -q'"' -M .clj node $MAIN_SWITCH "$STARTUP"
     else

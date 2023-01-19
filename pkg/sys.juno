@@ -173,8 +173,7 @@
               tags: ["compile" "build" "image" "save" "executable" "export" ]
               })
 
-      (defglobal core/compile_executable
-         compile_executable)
+      
       (unless (resolve_path [ `export `save_executable ] *env_config*)
          (set_path [ `export `save_executable ] *env_config* "bin/juno"))
       (register_feature "system")

@@ -1963,6 +1963,7 @@
                                                  (handle_event e)
                                                  (go_forward_in_position))))
                                         
+                                        (-> editor `on `click (function (val) (update_position)))
                                         (attach_event_listener nav_back_button
                                            `click
                                            (fn (e)

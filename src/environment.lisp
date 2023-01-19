@@ -63,6 +63,7 @@
    `check_true check_true
    `clone clone
    `lisp_writer lisp_writer
+   `get_next_environment_id get_next_environment_id
    `LispSyntaxError LispSyntaxError)
 
 (if (== "undefined" (typeof dlisp_environment_count))
@@ -135,7 +136,8 @@
                              `scope: {}
                              `name:  namespace
                              }
-              `build_version: (javascript DLISP_ENV_VERSION)
+              `build_version: (or opts.env_version
+                                 (javascript DLISP_ENV_VERSION))
               `definitions: (or opts.definitions
                                {
                                  
@@ -2492,8 +2494,9 @@
                      nil
                      { log_errors: true })))
             ;(console.log "core: initialized children, starting env_ready if exists")
-            (when env_ready
-               (eval env_ready)))
+            (if (not opts.no_start_on_ready)
+                (when env_ready
+                   (eval env_ready))))
          
          
          Environment)))

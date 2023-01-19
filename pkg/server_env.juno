@@ -769,6 +769,7 @@
               `rval: "OK"
               `result_type: (sub_type result)
               }))
+      
       (cond
          (is_error? result)
          (set_prop obj
@@ -782,6 +783,14 @@
                        else
                        nil)
             `error_type (sub_type result))
+         (and (is_array? result)
+              (is_object? result.0)
+              result.0.error
+              (ends_with? "Error" result.0.error))
+         (progn
+            (set_prop obj
+               `rval "FAIL"
+               `result result))
          (is_regex? result)
          (progn
             (set_prop obj
@@ -810,13 +819,14 @@
          else
          (progn
             (set_prop obj
-               `result (JSON.stringify result)
+               `result (as_lisp result)
                `needs_eval (if options.needs_eval
                               true
                               false)
                `needs_read (if options.needs_read
                               true
                               false))))
+      ;(console.log "encode_remote_result: returning obj:" obj)
       obj))
 
 (defglobal *ws_counter* 0)
@@ -877,7 +887,7 @@
                                                (evaluator (get_evaluator_for_ns ws.namespace))
                                                (result nil))
                                               (when (> __VERBOSITY__ 0)
-                                                 (console.log "ws_repl_handler: -> " result))
+                                                 (console.log "ws_repl_handler: -> " data))
                                               (cond
                                                  (and (== command "eval")
                                                       (is_array? args)
@@ -1038,12 +1048,14 @@
 (defun *on_serialization* ()
    (progn
       (console.log "http: running preserialization")
-      (= *http_routes* (reader (as_lisp *http_routes*)))))
+      (defglobal *http_routes_storage* (reader (as_lisp *http_routes*)))))
 
 
 ;
 (defun *initializer* ()
    (progn
+      (= *http_routes* *http_routes_storage*)
+      (undefine `*http_routes_storage*)
       (if (resolve_path [ `http_services `listen_on_start ] *env_config*)
           (http/start))))
 

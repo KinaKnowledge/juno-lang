@@ -7,7 +7,8 @@
 (declare (namespace core))
 (console.log "browser_workspace: running")
 
-(defparameter core/is_served? (not (blank? (resolve_path [ `location `hostname ] window))))
+(defparameter core/is_served? (and (not (blank? (resolve_path [ `location `hostname ] window)))
+                                   (== (prop (fetch "/files") `status) 200)))
 (console.log "browser_workspace: online? is_served: " is_served?)
 
 
@@ -159,7 +160,7 @@
         (log (if (is_function? options.log)
                options.log
                console.log))
-        (save_environment nil)
+        (save_method nil)
         (additional_embeds (let
                                ((acc [])
                                 (deduper (new Set)))
@@ -224,16 +225,18 @@
        ;(catch Error (e)
         ; (console.error "Issue on accessing http: " e)))
      
-     (if (and is_served? (contains? "http_client" *env_config*.features))
+     (if (and is_served? 
+              (not options.save_locally)
+              (contains? "http_client" *env_config*.features))
        (progn
         (console.log "we are online and we have http client software")
-        (= save_environment (fn (fname content content_type)
+        (= save_method (fn (fname content content_type)
                              (http/send_files "/save_file" (http/data_to_file (+ "environments/" (or options.save_as (prop *env_config*.export `save_prefix) "a1") ".html") content content_type)))))
-       (= save_environment save_locally))
+       (= save_method save_locally))
      (new Promise (fn (resolve reject)
                     (setTimeout (fn ()
                                   (try
-                                    (resolve (save_environment (or options.save_as                                       
+                                    (resolve (save_method (or options.save_as                                       
                                                           (+ (or (prop *env_config*.export `save_prefix) "juno_image")
                                                              "-" file_version_tag ".html"))
                                                       (+ "<!DOCTYPE html>\n<html>\n"

@@ -41,7 +41,6 @@ For more information on building images and compilation, see [Building Images](d
 
 
 
-
 ## About Juno
 
 Juno as a Lisp straddles two worlds.  It is built to easily leverage Javascript environments and libraries with the composability and expressiveness of Lisp.  Javascript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, generators and the like.  Juno doesn't have different language constructs, and this makes it easy to access and work with Javascript libraries and functions.  In fact you can inline javascript code as part of your Lisp forms.
