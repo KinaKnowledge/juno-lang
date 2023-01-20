@@ -101,15 +101,96 @@
   (let 
       ((classes "juno-value juno-type-")
        (options (or options {}))
+       (new_opts nil)
+       (make_input (function ()
+                      (let
+                         ((dtype (or (and path_opts
+                                           (resolve_path [ `type ] path_opts))
+                                      (sub_type val)))
+                          (input_elem (cond
+                                         (and path_opts
+                                            (resolve_path [ `values ] path_opts))
+                                         select
+                                         else
+                                         input))
+                          (selections (if (== input_elem select)
+                                          (for_each (`vset (resolve_path [ `values ] path_opts))
+                                             (progn
+                                                (if (is_array? vset)
+                                                   (option (+ { `value: vset.1 } 
+                                                              (if (== vset.1 val)
+                                                                  { selected: true }
+                                                                  {}))
+                                                           vset.0)
+                                                   (option 
+                                                       (if (== vset val)
+                                                           { selected: true }
+                                                           {})
+                                                       vset))))
+                                          [])))
+                         (declare (function input_elem))
+                         (input_elem (+ (cond
+                                         (== dtype "Boolean")
+                                         { type: "checkbox" }
+                                         (not (== (lowercase dtype) "string"))
+                                         { type: dtype }
+                                         else
+                                         {})
+                                      (if options.namespace { `ns: options.namespace } {})
+                                      (if (or options.read_only
+                                              (and path_opts
+                                                 (resolve_path [ `read_only ] path_opts)))
+                                          { `disabled: true }
+                                          {})
+                                      { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase dtype)) }
+                                      { `title: (lpath) }
+                                      (cond 
+                                         (== dtype "Boolean")
+                                         (if val
+                                            { checked: true }
+                                            {})
+                                         (== dtype "Date")
+                                         { `value: (first (split_by "T" (-> val `toISOString))) }
+                                         (not (blank? val))
+                                         { `value: val }
+                                         else
+                                         {}))
+                                     selections))))
+       (set_displayed_value (function (elem value)
+                               (progn
+                                  (cond
+                                     (is_date? value)
+                                     (set_prop elem `value (first (split_by "T" (-> value `toISOString))))
+                                     (or (== true value)
+                                         (== false value))
+                                     (set_prop elem `checked value)
+                                     else
+                                     (set_prop elem `value value)))))
+                                  
+                                  
        (elem nil)
+       (is_root? (eq nil _path))
        (_path (or _path [] ))
+       (path_opts (resolve_path (conj ["paths"] _path) options))
        (lpath (function () (join "~" _path))))
     (declare (function array_to_dom obj_to_dom function_to_dom)
              (global array_to_dom obj_to_dom function_to_dom))
+    
+    (if path_opts
+       (progn
+          ;(log "found path_opts: " (lpath) path_opts)
+          (= new_opts (clone options))
+          (if (and path_opts.read_only
+                   (== true path_opts.read_only))
+             (set_prop new_opts
+                `read_only true)))
+       (= new_opts options))
+          
     (= elem
        (cond 
          (is_array? val)
-         (array_to_dom val options _path)
+         (progn
+            (array_to_dom val new_opts _path))
          (is_element? val)
          (progn
           (if val.parentElement
@@ -131,7 +212,17 @@
                     `tabindex: 0  
                     `class: (+ classes "regexp") }) 
                (-> val `toString))
-         (is_string? val)
+         (and (is_date? val)
+              (not options.editable))
+         (span (+ {} (if options.namespace
+                         { `ns: options.namespace }
+                         {})
+                  { `lpath: (lpath) 
+                    `tabindex: 0  
+                    `class: (+ classes "regexp") }) 
+               (-> val `toISOString))
+         (and (is_string? val)
+              (not options.editable))
          (if (starts_with? "=:" val)
            (span (+ {} (if options.namespace { `ns: options.namespace } {}) 
                     { `lpath: (lpath) `tabindex: 0  `class: (+ classes "symbol") } )
@@ -151,13 +242,156 @@
                  tmp)))
          (is_function? val)
          (function_to_dom val options _path)
-         (is_object? val)
-         (obj_to_dom val options _path)          
+         (and (is_object? val)
+              (not (is_date? val)))
+         (obj_to_dom val new_opts _path)
+         options.editable
+         (make_input)
          else
          (span  (+ {} (if options.namespace { `ns: options.namespace } {}) 
                    { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase (sub_type val))) }) 
                val)))
-    elem))  
+    (when (and is_root?
+               options.editable
+               (eq nil options.namespace))
+       (attach_event_listener elem
+          `change
+          (fn (e)
+             (let
+                ((changed_lpath (get_attribute e.srcElement `lpath))
+                 (changed_path (if changed_lpath 
+                                   (split_by "~" changed_lpath)))
+                 (dtype nil)
+                 (new_val nil))
+                (when changed_path
+                   (= dtype
+                      (cond
+                         (and options.paths
+                            (resolve_path (conj changed_path [`type]) options.paths))
+                         (resolve_path (conj changed_path [`type]) options.paths)
+                         (get_attribute e.srcElement `type)
+                         (get_attribute e.srcElement `type)
+                         else
+                         "string"))
+                   
+                   (= new_val 
+                      (cond
+                         (== dtype "integer")
+                         (parseInt e.srcElement.value)
+                         (== dtype "Number")
+                         (float e.srcElement.value)
+                         (or (== dtype "Boolean")
+                             (== dtype "checkbox"))
+                         (progn
+                            (if (prop e.srcElement `checked)
+                                true
+                                false))
+                         (== dtype "Date")
+                         (new Date e.srcElement.value)
+                         else
+                         e.srcElement.value))
+                   (cond 
+                      (and options 
+                         (is_function? options.on_change))
+                      (progn
+                         (= new_val (-> options `on_change lpath new_val))
+                         (cond
+                            (eq nil new_val)
+                            (progn
+                               (set_displayed_value e.srcElement (resolve_path changed_path val))
+                               (set_prop e.srcElement `value
+                                  (resolve_path changed_path val)))
+                            else
+                            (progn
+                               (set_path changed_path val new_val)
+                               (set_displayed_value e.srcElement new_val))))
+                      else
+                      (set_path changed_path val new_val))
+                   (when options.debug
+                      (notify (+ "Changed Path: " changed_lpath ": " dtype ": " new_val ))))))))
+    elem)
+  {
+    description: (+ "<br><br>The `value_to_dom` function renders an arbitrary data structure to a "
+                    "DOM representation and returns a DOM ready element.  Objects and their "
+                    "hierarchies are rendered recursively.  The types that naturally render to the "
+                    "DOM are strings, numbers, primitive objects, arrays, RegExp instances, "
+                    "functions, Dates, and Booleans.  The log_viewer control as part of the "
+                    "visual_repl control uses this facility for output mode when in `tree` mode, "
+                    "which is the default output mode.<br>Additionally if the option `editable` is "
+                    "passed, the rendered object will be displayed with appropriate input fields "
+                    "which the user can then use to modify the values of the rendered object.  In "
+                    "edit mode, data types can be specified using the `paths` option, which allows "
+                    "for limiting selection or making certain paths read only.  <br><br>#### Options "
+                    " <br><br>editable:boolean -If true, the object values will be rendered with the "
+                    "HTML inputs which the user can use to edit.  Upon the `change` event, the value "
+                    "of the rendered object will be changed.  <br>on_change:function -If provided, "
+                    "this function is called on the change event, and is passed the path and edited "
+                    "value `(path new_value)` as arguments.  If the function returns nil, the new "
+                    "value isn\'t accepted and the value prior to the change is restored to the input "
+                    "field.  Otherwise, the returned value from the function is used as the new "
+                    "value for the object, and the corresponding input element displayed value will "
+                    "be updated with the `on_change` function\'s returned value.<br>paths:object -The "
+                    "`paths` value allows for more control over the display, data type and values of "
+                    "the presented input elements.  The paths object is structured to match the "
+                    "structure of the provided object, where the leaves of the displayed object look "
+                    "for attributes in the path object at the corresponding path.<br>In the "
+                    "following example, the `*env_config*` object would be displayed to the REPL "
+                    "output, with corresponding input fields being displayed at the leaves of the "
+                    "object.  If a parent structure is marked read only, all leaves in the "
+                    "corresponding structure are read only as well:```(value_to_dom *env_config* \n  "
+                    "           { `editable: true \n                `paths: {\n                   "
+                    "`features: {\n                        `read_only: true\n                    }\n   "
+                    "                `included_libraries: {\n                        `read_only: "
+                    "true\n                    }\n                    `editor:{\n                      "
+                    " `extensions_to_mode: {\n                            `read_only: true\n          "
+                    "                 }\n                        `default_theme: {\n                  "
+                    "                       values: *editor_themes*\n                                "
+                    "         }\n                    }\n                    `application: {\n          "
+                    "             `global_theme: {\n                            values: (keys "
+                    "*global_themes*)\n                        }\n                    }\n              "
+                    " }  \n                \n              })```<br><br>The above will display the "
+                    "*env_config* as a hierarchical form, with some values being completely "
+                    "non-editable, either due to a parent being set to read_only, or the leaf itself "
+                    "being declared read only.  Note that the `editable` flag is set to `true`.  All "
+                    "paths under the `inlcuded_libraries` and `features` keys are read_only.  "
+                    "Specific values for `editor.default_theme` and `application,.global_theme` are "
+                    "selection types, not free form text inputs.  <br>When a value is determined to "
+                    "be a non-string value, either through the value itself, or a declaration in the "
+                    "paths via the `type` key, then the input field will be modified accordingly to "
+                    "the type.  For example if a Date type is specified, the a Date value will be "
+                    "selected.  Similar for Numbers and Booleans.  <br>The path modifiers are as "
+                    "follows<br>read_only:boolean - If true, then the value will not be editable.  "
+                    "If this is a containing type, such as an Object or Array, then the children "
+                    "within it will be non-editable.<br>type:string - Specifies the type of value "
+                    "that is placed at the path. Values can be `Date`, `Boolean`, `Number`.  "
+                    "Otherwise the default value will be string, or the detected type of the value "
+                    "itself.<br>values:array - If present the input element is presented as a select "
+                    "box with the options being the array elements provided in the `values` key.  "
+                    "The array format can either be single values, such as `[\"Choice 1\" \"Choice 2\"]` "
+                    "or pairs, as in `[[\"Select Value\" nil] [\"Good\" 10] [\"Imperfect\" 5] "
+                    "[\"Unacceptable\" 0]]`, where in the latter, the value placed in the target "
+                    "object is the second numeric value, and the presented value is the first text "
+                    "value.<br><br><br>### Example\n\n <br><br>In the below example, a tester object "
+                    "is established, and rendered with `value_to_dom` with an `on_change` function "
+                    "as well as paths which show different presentation effects and their "
+                    "impacts.  ```(defglobal tester\n   {\n     name: \"\"\n     inspect_date: nil\n    "
+                    "count: 0\n     confirmed: true\n     quality: nil\n     })\n \n(value_to_dom \n  "
+                    "tester\n   { `editable: true\n     `debug: true\n     `on_change: (function (path "
+                    "value)\n                    (progn\n                       ;(log \"on_change: \" "
+                    "path value)\n                       (cond\n                          (is_string? "
+                    "value)\n                          (uppercase value)\n                         "
+                    "(is_number? value)\n                          (if (>= value 0)\n                 "
+                    "            value\n                              nil)\n                         "
+                    "else\n                          value)))\n     `paths:{\n         `count: {\n      "
+                    "      type: \"Number\"\n             read_only: false\n         }\n        "
+                    "`inspect_date: {\n             type: \"Date\"\n         }\n         `quality: {\n    "
+                    "        `type: \"Number\"\n             `values: [ [\"Select Quality\" nil]\n        "
+                    "               [\"Good\" 10 ]\n                        [\"Imperfect\" 5]\n           "
+                    "            [\"Unacceptable\" 0] ]\n         }\n     }\n    })```<br><br><br><br> ")
+
+
+  }
+  ) 
 
 (defun_sync function_to_dom (val options _path)
   (let
@@ -2085,7 +2319,55 @@
       (progn       
        (-> (get_by_id "body") `appendChild view)
        (console.log "appended view" view)
-       view))))
+       view)))
+  {
+    description: (+ "The `make_menu` function constructs a pop-up menu DOM structure and "
+                    "attaches it to the provided element.  The menu items are constructed from the "
+                    "`menu_items` nested array, which follows the standard menu structure.  The "
+                    "function, by default, attaches the constructed menu view to the element when "
+                    "called, but if the `do_not_attach` option is provided, will only produce and "
+                    "return the menu, and not mount it as a child to the provided element.  <br>The "
+                    "produced menu always has an id of `cmenu`, and if there is already an element "
+                    "attached to the DOM with that ID, it will remove it prior to construction of "
+                    "the new menu.<br>The menu is attached to the provided DOM element at the bottom "
+                    "left of the element.<br>The return value is the generated menu "
+                    "view.<br><br>#### Menu Format   <br><br>All menu structures that are provided "
+                    "to this function should follow the format of:```[[\"Menu Item 1 Text\" (fn "
+                    "(click_event))]\n [\"--\" nil]\n [\"Menu Item 2 Text\" [[\"Sub Menu 1\" (fn "
+                    "(click_event))]\n                      [\"Sub Menu 2\" (fn "
+                    "(click_event))]]]]```<br><br><br>Submenus are constructed by a nested array as "
+                    "a second argument.<br>If a `--` string is encountered as a first argument and "
+                    "nil as a second argument, then a horizontal rule is inserted in the generated "
+                    "menu view.<br><br>#### Shortcuts   <br><br>The easiest way to link a short cut "
+                    "action to a menu item is to link by name.  This means that the text value in "
+                    "position 0 of the descriptor array (e.g. \"Menu Item 1 Text\") is turned into a "
+                    "key by the `to_key` function, such that \"Menu Item 1 Text\" becomes "
+                    "`menu_item_1_text`, which is then checked against the `*key_bindings*` global "
+                    "in the namespace.  If a key binding is found with the key `menu_item_1_text` "
+                    "then that key is used as a short cut.  This method helps keep a naming linkage "
+                    "between the short cut key entries and the menu item entries.<br>Optionally "
+                    "instead of a text item in position 0 of the descriptor array an object can "
+                    "instead be present with the following key structure:```{\n  text: \"The displayed "
+                    "menu text\"\n  path: [ `global `command ]  ;; in *key_bindings*\n}```<br><br>The "
+                    "keycode will come from the linked key code which is dependent on the operating "
+                    "platform.<br><br>#### Example   <br>```(let \n   ((b (button \"Right Click!\")))\n "
+                    "(attach_event_listener b `contextmenu\n      (fn (right_click_event)\n       "
+                    "(progn\n            (handle_event right_click_event)\n            (make_menu b\n  "
+                    "                   [[\"Hi There\" (fn (menu_click_event)\n                        "
+                    "             (notify (+ \"Hi There: \"\n                                          "
+                    "      right_click_event.srcElement.tagName)))]\n                       [\"Good "
+                    "Bye!\" (fn (menu_click_event)\n                                       (notify (+ "
+                    "\"Good Bye!: \"\n                                                 "
+                    "menu_click_event.srcElement.tagName)))]]\n                       {\n             "
+                    "          min_width: 250 }))))\n   b)```<br><br><br>#### Options "
+                    "<br><br>min_width:number -The minimum width for the menu item.   This setting "
+                    "impacts how wide the menu element is.<br>do_not_attach:boolean -If true, the "
+                    "menu Element structure is created as a view, but not attached to the target "
+                    "element, and is instead just returned.   ")
+
+    usage: ["for_element:Element" "menu_items:array" "options:?object"]
+    tags: ["menu" "events" "popup" "UI" "DOM" "contextmenu" "menu-structure"]
+    })
 
 (defun_sync get_key_code (e)
   (let
@@ -2127,6 +2409,44 @@
       `usage: ["event:Event"]
       `tags: [ "key" "events" "binding" "keycodes" "keyboard"]
   })
+
+(defun attach_context_menu (element menu_gen)
+   (progn
+      (attach_event_listener element `contextmenu
+         (fn (e)
+            (progn
+               (handle_event e)
+               (make_menu element
+                          (cond
+                             (is_function? menu_gen)
+                             (menu_gen e)
+                             (is_array? menu_gen)
+                             menu_gen)
+                          {
+                            min_width: 250
+                            }))))
+      element)
+   {
+     description: (+ "<br><br>Given a target DOM element and a menu generator function or a menu "
+                     "array, attaches a `contextmenu` event listener to the target element.  The menu "
+                     "generator argument can either be a function which returns a nested array "
+                     "structure in the standard menu format, or a pre-built array with the menu "
+                     "structure already generated.  The element that the context menu event listener "
+                     "is returned.\n\n<br>If provided a function for the menu_generator argument, the "
+                     "contextmenu event is passed to the function when called.  <br>The individual "
+                     "menu items will receive the click event from the selected menu items.<br>See "
+                     "`make_menu` for more information on the standard menu format.<br><br>#### "
+                     "Example:   <br>```(let\n   ((b (button \"Right Click!\")))\n  (attach_context_menu "
+                     "\n      b\n      (fn (right_click_event)\n         [[\"Hi There\" (fn "
+                     "(menu_click_event)\n                         (notify (+ \"Hi There: \"\n           "
+                     "                        right_click_event.srcElement.tagName)))]\n        "
+                     "[\"Good Bye!\" (fn (menu_click_event)\n                          (notify (+ \"Good "
+                     "Bye!: \"\n                                   "
+                     "menu_click_event.srcElement.tagName)))]])))```<br> ")
+
+     usage: ["element:Element" "menu_generator:function|array"]
+     tags:["events" "contextmenu" "menu" "context" "event" "DOM" "UI"]
+     })
 
 (defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
