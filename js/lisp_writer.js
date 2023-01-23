@@ -86,6 +86,8 @@ export function lisp_writer(obj,depth,max_depth,env) {
     return text;
   } else if (obj instanceof RegExp) {
     return "(new RegExp "+JSON.stringify(obj.source)+" `"+obj.flags+")";
+  } else if (obj instanceof Date) {
+    return "(new Date \""+obj.toISOString()+"\")";
   } else if (typeof obj ==='object') {
     // object {}
     if (obj.constructor && obj.constructor.name !== "Object") {

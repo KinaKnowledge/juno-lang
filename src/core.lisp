@@ -11,21 +11,6 @@
 ;; **
    
 
-;; This function will be executed at the time of the compile of code.
-;; if called, it will be called with the arguments in the place of the
-;; argument list of the defmacro function.
-
-;; The result of the evaluation is returned to the compiler and used
-;; as a replacement for the calling form.
-
-;; Therefore the goal is to return a quoted form that will be spliced
-;; into the tree at the point of the original calling form.
-
-;; When this function is called, it will have the values assigned to the
-;; values in the let.
-
-
-
 ;; setup the special operator definitions of the compiler
 
 (defglobal special_definitions
@@ -971,9 +956,15 @@
       (let
           ((idx 0)
            (acc [])
+           (passed_rest 0)
            (structure elems)
            (follow_tree (fn (elems _path_prefix)
                             (cond
+                                (> passed_rest 0)
+                                (progn
+                                   (if (== passed_rest 1) 
+                                       (push acc _path_prefix))
+                                   (inc passed_rest))
                                 (is_array? elems)
                                 (map (fn (elem idx)
                                         (follow_tree elem (+ _path_prefix idx)))
@@ -981,10 +972,15 @@
                                 (is_object? elems)
                                 (for_each (`pset (pairs elems))
                                     (follow_tree pset.1 (+ _path_prefix pset.0)))
+                                (and (is_string? elems)
+                                     (== "&" elems))
+                                ;; the rest go into the same path value
+                                (progn
+                                   (inc passed_rest)
+                                   (push acc `*))
                                 else ;; not container, simple values record the final path in our acculumlator
                                 (push acc _path_prefix)))))
         (follow_tree structure [])
-        
         acc)
   {
    `description: "Destructure list takes a nested array and returns the paths of each element in the provided array."
@@ -998,6 +994,7 @@
           ((binding_vars bind_vars)
            (preamble [])
            (allocations [])
+           (passed_rest false)
            (expr_result_var (+ "=:" "_expr_" (random_int 100000)))
            (paths (destructure_list binding_vars))           
            (bound_expression (if (and (is_array? expression)
@@ -1009,18 +1006,29 @@
                                expression))                                            
            (acc [(quote let)]))
         
-	(assert (and (is_array? bind_vars)
-		     (is_value? expression)
-		     (is_value? forms))
-		"destructuring_bind: requires 3 arguments")
+          (assert (and (is_array? bind_vars)
+                       (is_value? expression)
+                       (is_value? forms))
+                  "destructuring_bind: requires 3 arguments")
           (for_each (`idx (range (length paths)))
-             (do 
-                 (push allocations 
-                    [ (resolve_path (prop paths idx) binding_vars) (cond 
-                                                                      (is_object? bound_expression) 
-                                                                      (resolve_path (prop paths idx) bound_expression)
-                                                                      else
-                                                                      (join "." (conj [ bound_expression ] (prop paths idx)))) ])))
+             (do
+                (if (== "*" (prop paths idx))
+                    (progn
+                       (push allocations
+                          [(resolve_path (prop paths (+ idx 1)) binding_vars)
+                           (cond
+                              (is_object? bound_expression)
+                              (slice bound_expression idx)
+                              else
+                              `(slice ,#expression ,#(+ idx 0)))])
+                       (break))
+                    (push allocations
+                       [ (resolve_path (prop paths idx) binding_vars)
+                        (cond
+                           (is_object? bound_expression)
+                           (resolve_path (prop paths idx) bound_expression)
+                           else
+                           (join "." (conj [ bound_expression ] (prop paths idx)))) ]))))
           (push acc
                 allocations)
           (= acc (conj acc
@@ -2832,7 +2840,8 @@ such as things that connect or use environmental resources.
                 (inc idx)
                 (if (< idx numargs)
                   (push acc ", "))))
-    (push acc "}"))
+    (push acc "}")
+    acc)
     {
      `usage: ["arg0:string|array","argN:string|array"]
      `description: (+ "The export_symbols macro facilitates the Javascript module export functionality.  "
@@ -2845,8 +2854,7 @@ such as things that connect or use environmental resources.
                       "(export (lisp_symbol1 external_name)) ;; exports lisp_symbol1 as 'external_name`. <br>"
                       "(export (initialize default) symbol2) ;; exports initialize as default and symbol2 as itself.")
      `tags: ["env" "enviroment" "module" "export" "import" "namespace" "scope"]                      
-     }
-    acc)
+     })
 
 (defun register_feature (feature)
   (if (not (contains? feature *env_config*.features))

@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-01-19 17:52:06
-// Version: 2023.01.19.17.52
-export const DLISP_ENV_VERSION='2023.01.19.17.52';
+// Build Time: 2023-01-23 11:01:11
+// Version: 2023.01.23.11.01
+export const DLISP_ENV_VERSION='2023.01.23.11.01';
 
 
 
@@ -16,8 +16,9 @@ export async function load_core(Environment)  {
 },"name":"if_undefined","macro":true,"fn_args":"(value replacer)","description":"If the first value is undefined, return the second value","usage":["value:*","replacer:*"],"requires":[],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("str",async function(...args) {
+    args=await (await Environment.get_global("slice"))(args,0);
     return (args).join(" ")
-},{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["join"],"source_name":"core-ext.lisp"
+},{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["slice","join"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("COPY_DATA",null,{
     requires:[],source_name:"core-ext.lisp"
@@ -282,10 +283,13 @@ null;
     },{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"source_name":"core-ext.lisp"
 })
 };
-await Environment.set_global("+=",async function(symbol,...args) {
+await Environment.set_global("+=",async function(...args) {
+    let symbol;
+    symbol=(args && args["0"]);
+    args=await (await Environment.get_global("slice"))(args,1);
     return ["=:=",].concat(symbol,[["=:+",symbol,].concat(args)])
 },{ "eval_when":{ "compile_time":true
-},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"],"requires":[],"source_name":"core-ext.lisp"
+},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"],"requires":["slice"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("minmax",async function(container) {
     let value_found=false;
@@ -1375,11 +1379,13 @@ await Environment.set_global("demarked_number",async function(value,separator,pr
     })()))
 },{ "name":"demarked_number","fn_args":"(value separator precision no_show_sign)","usage":["value:number","separator:string","precision:number","no_show_sign:boolean"],"description":["=:+","Given a numeric value, a separator string, such as \",\" and a precision value ","for the fractional-part or mantissa of the value, the demarked_number function will return a string with a formatted value. ","Default value for precision is 2 if not provided.","If no_show_sign is true, there will be no negative sign returned, which can be useful for alternative formatting.  See compile_format."],"tags":["format","conversion","currency"],"requires":["reverse","split","length","not","range","join","chop_front"],"source_name":"core-ext.lisp"
 });
-await Environment.set_global("measure_time",async function(...forms) {
+await Environment.set_global("measure_time",async function(...args) {
+    let forms;
+    forms=await (await Environment.get_global("slice"))(args,0);
     return ["=:let",[["=:end","=:nil"],["=:rval","=:nil"],["=:start",["=:time_in_millis"]]],["=:=","=:rval",["=:do",].concat(forms)],{ "time":["=:-",["=:time_in_millis"],"=:start"],"result":"=:rval"
 }]
 },{ "eval_when":{ "compile_time":true
-},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results.","requires":[],"source_name":"core-ext.lisp"
+},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results.","requires":["slice"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("compare_list_ends",async function(l1,l2) {
     let long_short;

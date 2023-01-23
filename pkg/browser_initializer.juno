@@ -388,10 +388,10 @@
                     "        `type: \"Number\"\n             `values: [ [\"Select Quality\" nil]\n        "
                     "               [\"Good\" 10 ]\n                        [\"Imperfect\" 5]\n           "
                     "            [\"Unacceptable\" 0] ]\n         }\n     }\n    })```<br><br><br><br> ")
-
-
+    usage: ["value:*" "options:?object"]
+    tags: ["UI" "DOM" "value" "element" "view"]
   }
-  ) 
+  )
 
 (defun_sync function_to_dom (val options _path)
   (let
@@ -427,7 +427,12 @@
                                      (= expanded true)
                                      (-> expansion_elem `replaceWith (render_function))
                                      (= render_function nil))))
-    detail_elem))
+    detail_elem)
+  {
+    description: "See value_to_dom for documentation details."
+    usage: ["value:*" "options:?object"]
+    tags: ["UI" "DOM" "value" "element" "view"]
+    })
     
 (defun_sync remote_function_to_dom (fdesc options _path)
   (let
@@ -470,7 +475,12 @@
                                      (= expanded true)
                                      (-> expansion_elem `replaceWith (render_function))
                                      (= render_function nil))))
-    detail_elem))
+    detail_elem)
+  {
+    description: "See value_to_dom for documentation details."
+    usage: ["value:*" "options:?object"]
+    tags: ["UI" "DOM" "value" "element" "view"]
+    })
                    
        
        
@@ -521,7 +531,12 @@
                                      (= expanded true)
                                      (-> expansion_elem `replaceWith (render_array))
                                      (= render_array nil)))))
-     detail_elem))
+     detail_elem)
+    {
+      description: "See value_to_dom for documentation details."
+      usage: ["value:*" "options:?object"]
+      tags: ["UI" "DOM" "value" "element" "view"]
+      })
            
 (defun_sync obj_to_dom (obj options _path)
   (let
@@ -579,7 +594,12 @@
                                               (= expanded true)
                                               (-> expansion_elem `replaceWith (render_table))
                                               (= render_table nil)))))
-           detail_elem)))))
+           detail_elem))))
+  {
+    description: "See value_to_dom for documentation details."
+    usage: ["value:*" "options:?object"]
+    tags: ["UI" "DOM" "value" "element" "view"]
+    })
 
 
 
@@ -1405,7 +1425,14 @@
         `child: control
         `parent: parent_control
         `child_position: parent_control_position
-    }))
+    })
+    {
+      description: (+ "<br><br>The `control_position` function returns a description object containing "
+                      "the provided control (child), the control\'s parent, and the child\'s position in "
+                      "the parent control. ")
+      usage: ["control:object"]
+      tags: ["control" "position" "placement" "controls" "UI" "DOM"]
+      })
 
 (defun get_container_for_control (control)
     (let
@@ -6376,17 +6403,26 @@
               (is_compiler_error? (and (resolve_path [ `result 0 `error ] result)
                                        (resolve_path [ `result 0 `message ] result)))
               (process_tree (fn (quoted_lisp)
+                               (progn
                                (cond
                                   (and (is_array? quoted_lisp)
                                        (== quoted_lisp.0 (quote javascript)))
                                   (progn 
-                                     
                                      (if (== display_mode `tree)
-                                         `(remote_function_to_dom
-                                             ,#(set_prop (fn_signature quoted_lisp.1)
+                                         (remote_function_to_dom
+                                             (set_prop (fn_signature quoted_lisp.1)
                                                          `body
                                                          quoted_lisp.1))
                                          quoted_lisp))
+                                  
+                                  (and (== display_mode `tree)
+                                       (is_array? quoted_lisp)
+                                       (== quoted_lisp.0 (quote new))
+                                       (contains? quoted_lisp.1 [(quote RegExp)]))
+                                  (try 
+                                     (eval quoted_lisp)
+                                     (catch Error (e)
+                                        quoted_lisp))
                                   (is_array? quoted_lisp)
                                   (for_each (val quoted_lisp)
                                      (process_tree val))
@@ -6395,9 +6431,8 @@
                                      (for_each (val (pairs quoted_lisp))
                                         [val.0 (process_tree val.1)]))
                                   else
-                                  quoted_lisp))))
-             
-             ;(log "process_remote_eval_result: "  is_system_error? "display_mode: " display_mode ": result: " result)
+                                  quoted_lisp)))))
+             (log "process_remote_eval_result: "  is_system_error? "display_mode: " display_mode ": result: " result)
              (cond
                 (and (or (== display_mode `juno)
                          (== display_mode `json))
@@ -6441,12 +6476,12 @@
                 (and result.needs_read
                    (== display_mode `juno))
                 (as_lisp (read_lisp result.result))
-                ;result.needs_eval  ;; if json form returned and is a local compile
-                ;(eval_struct (read_lisp result.result))
+                result.needs_eval  ;; if json form returned and is a local compile
+                (eval_struct (read_lisp result.result))
                 result.needs_read  ;; if juno form returned and is a local compile `
                 (eval_struct (read_lisp result.result))
                 (is_string? result.result)
-                (eval_struct (process_tree (read_lisp result.result)))
+                (process_tree (read_lisp result.result))
                 else
                 result.result))
           (catch Error (e)
@@ -11679,7 +11714,7 @@
      [(if is_served?
         [(dtext "Bundle Application To Host") (fn (e) (save_control_image true)) ]
         [])
-     [(dtext "Bundle Application Locally") (fn (e) (save_control_image true { save_locally: true })) ]
+     [(dtext "Bundle Application and Download") (fn (e) (save_control_image true { save_locally: true })) ]
      (if is_served?
         [(dtext "Generate Starter Application") build_starter_environment]
         [])

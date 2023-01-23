@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-19 17:52:06
-// Version: 2023.01.19.17.52
-export const DLISP_ENV_VERSION='2023.01.19.17.52';
+// Build Time: 2023-01-23 11:01:11
+// Version: 2023.01.23.11.01
+export const DLISP_ENV_VERSION='2023.01.23.11.01';
 
 
 
@@ -217,10 +217,14 @@ await Environment.set_global("deref",async function(val) {
 },{ "eval_when":{ "compile_time":true
 },"name":"deref","macro":true,"fn_args":"(val)","description":["=:+","If the value that the symbol references is a binding value, aka starting with '=:', then return the symbol value ","instead of the value that is referenced by the symbol. This is useful in macros where a value in a form is ","to be used for it's symbolic name vs. it's referenced value, which may be undefined if the symbol being ","de-referenced is not bound to any value. <br>","Example:<br>","Dereference the symbolic value being held in array element 0:<br>","(defglobal myvar \"foo\")<br>","(defglobal myarr [ (quote myvar) ])<br>","(deref my_array.0) => \"my_var\"<br>","(deref my_array) => [ \"=:my_var\" ]<br>","<br>In the last example, the input to deref isn't a string and so it returns the value as is.  See also desym_ref."],"tags":["symbol","reference","syntax","dereference","desym","desym_ref"],"usage":["symbol:string"],"requires":[],"source_name":"core.lisp"
 });
-await Environment.set_global("when",async function(condition,...mbody) {
+await Environment.set_global("when",async function(...args) {
+    let condition;
+    let mbody;
+    condition=(args && args["0"]);
+    mbody=await (await Environment.get_global("slice"))(args,1);
     return ["=:if",condition,["=:do",].concat(mbody)]
 },{ "eval_when":{ "compile_time":true
-},"name":"when","macro":true,"fn_args":"(condition \"&\" mbody)","description":["=:+","Similar to if, but the body forms are evaluated in an implicit progn, if the condition form or expression is true. ","The function when will return the last form value.  There is no evaluation of the body if the conditional expression ","is false."],"usage":["condition:*","body:*"],"tags":["if","condition","logic","true","progn","conditional"],"requires":[],"source_name":"core.lisp"
+},"name":"when","macro":true,"fn_args":"(condition \"&\" mbody)","description":["=:+","Similar to if, but the body forms are evaluated in an implicit progn, if the condition form or expression is true. ","The function when will return the last form value.  There is no evaluation of the body if the conditional expression ","is false."],"usage":["condition:*","body:*"],"tags":["if","condition","logic","true","progn","conditional"],"requires":["slice"],"source_name":"core.lisp"
 });
 await Environment.set_global("if_compile_time_defined",async function(quoted_symbol,exists_form,not_exists_form) {
     if (check_true (await (await Environment.get_global("describe"))(quoted_symbol))){
@@ -474,164 +478,175 @@ await Environment.set_global("do_deferred_splice",async function(tree) {
     } ()
 },{ "name":"do_deferred_splice","fn_args":"(tree)","description":"Internally used by the compiler to facilitate splice operations on arrays.","usage":["tree:*"],"tags":["compiler","build"],"requires":["join","is_array?","push","is_object?","pairs"],"source_name":"core.lisp"
 });
-await Environment.set_global("define",async function(...defs) {
-    let acc;
-    let symname;
-    acc=await (async function(){
-         return ["=:progl"] 
-    })();
-    symname=null;
-    await (async function() {
-        let __for_body__26=async function(defset) {
-            (acc).push(await (async function(){
-                 return ["=:defvar",(defset && defset["0"]),(defset && defset["1"])] 
-            })());
-            symname=(defset && defset["0"]);
-            (acc).push(await (async function(){
-                 return ["=:set_prop",await (async function(){
-                     return "=:Environment.global_ctx.scope" 
-                })(),(""+ await (await Environment.get_global("as_lisp"))(symname)),symname] 
-            })());
-            if (check_true (((defset && defset["2"]) instanceof Object))){
-                {
+await Environment.set_global("define",async function(...args) {
+    let defs;
+    defs=await (await Environment.get_global("slice"))(args,0);
+    {
+        let acc;
+        let symname;
+        acc=await (async function(){
+             return ["=:progl"] 
+        })();
+        symname=null;
+        await (async function() {
+            let __for_body__26=async function(defset) {
+                (acc).push(await (async function(){
+                     return ["=:defvar",(defset && defset["0"]),(defset && defset["1"])] 
+                })());
+                symname=(defset && defset["0"]);
+                (acc).push(await (async function(){
+                     return ["=:set_prop",await (async function(){
+                         return "=:Environment.global_ctx.scope" 
+                    })(),(""+ await (await Environment.get_global("as_lisp"))(symname)),symname] 
+                })());
+                if (check_true (((defset && defset["2"]) instanceof Object))){
+                    {
+                        return (acc).push(await (async function(){
+                             return [["=:set_prop",await (async function(){
+                                 return "=:Environment.definitions" 
+                            })(),(""+ await (await Environment.get_global("as_lisp"))(symname)+ ""),(defset && defset["2"])]] 
+                        })())
+                    }
+                }
+            };
+            let __array__27=[],__elements__25=defs;
+            let __BREAK__FLAG__=false;
+            for(let __iter__24 in __elements__25) {
+                __array__27.push(await __for_body__26(__elements__25[__iter__24]));
+                if(__BREAK__FLAG__) {
+                     __array__27.pop();
+                    break;
+                    
+                }
+            }return __array__27;
+             
+        })();
+        return acc
+    }
+},{ "eval_when":{ "compile_time":true
+},"name":"define","macro":true,"fn_args":"[\"&\" defs]","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["slice","push","as_lisp","is_object?"],"source_name":"core.lisp"
+});
+await Environment.set_global("defbinding",async function(...args) {
+    args=await (await Environment.get_global("slice"))(args,0);
+    {
+        let binding;
+        let acc;
+        binding=null;
+        acc=await (async function(){
+             return ["=:list"] 
+        })();
+        await (async function() {
+            let __for_body__30=async function(bind_set) {
+                return await async function(){
+                    if (check_true (((bind_set instanceof Array)&& (((bind_set && bind_set.length)===2)|| ((bind_set && bind_set.length)===3))&& ((bind_set && bind_set["1"]) instanceof Array)&& ((bind_set && bind_set["1"] && bind_set["1"]["length"])===2)))) {
+                        {
+                            binding=await (async function(){
+                                 return ["=:quotel",await (async function(){
+                                     return ["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])] 
+                                })()] 
+                            })();
+                            return (acc).push(await (async function(){
+                                 return ["=:defglobal",((await Environment.get_global("*namespace*"))+ "/"+ await (async function(){
+                                    let mval;
+                                    mval=(bind_set && bind_set["0"]);
+                                    if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
+                                        return await mval["substr"].call(mval,2)
+                                    } else {
+                                        return mval
+                                    }
+                                })()),await (async function(){
+                                     return ["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])] 
+                                })(),await (async function(){
+                                    if (check_true (((bind_set && bind_set["2"]) instanceof Object))){
+                                        return await (await Environment.get_global("add"))(new Object(),(bind_set && bind_set["2"]),{
+                                            initializer:binding
+                                        })
+                                    } else {
+                                        return {
+                                            initializer:binding
+                                        }
+                                    }
+                                })()] 
+                            })())
+                        }
+                    } else {
+                        throw new SyntaxError("defbinding received malform arguments");
+                        
+                    }
+                } ()
+            };
+            let __array__31=[],__elements__29=args;
+            let __BREAK__FLAG__=false;
+            for(let __iter__28 in __elements__29) {
+                __array__31.push(await __for_body__30(__elements__29[__iter__28]));
+                if(__BREAK__FLAG__) {
+                     __array__31.pop();
+                    break;
+                    
+                }
+            }return __array__31;
+             
+        })();
+        return acc
+    }
+},{ "eval_when":{ "compile_time":true
+},"name":"defbinding","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["slice","is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"],"source_name":"core.lisp"
+});
+await Environment.set_global("define_env",async function(...args) {
+    let defs;
+    defs=await (await Environment.get_global("slice"))(args,0);
+    {
+        let acc;
+        let symname;
+        acc=await (async function(){
+             return ["=:progl"] 
+        })();
+        symname=null;
+        await (async function() {
+            let __for_body__34=async function(defset) {
+                (acc).push(await (async function(){
+                     return ["=:defvar",(defset && defset["0"]),(defset && defset["1"])] 
+                })());
+                symname=(defset && defset["0"]);
+                (acc).push(await (async function(){
+                     return ["=:set_prop",await (async function(){
+                         return "=:Environment.global_ctx.scope" 
+                    })(),(""+ await (await Environment.get_global("as_lisp"))(symname)),symname] 
+                })());
+                if (check_true (((defset && defset["2"]) instanceof Object))){
                     return (acc).push(await (async function(){
                          return [["=:set_prop",await (async function(){
                              return "=:Environment.definitions" 
-                        })(),(""+ await (await Environment.get_global("as_lisp"))(symname)+ ""),(defset && defset["2"])]] 
+                        })(),(""+ await (await Environment.get_global("as_lisp"))(symname)+ ""),await (await Environment.get_global("add"))({
+                            core_lang:true
+                        },(defset && defset["2"]))]] 
+                    })())
+                } else {
+                    return (acc).push(await (async function(){
+                         return [["=:set_prop",await (async function(){
+                             return "=:Environment.definitions" 
+                        })(),(""+ await (await Environment.get_global("as_lisp"))(symname)+ ""),{
+                            core_lang:true
+                        }]] 
                     })())
                 }
-            }
-        };
-        let __array__27=[],__elements__25=defs;
-        let __BREAK__FLAG__=false;
-        for(let __iter__24 in __elements__25) {
-            __array__27.push(await __for_body__26(__elements__25[__iter__24]));
-            if(__BREAK__FLAG__) {
-                 __array__27.pop();
-                break;
-                
-            }
-        }return __array__27;
-         
-    })();
-    return acc
-},{ "eval_when":{ "compile_time":true
-},"name":"define","macro":true,"fn_args":"[\"&\" defs]","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["push","as_lisp","is_object?"],"source_name":"core.lisp"
-});
-await Environment.set_global("defbinding",async function(...args) {
-    let binding;
-    let acc;
-    binding=null;
-    acc=await (async function(){
-         return ["=:list"] 
-    })();
-    await (async function() {
-        let __for_body__30=async function(bind_set) {
-            return await async function(){
-                if (check_true (((bind_set instanceof Array)&& (((bind_set && bind_set.length)===2)|| ((bind_set && bind_set.length)===3))&& ((bind_set && bind_set["1"]) instanceof Array)&& ((bind_set && bind_set["1"] && bind_set["1"]["length"])===2)))) {
-                    {
-                        binding=await (async function(){
-                             return ["=:quotel",await (async function(){
-                                 return ["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])] 
-                            })()] 
-                        })();
-                        return (acc).push(await (async function(){
-                             return ["=:defglobal",((await Environment.get_global("*namespace*"))+ "/"+ await (async function(){
-                                let mval;
-                                mval=(bind_set && bind_set["0"]);
-                                if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                                    return await mval["substr"].call(mval,2)
-                                } else {
-                                    return mval
-                                }
-                            })()),await (async function(){
-                                 return ["=:bind",(bind_set && bind_set["1"] && bind_set["1"]["0"]),(bind_set && bind_set["1"] && bind_set["1"]["1"])] 
-                            })(),await (async function(){
-                                if (check_true (((bind_set && bind_set["2"]) instanceof Object))){
-                                    return await (await Environment.get_global("add"))(new Object(),(bind_set && bind_set["2"]),{
-                                        initializer:binding
-                                    })
-                                } else {
-                                    return {
-                                        initializer:binding
-                                    }
-                                }
-                            })()] 
-                        })())
-                    }
-                } else {
-                    throw new SyntaxError("defbinding received malform arguments");
+            };
+            let __array__35=[],__elements__33=defs;
+            let __BREAK__FLAG__=false;
+            for(let __iter__32 in __elements__33) {
+                __array__35.push(await __for_body__34(__elements__33[__iter__32]));
+                if(__BREAK__FLAG__) {
+                     __array__35.pop();
+                    break;
                     
                 }
-            } ()
-        };
-        let __array__31=[],__elements__29=args;
-        let __BREAK__FLAG__=false;
-        for(let __iter__28 in __elements__29) {
-            __array__31.push(await __for_body__30(__elements__29[__iter__28]));
-            if(__BREAK__FLAG__) {
-                 __array__31.pop();
-                break;
-                
-            }
-        }return __array__31;
-         
-    })();
-    return acc
+            }return __array__35;
+             
+        })();
+        return acc
+    }
 },{ "eval_when":{ "compile_time":true
-},"name":"defbinding","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"],"source_name":"core.lisp"
-});
-await Environment.set_global("define_env",async function(...defs) {
-    let acc;
-    let symname;
-    acc=await (async function(){
-         return ["=:progl"] 
-    })();
-    symname=null;
-    await (async function() {
-        let __for_body__34=async function(defset) {
-            (acc).push(await (async function(){
-                 return ["=:defvar",(defset && defset["0"]),(defset && defset["1"])] 
-            })());
-            symname=(defset && defset["0"]);
-            (acc).push(await (async function(){
-                 return ["=:set_prop",await (async function(){
-                     return "=:Environment.global_ctx.scope" 
-                })(),(""+ await (await Environment.get_global("as_lisp"))(symname)),symname] 
-            })());
-            if (check_true (((defset && defset["2"]) instanceof Object))){
-                return (acc).push(await (async function(){
-                     return [["=:set_prop",await (async function(){
-                         return "=:Environment.definitions" 
-                    })(),(""+ await (await Environment.get_global("as_lisp"))(symname)+ ""),await (await Environment.get_global("add"))({
-                        core_lang:true
-                    },(defset && defset["2"]))]] 
-                })())
-            } else {
-                return (acc).push(await (async function(){
-                     return [["=:set_prop",await (async function(){
-                         return "=:Environment.definitions" 
-                    })(),(""+ await (await Environment.get_global("as_lisp"))(symname)+ ""),{
-                        core_lang:true
-                    }]] 
-                })())
-            }
-        };
-        let __array__35=[],__elements__33=defs;
-        let __BREAK__FLAG__=false;
-        for(let __iter__32 in __elements__33) {
-            __array__35.push(await __for_body__34(__elements__33[__iter__32]));
-            if(__BREAK__FLAG__) {
-                 __array__35.pop();
-                break;
-                
-            }
-        }return __array__35;
-         
-    })();
-    return acc
-},{ "eval_when":{ "compile_time":true
-},"name":"define_env","macro":true,"fn_args":"[\"&\" defs]","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["push","as_lisp","is_object?","add"],"source_name":"core.lisp"
+},"name":"define_env","macro":true,"fn_args":"[\"&\" defs]","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["slice","push","as_lisp","is_object?","add"],"source_name":"core.lisp"
 });
 await Environment.set_global("type",async function(x) {
     return await async function(){
@@ -650,14 +665,23 @@ await Environment.set_global("type",async function(x) {
 await Environment.set_global("destructure_list",async function(elems) {
     let idx;
     let acc;
+    let passed_rest;
     let structure;
     let follow_tree;
     idx=0;
     acc=[];
+    passed_rest=0;
     structure=elems;
     follow_tree=async function(elems,_path_prefix) {
         return await async function(){
-            if (check_true ((elems instanceof Array))) {
+            if (check_true ((passed_rest>0))) {
+                {
+                    if (check_true ((passed_rest===1))){
+                        (acc).push(_path_prefix)
+                    };
+                    return passed_rest+=1
+                }
+            } else if (check_true ((elems instanceof Array))) {
                 return await (await Environment.get_global("map"))(async function(elem,idx) {
                     return await follow_tree(elem,await (await Environment.get_global("add"))(_path_prefix,idx))
                 },elems)
@@ -678,6 +702,11 @@ await Environment.set_global("destructure_list",async function(elems) {
                     }return __array__39;
                      
                 })()
+            } else if (check_true (((elems instanceof String || typeof elems==='string')&& ("&"===elems)))) {
+                {
+                    passed_rest+=1;
+                    return (acc).push("*")
+                }
             } else {
                 return (acc).push(_path_prefix)
             }
@@ -685,81 +714,111 @@ await Environment.set_global("destructure_list",async function(elems) {
     };
     await follow_tree(structure,[]);
     return acc
-},{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["is_array?","map","add","is_object?","pairs","push"],"source_name":"core.lisp"
+},{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["push","is_array?","map","add","is_object?","pairs","is_string?"],"source_name":"core.lisp"
 });
-await Environment.set_global("destructuring_bind",async function(bind_vars,expression,...forms) {
-    let binding_vars;
-    let preamble;
-    let allocations;
-    let expr_result_var;
-    let paths;
-    let bound_expression;
-    let acc;
-    binding_vars=bind_vars;
-    preamble=[];
-    allocations=[];
-    expr_result_var=("=:"+ "_expr_"+ await (await Environment.get_global("random_int"))(100000));
-    paths=await (async function(){
-         return await (await Environment.get_global("destructure_list"))(binding_vars) 
-    })();
-    bound_expression=await (async function(){
-        if (check_true (((expression instanceof Array)&& await (await Environment.get_global("starts_with?"))("=:",(expression && expression["0"]))))){
-            {
-                (allocations).push(await (async function(){
-                     return [expr_result_var,expression] 
-                })());
-                return expr_result_var
+await Environment.set_global("destructuring_bind",async function(...args) {
+    let bind_vars;
+    let expression;
+    let forms;
+    bind_vars=(args && args["0"]);
+    expression=(args && args["1"]);
+    forms=await (await Environment.get_global("slice"))(args,2);
+    {
+        let binding_vars;
+        let preamble;
+        let allocations;
+        let passed_rest;
+        let expr_result_var;
+        let paths;
+        let bound_expression;
+        let acc;
+        binding_vars=bind_vars;
+        preamble=[];
+        allocations=[];
+        passed_rest=false;
+        expr_result_var=("=:"+ "_expr_"+ await (await Environment.get_global("random_int"))(100000));
+        paths=await (async function(){
+             return await (await Environment.get_global("destructure_list"))(binding_vars) 
+        })();
+        bound_expression=await (async function(){
+            if (check_true (((expression instanceof Array)&& await (await Environment.get_global("starts_with?"))("=:",(expression && expression["0"]))))){
+                {
+                    (allocations).push(await (async function(){
+                         return [expr_result_var,expression] 
+                    })());
+                    return expr_result_var
+                }
+            } else {
+                return expression
             }
-        } else {
-            return expression
-        }
-    })();
-    acc=await (async function(){
-         return ["=:let"] 
-    })();
-    await (await Environment.get_global("assert"))(((bind_vars instanceof Array)&& await (async function(){
-         return await (await Environment.get_global("is_value?"))(expression) 
-    })()&& await (async function(){
-         return await (await Environment.get_global("is_value?"))(forms) 
-    })()),"destructuring_bind: requires 3 arguments");
-    await (async function() {
-        let __for_body__42=async function(idx) {
-            return (allocations).push(await (async function(){
-                 return [await (await Environment.get_global("resolve_path"))(paths[idx],binding_vars),await (async function(){
-                     return await async function(){
-                        if (check_true ((bound_expression instanceof Object))) {
-                            return await (await Environment.get_global("resolve_path"))(paths[idx],bound_expression)
-                        } else {
-                            return (await (await Environment.get_global("conj"))(await (async function(){
-                                let __array_op_rval__44=bound_expression;
-                                 if (__array_op_rval__44 instanceof Function){
-                                    return await __array_op_rval__44() 
+        })();
+        acc=await (async function(){
+             return ["=:let"] 
+        })();
+        await (await Environment.get_global("assert"))(((bind_vars instanceof Array)&& await (async function(){
+             return await (await Environment.get_global("is_value?"))(expression) 
+        })()&& await (async function(){
+             return await (await Environment.get_global("is_value?"))(forms) 
+        })()),"destructuring_bind: requires 3 arguments");
+        await (async function() {
+            let __for_body__42=async function(idx) {
+                if (check_true (("*"===paths[idx]))){
+                    {
+                        (allocations).push(await (async function(){
+                             return [await (await Environment.get_global("resolve_path"))(paths[await (await Environment.get_global("add"))(idx,1)],binding_vars),await (async function(){
+                                 return await async function(){
+                                    if (check_true ((bound_expression instanceof Object))) {
+                                        return await (await Environment.get_global("slice"))(bound_expression,idx)
+                                    } else {
+                                        return ["=:slice",expression,await (async function(){
+                                             return await (await Environment.get_global("add"))(idx,0) 
+                                        })()]
+                                    }
+                                } () 
+                            })()] 
+                        })());
+                        return __BREAK__FLAG__=true;
+                        return
+                    }
+                } else {
+                    return (allocations).push(await (async function(){
+                         return [await (await Environment.get_global("resolve_path"))(paths[idx],binding_vars),await (async function(){
+                             return await async function(){
+                                if (check_true ((bound_expression instanceof Object))) {
+                                    return await (await Environment.get_global("resolve_path"))(paths[idx],bound_expression)
                                 } else {
-                                    return [__array_op_rval__44]
+                                    return (await (await Environment.get_global("conj"))(await (async function(){
+                                        let __array_op_rval__44=bound_expression;
+                                         if (__array_op_rval__44 instanceof Function){
+                                            return await __array_op_rval__44() 
+                                        } else {
+                                            return [__array_op_rval__44]
+                                        }
+                                    })(),paths[idx])).join(".")
                                 }
-                            })(),paths[idx])).join(".")
-                        }
-                    } () 
-                })()] 
-            })())
-        };
-        let __array__43=[],__elements__41=await (await Environment.get_global("range"))(await (await Environment.get_global("length"))(paths));
-        let __BREAK__FLAG__=false;
-        for(let __iter__40 in __elements__41) {
-            __array__43.push(await __for_body__42(__elements__41[__iter__40]));
-            if(__BREAK__FLAG__) {
-                 __array__43.pop();
-                break;
-                
-            }
-        }return __array__43;
-         
-    })();
-    (acc).push(allocations);
-    acc=await (await Environment.get_global("conj"))(acc,forms);
-    return acc
+                            } () 
+                        })()] 
+                    })())
+                }
+            };
+            let __array__43=[],__elements__41=await (await Environment.get_global("range"))(await (await Environment.get_global("length"))(paths));
+            let __BREAK__FLAG__=false;
+            for(let __iter__40 in __elements__41) {
+                __array__43.push(await __for_body__42(__elements__41[__iter__40]));
+                if(__BREAK__FLAG__) {
+                     __array__43.pop();
+                    break;
+                    
+                }
+            }return __array__43;
+             
+        })();
+        (acc).push(allocations);
+        acc=await (await Environment.get_global("conj"))(acc,forms);
+        return acc
+    }
 },{ "eval_when":{ "compile_time":true
-},"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["random_int","destructure_list","is_array?","starts_with?","push","assert","is_value?","resolve_path","is_object?","join","conj","range","length"],"source_name":"core.lisp"
+},"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["slice","random_int","destructure_list","is_array?","starts_with?","push","assert","is_value?","resolve_path","add","is_object?","join","conj","range","length"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("split_by_recurse",function(token,container) {
@@ -1520,88 +1579,96 @@ await Environment.set_global("identify_symbols",async function(quoted_form,_stat
     return ["=:quote",acc]
 },{ "name":"identify_symbols","fn_args":"(quoted_form _state)","requires":["is_array?","push","identify_symbols","is_string?","starts_with?","as_lisp","describe","is_object?","values"],"source_name":"core.lisp"
 });
-await Environment.set_global("unless",async function(condition,...forms) {
+await Environment.set_global("unless",async function(...args) {
+    let condition;
+    let forms;
+    condition=(args && args["0"]);
+    forms=await (await Environment.get_global("slice"))(args,1);
     return ["=:if",["=:not",condition],["=:do",].concat(forms)]
 },{ "eval_when":{ "compile_time":true
-},"name":"unless","macro":true,"fn_args":"(condition \"&\" forms)","description":"opposite of if, if the condition is false then the forms are evaluated","usage":["condition:array","forms:array"],"tags":["if","not","ifnot","logic","conditional"],"requires":[],"source_name":"core.lisp"
+},"name":"unless","macro":true,"fn_args":"(condition \"&\" forms)","description":"opposite of if, if the condition is false then the forms are evaluated","usage":["condition:array","forms:array"],"tags":["if","not","ifnot","logic","conditional"],"requires":["slice"],"source_name":"core.lisp"
 });
-await Environment.set_global("use_quoted_initializer",async function(...forms) {
-    let insert_initializer;
-    insert_initializer=async function(form) {
-        let meta=form[3];
-        ;
-        if (check_true ((null==form[3]))){
-            meta=await async function(){
-                form[3]=new Object();
-                return form;
-                
-            }()
-        };
-        return await async function(){
-            if (check_true (((meta instanceof Array)&& (await (await Environment.get_global("resolve_path"))([3,1],form) instanceof Object)))) {
-                {
-                    await (await Environment.get_global("set_path"))([3,1,"initializer"],form,await (async function(){
-                         return ["=:quotel",await (async function(){
-                             return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
-                        })()] 
-                    })());
-                    return form
-                }
-            } else if (check_true ((meta instanceof Object))) {
-                {
-                    await async function(){
-                        let __target_obj__98=(form && form["3"]);
-                        __target_obj__98["initializer"]=await (async function(){
+await Environment.set_global("use_quoted_initializer",async function(...args) {
+    let forms;
+    forms=await (await Environment.get_global("slice"))(args,0);
+    {
+        let insert_initializer;
+        insert_initializer=async function(form) {
+            let meta=form[3];
+            ;
+            if (check_true ((null==form[3]))){
+                meta=await async function(){
+                    form[3]=new Object();
+                    return form;
+                    
+                }()
+            };
+            return await async function(){
+                if (check_true (((meta instanceof Array)&& (await (await Environment.get_global("resolve_path"))([3,1],form) instanceof Object)))) {
+                    {
+                        await (await Environment.get_global("set_path"))([3,1,"initializer"],form,await (async function(){
                              return ["=:quotel",await (async function(){
                                  return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
                             })()] 
-                        })();
-                        return __target_obj__98;
-                        
-                    }();
-                    return form
+                        })());
+                        return form
+                    }
+                } else if (check_true ((meta instanceof Object))) {
+                    {
+                        await async function(){
+                            let __target_obj__98=(form && form["3"]);
+                            __target_obj__98["initializer"]=await (async function(){
+                                 return ["=:quotel",await (async function(){
+                                     return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
+                                })()] 
+                            })();
+                            return __target_obj__98;
+                            
+                        }();
+                        return form
+                    }
+                } else {
+                    {
+                        await (await Environment.get_global("warn"))("use_quoted_initializer: cannot quote ",await (async function(){
+                            if (check_true (((form && form["2"]) instanceof String || typeof (form && form["2"])==='string'))){
+                                return (form && form["2"])
+                            } else {
+                                return form
+                            }
+                        })());
+                        return form
+                    }
                 }
-            } else {
-                {
-                    await (await Environment.get_global("warn"))("use_quoted_initializer: cannot quote ",await (async function(){
-                        if (check_true (((form && form["2"]) instanceof String || typeof (form && form["2"])==='string'))){
-                            return (form && form["2"])
-                        } else {
-                            return form
-                        }
-                    })());
-                    return form
-                }
-            }
-        } ()
-    };
-    return await (async function() {
-        let __for_body__101=async function(form) {
-            form=await (async function(){
-                 return await (await Environment.get_global("macroexpand"))(form) 
-            })();
-            if (check_true (((form instanceof Array)&& ((form && form["0"])==="=:defglobal")))){
-                {
-                    return await insert_initializer(form)
-                }
-            } else {
-                return form
-            }
+            } ()
         };
-        let __array__102=[],__elements__100=forms;
-        let __BREAK__FLAG__=false;
-        for(let __iter__99 in __elements__100) {
-            __array__102.push(await __for_body__101(__elements__100[__iter__99]));
-            if(__BREAK__FLAG__) {
-                 __array__102.pop();
-                break;
-                
-            }
-        }return __array__102;
-         
-    })()
+        return await (async function() {
+            let __for_body__101=async function(form) {
+                form=await (async function(){
+                     return await (await Environment.get_global("macroexpand"))(form) 
+                })();
+                if (check_true (((form instanceof Array)&& ((form && form["0"])==="=:defglobal")))){
+                    {
+                        return await insert_initializer(form)
+                    }
+                } else {
+                    return form
+                }
+            };
+            let __array__102=[],__elements__100=forms;
+            let __BREAK__FLAG__=false;
+            for(let __iter__99 in __elements__100) {
+                __array__102.push(await __for_body__101(__elements__100[__iter__99]));
+                if(__BREAK__FLAG__) {
+                     __array__102.pop();
+                    break;
+                    
+                }
+            }return __array__102;
+             
+        })()
+    }
 },{ "eval_when":{ "compile_time":true
-},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"source_name":"core.lisp"
+},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("random_int",function(...args) {
@@ -3016,7 +3083,9 @@ await Environment.set_global("sort",async function(elems,options) {
     return await elems["sort"].call(elems,sort_fn)
 },{ "name":"sort","fn_args":"(elems options)","description":["=:+","Given an array of elements, and an optional options object, returns a new sorted array.","With no options provided, the elements are sorted in ascending order.  If the key ","reversed is set to true in options, then the elements are reverse sorted. ","<br>","An optional synchronous function can be provided (defined by the comparitor key) which is expected to take ","two values and return the difference between them as can be used by the sort method of ","JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array ","which will be used to bind (destructure) the a and b values to be compared to nested values in the elements ","of the array.","<br>","<br>","Options:<br>","reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then ","this key cannot be present, as the comparitor should deal with the sorting order.<br>","key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period ","separated values.  If it is an array, each component of the array is a successive path value in the element to be ","sorted. <br>","comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take ","two arguments, and return the difference between the arguments, either a positive or negative."],"usage":["elements:array","options:object?"],"tags":["array","sorting","order","reverse","comparison","objects"],"requires":["is_object?","is_function?","is_string?","assert","is_array?","not","path_to_js_syntax","get_object_path","conj"],"source_name":"core.lisp"
 });
-await Environment.set_global("and*",async function(...vals) {
+await Environment.set_global("and*",async function(...args) {
+    let vals;
+    vals=await (await Environment.get_global("slice"))(args,0);
     if (check_true (((vals && vals.length)>0))){
         {
             let rval=true;
@@ -3048,9 +3117,11 @@ await Environment.set_global("and*",async function(...vals) {
             return rval
         }
     }
-},{ "name":"and*","fn_args":"[\"&\" vals]","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["not","is_value?"],"source_name":"core.lisp"
+},{ "name":"and*","fn_args":"[\"&\" vals]","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["slice","not","is_value?"],"source_name":"core.lisp"
 });
-await Environment.set_global("or*",async function(...vals) {
+await Environment.set_global("or*",async function(...args) {
+    let vals;
+    vals=await (await Environment.get_global("slice"))(args,0);
     if (check_true (((vals && vals.length)>0))){
         {
             let rval=false;
@@ -3080,35 +3151,38 @@ await Environment.set_global("or*",async function(...vals) {
             return rval
         }
     }
-},{ "name":"or*","fn_args":"[\"&\" vals]","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["is_value?"],"source_name":"core.lisp"
+},{ "name":"or*","fn_args":"[\"&\" vals]","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["slice","is_value?"],"source_name":"core.lisp"
 });
 await Environment.set_global("either",async function(...args) {
-    let rval;
-    rval=null;
-    await (async function() {
-        let __for_body__232=async function(arg) {
-            rval=arg;
-            if (check_true ((await (await Environment.get_global("not"))((undefined===arg))&& await (await Environment.get_global("not"))((null===arg))))){
-                {
-                    return __BREAK__FLAG__=true;
-                    return
+    args=await (await Environment.get_global("slice"))(args,0);
+    {
+        let rval;
+        rval=null;
+        await (async function() {
+            let __for_body__232=async function(arg) {
+                rval=arg;
+                if (check_true ((await (await Environment.get_global("not"))((undefined===arg))&& await (await Environment.get_global("not"))((null===arg))))){
+                    {
+                        return __BREAK__FLAG__=true;
+                        return
+                    }
                 }
-            }
-        };
-        let __array__233=[],__elements__231=args;
-        let __BREAK__FLAG__=false;
-        for(let __iter__230 in __elements__231) {
-            __array__233.push(await __for_body__232(__elements__231[__iter__230]));
-            if(__BREAK__FLAG__) {
-                 __array__233.pop();
-                break;
-                
-            }
-        }return __array__233;
-         
-    })();
-    return rval
-},{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["not"],"source_name":"core.lisp"
+            };
+            let __array__233=[],__elements__231=args;
+            let __BREAK__FLAG__=false;
+            for(let __iter__230 in __elements__231) {
+                __array__233.push(await __for_body__232(__elements__231[__iter__230]));
+                if(__BREAK__FLAG__) {
+                     __array__233.pop();
+                    break;
+                    
+                }
+            }return __array__233;
+             
+        })();
+        return rval
+    }
+},{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["slice","not"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("sanitize_js_ref_name",function(symname) {
@@ -3291,10 +3365,12 @@ await Environment.set_global("success",await (async function(){
     }] 
 })(),requires:["defclog"],source_name:"core.lisp"
 });
-await Environment.set_global("in_background",async function(...forms) {
+await Environment.set_global("in_background",async function(...args) {
+    let forms;
+    forms=await (await Environment.get_global("slice"))(args,0);
     return ["=:new","=:Promise",["=:fn",["=:resolve","=:reject"],["=:progn",["=:resolve",true],].concat(forms)]]
 },{ "eval_when":{ "compile_time":true
-},"name":"in_background","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","Given a form or forms, evaluates the forms in the background, with ","the function returning true immediately prior to starting the forms."],"usage":["forms:*"],"tags":["eval","background","promise","evaluation"],"requires":[],"source_name":"core.lisp"
+},"name":"in_background","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","Given a form or forms, evaluates the forms in the background, with ","the function returning true immediately prior to starting the forms."],"usage":["forms:*"],"tags":["eval","background","promise","evaluation"],"requires":["slice"],"source_name":"core.lisp"
 });
 await Environment.set_global("set_compiler",async function(compiler_function) {
     await Environment["set_compiler"].call(Environment,compiler_function);
@@ -3312,74 +3388,78 @@ await Environment.set_global("show",async function(thing) {
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"],"source_name":"core.lisp"
 });
 await Environment.set_global("export_symbols",async function(...args) {
-    let acc;
-    let numargs;
-    let idx;
-    acc=await (async function(){
-         return ["=:javascript","export","{"] 
-    })();
-    numargs=await (await Environment.get_global("length"))(args);
-    idx=0;
-    await (async function() {
-        let __for_body__244=async function(symname) {
-            await async function(){
-                if (check_true (((symname instanceof Array)&& ((symname && symname.length)===2)))) {
-                    {
+    args=await (await Environment.get_global("slice"))(args,0);
+    {
+        let acc;
+        let numargs;
+        let idx;
+        acc=await (async function(){
+             return ["=:javascript","export","{"] 
+        })();
+        numargs=await (await Environment.get_global("length"))(args);
+        idx=0;
+        await (async function() {
+            let __for_body__244=async function(symname) {
+                await async function(){
+                    if (check_true (((symname instanceof Array)&& ((symname && symname.length)===2)))) {
+                        {
+                            (acc).push(await (async function(){
+                                let mval;
+                                mval=(symname && symname["0"]);
+                                if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
+                                    return await mval["substr"].call(mval,2)
+                                } else {
+                                    return mval
+                                }
+                            })());
+                            (acc).push(" as ");
+                            return (acc).push(await (async function(){
+                                let mval;
+                                mval=(symname && symname["1"]);
+                                if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
+                                    return await mval["substr"].call(mval,2)
+                                } else {
+                                    return mval
+                                }
+                            })())
+                        }
+                    } else if (check_true ((symname instanceof String || typeof symname==='string'))) {
                         (acc).push(await (async function(){
                             let mval;
-                            mval=(symname && symname["0"]);
-                            if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                                return await mval["substr"].call(mval,2)
-                            } else {
-                                return mval
-                            }
-                        })());
-                        (acc).push(" as ");
-                        return (acc).push(await (async function(){
-                            let mval;
-                            mval=(symname && symname["1"]);
+                            mval=symname;
                             if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
                                 return await mval["substr"].call(mval,2)
                             } else {
                                 return mval
                             }
                         })())
+                    } else {
+                        throw new SyntaxError("Invalid argument for export");
+                        
                     }
-                } else if (check_true ((symname instanceof String || typeof symname==='string'))) {
-                    (acc).push(await (async function(){
-                        let mval;
-                        mval=symname;
-                        if (check_true (((mval instanceof String || typeof mval==='string')&& await (await Environment.get_global("starts_with?"))("=:",mval)))){
-                            return await mval["substr"].call(mval,2)
-                        } else {
-                            return mval
-                        }
-                    })())
-                } else {
-                    throw new SyntaxError("Invalid argument for export");
+                } ();
+                idx+=1;
+                if (check_true ((idx<numargs))){
+                    return (acc).push(", ")
+                }
+            };
+            let __array__245=[],__elements__243=args;
+            let __BREAK__FLAG__=false;
+            for(let __iter__242 in __elements__243) {
+                __array__245.push(await __for_body__244(__elements__243[__iter__242]));
+                if(__BREAK__FLAG__) {
+                     __array__245.pop();
+                    break;
                     
                 }
-            } ();
-            idx+=1;
-            if (check_true ((idx<numargs))){
-                return (acc).push(", ")
-            }
-        };
-        let __array__245=[],__elements__243=args;
-        let __BREAK__FLAG__=false;
-        for(let __iter__242 in __elements__243) {
-            __array__245.push(await __for_body__244(__elements__243[__iter__242]));
-            if(__BREAK__FLAG__) {
-                 __array__245.pop();
-                break;
-                
-            }
-        }return __array__245;
-         
-    })();
-    return (acc).push("}")
+            }return __array__245;
+             
+        })();
+        (acc).push("}");
+        return acc
+    }
 },{ "eval_when":{ "compile_time":true
-},"name":"export_symbols","macro":true,"fn_args":"[\"&\" args]","requires":["length","is_array?","push","is_string?","starts_with?"],"source_name":"core.lisp"
+},"name":"export_symbols","macro":true,"fn_args":"[\"&\" args]","usage":["arg0:string|array","argN:string|array"],"description":["=:+","The export_symbols macro facilitates the Javascript module export functionality.  ","To make available defined lisp symbols from the current module the export_symbols ","macro is called with it's arguments being either the direct symbols or, if an ","argument is an array, the first is the defined symbol within the lisp environment ","or current module and the second element in the array is the name to be exported ","as.  For example: <br> ","(export lisp_symbol1 lisp_symbol2) ;; exports lisp_symbol1 and lisp_symbol2 directly. <br>","(export (lisp_symbol1 external_name)) ;; exports lisp_symbol1 as 'external_name`. <br>","(export (initialize default) symbol2) ;; exports initialize as default and symbol2 as itself."],"tags":["env","enviroment","module","export","import","namespace","scope"],"requires":["slice","length","is_array?","push","is_string?","starts_with?"],"source_name":"core.lisp"
 });
 await Environment.set_global("register_feature",async function(feature) {
     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(feature,(await Environment.get_global("*env_config*.features")))))){
@@ -3450,18 +3530,27 @@ await Environment.set_global("use_ns",async function(name) {
 },{ "eval_when":{ "compile_time":true
 },"name":"use_ns","macro":true,"fn_args":"(name)","usage":["name:symbol"],"description":"Sets the current namespace to the provided name.  Returns the name of the new namespace if succesful, otherwise an Eval error is thrown","tags":["namespace","environment","scope","change","set"],"requires":[],"source_name":"core.lisp"
 });
-await Environment.set_global("bind_and_call",async function(target_object,this_object,method,...args) {
-    let boundf=await (await Environment.get_global("bind"))(target_object[method],this_object);
-    ;
-    if (check_true (boundf)){
-        return await (async function(){
-            return ( boundf).apply(this,args)
-        })()
-    } else {
-        throw new Error("unable to bind target_object");
-        
+await Environment.set_global("bind_and_call",async function(...args) {
+    let target_object;
+    let this_object;
+    let method;
+    target_object=(args && args["0"]);
+    this_object=(args && args["1"]);
+    method=(args && args["2"]);
+    args=await (await Environment.get_global("slice"))(args,3);
+    {
+        let boundf=await (await Environment.get_global("bind"))(target_object[method],this_object);
+        ;
+        if (check_true (boundf)){
+            return await (async function(){
+                return ( boundf).apply(this,args)
+            })()
+        } else {
+            throw new Error("unable to bind target_object");
+            
+        }
     }
-},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["bind"],"source_name":"core.lisp"
+},{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["slice","bind"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("clamp",function(value,min,max) {
@@ -3530,95 +3619,98 @@ await Environment.set_global("fetch_text",async function(url) {
 },{ "name":"fetch_text","fn_args":"(url)","description":["=:+","Given a url, returns the text content of that url. ","This function is a helper function for the import macro."],"usage":["url:string"],"tags":["fetch","text","string"],"requires":[],"source_name":"core.lisp"
 });
 await Environment.set_global("import",async function(...args) {
-    let filespec;
-    let is_url_ques_;
-    let js_mode;
-    let url_comps;
-    let js_mod;
-    let load_fn;
-    let target_symbols;
-    let target_path;
-    let acc;
-    filespec=await (await Environment.get_global("last"))(args);
-    is_url_ques_=await (await Environment.get_global("contains?"))("://",filespec);
-    js_mode=null;
-    url_comps=null;
-    js_mod=null;
-    load_fn=null;
-    target_symbols=await (async function(){
-        if (check_true (((args && args.length)>1))){
-            return (args && args["0"])
-        }
-    })();
-    target_path=null;
-    acc=[];
-    await async function(){
-        if (check_true ((is_url_ques_|| await (await Environment.get_global("not"))((null==location))))) {
-            {
-                load_fn="fetch_text";
-                url_comps=await (async function(){
-                     return await async function(){
-                        if (check_true (is_url_ques_)) {
-                            return new URL(filespec)
-                        } else if (check_true (await (await Environment.get_global("starts_with?"))("/",filespec))) {
-                            return new URL((""+ location["origin"]+ filespec))
-                        } else {
-                            return new URL((""+ location["href"]+ "/"+ filespec))
-                        }
-                    } () 
-                })();
-                return target_path=(url_comps && url_comps["pathname"])
+    args=await (await Environment.get_global("slice"))(args,0);
+    {
+        let filespec;
+        let is_url_ques_;
+        let js_mode;
+        let url_comps;
+        let js_mod;
+        let load_fn;
+        let target_symbols;
+        let target_path;
+        let acc;
+        filespec=await (await Environment.get_global("last"))(args);
+        is_url_ques_=await (await Environment.get_global("contains?"))("://",filespec);
+        js_mode=null;
+        url_comps=null;
+        js_mod=null;
+        load_fn=null;
+        target_symbols=await (async function(){
+            if (check_true (((args && args.length)>1))){
+                return (args && args["0"])
             }
-        } else if (check_true (await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")|| (await Environment["get_global"].call(Environment,"read_text_file",ReferenceError)===ReferenceError))))) {
-            {
-                load_fn="read_text_file";
-                target_path=filespec
+        })();
+        target_path=null;
+        acc=[];
+        await async function(){
+            if (check_true ((is_url_ques_|| await (await Environment.get_global("not"))((null==location))))) {
+                {
+                    load_fn="fetch_text";
+                    url_comps=await (async function(){
+                         return await async function(){
+                            if (check_true (is_url_ques_)) {
+                                return new URL(filespec)
+                            } else if (check_true (await (await Environment.get_global("starts_with?"))("/",filespec))) {
+                                return new URL((""+ location["origin"]+ filespec))
+                            } else {
+                                return new URL((""+ location["href"]+ "/"+ filespec))
+                            }
+                        } () 
+                    })();
+                    return target_path=(url_comps && url_comps["pathname"])
+                }
+            } else if (check_true (await (await Environment.get_global("not"))(((typeof "read_text_file"==="undefined")|| (await Environment["get_global"].call(Environment,"read_text_file",ReferenceError)===ReferenceError))))) {
+                {
+                    load_fn="read_text_file";
+                    return target_path=filespec
+                }
+            } else {
+                throw new EvalError(("unable to handle import of "+ filespec));
+                
+            }
+        } ();
+        return await async function(){
+            if (check_true ((await (await Environment.get_global("ends_with?"))(".lisp",target_path)|| await (await Environment.get_global("ends_with?"))(".juno",target_path)))) {
+                return ["=:evaluate",[await (async function(){
+                     return ("=:"+ load_fn) 
+                })(),filespec],"=:nil",["=:to_object",[["source_name",filespec],["throw_on_error",true]]]]
+            } else if (check_true (await (await Environment.get_global("ends_with?"))(".json",target_path))) {
+                return ["=:evaluate",["=:JSON.parse",[await (async function(){
+                     return ("=:"+ load_fn) 
+                })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec],["throw_on_error",true]]]]
+            } else if (check_true ((await (await Environment.get_global("ends_with?"))(".js",target_path)|| (await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")|| (await Environment["get_global"].call(Environment,"Deno",ReferenceError)===ReferenceError)))&& await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
+                {
+                    return await async function(){
+                        if (check_true ((await (await Environment.get_global("length"))(target_symbols)===0))) {
+                            throw new SyntaxError("imports of javascript sources require binding symbols as the first argument");
+                            
+                        } else if (check_true ((target_symbols instanceof Array))) {
+                            {
+                                (acc).push(await (async function(){
+                                     return ["=:defglobal",(target_symbols && target_symbols["0"]),["=:dynamic_import",filespec],{ "is_import":true,"initializer":["=:quotem",["=:import",].concat(args)]
+                                }] 
+                            })());
+                            (acc).push(await (async function(){
+                                 return ["=:set_path",["imports",["=:+",await (await Environment.get_global("current_namespace"))(),"/",["=:desym",(target_symbols && target_symbols["0"])]]],"=:*env_config*",["=:to_object",[["symbol",["=:desym",(target_symbols && target_symbols["0"])]],["namespace",await (await Environment.get_global("current_namespace"))()],["location",filespec]]]] 
+                            })());
+                            (acc).push(await (async function(){
+                                 return ["=:when",["=:prop",(target_symbols && target_symbols["0"]),"initializer"],["=:->",(target_symbols && target_symbols["0"]),"initializer","=:Environment"]] 
+                            })());
+                            (acc).push((target_symbols && target_symbols["0"]));
+                            return ["=:iprogn",].concat(acc)
+                        }
+                    }
+                } ()
             }
         } else {
-            throw new EvalError(("unable to handle import of "+ filespec));
+            throw new EvalError("invalid extension: needs to be .lisp, .js, .json or .juno");
             
         }
-    } ();
-    return await async function(){
-        if (check_true ((await (await Environment.get_global("ends_with?"))(".lisp",target_path)|| await (await Environment.get_global("ends_with?"))(".juno",target_path)))) {
-            return ["=:evaluate",[await (async function(){
-                 return ("=:"+ load_fn) 
-            })(),filespec],"=:nil",["=:to_object",[["source_name",filespec],["throw_on_error",true]]]]
-        } else if (check_true (await (await Environment.get_global("ends_with?"))(".json",target_path))) {
-            return ["=:evaluate",["=:JSON.parse",[await (async function(){
-                 return ("=:"+ load_fn) 
-            })(),filespec]],"=:nil",["=:to_object",[["json_in",true],["source_name",filespec],["throw_on_error",true]]]]
-        } else if (check_true ((await (await Environment.get_global("ends_with?"))(".js",target_path)|| (await (await Environment.get_global("not"))(((typeof "Deno"==="undefined")|| (await Environment["get_global"].call(Environment,"Deno",ReferenceError)===ReferenceError)))&& await (await Environment.get_global("ends_with?"))(".ts",target_path))))) {
-            {
-                return await async function(){
-                    if (check_true ((await (await Environment.get_global("length"))(target_symbols)===0))) {
-                        throw new SyntaxError("imports of javascript sources require binding symbols as the first argument");
-                        
-                    } else if (check_true ((target_symbols instanceof Array))) {
-                        {
-                            (acc).push(await (async function(){
-                                 return ["=:defglobal",(target_symbols && target_symbols["0"]),["=:dynamic_import",filespec],{ "is_import":true,"initializer":["=:quotem",["=:import",].concat(args)]
-                            }] 
-                        })());
-                        (acc).push(await (async function(){
-                             return ["=:set_path",["imports",["=:+",await (await Environment.get_global("current_namespace"))(),"/",["=:desym",(target_symbols && target_symbols["0"])]]],"=:*env_config*",["=:to_object",[["symbol",["=:desym",(target_symbols && target_symbols["0"])]],["namespace",await (await Environment.get_global("current_namespace"))()],["location",filespec]]]] 
-                        })());
-                        (acc).push(await (async function(){
-                             return ["=:when",["=:prop",(target_symbols && target_symbols["0"]),"initializer"],["=:->",(target_symbols && target_symbols["0"]),"initializer","=:Environment"]] 
-                        })());
-                        (acc).push((target_symbols && target_symbols["0"]));
-                        return ["=:iprogn",].concat(acc)
-                    }
-                }
-            } ()
-        }
-    } else {
-        throw new EvalError("invalid extension: needs to be .lisp, .js, .json or .juno");
-        
-    }
-} ()
+    } ()
+}
 },{ "eval_when":{ "compile_time":true
-},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Dynamically load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS Remote: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\")<br>","JS/TS Local: (import (logger) \"/absolute/path/to/library.js\")<br>","<br>","Note that this is a dynamic import. "],"tags":["compile","read","io","file","get","fetch","load","dynamic_import"],"usage":["binding_symbols:array","filename:string"],"requires":["last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"],"source_name":"core.lisp"
+},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Dynamically load the contents of the specified source file (including path) into the Lisp environment ","in the current namespace.<br>","If the file is a Lisp source, it will be evaluated as part of the load and the final result returned.","If the file is a JS source, it will be loaded into the environment and a handle returned.","When importing non-Lisp sources (javascript or typescript), import requires a binding symbol in an array ","as the first argument.<br","The allowed extensions are .lisp, .js, .json, .juno, and if the JS platform is Deno, ",".ts is allowed.  Otherwise an EvalError will be thrown due to a non-handled file type.","Examples:<br>","Lisp/JSON: (import \"tests/compiler_tests.lisp\")<br>","JS/TS Remote: (import (logger) \"https://deno.land/std@0.148.0/log/mod.ts\")<br>","JS/TS Local: (import (logger) \"/absolute/path/to/library.js\")<br>","<br>","Note that this is a dynamic import. "],"tags":["compile","read","io","file","get","fetch","load","dynamic_import"],"usage":["binding_symbols:array","filename:string"],"requires":["slice","last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"],"source_name":"core.lisp"
 });
 await Environment.set_global("system_date_format",{
     weekday:"long",year:"numeric",month:"2-digit",day:"2-digit",hour:"numeric",minute:"numeric",second:"numeric",fractionalSecondDigits:3,hourCycle:"h24",hour12:false,timeZoneName:"short"
@@ -3966,16 +4058,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__273=async function(req) {
                                             {
-                                                let _expr_50722;
+                                                let _expr_61748;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_50722=await (async function(){
+                                                _expr_61748=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_50722 && _expr_50722["0"]);
-                                                req_ns=(_expr_50722 && _expr_50722["1"]);
-                                                explicit=(_expr_50722 && _expr_50722["2"]);
+                                                req_sym=(_expr_61748 && _expr_61748["0"]);
+                                                req_ns=(_expr_61748 && _expr_61748["1"]);
+                                                explicit=(_expr_61748 && _expr_61748["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4078,13 +4170,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_73821;
+                    let _expr_12403;
                     let nspace;
-                    _expr_73821=await (async function(){
+                    _expr_12403=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_73821 && _expr_73821["0"]);
-                    nspace=(_expr_73821 && _expr_73821["1"]);
+                    sym=(_expr_12403 && _expr_12403["0"]);
+                    nspace=(_expr_12403 && _expr_12403["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4647,10 +4739,12 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
     },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"],"source_name":"core.lisp"
 })
 };
-await Environment.set_global("progc",async function(...forms) {
+await Environment.set_global("progc",async function(...args) {
+    let forms;
+    forms=await (await Environment.get_global("slice"))(args,0);
     return ["=:try",["=:progn",].concat(forms),["=:catch","=:Error",["=:e"],["=:log","=:e.message"]]]
 },{ "eval_when":{ "compile_time":true
-},"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"],"requires":[],"source_name":"core.lisp"
+},"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"],"requires":["slice"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("reverse_string",function(text) {

@@ -174,6 +174,224 @@
               })
 
       
+      (defun_sync stat (filepath)
+         (Deno.lstatSync filepath)
+         {
+           description: (+ "<br><br>Given a path to a file as a string, returns a FileInfo object, which "
+                           "will contain the results of the `stat()` system "
+                           "call:```isFile:Boolean\nisDirectory:Boolean\nisSymlink:Boolean" 
+                           "\nsize:Number\nmtime:Date\natime:Date\nbirthtime:Date\ndev:Number\n" 
+                           "ino:Number\nmode:Number\nnlink:Number\nuid:Number\ngid:Number\nrdev:Number\n" 
+                           "blksize:Number\nblocks:Number```<br> ")
+           usage: ["filepath:string"]
+           tags: ["file" "status" "information" "io" "filesystem"]
+           })
+      (defun_sync is_file? (filepath)
+         (try
+            (prop (stat filepath) `isFile)
+            (catch Error (e)
+               false))
+         {
+             description: "Returns true if the provided file path is a file object, otherwise false."
+             usage: ["filepath:string"]
+             tags: ["file" "status" "information" "filesystem"]
+         })
+      
+      (defun_sync is_dir? (filepath)
+         (try
+            (prop (stat filepath) `isDirectory)
+            (catch Error (e)
+               false))
+         {
+             description: "Returns true if the provided file path is a file object, otherwise false."
+             usage: ["filepath:string"]
+             tags: ["file" "directory" "status" "information" "filesystem"]
+         })
+      
+      (defun_sync is_symlink? (filepath)
+         (try
+            (prop (stat filepath) `isSymLink)
+            (catch Error (e)
+               false))
+         {
+             description: "Returns true if the provided file path is a symbolic link, otherwise false."
+             usage: ["filepath:string"]
+             tags: ["file" "directory" "status" "information" "filesystem"]
+         })
+      
+      (defun_sync filesize (filepath)
+         (try
+            (aif (stat filepath)
+                 (if it.isFile
+                    (prop it `size)
+                    nil))
+            (catch Error (e)
+               nil))
+         {
+           description: (+ "If the provided path is a file, returns the size of the file.  "
+                           "Otherwise if the path cannot be found, or the object pointed to by the path "
+                           "isn\'t a file, `nil` will be returned.´ ")
+           usage: ["filepath:string"]
+           tags: ["file" "directory" "status" "information" "filesystem"]
+         })
+      
+      
+      
+      (defun_sync delete_file (filepath)
+         (try 
+            (let
+               ((fd (stat filepath)))
+               (if (or fd.isFile fd.isSymlink)
+                   (progn
+                      (Deno.removeSync filepath)
+                      true)
+                   false))
+            (catch Error (e)
+               false))
+        {
+          description: (+ "<br><br>Given a path to a file or symbolic link, the function will remove the entry "
+                          "and return true if no errors are encountered.  Otherwise, if the target of the "
+                          "path isn\'t a file or link, or the file doesn\'t exist, returns false.<br> ")
+          usage: ["filepath:string"]
+          tags: ["remove" "file" "status" "information" "filesystem"]
+        })
+         
+      (defun_sync delete_dir (dirpath)
+        (if (is_dir? dirpath)
+         (try 
+            (progn
+               (Deno.removeSync dirpath { `recursive: true } )
+               true)
+            (catch Error (e)
+               false))
+         false)
+        {
+          description: (+ "<br><br>Given a path to a directory, the function will remove the directory and any "
+                          "content and return true if no errors are encountered.  Otherwise, if the target of "
+                          "the path isn\'t a file or the file doesn\'t exist, returns false.<br> ")
+          usage: ["dirpath:string"]
+          tags: ["remove" "directory" "status" "information" "filesystem"]
+        })
+      
+      (defun list_files (dirpath)
+        (if (is_dir? dirpath)
+            (try
+               (let
+                  ((entries []))
+                  (for_with (entry (Deno.readDir dirpath))
+                     (push entries entry))
+                  entries)
+               (catch Error (e)
+                  []))
+            [])
+        {
+          description: (+ "<br><br>The list files returns a list of DirEntry objects for the provided "
+                          "directory.  Otherwise if the path isn\'t a directory or the path doesn\'t exist, "
+                          "it will return an empty array. ")
+
+          usage: ["dirpath:string"]
+          tags: ["directory" "status" "information" "filesystem"]
+        })
+      
+      (defun dir_tree (dirpath options)
+        (let
+           ((base_dir dirpath)
+            (results [])
+            (options (or options {}))
+            (reducer options.reducer)
+            (traverse (fn (path)
+                          (progn
+                             (for_each (entry (list_files path))
+                                (progn
+                                   (set_prop entry
+                                      `name
+                                      (+ path "/" entry.name))
+                                   (if reducer
+                                      (if (reducer entry)
+                                          (push results
+                                             entry))
+                                      (push results
+                                         entry))
+                                   (if entry.isDirectory
+                                      (traverse entry.name))))))))
+           (when (is_dir? dirpath)
+              (traverse dirpath))
+           results)
+        {
+          `description: (+ "<br><br>The `dir_tree` function recursively follows a directory hierarchy and "
+                           "returns a non-nested structure with the contents of the directory and the "
+                           "contained sub-directories.  The returned value is an array containing "
+                           "`DirEntry` objects with the keys  `name`, `isFile`, `isDirectory` and "
+                           "`isSymlink`.  <br>Each `DirEntry` name value will be the full path to the found "
+                           "entity: the provided base path to the dir_tree function plus the position of "
+                           "the entity in the sub directory structure.<br>An optional `reducer` function "
+                           "can be provided to the dir_tree function in options, which will be called with "
+                           "the signature `(entry)`.  If the reducer function returns a true value for the "
+                           "entry when called, the entry will be included in the returned results.  If the "
+                           "reducer returns false, nil or undefined, the entry will be excluded from the "
+                           "final results.  <br><br>#### Example <br><br>Find all files that have the "
+                           "\".pdf\" extension in a subfolder:```(dir_tree \"/tmp\"\n          {\n             "
+                           "`reduce: (function (entry)\n                              (and entry.isFile\n    "
+                           "                            (ends_with? \".pdf\" entry.name)))\n         "
+                           "})```<br><br><br> ")
+          `usage: ["base_path:string" "options:?object"]
+          `tags: ["directory" "folder" "recursive" "subdirectory" "reduce"]
+        })
+      
+      (defun make_temp_dir (opts)
+         (-> Deno `makeTempDir opts)
+         {
+           description: (+ "<br><br>Makes a temporary directory in the default directory and returns the "
+                           "path as a string.  See also `with_temp_dir`. <br><br>#### Options "
+                           "<br><br>prefix:string - The prefix given to the start of the final temp "
+                           "directory name in the constructed path.<br>suffix:string - The suffix given to "
+                           "the end of the final temp directory name.<br>dir:string - The explicit path in "
+                           "which to construct the temp directory.<br> ")
+
+           usage: ["opts:options"]
+           tags: ["temp" "directory" "tmp" "filesystem"]
+         })
+         
+      ;; reference sys directly in macros since the compiled namespace
+      ;; probably isn't sys
+      (defmacro with_temp_dir ((tmp_path) `& body_forms)
+         (progn
+            (console.log "with_tmp_dir: " body_forms)
+         `(let
+            ((,#tmp_path (sys/make_temp_dir))
+             (caught_error nil)
+             (rval nil))
+            (try
+               (= rval 
+                  (progn
+                     ,@body_forms))
+               (catch Error (e)
+                  (progn
+                     (= caught_error e))))
+            (when (is_dir? ,#tmp_path)
+               (sys/delete_dir ,#tmp_path))
+            (if caught_error
+               (throw caught_error)
+               rval)))
+         {
+           description: (+ "The `with_temp_dir` macro creates a temporary named handle which is "
+                            "bound to the `tmp_path` argument as a first argument to the macro.  The "
+                            "remaining forms (macro arguments) are evaluated in a `progn` with the symbol "
+                            "name provided to `tmp_path` bound to the path to the temp directory, which is a "
+                            "string.  As with a `progn` form, the final form\'s return value is returned from "
+                            "the evaluated macro code.  Once the provided forms to the macro are completed, "
+                            "the temp directory is removed prior to the return value being returned.  If an "
+                            "exception is encountered during the processing of the provided forms, the "
+                            "exception is caught, the temp directory cleaned up and the exception is then "
+                            "re-thrown.```(with_temp_dir (tt)\n         (write_text_file (+ tt \"/text.txt\") \n "
+                            "                         (+ \"TT was: \" (is_dir? tt) \": \" tt))\n        "
+                            "(read_text_file (+ tt \"/text.txt\")))```<br><br><br><br><br> ")
+           usage: ["tmp_path:symbol" "body_forms:*"]
+           tags: ["temp" "directory" "filesystem" "tmp"]
+         })
+               
+      
+   
       (unless (resolve_path [ `export `save_executable ] *env_config*)
          (set_path [ `export `save_executable ] *env_config* "bin/juno"))
       (register_feature "system")
