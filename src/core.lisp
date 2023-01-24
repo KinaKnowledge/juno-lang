@@ -3379,6 +3379,8 @@ such as things that connect or use environmental resources.
                                    nspace))))
       symbols: ordered }))
 
+;; *scratch* buffer
+
 (defun symbols_by_namespace (options)
   (let
       ((ns_handle nil))
@@ -3386,21 +3388,46 @@ such as things that connect or use environmental resources.
         (for_each (ns (namespaces))
            (progn
                (= ns_handle (-> Environment `get_namespace_handle ns))
-               [ns (sort (if options.filter_by 
-                             (reduce (pset (pairs ns_handle.context.scope))
-                                (destructuring_bind (name val)
-                                   pset
-                                  (if (options.filter_by name val)
-                                       name)))
-                             (keys ns_handle.context.scope))) ]))))
+               (if options.include_meta
+                  [ns 
+                   (to_object (for_each (pset (pairs ns_handle.context.scope))
+                                 (destructuring_bind (sym_name val)
+                                    pset
+                                 [sym_name (+ { 
+                                                `type: (sub_type val)
+                                               }
+                                              (aif (prop ns_handle.definitions sym_name)
+                                                   it
+                                                   {}))
+                                              ])))]
+                  [ns (sort (cond
+                               options.filter_by
+                               (reduce (pset (pairs ns_handle.context.scope))
+                                  (destructuring_bind (name val)
+                                     pset
+                                     (if (options.filter_by name val)
+                                         name)))
+                               else
+                               (keys ns_handle.context.scope))) ])))))
   {
+   
+    `description: (+ "<br><br>By default, when called with no options, the `symbols_by_namespace` "
+                     "function returns an object with a key for each namespace, with an array "
+                     "containing the symbols (in a string format) defined in that "
+                     "namespace. <br>There is an optional `options` object argument which can modify "
+                     "the returned results and format.  The two options are mutually "
+                     "exclusive.<br><br>#### Options <br><br>filter_by:function - If a predicate "
+                     "function is provided, then only symbols that the predicate function returns a "
+                     "true value for will be returned.  This is a reducer "
+                     "function. <br>include_meta:function - If true, will return the meta data "
+                     "associated with each symbol from the Environment definitions.  The output "
+                     "format is changed in this situation: instead of an array being returned, an "
+                     "object with the symbol names as keys and the meta data values as their value is "
+                     "returned.  <br> ")
+
     `usage: ["options:object"]
-    `description: (+ "Returns an object with a key for each namespace, with the values of each key being the symbols defined in that namespace. "
-                     "If the options object has a key for `filter_by with a predicate function, then only symbols that the predicate function "
-                     "returns true for will be returned.")
     `tags: ["symbols" "namespace" ]
     })
-
 
 (defglobal *formatting_rules*
   {

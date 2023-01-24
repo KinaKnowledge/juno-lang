@@ -53,7 +53,7 @@ var JunoHighlightRules = function() {
         "support.function": builtinFunctions
     }, "identifier", false, " ");
 
- 
+  
   var keywordMapper = function(e) {
     //let rval=keywordMapperInternal(e);
     var $keywordMapper = globalThis.env.get_global("keyword_mapper",null);
@@ -335,7 +335,7 @@ oop.inherits(Mode, TextMode);
 (function() {
 
     this.lineCommentStart = ";";
-    this.minorIndentFunctions = ["defun", "defun-sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce"];
+    this.minorIndentFunctions = ["defun", "defun-sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce","reduce_sync"];
     this.env = globalThis.env;  /* handle to the Juno environment */
     
     this.$toIndent = function(str) {        

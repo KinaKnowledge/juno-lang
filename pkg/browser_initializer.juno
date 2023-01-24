@@ -716,7 +716,7 @@
      `tags: ["log" "console" "clear" "output" "display"]
      })
 
-(defun_sync decorative_usage (symbol_data namespace suppress_type)
+(defun_sync decorative_usage (symbol_data namespace suppress_type symbol_lookup)
   (let
       ((val (if (is_string? symbol_data)
                 (cond
@@ -741,7 +741,9 @@
                           namespace
                           (not symbol_data.require_ns))
                      [list symbol_data]
-                     (meta_for_symbol (trim val) true)))
+                     (if symbol_lookup
+                        [(symbol_lookup (trim val))]
+                        (meta_for_symbol (trim val) true))))
        
        (description (if (is_object? symbol_data)
                         symbol_data
@@ -757,7 +759,7 @@
                               true
                               false))
        (rval nil))
-     
+      (console.log "decorative_usage: metadadata: " val metadata)
       (when (and is_symbol_binding
                  (is_object? description))
        (set_prop description
@@ -766,6 +768,7 @@
                                     (when (== v.namespace description.require_ns)
                                        v)))
                 `usage)))
+      (console.log "decorative_usage:  description: " description)
       (= rval
          (cond
             (is_array? description.usage)
@@ -3685,7 +3688,7 @@
                      (-> dwin `showModal))))))
 
 
-(defun make_autocompletion_scores (analysis_object)
+(defun make_autocompletion_scores (analysis_object sorted_globals)
    (let
       ((result_set [])
        (keywords (try (compiler `[ true ] { `special_operators: true `env: Environment } )
@@ -3735,13 +3738,14 @@
                 (-> included `add r)
                 (push result_set
                    { `value: r `score: (inc score) `meta: "keyword" }))))
-      (for_each (r (sort (to_array (all_globals))))
+      
+      (for_each (r (or sorted_globals (sort (to_array (all_globals)))))
          (if (not (-> included `has r))
              (push result_set
                 { `value: r `score: (inc score) `meta: "global" })))
       result_set)
    {
-       `usage: ["analysis_object:object"]
+       `usage: ["analysis_object:object" "sorted_globals:array"]
        `description: (+ "Given the output of process_tree_symbols, returns a result_set to be provided to the Ace autocomplete callback for "
                         "suggestions for autocomplete.")
        `tags: ["editor" "analysis" "autocomplete" "session" "Ace"]
@@ -4274,21 +4278,22 @@
    })
 
 
-(defun get_juno_autocompletions (editor session pos prefix callback)
+(defun get_juno_autocompletions (editor session pos prefix callback sorted_symbols)
    (let
       ((root_form (select_root_form editor pos))
        (collect_error (fn (e)
                          true))
        (text_data (+ "" (-> editor.session `getTextRange (new ace.Range root_form.start_row root_form.start_col root_form.end_row root_form.end_col)) ")"))
        (tokens (reader text_data { `suppress_throw_on_error: true on_error: collect_error  } )))
-      
-      (= tokens (make_autocompletion_scores (process_tree_symbols tokens prefix)))
+      (console.log "get_juno_autocompletions: tokens ->: " tokens) 
+      (= tokens (make_autocompletion_scores (process_tree_symbols tokens prefix) sorted_symbols))
+      (console.log "get_juno_autocompletions: tokens <-: " tokens) 
       (callback null tokens))
    {
-       `usage: ["editor:object" "session:object" "pos:object" "prefix:text" "callback:fn" ]
+       `usage: ["editor:object" "session:object" "pos:object" "prefix:text" "callback:fn" "sorted_symbols:array"]
        `description: "Internally used by the editor for autocompletion."
        `tags: ["ace" "editor" "autocomplete" ]
-   })
+   })  
  
 (defun clone_edit_session (session)
    (let
@@ -4872,11 +4877,12 @@
             (mode "-")
             (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
             (title_span (span { `class: "juno-title" } options.name))
+            (ns_span (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace))
             (control_bar (or options.control_bar
                              (div { `class: "juno-buffer-bar" }
                                   buffer_commands_button
                                   title_span
-                                  (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace)
+                                  ns_span
                                   evaluator_span
                                   locked_span
                                   nav_forward_button
@@ -4918,6 +4924,7 @@
                        control_bar
                        editor_div
                        context_bar))
+            (ns_notifier_id (gen_id "ns_notifier"))
             (evaluator nil)
             (perform_resize (fn ()
                                (when view.parentElement
@@ -4968,7 +4975,7 @@
                                   (-> editor `setOptions {
                                                            `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
                                                                                                              getCompletions: (fn (editor session pos prefix callback)
-                                                                                                                                (get_juno_autocompletions editor session pos prefix callback)) }]
+                                                                                                                                (get_juno_autocompletions editor session pos prefix callback sorted_symbols)) }]
                                                            enableLiveAutocompletion: true
                                                            enableSnippets: true
                                                            }))
@@ -5176,7 +5183,11 @@
                                                    
                                                    (when (not (== new_op active_lisp_operator))
                                                       (= active_lisp_operator new_op)
-                                                      (= usage (decorative_usage active_lisp_operator))
+                                                      (= usage (decorative_usage active_lisp_operator nil nil (function (val)
+                                                                                                                               (progn 
+                                                                                                                                  (symbol_finder val true)
+                                                                                                                                     ))))
+                                                      (console.log "find_active_lisp_operator: usage is: " usage)
                                                       (if usage
                                                          (-> help_context_elem
                                                             `replaceChildren usage)
@@ -5211,7 +5222,16 @@
                               (progn
                                  (-> editor.commands `addCommand
                                     (to_ace_keybinding key_command it func))))))
-            
+            ;; keyword mapper support
+            (keyword_mapper (function (token)
+                               (progn
+                                  (console.log "editor keyword mapper: " options.name token)
+                                  (defvar rval
+                                     (if (contains? token *formatting_rules*.keywords)
+                                        "keyword"
+                                        (symbol_finder token)))
+                                  
+                                  rval)))
             ;; signal ready for saving
             (request_save (function ()
                              (progn
@@ -5457,23 +5477,133 @@
                                ;; data_type should be properly set for the content that
                                ;; is being edited
                                options)))
+            (symbol_finder (function (token want_metadata)
+                              (if (and token
+                                       cached_symbols)
+                                 (let
+                                    ((rval nil)
+                                     (comps (split_by "/" token))
+                                     (symbol_namespace (if (> comps.length 1)
+                                                           (take comps)
+                                                           nil))
+                                     (cns (or symbol_namespace
+                                              (if evaluator_control 
+                                                 (-> evaluator_control `current_namespace)
+                                                 nil)))
+                                     (token (last comps))
+                                     (search_order (if cns
+                                                       (reduce_sync (ns (keys cached_symbols) )
+                                                              (if (and (not (== ns `core))
+                                                                       (not (== ns cns)))
+                                                                  ns))
+                                                       (keys cached_symbols))))
+                                    
+                                    
+                                    (when cns
+                                       (= rval (resolve_path [ cns token  ] cached_symbols))
+                                       (if rval
+                                          (set_prop rval 
+                                             `namespace
+                                             cns))
+                                       (unless rval
+                                          (= rval (resolve_path [ `core token  ] cached_symbols))
+                                          (if rval
+                                             (set_prop rval
+                                                `namespace
+                                                `core))))
+                                    ;(console.log "symbol_finder: want_metadata: " want_metadata  " rval from level 1: " token "->" rval)
+                                    (if rval
+                                       (progn
+                                          (if want_metadata
+                                             rval
+                                             (= rval (or (lowercase (prop rval `type))
+                                                         "identifier"))))
+                                       (progn
+                                          (for_each (ns search_order)
+                                             (progn
+                                                (= rval (resolve_path [ ns token ] cached_symbols))
+                                                (when rval
+                                                   (set_prop rval
+                                                      `namespace ns)
+                                                   (break))))
+                                          ;(console.log "symbol_finder: search_order:" search_order " rval from level 2: " token "->" rval)
+                                          (if rval
+                                             (if want_metadata
+                                                rval
+                                                (= rval (lowercase (prop rval `type))))
+                                             (if want_metadata
+                                                (= rval {})
+                                                (= rval "identifier")))))
+                                    (console.log "symbol_finder: <- " cns token "want_metadata: " want_metadata rval)
+                                    rval)
+                                 (progn
+                                    (console.log "symbol_finder: no cached_symbols: returning empty {} / identifier")
+                                    (if want_metadata
+                                       {}
+                                       "identifier")))))
+            (cached_symbols nil)
+            (sorted_symbols nil)
+            (get_current_symbols (fn ()
+                                    (let
+                                       ((symbol_set (if evaluator_control
+                                                        (-> evaluator_control `available_symbols)))
+                                        (cns (if evaluator_control
+                                                 (-> evaluator_control `current_namespace)))
+                                        (in_path nil)
+                                        (search_order nil))
+                                       
+                                       (when (is_object? symbol_set)
+                                          (notify (+ "Received symbols for: " cns))
+                                          (= cached_symbols symbol_set)
+                                          (= search_order
+                                             (if cns
+                                                (conj [ cns `core ] 
+                                                      (reduce_sync (ns (keys cached_symbols) )
+                                                         (if (and (not (== ns `core))
+                                                                  (not (== ns cns)))
+                                                             ns)))
+                                                (keys cached_symbols)))
+                                          (= sorted_symbols
+                                             (flatten
+                                                (for_each (ns search_order)
+                                                   (progn
+                                                      (if (or (== ns cns)
+                                                                (== ns `core))
+                                                          (= in_path true)
+                                                          (= in_path false))
+                                                      (for_each (sym (keys (prop cached_symbols ns)))
+                                                         (if in_path
+                                                             sym
+                                                             (+ ns "/" sym))))))))
+                                       
+                                       (when evaluator_control
+                                          (set_prop ns_span
+                                             `innerText
+                                             (-> evaluator_control `current_namespace))))))
+                                       
             (set_display_control_bar (fn (state)
                                         (progn
                                            (if state
                                               (remove_class "juno-display-none" control_bar)
                                               (add_class "juno-display-none" control_bar))
                                            (perform_resize))))
+            (evaluator_control nil)  ;;create a convenience handle to this if not evaluated
             (set_evaluator_control (fn (control)
                                       (if control.evaluate
                                          (progn
+                                            (when options.evaluator_id
+                                               (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id))
+                                            (= evaluator_control control)
                                             (set_evaluator control.evaluate)
                                             (set_prop options
                                                `evaluator_id
                                                control.options.id)
+                                            (register_event_handler options.evaluator_id "evaluator_change" ns_notifier_id get_current_symbols)
                                             (if control.name
                                                (set_prop evaluator_span
                                                   `innerText
-                                                  (+ "⭢ " control.name)))))))
+                                                  (+ "⭢ " control.name)))
+                                            (get_current_symbols)))))
             (menu_items (fn ()
                            [(if options.path
                                 [(+ (dtext "Save to") " " (last options.path))
@@ -5842,6 +5972,8 @@
                                                           (get_editors_for_path options.path)
                                                           []))
                                 (defvar my_path (clone options.path))
+                                (when options.evaluator_id
+                                   (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id))
                                 ;(log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
                                 ;(log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                                 (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
@@ -5925,7 +6057,9 @@
                                      (delete_prop options
                                         `clone_with_editor_id)
                                      options))
-                
+                `cached_symbols: (function ()
+                                    cached_symbols)
+                `keyword_mapper: keyword_mapper
                 `toJSON: (function ()
                             (progn
                                (if (is_symbol? `LZString)
@@ -6072,6 +6206,10 @@
                       "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
                       "and `go_forward_in_position` functions in the text_editor closure move an index "
                       "back and forth between the stored positions.   ")
+
+
+
+
      })
 
 
@@ -6818,6 +6956,37 @@
        (request_id 0)
        (requests {})
        (remote_host nil)
+       (cached_symbols {})
+       (busy_with_cache_update false)
+       (available_symbols (fn ()
+                             (progn
+                                (while busy_with_cache_update
+                                   (sleep 0.2))
+                                (= busy_with_cache_update true)
+                                (log "requesting available symbols")
+                                (if options.remote_repl
+                                   (let
+                                      ((result (try
+                                                  (send_wait "(symbols_by_namespace { include_meta: true })")
+                                                  (catch Error (e)
+                                                     (progn
+                                                        (log "ERROR on available_symbols: remote: " e)
+                                                        nil)))))
+                                      (log "received result back for the symbols")
+                                      (if result
+                                         (progn
+                                            (try 
+                                               (= result (read_lisp result.result))
+                                               (catch Error (e)
+                                                  (log "ERROR on available_symbols update: " result)))
+                                            (= busy_with_cache_update false)
+                                            result)
+                                         (progn
+                                            (= busy_with_cache_update false)
+                                            {})))
+                                   (progn
+                                      (= busy_with_cache_update false)
+                                      (symbols_by_namespace { include_meta: true }))))))
        (open_remote_evaluator 
           (fn ()
              (if options.remote_repl
@@ -6865,7 +7034,7 @@
                                                            (progn
                                                               ;; received a request but it is not tied to a request we made, could be a log message
                                                               (if (== data.rval "OK")
-                                                                  (clog data.result)
+                                                                  (clog "ASYNC: " data.result)
                                                                   (clog data.message)))))
                                                     (and (is_object? data)
                                                          data.result
@@ -6876,7 +7045,7 @@
                                                     (progn
                                                        (-> output_control `log_message (process_remote_eval_result data (-> output_control `display_mode))))
                                                     else
-                                                    (clog data)))
+                                                    (clog "UNKNOWN: " data)))
                                               (catch Error (e)
                                                  (clog "Unable to process received message: " e.message))))
                            `on_open: (fn (event)
@@ -6936,7 +7105,7 @@
                                              (try 
                                                 (http/send_to_ws repl_ws
                                                                  { `command: "eval"
-                                                                   `req_id: request_id
+                                                                   `req_id: my_request_id
                                                                    `args: [ lisp_text ] })
                                                 (catch Error (e)
                                                    (progn
@@ -6953,9 +7122,10 @@
                     (let
                         ((result nil)
                          (processed_result nil)
+                         (current_ns (prop namespace_span `innerText))
                          (display_mode (-> output_control `display_mode)))
-                      (setq error_state nil)
-                      (if options.remote_repl
+                        (setq error_state nil)
+                        (if options.remote_repl
                          (progn
                             (try
                                (progn
@@ -6966,6 +7136,12 @@
                                      (when e.message
                                         (notify (+ "Remote Error: " e.message))))))
                             (when (is_object? result)
+                               (if (not (== result.namespace current_ns))
+                                   (dispatch_event {
+                                                     command: "evaluator_change"
+                                                     source: id
+                                                     args: [{ set: "namespace" value: result.namespace }]
+                                                    }))
                                (set_prop namespace_span
                                   `innerText
                                   (or result.namespace "Unknown!")))
@@ -7314,6 +7490,9 @@
              `initialize: initialize
              `websocket: (function ()
                             repl_ws)
+             `available_symbols: available_symbols
+             `current_namespace: (function ()
+                                    namespace_span.innerText)
              `rename: rename
              `destroy: destroy
              `on_hide: (fn ()
@@ -7344,7 +7523,7 @@
              `evaluate: (fn (lisp_text no_eval no_clear no_log options)
                           (evaluator lisp_text no_eval no_clear no_log options))
              })
-    intf)) 
+    intf))  
 
 (defun set_repl_display_mode (mode ctl)
    (if (is_string? mode)
@@ -11625,12 +11804,18 @@
                        
   })
   
-;; build a more sophisticated keyword_mapper
+;; the global keyword_mapper routes to the currently focused
+;; editor for the local keyword_mapper to that editor and the
+;; environment it might be connected to
+
 (defun_sync keyword_mapper (token)
    (progn
       (defvar details nil)
       (defvar rval
          (cond
+            (and *last_focus*
+               (prop *last_focus* `keyword_mapper))
+            (-> *last_focus* `keyword_mapper token)
             (contains? token *formatting_rules*.keywords)
             "keyword"
             (progn
@@ -11642,8 +11827,8 @@
             "identifier"))      
       rval))
 
-;; and redirect the core/keyword_mapper
-
+;; and redirect the core/keyword_mapper entry point
+;; from the javascript world..
 
 (use_quoted_initializer
  (defun_sync core/keyword_mapper (token)
