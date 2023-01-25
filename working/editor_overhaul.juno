@@ -1,4 +1,4 @@
-;; editor overhaul buffer
+; editor overhaul buffer
 
 (defun evaluate_and_replace_at_point (options)
    (let
@@ -1328,6 +1328,7 @@
                        editor_div
                        context_bar))
             (ns_notifier_id (gen_id "ns_notifier"))
+            (name_change_id (gen_id "name_change_notifier"))
             (evaluator nil)
             (perform_resize (fn ()
                                (when view.parentElement
@@ -1364,6 +1365,13 @@
                                            `bindKey: { `win: "Shift-Enter" `mac: "Shift-Enter" }
                                            `exec: evaluate_selection
                                            })))))
+            (change_evaluator_name (fn (event_obj)
+                                      (progn
+                                         (log "Received evaluator name change: " event_obj)
+                                         (aif (resolve_path [ `args 0 `value ] event_obj)
+                                              (set_prop evaluator_span
+                                                 `innerText
+                                                 it)))))
             (set_mode (fn (mode_name)
                          (progn
                             (defvar identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
@@ -1472,7 +1480,7 @@
                                `innerText
                                options.name)
                             options.name)))
-            
+            (refresh_symbol_timer nil)
             (evaluate_selection (function (editor)
                                    (let
                                       ((rval nil)
@@ -1484,10 +1492,14 @@
                                               (display_context_message (dtext "Please highlight text to evaluate")))
                                           (try
                                              (progn
+                                                (when refresh_symbol_timer
+                                                   (clearTimeout refresh_symbol_timer)
+                                                   (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000)))
                                                 (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
                                                       (progn
+                                                         
                                                          (try
                                                             (and options.on_evaluation
                                                                (-> options `on_evaluation copytext val))
@@ -1901,7 +1913,6 @@
                                                                   ns))
                                                        (keys cached_symbols))))
                                     
-                                    
                                     (when cns
                                        (= rval (resolve_path [ cns token  ] cached_symbols))
                                        (if rval
@@ -1914,13 +1925,21 @@
                                              (set_prop rval
                                                 `namespace
                                                 `core))))
+                                    
                                     ;(console.log "symbol_finder: want_metadata: " want_metadata  " rval from level 1: " token "->" rval)
+                                    (if (is_function? rval)
+                                      (console.error (+ "symbol_finder: received a function back!  Should be an object -> check path in namespace:" cns " for " token " in cached_symbols: ") (resolve_path [ cns token ] cached_symbols)))
                                     (if rval
                                        (progn
                                           (if want_metadata
-                                             rval
-                                             (= rval (or (lowercase (prop rval `type))
-                                                         "identifier"))))
+                                            rval
+                                            (progn                                               
+                                               (if (is_string? rval.type)
+                                                 (= rval (lowercase (prop rval `type)))
+                                                 (progn
+                                                  (console.error "symbol_finder: .type property for " token " is not a string: " rval.type)
+                                                  (= rval "identifier"))))))
+                                                  
                                        (progn
                                           (for_each (ns search_order)
                                              (progn
@@ -1937,7 +1956,7 @@
                                              (if want_metadata
                                                 (= rval {})
                                                 (= rval "identifier")))))
-                                    (console.log "symbol_finder: <- " cns token "want_metadata: " want_metadata rval)
+                                    ;(console.log "symbol_finder: <- " cns token "want_metadata: " want_metadata rval)
                                     rval)
                                  (progn
                                     (console.log "symbol_finder: no cached_symbols: returning empty {} / identifier")
@@ -1956,7 +1975,6 @@
                                         (search_order nil))
                                        
                                        (when (is_object? symbol_set)
-                                          (notify (+ "Received symbols for: " cns))
                                           (= cached_symbols symbol_set)
                                           (= search_order
                                              (if cns
@@ -1995,13 +2013,15 @@
                                       (if control.evaluate
                                          (progn
                                             (when options.evaluator_id
-                                               (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id))
+                                               (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id)
+                                               (remove_event_handler options.evaluator_id "control_name_change" name_change_id))
                                             (= evaluator_control control)
                                             (set_evaluator control.evaluate)
                                             (set_prop options
                                                `evaluator_id
                                                control.options.id)
                                             (register_event_handler options.evaluator_id "evaluator_change" ns_notifier_id get_current_symbols)
+                                            (register_event_handler options.evaluator_id "control_name_change" name_change_id change_evaluator_name)
                                             (if control.name
                                                (set_prop evaluator_span
                                                   `innerText
@@ -2376,7 +2396,8 @@
                                                           []))
                                 (defvar my_path (clone options.path))
                                 (when options.evaluator_id
-                                   (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id))
+                                   (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id)
+                                   (remove_event_handler options.evaluator_id "control_name_change" name_change_id))
                                 ;(log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
                                 ;(log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                                 (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })

@@ -110,6 +110,9 @@
   (setq no_includes
 	(conj no_includes
 	      ["repl" "Deno" "read_text_file" "path" "readline" "readline_mod" "streams" "write_text_file" "Deno.readTextFile" "Deno.writeTextFile" "readline_mod"]))
+  
+  (set_namespace_declaration "html" "serialize_with_image" false)
+  
   ;; print them out 
   
    ;(console.log "NOT INCLUDING: ")
@@ -127,7 +130,7 @@
            (throw e))))
      
   (console.log "building standalone starter.html file..")
-
+  
   (defglobal env {})
 
   (let
@@ -166,6 +169,8 @@
    
     (write_text_file "environments/starter.html"
                      doctext)
+    
+    (set_namespace_declaration "html" "serialize_with_image" true)
     true))
 
 ;; Notes and examples: to load p5:

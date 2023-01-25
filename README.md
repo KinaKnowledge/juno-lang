@@ -39,6 +39,7 @@ shell$ bin/juno
 ```
 For more information on building images and compilation, see [Building Images](doc/building_images.md).
 
+For more information on how to use the language see [Language Tutorial](doc/tutorial.md).
 
 
 ## About Juno

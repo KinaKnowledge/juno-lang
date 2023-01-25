@@ -114,7 +114,7 @@ export function lisp_writer(obj,depth,max_depth,env) {
       if (typeof obj[keys[i]]=="symbol") {
 	      text+=lisp_writer(keys[i], depth+4, max_depth, env)+": \"<symbol>\"";
       } else {
-          if ((typeof keys[i] === 'string' || keys[i] instanceof String) && keys[i].indexOf(" ")==-1 && !keys[i].startsWith("=:")) {
+          if ((typeof keys[i] === 'string' || keys[i] instanceof String) && keys[i].indexOf(" ")==-1 && keys[i].indexOf("/")==-1 && !keys[i].startsWith("=:")) {
              text+=keys[i]+":"+lisp_writer(obj[keys[i]],depth+4, max_depth, env);
           } else {
     	     text+=lisp_writer(keys[i], depth+4, max_depth, env)+":"+lisp_writer(obj[keys[i]],depth+4, max_depth, env)

@@ -2271,6 +2271,14 @@
             `null null)
          
          
+         (when (== namespace "core")
+            (set_prop Environment.global_ctx.scope
+               `namespace_declarations
+               (function ()
+                  children_declarations)
+               `set_namespace_declaration
+               (function (namespace key value)
+                  (set_path  [namespace key ] children_declarations value))))
          
          ;; inline functions for more efficient comxpiled code...
          ;; instead of calling functions these serve to inline inside

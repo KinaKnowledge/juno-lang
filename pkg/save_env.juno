@@ -45,6 +45,9 @@
                                            include_source: options.include_source
                                            }))
             (console.log "save_environment: options: " options "sys available: " (contains? "sys" (namespaces)) (namespaces))
+            (for_each (declaration (pairs (core/namespace_declarations)))
+               (if (== (resolve_path [ 1 `serialize_with_image ] declaration) false)
+                   (console.log "save_environment: NOTICE: " declaration.0 " is not exported due to serialize_with_image being false")))
             (when (and (contains? "sys" (namespaces))
                        options.compile)
                (= comp_exec (-> (-> Environment `get_namespace_handle "sys") `get_global "compile_executable"))
@@ -58,10 +61,10 @@
                                   { permissions: options.permissions }
                                   {} ))))
                (set_prop rval
-                  `exec: comp_rval.emitted
-                  `comp_success: comp_rval.success)
+                  `exec comp_rval.emitted
+                  `comp_success comp_rval.success)
                (if (not comp_rval.success)
-                   `comp_error: comp_rval.stderr))
+                   `comp_error comp_rval.stderr))
                  
             
             (set_namespace my_namespace)
@@ -89,7 +92,7 @@
             
 ;(save_environment { `initializer: (fn () (http/start))         
          
-
+; (save_environment { `compile: true `emit_as: "bin/tester" `save_as: "js/tester.js" })
    
 
 (if_compile_time_defined `Deno

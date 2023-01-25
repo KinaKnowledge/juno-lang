@@ -491,7 +491,7 @@
        `base_directory: nil
    })
 
-(defmacro content_spooler (content_function content_type)
+(defmacro content_spooler_with_type (content_function content_type)
    `(fn (request_parameters request_event)
        (let
           ((content_function ,#content_function)
@@ -511,6 +511,42 @@
                       "add_http_route function to do so.  <br>The lambda is called with the arguments "
                       "(request_parameters request_event). ")
 
+       `usage: ["content_function:function" "content_type:string"]
+       `tags: ["http" "route_handler" "file" "spool" "content" ]
+   })
+
+(defmacro content_spooler (content_function)
+   `(fn (request_parameters request_event)
+       (let
+          ((content_function ,#content_function))
+          (try
+            (progn
+               (defvar rsp (content_function request_parameters request_event))
+               (console.log "content_spooler: received: " (sub_type rsp))
+               (cond
+                  (and (is_object? rsp)
+                       (== (sub_type rsp) "Blob"))
+                  (new Response rsp)
+                  (and (is_object? rsp)
+                       rsp.content_type)
+                  (new Response (new Blob [rsp.data]
+                                     { `type: rsp.type }))
+                  else
+                  (new Response (new Blob []
+                                     { `type: "application/json" }))))
+                   
+             (catch Error (e)
+                (progn
+                   (console.error "content_spooler: error: " e)
+                   (new Response "500 Internal Server Error" { status: 500 }))))))
+   {
+     `description: (+ "Creates an HTTP content streamer for a lambda. The macro returns a "
+                      "function that can be used as a route handler.  To do so, add the returned "
+                      "function with a request method and service path to *http_routes*.  Use the "
+                      "add_http_route function to do so.  <br>The lambda is called with the arguments "
+                      "(request_parameters request_event) and should return an object with two "
+                      "keys:<br>data:* - The content being returned.<br>type:string - The type "
+                      "of content type being returned.<br> ")
        `usage: ["content_function:function" "content_type:string"]
        `tags: ["http" "route_handler" "file" "spool" "content" ]
    })
@@ -1029,9 +1065,9 @@
       (unless (is_symbol? `*user_interface*)
          (defglobal `*user_interface*
             (-> LZString `compressToBase64 (read_text_file "./environments/a1.html"))))
-   (add_http_route "GET" "/ui" (content_spooler (fn ()
-                                                   (-> LZString `decompressFromBase64 *user_interface*))
-                                                "text/html"))))
+   (add_http_route "GET" "/ui" (content_spooler_with_type (fn ()
+                                                             (-> LZString `decompressFromBase64 *user_interface*))
+                                                          "text/html"))))
 
 (defun start (options)
   (progn   

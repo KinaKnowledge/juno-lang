@@ -1,7 +1,7 @@
 
 (when (contains? "html" (namespaces))
   (delete_namespace `html))
-(create_namespace `html { serialize_with_image: false })
+(create_namespace `html) ;{ serialize_with_image: false })
 
 (progn
  (declare (namespace `html))
@@ -128,7 +128,11 @@
    (let
        ((bound_fn (-> create_dom_element `bind create_dom_element tagname)))
      ;; use the set_global function directly since we are dynamically creating the symbol names
-     (-> Environment `set_global tagname bound_fn)))
+     (-> Environment `set_global tagname 
+                     bound_fn 
+                     {
+                       `initializer: `(-> create_dom_element `bind create_dom_element ,#tagname)
+                       })))
 
 
   (defun serialize_document (root_element)

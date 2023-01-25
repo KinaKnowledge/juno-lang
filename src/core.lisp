@@ -708,7 +708,10 @@
   
 (defun macroexpand (quoted_form)
     (let
-        ((macro_name (-> quoted_form.0 `substr 2))
+        ((macro_name (try
+                        (-> quoted_form.0 `substr 2)
+                        (catch Error (e)
+                           (throw "macroexpand: unable to determine macro: is the form quoted?"))))
          (working_env (-> Environment `get_namespace_handle (current_namespace)))
          (meta (first (meta_for_symbol macro_name true))) ;; get the first namespace we find it in (should be either us or core))
          (macro_func (-> working_env `get_global (+ meta.namespace "/" macro_name))))
@@ -4375,6 +4378,31 @@ such as things that connect or use environmental resources.
   (if (contains? token *formatting_rules*.keywords)
     "keyword"
     "identifier"))
+
+(defmacro with_each_entry ((binding_sym) iteration_form `& body_forms)
+   `(let
+       ((__data_val__ ,#iteration_form)
+        (,#binding_sym nil)
+        (__next_val__ nil))
+       (if (is_function? __data_val__.next)
+           (while (= __next_val__ (-> __data_val__ `next))
+              (progn
+                 (= ,#binding_sym __next_val__.value)
+                 ,@body_forms
+                 (if __next_val__.done                         
+                    (break))))
+           (throw TypeError "with_each_entry: iteration_form is not an iterator")))
+   {
+     `description: (+ "Given a binding symbol, a form or symbol that resolves to an iteration "
+                      "object with a `next` function, and the body forms to be used with the "
+                      "binding_symbol, will call the binding forms for every value in the iterator, "
+                      "with the binding symbol being set to the next value each time through the "
+                      "loop.<br><br>#### Example <br>```(with_each_value (entries)\n   (-> "
+                      "request_headers `entries) ;; will return an iterator\n   (if (== entries.0 "
+                      "\"content-type\")\n       (= content_type entries.1)))```<br><br><br> ")
+     usage: ["binding_sym:array" "iteration_form:*" "body_forms:*"]
+     tags: [`iteration `loop `iterator `entries `flow `values ]
+   })
 
 (if_compile_time_defined `Deno
    (progn
