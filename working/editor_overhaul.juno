@@ -1640,7 +1640,7 @@
             ;; keyword mapper support
             (keyword_mapper (function (token)
                                (progn
-                                  (console.log "editor keyword mapper: " options.name token)
+                                  ;(console.log "editor keyword mapper: " options.name token)
                                   (defvar rval
                                      (if (contains? token *formatting_rules*.keywords)
                                         "keyword"
@@ -1788,7 +1788,7 @@
                                       (when (is_array? options.commands)
                                          (for_each (command options.commands)
                                             (do
-                                               (console.log "optional commands: " command.name command)
+                                               ;(console.log "optional commands: " command.name command)
                                                (-> editor.commands `addCommand
                                                   (to_ace_keybinding command.name command)))))
                                       true)))

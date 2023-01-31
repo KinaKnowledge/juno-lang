@@ -5242,7 +5242,7 @@
             ;; keyword mapper support
             (keyword_mapper (function (token)
                                (progn
-                                  (console.log "editor keyword mapper: " options.name token)
+                                  ;(console.log "editor keyword mapper: " options.name token)
                                   (defvar rval
                                      (if (contains? token *formatting_rules*.keywords)
                                         "keyword"
@@ -5390,7 +5390,7 @@
                                       (when (is_array? options.commands)
                                          (for_each (command options.commands)
                                             (do
-                                               (console.log "optional commands: " command.name command)
+                                               ;(console.log "optional commands: " command.name command)
                                                (-> editor.commands `addCommand
                                                   (to_ace_keybinding command.name command)))))
                                       true)))
@@ -5634,6 +5634,7 @@
                                          (aif (select_evaluator)
                                               (progn
                                                  (set_evaluator_control it)
+                                                 (display_context_message (+ (dtext "Evaluator set to ") it.options.name))
                                                  (notify (+ (dtext "Evaluator set to ") it.options.name)))))))
             (menu_items (fn ()
                            [(if options.path
@@ -7752,17 +7753,20 @@
    (aif (get_control_by_name "Holding Tank")
         it
         (let
-           ((my_controls (if (and initial_controls
+           ((holding_cell (div { `id: "holding_tank" }))
+            (my_controls (if (and initial_controls
                                   (is_array? initial_controls))
                              (to_object
                                 (reduce (control initial_controls)
                                    (when control.options.id
+                                       ;; call initialize on it since it is coming to us from a rehydration
                                       [control.options.id control])))
                              {}))
             (options (or options {}))
             (intf {})
             (name (or options.name
                       "Holding Tank"))
+           
             (initialized false)
             (id (or options.id (generate_id "holding_tank")))
             (title_span (span { `class: "juno-title" } (dtext "Holding Tank") " - " (dtext "non-displayed controls")))
@@ -7801,12 +7805,12 @@
                                       (when (== *last_focus* control)
                                          (== *last_focus* nil))
                                       (default_focus))
-                                   (progn  ;; control is going to storage - call on_hide if it has it
+                                   (progn  ;; control is going to storage - call on_hide if it has i
                                       (when (is_function? control.on_hide)
-                                         (-> control `on_hide))))
+                                         (-> control `on_hide))
+                                      (-> holding_cell `append control.view)))
                                (render_view)
-                               control)
-                            ))
+                               control)))
             (remove_control (fn (id)
                                (if (is_object? id)
                                    (aif (prop my_controls id.options.id)
@@ -7861,6 +7865,12 @@
                               (= initialized true)
                               (-> resize_observer `observe view.parentElement)
                               (console.log "holding_tank: in initialization: " options view.parentElement)
+                              (for_each (control (values my_controls))
+                                 (progn
+                                     (console.log "control holding tank: initializing: " control)
+                                     (-> holding_cell `append control.view)
+                                     (-> control `initialize)))
+                                              
                               (if options.in_tree
                                  (progn
                                     (console.log "holding_tank: in tree and setting view up to block..and calling render")
@@ -11501,8 +11511,8 @@
                                     (dtext "The file will be saved with this prefix and an .html extension."))
                                  `text
                                  { `default_value: save_as_name })
-                (= save_as_name it)))
-     
+                (= save_as_name it)
+                (= save_as_name nil)))
      (when (blank? save_as_name)
         (notify (dtext "Cancelled Save Operation"))
         (return 0))
