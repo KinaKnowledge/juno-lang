@@ -293,6 +293,119 @@
           tags: ["directory" "status" "information" "filesystem"]
         })
       
+      (defun_sync mkdir (dirpath options)
+         (progn
+            (Deno.mkdirSync dirpath options)
+            (is_dir? dirpath))
+         {
+           description: (+ "Given a string as a path, synchronously creates a new directory, or "
+                           "directory tree.   If the directory already exists, the function will throw an "
+                           "error.<br><br>#### Options <br><br>recursive:boolean - If true, the parent "
+                           "directory structure will be created.  All parent directories are set to the "
+                           "same permissions.  Will not throw an error if a directory already "
+                           "exists.<br>mode:number - The permissions for the created directory "
+                           "structure.<br> ")
+           usage:["dirpath:string" "options:?object"]
+           tags: [`directory `tree `make `create `folder `filesystem ]
+         })
+      
+      (defun_sync ensure_path_exists (fspath options)
+         (cond  
+            (eq nil fspath)
+            (throw ReferenceError "ensure_path_exists: nil path argument")
+            (is_file? fspath)
+            true
+            (is_dir? fspath)
+            true
+            (and (is_object? options)
+               options.dir)
+            (progn 
+               (mkdir fspath (+ { recursive: true }
+                                options))
+               (is_dir? fspath))
+            else
+            (let
+               ((fsresult nil)
+                (comps (split_by "/" fspath))
+                (dir_name (join "/" (but_last comps)))
+                (an_error nil))
+               (when (not (blank? dir_name))
+                  (mkdir dir_name
+                         (+ { recursive: true }
+                            (if (is_object? options)
+                                options
+                                {})))
+                  (unless (is_dir?  dir_name)
+                     (throw Error (+ "ensure_path_exists: cannot make parent directories: " dir_name))))
+               (= fsresult (Deno.createSync fspath))
+               (if fsresult
+                  (-> fsresult `close))
+               (when (and fsresult
+                          options.mode)
+                  (try
+                     (Deno.chmodSync fspath options.mode)
+                     (catch Error (e)
+                        (progn
+                           (= an_error e)))))
+               (if an_error
+                  (throw an_error)
+                  true)))
+         {
+           description: (+ "Given a path to a file or a directory, `ensure_path_exists` will return "
+                           "true if the file or directory exists, or if it doesn\'t exist, it will create "
+                           "the specified path.  By default, the function assumes that the provided path is "
+                           "a path to a file and so will treat the last segment of the path as a file to be "
+                           "created.  However, if the `dir` flag is `true` in options, the final path "
+                           "component will be created as a directory.  The function returns true if the "
+                           "file already exists or was created, or will throw an error if the file or "
+                           "directory path cannot be made.<br><br>#### Options <br><br>dir:boolean - If "
+                           "true, the final segment of the path will be created as a "
+                           "directory.<br>mode:number - If provided, the specified path will be constructed "
+                           "with the permissions set to the provided mode, which is usually specified in "
+                           "octal, such as `0o700`.<br> ")
+           usage: ["fspath:string" "options:?object"]
+           tags: ["filesystem" "path" "create" "folder" "directory" "create"]
+         })
+               
+      (defun_sync copy_file (from_path to_path)
+         (if (and (is_string? from_path)
+                  (is_string? to_path))
+             (progn
+                (Deno.copyFileSync from_path to_path)
+                (is_file? to_path))
+             (throw TypeError "copy_file: bad argument(s): requires two string arguments"))
+         {
+           description: (+ "Given a `from_path` and a `to_path`, copy_file will synchronously copy "
+                           "the file located a `from_path` to the `to_path` location.  If the operations "
+                           "fails, the function will throw an error, otherwise it will return true if "
+                           "successful. ")
+           usage: ["from_path:string" "to_path:string"]
+           tags: ["filesystem" "path" "copy" "clone" "directory"]
+         })
+      
+      (defun watch_fs (paths options)
+         (Deno.watchFs paths options)
+         {
+           description: (+ "Given a path, or an array of paths, creates and returns an "
+                           "`FSWatcher`.  The provided paths can be files or directories and they must "
+                           "already exist.  When file system events occur in the watched paths (or "
+                           "potentially subpaths), events are then created and returned via the `FSWatcher` "
+                           "object.<br>Event firing orders are not guaranteed to be returned in "
+                           "chronological order.<br>Once the path or paths are no longer required to be "
+                           "watched, the `FSWatcher` object should be closed by calling the `close` method "
+                           "of the watcher.<br><br>#### Options  <br><br>recursive:boolean -If true, the "
+                           "subpaths of provided watch directories will also be watched.<br><br>#### "
+                           "Example <br>```(let\n   ((watcher (watch_fs \"/tmp\")))\n   (setTimeout (fn ()\n    "
+                           "             (progn\n                     (-> watcher `close)\n                  "
+                           "  (log \"closed watcher\")))\n               10000)\n   (for_with (event watcher)\n "
+                           "    (log \"FS EVENT: \" event)))\n```<br><br>If a file is then created in the "
+                           "`/tmp` directory while the block is running, an event will be produced on the "
+                           "console:```FS EVENT:  { kind: \"create\", paths: [ \"/private/tmp/abc.txt\" ], "
+                           "flag: null }```<br><br>")
+           usage: ["paths:string|array"]
+           tags: ["filesystem" "path" "watch" "events" "file" "directory"]
+         })
+      
       (defun dir_tree (dirpath options)
         (let
            ((base_dir dirpath)
@@ -318,7 +431,7 @@
               (traverse dirpath))
            results)
         {
-          `description: (+ "<br><br>The `dir_tree` function recursively follows a directory hierarchy and "
+          `description: (+ "The `dir_tree` function recursively follows a directory hierarchy and "
                            "returns a non-nested structure with the contents of the directory and the "
                            "contained sub-directories.  The returned value is an array containing "
                            "`DirEntry` objects with the keys  `name`, `isFile`, `isDirectory` and "
