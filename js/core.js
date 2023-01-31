@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-01-25 13:24:32
-// Version: 2023.01.25.13.24
-export const DLISP_ENV_VERSION='2023.01.25.13.24';
+// Build Time: 2023-01-31 07:36:01
+// Version: 2023.01.31.07.36
+export const DLISP_ENV_VERSION='2023.01.31.07.36';
 
 
 
@@ -1140,6 +1140,7 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
     let comps;
     let find_in_ctx;
     let reference;
+    let idx;
     let val_type;
     comps=(val).split(".");
     find_in_ctx=async function(the_ctx) {
@@ -1162,6 +1163,7 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
         } ()
     };
     reference=(comps).shift();
+    idx=0;
     val_type=await find_in_ctx(ctx);
     return await async function(){
         if (check_true ((0===(comps && comps.length)))) {
@@ -1180,10 +1182,15 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
                 }
             })(),await (await Environment.get_global("flatten"))(await (async function() {
                 let __for_body__70=async function(comp) {
-                    if (check_true (await (await Environment.get_global("is_number?"))(comp))){
-                        return ["[",comp,"]"]
+                    idx+=1;
+                    if (check_true (((idx===1)&& (reference==="this")))){
+                        return [".",comp]
                     } else {
-                        return ["[\"",comp,"\"]"]
+                        if (check_true (await (await Environment.get_global("is_number?"))(comp))){
+                            return ["[",comp,"]"]
+                        } else {
+                            return ["[\"",comp,"\"]"]
+                        }
                     }
                 };
                 let __array__71=[],__elements__69=comps;
@@ -1681,6 +1688,17 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"source_name":"core.lisp"
 });
+{
+     Environment.set_global("but_last",function(arr) {
+        if (check_true ((arr instanceof Array))){
+            return  ( Environment.get_global("slice"))(arr,0,((arr && arr.length)- 1))
+        } else {
+            throw new TypeError(("but_last: expected array, but received "+  ( Environment.get_global("sub_type"))(arr)));
+            
+        }
+    },{ "name":"but_last","fn_args":"(arr)","description":["=:+","Given an array, returns all elements except the final element.  This ","function is the inverse of `last`.  If there are less than 2 elements in the ","array (0 or 1 elements), then an empty array is returned.  If a non-array is ","provided, the function will throw a `TypeError`. "],"usage":["arr:array"],"tags":["array","last","elements","front","head","rest"],"requires":["is_array?","slice","sub_type"],"source_name":"core.lisp"
+})
+};
 {
      Environment.set_global("random_int",function(...args) {
         let top;
@@ -4069,16 +4087,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_50811;
+                                                let _expr_9575;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_50811=await (async function(){
+                                                _expr_9575=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_50811 && _expr_50811["0"]);
-                                                req_ns=(_expr_50811 && _expr_50811["1"]);
-                                                explicit=(_expr_50811 && _expr_50811["2"]);
+                                                req_sym=(_expr_9575 && _expr_9575["0"]);
+                                                req_ns=(_expr_9575 && _expr_9575["1"]);
+                                                explicit=(_expr_9575 && _expr_9575["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4181,13 +4199,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_82233;
+                    let _expr_68548;
                     let nspace;
-                    _expr_82233=await (async function(){
+                    _expr_68548=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_82233 && _expr_82233["0"]);
-                    nspace=(_expr_82233 && _expr_82233["1"]);
+                    sym=(_expr_68548 && _expr_68548["0"]);
+                    nspace=(_expr_68548 && _expr_68548["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -5851,6 +5869,176 @@ await Environment.set_global("set_default",async function(path,value) {
     },{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"],"source_name":"core.lisp"
 })
 };
+await Environment.set_global("get_dependencies",async function(global_symbol,_deps,_req_ns) {
+    let comps;
+    let target_symbol;
+    let namespace;
+    let added;
+    let required_namespaces;
+    let dependencies;
+    let ns_env;
+    let sym_meta;
+    comps=(global_symbol).split("/");
+    target_symbol=await (async function(){
+        if (check_true (((comps && comps.length)>1))){
+            return await (await Environment.get_global("second"))(comps)
+        } else {
+            return await (await Environment.get_global("first"))(comps)
+        }
+    })();
+    namespace=await (async function(){
+        if (check_true (((comps && comps.length)>1))){
+            return await (await Environment.get_global("first"))(comps)
+        } else {
+            return null
+        }
+    })();
+    added=false;
+    required_namespaces=(_req_ns|| new Set());
+    dependencies=(_deps|| new Set());
+    ns_env=await Environment["get_namespace_handle"].call(Environment,await (await Environment.get_global("current_namespace"))());
+    sym_meta=await ns_env["eval"].call(ns_env,await (async function(){
+         return ["=:meta_for_symbol",target_symbol,true] 
+    })());
+    await async function(){
+        if (check_true ((namespace&& sym_meta&& ((sym_meta && sym_meta.length)>0)))) {
+            return await (async function() {
+                let __for_body__402=async function(m) {
+                    if (check_true (((m && m["namespace"])===namespace))){
+                        {
+                            sym_meta=m;
+                            return __BREAK__FLAG__=true;
+                            return
+                        }
+                    }
+                };
+                let __array__403=[],__elements__401=sym_meta;
+                let __BREAK__FLAG__=false;
+                for(let __iter__400 in __elements__401) {
+                    __array__403.push(await __for_body__402(__elements__401[__iter__400]));
+                    if(__BREAK__FLAG__) {
+                         __array__403.pop();
+                        break;
+                        
+                    }
+                }return __array__403;
+                 
+            })()
+        } else {
+            {
+                sym_meta=await (await Environment.get_global("first"))(sym_meta);
+                namespace=(sym_meta && sym_meta["namespace"])
+            }
+        }
+    } ();
+    if (check_true ((namespace&& await (await Environment.get_global("not"))(await required_namespaces["has"].call(required_namespaces,namespace))))){
+        await required_namespaces["add"].call(required_namespaces,namespace)
+    };
+    if (check_true ((sym_meta&& namespace))){
+        {
+            await (async function() {
+                let __for_body__406=async function(required_symbol) {
+                    if (check_true (await (await Environment.get_global("not"))(await dependencies["has"].call(dependencies,required_symbol)))){
+                        {
+                            added=true;
+                            return await dependencies["add"].call(dependencies,required_symbol)
+                        }
+                    }
+                };
+                let __array__407=[],__elements__405=(sym_meta && sym_meta["requires"]);
+                let __BREAK__FLAG__=false;
+                for(let __iter__404 in __elements__405) {
+                    __array__407.push(await __for_body__406(__elements__405[__iter__404]));
+                    if(__BREAK__FLAG__) {
+                         __array__407.pop();
+                        break;
+                        
+                    }
+                }return __array__407;
+                 
+            })();
+            if (check_true (added)){
+                await (async function() {
+                    let __for_body__410=async function(required_symbol) {
+                        return await (await Environment.get_global("get_dependencies"))(required_symbol,dependencies,required_namespaces)
+                    };
+                    let __array__411=[],__elements__409=(sym_meta && sym_meta["requires"]);
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__408 in __elements__409) {
+                        __array__411.push(await __for_body__410(__elements__409[__iter__408]));
+                        if(__BREAK__FLAG__) {
+                             __array__411.pop();
+                            break;
+                            
+                        }
+                    }return __array__411;
+                     
+                })()
+            }
+        }
+    };
+    if (check_true ((null==_deps))){
+        {
+            return {
+                dependencies:await (async function(){
+                     return await (await Environment.get_global("to_array"))(dependencies) 
+                })(),namespaces:await (async function(){
+                     return await (await Environment.get_global("to_array"))(required_namespaces) 
+                })()
+            }
+        }
+    }
+},{ "name":"get_dependencies","fn_args":"(global_symbol _deps _req_ns)","description":["=:+","<br><br>Given a symbol in string form, returns the global dependencies that the ","symbol is dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:string"],"tags":["dependencies","tree","required","dependency"],"requires":["split_by","second","first","current_namespace","not","get_dependencies","to_array"],"source_name":"core.lisp"
+});
+{
+     Environment.set_global("pad_left",function(value,pad_amount,padchar) {
+        return  ( function() {
+            {
+                 let __call_target__=(""+ value), __call_method__="padStart";
+                return  __call_target__[__call_method__].call(__call_target__,pad_amount,padchar)
+            } 
+        })()
+    },{ "name":"pad_left","fn_args":"(value pad_amount padchar)","description":["=:+","<br><br>Given a value (number or text). an amount to pad, and an optional ","character to use a padding value, returns a string that will contain pad amount ","leading characters of the padchar value.<br><br>#### Example <br>```(pad_left ","23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> "],"usage":["value:number|string","pad_amount:number","padchar:?string"],"tags":["pad","string","text","left"],"requires":[],"source_name":"core.lisp"
+})
+};
+await Environment.set_global("symbol_dependencies",async function(symbol_array) {
+    if (check_true ((symbol_array instanceof Array))){
+        {
+            {
+                let dependencies;
+                let ns_deps;
+                let deps;
+                dependencies=new Set();
+                ns_deps=new Set();
+                deps=null;
+                await (async function() {
+                    let __for_body__414=async function(sym) {
+                        return await (await Environment.get_global("get_dependencies"))(sym,dependencies,ns_deps)
+                    };
+                    let __array__415=[],__elements__413=symbol_array;
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__412 in __elements__413) {
+                        __array__415.push(await __for_body__414(__elements__413[__iter__412]));
+                        if(__BREAK__FLAG__) {
+                             __array__415.pop();
+                            break;
+                            
+                        }
+                    }return __array__415;
+                     
+                })();
+                return {
+                    dependencies:await (async function(){
+                         return await (await Environment.get_global("to_array"))(dependencies) 
+                    })(),namespaces:await (async function(){
+                         return await (await Environment.get_global("to_array"))(ns_deps) 
+                    })()
+                }
+            }
+        }
+    }
+},{ "name":"symbol_dependencies","fn_args":"(symbol_array)","description":["=:+","Given an array of symbols in string form, returns the global dependencies that the ","symbols are dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:array"],"tags":["dependencies","tree","required","dependency"],"requires":["is_array?","get_dependencies","to_array"],"source_name":"core.lisp"
+});
 {
      Environment.set_global("keyword_mapper",function(token) {
         if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){
@@ -5901,40 +6089,40 @@ await Environment.set_global("permissions",async function() {
     let perms;
     perms=["run","env","write","read","net","ffi","sys"];
     return await (await Environment.get_global("to_object"))(await (async function() {
-        let __for_body__402=async function(p) {
+        let __for_body__418=async function(p) {
             return await (async function(){
-                let __array_op_rval__405=p;
-                 if (__array_op_rval__405 instanceof Function){
-                    return await __array_op_rval__405(await (async function(){
-                        let __targ__404=await Deno.permissions.query({
+                let __array_op_rval__421=p;
+                 if (__array_op_rval__421 instanceof Function){
+                    return await __array_op_rval__421(await (async function(){
+                        let __targ__420=await Deno.permissions.query({
                             name:p
                         });
-                        if (__targ__404){
-                             return(__targ__404)["state"]
+                        if (__targ__420){
+                             return(__targ__420)["state"]
                         } 
                     })()) 
                 } else {
-                    return [__array_op_rval__405,await (async function(){
-                        let __targ__404=await Deno.permissions.query({
+                    return [__array_op_rval__421,await (async function(){
+                        let __targ__420=await Deno.permissions.query({
                             name:p
                         });
-                        if (__targ__404){
-                             return(__targ__404)["state"]
+                        if (__targ__420){
+                             return(__targ__420)["state"]
                         } 
                     })()]
                 }
             })()
         };
-        let __array__403=[],__elements__401=perms;
+        let __array__419=[],__elements__417=perms;
         let __BREAK__FLAG__=false;
-        for(let __iter__400 in __elements__401) {
-            __array__403.push(await __for_body__402(__elements__401[__iter__400]));
+        for(let __iter__416 in __elements__417) {
+            __array__419.push(await __for_body__418(__elements__417[__iter__416]));
             if(__BREAK__FLAG__) {
-                 __array__403.pop();
+                 __array__419.pop();
                 break;
                 
             }
-        }return __array__403;
+        }return __array__419;
          
     })())
 },{ "name":"permissions","fn_args":"[]","requires":["to_object"],"source_name":"core.lisp"

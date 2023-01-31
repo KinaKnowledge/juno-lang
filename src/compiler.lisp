@@ -132,7 +132,7 @@
                               false))
              (`show_hints nil)
              (`error_log (defclog { `prefix: "Compile Error" `background: "#CA3040" `color: "white" } ))
-             
+             (`dynamic_references? false)
              (`assembly []) ;; the output structure that holds the compiled code
              
              (`async_function_type_placeholder (fn () true))
@@ -239,7 +239,7 @@
                              ((`ctx_obj (new Object)))
                              (set_prop ctx_obj
                                 `scope (new Object)
-                                `source ""
+                                `source source_name
                                 `parent parent
                                 `ambiguous (new Object)
                                 `declared_types (new Object)
@@ -822,13 +822,14 @@
                                 token.ref
                                 (do
                                    (defvar `comps (split_by "." token.name))
-                                   (when (verbosity ctx)
-                                      (log "get_val: reference: " (safe_access token ctx sanitize_js_ref_name)))
+                                  
                                    (defvar `ref_name
                                       (if (and (> (safety_level ctx) 1)
                                                (> comps.length 1))
                                           (safe_access token ctx sanitize_js_ref_name)
                                           (sanitize_js_ref_name (expand_dot_accessor token.name ctx))))
+                                    (when (verbosity ctx)
+                                       (log "get_val: reference: " (safe_access token ctx sanitize_js_ref_name) ref_name ":" (get_ctx ctx ref_name)))
                                    (cond
                                       (and (get_ctx ctx "__IN_QUOTEM__")
                                            (not (get_ctx ctx "__IN_LAMBDA__")))
@@ -1193,43 +1194,49 @@
                                        (`idx 1))
                                       (declare (string preamble.0 preamble.1))
                                       
-                                      (set_new_completion_scope ctx)
-                                      
-                                      (for_each (`t [ preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" ])
-                                         (push wrapper t))
-                                      (if (not (is_string? target))
-                                          (for_each (`t [ "let" " " target_reference "=" target ";" ] )
-                                             (push wrapper t))
-                                          (do
-                                             (= target_reference target)))
-                                      (while (< idx (- tokens.length 1))
-                                         (do
-                                            (inc idx)
-                                            (push acc target_reference)
-                                            (= token (prop tokens idx))
-                                            (push acc "[")
-                                            (= stmt (compile_as_call token ctx))
-                                            (push acc stmt)
-                                            (push acc "]")
-                                            (inc idx)
-                                            (push acc "=")
-                                            (= token (prop tokens idx))
-                                            (if (eq nil token)
-                                                (throw SyntaxError "set_prop: odd number of arguments"))
-                                            (= stmt (compile_wrapper_fn token ctx))
-                                            (push acc stmt)
-                                            (push acc ";")))
-                                      
-                                      (push wrapper acc)
-                                      (push wrapper "return")
-                                      (push wrapper " ")
-                                      (push wrapper target_reference)
-                                      (push wrapper ";")
-                                      (push wrapper "}")
-                                      (push wrapper preamble.4)
-                                      (push wrapper "()")
-                                      
-                                      wrapper)))
+                                      (if (== token.name "this")
+                                          (progn
+                                             (push acc "this.")
+                                             (push acc tokens.2.name)
+                                             (push acc "=")
+                                             (push acc (compile_wrapper_fn tokens.3 ctx))
+                                             acc)
+                                          (progn
+                                             (set_new_completion_scope ctx)
+                                             (for_each (`t [ preamble.0 " " preamble.1 " " preamble.3  "function" "()" "{" ])
+                                                (push wrapper t))
+                                             (if (not (is_string? target))
+                                                 (for_each (`t [ "let" " " target_reference "=" target ";" ] )
+                                                    (push wrapper t))
+                                                 (do
+                                                    (= target_reference target)))
+                                             (while (< idx (- tokens.length 1))
+                                                (do
+                                                   (inc idx)
+                                                   (push acc target_reference)
+                                                   (= token (prop tokens idx))
+                                                   (push acc "[")
+                                                   (= stmt (compile_as_call token ctx))
+                                                   (push acc stmt)
+                                                   (push acc "]")
+                                                   (inc idx)
+                                                   (push acc "=")
+                                                   (= token (prop tokens idx))
+                                                   (if (eq nil token)
+                                                       (throw SyntaxError "set_prop: odd number of arguments"))
+                                                   (= stmt (compile_wrapper_fn token ctx))
+                                                   (push acc stmt)
+                                                   (push acc ";")))
+                                             
+                                             (push wrapper acc)
+                                             (push wrapper "return")
+                                             (push wrapper " ")
+                                             (push wrapper target_reference)
+                                             (push wrapper ";")
+                                             (push wrapper "}")
+                                             (push wrapper preamble.4)
+                                             (push wrapper "()")
+                                             wrapper)))))
              
              
              (`compile_prop  (fn (tokens ctx)
@@ -3515,11 +3522,7 @@
                                    
                                    (`assembled nil))
                                   (declare (boolean needs_return?))
-                                  (if (and false (not opts.root_environment)
-                                           (== first_level_setup.length 0)
-                                           has_lisp_globals)
-                                      (push first_level_setup
-                                         ["const __GG__=" env_ref "get_global" ";" ]))
+                                  
                                   
                                   (= assembled js_code)
                                   ;; is this our env's namespace or not?
@@ -4349,7 +4352,7 @@
              ;; DLisp mandatory defined globals plus the current global set
              (`standard_types (let
                                  ((all_vals (make_set
-                                                      (uniq (conj [`AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone
+                                                      (uniq (conj [`AsyncFunction `check_true `LispSyntaxError `dlisp_environment_count `clone `super `Class
                                                                    `Environment `Expression `get_next_environment_id `subtype `lisp_writer `do_deferred_splice ]
                                                                   (object_methods globalThis))))))
                                  (-> all_vals `delete "length") ;; length sometimes seems to be a globalThis value, so we need to remove it, otherwise it will screw us up..
@@ -5121,7 +5124,8 @@
             (set_ctx root_ctx
                      `__LAMBDA_STEP__
                      -1)
-            
+            (when (verbosity ctx)
+               (main_log "root_ctx: " root_ctx))
             ;; generate the output.
             (= output
                (cond
@@ -5139,7 +5143,19 @@
                   else
                   (do
                      (try
-                        (do
+                        (do ;; dynamic references are disabled  - don't quite work
+                           (when (and false (not opts.root_environment)
+                                    (== first_level_setup.length 0)
+                                    (is_object? opts.ctx.scope))
+                              (= dynamic_references? false)
+                              (for_each (`pset (pairs opts.ctx.scope))
+                                  (destructuring_bind (name value)
+                                     pset
+                                     (set_ctx root_ctx name value)
+                                     (push first_level_setup
+                                        ["let " (sanitize_js_ref_name name) "=" (compile (tokenize value root_ctx) root_ctx 101) ";" ]))))
+                               
+                               
                            (= final_token_assembly (tokenize tree root_ctx)))
                         (catch Error (`e)
                            (= is_error e)))
@@ -5177,15 +5193,6 @@
                            (when (not is_error)
                               (when (is_array? assembly)
                                  (check_statement_completion root_ctx assembly)))
-                           
-                           ;; add any first level scope stuff into the first_level_setup array
-                           ;; so it is included in the right place in the scope
-                           (if (and false (not opts.root_environment)
-                                    (== first_level_setup.length 0)
-                                    has_lisp_globals)
-                               (push first_level_setup
-                                  ["const __GG__=" env_ref "get_global" ";"]))
-                           
                            assembly))
                      
                      
@@ -5212,9 +5219,10 @@
                                          (not (contains? "block" val))
                                          (not (contains? "unction" val))))))
                         
-                        (set_prop assembly.0
+                        (progn
+                           (set_prop assembly.0
                            `ctype
-                           "statement")
+                           "statement"))
                         (and assembly
                            (is_string? (first assembly))
                            (== (first assembly) "throw"))
@@ -5224,8 +5232,11 @@
                              assembly
                              (or (not (is_object? (first assembly)))
                                  (not (prop (first assembly) `ctype))))
-                        (= assembly
-                           [ { `ctype: `statement } assembly])
+                        (progn
+                           (if dynamic_references?
+                              (= assembly [ { `ctype: `block } ["{" first_level_setup ";" "return " assembly "};" ]])
+                              (= assembly
+                                 [ { `ctype: `statement } assembly])))
                         is_error
                         is_error
                         (eq nil assembly)

@@ -88,11 +88,7 @@
                 `toJSON
                 (function ()
                    `(,#(+ "=:" *namespace* "/" element_name) ,#(prop elem `attributes) ,#content)))
-                ;(function ()
-                 ;         (do
-                  ;          (console.log "serializing: " elem)
-                   ;       (serialize elem))))
-      
+            
       (when opts
         (for_each (pset (pairs opts))
            (do

@@ -1264,7 +1264,7 @@
                                  (resolve_path [ `editor key ] *env_config*)
                                  default_value)))
             (buffer_commands_button (commands_button options.id))
-            (evaluator_span (span { `class: "juno-evaluator" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
+            (evaluator_span (span { `class: "juno-evaluator" `style: "pointer: cursor" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
             (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
             (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
             ;; if we have a namespace in options use that for referencing paths
@@ -2027,6 +2027,13 @@
                                                   `innerText
                                                   (+ "⭢ " control.name)))
                                             (get_current_symbols)))))
+            (user_select_evaluator (fn (e)
+                                      (progn
+                                         (aif (select_evaluator)
+                                              (progn
+                                                 (set_evaluator_control it)
+                                                 (display_context_message (+ (dtext "Evaluator set to ") it.options.name))
+                                                 (notify (+ (dtext "Evaluator set to ") it.options.name)))))))
             (menu_items (fn ()
                            [(if options.path
                                 [(+ (dtext "Save to") " " (last options.path))
@@ -2039,12 +2046,7 @@
                              (fn (e)
                                 (split_editor `horizontal))]
                             [(dtext "Select Evaluator")
-                             (fn (e)
-                                (progn
-                                   (aif (select_evaluator)
-                                        (progn
-                                           (set_evaluator_control it)
-                                           (notify (+ (dtext "Evaluator set to ") it.options.name))))))]
+                             user_select_evaluator]
                             
                             [(dtext "Increase Font Size") increase_font_size]
                             [(dtext "Decrease Font Size") decrease_font_size]
@@ -2316,6 +2318,10 @@
                                                  (handle_event e)
                                                  (go_backward_in_position))))
                                         
+                                        
+                                        (attach_event_listener evaluator_span
+                                           `click
+                                           user_select_evaluator)
                                         ;; setup the evaluator if it is ready
                                         (setTimeout (fn ()
                                                        (let

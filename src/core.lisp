@@ -1370,8 +1370,8 @@
                            the_ctx.parent
                            (find_in_ctx the_ctx.parent))))
        (`reference (take comps))
+       (`idx 0)
        (`val_type (find_in_ctx ctx))) ;; contains the named reference, comps now will have the path components
-          
     (cond
       (== 0 comps.length)
       reference
@@ -1383,9 +1383,14 @@
       (join ""
             (conj [ reference ]
                   (flatten (for_each (`comp comps)
+                              (progn
+                                 (inc idx)
+                                 (if (and (== idx 1)
+                                          (== reference "this"))
+                                     [ "." comp ]
                                      (if (is_number? comp)
                                          [ "[" comp "]" ]
-                                         [ "[\"" comp "\"]" ])))))))
+                                         [ "[\"" comp "\"]" ])))))))))
   {
    `description: "Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]"
    `usage: ["val:string" "ctx:object"]
@@ -1757,7 +1762,18 @@ such as things that connect or use environmental resources.
 	 
 	 
 	   
-
+(defun_sync but_last (arr)
+   (if (is_array? arr)
+       (slice arr 0 (- arr.length 1))
+       (throw TypeError (+ "but_last: expected array, but received " (sub_type arr))))
+   {
+     description: (+ "Given an array, returns all elements except the final element.  This "
+                      "function is the inverse of `last`.  If there are less than 2 elements in the "
+                      "array (0 or 1 elements), then an empty array is returned.  If a non-array is "
+                      "provided, the function will throw a `TypeError`. ")
+     usage: ["arr:array"]
+     tags: ["array" "last" "elements" "front" "head" "rest"]
+   })
 
 (defun_sync random_int (`& `args)
        (let
@@ -4373,6 +4389,99 @@ such as things that connect or use environmental resources.
      tags: ["format" "pretty" "lisp" "display" "output"]
      usage: ["input:array|string"]
      })
+
+
+(defun get_dependencies (global_symbol _deps _req_ns)
+   (let
+      ((comps (split_by "/" global_symbol))
+       (target_symbol (if (> comps.length 1)
+                          (second comps)
+                          (first comps)))
+       (namespace (if (> comps.length 1)
+                      (first comps)
+                      nil))
+       (added false)
+       (required_namespaces (or _req_ns (new Set)))
+       (dependencies (or _deps (new Set)))
+       (ns_env (-> Environment `get_namespace_handle (current_namespace)))  ;; make sure to operate in the current evaluation context
+       (sym_meta (-> ns_env `eval `(meta_for_symbol ,#target_symbol true))))
+      (cond
+         (and namespace
+              sym_meta
+              (> sym_meta.length 0))
+         (for_each (m sym_meta)
+            (when (== m.namespace namespace)
+               (= sym_meta m)
+               (break)))
+         else
+         (progn
+            (= sym_meta (first sym_meta))  ;; take the first in the sort order
+            (= namespace sym_meta.namespace)))
+      (if (and namespace
+               (not (-> required_namespaces `has namespace)))
+          (-> required_namespaces `add namespace))
+      
+      (when (and sym_meta namespace)
+         (for_each (required_symbol sym_meta.requires)
+            (when (not (-> dependencies `has required_symbol))
+               (= added true)
+               (-> dependencies `add required_symbol)))
+         (if added
+            (for_each (required_symbol sym_meta.requires)
+               (get_dependencies required_symbol dependencies required_namespaces))))
+      (when (eq nil _deps)
+         {
+           dependencies: (to_array dependencies)
+           namespaces: (to_array required_namespaces)
+           }))
+   {
+     `description: (+ "<br><br>Given a symbol in string form, returns the global dependencies that the "
+                      "symbol is dependent on in the runtime environment.  The return structure is in "
+                      "the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return "
+                      "structure will contain all the qualified and non-qualified symbols referenced "
+                      "by the provided target symbol, plus the dependencies of the required "
+                      "symbols.  <br>The needed namespace environments are also returned in the "
+                      "namespaces value.<br> ")
+     `usage: ["quoted_symbol:string"]
+     `tags: ["dependencies" "tree" "required" "dependency"]
+   })
+ 
+(defun_sync pad_left (value pad_amount padchar)
+   (-> (+ "" value) `padStart pad_amount padchar)
+   {
+     `description: (+ "<br><br>Given a value (number or text). an amount to pad, and an optional "
+                      "character to use a padding value, returns a string that will contain pad amount "
+                      "leading characters of the padchar value.<br><br>#### Example <br>```(pad_left "
+                      "23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> ")
+
+     `usage: ["value:number|string" "pad_amount:number" "padchar:?string"]
+     `tags: ["pad" "string" "text" "left"]
+   })  
+            
+(defun symbol_dependencies (symbol_array)
+   (when (is_array? symbol_array)
+      (let
+         ((dependencies (new Set))
+          (ns_deps (new Set))
+          (deps nil))
+      (for_each (sym symbol_array)
+         (progn
+            (get_dependencies sym dependencies ns_deps)))
+      {
+        `dependencies: (to_array dependencies)
+        `namespaces: (to_array ns_deps)
+        }))
+   {
+       `description: (+ "Given an array of symbols in string form, returns the global dependencies that the "
+                      "symbols are dependent on in the runtime environment.  The return structure is in "
+                      "the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return "
+                      "structure will contain all the qualified and non-qualified symbols referenced "
+                      "by the provided target symbol, plus the dependencies of the required "
+                      "symbols.  <br>The needed namespace environments are also returned in the "
+                      "namespaces value.<br> ")
+       `usage: ["quoted_symbol:array"]
+       `tags: ["dependencies" "tree" "required" "dependency"]
+   })
 
 (defun_sync keyword_mapper (token)
   (if (contains? token *formatting_rules*.keywords)

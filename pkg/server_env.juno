@@ -805,8 +805,8 @@
               `rval: "OK"
               `result_type: (sub_type result)
               }))
-      
-      (cond
+      ;(console.log "encode_remote_result: result type: " (is_error? result) (sub_type result))
+            (cond
          (is_error? result)
          (set_prop obj
             `rval "FAIL"
@@ -818,6 +818,7 @@
                        (split_by "\n" result.stack)
                        else
                        nil)
+            `stack result.stack
             `error_type (sub_type result))
          (and (is_array? result)
               (is_object? result.0)
@@ -919,9 +920,18 @@
                                                (command (prop data `command))
                                                (args (prop data `args))
                                                (request_id (prop data `req_id))
+                                               (compiled_metadata nil)
+                                               (compiled_source nil)
+                                               (compl_complete (fn (compilation_results)
+                                                                  (progn
+                                                                     (= compiled_metadata compilation_results.0)
+                                                                     (= compiled_source compilation_results.1))))
+                                                                 
                                                (result_type nil)
                                                (evaluator (get_evaluator_for_ns ws.namespace))
                                                (result nil))
+                                              (= compiled_source nil)
+                                              (= compiled_metadata nil)
                                               (when (> __VERBOSITY__ 0)
                                                  (console.log "ws_repl_handler: -> " data))
                                               (cond
@@ -953,14 +963,25 @@
                                                       (is_array? args))
                                                  (try
                                                     (progn
-                                                       (= result (-> evaluator `evaluate args.0))
+                                                       (= result (-> evaluator `evaluate args.0 nil  { `on_compilation_complete: compl_complete }))
                                                        (when (> __VERBOSITY__ 0)
                                                           (console.log "ws_repl_handler: " namespace " <- " result))
                                                        (send_to_ws ws
                                                                    (encode_remote_result request_id result evaluator.namespace { ws_id: ws.ws_id })))
                                                     (catch Error (e)
                                                        (progn
-                                                          (console.error "ws_repl_handler: error on eval: " e.message)
+                                                          
+                                                          (console.log "ws_repl_handler: compilation details: " compiled_metadata)
+                                                          (if (eq nil e.details)
+                                                              (set_prop e
+                                                                 `details {
+                                                                     `compiled: compiled_source
+                                                                     `compiled_metadata: compiled_metadata
+                                                                 })
+                                                              (set_prop e.details
+                                                                 `compiled compiled_source
+                                                                 `compiled_metadata compiled_metadata))
+                                                          (console.error "ws_repl_handler: error on eval: " e.message e.details)
                                                           (send_to_ws ws
                                                                       (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id })))))
                                                  (== command "close")

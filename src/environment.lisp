@@ -1633,7 +1633,7 @@
                                                             compiled.1)))
                                                    (catch Error (e)
                                                       (do
-                                                         (when (== (sub_type e) "SyntaxError")
+                                                         (when true ;(== (sub_type e) "SyntaxError")
                                                              (defvar details
                                                                 {
                                                                   `error: e.name
