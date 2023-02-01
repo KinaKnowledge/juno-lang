@@ -1933,7 +1933,56 @@
         [idx fzl hye])"
     []
     [1 0 [2 1]]
-    "Redeclarations of scope variables (shadowing)"]
+    "redeclarations of scope variables (shadowing)"]
+   ["(progn
+       (defglobal *x* 1)
+       (let
+          ((*x* 10))
+          (inc *x*))
+       *x*)"
+    []
+    1
+    "inc operator operates on shadowed global"]
+   ["(progn
+       (defglobal *x* 1)
+       (let
+          ((*x* 10))
+          (dec *x*))
+       *x*)"
+    []
+    1
+    "dec operator operates on shadowed global"]
+   ["(progn
+       (defglobal *x* 1000)
+       (inc *x*)
+       *x*)"
+    []
+    1001
+    "inc operator operates on global"]
+  ["(progn
+       (defglobal *x* 1000)
+       (dec *x*)
+       *x*)"
+    []
+    999
+    "dec operator operates on global"]
+   ["(defglobal *x* 10)
+     (defun foo ()
+        *x*)
+     (defun bar ()
+        (progn
+          [(foo)
+           (let
+              ((*x* 20))
+              (inc *x*)
+              (inc *x*)
+              (dec *x*)
+              *x*)
+           (foo)]))
+     (bar)"
+     []
+     [10 21 10]
+     "proper global shadowing inside of function context"]
    ["(do 
       (defvar `tt
         (if (> 4 2)

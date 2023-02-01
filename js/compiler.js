@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-01-31 07:36:01
-// Version: 2023.01.31.07.36
-export const DLISP_ENV_VERSION='2023.01.31.07.36';
+// Build Time: 2023-02-01 09:58:42
+// Version: 2023.02.01.09.58
+export const DLISP_ENV_VERSION='2023.02.01.09.58';
 
 
 
@@ -1531,64 +1531,49 @@ return await (async function() {
             tokenize_object=async function(obj,ctx,_path) {
                 let ser=null;
                 ;
-                return await async function(){
-                    if (check_true (false)) {
-                        {
-                            let rval=await tokenize(await (async function(){
-                                 return ["=:quote",await (async function(){
-                                     return await (await Environment.get_global("read_lisp"))(await (await Environment.get_global("as_lisp"))(obj)) 
-                                })()] 
-                            })(),ctx,(_path|| (await Environment.get_global("path"))));
-                            ;
-                            await console.log("tokenized regex: ",rval);
-                            return rval
-                        }
-                    } else {
-                        {
-                            try {
-                                ser=await JSON.stringify(obj)
-                            } catch (__exception__47) {
-                                if (__exception__47 instanceof TypeError) {
-                                    let e=__exception__47;
-                                    {
-                                        {
-                                            await console.warn("compiler: cannot tokenize: ",obj,e);
-                                            ser="{}"
-                                        }
-                                    }
-                                } else throw __exception__47;
-                                
-                            };
-                            _path=(_path|| []);
-                            if (check_true ((ser==="{}"))){
+                {
+                    try {
+                        ser=await JSON.stringify(obj)
+                    } catch (__exception__47) {
+                        if (__exception__47 instanceof TypeError) {
+                            let e=__exception__47;
+                            {
                                 {
-                                    return {
-                                        type:"object",ref:false,val:"{}",name:"{}",__token__:true,path:_path
-                                    }
+                                    await console.warn("compiler: cannot tokenize: ",obj,e);
+                                    ser="{}"
                                 }
-                            } else {
-                                return await (async function() {
-                                    let __for_body__50=async function(pset) {
-                                        return {
-                                            type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+ await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
-                                        }
-                                    };
-                                    let __array__51=[],__elements__49=await (await Environment.get_global("pairs"))(obj);
-                                    let __BREAK__FLAG__=false;
-                                    for(let __iter__48 in __elements__49) {
-                                        __array__51.push(await __for_body__50(__elements__49[__iter__48]));
-                                        if(__BREAK__FLAG__) {
-                                             __array__51.pop();
-                                            break;
-                                            
-                                        }
-                                    }return __array__51;
-                                     
-                                })()
+                            }
+                        } else throw __exception__47;
+                        
+                    };
+                    _path=(_path|| []);
+                    if (check_true ((ser==="{}"))){
+                        {
+                            return {
+                                type:"object",ref:false,val:"{}",name:"{}",__token__:true,path:_path
                             }
                         }
+                    } else {
+                        return await (async function() {
+                            let __for_body__50=async function(pset) {
+                                return {
+                                    type:"keyval",val:await tokenize(pset,ctx,"path:",await add(_path,(pset && pset["0"]))),ref:false,name:(""+ await (await Environment.get_global("as_lisp"))((pset && pset["0"]))),__token__:true
+                                }
+                            };
+                            let __array__51=[],__elements__49=await (await Environment.get_global("pairs"))(obj);
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__48 in __elements__49) {
+                                __array__51.push(await __for_body__50(__elements__49[__iter__48]));
+                                if(__BREAK__FLAG__) {
+                                     __array__51.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__51;
+                             
+                        })()
                     }
-                } ()
+                }
             };
             tokenize_quote=async function(args,_path) {
                 return await async function(){
@@ -4709,9 +4694,9 @@ return await (async function() {
             };
             compile_val_mod=async function(tokens,ctx) {
                 let target;
-                let target_location;
-                let comps;
+                let sanitized;
                 let target_details;
+                let comps;
                 let in_infix;
                 let operation;
                 let mod_source;
@@ -4720,17 +4705,43 @@ return await (async function() {
                     throw new SyntaxError(await add((tokens && tokens["0"] && tokens["0"]["name"])," requires at least one argument indicating the symbol which value is to be modified"));
                     
                 })());
-                target_location=await (async function(){
+                sanitized=await (async function(){
+                    if (check_true (((tokens && tokens["1"] && tokens["1"]["ref"])&& (tokens && tokens["1"] && tokens["1"]["name"])))){
+                        return await sanitize_js_ref_name((tokens && tokens["1"] && tokens["1"]["name"]))
+                    } else {
+                        return await add((tokens && tokens["0"] && tokens["0"]["name"])," requires at least one argument indicating the symbol which value is to be modified")
+                    }
+                })();
+                target_details=await (async function(){
                      return await async function(){
-                        if (check_true (await get_ctx(ctx,(tokens && tokens["1"] && tokens["1"]["name"])))) {
+                        if (check_true (await get_ctx(ctx,sanitized))) {
                             return "local"
                         } else if (check_true (await get_lisp_ctx(ctx,(tokens && tokens["1"] && tokens["1"]["name"])))) {
                             return "global"
+                        } else {
+                            {
+                                {
+                                    let it;
+                                    it=await get_declaration_details(ctx,(tokens && tokens["1"] && tokens["1"]["name"]));
+                                    if (check_true (it)){
+                                        return await async function(){
+                                            if (check_true ((it && it["is_argument"]))) {
+                                                return "local"
+                                            } else if (check_true ((it && it["declared_global"]))) {
+                                                return "global"
+                                            } else if (check_true (it)) {
+                                                return "local"
+                                            }
+                                        } ()
+                                    } else {
+                                        return 
+                                    }
+                                }
+                            }
                         }
                     } () 
                 })();
                 comps=(target).split(".");
-                target_details=await get_declaration_details(ctx,await first(comps));
                 in_infix=await get_ctx_val(ctx,"__COMP_INFIX_OPS__");
                 operation=await (async function(){
                     if (check_true (in_infix)){
@@ -4746,9 +4757,9 @@ return await (async function() {
                         } ()
                     } else {
                         return await async function(){
-                            if (check_true (((target_location==="local")&& ((tokens && tokens["0"] && tokens["0"]["name"])==="inc")))) {
+                            if (check_true (((target_details==="local")&& ((tokens && tokens["0"] && tokens["0"]["name"])==="inc")))) {
                                 return "+="
-                            } else if (check_true (((target_location==="local")&& ((tokens && tokens["0"] && tokens["0"]["name"])==="dec")))) {
+                            } else if (check_true (((target_details==="local")&& ((tokens && tokens["0"] && tokens["0"]["name"])==="dec")))) {
                                 return "-="
                             } else if (check_true (((tokens && tokens["0"] && tokens["0"]["name"])==="inc"))) {
                                 return "+"
@@ -4759,15 +4770,13 @@ return await (async function() {
                     }
                 })();
                 mod_source=null;
-                how_much=(((tokens && tokens["2"])&& await (async function(){
-                     return await compile((tokens && tokens["2"]),ctx) 
-                })())|| 1);
+                how_much=(((tokens && tokens["2"])&& await compile_wrapper_fn((tokens && tokens["2"]),ctx))|| 1);
                 if (check_true ((undefined===target_details))){
                     throw new ReferenceError(("unknown symbol: "+ (comps && comps["0"])));
                     
                 };
                 return await async function(){
-                    if (check_true ((target_location==="global"))) {
+                    if (check_true ((target_details==="global"))) {
                         {
                             has_lisp_globals=true;
                             return ["(","await"," ",env_ref,"set_global(\"",target,"\",","await"," ",env_ref,"get_global(\"",target,"\")"," ",operation," ",how_much,"))"]
@@ -4778,7 +4787,7 @@ return await (async function() {
                         }
                     } else {
                         return await (async function(){
-                            let __array_op_rval__270=target;
+                            let __array_op_rval__270=sanitized;
                              if (__array_op_rval__270 instanceof Function){
                                 return await __array_op_rval__270(operation,how_much) 
                             } else {
@@ -8786,7 +8795,7 @@ return await (async function() {
                 } else {
                     {
                         try {
-                            if (check_true ((false&& await not((opts && opts["root_environment"]))&& ((first_level_setup && first_level_setup.length)===0)&& ((opts && opts["ctx"] && opts["ctx"]["scope"]) instanceof Object)))){
+                            if (check_true ((await not((opts && opts["root_environment"]))&& ((first_level_setup && first_level_setup.length)===0)&& ((opts && opts["ctx"] && opts["ctx"]["scope"]) instanceof Object)))){
                                 {
                                     dynamic_references_ques_=false;
                                     await (async function() {
@@ -8999,5 +9008,5 @@ return await (async function() {
     }
 }
 },{
-    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","read_lisp","path","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","warn","make_set"],source_name:"compiler.lisp"
+    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set"],source_name:"compiler.lisp"
 })} 

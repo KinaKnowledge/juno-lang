@@ -78,10 +78,7 @@ color: #A5C261\
 .ace-idle-fingers .ace_string.ace_regexp {\
 color: #CCCC33\
 }\
-.ace-idle-fingers .ace_comment {\
-font-style: italic;\
-color: #BC9458\
-}\
+.ace-idle-fingers .ace_comment {color: #BC9458}\
 .ace-idle-fingers .ace_meta.ace_tag {\
 color: #FFE5BB\
 }\

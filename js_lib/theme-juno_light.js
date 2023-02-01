@@ -64,8 +64,7 @@ background-color:var(--editor-deprecated-bg-color);}\
 .ace-juno_light .ace_string{color:var(--editor-string-color);}\
 .ace-juno_light .ace_string.ace_regexp{color:var(--editor-regex-color);\
 background-color:var(--editor-regex-bg-color);}\
-.ace-juno_light .ace_comment{color:var(--editor-comment-color);\
-font-style: italic;}\
+.ace-juno_light .ace_comment{color:var(--editor-comment-color);}\
 .ace-juno_light .ace_variable{var(--editor-variable-color);}\
 .ace-juno_light .ace_meta.ace_tag{color:#005273;}\
 .ace-juno_light .ace_markup.ace_heading{color:var(--editor-heading-color);\

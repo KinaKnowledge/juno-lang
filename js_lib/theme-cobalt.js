@@ -86,10 +86,7 @@ color: #3AD900\
 .ace-cobalt .ace_string.ace_regexp {\
 color: #80FFC2\
 }\
-.ace-cobalt .ace_comment {\
-font-style: italic;\
-color: #0088FF\
-}\
+.ace-cobalt .ace_comment { color: #0088FF }\
 .ace-cobalt .ace_heading,\
 .ace-cobalt .ace_markup.ace_heading {\
 color: #C8E4FD;\

@@ -154,7 +154,8 @@
        (handle_connection (fn (connection)
                              (new Promise (fn (resolve)
                                              (progn
-                                                (log "handle_connection: new connection")
+                                                (when (> __VERBOSITY__ 0)
+                                                   (log "handle_connection: new connection"))
                                                 (resolve true)
                                                 (try
                                                    (handler connection state)
@@ -802,11 +803,12 @@
               `req_id: request_id
               `namespace: namespace
               `ws_id: options.ws_id
+              `category: (or (and (is_object? options) options.category) "req-res")
               `rval: "OK"
               `result_type: (sub_type result)
               }))
       ;(console.log "encode_remote_result: result type: " (is_error? result) (sub_type result))
-            (cond
+      (cond
          (is_error? result)
          (set_prop obj
             `rval "FAIL"
@@ -905,7 +907,8 @@
                                               (set_prop *active_websockets*
                                                  ws.ws_id
                                                  ws)
-                                              (console.log "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
+                                              (when (> __VERBOSITY__ 0)
+                                                 (console.log "ws_repl_handler: new open request: default namespace: " (or options.namespace "user")))
                                               ;(= evaluator (get_evaluator_for_ns ws.namespace))
                                               
                                               (send_to_ws ws
@@ -963,7 +966,7 @@
                                                       (is_array? args))
                                                  (try
                                                     (progn
-                                                       (= result (-> evaluator `evaluate args.0 nil  { `on_compilation_complete: compl_complete }))
+                                                       (= result (-> evaluator `evaluate args.0 { scope: { ws_id: ws.ws_id}}  { on_compilation_complete: compl_complete }))
                                                        (when (> __VERBOSITY__ 0)
                                                           (console.log "ws_repl_handler: " namespace " <- " result))
                                                        (send_to_ws ws
@@ -986,7 +989,8 @@
                                                                       (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id })))))
                                                  (== command "close")
                                                  (progn
-                                                    (console.log "closing repl connection")
+                                                    (when (> __VERBOSITY__ 0)
+                                                       (console.log "ws_repl_handler: received close request: closing repl connection"))
                                                     (try
                                                        (http/close_ws ws)
                                                        (catch Error (e)
@@ -996,10 +1000,11 @@
                                          (log "error on websocket: " error))
                            `on_close: (fn (ws event)
                                          (progn
+                                            (when (> __VERBOSITY__ 0)
+                                               (console.log "ws_repl_handler: close event: closing repl connection"))
                                             (when ws.ws_id
                                                (remove_prop *active_websockets*
-                                                  ws.ws_id))
-                                            (log "websocket closed")))
+                                                  ws.ws_id))))
                            })))
 
 
@@ -1066,6 +1071,9 @@
                           (throw EvalError "Please provide the path_to_browser option.")))))
          (Deno.run { `cmd: [browser "--new-window" (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "a1.html")) ] }))))
                        
+
+
+
       
 
 (when (eq nil (resolve_path [ `http_services `port ] *env_config*))
@@ -1108,16 +1116,64 @@
       (defglobal *http_routes_storage* (reader (as_lisp *http_routes*)))))
 
 
-;
+;; ----- Logging setup for connected REPLS ----
+
+;; Keep a list of interested parties to log messages 
+(defglobal core/*log_subscribers* 
+   [])
+
+
+(defun sub_log (websocket_id) 
+   (if (prop http/*active_websockets* websocket_id)
+       (push *log_subscribers*
+          (eval
+             `(fn (`& args)
+                 (let
+                    ((ws (prop http/*active_websockets* ,#websocket_id)))
+                    (if ws
+                       (http/send_to_ws ws
+                                        (http/encode_remote_result 0 args (current_namespace)
+                                                                   {
+                                                                     `category: "log"
+                                                                     }))
+                       (progn
+                          (console.log "ws is invalid - throwing and should be removed.")
+                          (throw Error "Invalid websocket")))
+                    true))))))
+         
+
+(defglobal core/saved_log_fn core/log)
+
+(defun core/logger (`& args)
+   (progn
+      (apply console.log (+ "" (formatted_date (new Date)) " ") args)
+      (= core/*log_subscribers*
+         (reduce_sync (subscriber *log_subscribers*)
+              (try
+                 (progn
+                    (apply subscriber args)  ;; if no problems, keep in the subscription list
+                    subscriber)
+                 (catch Error (e)
+                    (progn
+                       (console.log "removing subscriber due to caught error")
+                       nil)))))   ;; otherwise remove
+      nil))
+
+
+
 (defun *initializer* ()
    (progn
       (= *http_routes* *http_routes_storage*)
       (undefine `*http_routes_storage*)
+      (= core/log core/logger)
       (if (resolve_path [ `http_services `listen_on_start ] *env_config*)
           (http/start))))
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")
+
+
+
 
 true
 

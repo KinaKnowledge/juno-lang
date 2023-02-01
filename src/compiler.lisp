@@ -876,13 +876,6 @@
              (`tokenize_object (fn (obj ctx _path)
                                   (do
                                      (defvar ser nil)
-                                     (cond
-                                        false ;(is_regex? obj))
-                                        (progn
-                                           (defvar rval (tokenize [(quote quote) (read_lisp (as_lisp obj))] ctx (or _path path)))
-                                           (console.log "tokenized regex: " rval)
-                                           rval)
-                                        else
                                         (progn
                                            (try
                                               (= ser (JSON.stringify obj))
@@ -901,7 +894,7 @@
                                                   { `type: "object" `ref: false `val: "{}" `name: "{}" `__token__:true  `path: _path})
                                                (for_each (`pset (pairs obj))
                                                   (do
-                                                     {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true }))))))))
+                                                     {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true })))))))
              
              (`tokenize_quote (fn (args _path)
                                  (do
@@ -2860,13 +2853,28 @@
                                                       (throw SyntaxError
                                                          (+ tokens.0.name
                                                             " requires at least one argument indicating the symbol which value is to be modified")))))
-                                      (`target_location (cond
-                                                           (get_ctx ctx tokens.1.name)
-                                                           "local"
-                                                           (get_lisp_ctx ctx tokens.1.name)
-                                                           "global"))
+                                      (`sanitized (if (and tokens.1.ref
+                                                           tokens.1.name)
+                                                      (sanitize_js_ref_name tokens.1.name)
+                                                      (+ tokens.0.name
+                                                         " requires at least one argument indicating the symbol which value is to be modified")))
+                                      (`target_details (cond
+                                                          (get_ctx ctx sanitized)
+                                                          "local"
+                                                          (get_lisp_ctx ctx tokens.1.name)
+                                                          "global"
+                                                          else
+                                                          (progn
+                                                             (aif (get_declaration_details ctx tokens.1.name)
+                                                                  (cond
+                                                                     it.is_argument
+                                                                     "local"
+                                                                     it.declared_global
+                                                                     "global"
+                                                                     it
+                                                                     "local")))))
+                                      
                                       (`comps (split_by "." target))
-                                      (`target_details (get_declaration_details ctx (first comps)))
                                       (`in_infix (get_ctx_val ctx "__COMP_INFIX_OPS__"))
                                       (`operation (if in_infix
                                                       (cond
@@ -2878,10 +2886,10 @@
                                                          (throw SyntaxError (+ "Invalid value modification operator: " tokens.0.name)))
                                                       (cond
                                                          
-                                                         (and (== target_location "local")
+                                                         (and (== target_details "local")
                                                               (== tokens.0.name "inc"))
                                                          "+="
-                                                         (and (== target_location "local")
+                                                         (and (== target_details "local")
                                                               (== tokens.0.name "dec"))
                                                          "-="
                                                          (== tokens.0.name "inc")
@@ -2890,14 +2898,13 @@
                                                          "-")))
                                       (`mod_source nil)
                                       (`how_much (or (and tokens.2
-                                                          (compile tokens.2 ctx))
+                                                          (compile_wrapper_fn tokens.2 ctx))
                                                      1)))
-                                     
                                      
                                      (if (== undefined target_details)
                                          (throw ReferenceError (+ "unknown symbol: " comps.0)))
                                      (cond
-                                        (== target_location "global")
+                                        (== target_details "global")
                                         (do
                                            (= has_lisp_globals true)
                                            ["(" "await" " " env_ref "set_global(\"" target "\","
@@ -2907,7 +2914,7 @@
                                            ["(" target "=" target operation how_much ")"])
                                         
                                         else
-                                        [target operation how_much]))))
+                                        [sanitized operation how_much]))))
              
              (`compile_try
                 (fn (tokens ctx)
@@ -5143,8 +5150,8 @@
                   else
                   (do
                      (try
-                        (do ;; dynamic references are disabled  - don't quite work
-                           (when (and false (not opts.root_environment)
+                        (do ;; dynamic references are experimental
+                           (when (and (not opts.root_environment)
                                     (== first_level_setup.length 0)
                                     (is_object? opts.ctx.scope))
                               (= dynamic_references? false)

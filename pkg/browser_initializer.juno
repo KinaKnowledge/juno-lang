@@ -6567,11 +6567,59 @@
      })
 
 
+(defun process_stack_trace (result)
+   (try
+      (let
+         ((first_anon nil)
+          (line_num nil)
+          (col_num nil)
+          (src (or result.result.compiled
+                   result.compiled))
+          (buffer []))
+         (for_each (message (split_by "\n" result.stack))
+            (when (eq nil first_anon)
+               (for_each (m (split_by "," message))
+                  (when (and (eq nil first_anon)
+                             (starts_with? " <anonymous>" m))
+                     (= first_anon (rest (split_by ":" m)))
+                     (break)))))
+         (defglobal *ll* result)
+         (if (not (blank? first_anon))
+             (progn
+                (= line_num (parseInt (first first_anon)))
+                (= col_num (parseInt (second first_anon)))
+                (push buffer
+                   (+ "Line: " (- line_num 3) " Column: " col_num))
+                
+                (when src
+                   (= src (split_by "\n" src))
+                   (map (fn (v idx)
+                           (when (and (> idx (- line_num 5))
+                                      (< idx (+ line_num 5)))
+                              (if (== idx (- line_num 3))
+                                  (progn
+                                     (push buffer
+                                        (+ " -> " (pad_left idx 5 " ") ": " v))
+                                     (push buffer
+                                        (+ "    " "       " (pad_left "^" col_num " "))))
+                                  (push buffer
+                                     (+ "    " (pad_left idx 5 " ") ": " v)))))
+                        src))
+                (join "\n" buffer))
+             (progn
+                "Unable to find source line")))
+      (catch Error (e)
+         (progn
+            "Unable to process stack trace: unknown structure"))))
+
+
 (defun process_remote_eval_result (result display_mode)
    (if (is_object? result)
        (try
           (let
              ((is_system_error? (== "FAIL" result.rval))
+              (error_results nil)
+              (category result.category)
               (is_compiler_error? (and (resolve_path [ `result 0 `error ] result)
                                        (resolve_path [ `result 0 `message ] result)))
               (process_tree (fn (quoted_lisp)
@@ -6609,7 +6657,31 @@
                                      (progn
                                         (log "ERROR: " e)
                                         e.message)))))))
-            ;(log "process_remote_eval_result: "  is_system_error? "display_mode: " display_mode ": result: " result)
+            (if (and is_system_error?
+                     result.stack)
+               (= error_results (process_stack_trace result)))
+            (if (== category "log")
+                (progn
+                   (when (is_string? result.result)
+                      (set_prop result
+                         `result
+                         (reader result.result)))
+                   (if (is_array? result.result)
+                      (set_prop result
+                         `result
+                         (for_each (r result.result)
+                            (process_remote_eval_result
+                               {
+                                   req_id: result.req_id
+                                   namespace: result.namespace
+                                   ws_id: result.ws_id
+                                   result: (as_lisp r)
+                                   rval: result.rval
+                                   result_type: (sub_type r)
+                                   category: "log-processed"
+                               }
+                               display_mode))))
+                   result.result)
              (cond
                 (and (or (== display_mode `juno)
                          (== display_mode `json))
@@ -6624,17 +6696,19 @@
                 (and is_system_error?
                    (is_array? result.result))
                 (progn
-                   (log "system_error: array")
-                   (for_each (r result.result)
-                      (div { `style: "border-left: 5px solid red; padding: 5px;" }
-                           (+ r.error ": " r.message)
+                   (log "system_error: array" result)
+                   (div { `style: "border-left: 5px solid red; padding: 5px;" }
+                        (for_each (r result.result)
                            (value_to_dom r))))
                 (and is_system_error?
                    (is_object? result))
                 (progn
                    (div { `style: "border-left: 5px solid red; padding: 5px;" }
                         (+ result.result_type ": " result.message)
-                        (value_to_dom result)))
+                        (if error_results
+                           (pre error_results)
+                           [])
+                        (value_to_dom result.)))
                 
                 is_compiler_error?
                 (progn
@@ -6666,12 +6740,11 @@
                          (log "Error on result: " e.message result)
                       result.result)))
                 else
-                result.result))
+                result.result)))
           (catch Error (e)
              (list e.message result)))
        ;(log "process_remote_eval_result: returning: " result)
        result))
-
 
 (defun create_remote_evaluator(options)
    (new Promise 
@@ -6853,50 +6926,8 @@
              })))))
 
 
-(defun process_stack_trace (result)
-   (try
-      (let
-         ((first_anon nil)
-          (line_num nil)
-          (col_num nil)
-          (src (or result.result.compiled
-                   result.compiled))
-          (buffer []))
-         (for_each (message (split_by "\n" result.stack))
-            (when (eq nil first_anon)
-               (for_each (m (split_by "," message))
-                  (when (and (eq nil first_anon)
-                             (starts_with? " <anonymous>" m))
-                     (= first_anon (rest (split_by ":" m)))
-                     (break)))))
-         (defglobal *ll* result)
-         (if (not (blank? first_anon))
-             (progn
-                (= line_num (parseInt (first first_anon)))
-                (= col_num (parseInt (second first_anon)))
-                (push buffer
-                   (+ "Line: " (- line_num 3) " Column: " col_num))
-                
-                (when src
-                   (= src (split_by "\n" src))
-                   (map (fn (v idx)
-                           (when (and (> idx (- line_num 5))
-                                      (< idx (+ line_num 5)))
-                              (if (== idx (- line_num 3))
-                                  (progn
-                                     (push buffer
-                                        (+ " -> " (pad_left idx 5 " ") ": " v))
-                                     (push buffer
-                                        (+ "    " "       " (pad_left "^" col_num " "))))
-                                  (push buffer
-                                     (+ "    " (pad_left idx 5 " ") ": " v)))))
-                        src))
-                (join "\n" buffer))
-             (progn
-                "Unable to find source line")))
-      (catch Error (e)
-         (progn
-            "Unable to process stack trace: unknown structure"))))
+
+
 
 (defglobal *repl_counter* 0)
 
@@ -6930,6 +6961,7 @@
        (error_state nil)
        (reopen_button (button { `title: (dtext "Connect/Disconnect") `class: "juno-button-on" style: "float: right;" `tabindex: 0 `disabled: true }
                               "-"))
+       (ws_id_span (span { `title: (dtext "Server websocket ID") `class: "juno-websocket-id" `style: "padding-left: 5px; padding-right: 5px; display: inline-block; float: right;" } "-"))
        (set_reopen_button_state (fn (state)
                                    (cond
                                       (== state 2) ;; allow reconnect
@@ -6970,6 +7002,7 @@
                                                                                  namespace_span 
                                                                                  path_span
                                                                                  display_mode_span 
+                                                                                 (if options.remote_repl ws_id_span [])
                                                                                  location_span
                                                                                  (if options.remote_repl reopen_button [])] 
                                                          `id: id })))
@@ -7110,7 +7143,8 @@
                                                        (progn
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
-                                                 (if options.debug
+                                                 (if (or options.debug 
+                                                         (> __VERBOSITY__ 0))
                                                     (clog "remote: <-" data))
                                                  (if (and (is_object? data)
                                                           data.ws_id)
@@ -7121,6 +7155,7 @@
                                                     (and (is_object? data)
                                                          data.req_id)
                                                     (progn
+                                                       
                                                        (if (prop requests data.req_id)
                                                            (progn
                                                               (= pdata (prop requests data.req_id))
@@ -7135,8 +7170,11 @@
                                                                      (resolver data true))))
                                                            (progn
                                                               ;; received a request but it is not tied to a request we made, could be a log message
+                                                              
                                                               (if (== data.rval "OK")
-                                                                  (clog "ASYNC: " data.result)
+                                                                  (progn
+                                                                     
+                                                                     (apply output_control.log_message (process_remote_eval_result data (-> output_control `display_mode))))
                                                                   (clog data.message)))))
                                                     (and (is_object? data)
                                                          data.result
@@ -7153,11 +7191,13 @@
                            `on_open: (fn (event)
                                         (progn
                                            (defvar active_ns nil)
+                                           (defvar rval nil)
                                            (clog (+ "Connected to Remote REPL: " options.remote_repl))
                                            (set_reopen_button_state 0)
                                            (try
                                               (progn
-                                                 (= remote_host (prop (send_wait "(hostname)") `result))
+                                                 (= rval (send_wait "(hostname)"))
+                                                 (= remote_host rval.result)
                                                  (cond 
                                                     (is_string? remote_host)
                                                     (progn
@@ -7166,10 +7206,15 @@
                                                           `innerHTML remote_host))
                                                     else
                                                     (clog "ERROR: received invalid response for hostname: " remote_host))
+                                                 (if rval.ws_id
+                                                    (set_prop ws_id_span
+                                                       `innerText
+                                                       rval.ws_id))
                                                  (= active_ns (prop (send_wait (+ "(use_ns " namespace_span.innerText ")")) `result))
                                                  (if active_ns 
                                                     (clog (+ "Namespace set to: " (JSON.parse active_ns)))
-                                                    (clog "Unable to set namespace")))
+                                                    (clog "Unable to set namespace"))
+                                                 (send_wait (+ "(http/sub_log " rval.ws_id ")")))
                                               (catch Error (e)
                                                  (clog "Unable to determine remote hostname: " e)))))
                            `on_close: (fn (event)
@@ -7254,7 +7299,11 @@
                                                     }))
                                (set_prop namespace_span
                                   `innerText
-                                  (or result.namespace "Unknown!")))
+                                  (or result.namespace "Unknown!"))
+                               (set_prop ws_id_span
+                                  `innerText
+                                  result.ws_id))
+                            
                             (cond 
                                (== display_mode "juno")
                                (= processed_result (pre (pretty_print (process_remote_eval_result result display_mode))))
