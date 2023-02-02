@@ -2446,7 +2446,7 @@
          (fn (e)
             (progn
                (handle_event e)
-               (make_menu element
+               (make_menu e.srcElement
                           (cond
                              (is_function? menu_gen)
                              (menu_gen e)
