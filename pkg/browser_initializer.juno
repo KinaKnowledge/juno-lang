@@ -6287,7 +6287,158 @@
    })
 
 
-       
+
+(defun_sync get_path_for_DOM_obj (element)
+   (let
+      ((non_whitespace_regex (new RegExp "\\\\s")))
+      (aif (-> element `getAttribute "lpath")
+           (progn
+                 
+               (for_each (v (split_by "~" it))
+                  (cond (> (length (scan_str non_whitespace_regex v)) 0)
+                     (+ "\"" v "\"")
+                     (isNaN (new Number v))
+                     (+ "`" v)
+                     else
+                     v)))
+           (progn
+              ""
+              ))))
+
+
+(defun DOM_to_value (quoted_dom _acc _ctx)
+   (let
+      ((acc (or _acc []))
+       (ctx (new_ctx _ctx))
+       (process_children (fn (children)
+                            (progn
+                               (for_each (child (or children []))
+                                  (DOM_to_value child acc ctx)))))
+       (tag nil)
+       (is_obj_key? (fn ()
+                   (contains? "juno-obj-to-dom-key" classes)))
+       (is_obj_value? (fn ()
+                        (contains? "juno-obj-to-dom-value" classes)))
+       (is_new_obj? (fn ()
+                       (and (== tag (quote details))
+                            (contains? "juno-obj-to-dom" classes))))
+       (is_new_array? (fn ()
+                         (and (== tag (quote details))
+                              (contains? "juno-type-array" classes))))
+       (is_array_item? (fn ()
+                          (and (== tag (quote li))
+                               (contains? "juno-array-item" classes))))
+       (val nil)
+       (current_obj nil)
+       (current_key nil)
+       (classes nil))
+      (cond
+         (is_array? quoted_dom)
+         (progn
+            (= tag (if (is_reference? (first quoted_dom))
+                       (first quoted_dom)
+                       nil))
+            (= classes (aif (resolve_path [1 `class ] quoted_dom)
+                            (split_by " " it)
+                            []))
+            ;(if (not (eq nil ctx.parent))
+             ;   (= ctx (new_ctx ctx)))
+            (setf_ctx ctx `tag tag)
+            
+            ;; below are the rules to encode or handle certain elements in specific ways
+            (cond
+               (and tag
+                  (is_new_obj?))
+               (progn 
+                  (set_prop ctx.scope
+                     `obj {})
+                  (setf_ctx ctx `current_key "")
+                  (= current_obj (getf_ctx ctx `obj))
+                  (if (resolve_path [ 3  ] quoted_dom)
+                     (DOM_to_value (resolve_path [ 3 ] quoted_dom) acc ctx))
+                  current_obj)
+               (and tag
+                  (is_new_array?))
+               (progn
+                  (setf_ctx ctx `arr [])
+                  (if (resolve_path [ 3 ] quoted_dom)
+                       (DOM_to_value (resolve_path [ 3 ] quoted_dom) acc ctx))
+                  (getf_ctx ctx `arr))
+               (and tag
+                  (is_obj_key?))
+               (progn
+                  (setf_ctx ctx `current_key (third quoted_dom))  ;; set the key to the value in the key
+                  (third quoted_dom))
+                (and tag
+                   (== tag (quote span))
+                   (contains? "juno-obj-to-dom" classes)
+                   (== (third quoted_dom) "Object {}"))
+                (progn
+                    {})
+               (and tag
+                  (is_obj_value?))
+               (progn
+                  (= current_key (getf_ctx ctx `current_key))
+                  (= val (DOM_to_value (third quoted_dom) acc ctx))
+                  (set_prop (getf_ctx ctx `obj)
+                            current_key
+                            val)
+                  val)
+               (and tag
+                  (is_array_item?))
+               (progn
+                  (push (getf_ctx ctx `arr)
+                       (DOM_to_value (third quoted_dom) acc ctx)))
+               (and tag
+                  (contains? "juno-code-value" classes))
+               (progn
+                  (read_lisp (third quoted_dom)))
+               (and tag
+                  (== tag (quote span))
+                  (contains? "juno-value" classes))
+               (cond
+                  (contains? "juno-type-string" classes)
+                  (chop (-> (third quoted_dom) `substr 1))
+                  (contains? "juno-type-number" classes)
+                  (float (third quoted_dom))
+                  (contains? "juno-type-boolean" classes)
+                  (if (== (third quoted_dom) "true")
+                      true
+                      false)
+                  (contains? "juno-type-null" classes)
+                  nil
+                  else
+                  (DOM_to_value (third quoted_dom) acc ctx))
+               else 
+               (progn
+                  (process_children (rest quoted_dom)))))
+         (is_string? quoted_dom)
+         (progn
+            quoted_dom)))
+   {
+     `description: (+ "Given a quoted DOM structure in lisp representation (for example as "
+                      "returned by `element_to_lisp`), returns the object representation of the quoted "
+                      "structure.  <br><br>#### Example <br>```(DOM_to_value (element_to_lisp "
+                      "root_element))```<br>")
+     `usage: ["quoted_dom:array"]
+     `tags: ["DOM" "lisp" "reader" "read" "serialize"]
+   })
+
+(defun copy_log_struct (element as_object) 
+   (let
+      ((start_tag element.tagName)
+       (root_elem (cond
+                     (== start_tag "SUMMARY")
+                     element.parentElement
+                     (and (== start_tag "TD")
+                          (has_class? "juno-obj-to-dom-key" element))
+                     element.parentElement
+                     else
+                     element)))
+      (if as_object
+         (copy_text_to_clipboard (pretty_print (DOM_to_value (element_to_lisp root_elem))))
+         (copy_text_to_clipboard (as_lisp (element_to_lisp root_elem))))))
+      
 
 (defcontrol log_view ()
    ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))
@@ -6347,7 +6498,29 @@
                                 (set_show_timestamps false)
                                 (set_show_timestamps options.display_options.show_timestamps))
                             (if options.hide_command_button
-                               (set_display_command_button (not options.hide_command_button))))
+                               (set_display_command_button (not options.hide_command_button)))
+                            (attach_context_menu output_container
+                                                 (fn (orig_e)
+                                                    [["Copy as Value" (fn (e)
+                                                                        (progn
+                                                                         (copy_log_struct orig_e.srcElement true)
+                                                                         (notify "Copied to Value")))]
+                                                     ["Copy as Lisp" (fn (e)
+                                                                        (progn
+                                                                         (copy_log_struct orig_e.srcElement)
+                                                                         (notify "Copied to Lisp")))]
+                                                     ["Copy Path" (fn (e)
+                                                                     (try
+                                                                        (progn
+                                                                           (defvar path (+ "["
+                                                                                           (join " " (get_path_for_DOM_obj orig_e.srcElement))
+                                                                                           "]"))
+                                                                           (copy_text_to_clipboard path)
+                                                                           (notify path))
+                                                                        (catch Error (e)
+                                                                           (notify (+ "ERROR: " e)))))]])))
+                         
+                         
                          (catch Error (e)
                             (notify (+ "Error: " e.message))))))
     ;; override the default resize (typically we use on_resize )
