@@ -556,7 +556,7 @@
                                        (destructuring_bind (key value)
                                                            keyval
                                                            (tr 
-                                                            (td {  `class: "juno-obj-to-dom-key" } key)
+                                                            (td {  `class: "juno-obj-to-dom-key" `lpath: (join "~" (conj _path [ key ] )) } key)
                                                             (td { `class: "juno-obj-to-dom-value" } 
                                                                 (value_to_dom value options (conj _path [ key ] ))))))))))
        (_path (or _path []))
@@ -2340,15 +2340,13 @@
                   ["left" (+ "" (Math.max pos.left 0) "px") ]
                   ["position" "absolute"]
                   ["z-index" "30"]]
-                  view)
-      (console.log "make_menu: found element at: " pos))
+                  view))
     
      
     (if options.do_not_attach
       view
       (progn       
        (-> (get_by_id "body") `appendChild view)
-       (console.log "appended view" view)
        view)))
   {
     description: (+ "The `make_menu` function constructs a pop-up menu DOM structure and "
@@ -2444,20 +2442,29 @@
    (progn
       (attach_event_listener element `contextmenu
          (fn (e)
-            (progn
+            (let
+               ((cmenu nil))
                (handle_event e)
-               (make_menu e.srcElement
-                          (cond
-                             (is_function? menu_gen)
-                             (menu_gen e)
-                             (is_array? menu_gen)
-                             menu_gen)
-                          {
-                            min_width: 250
-                            }))))
+               (= cmenu 
+                  (make_menu e.srcElement
+                             (cond
+                                (is_function? menu_gen)
+                                (menu_gen e)
+                                (is_array? menu_gen)
+                                menu_gen)
+                             {
+                               min_width: 250
+                               do_not_attach: true
+                               }))
+               (set_style [["top" (+ "" (Math.max 0 e.clientY) "px") ]
+                           ["left" (+ "" (Math.max e.clientX 0) "px") ]
+                           ["position" "absolute"]
+                           ["z-index" "30"]]
+                          cmenu)
+                (-> (get_by_id "body") `appendChild cmenu))))
       element)
    {
-     description: (+ "<br><br>Given a target DOM element and a menu generator function or a menu "
+     description: (+ "Given a target DOM element and a menu generator function or a menu "
                      "array, attaches a `contextmenu` event listener to the target element.  The menu "
                      "generator argument can either be a function which returns a nested array "
                      "structure in the standard menu format, or a pre-built array with the menu "
@@ -6290,20 +6297,22 @@
 
 (defun_sync get_path_for_DOM_obj (element)
    (let
-      ((non_whitespace_regex (new RegExp "\\\\s")))
-      (aif (-> element `getAttribute "lpath")
-           (progn
-                 
-               (for_each (v (split_by "~" it))
-                  (cond (> (length (scan_str non_whitespace_regex v)) 0)
-                     (+ "\"" v "\"")
-                     (isNaN (new Number v))
-                     (+ "`" v)
-                     else
-                     v)))
-           (progn
-              ""
-              ))))
+      ((non_whitespace_regex (new RegExp "\\\\s"))
+       (lpath (if (is_element? element)
+                  (-> element `getAttribute "lpath"))))
+      (cond
+         lpath
+         (progn
+            (for_each (v (split_by "~" lpath))
+               (cond (> (length (scan_str non_whitespace_regex v)) 0)
+                  (+ "\"" v "\"")
+                  (isNaN (new Number v))
+                  (+ "`" v)
+                  else
+                  v)))
+         else
+         (progn
+            [] ))))
 
 
 (defun DOM_to_value (quoted_dom _acc _ctx)
@@ -6424,6 +6433,9 @@
      `tags: ["DOM" "lisp" "reader" "read" "serialize"]
    })
 
+
+
+
 (defun copy_log_struct (element as_object) 
    (let
       ((start_tag element.tagName)
@@ -6432,12 +6444,14 @@
                      element.parentElement
                      (and (== start_tag "TD")
                           (has_class? "juno-obj-to-dom-key" element))
-                     element.parentElement
+                     element.parentElement.parentElement.parentElement.parentElement
                      else
                      element)))
+      
       (if as_object
          (copy_text_to_clipboard (pretty_print (DOM_to_value (element_to_lisp root_elem))))
-         (copy_text_to_clipboard (as_lisp (element_to_lisp root_elem))))))
+         (copy_text_to_clipboard (pretty_print (element_to_lisp root_elem))))))
+
       
 
 (defcontrol log_view ()
@@ -6478,6 +6492,77 @@
              (if state
                 (remove_class "juno-display-none" command_button)
                 (add_class "juno-display-none" command_button)))))
+    (log_context_menu (fn (orig_e)
+                         (let
+                            ((element orig_e.srcElement)
+                             (quoted (if (get_attribute element `quoted)
+                                         true
+                                         false))
+                             (lpath (get_attribute element `lpath))
+                             (path (if lpath
+                                       (split_by "~" lpath)
+                                       []))
+                             (segment (cond
+                                         (> options.display_options.display_mode 0)
+                                         ""
+                                         (and (== path.length 0)
+                                              (== element.tagName "SUMMARY")
+                                              (has_class? "juno-obj-to-dom" element))
+                                         "from root"
+                                         (and (== element.tagName "SUMMARY")
+                                              (has_class? "juno-type-function" element))
+                                         "function"
+                                         (and (== path.length 0)
+                                              (== element.tagName "SUMMARY")
+                                              (== (get_attribute element `lpath) ""))
+                                         "array"
+                                         (and (== element.tagName "TD")
+                                              (> path.length 0)
+                                              (has_class? "juno-obj-to-dom-key" element))
+                                         (last (but_last path))
+                                         else
+                                         (last path))))
+                            (if (and (not quoted)
+                                     (blank? segment))
+                                (= segment "from root"))
+                            
+                            (if quoted
+                               [["Copy output value"
+                                 (fn (e)
+                                    (copy_text_to_clipboard element.innerText))]
+                                ["Copy selection"
+                                 (fn (e)
+                                    (-> document `execCommand `copy))]
+                                ["--" nil]
+                                [(dtext "Clear Output Log")
+                                 (fn (e)
+                                    (clear))]]
+                               [[(+ "Copy " segment " as value")
+                                 (fn (e)
+                                    (progn
+                                       (copy_log_struct orig_e.srcElement true)
+                                       (notify "Copied to Value")))]
+                                ["Copy as quoted view" (fn (e)
+                                                          (progn
+                                                             (copy_log_struct orig_e.srcElement)
+                                                             (notify "Copied to Lisp")))]
+                                ["Copy path" (fn (e)
+                                                (try
+                                                   (progn
+                                                      (defvar path (+ "["
+                                                                      (join " " (get_path_for_DOM_obj orig_e.srcElement))
+                                                                      "]"))
+                                                      (copy_text_to_clipboard path)
+                                                      (notify path))
+                                                   (catch Error (e)
+                                                      (notify (+ "ERROR: " e)))))]
+                                ["Copy selection"
+                                 (fn (e)
+                                    (-> document `execCommand `copy))]
+                                ["--" nil]
+                                [(dtext "Clear Output Log")
+                                 (fn (e)
+                                    (clear))]]))))
     (on_initialize (fn ()
                       (try
                          (progn
@@ -6500,25 +6585,7 @@
                             (if options.hide_command_button
                                (set_display_command_button (not options.hide_command_button)))
                             (attach_context_menu output_container
-                                                 (fn (orig_e)
-                                                    [["Copy as Value" (fn (e)
-                                                                        (progn
-                                                                         (copy_log_struct orig_e.srcElement true)
-                                                                         (notify "Copied to Value")))]
-                                                     ["Copy as Lisp" (fn (e)
-                                                                        (progn
-                                                                         (copy_log_struct orig_e.srcElement)
-                                                                         (notify "Copied to Lisp")))]
-                                                     ["Copy Path" (fn (e)
-                                                                     (try
-                                                                        (progn
-                                                                           (defvar path (+ "["
-                                                                                           (join " " (get_path_for_DOM_obj orig_e.srcElement))
-                                                                                           "]"))
-                                                                           (copy_text_to_clipboard path)
-                                                                           (notify path))
-                                                                        (catch Error (e)
-                                                                           (notify (+ "ERROR: " e)))))]])))
+                                                 log_context_menu))
                          
                          
                          (catch Error (e)
@@ -6633,7 +6700,8 @@
                                      (set_prop options
                                         `smooth_scroll_mode false)
                                      (set_style [[`scroll-behavior `default]] output_container)))))
-    
+    (clear (function ()
+              (-> output_container `replaceChildren)))
     (menu_items (fn ()
                    [[(dtext "Clear Log")
                      (fn ()
@@ -6719,8 +6787,7 @@
    {
      expose: [[`set_show_timestamps set_show_timestamps]
               [`set_show_prototypes set_show_prototypes]
-              [`clear (function ()
-                         (-> output_container `replaceChildren))]
+              [`clear clear]
               [`set_display_command_button set_display_command_button]
               [`set_display_mode set_display_mode]
               [`display_mode (function ()
@@ -7543,9 +7610,9 @@
                             (console.log "<-" result)
                             (cond 
                                (== display_mode "juno")
-                               (= result (pre (pretty_print result)))
+                               (= result (pre { `quoted: true } (pretty_print result)))
                                (== display_mode "json")
-                               (= result (pre (JSON.stringify result nil 2))))
+                               (= result (pre { `quoted: true }  (JSON.stringify result nil 2))))
                             (set_prop namespace_span
                                `innerText
                                (current_namespace))
