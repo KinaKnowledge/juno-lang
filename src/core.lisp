@@ -4021,6 +4021,20 @@ such as things that connect or use environmental resources.
     `usage: ["path:symbol|string|array" "value:*"]
   })
 
+(defun get_default (key alt_val)
+   (if (is_array? key)
+       (or (resolve_multi_path key *env_config*)
+            alt_val)
+       (throw TypeError "get_default: key must be an array"))
+   {
+     description: (+ "Given a path (array form) to a key in `*env_config*` , returns the "
+                     "value at the path.  If the value cannot be found, will return `undefined`.  If "
+                     "the second argument is provided, `alt_val`, that value will be returned if the "
+                     "provided path isn\'t found. ")
+     usage:["key:array" "alt_val:*"]
+     tags: ["settings" "config" "defaults" "default" "environment" "env" "application"]
+   })
+
 (defun_sync all_global_functions ()
    (let
       ((acc (new Set))

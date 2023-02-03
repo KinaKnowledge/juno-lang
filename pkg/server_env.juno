@@ -1015,7 +1015,16 @@
        `initializer: `(create_ws_repl_handler { `namespace: "user" })
    })
    
+(when (eq nil (resolve_path [ `http_services `port ] *env_config*))
+   (unless (prop *env_config* `http_services)
+      (set_prop *env_config* `http_services {
+                                              `listen_on_start: false
+                                              }))
+   (set_path [ `http_services `port ] *env_config* 56432)
+   (set_path [ `http_services `base_directory ] *env_config* "./"))
+   
 
+   
 (defun env_bank (port base_directory options)
    (let
       ((server nil)
@@ -1036,8 +1045,9 @@
                                        *env_bank*.log_length)
                                  (take *env_bank*.log))
                               true))))
+      
      (add_http_route "GET" "/env" (file_spooler (+ base_directory "/environments")))
-     (add_http_route "GET" "/files" (file_spooler base_directory))     
+     (add_http_route "GET" "/files" (file_spooler base_directory))
      (add_http_route "POST" "/echo_params"
                      echo_params)
      (add_http_route "POST" "/save_file"
@@ -1045,7 +1055,6 @@
      (add_http_route "GET" "/connect_repl"
                      ws_repl_handler)
      (add_http_route "GET" "/pkg" (file_spooler (+ base_directory "/pkg")))
-     
       (if (eq nil options)
           (= options {}))
       (set_prop options
@@ -1056,6 +1065,11 @@
          `control (serve_using_handler server default_handler options)
          `service_path "/env"
          `base_directory base_directory)))
+
+ 
+
+
+                      
 
 (if_compile_time_defined `Deno
    (defun open_browser (options)
@@ -1072,19 +1086,6 @@
          (Deno.run { `cmd: [browser "--new-window" (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "a1.html")) ] }))))
                        
 
-
-
-      
-
-(when (eq nil (resolve_path [ `http_services `port ] *env_config*))
-   (unless (prop *env_config* `http_services)
-      (set_prop *env_config* `http_services {
-                                              `listen_on_start: false
-                                              }))
-   (set_path [ `http_services `port ] *env_config* 56432))
-   
-      
-    
 (defun enable_ui ()
    (progn
       (declare (string *user_interface*)
@@ -1103,6 +1104,8 @@
    (env_bank (or options.port (resolve_path [ `http_services `port ] *env_config*))
              (or options.base_directory "./")
              options)))
+
+
 
 (defun serve_site (service_path port file_root options)
    (let

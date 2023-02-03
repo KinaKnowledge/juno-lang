@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-02-01 09:58:42
-// Version: 2023.02.01.09.58
-export const DLISP_ENV_VERSION='2023.02.01.09.58';
+// Build Time: 2023-02-03 09:00:20
+// Version: 2023.02.03.09.00
+export const DLISP_ENV_VERSION='2023.02.03.09.00';
 
 
 
@@ -4087,16 +4087,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__274=async function(req) {
                                             {
-                                                let _expr_4825;
+                                                let _expr_21497;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_4825=await (async function(){
+                                                _expr_21497=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_4825 && _expr_4825["0"]);
-                                                req_ns=(_expr_4825 && _expr_4825["1"]);
-                                                explicit=(_expr_4825 && _expr_4825["2"]);
+                                                req_sym=(_expr_21497 && _expr_21497["0"]);
+                                                req_ns=(_expr_21497 && _expr_21497["1"]);
+                                                explicit=(_expr_21497 && _expr_21497["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4199,13 +4199,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_71642;
+                    let _expr_17933;
                     let nspace;
-                    _expr_71642=await (async function(){
+                    _expr_17933=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_71642 && _expr_71642["0"]);
-                    nspace=(_expr_71642 && _expr_71642["1"]);
+                    sym=(_expr_17933 && _expr_17933["0"]);
+                    nspace=(_expr_17933 && _expr_17933["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -5348,6 +5348,15 @@ await Environment.set_global("set_default",async function(path,value) {
     return ["=:progn",["=:unless",["=:is_array?",real_path],["=:throw","=:ReferenceError","set_default: invalid path specification, needs to be an array, string or symbol."]],["=:defvar","=:__first_val",["=:first",real_path]],["=:if",["=:contains?","=:__first_val",["=:list","features","build","imports","included_libraries"]],["=:throw","=:ReferenceError",["=:+","set_default: the path value ","doesn't reference a default value setting"]]],["=:if",["=:resolve_path",real_path,"=:*env_config*"],["=:set_path",real_path,"=:*env_config*",value],["=:make_path",real_path,"=:*env_config*",value]],["=:resolve_path",real_path,"=:*env_config*"]]
 },{ "eval_when":{ "compile_time":true
 },"name":"set_default","macro":true,"fn_args":"(path value)","description":["=:+","Given a path to a value in the *env_config* object, and a value to set, creates or sets the value ","at the provided path position.  The path can be in the following forms:<br>","path.to.default_value:symbol - A period delimited non-quoted symbol<br>","[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>","\"path.to.default_value\" - A string delimited by periods<br>","\"path~to~default_value\" - A string delimited by the path delimiter ~<br>","<br>","The value returned from the macro is the new default value as set in the *env_config*.<br>"],"tags":["default","defaults","set","application","editor","repl"],"usage":["path:symbol|string|array","value:*"],"requires":["is_string?","starts_with?","contains?","split_by","as_lisp"],"source_name":"core.lisp"
+});
+await Environment.set_global("get_default",async function(key,alt_val) {
+    if (check_true ((key instanceof Array))){
+        return (await (await Environment.get_global("resolve_multi_path"))(key,(await Environment.get_global("*env_config*")))|| alt_val)
+    } else {
+        throw new TypeError("get_default: key must be an array");
+        
+    }
+},{ "name":"get_default","fn_args":"(key alt_val)","description":["=:+","Given a path (array form) to a key in `*env_config*` , returns the ","value at the path.  If the value cannot be found, will return `undefined`.  If ","the second argument is provided, `alt_val`, that value will be returned if the ","provided path isn't found. "],"usage":["key:array","alt_val:*"],"tags":["settings","config","defaults","default","environment","env","application"],"requires":["is_array?","resolve_multi_path","*env_config*"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("all_global_functions",function() {
