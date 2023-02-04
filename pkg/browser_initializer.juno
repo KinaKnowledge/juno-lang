@@ -43,6 +43,7 @@
 (defparameter *whitespace_regexp* (new RegExp "\\\\s" `g))
 
 (defparameter TokenIterator (function () true)) ;; filled in by the first editor
+(defparameter core/*evaluators* {})  ;; remote evaluators
 
 (defparameter
     *editor_themes*
@@ -6454,6 +6455,9 @@
 
       
 
+(defmacro get_selection ()
+   `(-> window `getSelection))
+
 (defcontrol log_view ()
    ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))
     (options (or options { `display_options: { include_prototypes: false }}))
@@ -6556,9 +6560,11 @@
                                                       (notify path))
                                                    (catch Error (e)
                                                       (notify (+ "ERROR: " e)))))]
-                                ["Copy selection"
-                                 (fn (e)
-                                    (-> document `execCommand `copy))]
+                                (if (not (blank? (-> (get_selection) "toString")))
+                                    ["Copy selection"
+                                     (fn (e)
+                                        (-> document `execCommand `copy))]
+                                    [])
                                 ["--" nil]
                                 [(dtext "Clear Output Log")
                                  (fn (e)
@@ -7001,7 +7007,18 @@
                             (fn (message)
                                (log (+ name ": message: ") message))))
             (request_id 0)
+            (heartbeat nil)
             (is_initial_open? true)
+            (round_trip_time nil)
+            (ping (fn ()
+                     (let
+                        ((start_time (time_in_millis))
+                         (response (send_wait "\"PING\"")))
+                        (if (is_function? options.on_heartbeat)
+                           (option.on_heartbeat response intf))
+                        (if (== response.rval "OK")
+                            (= round_trip_time (- (time_in_millis) start_time))
+                            (= round_trip_time nil)))))
             (send_wait (fn (lisp_text opts)
                           (let
                              ((rval nil))
@@ -7113,12 +7130,20 @@
                                                 (log "Unable to set namespace")))
                                           (catch Error (e)
                                              (log "Unable to set to active namespace: " e)))
+                                       ;; setup the round_trip_time values
+                                       (ping)
+                                       (if heartbeat
+                                          (clearInterval heartbeat))
+                                       (= heartbeat (setInterval ping 30000))
                                        (when is_initial_open?
                                           (= is_initial_open? false)
                                           (resolve_fn intf))))
                        
                        `on_close: (fn (event)
                                      (progn
+                                        (when heartbeat 
+                                           (clearInterval heartbeat)
+                                           (= heartbeat nil))
                                         (if options.on_close
                                            (options.on_close event intf)
                                            (log (+ name ": socket closed")))))
@@ -7156,6 +7181,12 @@
                          (defvar result (send_wait (as_lisp quoted_lisp)))
                          (process_result result)))
              ws: repl_ws
+             round_trip_time: (fn ()
+                                 round_trip_time)
+             num_requests: (fn ()
+                              request_id)
+             name: (fn ()
+                      name)
              close: (fn ()
                        (-> repl_ws `close))
              open?: (fn ()
@@ -7163,10 +7194,127 @@
              state: (fn ()
                        (prop repl_ws `readyState))
              connect: setup_connection
-             })))))
+             }))))
+   {
+     description:  (+ "The function `create_remote_evaluator` creates a websocket to the "
+                      "server that can be used for remote command evaluation.  It is typically called "
+                      "without options, and if successful will return an object interface that can be "
+                      "used to send evaluation requests to the server via the `eval` function in the "
+                      "returned interface.<br>Once the `remote_evaluator` is created, it will stay "
+                      "alive until it is closed, or the connection can no longer be sustained.   A "
+                      "heartbeat is sent every 30 seconds to perform keep alive duties and measure "
+                      "round trip times which can be retrieved through the interface that is "
+                      "returned.<br>#### Processing Modes <br><br>When results are returned from the "
+                      "server, they can be processed in a few different ways.  By default the "
+                      "connection is set to `eval` mode, which means that the returned forms from the "
+                      "server are evaluated locally.  This allows for things like DOM Elements or "
+                      "Regex objects to be sent over the wire and be represented in a natural form in "
+                      "the browser.  The other mode that is used is `quoted`, which returns the result "
+                      "without local evaluation<br>To close a remote evaluation connection, call the "
+                      "`close` method that is returned with the interface object.<br><br>#### Options "
+                      "<br><br>url:string - The location to create the websocket to, by default this "
+                      "is the server that the browser environment has been served from.  This must use "
+                      "a `ws` or `wss` scheme, such as: "
+                      "`ws://hostname/path/to/websocket_handler`.<br>name:string - The name assigned "
+                      "to the remote_evaluator.  By default the name is \"remote\", but it can be set to "
+                      "a specific name for identification purposes in callouts, "
+                      "etc.<br>on_message:function - When provided, this function is called with the "
+                      "received data packet from the server when the remote system has sent a message "
+                      "that isn\'t correlated to an originating request from the client (browser).  "
+                      "Note that this function is not called for requests that have originated via the "
+                      "`eval` interface function.<br>on_close:function - When the websocket is closed, "
+                      "and this option is provided, this function is called with the close event and "
+                      "the interface of the `remote_evaluator` object that received the close event.  "
+                      "`(event interface)`<br>on_error:function - If an error occurs with the remote "
+                      "evaluator connection, this function is called with the event and the "
+                      "`remote_evaluator`.  `(event interface)`<br>on_heartbeat:function - Called when "
+                      "the heartbeat message is received (every 30 seconds).  `(response "
+                      "interface)`<br><br><br>#### Interface <br><br>process_mode:function - returns "
+                      "the current response processing mode of the system as a string.  `eval` or "
+                      "`quoted`<br>set_process_mode:function - sets the processing mode.  Valid modes "
+                      "are `eval` or `quoted`.<br>evaluate:function - Given a string of lisp code, "
+                      "will remotely evaluate the lisp and return the result.<br>eval:function - Given "
+                      "a JSON structure, will remotely evaluate the lisp and return the "
+                      "result.<br>url:string - Will return the url that the remote evaluator is "
+                      "connected or was connected to.<br>on_message:function - Returns the on_message "
+                      "function assigned in options or the default on_message function (which is to "
+                      "send to log)<br>ws:Websocket - will return the websocket instance supporting "
+                      "the remote evalutor.<br>round_trip_time:function - will return the latest round "
+                      "trip time in milliseconds between the client and the "
+                      "server<br>num_requests:function - returns the number of requests processed by "
+                      "the remote evaluator<br>name:function - returns the name assigned to the remote "
+                      "evaluator.<br>close:function - closes the remote evaluator if "
+                      "open.<br>open?:function - Returns `true` if the remote evaluator is currently "
+                      "open and `false` if it is not.<br>state:function - Returns the integer value of "
+                      "the `readyState` of the websocket <br>connect:function - Attempts to connect "
+                      "the websocket.  Note that this function shouldn\'t be called after "
+                      "initialization.  The remote_evaluator is returned in a connected state under "
+                      "normal conditions.<br><br>")
+     usage: ["options:?object"]
+     tags: ["websocket" "remote" "server" "rblock" "eval" "evaluate"]
+   })
 
+(defun get_remote_sys_evaluator (options)
+   (let
+      ((name (if (and (is_object? options)
+                      options.name)
+                 options.name
+                 "sys_remote"))
+       (existing_evaluator (prop *evaluators* name))
+       (create_new (fn ()
+                      (let
+                         ((remote (create_remote_evaluator { `name: name })))
+                         (if remote.open?
+                            (progn
+                               (set_prop *evaluators*
+                                  name
+                                  remote)
+                               remote)
+                            (throw EvalError "get_remote_sys_evalutor: unable to create remote connection"))))))
+      (cond 
+         (and existing_evaluator 
+            (-> existing_evaluator `open?)) 
+         ;; it's there and open, use it
+         existing_evaluator
+         ;; it's there but not open, so reset it
+         existing_evaluator
+         (progn
+            (delete_prop *evaluators* name)
+            (create_new))
+         else
+         (create_new)))
+   {
+     description: (+ "Returns the global `remote_evaluator` instance for the system.  If "
+                     "there isn\'t one created, will attempt to create it before returning it to the "
+                     "caller, otherwise it will return the existing one.  Global remote evaluators "
+                     "are available in the `core/*evaluators*` object, which stores the global pool "
+                     "of evaluators. The default evaluator is `sys_remote`. <br><br>#### Options "
+                     "<br><br>name:string - The optional name for the remote evaluator to be used or "
+                     "created in the global evaluator pool.<br><br>For more details on remote "
+                     "evaluation, see `create_remote_evaluator`.<br> ")
+     usage: ["options:?object"]
+     tags: ["websocket" "remote" "server" "rblock" "eval" "evaluate"]
+     })
 
-
+(defmacro rblock (`& block_body)
+   (let
+      ((quoted_block block_body))
+   `(let
+       ((remote_evaluator (get_remote_sys_evaluator)))
+       (-> remote_evaluator 
+          `eval
+          `(progn
+             ,@quoted_block))))
+   {
+     `description: (+ "<br>The `rblock` macro allows for 1 or more forms to be evaluated as a "
+                      "block on the remote system.  The forms, which are provided as arguments are "
+                      "provided unquoted, and, like `progn`, the final form or statement return value "
+                      "is returned.<br>### Example\n <br><br>A simple example of validating the name of "
+                      "a host system:```(rblock\n   (if (== \"home_server\" (hostname))\n       true\n     "
+                      " false))```<br>")
+     `usage: ["arg0:*" "arg1:*" "argN:*"]
+     `tags: ["websocket" "remote" "server" "rblock" "eval" "evaluate" "create_remote_evaluator"]
+     })
 
 
 (defglobal *repl_counter* 0)
@@ -10104,8 +10252,6 @@
 
 ;; verbs for our editing command language
 
-(defmacro get_selection ()
-      `(-> window `getSelection))
 
 (defun_sync get_range (selection index)
    (-> selection `getRangeAt (or index 0)))
