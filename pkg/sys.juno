@@ -210,7 +210,7 @@
       
       (defun_sync is_symlink? (filepath)
          (try
-            (prop (stat filepath) `isSymLink)
+            (prop (stat filepath) `isSymlink)
             (catch Error (e)
                false))
          {
@@ -235,7 +235,23 @@
            tags: ["file" "directory" "status" "information" "filesystem"]
          })
       
-      
+      (defun_sync rename (source_path remote_path)
+         (progn
+            (Deno.renameSync source_path remote_path)
+            (or (is_file? remote_path) 
+                (is_dir? remote_path)
+                (is_symlink? remote_path)
+                false))
+         {
+           description: (+ "Given a source path and a target path, renames the source path to the "
+                           "target path.  If the operation is successful returns true.  True is returned "
+                           "when the rename operation is validated by a check to ensure that the target "
+                           "entry is present in the filesystem (either a file, a directory or a symbolic "
+                           "link).<br>If the source file isn\'t present, or the target file cannot be "
+                           "written, an error will be thrown. ")
+           usage: ["source_path:string" "remote_path:string"]
+           tags: ["file" "directory" "status" "information" "filesystem" "move" "mv" "filename"]
+         })
       
       (defun_sync delete_file (filepath)
          (try 
@@ -273,23 +289,27 @@
           tags: ["remove" "directory" "status" "information" "filesystem"]
         })
       
-      (defun list_files (dirpath)
+      (defun list_files (dirpath details?)
         (if (is_dir? dirpath)
             (try
                (let
                   ((entries []))
                   (for_with (entry (Deno.readDir dirpath))
-                     (push entries entry))
+                     (if details?
+                        (push entries (stat dirpath))
+                        (push entries entry)))
                   entries)
                (catch Error (e)
                   []))
             [])
         {
-          description: (+ "<br><br>The list files returns a list of DirEntry objects for the provided "
+          description: (+ "The list files returns a list of DirEntry objects for the provided "
                           "directory.  Otherwise if the path isn\'t a directory or the path doesn\'t exist, "
-                          "it will return an empty array. ")
+                          "it will return an empty array. <br>If `details?` is true, the full `stat` data "
+                          "for each entry in the directory is provided in the response. ")
 
-          usage: ["dirpath:string"]
+
+          usage: ["dirpath:string" "details?:?boolean"]
           tags: ["directory" "status" "information" "filesystem"]
         })
       

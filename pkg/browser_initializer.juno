@@ -7055,13 +7055,25 @@
                                    (log (+ "Error on send_wait: " e))))
                              rval)))
             (process_result (fn (result)
-                               (cond
+                               (progn
+                                  (cond
+                                  (and (is_object? result)
+                                       (== result.rval "FAIL"))
+                                  (progn
+                                     (defvar eresult (process_remote_eval_result result `juno))
+                                     (defvar remote_error (if (is_symbol? result.result_type)
+                                                              (new result.result_type result.message)
+                                                              (new Error result.message)))
+                                     (set_prop remote_error
+                                        `details
+                                        eresult)
+                                     (throw remote_error))
                                   (== process_mode "display")
                                   (process_remote_eval_result result `tree)
                                   (== process_mode "eval")
                                   (eval_struct (process_remote_eval_result result `juno))
                                   (== process_mode "quoted")
-                                  (process_remote_eval_result result `juno))))
+                                  (process_remote_eval_result result `juno)))))
             (setup_connection
                (fn ()
                   (http/create_websocket
@@ -7306,12 +7318,27 @@
           `(progn
              ,@quoted_block))))
    {
-     `description: (+ "<br>The `rblock` macro allows for 1 or more forms to be evaluated as a "
+     `description: (+ "The `rblock` macro allows for 1 or more forms to be evaluated as a "
                       "block on the remote system.  The forms, which are provided as arguments are "
                       "provided unquoted, and, like `progn`, the final form or statement return value "
-                      "is returned.<br>### Example\n <br><br>A simple example of validating the name of "
-                      "a host system:```(rblock\n   (if (== \"home_server\" (hostname))\n       true\n     "
-                      " false))```<br>")
+                      "is returned.<br>The `rblock` macro quotes the lisp forms within it prior to "
+                      "transmission so they aren\'t evaluated locally.  However, this means that local "
+                      "scope isn\'t available naturally and any references into the local scope need to "
+                      "be unquoted,<br><br>### Example   <br><br>A simple example of validating the "
+                      "name of a host system:```(rblock\n   (if (== \"home_server\" (hostname))\n    "
+                      "true\n      false))\n```<br><br>An example of a function that combines local "
+                      "references into a remotely evaluated form:```(defun ll (`& args)\n   (let\n     "
+                      "((cmd (+ \"ls -l \" (join \" \" args)))\n       (lines (rblock\n                "
+                      "(let\n                    ((out (prop (sys/system ,#cmd) `stdout)))\n            "
+                      "       (split_by \"\n\" out))))\n       (split_lines (map (fn (l)\n                "
+                      "           (no_empties (split_by \" \" l)))\n                         lines)))\n   "
+                      "  (dtable \n         split_lines)))```<br><br>In the above note how the locally "
+                      "scoped `cmd` is being referenced in the remote block by using the unquote "
+                      "operator `,#`.<br>The results of the `rblock` evaluation are then processed "
+                      "locally and presented in an html table form.<br><br> ")
+
+
+
      `usage: ["arg0:*" "arg1:*" "argN:*"]
      `tags: ["websocket" "remote" "server" "rblock" "eval" "evaluate" "create_remote_evaluator"]
      })
