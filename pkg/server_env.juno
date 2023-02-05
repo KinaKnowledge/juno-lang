@@ -1123,12 +1123,13 @@
 
 ;; Keep a list of interested parties to log messages 
 (defglobal core/*log_subscribers* 
-   [])
+   {})
 
 
 (defun sub_log (websocket_id) 
    (if (prop http/*active_websockets* websocket_id)
-       (push *log_subscribers*
+       (set_prop  *log_subscribers*
+          websocket_id
           (eval
              `(fn (`& args)
                  (let
@@ -1150,16 +1151,22 @@
 (defun core/logger (`& args)
    (progn
       (apply console.log (+ "" (formatted_date (new Date)) " ") args)
-      (= core/*log_subscribers*
-         (reduce_sync (subscriber *log_subscribers*)
-              (try
-                 (progn
+      (defvar removes [])
+      (map (fn (subscriber_detail idx total_idx)
+              (destructuring_bind (ws_id subscriber)
+                 subscriber_detail
+                 (try
                     (apply subscriber args)  ;; if no problems, keep in the subscription list
-                    subscriber)
-                 (catch Error (e)
-                    (progn
-                       (console.log "removing subscriber due to caught error")
-                       nil)))))   ;; otherwise remove
+                    (catch Error (e)
+                       (progn
+                          (push removes ws_id) ;; otherwise remove
+                          nil)))))
+           (pairs *log_subscribers*))
+      ;; now pull the invalid ones
+      (for_each (removal_id removes)
+         (progn
+            (console.log "logger: removing subscriber at " removal_id " due to caught error")
+            (delete_prop core/*log_subscribers* removal_id)))
       nil))
 
 
