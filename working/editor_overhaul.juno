@@ -603,6 +603,10 @@
             (console.error e)
             nil))))
 
+
+(defun is_clipboard_allowed? ()
+   (== "granted" (prop (-> navigator.permissions `query { name: "clipboard-write" }) `state)))
+
 (defun_sync select_to_current_form (editor pos)
   (if editor
     (let
@@ -2069,6 +2073,39 @@
                              (for_each (theme *editor_themes*)
                                 [theme  (fn () (-> intf `set_theme theme))])]]))
             
+            (init_context_menu (fn ()
+                                  (let
+                                     ()
+                                     (attach_context_menu 
+                                        view
+                                        (fn (event)
+                                           (progn
+                                              [[(dtext "Select to root form")
+                                                (fn (event)
+                                                   (select_to_root_form editor))]
+                                               [(dtext "Evaluate root form")
+                                                (fn ()
+                                                   (evaluate_root_form))]
+                                               [(dtext "Select current form")
+                                                (fn ()
+                                                   (select_current_form))]
+                                               (if (is_clipboard_allowed?)
+                                                   [(dtext "Copy root form")
+                                                    (fn ()
+                                                       (let
+                                                          ((cpos (current_position)))
+                                                          (select_form_root)
+                                                          (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                          (sleep 0.02)
+                                                          (-> editor.selection `clearSelection)
+                                                          (-> editor `navigateTo cpos.row cpos.column)))]
+                                                   [])
+                                               (if (is_clipboard_allowed?)
+                                                   [(dtext "Copy selection")
+                                                    (fn ()
+                                                       (-> navigator.clipboard `writeText (-> editor `getCopyText)))]
+                                                   [])
+                                               ]))))))
             ;; main initialization routine
             (initialize_editor (fn ()
                                   (when (not initialized)
@@ -2303,6 +2340,8 @@
                                         (if (== options.display_control_bar false)
                                             (set_display_control_bar false))
                                         
+                                        (init_context_menu)
+                                        
                                         (attach_event_listener nav_forward_button
                                            `click
                                            (fn (e)
@@ -2317,6 +2356,7 @@
                                               (progn
                                                  (handle_event e)
                                                  (go_backward_in_position))))
+                                        
                                         
                                         
                                         (attach_event_listener evaluator_span

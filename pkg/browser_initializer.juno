@@ -96,7 +96,8 @@
        (error_message error_instance.message))
      (console.error error_instance))))
      
-
+(defun is_clipboard_allowed? ()
+      (== "granted" (prop (-> navigator.permissions `query { name: "clipboard-write" }) `state)))
 
 (defun_sync value_to_dom (val options _path)
   (let 
@@ -205,7 +206,8 @@
                       (+ (sub_type val) " "))
              (span { `tabindex: 0 `style: "font-family: var(--main-app-font)" } "[ RENDERED ELEMENT ]"))
             val))
-         (is_regex? val)
+         (and (not options.include_prototypes)
+              (is_regex? val))
          (span (+ {} (if options.namespace
                          { `ns: options.namespace }
                          {})
@@ -214,7 +216,8 @@
                     `class: (+ classes "regexp") }) 
                (-> val `toString))
          (and (is_date? val)
-              (not options.editable))
+              (not options.editable)
+              (not options.include_prototypes))
          (span (+ {} (if options.namespace
                          { `ns: options.namespace }
                          {})
@@ -243,8 +246,9 @@
                  tmp)))
          (is_function? val)
          (function_to_dom val options _path)
-         (and (is_object? val)
-              (not (is_date? val)))
+         (is_object? val)
+              ;(or options.include_prototypes 
+                ; (not (is_date? val))))
          (obj_to_dom val new_opts _path)
          options.editable
          (make_input)
@@ -538,7 +542,37 @@
       usage: ["value:*" "options:?object"]
       tags: ["UI" "DOM" "value" "element" "view"]
       })
-           
+
+(use_quoted_initializer          
+   (defglobal *obj_summary_representation*
+      {
+        "Date":(function (obj options)
+                  (summary (+ {} (if options.namespace
+                                 { `ns: options.namespace }
+                                 {})
+                              { `lpath: options.lpath
+                                `tabindex: 0
+                                `class: (+ "juno-value juno-type-regexp") })
+                           (-> obj `toISOString)))
+        "RegExp":(function (obj options)
+                    (summary (+ {} (if options.namespace
+                                   { `ns: options.namespace }
+                                   {})
+                                { `lpath: options.lpath
+                                  `tabindex: 0
+                                  `class:  (+ "juno-value juno-type-regexp") })
+                             (-> obj `toString)))
+        }))
+
+(defparameter *base_object_methods*
+      (object_methods (new Object)))
+
+(defun_sync show_summary_representation (obj options)
+   (aif (prop *obj_summary_representation* (sub_type obj))
+        (it obj options)
+        (summary { `lpath: options.lpath `tabindex: 0 `class: "juno-obj-to-dom" } obj.constructor.name)))
+      
+
 (defun_sync obj_to_dom (obj options _path)
   (let
       ((options (or options {}))
@@ -549,7 +583,13 @@
        (expansion_mode false)
        (get_pairs (if options.include_prototypes
                     pairs*
-                    pairs))
+                    (function (obj)
+                       (reduce_sync (pset (pairs* obj))
+                           (destructuring_bind (method val)
+                              pset
+                              (if (contains? method *base_object_methods*)
+                                  nil
+                                  pset))))))
        (render_table (function () 
                          (table
                             (tbody
@@ -557,7 +597,7 @@
                                        (destructuring_bind (key value)
                                                            keyval
                                                            (tr 
-                                                            (td {  `class: "juno-obj-to-dom-key" `lpath: (join "~" (conj _path [ key ] )) } key)
+                                                            (td {  `class: "juno-obj-to-dom-key" } key)
                                                             (td { `class: "juno-obj-to-dom-value" } 
                                                                 (value_to_dom value options (conj _path [ key ] ))))))))))
        (_path (or _path []))
@@ -571,7 +611,7 @@
     (if (-> options.visited `has obj)
         (span { `lpath: (lpath) `tabindex: 0 `class: "juno-value juno-obj-to-dom" } "[CIRCULAR]")
         (cond
-          (== (length obj) 0)
+          (and false (== (length (object_methods obj)) 0))
           (span { `lpath: (lpath) `tabindex: 0 `class: "juno-value juno-obj-to-dom" } "Object {}")
           else
           (progn
@@ -583,7 +623,8 @@
                           (if (== _path.length 0)
                             { `open: true }
                             {}))
-                       (summary { `lpath: (lpath) `class: "juno-obj-to-dom" } obj.constructor.name)
+                       ;(summary { `lpath: (lpath) `class: "juno-obj-to-dom" } (-> obj `toString))
+                       (show_summary_representation obj { `lpath: (lpath) `class: "juno-obj-to-dom" })
                        (if expansion_mode
                          (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))
                          (render_table))))
@@ -595,12 +636,7 @@
                                               (= expanded true)
                                               (-> expansion_elem `replaceWith (render_table))
                                               (= render_table nil)))))
-           detail_elem))))
-  {
-    description: "See value_to_dom for documentation details."
-    usage: ["value:*" "options:?object"]
-    tags: ["UI" "DOM" "value" "element" "view"]
-    })
+           detail_elem)))))
 
 
 
@@ -5679,6 +5715,39 @@
                              (for_each (theme *editor_themes*)
                                 [theme  (fn () (-> intf `set_theme theme))])]]))
             
+            (init_context_menu (fn ()
+                                  (let
+                                     ()
+                                     (attach_context_menu 
+                                        view
+                                        (fn (event)
+                                           (progn
+                                              [[(dtext "Select to root form")
+                                                (fn (event)
+                                                   (select_to_root_form editor))]
+                                               [(dtext "Evaluate root form")
+                                                (fn ()
+                                                   (evaluate_root_form))]
+                                               [(dtext "Select current form")
+                                                (fn ()
+                                                   (select_current_form))]
+                                               (if (is_clipboard_allowed?)
+                                                   [(dtext "Copy root form")
+                                                    (fn ()
+                                                       (let
+                                                          ((cpos (current_position)))
+                                                          (select_form_root)
+                                                          (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                          (sleep 0.02)
+                                                          (-> editor.selection `clearSelection)
+                                                          (-> editor `navigateTo cpos.row cpos.column)))]
+                                                   [])
+                                               (if (is_clipboard_allowed?)
+                                                   [(dtext "Copy selection")
+                                                    (fn ()
+                                                       (-> navigator.clipboard `writeText (-> editor `getCopyText)))]
+                                                   [])
+                                               ]))))))
             ;; main initialization routine
             (initialize_editor (fn ()
                                   (when (not initialized)
@@ -5913,6 +5982,8 @@
                                         (if (== options.display_control_bar false)
                                             (set_display_control_bar false))
                                         
+                                        (init_context_menu)
+                                        
                                         (attach_event_listener nav_forward_button
                                            `click
                                            (fn (e)
@@ -5927,6 +5998,7 @@
                                               (progn
                                                  (handle_event e)
                                                  (go_backward_in_position))))
+                                        
                                         
                                         
                                         (attach_event_listener evaluator_span
@@ -6246,7 +6318,6 @@
                       "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
                       "and `go_forward_in_position` functions in the text_editor closure move an index "
                       "back and forth between the stored positions.   ")
-
      })
 
 
@@ -6399,8 +6470,26 @@
                (progn
                   (push (getf_ctx ctx `arr)
                        (DOM_to_value (third quoted_dom) acc ctx)))
+              
                (and tag
-                  (contains? "juno-code-value" classes))
+                  (== tag (quote input))
+                  (is_object? (second quoted_dom)))
+               (progn
+                  (defvar itype (prop (second quoted_dom) "type"))
+                  (defvar val (prop (second quoted_dom) `value))
+                  (cond
+                     (eq nil itype)
+                     val
+                     (== itype "Number")
+                     (float val)
+                     (== itype "checkbox")
+                     (if (prop (second quoted_dom) `is_checked)
+                         true
+                         false)
+                     else
+                     val))
+                (and tag
+                   (contains? "juno-code-value" classes))
                (progn
                   (read_lisp (third quoted_dom)))
                (and tag
@@ -7344,6 +7433,42 @@
      })
 
 
+(defun set_system_repl (repl_control)
+   (cond
+      (and repl_control 
+         (== repl_control *system_repl*))
+      (progn
+         (log (dtext "set_system_repl: the specified control is already the system repl"))
+         false)
+      (and repl_control
+         (== repl_control.type "visual_repl"))
+      (progn
+         (if *system_repl*
+            (remove_prop (prop *system_repl* `options)
+               `locked))
+         (set_prop repl_control.options
+            `locked
+            true)
+         (= *system_repl*
+            repl_control)
+         true)
+      repl_control
+      (progn
+         (log (dtext "set_system_repl: the specified argument must be a 'visual_repl'"))
+         false)
+      else
+      (progn
+         (log (dtext "set_system_repl: no control specified to be the *system_repl*."))
+         false))
+   {
+     `description: (+ "Given a `visual_repl` control instance, sets that repl to the "
+                      "`*system_repl*`.  The *system_repl* is a global variable pointing to a "
+                      "`visual_repl` instance that messages, errors and events are displayed on.  "
+                      "Returns `true` if the provided control is successfully set to the system repl.  "
+                      "Otherwise, the command will return false and log an error message.<br> ")
+     `tags: ["repl" "system" "log" "messages" "errors" "display"]
+     `usage: ["repl_control:object"]
+   })
 (defglobal *repl_counter* 0)
 
 (defun visual_repl (options)
@@ -7921,6 +8046,11 @@
                           [(dtext "Turn Off Smooth Scrolling")
                             (fn ()
                                (-> output_control `set_smooth_scroll_mode false))])
+                      [(dtext "Set as *system_repl*")
+                       (fn ()
+                          (if (set_system_repl intf)
+                              (-> input_container `display_context_message (+ "*system_repl* / REPL Mode: Press Shift-Enter to evaluate editor contents"))
+                              (-> input_container `display_context_message "Unable to set this repl as the *system_repl*")))]
                       [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
                                                             [theme  (fn ()
                                                                       (progn
@@ -10239,6 +10369,16 @@
                 (set_prop attribs
                    (resolve_path [ `attributes attrib_num `name ] element)
                    (resolve_path [ `attributes attrib_num `value ] element))))
+          (when (and (== tag_name "INPUT")
+                     (== (prop attribs `type)
+                         "checkbox"))
+             (if (prop element `checked)
+                 (set_prop attribs
+                    `is_checked
+                    true)
+                 (set_prop attribs
+                    `is_checked
+                    false)))
           (push elem_as_lisp
              attribs)
           (= nodes element.childNodes)
@@ -12612,7 +12752,9 @@
                        control.options.id)
               (defvar is_displayed? (and (not (== holding_tank control))
                                          (not (-> holding_tank `has_control? control))))
-              [(or control.name "Untitled") 
+              [(if (== *system_repl* control)
+                   (+" ⮕ " control.name)
+                   (+ "   " (or control.name "Untitled")))
                (reduce (operation ["Show" "Focus" "Hide" "--" "Close Control"])
                        (cond
                          (== control.name "Holding Tank")                              
