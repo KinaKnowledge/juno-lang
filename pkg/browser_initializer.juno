@@ -110,7 +110,8 @@
       (if *last_focus*
          (cond
             (or (== (prop *last_focus* `type) "text_editor")
-                (== (prop *last_focus* `type) "visual_repl"))
+                (== (prop *last_focus* `type) "visual_repl")
+                (== (prop *last_focus* `type) "DOM_editor"))
             (cond
                (== command "cut")
                (-> *last_focus* `cut_selection)
@@ -11462,6 +11463,27 @@
                                (pre (pretty_print (element_to_lisp root_elem))))
                             ))))
     (control_bar_elements [ locked_span ])
+    (cut_selection (fn ()
+                      (let
+                         ((selection (get_selection))
+                          (selrange (-> selection `getRangeAt 0))
+                          (copytext (-> selrange `toString)))
+                         (when (not (blank? copytext))
+                            (-> navigator.clipboard `writeText copytext)
+                            (doc_exec `delete nil)))))
+    (copy_selection (fn ()
+                       (let
+                          ((selection (get_selection))
+                           (selrange (-> selection `getRangeAt 0))
+                           (copytext (-> selrange `toString)))
+                          (when (not (blank? copytext))
+                             (-> navigator.clipboard `writeText copytext)))))
+    
+    (paste_selection (fn ()
+                        (let
+                           ((text (-> navigator.clipboard `readText)))
+                           (notify "Pasting text")
+                           (doc_exec `insertText text))))
     (request_save (function ()
                         (progn
                            (if (or options.path options.filename)
@@ -11557,6 +11579,33 @@
                                          response)
                                       else
                                       true))))
+    (init_context_menu (fn ()
+                          (attach_context_menu
+                             content_view
+                             (fn (event)
+                                (let
+                                   ()
+                                   [
+                                    (if (is_clipboard_allowed?)
+                                        [{
+                                           text: "Cut"
+                                           path: [`global `cut ]
+                                           exec: cut_selection }]
+                                        [])
+                                    (if (is_clipboard_allowed?)
+                                        [{
+                                           text: "Copy"
+                                           path: [`global `copy ]
+                                           exec: copy_selection
+                                           }]
+                                        [])
+                                    (if (is_clipboard_allowed?)
+                                        [ {
+                                            text: "Paste"
+                                            path: [`global `paste ]
+                                            exec: paste_selection }]
+                                        [])
+                                    ])))))
     (on_initialize (fn ()
                       (progc
                          (let
@@ -11672,7 +11721,8 @@
                                                     (check_for_unhandled_elements root_elem))
                                                  50))))
                                   
-                            
+                            (init_context_menu)
+                                       
                             (progc
                                (set_attribute root_elem
                                   `tabindex 0))
@@ -11703,6 +11753,9 @@
        expose: [[`active_rules active_rules]
                 [`reload_rules load_rules]
                 [`save request_save]
+                [`copy_selection copy_selection]
+                [`cut_selection cut_selection]
+                [`paste_selection paste_selection]
                 [`current_point (fn ()
                                    current_point) ]
                 [`editor {} ]  ;; just to indicate we are an editor type component
@@ -13207,7 +13260,7 @@
                                         win: "Alt-Shift-K"
                                         mac: "Command-Shift-K"
                                         description: "Clears the system repl output pane."
-                                        exec: (fn () (-> *system_repl* `clear_output))
+                                        exec: (fn () (clear_log))
                                         }
                   "copy" {
                             win: "Ctrl-C"

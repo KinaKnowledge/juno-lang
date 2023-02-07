@@ -9,11 +9,11 @@
        (catch Error (e)
           (log e.message)))
    {
-       `description: (+ "This macro wraps the provided forms in a "
-                        "try-catch, and returns the last value if "
-                        "no errors, like progn, or if an error "
-                        "occurs, logs to the console.  Simple "
-                        "help for debugging.")
+     `description: (+ "This macro wraps the provided forms in a try-catch, and returns the "
+                      "last value if no errors, like progn, or if an error occurs, logs to the "
+                      "console.  Simple help for debugging. ")
+
+
        `tags: ["debug" "error" "catch" "handler" "progn" "eval"]
        `usage: ["forms:*"]
    })
@@ -169,11 +169,10 @@
                (-> elem.innerText `substr point.position)))
          text))
    {
-       description: (+ "Given a point object,returns an array that can "
-                       "contain up to two strings.  The first value, at position "
-                       "0, is the element text pior to the point's position. "
-                       "The second value is the text of the element after "
-                       "the point's position.")
+       description: (+ "<br><br>Given a point object, returns an array that can contain up to two "
+                       "strings.  The first value, at position 0, is the element text prior to the "
+                       "point\'s position. The second value is the text of the element after the point\'s "
+                       "position. ")
        usage: ["point_object:object"]
        tags: ["DOM" "point" "edit" "selection" "editor" "select"]
    })
@@ -221,8 +220,9 @@
 (defun_sync point_under_element_tag? (tag_name point)
    (contains? tag_name (point_tag_path point))
    {
-       description: (+ "Returns true if the provided editor point is in a "
-                        "DOM tree containing the provided tagname, otherwise false.")
+     description: (+ "Returns true if the provided editor point is in a DOM tree containing "
+                     "the provided tagname, otherwise false. ")
+
        usage: ["tag_name:string" "point:object"]
        tags: ["editor" "point" "cursor" "DOM" "tree" "element"]
    })
@@ -791,6 +791,27 @@
                                (pre (pretty_print (element_to_lisp root_elem))))
                             ))))
     (control_bar_elements [ locked_span ])
+    (cut_selection (fn ()
+                      (let
+                         ((selection (get_selection))
+                          (selrange (-> selection `getRangeAt 0))
+                          (copytext (-> selrange `toString)))
+                         (when (not (blank? copytext))
+                            (-> navigator.clipboard `writeText copytext)
+                            (doc_exec `delete nil)))))
+    (copy_selection (fn ()
+                       (let
+                          ((selection (get_selection))
+                           (selrange (-> selection `getRangeAt 0))
+                           (copytext (-> selrange `toString)))
+                          (when (not (blank? copytext))
+                             (-> navigator.clipboard `writeText copytext)))))
+    
+    (paste_selection (fn ()
+                        (let
+                           ((text (-> navigator.clipboard `readText)))
+                           (notify "Pasting text")
+                           (doc_exec `insertText text))))
     (request_save (function ()
                         (progn
                            (if (or options.path options.filename)
@@ -886,6 +907,33 @@
                                          response)
                                       else
                                       true))))
+    (init_context_menu (fn ()
+                          (attach_context_menu
+                             content_view
+                             (fn (event)
+                                (let
+                                   ()
+                                   [
+                                    (if (is_clipboard_allowed?)
+                                        [{
+                                           text: "Cut"
+                                           path: [`global `cut ]
+                                           exec: cut_selection }]
+                                        [])
+                                    (if (is_clipboard_allowed?)
+                                        [{
+                                           text: "Copy"
+                                           path: [`global `copy ]
+                                           exec: copy_selection
+                                           }]
+                                        [])
+                                    (if (is_clipboard_allowed?)
+                                        [ {
+                                            text: "Paste"
+                                            path: [`global `paste ]
+                                            exec: paste_selection }]
+                                        [])
+                                    ])))))
     (on_initialize (fn ()
                       (progc
                          (let
@@ -1001,7 +1049,8 @@
                                                     (check_for_unhandled_elements root_elem))
                                                  50))))
                                   
-                            
+                            (init_context_menu)
+                                       
                             (progc
                                (set_attribute root_elem
                                   `tabindex 0))
@@ -1032,6 +1081,9 @@
        expose: [[`active_rules active_rules]
                 [`reload_rules load_rules]
                 [`save request_save]
+                [`copy_selection copy_selection]
+                [`cut_selection cut_selection]
+                [`paste_selection paste_selection]
                 [`current_point (fn ()
                                    current_point) ]
                 [`editor {} ]  ;; just to indicate we are an editor type component
@@ -1149,7 +1201,7 @@
      `description: (+ "<br><br>Given an element, will wrap it in a resizable element that preserves "
                       "aspect ratio. The provided element will be replaced with the wrapped element.  "
                       "The element will have a transparent handle on the lower right side that when "
-                      "hovered over, will indicate that the element can be resized.  ")
+                      "hovered over, will indicate that the element can be resized. ")
 
        `usage: ["element:Element"]
        `tags: ["DOM" "element" "UI" "resize" ]
