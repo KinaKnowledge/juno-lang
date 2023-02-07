@@ -84,20 +84,43 @@
 (defun message (text)
   (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text))
 
-(defun error_message (text)
-  (div { `style: "border-left: 5px solid red; padding: 5px;" } text))
+(defun error_message (text error)
+  (div { `style: "border-left: 5px solid red; padding: 5px;" } 
+       text 
+       (if (is_error? error)
+           (+ " [ " error.message " ]")
+           [])))
 
 (defun log_error (message error_instance)
   (progn
    (log (error_message message))
    (console.error message)
    (when error_instance
-     (when error_instance.messasge
+     (when error_instance.message
        (error_message error_instance.message))
      (console.error error_instance))))
      
 (defun is_clipboard_allowed? ()
       (== "granted" (prop (-> navigator.permissions `query { name: "clipboard-write" }) `state)))
+
+(defun handle_clipboard_event (command)
+   (progn
+      (declare (object *last_focus*)
+               (global *last_focus*))
+      (if *last_focus*
+         (cond
+            (or (== (prop *last_focus* `type) "text_editor")
+                (== (prop *last_focus* `type) "visual_repl"))
+            (cond
+               (== command "cut")
+               (-> *last_focus* `cut_selection)
+               (== command "copy")
+               (-> *last_focus* `copy_selection)
+               (== command "paste")
+               (-> *last_focus* `paste_selection))
+            else
+            (log "Handle Clipboard Event" command (prop *last_focus* `type))))))
+
 
 (defun_sync value_to_dom (val options _path)
   (let 
@@ -2252,17 +2275,35 @@
                          (and (is_object? struct)
                               (is_array? struct.path))
                          (progn
-                            (if (resolve_path struct.path *key_bindings*)
+                            (cond 
+                                 (resolve_path struct.path *key_bindings*)
                                  (progn
                                     (defvar detail (resolve_path struct.path *key_bindings*))
                                     (set_prop menu_details
                                        `text (or struct.text
                                                 detail.description)
                                        `keycode (prop detail os)
-                                       `exec detail.exec))
-                                 (set_prop menu_details
-                                         `text (or (prop struct `text)
-                                                   (+ "No Menu Text Found " idx)))))
+                                       `exec (or struct.exec detail.exec))
+                                    (if (is_function? menu_details.exec)
+                                        (set_prop item 
+                                           1
+                                           menu_details.exec))
+                                    menu_details)
+                                 (and (is_function? struct.exec)
+                                      (is_string? struct.text))
+                                 (progn
+                                    (set_prop menu_details
+                                       `text struct.text
+                                       `keycode nil
+                                       `exec struct.exec)
+                                    (set_prop item 
+                                           1
+                                           menu_details.exec))
+                                 else
+                                 (progn
+                                    (set_prop menu_details
+                                       `text (or (prop struct `text)
+                                                 (+ "No Menu Text Found " idx))))))
                          (is_object? struct)
                          (progn
                             (aif (and struct.text
@@ -2285,6 +2326,7 @@
                        (set_prop menu_details
                                  `keycode 
                                  (compress_keycodes menu_details.keycode)))
+                    ;(log "menu_tree: menu_details: final:" menu_details)
                     (cond
                       (is_array? item.1)
                       (menu_element options.flat_index menu_details (menu_tree item.1 options (conj path [ idx 1])))
@@ -2293,6 +2335,8 @@
                       (is_function? item.1)
                       (menu_element idx menu_details)
                       (is_string? item.1)
+                      (menu_element idx menu_details)
+                      (is_object? item.0)
                       (menu_element idx menu_details)
                       else
                       [])))
@@ -5680,6 +5724,23 @@
                                                  (set_evaluator_control it)
                                                  (display_context_message (+ (dtext "Evaluator set to ") it.options.name))
                                                  (notify (+ (dtext "Evaluator set to ") it.options.name)))))))
+            
+           
+            (cut_selection (fn ()
+                              (when (not (blank? (-> editor `getCopyText)))
+                                 (let
+                                    ((text (-> editor `getCopyText))
+                                     (rng (get_selection_object)))
+                                    (-> navigator.clipboard `writeText text)
+                                    (-> editor.session `replace rng "")))))
+            (copy_selection (fn ()
+                               (when (not (blank? (-> editor `getCopyText)))
+                                  (-> navigator.clipboard `writeText (-> editor `getCopyText)))))
+            (paste_selection (fn ()
+                               (let
+                                  ((text (-> navigator.clipboard `readText))
+                                   (rng (get_selection_object)))
+                                  (-> editor.session `replace rng text))))
             (menu_items (fn ()
                            [(if options.path
                                 [(+ (dtext "Save to") " " (last options.path))
@@ -5721,31 +5782,58 @@
                                      (attach_context_menu 
                                         view
                                         (fn (event)
-                                           (progn
-                                              [[(dtext "Select to root form")
-                                                (fn (event)
-                                                   (select_to_root_form editor))]
-                                               [(dtext "Evaluate root form")
-                                                (fn ()
-                                                   (evaluate_root_form))]
-                                               [(dtext "Select current form")
-                                                (fn ()
-                                                   (select_current_form))]
+                                           (let
+                                              ()
+                                              [[{
+                                                text: (dtext "Select to root form")
+                                                path: [`editor `select_form_root ]
+                                                exec: (fn ()
+                                                         (select_to_root_form editor))
+                                                 }]
+                                               [{
+                                                   text: (dtext "Evaluate root form")
+                                                   path: [`editor `evaluate_root_form ]
+                                                   exec: evaluate_root_form
+                                                   }]
                                                (if (is_clipboard_allowed?)
-                                                   [(dtext "Copy root form")
-                                                    (fn ()
-                                                       (let
-                                                          ((cpos (current_position)))
-                                                          (select_form_root)
-                                                          (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                          (sleep 0.02)
-                                                          (-> editor.selection `clearSelection)
-                                                          (-> editor `navigateTo cpos.row cpos.column)))]
+                                                   [{
+                                                   text: (dtext "Copy root form")
+                                                   path: [`editor `copy_root_form ]
+                                                   exec:  (fn ()
+                                                             (let
+                                                                ((cpos (current_position)))
+                                                                (select_form_root)
+                                                                (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                                (sleep 0.02)
+                                                                (-> editor.selection `clearSelection)
+                                                                (-> editor `navigateTo cpos.row cpos.column)))
+                                                   }]
+                                                   [])
+                                               ["--" nil]
+                                               [{
+                                                   text: (dtext "Select current form")
+                                                   path: [`editor `select_current_form ]
+                                                   exec: select_current_form
+                                                   }]
+                                               ["--" nil]
+                                               (if (is_clipboard_allowed?)
+                                                   [{
+                                                   text: "Cut"
+                                                   path: [`global `cut ]
+                                                   exec: cut_selection }]
                                                    [])
                                                (if (is_clipboard_allowed?)
-                                                   [(dtext "Copy selection")
-                                                    (fn ()
-                                                       (-> navigator.clipboard `writeText (-> editor `getCopyText)))]
+                                                   [{
+                                                   text: "Copy"
+                                                   path: [`global `copy ]
+                                                   exec: copy_selection
+                                                   }]
+                                                   [])
+                                               (if (is_clipboard_allowed?)
+                                                   [ {
+                                                   text: "Paste"
+                                                   path: [`global `paste ]
+                                                   exec: paste_selection }]
                                                    [])
                                                ]))))))
             ;; main initialization routine
@@ -6046,9 +6134,16 @@
                          (-> editor `setValue text))
                 `get: (fn (text)
                          (-> editor `getValue))
+                
+                ;; selection 
+                
                 `get_selection: get_selection_object
                 `get_selected_text: get_selected_text
                 `is_selected?: is_selected?
+                `cut_selection: cut_selection
+                `copy_selection: copy_selection
+                `paste_selection: paste_selection 
+                
                 `group_name: (fn ()
                                 options.group_name)
                 `type: `text_editor
@@ -6585,6 +6680,11 @@
              (if state
                 (remove_class "juno-display-none" command_button)
                 (add_class "juno-display-none" command_button)))))
+    
+    (copy_selection (fn ()
+                       (if (not (blank? (-> (get_selection) "toString")))
+                           (-> document `execCommand `copy))))
+    
     (log_context_menu (fn (orig_e)
                          (let
                             ((element orig_e.srcElement)
@@ -6841,7 +6941,6 @@
     (on_hide (fn ()
                 (progn
                    (= hide_state true))))
-    
     (on_focus (fn ()
                  (progn
                     (= hide_state false)
@@ -6890,6 +6989,11 @@
               [`display_modes (function ()
                                  display_modes)]
               [`set_smooth_scroll_mode set_smooth_scroll_mode]
+              [`cut_selection (function ()
+                                 (notify "Cannot cut from the log_viewer"))]
+              [`copy_selection copy_selection]
+              [`paste_selection (function ()
+                                 (notify "Cannot paste directly to the log viewer"))]
               [`output_container output_container]
               [`control_bar control_status]
               [`append add_result]
@@ -7576,6 +7680,36 @@
                         (aif (request_user_input (+ (dtext "Rename") ": " intf.name)
                                             `text)
                              (rename it))))
+      
+      (determine_focus (fn ()
+                          (let
+                             ((element document.activeElement)
+                              (sub_control (when element
+                                              (while (and element
+                                                          (not (== element output_control.view))
+                                                          (not (== element input_container.view)))
+                                                 (= element element.parentElement))
+                                              element)))
+                             (cond 
+                                (and sub_control
+                                   (== sub_control output_control.view))
+                                (progn
+                                   output_control)
+                                (and sub_control
+                                   (== sub_control input_container.view))
+                                (progn
+                                   input_container)))))
+      (cut_selection (fn ()
+                        (aif (determine_focus)
+                             (-> it `cut_selection))))
+      (copy_selection (fn ()
+                         (aif (determine_focus)
+                              (-> it `copy_selection))))
+      (paste_selection (fn ()
+                          (aif (determine_focus)
+                               (-> it `paste_selection))))
+      
+      
       (clog (fn (`& args)
                (progn
                   (apply console.log args)
@@ -8224,6 +8358,9 @@
                            (when (contains? theme_name *editor_themes*)
                              (set_prop options `theme theme_name)
                              (-> input_container `set_theme theme_name)))
+             `cut_selection: cut_selection
+             `copy_selection: copy_selection
+             `paste_selection: paste_selection
              `toJSON: (function ()
                                 (progn
                                  (set_prop options
@@ -13071,7 +13208,25 @@
                                         mac: "Command-Shift-K"
                                         description: "Clears the system repl output pane."
                                         exec: (fn () (-> *system_repl* `clear_output))
-                                        })
+                                        }
+                  "copy" {
+                            win: "Ctrl-C"
+                            mac: "Command-C"
+                            description: "Copies the current selection"
+                            exec: (fn (e) (handle_clipboard_event `copy e))
+                            }
+                  "cut" {
+                          win: "Ctrl-X"
+                          mac: "Command-X"
+                          description: "Copy the current selection and remove from document"
+                          exec: (fn (e) (handle_clipboard_event `cut e))
+                          }
+                  "paste" {
+                            win: "Ctrl-V"
+                            mac: "Command-V"
+                            description: "Copy the current selection and remove from document"
+                            exec: (fn (e) (handle_clipboard_event `paste e))
+                            })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        

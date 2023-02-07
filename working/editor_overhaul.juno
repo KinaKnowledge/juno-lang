@@ -2038,6 +2038,23 @@
                                                  (set_evaluator_control it)
                                                  (display_context_message (+ (dtext "Evaluator set to ") it.options.name))
                                                  (notify (+ (dtext "Evaluator set to ") it.options.name)))))))
+            
+            (cut_selection (fn ()
+                              (when (not (blank? (-> editor `getCopyText)))
+                                 (let
+                                    ((text (-> editor `getCopyText))
+                                     (rng (get_selection_object)))
+                                    (-> navigator.clipboard `writeText text)
+                                    (-> editor.session `replace rng "")))))
+            (copy_selection (fn ()
+                               (when (not (blank? (-> editor `getCopyText)))
+                                  (-> navigator.clipboard `writeText (-> editor `getCopyText)))))
+            (paste_selection (fn ()
+                               (let
+                                  ((text (-> navigator.clipboard `readText))
+                                   (rng (get_selection_object)))
+                                  (-> editor.session `replace rng text))))
+            
             (menu_items (fn ()
                            [(if options.path
                                 [(+ (dtext "Save to") " " (last options.path))
@@ -2079,31 +2096,58 @@
                                      (attach_context_menu 
                                         view
                                         (fn (event)
-                                           (progn
-                                              [[(dtext "Select to root form")
-                                                (fn (event)
-                                                   (select_to_root_form editor))]
-                                               [(dtext "Evaluate root form")
-                                                (fn ()
-                                                   (evaluate_root_form))]
-                                               [(dtext "Select current form")
-                                                (fn ()
-                                                   (select_current_form))]
+                                           (let
+                                              ()
+                                              [[{
+                                                text: (dtext "Select to root form")
+                                                path: [`editor `select_form_root ]
+                                                exec: (fn ()
+                                                         (select_to_root_form editor))
+                                                 }]
+                                               [{
+                                                   text: (dtext "Evaluate root form")
+                                                   path: [`editor `evaluate_root_form ]
+                                                   exec: evaluate_root_form
+                                                   }]
                                                (if (is_clipboard_allowed?)
-                                                   [(dtext "Copy root form")
-                                                    (fn ()
-                                                       (let
-                                                          ((cpos (current_position)))
-                                                          (select_form_root)
-                                                          (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                          (sleep 0.02)
-                                                          (-> editor.selection `clearSelection)
-                                                          (-> editor `navigateTo cpos.row cpos.column)))]
+                                                   [{
+                                                   text: (dtext "Copy root form")
+                                                   path: [`editor `copy_root_form ]
+                                                   exec:  (fn ()
+                                                             (let
+                                                                ((cpos (current_position)))
+                                                                (select_form_root)
+                                                                (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                                (sleep 0.02)
+                                                                (-> editor.selection `clearSelection)
+                                                                (-> editor `navigateTo cpos.row cpos.column)))
+                                                   }]
+                                                   [])
+                                               ["--" nil]
+                                               [{
+                                                   text: (dtext "Select current form")
+                                                   path: [`editor `select_current_form ]
+                                                   exec: select_current_form
+                                                   }]
+                                               ["--" nil]
+                                               (if (is_clipboard_allowed?)
+                                                   [{
+                                                   text: "Cut"
+                                                   path: [`global `cut ]
+                                                   exec: cut_selection }]
                                                    [])
                                                (if (is_clipboard_allowed?)
-                                                   [(dtext "Copy selection")
-                                                    (fn ()
-                                                       (-> navigator.clipboard `writeText (-> editor `getCopyText)))]
+                                                   [{
+                                                   text: "Copy"
+                                                   path: [`global `copy ]
+                                                   exec: copy_selection
+                                                   }]
+                                                   [])
+                                               (if (is_clipboard_allowed?)
+                                                   [ {
+                                                   text: "Paste"
+                                                   path: [`global `paste ]
+                                                   exec: paste_selection }]
                                                    [])
                                                ]))))))
             ;; main initialization routine
@@ -2404,9 +2448,16 @@
                          (-> editor `setValue text))
                 `get: (fn (text)
                          (-> editor `getValue))
+                
+                ;; selection 
+                
                 `get_selection: get_selection_object
                 `get_selected_text: get_selected_text
                 `is_selected?: is_selected?
+                `cut_selection: cut_selection
+                `copy_selection: copy_selection
+                `paste_selection: paste_selection 
+                
                 `group_name: (fn ()
                                 options.group_name)
                 `type: `text_editor
