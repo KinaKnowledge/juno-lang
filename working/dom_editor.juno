@@ -12,8 +12,6 @@
      `description: (+ "This macro wraps the provided forms in a try-catch, and returns the "
                       "last value if no errors, like progn, or if an error occurs, logs to the "
                       "console.  Simple help for debugging. ")
-
-
        `tags: ["debug" "error" "catch" "handler" "progn" "eval"]
        `usage: ["forms:*"]
    })
@@ -98,7 +96,10 @@
       (let
          ((selection (get_selection)))
          (when selection
-            (-> selection `modify `extend dir (or granularity "character"))))))
+            (-> selection `modify `extend dir (or granularity "character")))))
+   {
+     `description: nil
+     })
 
 (defun point_for (root_element)
    (let
@@ -227,6 +228,165 @@
        tags: ["editor" "point" "cursor" "DOM" "tree" "element"]
    })
 
+(defun wait_for_editor (content)
+   (if (get_control_by_name "Description Editor")
+       (alert_box (dtext "Open Editor")
+                  (dtext "There can be only one description editor open at a time."))
+       (new Promise
+          (fn (resolve reject)
+             (let
+                ((result nil)
+                 (name "Description Editor")
+                 (deditor (DOM_editor { rules: [ `*markdown_rules* ] `content: content `name: name })))
+                (defglobal $ed_rval nil)
+                (place_control `right deditor)
+                (while (and (get_control_by_id deditor.options.id)
+                            (is_nil? $ed_rval))
+                   (progn
+                      (sleep 1)))
+                (console.log "wait_for_editor: DOM_editor is complete" (get_by_id "body"))
+                (when (get_control_by_id deditor.options.id)
+                   (log "wait_for_editor: was able to get the control by id again.")
+                   (console.log "wait_for_editor: was able to get the control by id again!")
+                   (debug))
+                   ;(destroy_control deditor))
+                (console.log "wait_for_editor: resolving...")
+                (notify "Resolving in 3 seconds...")
+                (resolve `(+ ,@$ed_rval))))))
+   {
+     description: (+ "<br><br>Some more text ")
+     
+     
+     
+   })
+
+
+(defun edit_description_text (control)
+   (let
+      ((ctl (or (and control
+                     (== control.type "text_editor"))
+                (if (== (prop *last_focus* `type) "text_editor")
+                    *last_focus*
+                    nil))))
+      (if ctl
+         (let
+            ((pos (-> ctl `get_selection))
+             (select_pos nil)
+             (parent_pos nil)
+             (editor ctl.editor)
+             (new_text nil)
+             (content nil)
+             (thing_we_are_in nil)
+             (ok_to_proceed true)
+             (error_content (div
+                              (dtext "To use the Description Text Editor, the description field must be in one of the following forms:")
+                              (br)
+                              (code "description: nil")
+                              (br)
+                              (code "description: (+ \"content\")")))
+             (text nil))
+            
+            (select_to_current_form editor)
+            (= select_pos (-> ctl `get_selection))
+            (= text (-> ctl `get_selected_text))
+            
+            (= thing_we_are_in (read_lisp text { suppress_throw_on_error: true } ))
+            (cond
+               (is_array? thing_we_are_in)
+               (progn
+                  (= parent_pos (find_last_paren editor select_pos.start))
+                  (-> editor.selection `clearSelection)
+                  (-> editor.selection `setSelectionAnchor parent_pos.start.row parent_pos.start.column)
+                  (-> editor.selection `selectTo parent_pos.end.row (+ parent_pos.end.column 0))
+                  (= thing_we_are_in (read_lisp (-> ctl `get_selected_text) { suppress_throw_on_error: true } ))
+                  
+                  (if (and (prop thing_we_are_in `description)
+                           (>= select_pos.start.row parent_pos.start.row)
+                           (<= select_pos.end.row parent_pos.end.row)
+                           (== (eval (prop thing_we_are_in `description)) (eval (read_lisp text)))
+                           )
+                      (progn
+                          (-> editor.selection `clearSelection)
+                          (-> editor.selection `setSelectionAnchor select_pos.start.row select_pos.start.column)
+                          (-> editor.selection `selectTo select_pos.end.row (+ select_pos.end.column)))
+                      (progn
+                         (= ok_to_proceed false)
+                         (alert_box (dtext "Edit Description Text")
+                                    error_content))))
+               (and (is_object? thing_we_are_in)
+                    (contains? "description:" (trim (-> editor.session `getLine pos.start.row)))
+                    (contains? "description" (keys thing_we_are_in))
+                    (== thing_we_are_in.description (quote "=:nil")))
+               (progn
+                  (-> editor `clearSelection)
+                  (-> editor `navigateTo pos.end.row pos.end.column)
+                  (= select_pos (-> editor.session `getAWordRange pos.start.row pos.end.column))
+                  (-> editor.selection `setSelectionAnchor select_pos.start.row select_pos.start.column)
+                  (-> editor.selection `selectTo select_pos.end.row (+ select_pos.end.column 0))
+                  
+                  (= text "")
+                  (= select_pos pos))
+               else
+               (progn
+                  (= ok_to_proceed false)
+                  (alert_box (dtext "Edit Description Text")
+                             error_content)))
+            (when ok_to_proceed
+               (progc
+                  (= content  (unpack_description (or (eval (read_lisp (or text ""))) "Empty") { `edit_mode: true })))
+               (-> ctl `set_read_only true)
+               (= pos (-> ctl `get_selection))
+               (= new_text (wait_for_editor content))
+               (console.log "edit_description_text: back from wait for editor" (get_by_id "body"))
+              
+               (-> ctl `set_read_only false)
+               ;(log "edit_description_text: new_text: " new_text)
+               (when (and new_text
+                          (second new_text))
+                  (= new_text (pretty_print new_text))
+                  (console.log "edit_description_text: inserting text:" (get_by_id "body"))
+                  (-> (-> editor `getSession) `replace pos new_text)
+                  (-> editor `navigateTo pos.end.row pos.end.column)
+                  ;; slow it down so we can watch the fitment..
+                  (sleep 0.3)
+                  (select_to_current_form ctl.editor)
+                  (sleep 0.2)
+                  (indent_editor_selection  ctl.editor)
+                  (sleep 0.1))))
+         (alert_box (dtext "Edit Description Text")
+                    (dtext "The control being used must be a text editor type."))))
+   { 
+     `description: (+ "This function provides an ability to edit the description text of a function "
+                      "for easier documentation.  When invoked, if not provided with a specific "
+                      "text_editor control, will use the *last_focus* control if it is a text editor "
+                      "type.   The current cursor position of the editor it is being invoked on will "
+                      "be examined, and if it meets certain criteria, the description text will be "
+                      "gathered and the description editor pane will pop up providing the user the "
+                      "ability to edit the text in a fashion more amenable for writing "
+                      "documentation.  <br>Once completed with the description edits, the user can "
+                      "press the short cut key for get_as_wordwrap_text (default is bound to Alt-X) or "
+                      "select the \"Get As Wordwrap Text\" menu item from the control menu.  This will "
+                      "close the editor and place the contents of the description editor into the "
+                      "source code in the appropriate position and form. <br>If the contents of the "
+                      "description editor are not to be saved back to the text editor, just close the "
+                      "editor, either from the menu or by pressing <br>Alt-D<br> (or the command "
+                      "currently associated with the Close Control Command).  See (show_key_bindings) "
+                      "in the REPL for a table of current globally defined key bindings. <br>#### "
+                      "Qualifying formats of the Description Field to be Edited<br>The description "
+                      "field must either have a value of nil (empty).  In this case, the description "
+                      "editor will be empty of content when opened.  In this case the field entry "
+                      "would look like:<br>```{\n   description: nil \n}```<br><br>If the description "
+                      "field is already populated with content, it will need to be in the form "
+                      "of: <br>```{\n   description: (+ \"Content Line\" \"more content\" "
+                      "\"...\")\n}```<br><br>This is the format that the Description editor will place "
+                      "into the source code when complete.<br>#### Other Notes<br>When the Description "
+                      "Editor is invoked and while the user is editing text, the text_buffer that it "
+                      "is being invoked on is placed into read only mode and so cannot be modified "
+                      "until the Description Editor is closed. ")
+
+      `usage: ["control:?object"]
+      `tags: ["editor" "description" "metadata" "meta" ] })
+
 (defparameter *markdown_rules*
    {
      reload_rules:{
@@ -248,16 +408,25 @@
          handle_event: true
          menu: true
          qualifier: (fn (point ctl)
-                       true)
+                       (progn
+                          true))
          exec: (fn (point ctl event)
-                  (progn
-                     (-> ctl `save)
-                     (sleep 0.1)
-                     (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
-                                            (if (ends_with? " " line)
-                                                line
-                                                (+ line " "))))
-                     (destroy_control ctl)))
+                  (if (and ctl
+                             (== ctl.type "DOM_editor"))
+                      (try
+                         (progn
+                            (-> ctl `save)
+                            (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
+                                                   (if (ends_with? " " line)
+                                                       line
+                                                       (+ line " "))))
+                            (destroy_control ctl))
+                         (catch Error (e)
+                            (progn
+                               (notify "ERROR: " e.message)
+                               (console.error e))))
+                      (progn
+                         (notify (+ "TYPE: " ctl.type)))))
      }
      get_as_markdown_text:{
          on_event: `keydown
@@ -493,11 +662,16 @@
 
 (defun_sync flex_row (`& args)
    (apply div { `style: "padding: 5px; display: flex; flex-direction: row; justify-content: flex-start; align-items: flex-start" }
-          args))
+          args)
+   {
+     `description: (+ "<br><br>Shorthand function for creating a flex element with a flex direction "
+                      "row and justify-content to flex-start, align-items to the flex-start position. ")
+
+   })
 
 
 (defcontrol DOM_editor ()
-   ((starter  (div { } "Start Typing!"))
+   ((starter  (div { } "Enter text"))
     (root_elem (div { `contenteditable: true `tabindex: 0 }
                     starter))
     (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 0px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
@@ -567,18 +741,27 @@
                         (push rules_menu
                            [(from_key name)
                             (eval `(fn (e)
-                                      (progn
-                                         (defvar rule ,#rule)
-                                         (when (prop *last_focus* `root_elem)
-                                            (focus_to (-> *last_focus* `root_elem))
-                                            (defvar current_point (-> *last_focus* `current_point))
-                                            (log "current_point: " current_point)
-                                            (when current_point
-                                               (move_to_point current_point))
-                                            (if (is_function? rule.qualifier)
-                                                (if (rule.qualifier current_point *last_focus*)
-                                                    (rule.exec current_point *last_focus* nil))
-                                                (rule.exec current_point *last_focus* nil))))))])))))
+                                      (try
+                                         (progn
+                                            (defvar rule ,#rule)
+                                            (defvar ctl_id ,#id)
+                                            (defvar ctl (get_control_by_id ctl_id))
+                                            (console.log "DOM_editor: load_rule: " ctl.options (get_by_id "body"))
+                                            (when (and ctl
+                                                       (prop  ctl `root_elem))
+                                               (focus_to (-> ctl `root_elem))
+                                               (defvar current_point (-> ctl `current_point))
+                                               (when current_point
+                                                  (move_to_point current_point))
+                                               (if (is_function? rule.qualifier)
+                                                   (if (rule.qualifier current_point ctl)
+                                                       (progn
+                                                           (rule.exec current_point ctl nil)))
+                                                   (rule.exec current_point ctl nil))))
+                                         (catch Error (e)
+                                            (progn
+                                               (log "dom_editor: load_rule: error on eval: " e.message)
+                                               (console.error "dom_editor: load_rule: error on eval: " e))))))])))))
                                    
     (load_rules (fn ()
                    (progn
@@ -697,7 +880,12 @@
                                  (when (== identified_by `key_sequence)
                                     (= key_history_acc []))
                                  ;; then call the rule!
-                                 (-> rule `exec current_point self)
+                                 (try
+                                    (-> rule `exec current_point self)
+                                    (catch Error (e)
+                                       (progn
+                                          (log "dom_editor: caught error: " e.message e)
+                                          (console.error "dom_editor: caught error on rule evaluation: " e.message e))))
                                  true)
                               false))))
     (key_history_acc [])
@@ -1006,6 +1194,10 @@
                                   (defvar tmp (if (is_element? options.content)
                                                   options.content
                                                   (eval options.content)))
+                                  (if (and (is_array? options.content)
+                                           (== (length options.content) 0))
+                                      (= is_fresh true))
+                                      
                                   (when (is_element? tmp)
                                      (-> root_elem `replaceWith tmp)
                                      (= root_elem document_view.children.0))))
@@ -1060,7 +1252,7 @@
                                (-> self `show_control_bar false))
                             
                             (check_for_unhandled_elements root_elem)
-                            
+                            (log "DOM_Editor: options: " options)
                             (setTimeout (fn ()
                                            (progn
                                               (cond
@@ -1070,10 +1262,12 @@
                                                           options.filename)
                                                       (not is_fresh))
                                                  (progn
+                                                    (log "selecting root elem")
                                                     (select_element root_elem)
                                                     (collapse_to_start (get_selection)))
                                                  else
                                                  (progn
+                                                    (log "Selecting starter")
                                                     (select_element starter)))))
                                         100))))))
    {
