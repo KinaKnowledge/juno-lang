@@ -2535,7 +2535,7 @@
                                 (is_array? menu_gen)
                                 menu_gen)
                              {
-                               min_width: 250
+                               min_width: 300
                                do_not_attach: true
                                }))
                (set_style [["top" (+ "" (Math.max 0 e.clientY) "px") ]
@@ -10808,7 +10808,7 @@
                        true)
          exec: (fn (point ctl event)
                   (progn
-                     (notify (+ "Reloading Markdown Rules: " ctl.name))
+                     (notify (+ "Reloading Rules: " ctl.name))
                      (-> ctl `reload_rules)))
          
      }
@@ -10818,16 +10818,26 @@
          handle_event: true
          menu: true
          qualifier: (fn (point ctl)
-                       true)
+                       (progn
+                          true))
          exec: (fn (point ctl event)
-                  (progn
-                     (-> ctl `save)
-                     (sleep 0.1)
-                     (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
-                                            (if (ends_with? " " line)
-                                                line
-                                                (+ line " "))))
-                     (destroy_control ctl)))
+                  (if (and ctl
+                             (== ctl.type "DOM_editor"))
+                      (try
+                         (progn
+                            (-> ctl `save)
+                            (sleep 0.1)
+                            (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
+                                                   (if (ends_with? " " line)
+                                                       line
+                                                       (+ line " "))))
+                            (destroy_control ctl))
+                         (catch Error (e)
+                            (progn
+                               (notify "ERROR: " e.message)
+                               (console.error e))))
+                      (progn
+                         (notify (+ "TYPE: " ctl.type)))))
      }
      get_as_markdown_text:{
          on_event: `keydown
@@ -10981,7 +10991,7 @@
                         (select_node_at_point)
                         )))
      }  
-     insert_section:{
+      insert_section:{   
          ;; on_event specifies what events cause this rule to be checked
          on_event: `keydown
          
@@ -11010,7 +11020,7 @@
                      (select_node_at_point)
                      ))
      }
-     insert_horizontal_rule:{
+      insert_horizontal_rule:{
           on_event: `keyup
           handle_event: true
           menu: true
@@ -11030,7 +11040,8 @@
                         
           
       }
-     wrap_text_in_code_tag:{
+      
+       wrap_text_in_code_tag:{
           on_event: `keydown
           handle_event: true
           menu: true
@@ -11169,7 +11180,7 @@
    })
 
 (defcontrol DOM_editor ()
-   ((starter  (div { } "Start Typing!"))
+   ((starter  (div { } "Enter text"))
     (root_elem (div { `contenteditable: true `tabindex: 0 }
                     starter))
     (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 0px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
@@ -11239,18 +11250,27 @@
                         (push rules_menu
                            [(from_key name)
                             (eval `(fn (e)
-                                      (progn
-                                         (defvar rule ,#rule)
-                                         (when (prop *last_focus* `root_elem)
-                                            (focus_to (-> *last_focus* `root_elem))
-                                            (defvar current_point (-> *last_focus* `current_point))
-                                            (log "current_point: " current_point)
-                                            (when current_point
-                                               (move_to_point current_point))
-                                            (if (is_function? rule.qualifier)
-                                                (if (rule.qualifier current_point *last_focus*)
-                                                    (rule.exec current_point *last_focus* nil))
-                                                (rule.exec current_point *last_focus* nil))))))])))))
+                                      (try
+                                         (progn
+                                            (defvar rule ,#rule)
+                                            (defvar ctl_id ,#id)
+                                            (defvar ctl (get_control_by_id ctl_id))
+                                            (console.log "DOM_editor: load_rule: " ctl.options (get_by_id "body"))
+                                            (when (and ctl
+                                                       (prop  ctl `root_elem))
+                                               (focus_to (-> ctl `root_elem))
+                                               (defvar current_point (-> ctl `current_point))
+                                               (when current_point
+                                                  (move_to_point current_point))
+                                               (if (is_function? rule.qualifier)
+                                                   (if (rule.qualifier current_point ctl)
+                                                       (progn
+                                                           (rule.exec current_point ctl nil)))
+                                                   (rule.exec current_point ctl nil))))
+                                         (catch Error (e)
+                                            (progn
+                                               (log "dom_editor: load_rule: error on eval: " e.message)
+                                               (console.error "dom_editor: load_rule: error on eval: " e))))))])))))
                                    
     (load_rules (fn ()
                    (progn
@@ -11369,7 +11389,12 @@
                                  (when (== identified_by `key_sequence)
                                     (= key_history_acc []))
                                  ;; then call the rule!
-                                 (-> rule `exec current_point self)
+                                 (try
+                                    (-> rule `exec current_point self)
+                                    (catch Error (e)
+                                       (progn
+                                          (log "dom_editor: caught error: " e.message e)
+                                          (console.error "dom_editor: caught error on rule evaluation: " e.message e))))
                                  true)
                               false))))
     (key_history_acc [])
@@ -11678,6 +11703,10 @@
                                   (defvar tmp (if (is_element? options.content)
                                                   options.content
                                                   (eval options.content)))
+                                  (if (and (is_array? options.content)
+                                           (== (length options.content) 0))
+                                      (= is_fresh true))
+                                      
                                   (when (is_element? tmp)
                                      (-> root_elem `replaceWith tmp)
                                      (= root_elem document_view.children.0))))
@@ -11732,7 +11761,7 @@
                                (-> self `show_control_bar false))
                             
                             (check_for_unhandled_elements root_elem)
-                            
+                            (log "DOM_Editor: options: " options)
                             (setTimeout (fn ()
                                            (progn
                                               (cond
@@ -11742,10 +11771,12 @@
                                                           options.filename)
                                                       (not is_fresh))
                                                  (progn
+                                                    (log "selecting root elem")
                                                     (select_element root_elem)
                                                     (collapse_to_start (get_selection)))
                                                  else
                                                  (progn
+                                                    (log "Selecting starter")
                                                     (select_element starter)))))
                                         100))))))
    {
