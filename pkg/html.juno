@@ -225,7 +225,7 @@
    `usage:["style_attributes:list" "element:Element"]
    })
 
-(defun has_class? (classname elem)
+(defun_sync has_class? (classname elem)
   (if (and elem
            (is_element? elem))
     (-> elem.classList `contains classname)
@@ -461,14 +461,14 @@
         (let
             ((type (or type "info"))
              (timer nil)
-             (view (div { `style: (+ "z-index: 5; box-shadow: 1px 2px 11px 2px #00000050; padding: 5px; position: relative; opacity: 0; cursor: pointer; color: var(--control-color); background: var(--control-bg-color); display: inline-block; width: 250px; overflow: auto; height: 50px; text-overflow: ellipses;" 
-                                     (cond
-                                         (== type "error")
-                                         "border-left: 5px solid var(--type-error-color);"
-                                         (== type "success")
-                                         "border-left: 5px solid var(--success-color);"
-                                         else
-                                         "border-left: 5px solid var(--primary-action-bg-color);")) }
+             (view (div { `class: "juno-notification" 
+                          `style: (cond
+                                     (== type "error")
+                                     "border-left: 10px solid var(--type-error-color);"
+                                     (== type "success")
+                                     "border-left: 10px solid var(--success-color);"
+                                     else
+                                     "border-left: 10px solid var(--primary-action-bg-color);") }
                          (or text "-"))))
             (when (eq nil (get_by_id "lower_right_corner"))
                   (-> (get_by_id "body")

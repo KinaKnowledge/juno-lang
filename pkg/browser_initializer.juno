@@ -591,11 +591,58 @@
 (defparameter *base_object_methods*
       (object_methods (new Object)))
 
+(defun_sync pairs_without_base_methods (obj)
+   (reduce_sync (pset (pairs* obj))
+      (destructuring_bind (method val)
+         pset
+         (if (contains? method *base_object_methods*)
+             nil
+             pset))))
+
 (defun_sync show_summary_representation (obj options)
    (aif (prop *obj_summary_representation* (sub_type obj))
         (it obj options)
-        (summary { `lpath: options.lpath `tabindex: 0 `class: "juno-obj-to-dom" } obj.constructor.name)))
+        (progn
+           (defvar idx 0)
+           (defvar obj_keys (for_each (pset (pairs_without_base_methods obj))
+                               (first pset)))
+              
+           (summary { `lpath: options.lpath `tabindex: 0 `class: "juno-obj-to-dom" }
+                    (span obj.constructor.name)
+                    (div { `style: "display: inline-block;" `class: "juno-non-value"  }
+                         (for_each (k obj_keys)
+                            (progn
+                               (when (> idx 10)
+                                   (break))
+                               (inc idx)
+                               (if (> idx 10)
+                                  (span {  `class: "juno-hint" } "...")
+                                  (span {  `class: "juno-hint" `style: "color: var(--type-key-color); background: #00000010;" } k)))))))))
       
+
+(defun trigger_cascade_open (element)
+   (let
+      ((initial_state 0))
+      (when (and (== element.tagName "DETAILS")
+                 (is_nil? (get_attribute element `open)))
+         (= initial_state 1)
+         (set_prop element `open true)
+         (when (== element.children.1.innerText "Opening...")
+             (while (== element.children.1.innerText "Opening...")
+                (sleep 0.01))))
+      (for_each (`c element.children)
+         (trigger_cascade_open c))
+      (if (== initial_state 1)
+          (set_prop element `open nil))
+      true)
+   {
+     description: (+ "When provided with a DOM Element produced by `value_to_dom`, will "
+                     "traverse the tree and open any `details` elements to ensure that the contents "
+                     "of the tree are fully rendered.  This is required for copying the tree as a "
+                     "value, since the HTML representation may not be fully rendered. ")
+     usage: ["element:Element"]
+     tags: ["dom_to_value" "value" "DOM" "details" "open" "summary"]
+     })
 
 (defun_sync obj_to_dom (obj options _path)
   (let
@@ -640,7 +687,7 @@
           else
           (progn
            (-> options.visited `add obj)    
-           (when (> _path.length 2)
+           (when (> _path.length -1)
              (= expansion_mode true))
            (= detail_elem 
               (details (+ {  `class: "juno-obj-to-dom" }
@@ -656,10 +703,14 @@
              (attach_event_listener detail_elem
                                     `toggle
                                     (fn (e) 
-                                      (unless expanded
-                                              (= expanded true)
-                                              (-> expansion_elem `replaceWith (render_table))
-                                              (= render_table nil)))))
+                                       (progn
+                                          (if (is_nil? (get_attribute e.srcElement `open))
+                                              (remove_class "juno-display-none" detail_elem.children.0.children.1 )
+                                              (add_class "juno-display-none" detail_elem.children.0.children.1 ))
+                                          (unless expanded
+                                             (= expanded true)
+                                             (-> expansion_elem `replaceWith (render_table))
+                                             (= render_table nil))))))
            detail_elem)))))
 
 
@@ -6633,7 +6684,7 @@
                      element.parentElement.parentElement.parentElement.parentElement
                      else
                      element)))
-      
+      (trigger_cascade_open root_elem)
       (if as_object
          (copy_text_to_clipboard (pretty_print (DOM_to_value (element_to_lisp root_elem))))
          (copy_text_to_clipboard (pretty_print (element_to_lisp root_elem))))))
@@ -10528,8 +10579,10 @@
                        (-> options `on_text (resolve_path [ cnum `nodeValue] nodes) nodes)
                        (resolve_path [ cnum `nodeValue] nodes)))
                 (== 1 (resolve_path [ cnum `nodeType ] nodes))
-                (push elem_as_lisp
-                   (element_to_lisp (resolve_path [ cnum ] nodes) options))))
+                (progn
+                   (unless (has_class?  "juno-non-value" (resolve_path [ cnum ] nodes) `classList )
+                      (push elem_as_lisp
+                         (element_to_lisp (resolve_path [ cnum ] nodes) options))))))
           (if (is_function? options.on_element_complete)
               (-> options `on_element_complete elem_as_lisp)
               elem_as_lisp))

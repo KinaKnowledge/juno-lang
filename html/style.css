@@ -1673,6 +1673,22 @@ hr {
    
 }
 
+div.juno-notification {
+   z-index: 5; 
+   box-shadow: 1px 2px 11px 2px #00000050; 
+   padding: 5px; 
+   position: relative; 
+   opacity: 0; cursor: pointer; 
+   color: var(--main-bg-color); 
+   background: var(--main-color); 
+   display: inline-block; 
+   width: 250px; 
+   overflow: auto; 
+   height: 70px; 
+   text-overflow: ellipses;
+   border-radius: 5px; 
+}
+
 .juno-empty-content {
   width: 100%;
   height: 100%;    
@@ -2227,6 +2243,17 @@ input.juno-input-error {
     }
 }
 
+span.juno-hint {
+    padding-left: 4px;
+    padding-right: 4px;
+    margin-left: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.juno-non-value {
+    opacity: 60%;
+}
 
 
 /* Overrides - may be dealt with in a better way but for now
