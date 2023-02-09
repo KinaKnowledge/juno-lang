@@ -2730,7 +2730,8 @@
                      ;          50)
                      (when (is_function? dwin.showModal)
                         (-> dwin `showModal)
-                        (-> user_input `select)))))
+                        (and (is_function? user_input.select)
+                             (-> user_input `select))))))
   {
     description: (+ "This function will pause the flow of execution until the user makes a choice, "
                     "selection or input and then will return the result of the user action.  If the "
@@ -5344,7 +5345,8 @@
                                                                                                                                (progn 
                                                                                                                                   (symbol_finder val true)
                                                                                                                                      ))))
-                                                      (console.log "find_active_lisp_operator: usage is: " usage)
+                                                      (when (> __VERBOSITY__ 0)
+                                                         (log "find_active_lisp_operator: " active_lisp_operator " usage is: " usage))
                                                       (if usage
                                                          (-> help_context_elem
                                                             `replaceChildren usage)
@@ -5448,6 +5450,10 @@
                                       `innerText
                                       (+ "[" current_pos.row " " current_pos.column "]"))
                                    (set_prop options `cursor_position current_pos)
+                                   
+                                   ;; determine if we have a new lisp operator in lisp mode
+                                   (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                      (find_active_lisp_operator))
                                    
                                    ;; record our position history so we can go back
                                    ;; if we are less then 8 rows difference, then
@@ -5777,7 +5783,6 @@
                                                  (display_context_message (+ (dtext "Evaluator set to ") it.options.name))
                                                  (notify (+ (dtext "Evaluator set to ") it.options.name)))))))
             
-           
             (cut_selection (fn ()
                               (when (not (blank? (-> editor `getCopyText)))
                                  (let
@@ -5793,6 +5798,7 @@
                                   ((text (-> navigator.clipboard `readText))
                                    (rng (get_selection_object)))
                                   (-> editor.session `replace rng text))))
+            
             (menu_items (fn ()
                            [(if options.path
                                 [(+ (dtext "Save to") " " (last options.path))
@@ -6054,8 +6060,8 @@
                                                                      (= is_dirty? true)
                                                                      (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
                                                                         (when (not linked_editor)
-                                                                           (handle_lisp_format_event val editor))
-                                                                        (find_active_lisp_operator))
+                                                                           (handle_lisp_format_event val editor)))
+                                                                        ;(find_active_lisp_operator))
                                                                      (when (not linked_editor)
                                                                         (dispatch_event { command: "editor_change"
                                                                                           source: options.id
@@ -6465,6 +6471,10 @@
                       "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
                       "and `go_forward_in_position` functions in the text_editor closure move an index "
                       "back and forth between the stored positions.   ")
+
+
+
+
      })
 
 
@@ -10959,7 +10969,7 @@
          exec: (fn (point ctl event) 
                   (progc
                      ;(move_to_point point)
-                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch;'></pre><div ><br></div>" true)
+                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch; spellcheck=\"false\"></pre><div ><br></div>" true)
                      (move_to_point point)
                      (move_point `forward `character)))
          
@@ -12487,8 +12497,9 @@
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
     (when (and target_env (not (resolve_path symbol_data.path target_env.global_ctx.scope)))
-       (console.log "new_buffer: target symbol doesn't exist: creating it")
-       (set_path symbol_data.path target_env.global_ctx.scope ""))
+       ;(console.log "new_buffer: target symbol doesn't exist: creating it: " symbol_data.path)
+       (log "new_buffer: target symbol doesn't exist in namespace " target_ns " creating it: " symbol_data.path)
+       (make_path symbol_data.path target_env.global_ctx.scope ""))
     
     (when symbol_data.path
        (= new_control

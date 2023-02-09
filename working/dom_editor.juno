@@ -244,20 +244,16 @@
                             (is_nil? $ed_rval))
                    (progn
                       (sleep 1)))
-                (console.log "wait_for_editor: DOM_editor is complete" (get_by_id "body"))
                 (when (get_control_by_id deditor.options.id)
                    (log "wait_for_editor: was able to get the control by id again.")
                    (console.log "wait_for_editor: was able to get the control by id again!")
                    (debug))
                    ;(destroy_control deditor))
-                (console.log "wait_for_editor: resolving...")
-                (notify "Resolving in 3 seconds...")
                 (resolve `(+ ,@$ed_rval))))))
    {
-     description: (+ "<br><br>Some more text ")
-     
-     
-     
+     description: (+ "<br><br>The `wait_for_editor` function is a support function for the "
+                     "`DOM_editor` and `text_editor` integration, specifically around facilitating "
+                     "the description editing process.  ")
    })
 
 
@@ -495,7 +491,7 @@
          exec: (fn (point ctl event) 
                   (progc
                      ;(move_to_point point)
-                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch;'></pre><div ><br></div>" true)
+                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch; spellcheck=false></pre><div ><br></div>" true)
                      (move_to_point point)
                      (move_point `forward `character)))
          

@@ -387,6 +387,7 @@
                    else
                    { `mode: "juno" }))
        (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (new_control nil)
        (symbol_data (if options.path
                         { `path: options.path `namespace: (or options.namespace (current_namespace)) }
                         (symbol_chooser "Select a symbol to edit" options.mode)))
@@ -400,29 +401,29 @@
        (target_ns symbol_data.namespace)
        (target_env nil))
       (log "new_buffer: for: " options target_ns extension symbol_data)
-     
+      
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
     (when (and target_env (not (resolve_path symbol_data.path target_env.global_ctx.scope)))
-       (console.log "new_buffer: target symbol doesn't exist: creating it")
-       (set_path symbol_data.path target_env.global_ctx.scope ""))
+       ;(console.log "new_buffer: target symbol doesn't exist: creating it: " symbol_data.path)
+       (log "new_buffer: target symbol doesn't exist in namespace " target_ns " creating it: " symbol_data.path)
+       (make_path symbol_data.path target_env.global_ctx.scope ""))
+    
     (when symbol_data.path
+       (= new_control
+          (if (== extension `dom)
+              (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+              (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
       (cond
          (is_top_control? target_container)
          (container_view_operation "split_right" 
                                    (first (-> target_container `controls))
-                                   (if (== extension `dom)
-                                       (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-                                       (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options) )))
+                                   new_control)
          else
          (swap_control target_container 
-                       (cond 
-                          (== extension `dom)
-                          (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-                          ;(== extesion `md)
-                          ;(mark_dow)
-                          else
-                           (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options )))))))
+                       new_control))
+      (sleep 0.1)
+      (set_focus_to new_control)))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                        "split the view to the right for the new editor.  If no options are provided, the user "
@@ -439,6 +440,8 @@
       `tags: ["editor" "edit" "buffer" "control"]
       `usage: ["options:object?"]
   })
+
+
 
 (defun edit_file (options)
    (let
@@ -1604,9 +1607,11 @@
                                                       (= active_lisp_operator new_op)
                                                       (= usage (decorative_usage active_lisp_operator nil nil (function (val)
                                                                                                                                (progn 
+                                                                                                                                  (log "find_active_lisp_operator: " val (symbol_finder val true))
                                                                                                                                   (symbol_finder val true)
                                                                                                                                      ))))
-                                                      (console.log "find_active_lisp_operator: usage is: " usage)
+                                                      (when (> __VERBOSITY__ 0)
+                                                         (log "find_active_lisp_operator: " active_lisp_operator " usage is: " usage))
                                                       (if usage
                                                          (-> help_context_elem
                                                             `replaceChildren usage)
@@ -1710,6 +1715,10 @@
                                       `innerText
                                       (+ "[" current_pos.row " " current_pos.column "]"))
                                    (set_prop options `cursor_position current_pos)
+                                   
+                                   ;; determine if we have a new lisp operator in lisp mode
+                                   (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
+                                      (find_active_lisp_operator))
                                    
                                    ;; record our position history so we can go back
                                    ;; if we are less then 8 rows difference, then
@@ -1901,7 +1910,7 @@
                                        cached_symbols)
                                  (let
                                     ((rval nil)
-                                     (comps (split_by "/" token))
+                                     (comps (split_by "/" token))  ;; split the token into namespace and symbol if applicable 
                                      (symbol_namespace (if (> comps.length 1)
                                                            (take comps)
                                                            nil))
@@ -1930,7 +1939,8 @@
                                                 `namespace
                                                 `core))))
                                     
-                                    ;(console.log "symbol_finder: want_metadata: " want_metadata  " rval from level 1: " token "->" rval)
+                                    ;(when (> __VERBOSITY__ 0)
+                                     ;  (log "symbol_finder: want_metadata: " want_metadata  " rval from level 1: " token "->" rval))
                                     (if (is_function? rval)
                                       (console.error (+ "symbol_finder: received a function back!  Should be an object -> check path in namespace:" cns " for " token " in cached_symbols: ") (resolve_path [ cns token ] cached_symbols)))
                                     (if rval
@@ -2316,8 +2326,8 @@
                                                                      (= is_dirty? true)
                                                                      (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
                                                                         (when (not linked_editor)
-                                                                           (handle_lisp_format_event val editor))
-                                                                        (find_active_lisp_operator))
+                                                                           (handle_lisp_format_event val editor)))
+                                                                        ;(find_active_lisp_operator))
                                                                      (when (not linked_editor)
                                                                         (dispatch_event { command: "editor_change"
                                                                                           source: options.id
