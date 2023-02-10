@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-02-10 11:44:08
-// Version: 2023.02.10.11.44
-export const DLISP_ENV_VERSION='2023.02.10.11.44';
+// Build Time: 2023-02-10 12:29:15
+// Version: 2023.02.10.12.29
+export const DLISP_ENV_VERSION='2023.02.10.12.29';
 
 
 
@@ -367,79 +367,81 @@ await Environment.set_global("check_type",async function(thing,type_name,error_s
 },{ "eval_when":{ "compile_time":true
 },"name":"check_type","macro":true,"fn_args":"(thing type_name error_string)","description":"If the type of thing (ascertained by sub_type) are not of the type type_name, will throw a TypeError with the optional error_string as the error message.","usage":["thing:*","type_name:string","error_string:string"],"tags":["types","validation","type","assert"],"requires":[],"source_name":"core.lisp"
 });
- Environment.set_global("get_object_path",function(refname) {
-    if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
-        {
-            let chars;
-            let comps;
-            let mode;
-            let name_acc;
-            chars=(refname).split("");
-            comps=[];
-            mode=0;
-            name_acc=[];
-             ( function() {
-                let __for_body__17=function(c) {
-                    return   (function(){
-                        if (check_true (((c===".")&& (mode===0)))) {
-                            {
-                                if (check_true (((name_acc && name_acc.length)>0))){
-                                    {
-                                        (comps).push((name_acc).join(""))
-                                    }
-                                };
-                                return name_acc=[]
+{
+     Environment.set_global("get_object_path",function(refname) {
+        if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
+            {
+                let chars;
+                let comps;
+                let mode;
+                let name_acc;
+                chars=(refname).split("");
+                comps=[];
+                mode=0;
+                name_acc=[];
+                 ( function() {
+                    let __for_body__17=function(c) {
+                        return   (function(){
+                            if (check_true (((c===".")&& (mode===0)))) {
+                                {
+                                    if (check_true (((name_acc && name_acc.length)>0))){
+                                        {
+                                            (comps).push((name_acc).join(""))
+                                        }
+                                    };
+                                    return name_acc=[]
+                                }
+                            } else if (check_true (((mode===0)&& (c==="[")))) {
+                                {
+                                    mode=1;
+                                    if (check_true (((name_acc && name_acc.length)>0))){
+                                        {
+                                            (comps).push((name_acc).join(""))
+                                        }
+                                    };
+                                    return name_acc=[]
+                                }
+                            } else if (check_true (((mode===1)&& (c==="]")))) {
+                                {
+                                    mode=0;
+                                    (comps).push((name_acc).join(""));
+                                    return name_acc=[]
+                                }
+                            } else {
+                                return (name_acc).push(c)
                             }
-                        } else if (check_true (((mode===0)&& (c==="[")))) {
-                            {
-                                mode=1;
-                                if (check_true (((name_acc && name_acc.length)>0))){
-                                    {
-                                        (comps).push((name_acc).join(""))
-                                    }
-                                };
-                                return name_acc=[]
-                            }
-                        } else if (check_true (((mode===1)&& (c==="]")))) {
-                            {
-                                mode=0;
-                                (comps).push((name_acc).join(""));
-                                return name_acc=[]
-                            }
-                        } else {
-                            return (name_acc).push(c)
+                        } )()
+                    };
+                    let __array__18=[],__elements__16=chars;
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__15 in __elements__16) {
+                        __array__18.push( __for_body__17(__elements__16[__iter__15]));
+                        if(__BREAK__FLAG__) {
+                             __array__18.pop();
+                            break;
+                            
                         }
-                    } )()
+                    }return __array__18;
+                     
+                })();
+                if (check_true (((name_acc && name_acc.length)>0))){
+                    (comps).push((name_acc).join(""))
                 };
-                let __array__18=[],__elements__16=chars;
-                let __BREAK__FLAG__=false;
-                for(let __iter__15 in __elements__16) {
-                    __array__18.push( __for_body__17(__elements__16[__iter__15]));
-                    if(__BREAK__FLAG__) {
-                         __array__18.pop();
-                        break;
-                        
-                    }
-                }return __array__18;
-                 
-            })();
-            if (check_true (((name_acc && name_acc.length)>0))){
-                (comps).push((name_acc).join(""))
-            };
-            return comps
-        }
-    } else {
-        return  ( function(){
-            let __array_op_rval__19=refname;
-             if (__array_op_rval__19 instanceof Function){
-                return  __array_op_rval__19() 
-            } else {
-                return [__array_op_rval__19]
+                return comps
             }
-        })()
-    }
-},{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"],"requires":["split_by","push","join"],"source_name":"core.lisp"
-});
+        } else {
+            return  ( function(){
+                let __array_op_rval__19=refname;
+                 if (__array_op_rval__19 instanceof Function){
+                    return  __array_op_rval__19() 
+                } else {
+                    return [__array_op_rval__19]
+                }
+            })()
+        }
+    },{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"],"requires":["split_by","push","join"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("do_deferred_splice",async function(tree) {
     let rval;
     let idx;
@@ -703,60 +705,62 @@ await Environment.set_global("type",async function(x) {
     } ()
 },{ "name":"type","fn_args":"(x)","usage":["value:*"],"description":"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.","tags":["types","value","what"],"requires":[],"source_name":"core.lisp"
 });
- Environment.set_global("destructure_list",function(elems) {
-    let idx;
-    let acc;
-    let passed_rest;
-    let structure;
-    let follow_tree;
-    idx=0;
-    acc=[];
-    passed_rest=0;
-    structure=elems;
-    follow_tree=async function(elems,_path_prefix) {
-        return   (function(){
-            if (check_true ((passed_rest>0))) {
-                {
-                    if (check_true ((passed_rest===1))){
-                        (acc).push(_path_prefix)
-                    };
-                    return passed_rest+=1
+{
+     Environment.set_global("destructure_list",function(elems) {
+        let idx;
+        let acc;
+        let passed_rest;
+        let structure;
+        let follow_tree;
+        idx=0;
+        acc=[];
+        passed_rest=0;
+        structure=elems;
+        follow_tree=async function(elems,_path_prefix) {
+            return   (function(){
+                if (check_true ((passed_rest>0))) {
+                    {
+                        if (check_true ((passed_rest===1))){
+                            (acc).push(_path_prefix)
+                        };
+                        return passed_rest+=1
+                    }
+                } else if (check_true ((elems instanceof Array))) {
+                    return  ( Environment.get_global("map"))(async function(elem,idx) {
+                        return  follow_tree(elem, ( Environment.get_global("add"))(_path_prefix,idx))
+                    },elems)
+                } else if (check_true ((elems instanceof Object))) {
+                    return  ( function() {
+                        let __for_body__41=function(pset) {
+                            return  follow_tree((pset && pset["1"]), ( Environment.get_global("add"))(_path_prefix,(pset && pset["0"])))
+                        };
+                        let __array__42=[],__elements__40= ( Environment.get_global("pairs"))(elems);
+                        let __BREAK__FLAG__=false;
+                        for(let __iter__39 in __elements__40) {
+                            __array__42.push( __for_body__41(__elements__40[__iter__39]));
+                            if(__BREAK__FLAG__) {
+                                 __array__42.pop();
+                                break;
+                                
+                            }
+                        }return __array__42;
+                         
+                    })()
+                } else if (check_true (((elems instanceof String || typeof elems==='string')&& ("&"===elems)))) {
+                    {
+                        passed_rest+=1;
+                        return (acc).push("*")
+                    }
+                } else {
+                    return (acc).push(_path_prefix)
                 }
-            } else if (check_true ((elems instanceof Array))) {
-                return  ( Environment.get_global("map"))(async function(elem,idx) {
-                    return  follow_tree(elem, ( Environment.get_global("add"))(_path_prefix,idx))
-                },elems)
-            } else if (check_true ((elems instanceof Object))) {
-                return  ( function() {
-                    let __for_body__41=function(pset) {
-                        return  follow_tree((pset && pset["1"]), ( Environment.get_global("add"))(_path_prefix,(pset && pset["0"])))
-                    };
-                    let __array__42=[],__elements__40= ( Environment.get_global("pairs"))(elems);
-                    let __BREAK__FLAG__=false;
-                    for(let __iter__39 in __elements__40) {
-                        __array__42.push( __for_body__41(__elements__40[__iter__39]));
-                        if(__BREAK__FLAG__) {
-                             __array__42.pop();
-                            break;
-                            
-                        }
-                    }return __array__42;
-                     
-                })()
-            } else if (check_true (((elems instanceof String || typeof elems==='string')&& ("&"===elems)))) {
-                {
-                    passed_rest+=1;
-                    return (acc).push("*")
-                }
-            } else {
-                return (acc).push(_path_prefix)
-            }
-        } )()
-    };
-     follow_tree(structure,[]);
-    return acc
-},{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["push","is_array?","map","add","is_object?","pairs","is_string?"],"source_name":"core.lisp"
-});
+            } )()
+        };
+         follow_tree(structure,[]);
+        return acc
+    },{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["push","is_array?","map","add","is_object?","pairs","is_string?"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("destructuring_bind",async function(...args) {
     let bind_vars;
     let expression;
@@ -859,18 +863,20 @@ await Environment.set_global("destructuring_bind",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["slice","random_int","destructure_list","is_array?","starts_with?","push","assert","is_value?","resolve_path","add","is_object?","join","conj","range","length"],"source_name":"core.lisp"
 });
- Environment.set_global("split_by_recurse",function(token,container) {
-    return   (function(){
-        if (check_true ((container instanceof String || typeof container==='string'))) {
-            return (container).split(token)
-        } else if (check_true ((container instanceof Array))) {
-            return  ( Environment.get_global("map"))(async function(elem) {
-                return  ( Environment.get_global("split_by_recurse"))(token,elem)
-            },container)
-        }
-    } )()
-},{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"],"requires":["is_string?","split_by","is_array?","map","split_by_recurse"],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("split_by_recurse",function(token,container) {
+        return   (function(){
+            if (check_true ((container instanceof String || typeof container==='string'))) {
+                return (container).split(token)
+            } else if (check_true ((container instanceof Array))) {
+                return  ( Environment.get_global("map"))(async function(elem) {
+                    return  ( Environment.get_global("split_by_recurse"))(token,elem)
+                },container)
+            }
+        } )()
+    },{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"],"requires":["is_string?","split_by","is_array?","map","split_by_recurse"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("defmacro",async function(name,lambda_list,...forms) {
     let macro_name;
     let macro_args;
@@ -1093,88 +1099,92 @@ await Environment.set_global("is_regex?",async function(x) {
 await Environment.set_global("bind_function",(await Environment.get_global("bind")),{
     description:"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description.",requires:["bind"],source_name:"core.lisp"
 });
- Environment.set_global("is_error?",function(val) {
-    return (val instanceof Error)
-},{ "name":"is_error?","fn_args":"(val)","description":"Returns true if the passed value is a instance of an Error type, otherwise returns false.","usage":["val:*"],"tags":["Error","types","predicate","type","instanceof"],"requires":[],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("is_error?",function(val) {
+        return (val instanceof Error)
+    },{ "name":"is_error?","fn_args":"(val)","description":"Returns true if the passed value is a instance of an Error type, otherwise returns false.","usage":["val:*"],"tags":["Error","types","predicate","type","instanceof"],"requires":[],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("is_reference?",async function(val) {
     return ["=:and",["=:is_string?",val],["=:>",["=:length",val],2],["=:starts_with?",["=:quote","=:"],val]]
 },{ "eval_when":{ "compile_time":true
 },"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol","predicate"],"requires":[],"source_name":"core.lisp"
 });
- Environment.set_global("scan_str",function(regex,search_string) {
-    let result;
-    let last_result;
-    let totals;
-    let strs;
-    result=null;
-    last_result=null;
-    totals=[];
-    strs=(""+ search_string);
-    if (check_true ( ( Environment.get_global("is_regex?"))(regex))){
-        {
-              (function(){
-                regex["lastIndex"]=0;
-                return regex;
-                
-            })();
-             ( function(){
-                 let __test_condition__63=function() {
-                    return ( ( function(){
-                        result= regex["exec"].call(regex,strs);
-                        return true
-                    })()&& result&&  ( function(){
-                        if (check_true (last_result)){
-                            return  ( Environment.get_global("not"))(((result && result["0"])===(last_result && last_result["0"])))
-                        } else {
+{
+     Environment.set_global("scan_str",function(regex,search_string) {
+        let result;
+        let last_result;
+        let totals;
+        let strs;
+        result=null;
+        last_result=null;
+        totals=[];
+        strs=(""+ search_string);
+        if (check_true ( ( Environment.get_global("is_regex?"))(regex))){
+            {
+                  (function(){
+                    regex["lastIndex"]=0;
+                    return regex;
+                    
+                })();
+                 ( function(){
+                     let __test_condition__63=function() {
+                        return ( ( function(){
+                            result= regex["exec"].call(regex,strs);
                             return true
-                        }
-                    })())
-                };
-                let __body_ref__64=function() {
-                    last_result=result;
-                    return (totals).push( ( Environment.get_global("to_object"))( ( function() {
-                        let __for_body__67=function(v) {
-                            return  ( function(){
-                                let __array_op_rval__69=v;
-                                 if (__array_op_rval__69 instanceof Function){
-                                    return  __array_op_rval__69(result[v]) 
-                                } else {
-                                    return [__array_op_rval__69,result[v]]
-                                }
-                            })()
-                        };
-                        let __array__68=[],__elements__66= ( Environment.get_global("keys"))(result);
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__65 in __elements__66) {
-                            __array__68.push( __for_body__67(__elements__66[__iter__65]));
-                            if(__BREAK__FLAG__) {
-                                 __array__68.pop();
-                                break;
-                                
+                        })()&& result&&  ( function(){
+                            if (check_true (last_result)){
+                                return  ( Environment.get_global("not"))(((result && result["0"])===(last_result && last_result["0"])))
+                            } else {
+                                return true
                             }
-                        }return __array__68;
-                         
-                    })()))
-                };
-                let __BREAK__FLAG__=false;
-                while( __test_condition__63()) {
-                      __body_ref__64();
-                     if(__BREAK__FLAG__) {
-                         break;
-                        
-                    }
-                } ;
-                
-            })()
-        }
-    } else {
-        throw new Error(new ReferenceError(("scan_str: invalid RegExp provided: "+ regex)));
-        
-    };
-    return totals
-},{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"],"requires":["is_regex?","not","push","to_object","keys"],"source_name":"core.lisp"
-});
+                        })())
+                    };
+                    let __body_ref__64=function() {
+                        last_result=result;
+                        return (totals).push( ( Environment.get_global("to_object"))( ( function() {
+                            let __for_body__67=function(v) {
+                                return  ( function(){
+                                    let __array_op_rval__69=v;
+                                     if (__array_op_rval__69 instanceof Function){
+                                        return  __array_op_rval__69(result[v]) 
+                                    } else {
+                                        return [__array_op_rval__69,result[v]]
+                                    }
+                                })()
+                            };
+                            let __array__68=[],__elements__66= ( Environment.get_global("keys"))(result);
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__65 in __elements__66) {
+                                __array__68.push( __for_body__67(__elements__66[__iter__65]));
+                                if(__BREAK__FLAG__) {
+                                     __array__68.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__68;
+                             
+                        })()))
+                    };
+                    let __BREAK__FLAG__=false;
+                    while( __test_condition__63()) {
+                          __body_ref__64();
+                         if(__BREAK__FLAG__) {
+                             break;
+                            
+                        }
+                    } ;
+                    
+                })()
+            }
+        } else {
+            throw new Error(new ReferenceError(("scan_str: invalid RegExp provided: "+ regex)));
+            
+        };
+        return totals
+    },{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"],"requires":["is_regex?","not","push","to_object","keys"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("remove_prop",async function(obj,key) {
     if (check_true (await (await Environment.get_global("not"))((undefined===obj[key])))){
         {
@@ -1491,19 +1501,23 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
 },{ "eval_when":{ "compile_time":true
 },"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"],"requires":[],"source_name":"core.lisp"
 });
- Environment.set_global("map_range",function(n,from_range,to_range) {
-    ;
-    return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
-},{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"source_name":"core.lisp"
-});
- Environment.set_global("range_inc",function(start,end,step) {
-    if (check_true (end)){
-        return  ( Environment.get_global("range"))(start, ( Environment.get_global("add"))(end,1),step)
-    } else {
-        return  ( Environment.get_global("range"))( ( Environment.get_global("add"))(start,1))
-    }
-},{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("map_range",function(n,from_range,to_range) {
+        ;
+        return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
+    },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("range_inc",function(start,end,step) {
+        if (check_true (end)){
+            return  ( Environment.get_global("range"))(start, ( Environment.get_global("add"))(end,1),step)
+        } else {
+            return  ( Environment.get_global("range"))( ( Environment.get_global("add"))(start,1))
+        }
+    },{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("HSV_to_RGB",async function(h,s,v) {
      {
              var r, g, b, i, f, p, q, t;
@@ -1767,18 +1781,19 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"source_name":"core.lisp"
 });
- Environment.set_global("but_last",function(arr) {
-    if (check_true ((arr instanceof Array))){
-        return  ( Environment.get_global("slice"))(arr,0,((arr && arr.length)- 1))
-    } else {
-        throw new TypeError(("but_last: expected array, but received "+  ( Environment.get_global("sub_type"))(arr)));
-        
-    }
-},{ "name":"but_last","fn_args":"(arr)","description":["=:+","Given an array, returns all elements except the final element.  This ","function is the inverse of `last`.  If there are less than 2 elements in the ","array (0 or 1 elements), then an empty array is returned.  If a non-array is ","provided, the function will throw a `TypeError`. "],"usage":["arr:array"],"tags":["array","last","elements","front","head","rest"],"requires":["is_array?","slice","sub_type"],"source_name":"core.lisp"
-});
- Environment.set_global("random_int",function(...args) {
-    args= ( Environment.get_global("slice"))(args,0);
-    {
+{
+     Environment.set_global("but_last",function(arr) {
+        if (check_true ((arr instanceof Array))){
+            return  ( Environment.get_global("slice"))(arr,0,((arr && arr.length)- 1))
+        } else {
+            throw new TypeError(("but_last: expected array, but received "+  ( Environment.get_global("sub_type"))(arr)));
+            
+        }
+    },{ "name":"but_last","fn_args":"(arr)","description":["=:+","Given an array, returns all elements except the final element.  This ","function is the inverse of `last`.  If there are less than 2 elements in the ","array (0 or 1 elements), then an empty array is returned.  If a non-array is ","provided, the function will throw a `TypeError`. "],"usage":["arr:array"],"tags":["array","last","elements","front","head","rest"],"requires":["is_array?","slice","sub_type"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("random_int",function(...args) {
         let top;
         let bottom;
         top=0;
@@ -1792,113 +1807,117 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
             top= parseInt((args && args["0"]))
         };
         return  parseInt( ( Environment.get_global("add"))(( Math.random()* (top- bottom)),bottom))
-    }
-},{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["slice","length","add"],"source_name":"core.lisp"
-});
- Environment.set_global("resolve_multi_path",function(path,obj,not_found) {
-    return   (function(){
-        if (check_true ((obj instanceof Object))) {
-            return   (function(){
-                if (check_true ((( ( Environment.get_global("length"))(path)===1)&& ("*"=== ( Environment.get_global("first"))(path))))) {
-                    return (obj|| not_found)
-                } else if (check_true ((( ( Environment.get_global("length"))(path)===1)&& (obj[ ( Environment.get_global("first"))(path)] instanceof Object)))) {
-                    return (obj[ ( Environment.get_global("first"))(path)]|| not_found)
-                } else if (check_true ((( ( Environment.get_global("length"))(path)===1)&&  ( Environment.get_global("not"))((obj[ ( Environment.get_global("first"))(path)] instanceof Object))&&  ( Environment.get_global("not"))((null==obj[ ( Environment.get_global("first"))(path)]))))) {
-                    return obj[ ( Environment.get_global("first"))(path)]
-                } else if (check_true (((obj instanceof Array)&& ("*"=== ( Environment.get_global("first"))(path))))) {
-                    return  ( function() {
-                        let __for_body__113=function(val) {
-                            return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),val,not_found)
-                        };
-                        let __array__114=[],__elements__112=obj;
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__111 in __elements__112) {
-                            __array__114.push( __for_body__113(__elements__112[__iter__111]));
-                            if(__BREAK__FLAG__) {
-                                 __array__114.pop();
-                                break;
-                                
-                            }
-                        }return __array__114;
-                         
-                    })()
-                } else if (check_true (((obj instanceof Object)&& ("*"=== ( Environment.get_global("first"))(path))))) {
-                    return  ( function() {
-                        let __for_body__117=function(val) {
-                            return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),val,not_found)
-                        };
-                        let __array__118=[],__elements__116= ( Environment.get_global("values"))(obj);
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__115 in __elements__116) {
-                            __array__118.push( __for_body__117(__elements__116[__iter__115]));
-                            if(__BREAK__FLAG__) {
-                                 __array__118.pop();
-                                break;
-                                
-                            }
-                        }return __array__118;
-                         
-                    })()
-                } else if (check_true (( ( Environment.get_global("length"))(path)>1))) {
-                    return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),obj[ ( Environment.get_global("first"))(path)],not_found)
-                }
-            } )()
-        } else {
-            return not_found
-        }
-    } )()
-},{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":["=:+","Given a list containing a path to a value in a nested array, return the value at the given ","path. If the value * is in the path, the path value is a wild card if the passed object ","structure at the path position is a vector or list."],"requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"],"source_name":"core.lisp"
-});
- Environment.set_global("delete_path",function(path,obj) {
-    let mpath;
-    let key;
-    let place_path;
-    let place;
-    mpath= ( function(){
-         return  clone(path) 
-    })();
-    key=(mpath).pop();
-    place_path=mpath;
-    place=null;
-    if (check_true ( ( Environment.get_global("not"))((path instanceof Array)))){
-        {
-            throw new TypeError("path must be an array when provided to delete_path");
-            
-        }
-    };
-    if (check_true ( ( Environment.get_global("not"))((obj instanceof Object)))){
-        {
-            throw new TypeError("Invalid object provided to delete_path");
-            
-        }
-    };
-    return   (function(){
-        if (check_true ((( ( Environment.get_global("length"))(place_path)===0)&&  ( function(){
-             return  ( Environment.get_global("is_value?"))(key) 
-        })()))) {
-            {
-                 ( Environment.get_global("delete_prop"))(obj,key);
-                return obj
-            }
-        } else if (check_true ((( ( Environment.get_global("length"))(place_path)>0)&&  ( function(){
-             return  ( Environment.get_global("is_value?"))(key) 
-        })()))) {
-            {
-                place= ( Environment.get_global("resolve_path"))(place_path,obj);
-                if (check_true ((place instanceof Object))){
-                    {
-                         ( Environment.get_global("delete_prop"))(place,key)
+    },{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("resolve_multi_path",function(path,obj,not_found) {
+        return   (function(){
+            if (check_true ((obj instanceof Object))) {
+                return   (function(){
+                    if (check_true ((( ( Environment.get_global("length"))(path)===1)&& ("*"=== ( Environment.get_global("first"))(path))))) {
+                        return (obj|| not_found)
+                    } else if (check_true ((( ( Environment.get_global("length"))(path)===1)&& (obj[ ( Environment.get_global("first"))(path)] instanceof Object)))) {
+                        return (obj[ ( Environment.get_global("first"))(path)]|| not_found)
+                    } else if (check_true ((( ( Environment.get_global("length"))(path)===1)&&  ( Environment.get_global("not"))((obj[ ( Environment.get_global("first"))(path)] instanceof Object))&&  ( Environment.get_global("not"))((null==obj[ ( Environment.get_global("first"))(path)]))))) {
+                        return obj[ ( Environment.get_global("first"))(path)]
+                    } else if (check_true (((obj instanceof Array)&& ("*"=== ( Environment.get_global("first"))(path))))) {
+                        return  ( function() {
+                            let __for_body__113=function(val) {
+                                return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),val,not_found)
+                            };
+                            let __array__114=[],__elements__112=obj;
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__111 in __elements__112) {
+                                __array__114.push( __for_body__113(__elements__112[__iter__111]));
+                                if(__BREAK__FLAG__) {
+                                     __array__114.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__114;
+                             
+                        })()
+                    } else if (check_true (((obj instanceof Object)&& ("*"=== ( Environment.get_global("first"))(path))))) {
+                        return  ( function() {
+                            let __for_body__117=function(val) {
+                                return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),val,not_found)
+                            };
+                            let __array__118=[],__elements__116= ( Environment.get_global("values"))(obj);
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__115 in __elements__116) {
+                                __array__118.push( __for_body__117(__elements__116[__iter__115]));
+                                if(__BREAK__FLAG__) {
+                                     __array__118.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__118;
+                             
+                        })()
+                    } else if (check_true (( ( Environment.get_global("length"))(path)>1))) {
+                        return  ( Environment.get_global("resolve_multi_path"))( ( Environment.get_global("rest"))(path),obj[ ( Environment.get_global("first"))(path)],not_found)
                     }
-                };
-                return obj
+                } )()
+            } else {
+                return not_found
             }
-        } else {
-            throw new TypeError("delete_path: invalid path or object provided");
-            
-        }
-    } )()
-},{ "name":"delete_path","fn_args":"(path obj)","description":["=:+","Given a path and an target object, removes the specified value ","at the path and returns the original object, which will have been modified. ","If the value isn't found, there are no modifications to the object and the ","object is returned.  Will throw a TypeError if the obj argument isn't an ","object type, of if the path isn't an array with at least one element."],"usage":["path:array","obj:object"],"tags":["path","delete","remove","object","resolve","modify","value"],"requires":["pop","not","is_array?","is_object?","length","is_value?","delete_prop","resolve_path"],"source_name":"core.lisp"
-});
+        } )()
+    },{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":["=:+","Given a list containing a path to a value in a nested array, return the value at the given ","path. If the value * is in the path, the path value is a wild card if the passed object ","structure at the path position is a vector or list."],"requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("delete_path",function(path,obj) {
+        let mpath;
+        let key;
+        let place_path;
+        let place;
+        mpath= ( function(){
+             return  clone(path) 
+        })();
+        key=(mpath).pop();
+        place_path=mpath;
+        place=null;
+        if (check_true ( ( Environment.get_global("not"))((path instanceof Array)))){
+            {
+                throw new TypeError("path must be an array when provided to delete_path");
+                
+            }
+        };
+        if (check_true ( ( Environment.get_global("not"))((obj instanceof Object)))){
+            {
+                throw new TypeError("Invalid object provided to delete_path");
+                
+            }
+        };
+        return   (function(){
+            if (check_true ((( ( Environment.get_global("length"))(place_path)===0)&&  ( function(){
+                 return  ( Environment.get_global("is_value?"))(key) 
+            })()))) {
+                {
+                     ( Environment.get_global("delete_prop"))(obj,key);
+                    return obj
+                }
+            } else if (check_true ((( ( Environment.get_global("length"))(place_path)>0)&&  ( function(){
+                 return  ( Environment.get_global("is_value?"))(key) 
+            })()))) {
+                {
+                    place= ( Environment.get_global("resolve_path"))(place_path,obj);
+                    if (check_true ((place instanceof Object))){
+                        {
+                             ( Environment.get_global("delete_prop"))(place,key)
+                        }
+                    };
+                    return obj
+                }
+            } else {
+                throw new TypeError("delete_path: invalid path or object provided");
+                
+            }
+        } )()
+    },{ "name":"delete_path","fn_args":"(path obj)","description":["=:+","Given a path and an target object, removes the specified value ","at the path and returns the original object, which will have been modified. ","If the value isn't found, there are no modifications to the object and the ","object is returned.  Will throw a TypeError if the obj argument isn't an ","object type, of if the path isn't an array with at least one element."],"usage":["path:array","obj:object"],"tags":["path","delete","remove","object","resolve","modify","value"],"requires":["pop","not","is_array?","is_object?","length","is_value?","delete_prop","resolve_path"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("symbol_tree",async function(quoted_form,_state,_current_path) {
     let acc;
     let allocators;
@@ -2313,161 +2332,164 @@ await Environment.set_global("each",async function(items,property) {
     } ()
 },{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"],"requires":["is_string?","is_number?","except_nil","sub_type","is_array?","push","resolve_path","is_function?"],"source_name":"core.lisp"
 });
- Environment.set_global("replace",function(...args) {
-    args= ( Environment.get_global("slice"))(args,0);
-    if (check_true (((args && args.length)<3))){
-        throw new SyntaxError("Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)");
-        
-    } else {
-        try {
-            {
-                let target;
-                let replacement;
-                let work_values;
-                let value_type;
-                let sr_val;
-                let arg_value_type;
-                let rval;
-                target=(args && args["0"]);
-                replacement=(args && args["1"]);
-                work_values= ( Environment.get_global("slice"))(args,2);
-                value_type=null;
-                sr_val=null;
-                arg_value_type= subtype((args && args["2"]));
-                rval=[];
-                 ( function() {
-                    let __for_body__168=function(value) {
-                        value_type= subtype(value);
-                        if (check_true ((value_type==="Number"))){
-                            {
-                                value_type="String";
-                                value=(""+ value)
-                            }
-                        };
-                        return   (function(){
-                            if (check_true ((value_type==="String"))) {
-                                return (rval).push( value["replace"].call(value,target,replacement))
-                            } else if (check_true ((value_type==="array"))) {
-                                return  ( function() {
-                                    let __for_body__172=function(elem) {
-                                        return (rval).push( ( Environment.get_global("replace"))(target,replacement,elem))
-                                    };
-                                    let __array__173=[],__elements__171=value;
-                                    let __BREAK__FLAG__=false;
-                                    for(let __iter__170 in __elements__171) {
-                                        __array__173.push( __for_body__172(__elements__171[__iter__170]));
-                                        if(__BREAK__FLAG__) {
-                                             __array__173.pop();
-                                            break;
-                                            
-                                        }
-                                    }return __array__173;
-                                     
-                                })()
-                            } else if (check_true ((value_type==="object"))) {
+{
+     Environment.set_global("replace",function(...args) {
+        if (check_true (((args && args.length)<3))){
+            throw new SyntaxError("Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)");
+            
+        } else {
+            try {
+                {
+                    let target;
+                    let replacement;
+                    let work_values;
+                    let value_type;
+                    let sr_val;
+                    let arg_value_type;
+                    let rval;
+                    target=(args && args["0"]);
+                    replacement=(args && args["1"]);
+                    work_values= ( Environment.get_global("slice"))(args,2);
+                    value_type=null;
+                    sr_val=null;
+                    arg_value_type= subtype((args && args["2"]));
+                    rval=[];
+                     ( function() {
+                        let __for_body__168=function(value) {
+                            value_type= subtype(value);
+                            if (check_true ((value_type==="Number"))){
                                 {
-                                    sr_val=new Object();
-                                     ( function() {
-                                        let __for_body__176=function(k) {
-                                            if (check_true ( value["hasOwnProperty"].call(value,k))){
-                                                {
-                                                    return   (function(){
-                                                        sr_val[k]= ( Environment.get_global("replace"))(target,replacement,value[k]);
-                                                        return sr_val;
-                                                        
-                                                    })()
-                                                }
-                                            }
+                                    value_type="String";
+                                    value=(""+ value)
+                                }
+                            };
+                            return   (function(){
+                                if (check_true ((value_type==="String"))) {
+                                    return (rval).push( value["replace"].call(value,target,replacement))
+                                } else if (check_true ((value_type==="array"))) {
+                                    return  ( function() {
+                                        let __for_body__172=function(elem) {
+                                            return (rval).push( ( Environment.get_global("replace"))(target,replacement,elem))
                                         };
-                                        let __array__177=[],__elements__175= ( Environment.get_global("keys"))(value);
+                                        let __array__173=[],__elements__171=value;
                                         let __BREAK__FLAG__=false;
-                                        for(let __iter__174 in __elements__175) {
-                                            __array__177.push( __for_body__176(__elements__175[__iter__174]));
+                                        for(let __iter__170 in __elements__171) {
+                                            __array__173.push( __for_body__172(__elements__171[__iter__170]));
                                             if(__BREAK__FLAG__) {
-                                                 __array__177.pop();
+                                                 __array__173.pop();
                                                 break;
                                                 
                                             }
-                                        }return __array__177;
+                                        }return __array__173;
                                          
-                                    })();
-                                    return rval= rval["concat"].call(rval,sr_val)
+                                    })()
+                                } else if (check_true ((value_type==="object"))) {
+                                    {
+                                        sr_val=new Object();
+                                         ( function() {
+                                            let __for_body__176=function(k) {
+                                                if (check_true ( value["hasOwnProperty"].call(value,k))){
+                                                    {
+                                                        return   (function(){
+                                                            sr_val[k]= ( Environment.get_global("replace"))(target,replacement,value[k]);
+                                                            return sr_val;
+                                                            
+                                                        })()
+                                                    }
+                                                }
+                                            };
+                                            let __array__177=[],__elements__175= ( Environment.get_global("keys"))(value);
+                                            let __BREAK__FLAG__=false;
+                                            for(let __iter__174 in __elements__175) {
+                                                __array__177.push( __for_body__176(__elements__175[__iter__174]));
+                                                if(__BREAK__FLAG__) {
+                                                     __array__177.pop();
+                                                    break;
+                                                    
+                                                }
+                                            }return __array__177;
+                                             
+                                        })();
+                                        return rval= rval["concat"].call(rval,sr_val)
+                                    }
                                 }
+                            } )()
+                        };
+                        let __array__169=[],__elements__167=work_values;
+                        let __BREAK__FLAG__=false;
+                        for(let __iter__166 in __elements__167) {
+                            __array__169.push( __for_body__168(__elements__167[__iter__166]));
+                            if(__BREAK__FLAG__) {
+                                 __array__169.pop();
+                                break;
+                                
                             }
-                        } )()
-                    };
-                    let __array__169=[],__elements__167=work_values;
-                    let __BREAK__FLAG__=false;
-                    for(let __iter__166 in __elements__167) {
-                        __array__169.push( __for_body__168(__elements__167[__iter__166]));
-                        if(__BREAK__FLAG__) {
-                             __array__169.pop();
-                            break;
-                            
-                        }
-                    }return __array__169;
-                     
-                })();
-                if (check_true (( ( Environment.get_global("not"))((arg_value_type==="array"))&&  ( Environment.get_global("not"))((arg_value_type==="object"))))){
-                    return  ( Environment.get_global("first"))(rval)
-                } else {
-                    return rval
+                        }return __array__169;
+                         
+                    })();
+                    if (check_true (( ( Environment.get_global("not"))((arg_value_type==="array"))&&  ( Environment.get_global("not"))((arg_value_type==="object"))))){
+                        return  ( Environment.get_global("first"))(rval)
+                    } else {
+                        return rval
+                    }
                 }
-            }
-        } catch (__exception__165) {
-            if (__exception__165 instanceof Error) {
-                let e=__exception__165;
-                {
-                    return  console.error(("replace: "+ e))
+            } catch (__exception__165) {
+                if (__exception__165 instanceof Error) {
+                    let e=__exception__165;
+                    {
+                        return  console.error(("replace: "+ e))
+                    }
                 }
             }
         }
-    }
-},{ "name":"replace","fn_args":"[\"&\" args]","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"],"source_name":"core.lisp"
-});
- Environment.set_global("get_symbol_details_for_ns",function(namespace,symbol_name) {
-    if (check_true (((namespace instanceof String || typeof namespace==='string')&& (symbol_name instanceof String || typeof symbol_name==='string')))){
-        return  ( Environment.get_global("first"))( ( function(){
-            let __collector;
-            let __result;
-            let __action;
-            __collector=[];
-            __result=null;
-            __action=function(entry) {
-                if (check_true (((entry && entry["namespace"])===namespace))){
-                    {
-                        return entry
-                    }
-                }
-            };
-            ;
-             ( function() {
-                let __for_body__181=function(__item) {
-                    __result= __action(__item);
-                    if (check_true (__result)){
-                        return (__collector).push(__result)
+    },{ "name":"replace","fn_args":"[\"&\" args]","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("get_symbol_details_for_ns",function(namespace,symbol_name) {
+        if (check_true (((namespace instanceof String || typeof namespace==='string')&& (symbol_name instanceof String || typeof symbol_name==='string')))){
+            return  ( Environment.get_global("first"))( ( function(){
+                let __collector;
+                let __result;
+                let __action;
+                __collector=[];
+                __result=null;
+                __action=function(entry) {
+                    if (check_true (((entry && entry["namespace"])===namespace))){
+                        {
+                            return entry
+                        }
                     }
                 };
-                let __array__182=[],__elements__180= ( Environment.get_global("meta_for_symbol"))(symbol_name,true);
-                let __BREAK__FLAG__=false;
-                for(let __iter__179 in __elements__180) {
-                    __array__182.push( __for_body__181(__elements__180[__iter__179]));
-                    if(__BREAK__FLAG__) {
-                         __array__182.pop();
-                        break;
-                        
-                    }
-                }return __array__182;
-                 
-            })();
-            return __collector
-        })())
-    } else {
-        throw new TypeError("get_symbol_for_ns: invalid arguments: must both be strings");
-        
-    }
-},{ "name":"get_symbol_details_for_ns","fn_args":"(namespace symbol_name)","description":"Given a namespace and a symbol name returns the details for the specific symbol in the namespace if found, or nil if not.","tags":["namespace","symbol","find","meta","details"],"usage":["namespace:string","symbol_name:string"],"requires":["is_string?","first","push","meta_for_symbol"],"source_name":"core.lisp"
-});
+                ;
+                 ( function() {
+                    let __for_body__181=function(__item) {
+                        __result= __action(__item);
+                        if (check_true (__result)){
+                            return (__collector).push(__result)
+                        }
+                    };
+                    let __array__182=[],__elements__180= ( Environment.get_global("meta_for_symbol"))(symbol_name,true);
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__179 in __elements__180) {
+                        __array__182.push( __for_body__181(__elements__180[__iter__179]));
+                        if(__BREAK__FLAG__) {
+                             __array__182.pop();
+                            break;
+                            
+                        }
+                    }return __array__182;
+                     
+                })();
+                return __collector
+            })())
+        } else {
+            throw new TypeError("get_symbol_for_ns: invalid arguments: must both be strings");
+            
+        }
+    },{ "name":"get_symbol_details_for_ns","fn_args":"(namespace symbol_name)","description":"Given a namespace and a symbol name returns the details for the specific symbol in the namespace if found, or nil if not.","tags":["namespace","symbol","find","meta","details"],"usage":["namespace:string","symbol_name:string"],"requires":["is_string?","first","push","meta_for_symbol"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("env_encode_string",async function(text) {
     let te;
     let enc;
@@ -2528,105 +2550,107 @@ await Environment.set_global("cl_encode_string",async function(text) {
     }
 },{ "name":"cl_encode_string","fn_args":"(text)","requires":["is_string?","replace","add","split_by","join"],"source_name":"core.lisp"
 });
- Environment.set_global("fn_signature",function(f) {
-    if (check_true ((f instanceof Function|| (f instanceof String || typeof f==='string')))){
-        {
-            let sig;
-            let arg_text;
-            let comps;
-            let descriptor;
-            let fname;
-            let ftype;
-            let extends_class;
-            let keyword_idx;
-            let args;
-            sig=( ( Environment.get_global("first"))(( ( Environment.get_global("replace"))("\n","", ( function(){
-                if (check_true (f instanceof Function)){
-                    return  f["toString"]()
-                } else {
-                    return f
-                }
-            })())).split("{"))).trim();
-            arg_text=null;
-            comps=null;
-            descriptor=null;
-            fname=null;
-            ftype=null;
-            extends_class=null;
-            keyword_idx=null;
-            args=null;
-            return   (function(){
-                if (check_true ( ( Environment.get_global("starts_with?"))("class",sig))) {
-                    {
-                        ftype="class";
-                        descriptor=(sig).split(" ");
-                        fname= ( Environment.get_global("second"))(descriptor);
-                        if (check_true ((descriptor[3]==="extends"))){
-                            extends_class=descriptor[4]
-                        };
-                        return {
-                            name:fname,type:ftype,extends:extends_class
-                        }
+{
+     Environment.set_global("fn_signature",function(f) {
+        if (check_true ((f instanceof Function|| (f instanceof String || typeof f==='string')))){
+            {
+                let sig;
+                let arg_text;
+                let comps;
+                let descriptor;
+                let fname;
+                let ftype;
+                let extends_class;
+                let keyword_idx;
+                let args;
+                sig=( ( Environment.get_global("first"))(( ( Environment.get_global("replace"))("\n","", ( function(){
+                    if (check_true (f instanceof Function)){
+                        return  f["toString"]()
+                    } else {
+                        return f
                     }
-                } else {
-                    {
-                        if (check_true (sig)){
-                            {
-                                comps=(sig).split("(");
-                                descriptor=(( ( Environment.get_global("first"))(comps)|| "")).split(" ");
-                                arg_text=( ( Environment.get_global("chop"))( ( Environment.get_global("second"))(comps))|| "")
+                })())).split("{"))).trim();
+                arg_text=null;
+                comps=null;
+                descriptor=null;
+                fname=null;
+                ftype=null;
+                extends_class=null;
+                keyword_idx=null;
+                args=null;
+                return   (function(){
+                    if (check_true ( ( Environment.get_global("starts_with?"))("class",sig))) {
+                        {
+                            ftype="class";
+                            descriptor=(sig).split(" ");
+                            fname= ( Environment.get_global("second"))(descriptor);
+                            if (check_true ((descriptor[3]==="extends"))){
+                                extends_class=descriptor[4]
+                            };
+                            return {
+                                name:fname,type:ftype,extends:extends_class
                             }
-                        };
-                        if (check_true (((descriptor && descriptor.length)>0))){
-                            {
-                                keyword_idx= ( Environment.get_global("index_of"))("function",descriptor);
-                                if (check_true (keyword_idx)){
-                                    {
-                                        fname=( ( Environment.get_global("first"))( descriptor["slice"].call(descriptor,(keyword_idx+ 1),(keyword_idx+ 2)))|| "anonymous");
-                                        ftype= ( function(){
-                                            if (check_true ((keyword_idx===0))){
-                                                return "sync"
-                                            } else {
-                                                return descriptor[(keyword_idx- 1)]
-                                            }
-                                        })()
+                        }
+                    } else {
+                        {
+                            if (check_true (sig)){
+                                {
+                                    comps=(sig).split("(");
+                                    descriptor=(( ( Environment.get_global("first"))(comps)|| "")).split(" ");
+                                    arg_text=( ( Environment.get_global("chop"))( ( Environment.get_global("second"))(comps))|| "")
+                                }
+                            };
+                            if (check_true (((descriptor && descriptor.length)>0))){
+                                {
+                                    keyword_idx= ( Environment.get_global("index_of"))("function",descriptor);
+                                    if (check_true (keyword_idx)){
+                                        {
+                                            fname=( ( Environment.get_global("first"))( descriptor["slice"].call(descriptor,(keyword_idx+ 1),(keyword_idx+ 2)))|| "anonymous");
+                                            ftype= ( function(){
+                                                if (check_true ((keyword_idx===0))){
+                                                    return "sync"
+                                                } else {
+                                                    return descriptor[(keyword_idx- 1)]
+                                                }
+                                            })()
+                                        }
                                     }
                                 }
+                            };
+                            if (check_true (arg_text)){
+                                args= ( function() {
+                                    let __for_body__189=function(a) {
+                                        return (a).trim()
+                                    };
+                                    let __array__190=[],__elements__188=((arg_text).split(",")|| []);
+                                    let __BREAK__FLAG__=false;
+                                    for(let __iter__187 in __elements__188) {
+                                        __array__190.push( __for_body__189(__elements__188[__iter__187]));
+                                        if(__BREAK__FLAG__) {
+                                             __array__190.pop();
+                                            break;
+                                            
+                                        }
+                                    }return __array__190;
+                                     
+                                })()
+                            } else {
+                                args=[]
+                            };
+                            return {
+                                name:fname,type:ftype,args:args
                             }
-                        };
-                        if (check_true (arg_text)){
-                            args= ( function() {
-                                let __for_body__189=function(a) {
-                                    return (a).trim()
-                                };
-                                let __array__190=[],__elements__188=((arg_text).split(",")|| []);
-                                let __BREAK__FLAG__=false;
-                                for(let __iter__187 in __elements__188) {
-                                    __array__190.push( __for_body__189(__elements__188[__iter__187]));
-                                    if(__BREAK__FLAG__) {
-                                         __array__190.pop();
-                                        break;
-                                        
-                                    }
-                                }return __array__190;
-                                 
-                            })()
-                        } else {
-                            args=[]
-                        };
-                        return {
-                            name:fname,type:ftype,args:args
                         }
                     }
-                }
-            } )()
+                } )()
+            }
+        } else {
+            throw new TypeError("non-function supplied to fn_signature");
+            
         }
-    } else {
-        throw new TypeError("non-function supplied to fn_signature");
-        
-    }
-},{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments.  Note that a string value which ","is the result of a function serialized with the function's ","toString() method can also be passed."],"usage":["f:function|string"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","is_string?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"source_name":"core.lisp"
-});
+    },{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments.  Note that a string value which ","is the result of a function serialized with the function's ","toString() method can also be passed."],"usage":["f:function|string"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","is_string?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("path_to_js_syntax",async function(comps) {
     if (check_true ((comps instanceof Array))){
         if (check_true (((comps && comps.length)>1))){
@@ -3282,67 +3306,69 @@ await Environment.set_global("either",async function(...args) {
     }
 },{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["slice","not"],"source_name":"core.lisp"
 });
- Environment.set_global("sanitize_js_ref_name",function(symname) {
-    return   (function(){
-        if (check_true ( ( Environment.get_global("not"))((symname instanceof String || typeof symname==='string')))) {
-            return symname
-        } else {
-            {
-                let text_chars;
-                let acc;
-                text_chars=(symname).split("");
-                acc=[];
-                 ( function() {
-                    let __for_body__244=function(t) {
-                        return   (function(){
-                            if (check_true ((t==="+"))) {
-                                return (acc).push("_plus_")
-                            } else if (check_true ((t==="?"))) {
-                                return (acc).push("_ques_")
-                            } else if (check_true ((t==="-"))) {
-                                return (acc).push("_")
-                            } else if (check_true ((t==="&"))) {
-                                return (acc).push("_amper_")
-                            } else if (check_true ((t==="^"))) {
-                                return (acc).push("_carot_")
-                            } else if (check_true ((t==="#"))) {
-                                return (acc).push("_hash_")
-                            } else if (check_true ((t==="!"))) {
-                                return (acc).push("_exclaim_")
-                            } else if (check_true ((t==="*"))) {
-                                return (acc).push("_star_")
-                            } else if (check_true ((t==="~"))) {
-                                return (acc).push("_tilde_")
-                            } else if (check_true ((t==="~"))) {
-                                return (acc).push("_percent_")
-                            } else if (check_true ((t==="|"))) {
-                                return (acc).push("_pipe_")
-                            } else if (check_true ( ( Environment.get_global("contains?"))(t,"(){}"))) {
-                                throw new LispSyntaxError(("Invalid character in symbol: "+ symname));
+{
+     Environment.set_global("sanitize_js_ref_name",function(symname) {
+        return   (function(){
+            if (check_true ( ( Environment.get_global("not"))((symname instanceof String || typeof symname==='string')))) {
+                return symname
+            } else {
+                {
+                    let text_chars;
+                    let acc;
+                    text_chars=(symname).split("");
+                    acc=[];
+                     ( function() {
+                        let __for_body__244=function(t) {
+                            return   (function(){
+                                if (check_true ((t==="+"))) {
+                                    return (acc).push("_plus_")
+                                } else if (check_true ((t==="?"))) {
+                                    return (acc).push("_ques_")
+                                } else if (check_true ((t==="-"))) {
+                                    return (acc).push("_")
+                                } else if (check_true ((t==="&"))) {
+                                    return (acc).push("_amper_")
+                                } else if (check_true ((t==="^"))) {
+                                    return (acc).push("_carot_")
+                                } else if (check_true ((t==="#"))) {
+                                    return (acc).push("_hash_")
+                                } else if (check_true ((t==="!"))) {
+                                    return (acc).push("_exclaim_")
+                                } else if (check_true ((t==="*"))) {
+                                    return (acc).push("_star_")
+                                } else if (check_true ((t==="~"))) {
+                                    return (acc).push("_tilde_")
+                                } else if (check_true ((t==="~"))) {
+                                    return (acc).push("_percent_")
+                                } else if (check_true ((t==="|"))) {
+                                    return (acc).push("_pipe_")
+                                } else if (check_true ( ( Environment.get_global("contains?"))(t,"(){}"))) {
+                                    throw new LispSyntaxError(("Invalid character in symbol: "+ symname));
+                                    
+                                } else {
+                                    return (acc).push(t)
+                                }
+                            } )()
+                        };
+                        let __array__245=[],__elements__243=text_chars;
+                        let __BREAK__FLAG__=false;
+                        for(let __iter__242 in __elements__243) {
+                            __array__245.push( __for_body__244(__elements__243[__iter__242]));
+                            if(__BREAK__FLAG__) {
+                                 __array__245.pop();
+                                break;
                                 
-                            } else {
-                                return (acc).push(t)
                             }
-                        } )()
-                    };
-                    let __array__245=[],__elements__243=text_chars;
-                    let __BREAK__FLAG__=false;
-                    for(let __iter__242 in __elements__243) {
-                        __array__245.push( __for_body__244(__elements__243[__iter__242]));
-                        if(__BREAK__FLAG__) {
-                             __array__245.pop();
-                            break;
-                            
-                        }
-                    }return __array__245;
-                     
-                })();
-                return (acc).join("")
+                        }return __array__245;
+                         
+                    })();
+                    return (acc).join("")
+                }
             }
-        }
-    } )()
-},{ "name":"sanitize_js_ref_name","fn_args":"(symname)","requires":["not","is_string?","split_by","push","contains?","join"],"source_name":"core.lisp"
-});
+        } )()
+    },{ "name":"sanitize_js_ref_name","fn_args":"(symname)","requires":["not","is_string?","split_by","push","contains?","join"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("is_symbol?",async function(symbol_to_find) {
     return ["=:not",["=:or",["=:==",["=:typeof",symbol_to_find],"undefined"],["=:==",["=:->","=:Environment","get_global",symbol_to_find,"=:ReferenceError"],"=:ReferenceError"]]]
 },{ "eval_when":{ "compile_time":true
@@ -3648,10 +3674,12 @@ await Environment.set_global("bind_and_call",async function(...args) {
     }
 },{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["slice","bind"],"source_name":"core.lisp"
 });
- Environment.set_global("clamp",function(value,min,max) {
-    return  Math.min( Math.max(min,value),max)
-},{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"],"requires":[],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("clamp",function(value,min,max) {
+        return  Math.min( Math.max(min,value),max)
+    },{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"],"requires":[],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("document",new Object(),{
     requires:[],source_name:"core.lisp"
 });
@@ -3869,15 +3897,17 @@ await Environment.set_global("formatted_date",async function(dval,date_formatter
 await Environment.set_global("*LANGUAGE*",new Object(),{
     requires:[],source_name:"core.lisp"
 });
- Environment.set_global("dtext",function(default_text) {
-    return ( ( function(){
-        let __targ__262=( Environment.get_global("*LANGUAGE*"));
-        if (__targ__262){
-             return(__targ__262)[default_text]
-        } 
-    })()|| default_text)
-},{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("dtext",function(default_text) {
+        return ( ( function(){
+            let __targ__262=( Environment.get_global("*LANGUAGE*"));
+            if (__targ__262){
+                 return(__targ__262)[default_text]
+            } 
+        })()|| default_text)
+    },{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("nth",async function(idx,collection) {
     return await async function(){
         if (check_true ((idx instanceof Array))) {
@@ -3894,28 +3924,34 @@ await Environment.set_global("nth",async function(idx,collection) {
     } ()
 },{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"],"source_name":"core.lisp"
 });
- Environment.set_global("max_index",function(container) {
-    return  Math.max(0,( ( Environment.get_global("length"))(container)- 1))
-},{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"source_name":"core.lisp"
-});
- Environment.set_global("decode_text",function(buffer) {
-    return  ( function() {
-        {
-             let __call_target__=new TextDecoder(), __call_method__="decode";
-            return  __call_target__[__call_method__].call(__call_target__,buffer)
-        } 
-    })()
-},{ "name":"decode_text","fn_args":"(buffer)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"source_name":"core.lisp"
-});
- Environment.set_global("encode_text",function(text) {
-    return  ( function() {
-        {
-             let __call_target__=new TextEncoder(), __call_method__="encode";
-            return  __call_target__[__call_method__].call(__call_target__,text)
-        } 
-    })()
-},{ "name":"encode_text","fn_args":"(text)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("max_index",function(container) {
+        return  Math.max(0,( ( Environment.get_global("length"))(container)- 1))
+    },{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("decode_text",function(buffer) {
+        return  ( function() {
+            {
+                 let __call_target__=new TextDecoder(), __call_method__="decode";
+                return  __call_target__[__call_method__].call(__call_target__,buffer)
+            } 
+        })()
+    },{ "name":"decode_text","fn_args":"(buffer)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("encode_text",function(text) {
+        return  ( function() {
+            {
+                 let __call_target__=new TextEncoder(), __call_method__="encode";
+                return  __call_target__[__call_method__].call(__call_target__,text)
+            } 
+        })()
+    },{ "name":"encode_text","fn_args":"(text)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("hostname",async function() {
     return await Deno.hostname()
 },{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"source_name":"core.lisp"
@@ -4112,16 +4148,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__279=async function(req) {
                                             {
-                                                let _expr_65250;
+                                                let _expr_14357;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_65250=await (async function(){
+                                                _expr_14357=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_65250 && _expr_65250["0"]);
-                                                req_ns=(_expr_65250 && _expr_65250["1"]);
-                                                explicit=(_expr_65250 && _expr_65250["2"]);
+                                                req_sym=(_expr_14357 && _expr_14357["0"]);
+                                                req_ns=(_expr_14357 && _expr_14357["1"]);
+                                                explicit=(_expr_14357 && _expr_14357["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4224,13 +4260,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_38520;
+                    let _expr_30956;
                     let nspace;
-                    _expr_38520=await (async function(){
+                    _expr_30956=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_38520 && _expr_38520["0"]);
-                    nspace=(_expr_38520 && _expr_38520["1"]);
+                    sym=(_expr_30956 && _expr_30956["0"]);
+                    nspace=(_expr_30956 && _expr_30956["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -4869,155 +4905,161 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
     return rval
 },{ "name":"process_tree_symbols","fn_args":"(tree prefix _ctx)","usage":["tree:*"],"description":["=:+","Given a JSON structure, such as produced by the reader, returns an object containing the various determined types of the provided structure:<br>","allocations:array - All locally allocated symbols<br>","symbols:array - All identified symbols<br>","keywords:array - All keywords used in the structure","literals:array - All identified literals (i.e. not a symbol)","globals:array - All referenced globals"],"tags":["editor","usage","scope","structure"],"requires":["as_lisp","not","is_array?","process_tree_symbols","contains?","*formatting_rules*","meta_for_symbol","length","is_string?","starts_with?","is_number?","is_function?","is_object?","pairs","to_array"],"source_name":"core.lisp"
 });
- Environment.set_global("keys*",function(obj) {
-    if (check_true ((obj instanceof Object))){
-        {
-            let current_obj;
-            let prototypes;
-            let properties;
-            current_obj=obj;
-            prototypes=[];
-            properties= ( Environment.get_global("first"))(prototypes);
-             ( function(){
-                 let __body_ref__334=function() {
-                    properties=new Set();
-                    (prototypes).push(properties);
-                     ( function() {
-                        let __for_body__337=function(item) {
-                            return  properties["add"].call(properties,item)
-                        };
-                        let __array__338=[],__elements__336= Object.getOwnPropertyNames(current_obj);
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__335 in __elements__336) {
-                            __array__338.push( __for_body__337(__elements__336[__iter__335]));
-                            if(__BREAK__FLAG__) {
-                                 __array__338.pop();
-                                break;
-                                
-                            }
-                        }return __array__338;
-                         
-                    })();
-                    return current_obj= Object.getPrototypeOf(current_obj)
-                };
-                let __BREAK__FLAG__=false;
-                while(current_obj) {  __body_ref__334();
-                 if(__BREAK__FLAG__) {
-                     break;
-                    
-                }
-            } ;
-            
-        })();
-        return  ( Environment.get_global("flatten"))( ( function() {
-            let __for_body__341=function(s) {
-                return  ( function() {
-                    {
-                         let __call_target__= Array.from(s), __call_method__="sort";
-                        return  __call_target__[__call_method__]()
-                    } 
-                })()
-            };
-            let __array__342=[],__elements__340=prototypes;
-            let __BREAK__FLAG__=false;
-            for(let __iter__339 in __elements__340) {
-                __array__342.push( __for_body__341(__elements__340[__iter__339]));
-                if(__BREAK__FLAG__) {
-                     __array__342.pop();
-                    break;
-                    
-                }
-            }return __array__342;
-             
-        })())
-    }
-} else {
-    throw new TypeError("keys*: invalid object as argument");
-    
-}
-},{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"source_name":"core.lisp"
-});
- Environment.set_global("pairs*",function(obj) {
-    if (check_true ((obj instanceof Object))){
-        return  ( function() {
-            let __for_body__345=function(k) {
-                return  ( function(){
-                    let __array_op_rval__347=k;
-                     if (__array_op_rval__347 instanceof Function){
-                        return  __array_op_rval__347(obj[k]) 
-                    } else {
-                        return [__array_op_rval__347,obj[k]]
-                    }
-                })()
-            };
-            let __array__346=[],__elements__344= ( Environment.get_global("keys*"))(obj);
-            let __BREAK__FLAG__=false;
-            for(let __iter__343 in __elements__344) {
-                __array__346.push( __for_body__345(__elements__344[__iter__343]));
-                if(__BREAK__FLAG__) {
-                     __array__346.pop();
-                    break;
-                    
-                }
-            }return __array__346;
-             
-        })()
-    }
-},{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"],"source_name":"core.lisp"
-});
- Environment.set_global("word_wrap",function(text,ncols) {
-    let line_length;
-    let words;
-    let max_cols;
-    let current_line;
-    let lines;
-    line_length=0;
-    words=(text).split(" ");
-    max_cols=(ncols|| 80);
-    current_line=[];
-    lines=[];
-     ( function() {
-        let __for_body__350=function(word) {
-            return   (function(){
-                if (check_true (((line_length+  ( Environment.get_global("length"))(word))>=max_cols))) {
-                    {
-                        (lines).push((current_line).join(" "));
-                        current_line= ( function(){
-                            let __array_op_rval__352=word;
-                             if (__array_op_rval__352 instanceof Function){
-                                return  __array_op_rval__352() 
-                            } else {
-                                return [__array_op_rval__352]
-                            }
+{
+     Environment.set_global("keys*",function(obj) {
+        if (check_true ((obj instanceof Object))){
+            {
+                let current_obj;
+                let prototypes;
+                let properties;
+                current_obj=obj;
+                prototypes=[];
+                properties= ( Environment.get_global("first"))(prototypes);
+                 ( function(){
+                     let __body_ref__334=function() {
+                        properties=new Set();
+                        (prototypes).push(properties);
+                         ( function() {
+                            let __for_body__337=function(item) {
+                                return  properties["add"].call(properties,item)
+                            };
+                            let __array__338=[],__elements__336= Object.getOwnPropertyNames(current_obj);
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__335 in __elements__336) {
+                                __array__338.push( __for_body__337(__elements__336[__iter__335]));
+                                if(__BREAK__FLAG__) {
+                                     __array__338.pop();
+                                    break;
+                                    
+                                }
+                            }return __array__338;
+                             
                         })();
-                        return line_length= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        return current_obj= Object.getPrototypeOf(current_obj)
+                    };
+                    let __BREAK__FLAG__=false;
+                    while(current_obj) {  __body_ref__334();
+                     if(__BREAK__FLAG__) {
+                         break;
+                        
                     }
-                } else {
-                    {
-                        (current_line).push(word);
-                        return line_length+= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
-                    }
-                }
-            } )()
-        };
-        let __array__351=[],__elements__349=(words|| []);
-        let __BREAK__FLAG__=false;
-        for(let __iter__348 in __elements__349) {
-            __array__351.push( __for_body__350(__elements__349[__iter__348]));
-            if(__BREAK__FLAG__) {
-                 __array__351.pop();
-                break;
+                } ;
                 
-            }
-        }return __array__351;
-         
-    })();
-    if (check_true (((current_line && current_line.length)>0))){
-        (lines).push((current_line).join(" "))
-    };
-    return lines
-},{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"],"source_name":"core.lisp"
-});
+            })();
+            return  ( Environment.get_global("flatten"))( ( function() {
+                let __for_body__341=function(s) {
+                    return  ( function() {
+                        {
+                             let __call_target__= Array.from(s), __call_method__="sort";
+                            return  __call_target__[__call_method__]()
+                        } 
+                    })()
+                };
+                let __array__342=[],__elements__340=prototypes;
+                let __BREAK__FLAG__=false;
+                for(let __iter__339 in __elements__340) {
+                    __array__342.push( __for_body__341(__elements__340[__iter__339]));
+                    if(__BREAK__FLAG__) {
+                         __array__342.pop();
+                        break;
+                        
+                    }
+                }return __array__342;
+                 
+            })())
+        }
+    } else {
+        throw new TypeError("keys*: invalid object as argument");
+        
+    }
+},{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("pairs*",function(obj) {
+        if (check_true ((obj instanceof Object))){
+            return  ( function() {
+                let __for_body__345=function(k) {
+                    return  ( function(){
+                        let __array_op_rval__347=k;
+                         if (__array_op_rval__347 instanceof Function){
+                            return  __array_op_rval__347(obj[k]) 
+                        } else {
+                            return [__array_op_rval__347,obj[k]]
+                        }
+                    })()
+                };
+                let __array__346=[],__elements__344= ( Environment.get_global("keys*"))(obj);
+                let __BREAK__FLAG__=false;
+                for(let __iter__343 in __elements__344) {
+                    __array__346.push( __for_body__345(__elements__344[__iter__343]));
+                    if(__BREAK__FLAG__) {
+                         __array__346.pop();
+                        break;
+                        
+                    }
+                }return __array__346;
+                 
+            })()
+        }
+    },{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("word_wrap",function(text,ncols) {
+        let line_length;
+        let words;
+        let max_cols;
+        let current_line;
+        let lines;
+        line_length=0;
+        words=(text).split(" ");
+        max_cols=(ncols|| 80);
+        current_line=[];
+        lines=[];
+         ( function() {
+            let __for_body__350=function(word) {
+                return   (function(){
+                    if (check_true (((line_length+  ( Environment.get_global("length"))(word))>=max_cols))) {
+                        {
+                            (lines).push((current_line).join(" "));
+                            current_line= ( function(){
+                                let __array_op_rval__352=word;
+                                 if (__array_op_rval__352 instanceof Function){
+                                    return  __array_op_rval__352() 
+                                } else {
+                                    return [__array_op_rval__352]
+                                }
+                            })();
+                            return line_length= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        }
+                    } else {
+                        {
+                            (current_line).push(word);
+                            return line_length+= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
+                        }
+                    }
+                } )()
+            };
+            let __array__351=[],__elements__349=(words|| []);
+            let __BREAK__FLAG__=false;
+            for(let __iter__348 in __elements__349) {
+                __array__351.push( __for_body__350(__elements__349[__iter__348]));
+                if(__BREAK__FLAG__) {
+                     __array__351.pop();
+                    break;
+                    
+                }
+            }return __array__351;
+             
+        })();
+        if (check_true (((current_line && current_line.length)>0))){
+            (lines).push((current_line).join(" "))
+        };
+        return lines
+    },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("progc",async function(...args) {
     let forms;
     forms=await (await Environment.get_global("slice"))(args,0);
@@ -5025,418 +5067,430 @@ await Environment.set_global("progc",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"],"requires":["slice"],"source_name":"core.lisp"
 });
- Environment.set_global("reverse_string",function(text) {
-    return ( ( function() {
-        {
-             let __call_target__=(text).split(""), __call_method__="reverse";
-            return  __call_target__[__call_method__]()
-        } 
-    })()).join("")
-},{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"],"source_name":"core.lisp"
-});
- Environment.set_global("last_n_chars",function(n,text) {
-    if (check_true ((text instanceof String || typeof text==='string'))){
-        return  text["substr"].call(text,(-1* n))
-    } else {
-        return null
-    }
-},{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"],"source_name":"core.lisp"
-});
- Environment.set_global("last_n",function(n,arr) {
-    if (check_true ((arr instanceof Array))){
-        return  arr["slice"].call(arr,(-1* n))
-    } else {
-        return null
-    }
-},{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"],"source_name":"core.lisp"
-});
- Environment.set_global("analyze_text_line",function(line) {
-    let delta;
-    let indent_spaces;
-    let base_indent;
-    let idx;
-    let openers;
-    let closers;
-    let code_mode;
-    let cpos;
-    let last_c;
-    let last_delim;
-    delta=0;
-    indent_spaces=0;
-    base_indent=null;
-    idx=-1;
-    openers=[];
-    closers=[];
-    code_mode=true;
-    cpos=null;
-    last_c=null;
-    last_delim=null;
-     ( function() {
-        let __for_body__355=function(c) {
-            idx+=1;
-              (function(){
-                if (check_true (((c==="\"")&& ((null==last_c)|| (last_c&&  ( Environment.get_global("not"))((92=== last_c["charCodeAt"]()))))))) {
-                    return code_mode= ( Environment.get_global("not"))(code_mode)
-                } else if (check_true ((code_mode&& (c===";")))) {
-                    {
-                        __BREAK__FLAG__=true;
-                        return
-                    }
-                } else if (check_true ((code_mode&& ((c==="(")|| (c==="{")|| (c==="["))))) {
-                    {
-                        delta+=1;
-                        (openers).push(idx);
-                        base_indent=indent_spaces;
-                        cpos=idx;
-                        last_delim=c
-                    }
-                } else if (check_true ((code_mode&& ((c===")")|| (c==="]")|| (c==="}"))))) {
-                    {
-                        delta-=1;
-                        (closers).push(idx);
-                        cpos=idx;
-                        last_delim=c
-                    }
-                } else if (check_true ((code_mode&& (c===" ")&&  ( Environment.get_global("not"))(base_indent)))) {
-                    {
-                        indent_spaces+=1
-                    }
-                } else if (check_true ( ( Environment.get_global("not"))(base_indent))) {
-                    base_indent=indent_spaces
-                }
-            } )();
-            return last_c=c
-        };
-        let __array__356=[],__elements__354=(line).split("");
-        let __BREAK__FLAG__=false;
-        for(let __iter__353 in __elements__354) {
-            __array__356.push( __for_body__355(__elements__354[__iter__353]));
-            if(__BREAK__FLAG__) {
-                 __array__356.pop();
-                break;
-                
-            }
-        }return __array__356;
-         
-    })();
-    if (check_true ((undefined==base_indent))){
-        {
-            base_indent=indent_spaces
-        }
-    };
-    return {
-        delta:delta,final_type:last_delim,final_pos:cpos,line:line,indent:base_indent,openers:openers,closers:closers
-    }
-},{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"],"source_name":"core.lisp"
-});
- Environment.set_global("calculate_indent_rule",function(delta,movement_needed) {
-    let lisp_line;
-    let remainder_pos;
-    let remainder;
-    let comps;
-    let symbol_details;
-    lisp_line= (delta && delta["line"])["substr"].call((delta && delta["line"]), ( Environment.get_global("first"))((delta && delta["openers"])));
-    remainder_pos= ( function(){
-        if (check_true (((delta && delta["openers"] && delta["openers"]["length"])>0))){
-            return ( ( function(){
-                let __targ__357=(delta && delta["openers"]);
-                if (__targ__357){
-                     return(__targ__357)[(movement_needed- 1)]
-                } 
-            })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]))
+{
+     Environment.set_global("reverse_string",function(text) {
+        return ( ( function() {
+            {
+                 let __call_target__=(text).split(""), __call_method__="reverse";
+                return  __call_target__[__call_method__]()
+            } 
+        })()).join("")
+    },{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("last_n_chars",function(n,text) {
+        if (check_true ((text instanceof String || typeof text==='string'))){
+            return  text["substr"].call(text,(-1* n))
         } else {
-            return 0
+            return null
         }
-    })();
-    remainder= (delta && delta["line"])["substr"].call((delta && delta["line"]),(1+ remainder_pos));
-    comps= ( function(){
-        let __collector;
-        let __result;
-        let __action;
-        __collector=[];
-        __result=null;
-        __action=function(c) {
-            if (check_true ( ( Environment.get_global("not"))( ( Environment.get_global("blank?"))(c)))){
-                {
-                    return c
-                }
-            }
-        };
-        ;
+    },{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("last_n",function(n,arr) {
+        if (check_true ((arr instanceof Array))){
+            return  arr["slice"].call(arr,(-1* n))
+        } else {
+            return null
+        }
+    },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("analyze_text_line",function(line) {
+        let delta;
+        let indent_spaces;
+        let base_indent;
+        let idx;
+        let openers;
+        let closers;
+        let code_mode;
+        let cpos;
+        let last_c;
+        let last_delim;
+        delta=0;
+        indent_spaces=0;
+        base_indent=null;
+        idx=-1;
+        openers=[];
+        closers=[];
+        code_mode=true;
+        cpos=null;
+        last_c=null;
+        last_delim=null;
          ( function() {
-            let __for_body__360=function(__item) {
-                __result= __action(__item);
-                if (check_true (__result)){
-                    return (__collector).push(__result)
-                }
+            let __for_body__355=function(c) {
+                idx+=1;
+                  (function(){
+                    if (check_true (((c==="\"")&& ((null==last_c)|| (last_c&&  ( Environment.get_global("not"))((92=== last_c["charCodeAt"]()))))))) {
+                        return code_mode= ( Environment.get_global("not"))(code_mode)
+                    } else if (check_true ((code_mode&& (c===";")))) {
+                        {
+                            __BREAK__FLAG__=true;
+                            return
+                        }
+                    } else if (check_true ((code_mode&& ((c==="(")|| (c==="{")|| (c==="["))))) {
+                        {
+                            delta+=1;
+                            (openers).push(idx);
+                            base_indent=indent_spaces;
+                            cpos=idx;
+                            last_delim=c
+                        }
+                    } else if (check_true ((code_mode&& ((c===")")|| (c==="]")|| (c==="}"))))) {
+                        {
+                            delta-=1;
+                            (closers).push(idx);
+                            cpos=idx;
+                            last_delim=c
+                        }
+                    } else if (check_true ((code_mode&& (c===" ")&&  ( Environment.get_global("not"))(base_indent)))) {
+                        {
+                            indent_spaces+=1
+                        }
+                    } else if (check_true ( ( Environment.get_global("not"))(base_indent))) {
+                        base_indent=indent_spaces
+                    }
+                } )();
+                return last_c=c
             };
-            let __array__361=[],__elements__359=(remainder).split(" ");
+            let __array__356=[],__elements__354=(line).split("");
             let __BREAK__FLAG__=false;
-            for(let __iter__358 in __elements__359) {
-                __array__361.push( __for_body__360(__elements__359[__iter__358]));
+            for(let __iter__353 in __elements__354) {
+                __array__356.push( __for_body__355(__elements__354[__iter__353]));
                 if(__BREAK__FLAG__) {
-                     __array__361.pop();
+                     __array__356.pop();
                     break;
                     
                 }
-            }return __array__361;
+            }return __array__356;
              
         })();
-        return __collector
-    })();
-    symbol_details= ( function(){
-        if (check_true ((((comps && comps.length)>0)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("(",(comps && comps["0"])))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("{",(comps && comps["0"])))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("[",(comps && comps["0"])))))){
-            return ( ( Environment.get_global("first"))( ( Environment.get_global("meta_for_symbol"))((comps && comps["0"]),true))|| {
-                type:"-"
-            })
-        } else {
-            return {
-                type:"-"
+        if (check_true ((undefined==base_indent))){
+            {
+                base_indent=indent_spaces
             }
+        };
+        return {
+            delta:delta,final_type:last_delim,final_pos:cpos,line:line,indent:base_indent,openers:openers,closers:closers
         }
-    })();
-      (function(){
-        if (check_true ((movement_needed===0))) {
-            return true
-        } else if (check_true ((((comps && comps.length)===0)&& ((delta && delta["openers"] && delta["openers"]["length"])===0)&& ((delta && delta["closers"] && delta["closers"]["length"])===0)))) {
-            true
-        } else if (check_true (( ( Environment.get_global("starts_with?"))("def",(comps && comps["0"]))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.minor_indent")))))) {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ 3);
-                    return delta;
-                    
-                })()
+    },{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("calculate_indent_rule",function(delta,movement_needed) {
+        let lisp_line;
+        let remainder_pos;
+        let remainder;
+        let comps;
+        let symbol_details;
+        lisp_line= (delta && delta["line"])["substr"].call((delta && delta["line"]), ( Environment.get_global("first"))((delta && delta["openers"])));
+        remainder_pos= ( function(){
+            if (check_true (((delta && delta["openers"] && delta["openers"]["length"])>0))){
+                return ( ( function(){
+                    let __targ__357=(delta && delta["openers"]);
+                    if (__targ__357){
+                         return(__targ__357)[(movement_needed- 1)]
+                    } 
+                })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]))
+            } else {
+                return 0
             }
-        } else if (check_true (((((symbol_details && symbol_details["type"])&&  ( Environment.get_global("contains?"))("Function",(symbol_details && symbol_details["type"])))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.keywords"))))&&  ( Environment.get_global("contains?"))((delta && delta["final_type"]),["(","[",")","]"])))) {
-            {
-                if (check_true ((( ( Environment.get_global("length"))((delta && delta["closers"]))===0)&& ( ( Environment.get_global("length"))((delta && delta["openers"]))===1)))){
+        })();
+        remainder= (delta && delta["line"])["substr"].call((delta && delta["line"]),(1+ remainder_pos));
+        comps= ( function(){
+            let __collector;
+            let __result;
+            let __action;
+            __collector=[];
+            __result=null;
+            __action=function(c) {
+                if (check_true ( ( Environment.get_global("not"))( ( Environment.get_global("blank?"))(c)))){
                     {
-                          (function(){
-                            delta["indent"]=(remainder_pos+ 3);
-                            return delta;
-                            
-                        })()
-                    }
-                } else {
-                    {
-                          (function(){
-                            delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
-                            return delta;
-                            
-                        })()
+                        return c
                     }
                 }
-            }
-        } else if (check_true ( ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("built_ins"))))) {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
-                    return delta;
-                    
-                })()
-            }
-        } else if (check_true (((delta && delta["final_type"])==="["))) {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ 1);
-                    return delta;
-                    
-                })()
-            }
-        } else if (check_true (( ( Environment.get_global("starts_with?"))("[",(comps && comps["0"]))||  ( Environment.get_global("starts_with?"))("(",(comps && comps["0"]))))) {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ 1);
-                    return delta;
-                    
-                })()
-            }
-        } else if (check_true (((comps && comps.length)===1))) {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ 3);
-                    return delta;
-                    
-                })()
-            }
-        } else if (check_true ((((delta && delta["final_type"])==="{")&& (movement_needed>0)))) {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ 2);
-                    return delta;
-                    
-                })()
-            }
-        } else if (check_true (((comps && comps.length)===0))) {
-            {
-                  (function(){
-                    delta["indent"]=(1+ remainder_pos);
-                    return delta;
-                    
-                })()
-            }
-        } else {
-            {
-                  (function(){
-                    delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
-                    return delta;
-                    
-                })()
-            }
-        }
-    } )();
-    return delta
-},{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","built_ins"],"source_name":"core.lisp"
-});
- Environment.set_global("format_lisp_line",function(line_number,get_line) {
-    if (check_true (((line_number>0)&& get_line instanceof Function))){
-        {
-            let current_row;
-            let prior_line;
-            let delta;
-            let movement_needed;
-            let orig_movement_needed;
-            let comps;
-            let final;
-            let in_seek;
-            current_row=(line_number- 1);
-            prior_line= ( function(){
-                let v= ( function(){
-                    let __array_op_rval__372=get_line;
-                     if (__array_op_rval__372 instanceof Function){
-                        return  __array_op_rval__372(current_row) 
-                    } else {
-                        return [__array_op_rval__372,current_row]
+            };
+            ;
+             ( function() {
+                let __for_body__360=function(__item) {
+                    __result= __action(__item);
+                    if (check_true (__result)){
+                        return (__collector).push(__result)
                     }
-                })();
-                ;
-                 ( function(){
-                     let __test_condition__373=function() {
-                        return (((v).trim()==="")&& (current_row>0))
-                    };
-                    let __body_ref__374=function() {
-                        current_row-=1;
-                        return v= ( function(){
-                            let __array_op_rval__375=get_line;
-                             if (__array_op_rval__375 instanceof Function){
-                                return  __array_op_rval__375(current_row) 
-                            } else {
-                                return [__array_op_rval__375,current_row]
-                            }
-                        })()
-                    };
-                    let __BREAK__FLAG__=false;
-                    while( __test_condition__373()) {
-                          __body_ref__374();
-                         if(__BREAK__FLAG__) {
-                             break;
-                            
-                        }
-                    } ;
-                    
-                })();
-                return (v|| "")
-            })();
-            delta= ( Environment.get_global("analyze_text_line"))(prior_line);
-            movement_needed=0;
-            orig_movement_needed=0;
-            comps=null;
-            final=(delta && delta["final_type"]);
-            in_seek=((delta && delta["openers"] && delta["openers"]["length"])<(delta && delta["closers"] && delta["closers"]["length"]));
-            movement_needed=(delta && delta["delta"]);
-            orig_movement_needed=movement_needed;
-              (function(){
-                if (check_true ((movement_needed<0))) {
-                    {
-                        let lisp_line;
-                        let remainder_pos;
-                        let remainder;
-                        let symbol_details;
-                        lisp_line=null;
-                        remainder_pos=null;
-                        remainder=null;
-                        symbol_details=null;
-                         ( function(){
-                             let __test_condition__376=function() {
-                                return ((movement_needed<0)&& (current_row>0))
-                            };
-                            let __body_ref__377=function() {
-                                current_row-=1;
-                                prior_line= ( function(){
-                                    let __array_op_rval__378=get_line;
-                                     if (__array_op_rval__378 instanceof Function){
-                                        return  __array_op_rval__378(current_row) 
-                                    } else {
-                                        return [__array_op_rval__378,current_row]
-                                    }
-                                })();
-                                 ( function(){
-                                     let __test_condition__379=function() {
-                                        return ((current_row>0)&& ((prior_line).trim()===""))
-                                    };
-                                    let __body_ref__380=function() {
-                                        current_row-=1;
-                                        return prior_line= ( function(){
-                                            let __array_op_rval__381=get_line;
-                                             if (__array_op_rval__381 instanceof Function){
-                                                return  __array_op_rval__381(current_row) 
-                                            } else {
-                                                return [__array_op_rval__381,current_row]
-                                            }
-                                        })()
-                                    };
-                                    let __BREAK__FLAG__=false;
-                                    while( __test_condition__379()) {
-                                          __body_ref__380();
-                                         if(__BREAK__FLAG__) {
-                                             break;
-                                            
-                                        }
-                                    } ;
-                                    
-                                })();
-                                delta= ( Environment.get_global("analyze_text_line"))(prior_line);
-                                return movement_needed=(movement_needed+ (delta && delta["delta"]))
-                            };
-                            let __BREAK__FLAG__=false;
-                            while( __test_condition__376()) {
-                                  __body_ref__377();
-                                 if(__BREAK__FLAG__) {
-                                     break;
-                                    
-                                }
-                            } ;
-                            
-                        })();
-                        return delta= ( Environment.get_global("calculate_indent_rule"))(delta,movement_needed)
-                    }
-                } else if (check_true ((movement_needed>0))) {
-                    {
-                        return delta= ( Environment.get_global("calculate_indent_rule"))(delta,movement_needed)
-                    }
-                }
-            } )();
-            return ( ( function() {
-                let __for_body__384=function(c) {
-                    return " "
                 };
-                let __array__385=[],__elements__383= ( Environment.get_global("range"))( Math.max(0,(delta && delta["indent"])));
+                let __array__361=[],__elements__359=(remainder).split(" ");
                 let __BREAK__FLAG__=false;
-                for(let __iter__382 in __elements__383) {
-                    __array__385.push( __for_body__384(__elements__383[__iter__382]));
+                for(let __iter__358 in __elements__359) {
+                    __array__361.push( __for_body__360(__elements__359[__iter__358]));
                     if(__BREAK__FLAG__) {
-                         __array__385.pop();
+                         __array__361.pop();
                         break;
                         
                     }
-                }return __array__385;
+                }return __array__361;
                  
-            })()).join("")
+            })();
+            return __collector
+        })();
+        symbol_details= ( function(){
+            if (check_true ((((comps && comps.length)>0)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("(",(comps && comps["0"])))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("{",(comps && comps["0"])))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))("[",(comps && comps["0"])))))){
+                return ( ( Environment.get_global("first"))( ( Environment.get_global("meta_for_symbol"))((comps && comps["0"]),true))|| {
+                    type:"-"
+                })
+            } else {
+                return {
+                    type:"-"
+                }
+            }
+        })();
+          (function(){
+            if (check_true ((movement_needed===0))) {
+                return true
+            } else if (check_true ((((comps && comps.length)===0)&& ((delta && delta["openers"] && delta["openers"]["length"])===0)&& ((delta && delta["closers"] && delta["closers"]["length"])===0)))) {
+                true
+            } else if (check_true (( ( Environment.get_global("starts_with?"))("def",(comps && comps["0"]))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.minor_indent")))))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ 3);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((((symbol_details && symbol_details["type"])&&  ( Environment.get_global("contains?"))("Function",(symbol_details && symbol_details["type"])))||  ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("*formatting_rules*.keywords"))))&&  ( Environment.get_global("contains?"))((delta && delta["final_type"]),["(","[",")","]"])))) {
+                {
+                    if (check_true ((( ( Environment.get_global("length"))((delta && delta["closers"]))===0)&& ( ( Environment.get_global("length"))((delta && delta["openers"]))===1)))){
+                        {
+                              (function(){
+                                delta["indent"]=(remainder_pos+ 3);
+                                return delta;
+                                
+                            })()
+                        }
+                    } else {
+                        {
+                              (function(){
+                                delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
+                                return delta;
+                                
+                            })()
+                        }
+                    }
+                }
+            } else if (check_true ( ( Environment.get_global("contains?"))((comps && comps["0"]),( Environment.get_global("built_ins"))))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((delta && delta["final_type"])==="["))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ 1);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (( ( Environment.get_global("starts_with?"))("[",(comps && comps["0"]))||  ( Environment.get_global("starts_with?"))("(",(comps && comps["0"]))))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ 1);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((comps && comps.length)===1))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ 3);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true ((((delta && delta["final_type"])==="{")&& (movement_needed>0)))) {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ 2);
+                        return delta;
+                        
+                    })()
+                }
+            } else if (check_true (((comps && comps.length)===0))) {
+                {
+                      (function(){
+                        delta["indent"]=(1+ remainder_pos);
+                        return delta;
+                        
+                    })()
+                }
+            } else {
+                {
+                      (function(){
+                        delta["indent"]=(remainder_pos+ (comps && comps["0"] && comps["0"]["length"])+ 2);
+                        return delta;
+                        
+                    })()
+                }
+            }
+        } )();
+        return delta
+    },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","built_ins"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("format_lisp_line",function(line_number,get_line) {
+        if (check_true (((line_number>0)&& get_line instanceof Function))){
+            {
+                let current_row;
+                let prior_line;
+                let delta;
+                let movement_needed;
+                let orig_movement_needed;
+                let comps;
+                let final;
+                let in_seek;
+                current_row=(line_number- 1);
+                prior_line= ( function(){
+                    let v= ( function(){
+                        let __array_op_rval__372=get_line;
+                         if (__array_op_rval__372 instanceof Function){
+                            return  __array_op_rval__372(current_row) 
+                        } else {
+                            return [__array_op_rval__372,current_row]
+                        }
+                    })();
+                    ;
+                     ( function(){
+                         let __test_condition__373=function() {
+                            return (((v).trim()==="")&& (current_row>0))
+                        };
+                        let __body_ref__374=function() {
+                            current_row-=1;
+                            return v= ( function(){
+                                let __array_op_rval__375=get_line;
+                                 if (__array_op_rval__375 instanceof Function){
+                                    return  __array_op_rval__375(current_row) 
+                                } else {
+                                    return [__array_op_rval__375,current_row]
+                                }
+                            })()
+                        };
+                        let __BREAK__FLAG__=false;
+                        while( __test_condition__373()) {
+                              __body_ref__374();
+                             if(__BREAK__FLAG__) {
+                                 break;
+                                
+                            }
+                        } ;
+                        
+                    })();
+                    return (v|| "")
+                })();
+                delta= ( Environment.get_global("analyze_text_line"))(prior_line);
+                movement_needed=0;
+                orig_movement_needed=0;
+                comps=null;
+                final=(delta && delta["final_type"]);
+                in_seek=((delta && delta["openers"] && delta["openers"]["length"])<(delta && delta["closers"] && delta["closers"]["length"]));
+                movement_needed=(delta && delta["delta"]);
+                orig_movement_needed=movement_needed;
+                  (function(){
+                    if (check_true ((movement_needed<0))) {
+                        {
+                            let lisp_line;
+                            let remainder_pos;
+                            let remainder;
+                            let symbol_details;
+                            lisp_line=null;
+                            remainder_pos=null;
+                            remainder=null;
+                            symbol_details=null;
+                             ( function(){
+                                 let __test_condition__376=function() {
+                                    return ((movement_needed<0)&& (current_row>0))
+                                };
+                                let __body_ref__377=function() {
+                                    current_row-=1;
+                                    prior_line= ( function(){
+                                        let __array_op_rval__378=get_line;
+                                         if (__array_op_rval__378 instanceof Function){
+                                            return  __array_op_rval__378(current_row) 
+                                        } else {
+                                            return [__array_op_rval__378,current_row]
+                                        }
+                                    })();
+                                     ( function(){
+                                         let __test_condition__379=function() {
+                                            return ((current_row>0)&& ((prior_line).trim()===""))
+                                        };
+                                        let __body_ref__380=function() {
+                                            current_row-=1;
+                                            return prior_line= ( function(){
+                                                let __array_op_rval__381=get_line;
+                                                 if (__array_op_rval__381 instanceof Function){
+                                                    return  __array_op_rval__381(current_row) 
+                                                } else {
+                                                    return [__array_op_rval__381,current_row]
+                                                }
+                                            })()
+                                        };
+                                        let __BREAK__FLAG__=false;
+                                        while( __test_condition__379()) {
+                                              __body_ref__380();
+                                             if(__BREAK__FLAG__) {
+                                                 break;
+                                                
+                                            }
+                                        } ;
+                                        
+                                    })();
+                                    delta= ( Environment.get_global("analyze_text_line"))(prior_line);
+                                    return movement_needed=(movement_needed+ (delta && delta["delta"]))
+                                };
+                                let __BREAK__FLAG__=false;
+                                while( __test_condition__376()) {
+                                      __body_ref__377();
+                                     if(__BREAK__FLAG__) {
+                                         break;
+                                        
+                                    }
+                                } ;
+                                
+                            })();
+                            return delta= ( Environment.get_global("calculate_indent_rule"))(delta,movement_needed)
+                        }
+                    } else if (check_true ((movement_needed>0))) {
+                        {
+                            return delta= ( Environment.get_global("calculate_indent_rule"))(delta,movement_needed)
+                        }
+                    }
+                } )();
+                return ( ( function() {
+                    let __for_body__384=function(c) {
+                        return " "
+                    };
+                    let __array__385=[],__elements__383= ( Environment.get_global("range"))( Math.max(0,(delta && delta["indent"])));
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__382 in __elements__383) {
+                        __array__385.push( __for_body__384(__elements__383[__iter__382]));
+                        if(__BREAK__FLAG__) {
+                             __array__385.pop();
+                            break;
+                            
+                        }
+                    }return __array__385;
+                     
+                })()).join("")
+            }
         }
-    }
-},{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. Once the string is returned, it is mandatory to update ","the line buffer with the updated indented string, otherwise the function ","will not work properly."],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"],"source_name":"core.lisp"
-});
+    },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. Once the string is returned, it is mandatory to update ","the line buffer with the updated indented string, otherwise the function ","will not work properly."],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("set_default",async function(path,value) {
     let real_path;
     real_path=await (async function(){
@@ -5465,522 +5519,526 @@ await Environment.set_global("get_default",async function(key,alt_val) {
     }
 },{ "name":"get_default","fn_args":"(key alt_val)","description":["=:+","Given a path (array form) to a key in `*env_config*` , returns the ","value at the path.  If the value cannot be found, will return `undefined`.  If ","the second argument is provided, `alt_val`, that value will be returned if the ","provided path isn't found. "],"usage":["key:array","alt_val:*"],"tags":["settings","config","defaults","default","environment","env","application"],"requires":["is_array?","resolve_multi_path","*env_config*"],"source_name":"core.lisp"
 });
- Environment.set_global("all_global_functions",function() {
-    let acc;
-    let env_a;
-    acc=new Set();
-    env_a=null;
-     ( function() {
-        let __for_body__388=function(ns) {
-            env_a= Environment["get_namespace_handle"].call(Environment,ns);
-            return  ( function() {
-                let __for_body__392=function(pset) {
-                    if (check_true ((pset && pset["1"]) instanceof Function)){
-                        return  acc["add"].call(acc,(pset && pset["0"]))
-                    }
-                };
-                let __array__393=[],__elements__391= ( Environment.get_global("pairs"))((env_a && env_a["context"] && env_a["context"]["scope"]));
-                let __BREAK__FLAG__=false;
-                for(let __iter__390 in __elements__391) {
-                    __array__393.push( __for_body__392(__elements__391[__iter__390]));
-                    if(__BREAK__FLAG__) {
-                         __array__393.pop();
-                        break;
-                        
-                    }
-                }return __array__393;
-                 
-            })()
-        };
-        let __array__389=[],__elements__387= ( Environment.get_global("namespaces"))();
-        let __BREAK__FLAG__=false;
-        for(let __iter__386 in __elements__387) {
-            __array__389.push( __for_body__388(__elements__387[__iter__386]));
-            if(__BREAK__FLAG__) {
-                 __array__389.pop();
-                break;
-                
-            }
-        }return __array__389;
-         
-    })();
-    return acc
-},{ "name":"all_global_functions","fn_args":"[]","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"],"source_name":"core.lisp"
-});
- Environment.set_global("pretty_print",function(in_struct,report_callout) {
-    let in_text;
-    let chars;
-    let key_words;
-    let block_words;
-    let conditionals;
-    let char;
-    let global_lookup;
-    let last_opener;
-    let operator;
-    let next_char;
-    let next_char_pos;
-    let state;
-    let lines;
-    let formatted_lines;
-    let line_acc;
-    let rule;
-    let cpos;
-    let debug_mode;
-    let closers;
-    let openers;
-    let code_mode;
-    let string_mode;
-    let escape_state;
-    let mode;
-    let nl_suppress;
-    let skip_for;
-    let depth_change;
-    let long_string_mode;
-    let report;
-    let lpos;
-    let lnum;
-    let argnum;
-    let text;
-    let word;
-    let word_acc;
-    let add_char_to_line;
-    let next_line;
-    let is_whitespace_ques_;
-    let indent_string;
-    let get_line;
-    let calc_next_char;
-    in_text= ( function(){
-         return   (function(){
-            if (check_true ((in_struct instanceof Object))) {
-                return  ( Environment.get_global("as_lisp"))(in_struct)
-            } else if (check_true ((in_struct instanceof String || typeof in_struct==='string'))) {
-                return in_struct
-            } else {
-                return (""+ in_struct)
-            }
-        } )() 
-    })();
-    chars=(in_text).split("");
-    key_words= ( function(){
-        let __targ__394=( Environment.get_global("*formatting_rules*"));
-        if (__targ__394){
-             return(__targ__394)["keywords"]
-        } 
-    })();
-    block_words=["try","progn","progl","progc","do","let","cond"];
-    conditionals=["if","when","unless"];
-    char=null;
-    global_lookup= ( function(){
-        let tmp= ( Environment.get_global("all_global_functions"))();
-        ;
+{
+     Environment.set_global("all_global_functions",function() {
+        let acc;
+        let env_a;
+        acc=new Set();
+        env_a=null;
          ( function() {
-            let __for_body__397=function(op) {
-                return  tmp["add"].call(tmp,op)
+            let __for_body__388=function(ns) {
+                env_a= Environment["get_namespace_handle"].call(Environment,ns);
+                return  ( function() {
+                    let __for_body__392=function(pset) {
+                        if (check_true ((pset && pset["1"]) instanceof Function)){
+                            return  acc["add"].call(acc,(pset && pset["0"]))
+                        }
+                    };
+                    let __array__393=[],__elements__391= ( Environment.get_global("pairs"))((env_a && env_a["context"] && env_a["context"]["scope"]));
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__390 in __elements__391) {
+                        __array__393.push( __for_body__392(__elements__391[__iter__390]));
+                        if(__BREAK__FLAG__) {
+                             __array__393.pop();
+                            break;
+                            
+                        }
+                    }return __array__393;
+                     
+                })()
             };
-            let __array__398=[],__elements__396=(key_words|| []);
+            let __array__389=[],__elements__387= ( Environment.get_global("namespaces"))();
             let __BREAK__FLAG__=false;
-            for(let __iter__395 in __elements__396) {
-                __array__398.push( __for_body__397(__elements__396[__iter__395]));
+            for(let __iter__386 in __elements__387) {
+                __array__389.push( __for_body__388(__elements__387[__iter__386]));
                 if(__BREAK__FLAG__) {
-                     __array__398.pop();
+                     __array__389.pop();
                     break;
                     
                 }
-            }return __array__398;
+            }return __array__389;
              
         })();
-        return tmp
-    })();
-    last_opener=null;
-    operator=null;
-    next_char=null;
-    next_char_pos=0;
-    state=new Object();
-    lines=[];
-    formatted_lines=[];
-    line_acc=[];
-    rule=null;
-    cpos=-1;
-    debug_mode= ( function(){
-        if (check_true (report_callout)){
-            return true
-        } else {
-            return false
-        }
-    })();
-    closers=[")","]","}"];
-    openers=["(","[","{"];
-    code_mode=0;
-    string_mode=1;
-    escape_state=0;
-    mode=code_mode;
-    nl_suppress=false;
-    skip_for=null;
-    depth_change=0;
-    long_string_mode=2;
-    report=[];
-    lpos=0;
-    lnum=0;
-    argnum=0;
-    text=null;
-    word="";
-    word_acc=[];
-    add_char_to_line=function(c) {
-        (line_acc).push((c|| char));
-        return lpos=(line_acc && line_acc.length)
-    };
-    next_line=function() {
-        (lines).push((line_acc).join(""));
-        lnum=(lines && lines.length);
-        depth_change=0;
-        return line_acc=[]
-    };
-    is_whitespace_ques_=function(c) {
-        return  ( Environment.get_global("contains?"))(c,[" ","	"])
-    };
-    indent_string=null;
-    get_line=function(rnum) {
-        let it;
-        it=lines[rnum];
-        if (check_true (it)){
-            if (check_true ( ( Environment.get_global("ends_with?"))("\n",it))){
-                return it
+        return acc
+    },{ "name":"all_global_functions","fn_args":"[]","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("pretty_print",function(in_struct,report_callout) {
+        let in_text;
+        let chars;
+        let key_words;
+        let block_words;
+        let conditionals;
+        let char;
+        let global_lookup;
+        let last_opener;
+        let operator;
+        let next_char;
+        let next_char_pos;
+        let state;
+        let lines;
+        let formatted_lines;
+        let line_acc;
+        let rule;
+        let cpos;
+        let debug_mode;
+        let closers;
+        let openers;
+        let code_mode;
+        let string_mode;
+        let escape_state;
+        let mode;
+        let nl_suppress;
+        let skip_for;
+        let depth_change;
+        let long_string_mode;
+        let report;
+        let lpos;
+        let lnum;
+        let argnum;
+        let text;
+        let word;
+        let word_acc;
+        let add_char_to_line;
+        let next_line;
+        let is_whitespace_ques_;
+        let indent_string;
+        let get_line;
+        let calc_next_char;
+        in_text= ( function(){
+             return   (function(){
+                if (check_true ((in_struct instanceof Object))) {
+                    return  ( Environment.get_global("as_lisp"))(in_struct)
+                } else if (check_true ((in_struct instanceof String || typeof in_struct==='string'))) {
+                    return in_struct
+                } else {
+                    return (""+ in_struct)
+                }
+            } )() 
+        })();
+        chars=(in_text).split("");
+        key_words= ( function(){
+            let __targ__394=( Environment.get_global("*formatting_rules*"));
+            if (__targ__394){
+                 return(__targ__394)["keywords"]
+            } 
+        })();
+        block_words=["try","progn","progl","progc","do","let","cond"];
+        conditionals=["if","when","unless"];
+        char=null;
+        global_lookup= ( function(){
+            let tmp= ( Environment.get_global("all_global_functions"))();
+            ;
+             ( function() {
+                let __for_body__397=function(op) {
+                    return  tmp["add"].call(tmp,op)
+                };
+                let __array__398=[],__elements__396=(key_words|| []);
+                let __BREAK__FLAG__=false;
+                for(let __iter__395 in __elements__396) {
+                    __array__398.push( __for_body__397(__elements__396[__iter__395]));
+                    if(__BREAK__FLAG__) {
+                         __array__398.pop();
+                        break;
+                        
+                    }
+                }return __array__398;
+                 
+            })();
+            return tmp
+        })();
+        last_opener=null;
+        operator=null;
+        next_char=null;
+        next_char_pos=0;
+        state=new Object();
+        lines=[];
+        formatted_lines=[];
+        line_acc=[];
+        rule=null;
+        cpos=-1;
+        debug_mode= ( function(){
+            if (check_true (report_callout)){
+                return true
             } else {
-                return (it+ "\n")
+                return false
             }
-        } else {
-            return null
-        }
-    };
-    calc_next_char=function() {
-        if (check_true (chars[(1+ cpos)])){
-            {
-                next_char_pos=(cpos+ 1);
-                 ( function(){
-                     let __test_condition__399=function() {
-                        return (chars[next_char_pos]&&  is_whitespace_ques_(chars[next_char_pos]))
-                    };
-                    let __body_ref__400=function() {
-                        return next_char_pos+=1
-                    };
-                    let __BREAK__FLAG__=false;
-                    while( __test_condition__399()) {
-                          __body_ref__400();
-                         if(__BREAK__FLAG__) {
-                             break;
-                            
-                        }
-                    } ;
-                    
-                })();
-                return next_char=chars[next_char_pos]
-            }
-        }
-    };
-     ( function(){
-         let __test_condition__401=function() {
-            return (cpos<(chars && chars.length))
+        })();
+        closers=[")","]","}"];
+        openers=["(","[","{"];
+        code_mode=0;
+        string_mode=1;
+        escape_state=0;
+        mode=code_mode;
+        nl_suppress=false;
+        skip_for=null;
+        depth_change=0;
+        long_string_mode=2;
+        report=[];
+        lpos=0;
+        lnum=0;
+        argnum=0;
+        text=null;
+        word="";
+        word_acc=[];
+        add_char_to_line=function(c) {
+            (line_acc).push((c|| char));
+            return lpos=(line_acc && line_acc.length)
         };
-        let __body_ref__402=function() {
-            cpos+=1;
-            char=chars[cpos];
-            rule=null;
-            if (check_true (char)){
+        next_line=function() {
+            (lines).push((line_acc).join(""));
+            lnum=(lines && lines.length);
+            depth_change=0;
+            return line_acc=[]
+        };
+        is_whitespace_ques_=function(c) {
+            return  ( Environment.get_global("contains?"))(c,[" ","	"])
+        };
+        indent_string=null;
+        get_line=function(rnum) {
+            let it;
+            it=lines[rnum];
+            if (check_true (it)){
+                if (check_true ( ( Environment.get_global("ends_with?"))("\n",it))){
+                    return it
+                } else {
+                    return (it+ "\n")
+                }
+            } else {
+                return null
+            }
+        };
+        calc_next_char=function() {
+            if (check_true (chars[(1+ cpos)])){
                 {
-                    if (check_true ((skip_for&& (skip_for>0)))){
-                        skip_for-=1
-                    };
-                    if (check_true (( char["charCodeAt"]()===92))){
-                        escape_state=2
-                    } else {
-                        escape_state= Math.max(0,(escape_state- 1))
-                    };
-                    if (check_true (((mode===code_mode)&& (cpos>=next_char_pos)))){
-                        {
-                            if (check_true ((nl_suppress&& (skip_for===null)))){
+                    next_char_pos=(cpos+ 1);
+                     ( function(){
+                         let __test_condition__399=function() {
+                            return (chars[next_char_pos]&&  is_whitespace_ques_(chars[next_char_pos]))
+                        };
+                        let __body_ref__400=function() {
+                            return next_char_pos+=1
+                        };
+                        let __BREAK__FLAG__=false;
+                        while( __test_condition__399()) {
+                              __body_ref__400();
+                             if(__BREAK__FLAG__) {
+                                 break;
+                                
+                            }
+                        } ;
+                        
+                    })();
+                    return next_char=chars[next_char_pos]
+                }
+            }
+        };
+         ( function(){
+             let __test_condition__401=function() {
+                return (cpos<(chars && chars.length))
+            };
+            let __body_ref__402=function() {
+                cpos+=1;
+                char=chars[cpos];
+                rule=null;
+                if (check_true (char)){
+                    {
+                        if (check_true ((skip_for&& (skip_for>0)))){
+                            skip_for-=1
+                        };
+                        if (check_true (( char["charCodeAt"]()===92))){
+                            escape_state=2
+                        } else {
+                            escape_state= Math.max(0,(escape_state- 1))
+                        };
+                        if (check_true (((mode===code_mode)&& (cpos>=next_char_pos)))){
+                            {
+                                if (check_true ((nl_suppress&& (skip_for===null)))){
+                                    {
+                                        skip_for=2
+                                    }
+                                };
+                                 calc_next_char()
+                            }
+                        };
+                        if (check_true (((mode===code_mode)&& ( is_whitespace_ques_(char)||  ( Environment.get_global("contains?"))(char,openers)||  ( Environment.get_global("contains?"))(char,closers)|| (char===":")|| (char==="\n"))))){
+                            {
+                                if (check_true (((word_acc && word_acc.length)>0))){
+                                    {
+                                        word=(word_acc).join("");
+                                        if (check_true ((((last_opener==="(")|| (last_opener==="["))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",word))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",word))))){
+                                            operator=word
+                                        }
+                                    }
+                                };
+                                word_acc=[]
+                            }
+                        } else {
+                            (word_acc).push(char)
+                        };
+                        if (check_true (((mode===code_mode)&& (char==="}")&&  ( Environment.get_global("not"))(( ( Environment.get_global("last"))(line_acc)==="{"))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&&  ( Environment.get_global("not"))(( ( Environment.get_global("last"))(line_acc)===" "))))){
+                             add_char_to_line(" ")
+                        };
+                        if (check_true (((mode===code_mode)&&  ( Environment.get_global("contains?"))(char,openers)))){
+                            last_opener=char
+                        };
+                        if (check_true (((mode===code_mode)&& ( ( Environment.get_global("contains?"))(char,closers)||  is_whitespace_ques_(char))))){
+                            last_opener=null
+                        };
+                        if (check_true ((skip_for===0))){
+                            {
+                                nl_suppress=false;
+                                skip_for=null
+                            }
+                        };
+                          (function(){
+                            if (check_true (((mode===code_mode)&& (char==="\"")))) {
                                 {
-                                    skip_for=2
+                                    return mode=string_mode
                                 }
-                            };
-                             calc_next_char()
-                        }
-                    };
-                    if (check_true (((mode===code_mode)&& ( is_whitespace_ques_(char)||  ( Environment.get_global("contains?"))(char,openers)||  ( Environment.get_global("contains?"))(char,closers)|| (char===":")|| (char==="\n"))))){
-                        {
-                            if (check_true (((word_acc && word_acc.length)>0))){
+                            } else if (check_true (((mode===code_mode)&& ("|"===char)))) {
                                 {
-                                    word=(word_acc).join("");
-                                    if (check_true ((((last_opener==="(")|| (last_opener==="["))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",word))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",word))))){
-                                        operator=word
-                                    }
+                                    return mode=long_string_mode
                                 }
-                            };
-                            word_acc=[]
-                        }
-                    } else {
-                        (word_acc).push(char)
-                    };
-                    if (check_true (((mode===code_mode)&& (char==="}")&&  ( Environment.get_global("not"))(( ( Environment.get_global("last"))(line_acc)==="{"))&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&&  ( Environment.get_global("not"))(( ( Environment.get_global("last"))(line_acc)===" "))))){
-                         add_char_to_line(" ")
-                    };
-                    if (check_true (((mode===code_mode)&&  ( Environment.get_global("contains?"))(char,openers)))){
-                        last_opener=char
-                    };
-                    if (check_true (((mode===code_mode)&& ( ( Environment.get_global("contains?"))(char,closers)||  is_whitespace_ques_(char))))){
-                        last_opener=null
-                    };
-                    if (check_true ((skip_for===0))){
-                        {
-                            nl_suppress=false;
-                            skip_for=null
-                        }
-                    };
-                      (function(){
-                        if (check_true (((mode===code_mode)&& (char==="\"")))) {
-                            {
-                                return mode=string_mode
-                            }
-                        } else if (check_true (((mode===code_mode)&& ("|"===char)))) {
-                            {
-                                return mode=long_string_mode
-                            }
-                        } else if (check_true (((char==="\"")&& (mode===string_mode)&& (escape_state===0)))) {
-                            {
-                                return mode=code_mode
-                            }
-                        } else if (check_true (((char==="|")&& (mode===long_string_mode)))) {
-                            {
-                                return mode=code_mode
-                            }
-                        } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&& (mode===code_mode)))) {
-                            {
-                                return argnum=0
-                            }
-                        } else if (check_true (((char===":")&& (mode===code_mode)))) {
-                            {
-                                argnum+=1;
-                                return nl_suppress=true
-                            }
-                        }
-                    } )();
-                    if (check_true ((mode===code_mode))){
-                        {
-                              (function(){
-                                if (check_true ( ( Environment.get_global("contains?"))(char,openers))) {
-                                    return depth_change+=1
-                                } else if (check_true ( ( Environment.get_global("contains?"))(char,closers))) {
-                                    depth_change-=1
+                            } else if (check_true (((char==="\"")&& (mode===string_mode)&& (escape_state===0)))) {
+                                {
+                                    return mode=code_mode
                                 }
-                            } )();
-                              (function(){
-                                if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("contains?"))(next_char,closers)&& (argnum>1)&&  ( Environment.get_global("not"))(nl_suppress)))) {
-                                    {
-                                        rule="r0!";
-                                        return  next_line()
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&& (word&&  ( Environment.get_global("contains?"))(word,block_words))))) {
-                                    {
-                                        rule="rb!";
-                                         next_line()
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&& (argnum>=1)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&& (depth_change>-1)&& (depth_change<2)&&  ( Environment.get_global("contains?"))(operator,conditionals)))) {
-                                    {
-                                        rule="rC";
-                                         next_line()
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&& (argnum<2)&& (depth_change<2)&& (lpos<30)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&& ( ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",(word|| "")))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",(word|| "")))&& (depth_change>-1))&& ((next_char_pos- cpos)<=1)))) {
-                                    {
-                                         add_char_to_line();
-                                        argnum+=1;
-                                        rule="r1+"
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&& (argnum===0)&& ( ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",(word|| "")))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",(word|| "")))&& (word&&  global_lookup["has"].call(global_lookup,word))&&  ( Environment.get_global("not"))(("()"===( ( Environment.get_global("last_n"))(2,line_acc)).join("")))&& (depth_change>-1))))) {
-                                    {
-                                         add_char_to_line();
-                                        argnum+=1;
-                                        rule="rc"
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&&  ( Environment.get_global("not"))((next_char==="{"))&& ((next_char_pos- cpos)<=1)))) {
-                                    {
-                                        rule="r2!";
-                                         next_line();
-                                        nl_suppress=true
-                                    }
-                                } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&&  ( Environment.get_global("not"))(nl_suppress)&& (argnum>1)))) {
-                                    {
-                                        rule="r3!";
-                                        nl_suppress=true;
-                                         next_line();
-                                         add_char_to_line();
-                                        argnum=0
-                                    }
-                                } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&& (argnum>1)))) {
-                                    {
-                                        rule="r3A";
-                                         add_char_to_line();
-                                        argnum=0
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&& (depth_change<0)))) {
-                                    {
-                                        rule="r4!";
-                                         next_line();
-                                        argnum=0
-                                    }
-                                } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&& (lpos>40)))) {
-                                    {
-                                        rule="r5!";
-                                         next_line();
-                                        argnum=0
-                                    }
-                                } else if (check_true (((char==="{")&&  ( Environment.get_global("not"))( is_whitespace_ques_(chars[(1+ cpos)]))&&  ( Environment.get_global("not"))((chars[(1+ cpos)]==="}"))))) {
-                                    {
-                                        rule="r6";
-                                         add_char_to_line();
-                                         add_char_to_line(" ")
-                                    }
-                                } else if (check_true (((char===":")&&  ( Environment.get_global("not"))((" "===chars[(1+ cpos)]))))) {
-                                    {
-                                        rule="r7";
-                                         add_char_to_line();
-                                         add_char_to_line(" ")
-                                    }
-                                } else {
-                                    {
-                                        rule="r99";
-                                         add_char_to_line()
-                                    }
+                            } else if (check_true (((char==="|")&& (mode===long_string_mode)))) {
+                                {
+                                    return mode=code_mode
                                 }
-                            } )()
-                        }
-                    } else {
-                        {
-                            rule="rD";
-                             add_char_to_line()
-                        }
-                    };
-                    if (check_true (debug_mode)){
-                        {
-                            return (report).push( ( function(){
-                                let __array_op_rval__403=cpos;
-                                 if (__array_op_rval__403 instanceof Function){
-                                    return  __array_op_rval__403(char, ( function(){
-                                        if (check_true ((cpos<=next_char_pos))){
-                                            return next_char
-                                        } else {
-                                            return ""
-                                        }
-                                    })(),lpos,(next_char_pos- cpos),depth_change,mode,argnum, ( function(){
-                                        if (check_true (((mode===code_mode)&&  is_whitespace_ques_(char)))){
-                                            return "*"
-                                        } else {
-                                            return ""
-                                        }
-                                    })(), ( function(){
-                                        if (check_true (nl_suppress)){
-                                            return " NLS "
-                                        } else {
-                                            return ""
-                                        }
-                                    })(), ( function(){
-                                        if (check_true (skip_for)){
-                                            return skip_for
-                                        } else {
-                                            return ""
-                                        }
-                                    })(),rule,word,operator,(line_acc).join("")) 
-                                } else {
-                                    return [__array_op_rval__403,char, ( function(){
-                                        if (check_true ((cpos<=next_char_pos))){
-                                            return next_char
-                                        } else {
-                                            return ""
-                                        }
-                                    })(),lpos,(next_char_pos- cpos),depth_change,mode,argnum, ( function(){
-                                        if (check_true (((mode===code_mode)&&  is_whitespace_ques_(char)))){
-                                            return "*"
-                                        } else {
-                                            return ""
-                                        }
-                                    })(), ( function(){
-                                        if (check_true (nl_suppress)){
-                                            return " NLS "
-                                        } else {
-                                            return ""
-                                        }
-                                    })(), ( function(){
-                                        if (check_true (skip_for)){
-                                            return skip_for
-                                        } else {
-                                            return ""
-                                        }
-                                    })(),rule,word,operator,(line_acc).join("")]
+                            } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&& (mode===code_mode)))) {
+                                {
+                                    return argnum=0
                                 }
-                            })())
+                            } else if (check_true (((char===":")&& (mode===code_mode)))) {
+                                {
+                                    argnum+=1;
+                                    return nl_suppress=true
+                                }
+                            }
+                        } )();
+                        if (check_true ((mode===code_mode))){
+                            {
+                                  (function(){
+                                    if (check_true ( ( Environment.get_global("contains?"))(char,openers))) {
+                                        return depth_change+=1
+                                    } else if (check_true ( ( Environment.get_global("contains?"))(char,closers))) {
+                                        depth_change-=1
+                                    }
+                                } )();
+                                  (function(){
+                                    if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("contains?"))(next_char,closers)&& (argnum>1)&&  ( Environment.get_global("not"))(nl_suppress)))) {
+                                        {
+                                            rule="r0!";
+                                            return  next_line()
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (word&&  ( Environment.get_global("contains?"))(word,block_words))))) {
+                                        {
+                                            rule="rb!";
+                                             next_line()
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (argnum>=1)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&& (depth_change>-1)&& (depth_change<2)&&  ( Environment.get_global("contains?"))(operator,conditionals)))) {
+                                        {
+                                            rule="rC";
+                                             next_line()
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (argnum<2)&& (depth_change<2)&& (lpos<30)&&  ( Environment.get_global("not"))( ( Environment.get_global("contains?"))( ( Environment.get_global("last"))(line_acc),closers))&& ( ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",(word|| "")))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",(word|| "")))&& (depth_change>-1))&& ((next_char_pos- cpos)<=1)))) {
+                                        {
+                                             add_char_to_line();
+                                            argnum+=1;
+                                            rule="r1+"
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&& (argnum===0)&& ( ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("\"",(word|| "")))&&  ( Environment.get_global("not"))( ( Environment.get_global("starts_with?"))("`",(word|| "")))&& (word&&  global_lookup["has"].call(global_lookup,word))&&  ( Environment.get_global("not"))(("()"===( ( Environment.get_global("last_n"))(2,line_acc)).join("")))&& (depth_change>-1))))) {
+                                        {
+                                             add_char_to_line();
+                                            argnum+=1;
+                                            rule="rc"
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&&  ( Environment.get_global("not"))((next_char==="{"))&& ((next_char_pos- cpos)<=1)))) {
+                                        {
+                                            rule="r2!";
+                                             next_line();
+                                            nl_suppress=true
+                                        }
+                                    } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&&  ( Environment.get_global("not"))(nl_suppress)&& (argnum>1)))) {
+                                        {
+                                            rule="r3!";
+                                            nl_suppress=true;
+                                             next_line();
+                                             add_char_to_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (( ( Environment.get_global("contains?"))(char,openers)&& (argnum>1)))) {
+                                        {
+                                            rule="r3A";
+                                             add_char_to_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&& (depth_change<0)))) {
+                                        {
+                                            rule="r4!";
+                                             next_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (( is_whitespace_ques_(char)&&  ( Environment.get_global("not"))(nl_suppress)&& (lpos>40)))) {
+                                        {
+                                            rule="r5!";
+                                             next_line();
+                                            argnum=0
+                                        }
+                                    } else if (check_true (((char==="{")&&  ( Environment.get_global("not"))( is_whitespace_ques_(chars[(1+ cpos)]))&&  ( Environment.get_global("not"))((chars[(1+ cpos)]==="}"))))) {
+                                        {
+                                            rule="r6";
+                                             add_char_to_line();
+                                             add_char_to_line(" ")
+                                        }
+                                    } else if (check_true (((char===":")&&  ( Environment.get_global("not"))((" "===chars[(1+ cpos)]))))) {
+                                        {
+                                            rule="r7";
+                                             add_char_to_line();
+                                             add_char_to_line(" ")
+                                        }
+                                    } else {
+                                        {
+                                            rule="r99";
+                                             add_char_to_line()
+                                        }
+                                    }
+                                } )()
+                            }
+                        } else {
+                            {
+                                rule="rD";
+                                 add_char_to_line()
+                            }
+                        };
+                        if (check_true (debug_mode)){
+                            {
+                                return (report).push( ( function(){
+                                    let __array_op_rval__403=cpos;
+                                     if (__array_op_rval__403 instanceof Function){
+                                        return  __array_op_rval__403(char, ( function(){
+                                            if (check_true ((cpos<=next_char_pos))){
+                                                return next_char
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),lpos,(next_char_pos- cpos),depth_change,mode,argnum, ( function(){
+                                            if (check_true (((mode===code_mode)&&  is_whitespace_ques_(char)))){
+                                                return "*"
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (nl_suppress)){
+                                                return " NLS "
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (skip_for)){
+                                                return skip_for
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),rule,word,operator,(line_acc).join("")) 
+                                    } else {
+                                        return [__array_op_rval__403,char, ( function(){
+                                            if (check_true ((cpos<=next_char_pos))){
+                                                return next_char
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),lpos,(next_char_pos- cpos),depth_change,mode,argnum, ( function(){
+                                            if (check_true (((mode===code_mode)&&  is_whitespace_ques_(char)))){
+                                                return "*"
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (nl_suppress)){
+                                                return " NLS "
+                                            } else {
+                                                return ""
+                                            }
+                                        })(), ( function(){
+                                            if (check_true (skip_for)){
+                                                return skip_for
+                                            } else {
+                                                return ""
+                                            }
+                                        })(),rule,word,operator,(line_acc).join("")]
+                                    }
+                                })())
+                            }
                         }
                     }
                 }
-            }
-        };
-        let __BREAK__FLAG__=false;
-        while( __test_condition__401()) {
-              __body_ref__402();
-             if(__BREAK__FLAG__) {
-                 break;
-                
-            }
-        } ;
-        
-    })();
-    if (check_true (debug_mode)){
-        {
-             ( function(){
-                let __array_op_rval__404=report_callout;
-                 if (__array_op_rval__404 instanceof Function){
-                    return  __array_op_rval__404(report,{
-                        columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
-                    }) 
-                } else {
-                    return [__array_op_rval__404,report,{
-                        columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
-                    }]
-                }
-            })()
-        }
-    };
-    if (check_true (((line_acc && line_acc.length)>0))){
-        {
-            (lines).push((line_acc).join(""))
-        }
-    };
-     ( function() {
-        let __for_body__407=function(line_num) {
-            text=(""+ lines[line_num]+ "\n");
-            if (check_true ((line_num>0))){
-                indent_string= ( Environment.get_global("format_lisp_line"))(line_num,get_line)
-            } else {
-                indent_string=""
             };
-            return   (function(){
-                lines[line_num]=(""+ indent_string+ text);
-                return lines;
-                
-            })()
-        };
-        let __array__408=[],__elements__406= ( Environment.get_global("range"))((lines && lines.length));
-        let __BREAK__FLAG__=false;
-        for(let __iter__405 in __elements__406) {
-            __array__408.push( __for_body__407(__elements__406[__iter__405]));
-            if(__BREAK__FLAG__) {
-                 __array__408.pop();
-                break;
-                
+            let __BREAK__FLAG__=false;
+            while( __test_condition__401()) {
+                  __body_ref__402();
+                 if(__BREAK__FLAG__) {
+                     break;
+                    
+                }
+            } ;
+            
+        })();
+        if (check_true (debug_mode)){
+            {
+                 ( function(){
+                    let __array_op_rval__404=report_callout;
+                     if (__array_op_rval__404 instanceof Function){
+                        return  __array_op_rval__404(report,{
+                            columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
+                        }) 
+                    } else {
+                        return [__array_op_rval__404,report,{
+                            columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
+                        }]
+                    }
+                })()
             }
-        }return __array__408;
-         
-    })();
-    return (lines).join("")
-},{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"],"source_name":"core.lisp"
-});
+        };
+        if (check_true (((line_acc && line_acc.length)>0))){
+            {
+                (lines).push((line_acc).join(""))
+            }
+        };
+         ( function() {
+            let __for_body__407=function(line_num) {
+                text=(""+ lines[line_num]+ "\n");
+                if (check_true ((line_num>0))){
+                    indent_string= ( Environment.get_global("format_lisp_line"))(line_num,get_line)
+                } else {
+                    indent_string=""
+                };
+                return   (function(){
+                    lines[line_num]=(""+ indent_string+ text);
+                    return lines;
+                    
+                })()
+            };
+            let __array__408=[],__elements__406= ( Environment.get_global("range"))((lines && lines.length));
+            let __BREAK__FLAG__=false;
+            for(let __iter__405 in __elements__406) {
+                __array__408.push( __for_body__407(__elements__406[__iter__405]));
+                if(__BREAK__FLAG__) {
+                     __array__408.pop();
+                    break;
+                    
+                }
+            }return __array__408;
+             
+        })();
+        return (lines).join("")
+    },{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("get_dependencies",async function(global_symbol,_deps,_req_ns) {
     let comps;
     let target_symbol;
@@ -6102,15 +6160,17 @@ await Environment.set_global("get_dependencies",async function(global_symbol,_de
     }
 },{ "name":"get_dependencies","fn_args":"(global_symbol _deps _req_ns)","description":["=:+","<br><br>Given a symbol in string form, returns the global dependencies that the ","symbol is dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:string"],"tags":["dependencies","tree","required","dependency"],"requires":["split_by","second","first","current_namespace","not","get_dependencies","to_array"],"source_name":"core.lisp"
 });
- Environment.set_global("pad_left",function(value,pad_amount,padchar) {
-    return  ( function() {
-        {
-             let __call_target__=(""+ value), __call_method__="padStart";
-            return  __call_target__[__call_method__].call(__call_target__,pad_amount,padchar)
-        } 
-    })()
-},{ "name":"pad_left","fn_args":"(value pad_amount padchar)","description":["=:+","<br><br>Given a value (number or text). an amount to pad, and an optional ","character to use a padding value, returns a string that will contain pad amount ","leading characters of the padchar value.<br><br>#### Example <br>```(pad_left ","23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> "],"usage":["value:number|string","pad_amount:number","padchar:?string"],"tags":["pad","string","text","left"],"requires":[],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("pad_left",function(value,pad_amount,padchar) {
+        return  ( function() {
+            {
+                 let __call_target__=(""+ value), __call_method__="padStart";
+                return  __call_target__[__call_method__].call(__call_target__,pad_amount,padchar)
+            } 
+        })()
+    },{ "name":"pad_left","fn_args":"(value pad_amount padchar)","description":["=:+","<br><br>Given a value (number or text). an amount to pad, and an optional ","character to use a padding value, returns a string that will contain pad amount ","leading characters of the padchar value.<br><br>#### Example <br>```(pad_left ","23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> "],"usage":["value:number|string","pad_amount:number","padchar:?string"],"tags":["pad","string","text","left"],"requires":[],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("symbol_dependencies",async function(symbol_array) {
     if (check_true ((symbol_array instanceof Array))){
         {
@@ -6149,14 +6209,16 @@ await Environment.set_global("symbol_dependencies",async function(symbol_array) 
     }
 },{ "name":"symbol_dependencies","fn_args":"(symbol_array)","description":["=:+","Given an array of symbols in string form, returns the global dependencies that the ","symbols are dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:array"],"tags":["dependencies","tree","required","dependency"],"requires":["is_array?","get_dependencies","to_array"],"source_name":"core.lisp"
 });
- Environment.set_global("keyword_mapper",function(token) {
-    if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){
-        return "keyword"
-    } else {
-        return "identifier"
-    }
-},{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"],"source_name":"core.lisp"
-});
+{
+     Environment.set_global("keyword_mapper",function(token) {
+        if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){
+            return "keyword"
+        } else {
+            return "identifier"
+        }
+    },{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("with_each_entry",async function(...args) {
     let binding_sym;
     let iteration_form;
@@ -6169,22 +6231,30 @@ await Environment.set_global("with_each_entry",async function(...args) {
 },"name":"with_each_entry","macro":true,"fn_args":"[(binding_sym) iteration_form \"&\" body_forms]","description":["=:+","Given a binding symbol, a form or symbol that resolves to an iteration ","object with a `next` function, and the body forms to be used with the ","binding_symbol, will call the binding forms for every value in the iterator, ","with the binding symbol being set to the next value each time through the ","loop.<br><br>#### Example <br>```(with_each_value (entries)\n   (-> ","request_headers `entries) ;; will return an iterator\n   (if (== entries.0 ","\"content-type\")\n       (= content_type entries.1)))```<br><br><br> "],"usage":["binding_sym:array","iteration_form:*","body_forms:*"],"tags":["iteration","loop","iterator","entries","flow","values"],"requires":["slice"],"source_name":"core.lisp"
 });
 {
-     Environment.set_global("operating_system",function() {
-        return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
-    },{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"source_name":"core.lisp"
-});
- Environment.set_global("platform_architecture",function() {
-    return  ( Environment.get_global("resolve_path"))(["build","arch"],Deno)
-},{ "name":"platform_architecture","fn_args":"[]","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"],"source_name":"core.lisp"
-});
- Environment.set_global("platform",function() {
-    return Deno["build"]
-},{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"source_name":"core.lisp"
-});
- Environment.set_global("exit",function(return_code) {
-    return  Deno.exit(return_code)
-},{ "name":"exit","fn_args":"(return_code)","description":"Exits the system and returns the provided integer return code","usage":["return_code:?number"],"tags":["exit","quit","return","leave"],"requires":[],"source_name":"core.lisp"
-});
+    {
+         Environment.set_global("operating_system",function() {
+            return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
+        },{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"source_name":"core.lisp"
+    })
+};
+{
+     Environment.set_global("platform_architecture",function() {
+        return  ( Environment.get_global("resolve_path"))(["build","arch"],Deno)
+    },{ "name":"platform_architecture","fn_args":"[]","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("platform",function() {
+        return Deno["build"]
+    },{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"source_name":"core.lisp"
+})
+};
+{
+     Environment.set_global("exit",function(return_code) {
+        return  Deno.exit(return_code)
+    },{ "name":"exit","fn_args":"(return_code)","description":"Exits the system and returns the provided integer return code","usage":["return_code:?number"],"tags":["exit","quit","return","leave"],"requires":[],"source_name":"core.lisp"
+})
+};
 await Environment.set_global("permissions",async function() {
     let perms;
     perms=["run","env","write","read","net","ffi","sys"];
