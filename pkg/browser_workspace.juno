@@ -154,7 +154,7 @@
 (defun core/save_image (options)
    (let
        ((js_resource (save_env { `want_buffer: true
-                                `do_not_include: (conj  [ `browser_repl `line_reader  ])}))
+                                `do_not_include: (conj  [ `browser_repl `line_reader  ] (if (is_array? options.do_not_include) options.do_not_include []) )}))
         (scripts (-> (page_header) `querySelectorAll "script[id]"))
         (styles (-> (page_header) `querySelectorAll "style[id]"))
         (log (if (is_function? options.log)

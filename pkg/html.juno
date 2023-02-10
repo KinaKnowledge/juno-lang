@@ -393,16 +393,15 @@
                                                               (not (blank? val)))
                                                      (+ "" attrib ": " val)))))
        
-       
        (head_elem (-> document `querySelector "head"))
        (new_style nil))
-
+      ;(log "create_css_entry: " entry_name "css_attributes: "  css_attributes )
     (when head_elem
       (remove_css_entry entry_name)
       (-> head_elem `appendChild
           (= new_style
              (style { `id: (to_key (+ "juno-css-" entry_name )) `type: "text/css" }
-                    (+ "" entry_name "{\n  " (join ";\n" css_attributes) " }")))))
+                    (+ "" entry_name "{ " (join ";" css_attributes) " }")))))
     new_style)
   { `usage: ["entry_name:string" "css_attribute_list:array"]
    `description: (+ " Given a name for the class and a list of formatted css attributes "

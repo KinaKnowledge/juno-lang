@@ -672,8 +672,15 @@
                  ,#fn_body)
            (quote ,#source_details))))
   {
-   `description: "simple defun for bootstrapping and is replaced by the more sophisticated during bootstrapping"
+   `description: "simple defun for bootstrapping and is replaced by the more sophisticated defun during bootstrapping"
    })
+
+(defun decomp_symbol (quoted_sym)
+  (let
+      ((comps (split_by "/" quoted_sym)))
+    (if (== comps.length 1)
+	[comps.0 (first (each (describe quoted_sym true) `namespace)) false]
+	[comps.1 comps.0 true])))
 
 (defmacro defun_sync (name args body meta)
     (let
@@ -955,7 +962,7 @@
     })
 
 
-(defun destructure_list (elems)
+(defun_sync destructure_list (elems)
       (let
           ((idx 0)
            (acc [])
@@ -1165,13 +1172,12 @@
          (complex_lambda_list (or_args 
                                    (for_each (`elem lambda_list)
                                         (> (length (flatten (destructure_list elem))) 0))))
-                                     
+         (symbol_details (decomp_symbol (unquotify name)))
          (source_details 
                      (+
                          {
-                            `name: (unquotify name)
+                            `name: symbol_details.0
                             `fn_args: (as_lisp fn_args)                          
-                            ;`fn_body: (as_lisp fn_body)
                           }                         
                          (if fn_meta 
                              (do 
@@ -1202,6 +1208,50 @@
      `tags: ["function" "lambda" "define" "environment"]     
      })
 
+(defmacro defun_sync_ds (name lambda_list body meta)
+     (let
+        ((fn_name name)
+         (fn_args lambda_list)
+         (fn_body body)
+         (fn_meta meta)        
+         (complex_lambda_list (or_args 
+                                   (for_each (`elem lambda_list)
+                                        (> (length (flatten (destructure_list elem))) 0))))
+         (symbol_details (decomp_symbol (unquotify name)))
+         (source_details 
+                     (+
+                         {
+                            `name: symbol_details.0
+                            `fn_args: (as_lisp fn_args)                          
+                          }                         
+                         (if fn_meta 
+                             (do 
+                                 (if fn_meta.description
+                                     (set_prop fn_meta
+                                               `description
+                                                fn_meta.description))
+                                  fn_meta)
+                             {}))))
+      
+        (if complex_lambda_list
+          `(defglobal ,#fn_name 
+                  (function (`& args)
+                      (destructuring_bind ,#fn_args 
+                                          args
+                                          ,#fn_body))
+                  (quote ,#source_details))
+         `(defglobal ,#fn_name
+             (function ,#fn_args
+                 ,#fn_body)
+              (quote ,#source_details))))
+    {
+     `description: (+ "Defines a top level function in the current environment.  Given a name, lambda_list,"
+                      "body, and a meta data description, builds, compiles and installs the function in the"
+                      "environment under the provided name.  The body isn't an explicit progn, and must be"
+                      "within a block structure, such as progn, let or do.")
+     `usage: ["name:string:required" "lambda_list:array:required" "body:array:required" "meta:object"]
+     `tags: ["function" "lambda" "define" "environment"]     
+     })
 
 (defmacro no_await (form)
    `(progn
@@ -3309,12 +3359,7 @@ such as things that connect or use environmental resources.
    `tags: [ `namespace `binding `import `use `symbols ]
    })
 
-(defun decomp_symbol (quoted_sym)
-  (let
-      ((comps (split_by "/" quoted_sym)))
-    (if (== comps.length 1)
-	[comps.0 (first (each (describe quoted_sym true) `namespace)) false]
-	[comps.1 comps.0 true])))
+
 
 
 
@@ -3396,7 +3441,20 @@ such as things that connect or use environmental resources.
                                 (unless (contains? nspace acc)
                                    (push acc nspace)
                                    nspace))))
-      symbols: ordered }))
+      symbols: ordered })
+  {
+    description: (+ "Returns an object containing two keys, `namespaces` and `symbols`, each "
+                    "being arrays that contains the needed load order to satisfy the dependencies "
+                    "for the current environment with all namespaces.  For symbols, the array is "
+                    "sorted in terms of dependencies: a symbol appearing with a higher index value "
+                    "will mean that it is dependent on symbols at a lower index value, with the "
+                    "first symbol having no dependencies, and the final element having the most "
+                    "dependencies.  For example, if the final symbol in the returned array is to be "
+                    "compiled, symbols at a lower index must be defined prior to compiling the final "
+                    "symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must "
+                    "be loaded prior to a higher indexed namespace. ")
+    usage: []
+    tags: [`symbol `symbols `dependencies `requirements `order `compile ]})
 
 ;; *scratch* buffer
 
@@ -3410,6 +3468,14 @@ such as things that connect or use environmental resources.
                (if options.include_meta
                   [ns 
                    (to_object (conj
+                                    (for_each (pset (pairs ns_handle.definitions))
+                                              (destructuring_bind (sym_name val)
+                                                                  pset
+                                                                  [sym_name (+ {}
+                                                                               (if (eq nil val.type)                                                                                 
+                                                                                 { type: "Unknown!" }
+                                                                                 {})
+                                                                               val) ]))
                                     (for_each (pset (pairs ns_handle.context.scope))
                                        (destructuring_bind (sym_name val)
                                           pset
@@ -3420,7 +3486,8 @@ such as things that connect or use environmental resources.
                                                            it
                                                            {}))
                                             ]))
-                                    (pairs ns_handle.definitions)))]
+                                    ))]
+                                                             
                   [ns (sort (cond
                                false ;options.filter_by   ;; deprecated and not full coverage 
                                (progn

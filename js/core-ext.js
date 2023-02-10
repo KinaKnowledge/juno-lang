@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-02-09 09:04:19
-// Version: 2023.02.09.09.04
-export const DLISP_ENV_VERSION='2023.02.09.09.04';
+// Build Time: 2023-02-10 11:44:08
+// Version: 2023.02.10.11.44
+export const DLISP_ENV_VERSION='2023.02.10.11.44';
 
 
 
@@ -272,17 +272,15 @@ await Environment.set_global("sleep",async function(seconds) {
 },{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function.","requires":[],"source_name":"core-ext.lisp"
 });
 null;
-{
-     Environment.set_global("from_universal_time",function(seconds) {
-        let d;
-        let ue;
-        d=new Date(0);
-        ue=(seconds- 2208988800);
-         d["setUTCSeconds"].call(d,ue);
-        return d
-    },{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"source_name":"core-ext.lisp"
-})
-};
+ Environment.set_global("from_universal_time",function(seconds) {
+    let d;
+    let ue;
+    d=new Date(0);
+    ue=(seconds- 2208988800);
+     d["setUTCSeconds"].call(d,ue);
+    return d
+},{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"source_name":"core-ext.lisp"
+});
 await Environment.set_global("+=",async function(...args) {
     let symbol;
     symbol=(args && args["0"]);
@@ -1277,22 +1275,20 @@ await Environment.set_global("match_all",async function(regex_str,search_string)
     return await (await Environment.get_global("match_all_js"))(regex_str,search_string)
 },{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"],"source_name":"core-ext.lisp"
 });
-{
-     Environment.set_global("chop_front",function(container,amount) {
-        amount=(amount|| 1);
-        return   (function(){
-            if (check_true ((container instanceof String || typeof container==='string'))) {
-                return  container["substr"].call(container,amount)
-            } else if (check_true ((container instanceof Array))) {
-                return  container["slice"].call(container,amount)
-            } else {
-                throw new Error("chop: container must be a string or array");
-                
-            }
-        } )()
-    },{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"],"source_name":"core-ext.lisp"
-})
-};
+ Environment.set_global("chop_front",function(container,amount) {
+    amount=(amount|| 1);
+    return   (function(){
+        if (check_true ((container instanceof String || typeof container==='string'))) {
+            return  container["substr"].call(container,amount)
+        } else if (check_true ((container instanceof Array))) {
+            return  container["slice"].call(container,amount)
+        } else {
+            throw new Error("chop: container must be a string or array");
+            
+        }
+    } )()
+},{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"],"source_name":"core-ext.lisp"
+});
 [];
 await Environment.set_global("compile_lisp",async function(text) {
     if (check_true (text)){
@@ -2063,87 +2059,81 @@ await Environment.set_global("show",async function(thing) {
     } ()
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"],"source_name":"core-ext.lisp"
 });
-{
-     Environment.set_global("rotate_right",function(array_obj) {
-        (array_obj).unshift((array_obj).pop());
-        return array_obj
-    },{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"],"source_name":"core-ext.lisp"
-})
-};
-{
-     Environment.set_global("rotate_left",function(array_obj) {
-        (array_obj).push((array_obj).shift());
-        return array_obj
-    },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"source_name":"core-ext.lisp"
-})
-};
-{
-     Environment.set_global("interpolate",function(from,to,steps) {
-        let cur;
-        let step_size;
-        let tmp;
-        let acc;
-        cur=from;
-        step_size=1;
-        tmp=0;
-        acc=[];
-         ( Environment.get_global("assert"))(( ( Environment.get_global("is_number?"))(from)&&  ( Environment.get_global("is_number?"))(to)&&  ( Environment.get_global("is_number?"))(steps)),"interpolate: all arguments must be numbers");
-         ( Environment.get_global("assert"))(( Math.abs((from- to))>0),"interpolate: from and to numbers cannot be the same");
-         ( Environment.get_global("assert"))((steps>1),"interpolate: steps must be greater than 1");
-        step_size=((to- from)/ (steps- 1));
-        if (check_true ((to>from))){
-            {
-                 ( function(){
-                     let __test_condition__160=function() {
-                        return (cur<=to)
-                    };
-                    let __body_ref__161=function() {
-                        (acc).push(cur);
-                        return cur=(cur+ step_size)
-                    };
-                    let __BREAK__FLAG__=false;
-                    while( __test_condition__160()) {
-                          __body_ref__161();
-                         if(__BREAK__FLAG__) {
-                             break;
-                            
-                        }
-                    } ;
-                    
-                })();
-                if (check_true (((acc && acc.length)<steps))){
-                    (acc).push(to)
-                }
+ Environment.set_global("rotate_right",function(array_obj) {
+    (array_obj).unshift((array_obj).pop());
+    return array_obj
+},{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"],"source_name":"core-ext.lisp"
+});
+ Environment.set_global("rotate_left",function(array_obj) {
+    (array_obj).push((array_obj).shift());
+    return array_obj
+},{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"source_name":"core-ext.lisp"
+});
+ Environment.set_global("interpolate",function(from,to,steps) {
+    let cur;
+    let step_size;
+    let tmp;
+    let acc;
+    cur=from;
+    step_size=1;
+    tmp=0;
+    acc=[];
+     ( Environment.get_global("assert"))(( ( Environment.get_global("is_number?"))(from)&&  ( Environment.get_global("is_number?"))(to)&&  ( Environment.get_global("is_number?"))(steps)),"interpolate: all arguments must be numbers");
+     ( Environment.get_global("assert"))(( Math.abs((from- to))>0),"interpolate: from and to numbers cannot be the same");
+     ( Environment.get_global("assert"))((steps>1),"interpolate: steps must be greater than 1");
+    step_size=((to- from)/ (steps- 1));
+    if (check_true ((to>from))){
+        {
+             ( function(){
+                 let __test_condition__160=function() {
+                    return (cur<=to)
+                };
+                let __body_ref__161=function() {
+                    (acc).push(cur);
+                    return cur=(cur+ step_size)
+                };
+                let __BREAK__FLAG__=false;
+                while( __test_condition__160()) {
+                      __body_ref__161();
+                     if(__BREAK__FLAG__) {
+                         break;
+                        
+                    }
+                } ;
+                
+            })();
+            if (check_true (((acc && acc.length)<steps))){
+                (acc).push(to)
             }
-        } else {
-            {
-                 ( function(){
-                     let __test_condition__162=function() {
-                        return (cur>=to)
-                    };
-                    let __body_ref__163=function() {
-                        (acc).push(cur);
-                        return cur=(cur+ step_size)
-                    };
-                    let __BREAK__FLAG__=false;
-                    while( __test_condition__162()) {
-                          __body_ref__163();
-                         if(__BREAK__FLAG__) {
-                             break;
-                            
-                        }
-                    } ;
-                    
-                })();
-                if (check_true (((acc && acc.length)<steps))){
-                    (acc).push(to)
-                }
+        }
+    } else {
+        {
+             ( function(){
+                 let __test_condition__162=function() {
+                    return (cur>=to)
+                };
+                let __body_ref__163=function() {
+                    (acc).push(cur);
+                    return cur=(cur+ step_size)
+                };
+                let __BREAK__FLAG__=false;
+                while( __test_condition__162()) {
+                      __body_ref__163();
+                     if(__BREAK__FLAG__) {
+                         break;
+                        
+                    }
+                } ;
+                
+            })();
+            if (check_true (((acc && acc.length)<steps))){
+                (acc).push(to)
             }
-        };
-        return acc
-    },{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"source_name":"core-ext.lisp"
-})
-};
+        }
+    };
+    return acc
+},{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"source_name":"core-ext.lisp"
+});
 await Environment.set_global("unload_core_ext",async function() {
     let count;
     let core_handle;

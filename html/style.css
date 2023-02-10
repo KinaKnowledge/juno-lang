@@ -1956,7 +1956,7 @@ li.juno-menu-selected {
 div.juno-floating-container {
     cursor: default;
     user-select: none;
-    box-shadow: 1px 1px 6px 2px #00000080;
+    box-shadow: 1px 1px 12px 0px #00000080;
     background: var(--main-bg-color); 
     color: var(--main-color);
     position: absolute;
@@ -2254,6 +2254,8 @@ span.juno-hint {
 .juno-non-value {
     opacity: 60%;
 }
+
+
 
 
 /* Overrides - may be dealt with in a better way but for now
