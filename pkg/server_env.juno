@@ -873,6 +873,7 @@
 (defparameter *active_websockets*
    {})
 
+
 (defun create_ws_repl_handler (options)
    (let
       ((namespace nil)
@@ -922,6 +923,7 @@
                                               ((data (JSON.parse event.data))
                                                (command (prop data `command))
                                                (args (prop data `args))
+                                               (cmd_opts (or args.1 {}))
                                                (request_id (prop data `req_id))
                                                (compiled_metadata nil)
                                                (compiled_source nil)
@@ -936,11 +938,11 @@
                                               (= compiled_source nil)
                                               (= compiled_metadata nil)
                                               (when (> __VERBOSITY__ 0)
-                                                 (console.log "ws_repl_handler: -> " data))
+                                                 (console.log "ws_repl_handler: -> " data cmd_opts))
                                               (cond
                                                  (and (== command "eval")
                                                       (is_array? args)
-                                                      (starts_with? "(use_ns " args.0))
+                                                      (starts_with? "(use_ns " (trim args.0)))
                                                  (try
                                                     (let
                                                        ((cmd (read_lisp args.0))
@@ -966,7 +968,7 @@
                                                       (is_array? args))
                                                  (try
                                                     (progn
-                                                       (= result (-> evaluator `evaluate args.0 { scope: { ws_id: ws.ws_id}}  { on_compilation_complete: compl_complete }))
+                                                       (= result (-> evaluator `evaluate_local args.0 { scope: { ws_id: ws.ws_id}}  (+ {} cmd_opts { on_compilation_complete: compl_complete })))
                                                        (when (> __VERBOSITY__ 0)
                                                           (console.log "ws_repl_handler: " namespace " <- " result))
                                                        (send_to_ws ws
