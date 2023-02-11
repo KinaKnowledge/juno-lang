@@ -5304,8 +5304,8 @@
                                           (try
                                              (progn
                                                 (when refresh_symbol_timer
-                                                   (clearTimeout refresh_symbol_timer)
-                                                   (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000)))
+                                                   (clearTimeout refresh_symbol_timer))
+                                                (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000))
                                                 (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
@@ -5443,7 +5443,8 @@
                            (indent_editor_line editor row_number options)))
             
             (indent_current_row (function (editor)
-                                   (when (== *last_focus* intf)
+                                   (when (or (== *last_focus* intf)
+                                             options.repl_mode)
                                       (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
                                          (if (not (is_selected?))
                                              (progn
@@ -7777,7 +7778,7 @@
        (show_prototype_details_button (button { `title: (dtext "Show Object Prototype Detail") } "P"))
        (path_span (span { `tabindex: 0 `title: (dtext "Click to copy focused path")  `class: "juno-path" } ""))
        (current_env Environment)
-       (error_state nil)
+      ; (error_state nil)
        (reopen_button (button { `title: (dtext "Connect/Disconnect") `class: "juno-button-on" style: "float: right;" `tabindex: 0 `disabled: true }
                               "-"))
        (ws_id_span (span { `title: (dtext "Server websocket ID") `class: "juno-websocket-id" `style: "padding-left: 5px; padding-right: 5px; display: inline-block; float: right;" } "-"))
@@ -8102,7 +8103,7 @@
                                                 (http/send_to_ws repl_ws
                                                                  { `command: "eval"
                                                                    `req_id: my_request_id
-                                                                   `args: [ lisp_text ] })
+                                                                   `args: [ lisp_text opts] })
                                                 (catch Error (e)
                                                    (progn
                                                       (notify (+ "send_wait: error: " e.message))
@@ -8120,6 +8121,8 @@
                          (processed_result nil)
                          (current_ns (prop namespace_span `innerText))
                          (display_mode (-> output_control `display_mode))
+                         (error_state nil)
+                         (structured_text nil)
                          (compiled_metadata nil)
                          (compiled_source nil)
                          (compl_complete (fn (compilation_results)
@@ -8133,7 +8136,7 @@
                          (progn
                             (try
                                (progn
-                                  (= result (send_wait lisp_text)))
+                                  (= result (send_wait lisp_text opts)))
                                (catch Error (e)
                                   (do
                                      (= error_state true)
@@ -8184,17 +8187,46 @@
                                   result)))
                             
                          (progn
-                            (setq current_env (-> Environment `get_namespace_handle (current_namespace)))
+                            (setq current_env (-> Environment `get_namespace_handle current_ns))
+                            (assert (== current_ns current_env.namespace) (+ "visual_repl: namespace not valid: " current_ns))
                             (try
-                               (= result (if no_eval
-                                             lisp_text
-                                             (-> current_env `evaluate lisp_text {} (+ { `throw_on_error: true `on_compilation_complete: compl_complete } (if opts opts {})))))
+                               (progn
+                                  (= error_state nil)
+                                  (= structured_text (reader lisp_text { `suppress_throw_on_error: true 
+                                                                         `on_error: (fn (error)
+                                                                                       (progn
+                                                                                          ;; opportunity to do error highlighting
+                                                                                          (= error_state error))) } ))
+                                  (cond
+                                     (and (not error_state)
+                                          (== structured_text.0 (quote use_ns)))
+                                     (progn
+                                        (if (contains? (desym_ref structured_text.1) (namespaces))
+                                            (progn
+                                               (set_prop namespace_span
+                                                  `innerText
+                                                  (desym_ref structured_text.1))
+                                               (if (not (== result.namespace current_ns))
+                                                   (dispatch_event {
+                                                                     command: "evaluator_change"
+                                                                     source: id
+                                                                     args: [{ set: "namespace" value: (desym_ref structured_text.1) }]
+                                                                     }))
+                                               (clog (desym_ref structured_text.1)))
+                                            (clog "Invalid Namespace: " structured_text.1 "Allowed: " (namespaces))))
+                                     else
+                                     (if error_state
+                                        (throw LispSyntaxError error_state)
+                                        (= result (if no_eval
+                                                      lisp_text
+                                                      (-> current_env `evaluate_local structured_text {} (+ { `json_in: true `throw_on_error: true `on_compilation_complete: compl_complete } (if opts opts {}))))))))
                                (catch Error (ex)
                                   (do
                                      (= error_state true)
                                      (console.error "ERROR: " ex)
                                      (notify (+ (sub_type ex) ": " ex.message))
                                      (when  ex.details
+                                       ; (log "Caught error: " ex.details)
                                         (when compiled_source
                                            (set_prop ex.details
                                               `compiled
@@ -8215,15 +8247,13 @@
                                               `compiled
                                               (pre ex.details.compiled))))
                                         (= result ex.details))))
-                            (console.log "<-" result)
+                            ;(log "<-" result)
                             (cond 
                                (== display_mode "juno")
                                (= result (pre { `quoted: true } (pretty_print result)))
                                (== display_mode "json")
                                (= result (pre { `quoted: true }  (JSON.stringify result nil 2))))
-                            (set_prop namespace_span
-                               `innerText
-                               (current_namespace))
+                            
                             (unless no_log
                                (-> output_control `append result lisp_text error_state))
                             (if (and (not error_state)
@@ -12617,8 +12647,16 @@
     (when symbol_data.path
        (= new_control
           (if (== extension `dom)
-              (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-              (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
+              (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                               hide_control_bar: false 
+                               debug: false } 
+                             options))
+              (text_editor (+ { name: (last symbol_data.path) 
+                                path_namespace: target_ns 
+                                namespace: target_ns 
+                                path: symbol_data.path 
+                                mode: options.mode } 
+                              options ))))
       (cond
          (is_top_control? target_container)
          (container_view_operation "split_right" 
