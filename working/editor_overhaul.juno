@@ -1,5 +1,8 @@
 ; editor overhaul buffer
 
+
+
+
 (defun evaluate_and_replace_at_point (options)
    (let
       ((ctl *last_focus*))
@@ -1560,8 +1563,8 @@
                                           (try
                                              (progn
                                                 (when refresh_symbol_timer
-                                                   (clearTimeout refresh_symbol_timer)
-                                                   (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000)))
+                                                   (clearTimeout refresh_symbol_timer))
+                                                (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000))
                                                 (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
@@ -1699,7 +1702,8 @@
                            (indent_editor_line editor row_number options)))
             
             (indent_current_row (function (editor)
-                                   (when (== *last_focus* intf)
+                                   (when (or (== *last_focus* intf)
+                                             options.repl_mode)
                                       (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
                                          (if (not (is_selected?))
                                              (progn

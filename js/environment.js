@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-02-10 12:29:15
-// Version: 2023.02.10.12.29
-export const DLISP_ENV_VERSION='2023.02.10.12.29';
+// Build Time: 2023-02-11 07:29:57
+// Version: 2023.02.11.07.29
+export const DLISP_ENV_VERSION='2023.02.11.07.29';
 
 
 
@@ -45,77 +45,77 @@ export async function init_dlisp(Environment)  {
   }
   return typeof value;
 };
-                    let get_object_path=function(refname) {    if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
-        {
-            let chars;
-            let comps;
-            let mode;
-            let name_acc;
-            chars=(refname).split("");
-            comps=[];
-            mode=0;
-            name_acc=[];
-             ( function() {
-                let __for_body__17=function(c) {
-                    return   (function(){
-                        if (check_true (((c===".")&& (mode===0)))) {
-                            {
-                                if (check_true (((name_acc && name_acc.length)>0))){
-                                    {
-                                        (comps).push((name_acc).join(""))
-                                    }
-                                };
-                                return name_acc=[]
+                    let get_object_path=function(refname) {        if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
+            {
+                let chars;
+                let comps;
+                let mode;
+                let name_acc;
+                chars=(refname).split("");
+                comps=[];
+                mode=0;
+                name_acc=[];
+                 ( function() {
+                    let __for_body__17=function(c) {
+                        return   (function(){
+                            if (check_true (((c===".")&& (mode===0)))) {
+                                {
+                                    if (check_true (((name_acc && name_acc.length)>0))){
+                                        {
+                                            (comps).push((name_acc).join(""))
+                                        }
+                                    };
+                                    return name_acc=[]
+                                }
+                            } else if (check_true (((mode===0)&& (c==="[")))) {
+                                {
+                                    mode=1;
+                                    if (check_true (((name_acc && name_acc.length)>0))){
+                                        {
+                                            (comps).push((name_acc).join(""))
+                                        }
+                                    };
+                                    return name_acc=[]
+                                }
+                            } else if (check_true (((mode===1)&& (c==="]")))) {
+                                {
+                                    mode=0;
+                                    (comps).push((name_acc).join(""));
+                                    return name_acc=[]
+                                }
+                            } else {
+                                return (name_acc).push(c)
                             }
-                        } else if (check_true (((mode===0)&& (c==="[")))) {
-                            {
-                                mode=1;
-                                if (check_true (((name_acc && name_acc.length)>0))){
-                                    {
-                                        (comps).push((name_acc).join(""))
-                                    }
-                                };
-                                return name_acc=[]
-                            }
-                        } else if (check_true (((mode===1)&& (c==="]")))) {
-                            {
-                                mode=0;
-                                (comps).push((name_acc).join(""));
-                                return name_acc=[]
-                            }
-                        } else {
-                            return (name_acc).push(c)
+                        } )()
+                    };
+                    let __array__18=[],__elements__16=chars;
+                    let __BREAK__FLAG__=false;
+                    for(let __iter__15 in __elements__16) {
+                        __array__18.push( __for_body__17(__elements__16[__iter__15]));
+                        if(__BREAK__FLAG__) {
+                             __array__18.pop();
+                            break;
+                            
                         }
-                    } )()
+                    }return __array__18;
+                     
+                })();
+                if (check_true (((name_acc && name_acc.length)>0))){
+                    (comps).push((name_acc).join(""))
                 };
-                let __array__18=[],__elements__16=chars;
-                let __BREAK__FLAG__=false;
-                for(let __iter__15 in __elements__16) {
-                    __array__18.push( __for_body__17(__elements__16[__iter__15]));
-                    if(__BREAK__FLAG__) {
-                         __array__18.pop();
-                        break;
-                        
-                    }
-                }return __array__18;
-                 
-            })();
-            if (check_true (((name_acc && name_acc.length)>0))){
-                (comps).push((name_acc).join(""))
-            };
-            return comps
-        }
-    } else {
-        return  ( function(){
-            let __array_op_rval__19=refname;
-             if (__array_op_rval__19 instanceof Function){
-                return  __array_op_rval__19() 
-            } else {
-                return [__array_op_rval__19]
+                return comps
             }
-        })()
-    }
-};
+        } else {
+            return  ( function(){
+                let __array_op_rval__19=refname;
+                 if (__array_op_rval__19 instanceof Function){
+                    return  __array_op_rval__19() 
+                } else {
+                    return [__array_op_rval__19]
+                }
+            })()
+        }
+    };
                     let get_outside_global=function get_outside_global(refname) {  try {    let tfn = new Function("{ if (typeof " + refname + " === 'undefined') { return undefined } else { return "+refname+" } }");    return tfn();  } catch (ex) {    return undefined;  }};
                     ;
                     opts=await (async function(){
