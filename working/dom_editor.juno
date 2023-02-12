@@ -9,9 +9,12 @@
        (catch Error (e)
           (log e.message)))
    {
-     `description: (+ "This macro wraps the provided forms in a try-catch, and returns the "
+     `description: (+ "<br><br>This macro wraps the provided forms in a try-catch, and returns the "
                       "last value if no errors, like progn, or if an error occurs, logs to the "
-                      "console.  Simple help for debugging. ")
+                      "console.  Simple help for debugging.   <br>Example<br> ")
+
+
+
        `tags: ["debug" "error" "catch" "handler" "progn" "eval"]
        `usage: ["forms:*"]
    })
@@ -254,6 +257,7 @@
      description: (+ "<br><br>The `wait_for_editor` function is a support function for the "
                      "`DOM_editor` and `text_editor` integration, specifically around facilitating "
                      "the description editing process.  ")
+
    })
 
 
@@ -490,8 +494,7 @@
          ;; exec is the function that is evaluated when the rule is qualified to be fired
          exec: (fn (point ctl event) 
                   (progc
-                     ;(move_to_point point)
-                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch; spellcheck=false></pre><div ><br></div>" true)
+                     (doc_exec `insertHTML "<pre style='min-height: 2.4ch'></pre><div ><br></div>" true)
                      (move_to_point point)
                      (move_point `forward `character)))
          
@@ -625,7 +628,28 @@
                         
           
       }
-      
+      insert_tab:{
+          on_event: `keydown
+          handle_event: true
+          menu: false
+          remove_if_prior: false
+          key_sequence: "Tab"
+          ;prior_text_sequence: ""    ;; when three dashes 
+          qualifier: (fn (point ctl)
+                        (progn
+                           (point_under_element_tag? "PRE" point)))
+          exec: (fn (point ctl event)
+                   (progc
+                      (sleep 0.001)
+                      (if (point_under_element_tag? "PRE" point)
+                          (doc_exec `insertText "\t"))
+                      ;(move_point `forward `character)
+                      ;(move_point `forward `character)
+                      ;(select_node_at_point)
+                      ))
+                        
+          
+      }
        wrap_text_in_code_tag:{
           on_event: `keydown
           handle_event: true
@@ -672,7 +696,7 @@
                     starter))
     (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 0px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
                         root_elem))
-        
+       
     (position_elem (div { `style: "padding: 5px;color: darkblue;" } ))
     (depth_elem (div { `style: "padding: 5px; color: green;" } ))
     (path_elem (div { `style: "padding: 5px; " } ))
@@ -811,6 +835,8 @@
                                 (let
                                    ((text (get_text_around_point current_point))
                                     (on_event event.type)
+                                    (rule_result nil)
+                                    (results [])
                                     (prior_text_sequence (or text.0 ""))
                                     (next_text_sequence text.1)
                                     (key_sequence (clone (key_history))))
@@ -831,14 +857,17 @@
                                    (for_each (n [ 3 2 1 ])
                                       (progn 
                                          (aif (resolve_path [ on_event (join " " (last_n n key_sequence)) ] key_sequence_rules)
-                                              (when (qualify_and_run it `key_sequence event)
+                                              (when (= rule_result (qualify_and_run it `key_sequence event))
+                                                 (push results rule_result)
                                                  (break)))))
                                    (for_each (n [ 4 3 2 1 ])
                                       (progc
                                          (when (>= (length text.0) n) 
                                             (aif (resolve_path [ on_event (last_n_chars n text.0) ] prior_text_rules)
-                                                (when (qualify_and_run it `prior_text event)
-                                                   (break)))))))))
+                                                (when (= rule_result (qualify_and_run it `prior_text event))
+                                                   (push results rule_result)
+                                                   (break))))))
+                                   rule_result)))
      ;; when a rule is identified by process_rules_for_event as matching
      ;; the qualify_and_run function will make check to see if it is qualified
      ;; to run and then run the rule 
@@ -900,16 +929,11 @@
                           (let
                              ((status (point_for root_elem))
                               (key event.key))
-                             (when (or (and (== key.length 1)
-                                            (not event.metaKey))
-                                       (or (== key "Backspace")
-                                           (== key "Enter")))
-                                (when (not is_dirty?)
-                                    (add_class "juno-needs-save" title_span))
-                                (= is_dirty? true))
+                             
                              
                              (cond
-                               (and options.close_on_escape 
+                               
+                                (and options.close_on_escape 
                                   (== key "Escape"))
                                (progn
                                   (log "DOM Editor:Escape pressed!")
@@ -920,6 +944,8 @@
                                (progn
                                   (add_to_key_history (get_key_code event))
                                   (= last_event_context (process_rules_for_event event))
+                                  (when (> __VERBOSITY__ 0) 
+                                     (log "last_event_context: " last_event_context))
                                   key))))))
     
     (key_up_event (fn (event)
@@ -935,7 +961,14 @@
                             (= current_point status)
                             (= last_event_context (process_rules_for_event event))
                             
-                            
+                            (when (or (and (== key.length 1)
+                                            (not event.metaKey)
+                                            (not event.ctrlKey))
+                                       (or (== key "Backspace")
+                                           (== key "Enter")))
+                                (when (not is_dirty?)
+                                   (add_class "juno-needs-save" title_span))
+                                (= is_dirty? true))
                             
                             (set_prop position_elem
                                `innerText
@@ -1125,6 +1158,7 @@
                              (is_fresh false)
                              (load_error false)
                              (extension nil))
+                            
                             (cond
                                options.filename
                                (progn
@@ -1182,7 +1216,13 @@
                                          (make_path options.path nseval.global_ctx.scope root_elem))
                                       (progn
                                          (when (not (is_element? content))
-                                            (= content (eval content)))
+                                            (= content (try
+                                                          (eval content)
+                                                          (catch Error (e)
+                                                             (progn
+                                                                (alert_box "Evaluation Error"
+                                                                           (+ "The content cannot be read: " e.message ".  Please check the source."))
+                                                                (= error_state true))))))
                                          (-> root_elem `replaceWith content)
                                          (= root_elem document_view.children.0))))
                                options.content
@@ -1500,18 +1540,7 @@
 
 (place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `path: [ `*dom_buf* ] `hide_control_bar: false debug: true }))
 
-(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `path: [ `*dom_buf* ] `hide_control_bar: false debug: true }))
+(place_control `right (DOM_editor { rules: [ `*markdown_rules* ] `path: [ `*dom_buf2* ] `hide_control_bar: false debug: true }))
 
-(defcontrol markdown_editor (options)
-   ((content nil)
-    (editor nil)
-    (load_content (fn (pathname)
-                     
-    (on_initialize (fn (self)
-                      (let
-                         ()
-                         (cond
-                            options.filename
-                            ()
-                         
-   
+*dom_buf*
+*markdown_rules*
