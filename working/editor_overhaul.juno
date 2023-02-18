@@ -2586,7 +2586,8 @@
                                           (is_string? options.path))
                                       (< (length (get_editors_for_path options.path)) 2)
                                       true)))
-                
+                `on_hide: (fn ()
+                             (log "text_editor: " options.name ": on_hide is called."))
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
                                 (progn

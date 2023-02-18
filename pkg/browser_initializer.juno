@@ -748,10 +748,23 @@
     tags: ["controls" "ui" "control"]
   })
 
+(defun_sync is_layout? (control)
+   (and (contains? control $root_controls)
+        (or (resolve_path [ `options `root_bundle ] control) false)
+        true)
+   {
+     description: (+ "For the given control, will return true if the given control if it is "
+                     "determined to be a root_bundle and part of the `$root_controls` array. "
+                     "Otherwise false will be returned.")
+     usage: []
+     tags: [ `control `controls `layout `DOM `ui ]
+   })
+
 (defun_sync is_top_control? (control)
   (if (is_control? control)
     (contains? control $root_controls)
     false))
+
 
 (defun copy_text_to_clipboard (text)
         (if text
@@ -772,6 +785,59 @@
           `tags: ["env" "copy" "clipboard" "ui"]
         } )
 
+(defun set_key_binding (scope name desc)
+  (let
+      ((target (resolve_path [ scope ] *key_bindings*))
+       (key_mode (get_operating_platform)))
+      (set_prop target
+         name
+         desc)
+      (set_prop *key_bindings*.active
+         (prop desc key_mode)
+         (prop desc `exec)))
+  {
+      `description: (+ "Given a scope for the keybinding, a command name key, and a description object, "
+                       "establishes the binding in the *key_bindings* and in the environment as active. "
+                       "<br>The description object should contain the following keys:<br>"
+                       "description:text - A human readable description of what the key binding does.<br>"
+                       "exec:fn - The function to execute when the key binding occurs. Some exec entries " 
+                       "can be nil if the control has an internal function for the command name.<br>"
+                       "mac:text - The key sequence to use on environments running on MacOS<br>"
+                       "win:text - The key sequence to use when running on Windows or Linux (or non Mac environments)<br>")
+      `usage: ["scope:string" "name:string" "desc:object"]
+      `tags: ["keys" "bindings" "settings" "configuration" "config" ]
+                       
+  })
+
+
+(defun remove_key_binding (scope name)
+   (if (and (is_string? scope)
+              (is_string? name))
+      (let
+         ((target (resolve_path [ scope name ] *key_bindings*))
+          (key_mode (get_operating_platform))
+          (active_key (when target
+                         (prop target key_mode))))
+         (if target
+            (progn
+               (delete_prop (prop *key_bindings* scope)
+                            name)
+               (delete_prop *key_bindings*.active
+                  active_key)
+               true)
+            false))
+      (throw TypeError "remove_key_binding requires a scope and a name as strings"))
+   {
+     description: (+ "Given a scope and a key binding name (the key), removes the key binding "
+                     "from the `*key_bindings*` global object.  If the scope is `global`, the effect "
+                     "of the removal will be immediate.  If it is a control scope, it may not take "
+                     "immediate effect because the control may have mapped the key bindings in "
+                     "`*key_bindings*` to an internal representation.  This occurs in the text_editor "
+                     "for example.<br> ")
+     usage: ["scope:string" "name:string" "desc:object"]
+      tags: ["keys" "bindings" "settings" "configuration" "config" ]
+   })
+          
 
 (defun_sync get_keybinding (category command)
    (aif (resolve_path [category command] *key_bindings*)
@@ -1337,7 +1403,25 @@
      `tags: ["controls" "active" "tree" "ui"]
      })
 
-
+(defun controls_by_type ()
+   (let
+      ((clist (current_controls))
+       (rval {}))
+      (for_each (ctl (or clist []))
+         (progn
+            (when (not (prop rval ctl.type))
+               (set_prop rval
+                  ctl.type
+                  []))
+            (push (prop rval ctl.type) ctl)))
+      rval)
+   {
+     `description: (+ "Returns an object containing keys of the different types of "
+                      "instantiated controls, with the corresponding values being arrays that contain "
+                      "the instances of each type. ")
+     `usage: []
+     `tags: [`controls `control `layout `ui `DOM ]
+   })
 
 (defun all_editor_controls ()
    (reduce (ctl (current_controls))
@@ -1592,6 +1676,18 @@
      tags: ["DOM" "controls" "ui" "root" "layout" "control"]
    })
 
+(defun layout_locked? (layout_control)
+   (aif (and (is_layout? layout_control)
+             layout_control)
+        (prop it.options `is_locked?))
+   {
+     `description: (+ "If the provided named layout is locked, the function will "
+                      "return `true` otherwise it will return `false`.  The return value is sourced "
+                      "from the current root control options `is_locked?` property. ")
+     usage: ["layout_control:object"]
+     tags: ["DOM" "controls" "ui" "root" "layout" "control"]
+   })
+
 (defun replace_control (target_control new_control)
   (let
       ((tmp (new Object))
@@ -1838,47 +1934,70 @@
       nil)))        
 
 (defun switch_to_new_layout (layout_name)
-   (let
-      ((current_layout (get_current_layout_control))
-       (current_focus_for_layout (or *last_focus* (default_focus)))
-       (control_to_focus_to nil)
-       (found false))
-      (if current_layout
-         (for_each (ctl $root_controls)
-            (if (== ctl.options.name layout_name)
-                (progn
-                   (control_tree current_layout
-                                 (fn (control)
-                                    (when (is_function? control.lock_ratio)
-                                       (-> control `lock_ratio true))))
-                   (set_prop current_layout.options
-                      `root_frame
-                      false
-                      `last_focus_id
-                      (if current_focus_for_layout
-                         current_focus_for_layout.options.id
-                         nil))
-                   (-> current_layout.view `replaceWith ctl.view)
-                   (set_prop ctl.options
-                      `root_frame
-                      true)
-                   (control_tree ctl
-                                 (fn (control)
-                                    (when (is_function? control.lock_ratio)
-                                       (-> control `lock_ratio false))))
-                   (-> ctl `initialize)  ;; if we need to initialize, do it
-                   (= found true)
-                   (sleep 0.01) 
-                   
-                   
-                   (= control_to_focus_to (or (get_control_by_id ctl.options.last_focus_id)
-                                              (default_focus)))
-                   (set_focus_to control_to_focus_to)
-                   (= *last_focus* control_to_focus_to)
-                   (break))))
-         (progn
-            (notify "Unable to find the currently active layout: check $root_controls")))
-      found)
+   (if (and (not (blank? layout_name))
+            (is_string? layout_name))
+       (let
+          ((current_layout (get_current_layout_control))
+           (current_focus_for_layout (or *last_focus* (default_focus)))
+           (control_to_focus_to nil)
+           (page_container (get_by_id `juno_container))
+           (layout_holding_cell nil)
+           (found false))
+          (console.log "switch_to_new_layout: layout_name: " layout_name)
+          (if (eq nil (get_by_id "layout_holding_cell"))
+              (-> (first (get_by_tag "body"))
+                  `append (div { `id: "layout_holding_cell" } )))
+          (= layout_holding_cell (get_by_id "layout_holding_cell"))
+          
+          (cond 
+             (and current_layout
+                  (== current_layout.name layout_name))
+             true ;; do nothing we are already here
+             current_layout
+             (for_each (ctl $root_controls)
+                (if (== ctl.options.name layout_name)
+                    (progn
+                       (control_tree current_layout
+                          (fn (control)
+                             (when (is_function? control.lock_ratio)
+                                (-> control `lock_ratio true))))
+                       (set_prop current_layout.options
+                          `root_frame
+                          false
+                          `last_focus_id
+                          (if current_focus_for_layout
+                             current_focus_for_layout.options.id
+                             nil))
+                       
+                       (if (== current_layout.view.parentElement page_container)
+                           (-> current_layout.view `replaceWith ctl.view) ;; replace the old one with the new one...
+                           (progn
+                              (-> page_container `remove current_layout.view)
+                              (-> page_container `append ctl.view)))
+                       
+                       (-> layout_holding_cell `append current_layout.view) ;; and store the old one until needed
+                       (set_prop ctl.options
+                          `root_frame
+                          true)
+                       (control_tree ctl
+                          (fn (control)
+                             (when (is_function? control.lock_ratio)
+                                (-> control `lock_ratio false))))
+                       (-> ctl `initialize)  ;; if we need to initialize, do it
+                       (= found true)
+                       (sleep 0.01)
+                       
+                       
+                       (= control_to_focus_to (or (get_control_by_id ctl.options.last_focus_id)
+                                                  (default_focus)))
+                       (set_focus_to control_to_focus_to)
+                       (= *last_focus* control_to_focus_to)
+                       (break))))
+             else
+             (progn
+                (notify "Unable to find the currently active layout: check $root_controls")))
+          found)
+       (throw TypeError "switch_to_new_layout: invalid layout__name provided"))
    {
      description: (+ "Given a new layout name, replaces the current layout with the provided "
                      "named layout, if it exists.  If the operation is successful, the function will "
@@ -1981,7 +2100,7 @@
                           (throw TypeError "make_named_layout must be passed a control_container type")))
        (layout_name (if (and (is_string? name)
                              (not (blank? name)))
-                        name
+                        (trim name)
                         (throw TypeError "make_named_layout must be a non blank name")))
        (layout_control nil)
        (parents (parents_for_control target_control))
@@ -1990,7 +2109,9 @@
                      false))
        (replacement_control nil)
        (already_mounted true)
+       (layout_name_key (to_key layout_name))
        (num_named_layouts (length (named_layouts)))
+       (layout_number (+ 2 num_named_layouts))  ;; frame 0 is 1,
        (idx 0))
       (declare (function alert_on_error control_holding_tank empty_selection_control holding_tank_controls set_key_binding)
                (global alert_on_error control_holding_tank empty_selection_control holding_tank_controls set_key_binding))
@@ -2001,9 +2122,9 @@
           ;; add target_control to the new layout and remove from the old one
           (= layout_control (control_container target_control
                                                {
-                                                 name: name
+                                                 name: layout_name
                                                  id: id
-                                                 root_bundle: name
+                                                 root_bundle: layout_name
                                                  last_focus_id: (resolve_path [ `options `id ]
                                                                               (or *last_focus*
                                                                                  (default_focus)
@@ -2022,14 +2143,14 @@
              else
              (= replacement_control (empty_selection_control)))
           
-          
-          (set_key_binding `global (+ "layout_" (+ 1 num_named_layouts))
+          (remove_key_binding `global (+ "layout_" layout_name_key))
+          (set_key_binding `global (+ "layout_" layout_name_key)
                            {
-                             description: (+ "Jump to layout at index " (+ 1 num_named_layouts))
+                             description: (+ "Jump to layout " layout_name)
                              exec: (eval `(fn ()
-                                             (switch_to_new_layout ,#name)))
-                             mac: (+ "Command-" (+ 1 num_named_layouts))
-                             win: (+ "Alt-" (+ 1 num_named_layouts))
+                                             (switch_to_new_layout ,#layout_name)))
+                             mac: (+ "Command-" layout_number)
+                             win: (+ "Alt-" layout_number)
                              })
           
           (push $root_controls
@@ -2071,6 +2192,7 @@
                     (get_control_by_name layout_name)
                     _ctl))
        (holding_tank (control_holding_tank))
+       (layout_name_key (to_key (trim layout_name)))
        (control_idx -1))
       (declare (function  control_holding_tank)
                (global  control_holding_tank))
@@ -2093,7 +2215,7 @@
          (remove_prop control.options
             `bundled))
       
-      (log "remove_named_layout: " layout_name control.options.name)
+      
       (when (is_function? control.controls)
          (for_each (`c (or (-> control `controls) []))
             (unless (is_sub_control? c)
@@ -2108,6 +2230,7 @@
              (= control_idx
                 (index_of control $root_controls))
              (log "remove_named_layout: root_control index: " control_idx)
+             (remove_key_binding `global (+ "layout_" layout_name_key))
              (if (> control_idx -1)
                  (-> $root_controls `splice control_idx 1)))
           (unless (or (-> holding_tank `has_control? control) ;; add any subcontrols to the holding tank if allowed.
@@ -2153,10 +2276,32 @@
       ((tmp (new Object))
        (position_details_target nil)
        (position_details_new nil)
-       (holding_tank (get_control_by_name "Holding Tank"))
+       (current_control_layout nil)
+       (new_control_layout nil)
+       (holding_tank (control_holding_tank))
+       (noop false)
        (replaced_keys (new Set)))
     (assert (is_control? target_control) "Invalid control provided for old_control")
     (assert (is_control? new_control) "Invalid control provided for new_control")
+    
+    (= current_control_layout (get_layout_for_control target_control))
+    (= new_control_layout (get_layout_for_control new_control))
+    
+    (if (== current_control_layout holding_tank)
+        (= current_control_layout nil))
+    (if (== new_control_layout holding_tank)
+        (= new_control_layout nil))
+    
+    (if (and current_control_layout
+             (layout_locked? current_control_layout))
+        (progn
+           (notify (dtext "Cannot swap out the current control - layout is locked"))
+           (= noop true)))
+    (if (and new_control_layout
+             (layout_locked? new_control_layout))
+        (progn
+           (notify (dtext "Cannot swap out the target control - layout is locked"))
+           (= noop true)))
     
     (if (== target_control new_control)
         (progn
@@ -2169,8 +2314,17 @@
            (= position_details_new (control_position new_control))
            (console.log "swap_control: target: " target_control "new: " new_control)))
     
+    (if (and (not noop)
+             new_control_layout
+             current_control_layout
+             (not (== new_control_layout current_control_layout)))
+        (progn
+           (= noop true)
+           (notify (dtext "Cannot swap controls between different layouts"))))
+    
     (cond
-        (== target_control new_control)
+        (or (== target_control new_control)
+            noop)
         nil ;; do nothing 
         
         (== position_details_target.parent holding_tank)   ;; target is in the holding tank so take the old control out and replace with new
@@ -2495,21 +2649,53 @@
                           control_to_show))
        (target_layout (if control_to_show
                           (get_layout_for_control control_to_show)))
-       (target_control (if *last_focus*
-                         *last_focus*
-                           nil)))
+       (target_control nil))
       ;; cannot switch to the holding tank.
-    (if (== target_layout (control_holding_tank))
-        (= target_layout nil))
+      ;; first move to the correct layout
+      (cond
+         (is_layout? target_control)
+         (if (not (== target_control current_layout))     
+             (progn
+                (switch_to_new_layout target_control.name)
+                (sleep 0.01)))
+         (== target_layout (control_holding_tank))
+         (progn 
+            (= target_layout nil)
+            (switch_to_new_layout (prop (frame_0) `name))
+            (sleep 0.01))
+             ;; go to the default layout
+         (not (== target_layout current_layout))
+         (progn
+            (switch_to_new_layout target_layout.name)
+            (sleep 0.01))
+         (== target_layout current_layout)
+         true ;; we are on the same layout
+         else
+         (throw EvalError "Fall through error on show_control: cannot determine layout for requested control"))
+      
+      
+      ;; we should be at the right layout here - assert it if it is not in the holding tank
+      (if target_layout
+         (assert  (== (get_current_layout_control) (get_layout_for_control control_to_show))
+                 "show_control: not able to get to the current layout for the control"))
+      
+      ;; now where on the correct layout..
+      ;; if we have a last_focus for the layout use that 
+      (if (== (get_layout_for_control *last_focus*) (get_current_layout_control))
+          (= target_control *last_focus*))
+      
     (cond 
-       (and target_layout
-          (not (== target_layout current_layout)))
+       (is_layout? target_control)
+       true ;; we have already done our work
+       
+       (and target_layout ;; not in the holding tank if target_layout is not nil
+            target_control
+            control_to_show)
        (progn
-          (switch_to_new_layout target_layout.options.name)
-          (sleep 0.01)
+          (sleep 0.1)
           (set_focus_to control_to_show)
           true)
-         
+       
        (and target_control control_to_show)
        (progn
           (swap_control target_control control_to_show)
@@ -2606,7 +2792,65 @@
    `usage: ["target:string|object"]
    })
 
-
+(defun jump_to_control ()
+   (let
+      ((dlist nil)
+       (dlist_id "control_names")
+       (names (each (current_controls) `name))
+       (check_selection (fn ()
+                           (let
+                              ((count 0)
+                               (candidates []))
+                              (for_each (name names)
+                                 (if (contains? (lowercase search_input.value) (lowercase name))
+                                     (push candidates name)))
+                              (if (== candidates.length 1)
+                                  (set_prop search_input
+                                     `value
+                                     (first candidates))))))
+       (search_input nil)
+       (target nil))
+      
+      (declare (function request_user_input current_controls show_control)
+               (global request_user_input current_controls show_control))
+      
+      (aif (get_by_id dlist_id)
+           (-> it `remove))
+      (= dlist (datalist { `id: dlist_id }
+                         (for_each (ctlname (sort names))
+                            (option ctlname))))
+      (-> (first (get_by_tag "body")) `append dlist)
+      (= search_input (input { type: "search" 
+                               list: "control_names" 
+                               placeholder: (dtext "Type Control Name") 
+                               style: "font-weight: bold; display: inline-block; padding: 10px; width: calc(100% - 10px); border: 0px; background: var(--editor-bg-color); color: var(--main-color);" } ))
+      (attach_event_listener search_input
+         `keyup
+         check_selection)
+      (= target
+         (request_user_input (dtext "Type the name of control and press Enter to switch to it. Press Escape to cancel this dialog.")
+                             `text
+                             {
+                               `input: search_input
+                               `validator: (fn (v)
+                                              (if (contains? v names)
+                                                  true
+                                                  false))
+                               }))
+      (if (and (not (blank? target))
+               (contains? target names))
+          (show_control target))
+      target)
+   {
+     description: (+ "This function provides a popup selector allowing the user to quickly "
+                     "select a control or layout control to switch the view to.  If the user selects "
+                     "a valid control, the layout will be switched to the containing layout or frame "
+                     "0 if the control is in the holding tank.  Then the control will be selected.  "
+                     "If the user escapes or cancels, then nothing occurs and the action is "
+                     "cancelled.  ")
+     usage: []
+     tags: ["controls" "layout" "controls" "switch" "ui" "layouts"]
+   })
 
 (defun process_focus_chain (e originator_container)
    (progn
@@ -3258,25 +3502,30 @@
    })
 
 
-(defun make_named_layout_interactive (root_control)
-   (let
-      ((current_names (named_layouts))
-       (name (request_user_input "Please enter a name for this layout."
-                           {
-                             validator:(fn (v)
-                                          (not (contains? v current_names)))
-                             })))
-      (if (not (blank? name))
-          (make_named_layout name (get_current_layout_control))))
-   {
-     description: (+ "<br><br>Given a root control which has a layout that should be \'frozen\', "
-                      "provides a pop up dialog to request a name for the new layout.  Once the user "
-                      "has entered a name that is unique and not presently used by another named "
-                      "layout, the presently displayed layout will be named and the controls bundled "
-                      "together. ")
-     usage: ["root_control:obj"]
-     tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
-   })
+(defun make_named_layout_interactive ()
+   (if (resolve_path [ `options `root_bundle ] (get_current_layout_control))
+       (progn
+          (notify (dtext "A named layout cannot be created from another named layout."))
+          false)
+       (let
+          ((current_names (named_layouts))
+           (name (request_user_input "Please enter a name for this layout."
+                                     {
+                                       validator:(fn (v)
+                                                    (not (contains? v current_names)))
+                                       })))
+          (if (not (blank? name))
+              (make_named_layout name (get_current_layout_control)))))
+       {
+         description: (+ "Using the current frame which has a layout that is to be preserved, "
+                         "provides a pop up dialog to request a name for the new layout.  Once the user "
+                         "has entered a name that is unique and not presently used by another named "
+                         "layout, the presently displayed layout will be named and the controls bundled "
+                         "together. ")
+
+         usage: []
+         tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
+         })
 
 (defun select_control_by_name (prompt options)
    (let
@@ -9576,10 +9825,7 @@
 (defun next_displayed_control (backward?)
       (let
       ((next_index nil)
-       (displayed_root_control (reduce (ctl (uniq (flatten (control_tree $root_controls))))
-                                  (if (and (not (-> (control_holding_tank) `has_control? ctl))
-                                           (== ctl.type "control_container"))
-                                      ctl)))
+       (displayed_root_control (get_current_layout_control))
        (candidates (reduce (ctl (current_controls true displayed_root_control))
                       (unless (or (-> (control_holding_tank) `has_control? ctl)  ;; we only want controls that are able to take a direct focus
                                   (== ctl.type "control_container")
@@ -9605,13 +9851,12 @@
                (focus_to new_ctl.editor))))
       (notify (dtext "No controls are in the holding tank."))))
    {
-     `usage: ["backward?:boolean"]
-     `description: (+ "If backward? is false (default) swap the current control " 
-                      "with the next control in the displayed control tree. Otherwise "
-                      "swap with the first control in the holding tank. "
-                      "If there are no controls, notifies the user that there are "
-                      "no other non-displayed controls to swap to.")
+     
+     `description: (+ "For the current layout, move the focus to the next displayed control in "
+                      "the layout.   If the `backward?` argument is true, will move backward in the "
+                      "display list as opposed to the default forward operation in the control list.  ")
      `tags: ["ui" "controls" "swap" "buffers" "editor" "next"]
+     `usage: ["backward?:boolean"]
      })
 
 (defmacro on_key_down_event (e view `& key_to_action_pairs)
@@ -10381,7 +10626,8 @@
             (-> keywords `add (first (split_by "/" pset.1.0)))
             (for_each (`target pset.1)
                (-> keywords `add (second (split_by "/" target))))))
-      (= dlist (datalist { `id: dlist_id } (for_each (keyword (sort (to_array keywords)))
+      (= dlist (datalist { `id: dlist_id } 
+                         (for_each (keyword (sort (to_array keywords)))
                             (option keyword))))
       (aif (get_by_id dlist_id)
           (-> it `remove))
@@ -12654,6 +12900,7 @@
        (control_id (get_attribute elem "control_id"))
        (control (if control_id
                   (get_control_by_id control_id)))
+       (clayout (get_current_layout_control))
        (parents (each (parents_for_control control) `name)))
     (cond
       (and (has_class? "juno-command-button" elem)
@@ -12664,11 +12911,16 @@
           ((control_menu (conj (if (is_function? control.menu_items)
                                  (-> control `menu_items)
                                  [[]])
-                               [[(dtext "Swap") (reduce (other_control (current_controls true))
-                                                         (unless (or (== other_control control)
-                                                                     (eq nil other_control.name)
-                                                                     (contains? other_control.name parents))
-                                                                 [other_control.name (fn () (swap_control control other_control)) ]))]
+                               [(if (current_layout_locked?)
+                                    []
+                                    [(dtext "Swap") 
+                                     (reduce (other_control (current_controls true))
+                                        (if (and (or (== (get_layout_for_control other_control) clayout)
+                                                     (== (control_holding_tank) (get_layout_for_control other_control)))
+                                                 (not (== other_control control))
+                                                 (not (eq nil other_control.name))
+                                                 (not (contains? other_control.name parents)))
+                                            [other_control.name (fn () (swap_control control other_control)) ]))])
                                 [(dtext "Hide") (fn ()
                                                   (hide_control control))]
                                 ["--" nil]
@@ -13492,30 +13744,7 @@
    `tags: ["save" "file" "control"]
    })    
 
-(defun set_key_binding (scope name desc)
-  (let
-      ((target (resolve_path [ scope ] *key_bindings*))
-       (key_mode (get_operating_platform)))
-    (progn
-     (set_prop target
-               name
-               desc)
-     (set_prop *key_bindings*.active
-               (prop desc key_mode) 
-               (prop desc `exec))))
-  {
-      `description: (+ "Given a scope for the keybinding, a command name key, and a description object, "
-                       "establishes the binding in the *key_bindings* and in the environment as active. "
-                       "<br>The description object should contain the following keys:<br>"
-                       "description:text - A human readable description of what the key binding does.<br>"
-                       "exec:fn - The function to execute when the key binding occurs. Some exec entries " 
-                       "can be nil if the control has an internal function for the command name.<br>"
-                       "mac:text - The key sequence to use on environments running on MacOS<br>"
-                       "win:text - The key sequence to use when running on Windows or Linux (or non Mac environments)<br>")
-      `usage: ["scope:string" "name:string" "desc:object"]
-      `tags: ["keys" "bindings" "settings" "configuration" "config" ]
-                       
-  })
+
   
 ;; the global keyword_mapper routes to the currently focused
 ;; editor for the local keyword_mapper to that editor and the
@@ -13633,7 +13862,8 @@
 (defun gen_layout_menu ()
    (let
       ((current_layout (get_current_layout_control))
-       (idx -1)
+       (idx 0)
+       (f0 (frame_0))
        (roots (reduce (ctl $root_controls)
                  (when (and (not (== ctl.type "app_header"))
                             (not (== ctl.type "holding_tank")))
@@ -13645,13 +13875,17 @@
                (inc idx)
                (if (== ctl.options.root_frame true)
                    [{
-                      path: [ `global (+ "layout_" idx) ]
+                      path: [ `global (if (== ctl f0)
+                                          "frame_0"
+                                          (+ "layout_" (to_key ctl.options.name))) ]
                       text: (span { class: "juno-selected-menu-item" } ctl.options.name)
                       exec:(fn ()
                               true)
                       }]
                    [{
-                      path: [ `global (+ "layout_" idx) ]
+                      path: [ `global (if (== ctl f0)
+                                          "frame_0"
+                                          (+ "layout_" (to_key ctl.options.name))) ]
                       text: ctl.options.name
                       exec:(fn ()
                               (switch_to_new_layout ctl.options.name))
@@ -13661,31 +13895,37 @@
                 []
                 [{
                     text: (dtext "New named layout")
-                    path: [ `global `name_current_layout ]
+                    path: [ `global `make_named_layout ]
                     exec: (fn ()
                              (make_named_layout_interactive current_layout))
                 }])]
-         [(if (and current_layout.options.root_bundle
-                   layout_locked?)
-                [{
-                    text: (dtext "Unlock Layout Positions")
-                    path: [ `global `unlock_current_layout_positions ]
-                    exec: (fn ()
-                             (unlock_layout_positions current_layout.options.name))
+         [(if 
+             (and current_layout.options.root_bundle
+                layout_locked?)
+             [{
+                text: (+ (dtext "Unlock positions for") " " current_layout.options.name)
+                path: [ `global `unlock_current_layout_positions ]
+                exec: (fn ()
+                         (unlock_layout_positions current_layout.options.name))
                 }]
-                [{
-                    text: (dtext "Lock Layout Positions")
-                    path: [ `global `lock_current_layout_positions ]
-                    exec: (fn ()
-                             (lock_layout_positions current_layout.options.name))
+             [{
+                text: (+ (dtext "Lock positions for") " " current_layout.options.name)
+                path: [ `global `lock_current_layout_positions ]
+                exec: (fn ()
+                         (lock_layout_positions current_layout.options.name))
                 }])]
+             
+         [[(dtext "Copy as Quoted View")
+           ]]
+         [["--" nil]]
          [[(dtext "Remove Named Layout..")
            (on_empty [["No Named Layouts" 
                       (fn ()
                          false)]]
               (reduce (ctl roots)
                   (progn
-                     (when (not (blank? ctl.options.root_bundle))
+                     (when (and (not (== ctl f0))
+                                (not (blank? ctl.options.root_bundle)))
                         [{
                            text: ctl.options.name
                            path: [ `global `remove_named_layout ]
@@ -13695,9 +13935,10 @@
                                                               (when (== (resolve_path [ `options `id ] (get_current_layout_control)) 
                                                                       ,#ctl.options.id)
                                                                   (switch_to_new_layout "Frame 0"))
-                                                              (remove_named_layout ,#ctl.options.name)))))
-                           }]))))]]
-          )))
+                                                              (remove_named_layout ,#ctl.options.name)
+                                                              (notify (+ "Removed Layout: " ,#ctl.options.name))
+                                                              ))))
+                           }]))))]])))
 
 (defun gen_controls_menu ()
   (progn
@@ -13708,6 +13949,11 @@
    (defvar current_layout (get_current_layout_control))
    
    (conj 
+        [[ {
+             `path: [ `global `jump_to_control ]
+             `text: (dtext "Jump to Control or Layout")
+           }]
+         ["--" nil]]
         (reduce (control (current_controls))
             (when (and control.on_focus
                        control.options.id)
@@ -14052,12 +14298,28 @@
                             description: "Copy the current selection and remove from document"
                             exec: (fn (e) (handle_clipboard_event `paste e))
                             }
+                  "jump_to_control" {
+                      win: "Alt-J"
+                      mac: "Command-J"
+                      description: "Allows the user to quickly select the control or layout to move to"
+                      exec: jump_to_control
+                  }
                   "frame_0" {
-                              win: "Alt-Shift-0"
-                              mac: "Command-0"
+                              win: "Alt-1"
+                              mac: "Command-1"
                               description: "Jump to frame 0"
                               exec: (fn (e) (jump_to_frame_0))
+                              }
+                  "make_named_layout" {
+                              win: "Alt-Shift-L"
+                              mac: "Command-L"
+                              description: "Make a new named layout from the current frame"
+                              exec: (fn ()
+                                       (progn
+                                          (notify "Make Named Layout")
+                                          (make_named_layout_interactive)))
                               })
+       
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        
