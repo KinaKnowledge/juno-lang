@@ -55,6 +55,9 @@
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
 
+
+;; 
+
 (create_css_entry "td.juno-obj-to-dom-key"
                   [["vertical-align" "top"]
                    ["color" "#881280"]
@@ -340,7 +343,7 @@
                       (notify (+ "Changed Path: " changed_lpath ": " dtype ": " new_val ))))))))
     elem)
   {
-    description: (+ "<br><br>The `value_to_dom` function renders an arbitrary data structure to a "
+    description: (+ "The `value_to_dom` function renders an arbitrary data structure to a "
                     "DOM representation and returns a DOM ready element.  Objects and their "
                     "hierarchies are rendered recursively.  The types that naturally render to the "
                     "DOM are strings, numbers, primitive objects, arrays, RegExp instances, "
@@ -351,34 +354,47 @@
                     "which the user can then use to modify the values of the rendered object.  In "
                     "edit mode, data types can be specified using the `paths` option, which allows "
                     "for limiting selection or making certain paths read only.  <br><br>#### Options "
-                    " <br><br>editable:boolean -If true, the object values will be rendered with the "
-                    "HTML inputs which the user can use to edit.  Upon the `change` event, the value "
-                    "of the rendered object will be changed.  <br>on_change:function -If provided, "
-                    "this function is called on the change event, and is passed the path and edited "
-                    "value `(path new_value)` as arguments.  If the function returns nil, the new "
-                    "value isn\'t accepted and the value prior to the change is restored to the input "
-                    "field.  Otherwise, the returned value from the function is used as the new "
-                    "value for the object, and the corresponding input element displayed value will "
-                    "be updated with the `on_change` function\'s returned value.<br>paths:object -The "
-                    "`paths` value allows for more control over the display, data type and values of "
-                    "the presented input elements.  The paths object is structured to match the "
+                    "  <br><br>editable:boolean -If true, the object values will be rendered with "
+                    "the HTML inputs which the user can use to edit.  Upon the `change` event, the "
+                    "value of the rendered object will be changed.  <br>on_change:function -If "
+                    "provided, this function is called on the change event, and is passed the path "
+                    "and edited value `(path new_value)` as arguments.  If the function returns nil, "
+                    "the new value isn\'t accepted and the value prior to the change is restored to "
+                    "the input field.  Otherwise, the returned value from the function is used as "
+                    "the new value for the object, and the corresponding input element displayed "
+                    "value will be updated with the `on_change` function\'s returned "
+                    "value.<br>expand_all:boolean - If true, all objects will be toggled open to "
+                    "display the keys by default.  This may cause rendering times to increase for "
+                    "larger values, but can be useful for UI elements and other instances where an "
+                    "open presentation by default is appropriate.  The default is false for this "
+                    "value.<br>disable_object_toggle:boolean - If true, presented objects are "
+                    "displayed open and expanded, with no `summary` displayed, preventing a toggle.  "
+                    "This is useful for UI contexts where the presented object represents a form "
+                    "that is to be filled out.<br>pretty_keys:boolean - If true, object keys are "
+                    "presented in a more end-user friendly format, where the `from_key` function is "
+                    "used to remove underscores and provide capitalization for leading characters.  "
+                    "For example, the key `output_format` would be presented as `Output Format`.  "
+                    "When set to true, this option has no effect on the actual key names which are "
+                    "preserved in the format they were given to render.<br>paths:object -The `paths` "
+                    "value allows for more control over the display, data type and values of the "
+                    "presented input elements.  The paths object is structured to match the "
                     "structure of the provided object, where the leaves of the displayed object look "
                     "for attributes in the path object at the corresponding path.<br>In the "
                     "following example, the `*env_config*` object would be displayed to the REPL "
                     "output, with corresponding input fields being displayed at the leaves of the "
                     "object.  If a parent structure is marked read only, all leaves in the "
                     "corresponding structure are read only as well:```(value_to_dom *env_config* \n  "
-                    "           { `editable: true \n                `paths: {\n                   "
+                    "          { `editable: true \n                `paths: {\n                  "
                     "`features: {\n                        `read_only: true\n                    }\n   "
-                    "                `included_libraries: {\n                        `read_only: "
-                    "true\n                    }\n                    `editor:{\n                      "
-                    " `extensions_to_mode: {\n                            `read_only: true\n          "
-                    "                 }\n                        `default_theme: {\n                  "
-                    "                       values: *editor_themes*\n                                "
-                    "         }\n                    }\n                    `application: {\n          "
-                    "             `global_theme: {\n                            values: (keys "
+                    "               `included_libraries: {\n                        `read_only: true\n "
+                    "                   }\n                    `editor:{\n                      "
+                    "`extensions_to_mode: {\n                            `read_only: true\n           "
+                    "               }\n                        `default_theme: {\n                    "
+                    "                    values: *editor_themes*\n                                   "
+                    "     }\n                    }\n                    `application: {\n              "
+                    "        `global_theme: {\n                            values: (keys "
                     "*global_themes*)\n                        }\n                    }\n              "
-                    " }  \n                \n              })```<br><br>The above will display the "
+                    "}  \n                \n              })```<br><br>The above will display the "
                     "*env_config* as a hierarchical form, with some values being completely "
                     "non-editable, either due to a parent being set to read_only, or the leaf itself "
                     "being declared read only.  Note that the `editable` flag is set to `true`.  All "
@@ -389,34 +405,35 @@
                     "paths via the `type` key, then the input field will be modified accordingly to "
                     "the type.  For example if a Date type is specified, the a Date value will be "
                     "selected.  Similar for Numbers and Booleans.  <br>The path modifiers are as "
-                    "follows<br>read_only:boolean - If true, then the value will not be editable.  "
-                    "If this is a containing type, such as an Object or Array, then the children "
-                    "within it will be non-editable.<br>type:string - Specifies the type of value "
-                    "that is placed at the path. Values can be `Date`, `Boolean`, `Number`.  "
-                    "Otherwise the default value will be string, or the detected type of the value "
-                    "itself.<br>values:array - If present the input element is presented as a select "
+                    "follows<br>read_only:boolean -If true, then the value will not be editable.  If "
+                    "this is a containing type, such as an Object or Array, then the children within "
+                    "it will be non-editable.<br>type:string -Specifies the type of value that is "
+                    "placed at the path. Values can be `Date`, `Boolean`, `Number`.  Otherwise the "
+                    "default value will be string, or the detected type of the value "
+                    "itself.<br>values:array -If present the input element is presented as a select "
                     "box with the options being the array elements provided in the `values` key.  "
                     "The array format can either be single values, such as `[\"Choice 1\" \"Choice 2\"]` "
                     "or pairs, as in `[[\"Select Value\" nil] [\"Good\" 10] [\"Imperfect\" 5] "
                     "[\"Unacceptable\" 0]]`, where in the latter, the value placed in the target "
                     "object is the second numeric value, and the presented value is the first text "
-                    "value.<br><br><br>### Example\n\n <br><br>In the below example, a tester object "
-                    "is established, and rendered with `value_to_dom` with an `on_change` function "
-                    "as well as paths which show different presentation effects and their "
-                    "impacts.  ```(defglobal tester\n   {\n     name: \"\"\n     inspect_date: nil\n    "
-                    "count: 0\n     confirmed: true\n     quality: nil\n     })\n \n(value_to_dom \n  "
+                    "value.<br><br>### Example <br>\n\n <br>In the below example, a tester object is "
+                    "established, and rendered with `value_to_dom` with an `on_change` function as "
+                    "well as paths which show different presentation effects and their "
+                    "impacts.  ```(defglobal tester\n   {\n     name: \"\"\n     inspect_date: nil\n   "
+                    "count: 0\n     confirmed: true\n     quality: nil\n     })\n \n(value_to_dom \n "
                     "tester\n   { `editable: true\n     `debug: true\n     `on_change: (function (path "
                     "value)\n                    (progn\n                       ;(log \"on_change: \" "
                     "path value)\n                       (cond\n                          (is_string? "
-                    "value)\n                          (uppercase value)\n                         "
+                    "value)\n                          (uppercase value)\n                        "
                     "(is_number? value)\n                          (if (>= value 0)\n                 "
-                    "            value\n                              nil)\n                         "
+                    "           value\n                              nil)\n                        "
                     "else\n                          value)))\n     `paths:{\n         `count: {\n      "
-                    "      type: \"Number\"\n             read_only: false\n         }\n        "
+                    "     type: \"Number\"\n             read_only: false\n         }\n       "
                     "`inspect_date: {\n             type: \"Date\"\n         }\n         `quality: {\n    "
-                    "        `type: \"Number\"\n             `values: [ [\"Select Quality\" nil]\n        "
-                    "               [\"Good\" 10 ]\n                        [\"Imperfect\" 5]\n           "
-                    "            [\"Unacceptable\" 0] ]\n         }\n     }\n    })```<br><br><br><br> ")
+                    "       `type: \"Number\"\n             `values: [ [\"Select Quality\" nil]\n         "
+                    "             [\"Good\" 10 ]\n                        [\"Imperfect\" 5]\n             "
+                    "         [\"Unacceptable\" 0] ]\n         }\n     }\n    })```<br> ")
+
     usage: ["value:*" "options:?object"]
     tags: ["UI" "DOM" "value" "element" "view"]
   }
@@ -668,7 +685,10 @@
                                        (destructuring_bind (key value)
                                                            keyval
                                                            (tr 
-                                                            (td {  `class: "juno-obj-to-dom-key" } key)
+                                                            (td {  `class: "juno-obj-to-dom-key" } 
+                                                                (if options.pretty_keys
+                                                                   (from_key key)
+                                                                   key))
                                                             (td { `class: "juno-obj-to-dom-value" } 
                                                                 (value_to_dom value options (conj _path [ key ] ))))))))))
        (_path (or _path []))
@@ -688,33 +708,50 @@
           (progn
            (-> options.visited `add obj)    
            (when (> _path.length -1)
-             (= expansion_mode true))
+              (= expansion_mode true))
            (= detail_elem 
               (details (+ {  `class: "juno-obj-to-dom" }
                           (if (== _path.length 0)
                             { `open: true }
                             {}))
                        ;(summary { `lpath: (lpath) `class: "juno-obj-to-dom" } (-> obj `toString))
-                       (show_summary_representation obj { `lpath: (lpath) `class: "juno-obj-to-dom" })
-                       (if expansion_mode
+                       (if options.disable_object_toggle
+                          (summary { class: "juno-display-none" } )
+                          (show_summary_representation obj { `lpath: (lpath) `class: "juno-obj-to-dom" }))
+                       (if (and expansion_mode
+                                (not options.expand_all)
+                                (not options.disable_object_toggle))
                          (= expansion_elem (span { `class: "juno-in-expansion" } (+ (dtext "Opening") "...")))
                          (render_table))))
            (when expansion_mode
-             (attach_event_listener detail_elem
-                                    `toggle
-                                    (fn (e) 
-                                       (progn
-                                          (if (is_nil? (get_attribute e.srcElement `open))
-                                              (remove_class "juno-display-none" detail_elem.children.0.children.1 )
-                                              (add_class "juno-display-none" detail_elem.children.0.children.1 ))
-                                          (unless expanded
-                                             (= expanded true)
-                                             (-> expansion_elem `replaceWith (render_table))
-                                             (= render_table nil))))))
-           detail_elem)))))
+              (unless options.disable_object_toggle
+                 (attach_event_listener detail_elem
+                    `toggle
+                    (fn (e)
+                       (progn
+                          (if (is_nil? (get_attribute e.srcElement `open))
+                              (remove_class "juno-display-none" detail_elem.children.0.children.1 )
+                              (add_class "juno-display-none" detail_elem.children.0.children.1 ))
+                          (unless expanded
+                             (= expanded true)
+                             (-> expansion_elem `replaceWith (render_table))
+                             (= render_table nil)))))))
+          detail_elem)))))
 
 
 
+(defun_sync is_control? (val)
+  (and (is_object? val) val.type val.view val.toJSON true)
+  {
+    usage: "val:object"
+    description: "Predicate function which returns true if the provided object tests to be a control."
+    tags: ["controls" "ui" "control"]
+  })
+
+(defun_sync is_top_control? (control)
+  (if (is_control? control)
+    (contains? control $root_controls)
+    false))
 
 (defun copy_text_to_clipboard (text)
         (if text
@@ -1151,11 +1188,26 @@
                   (for_each (`sym meta_obj.tags)
                      (span { `tabindex: 0 `class: "juno-tag" `style: "" } sym ))]
                  [])
+              
+              (if meta_obj.source_name
+                 [(br)
+                  (h4 "Defined In")
+                  (span { class: "juno-source-location juno-shadow-on-hover" } meta_obj.source_name) ]
+                 [])
+              
               (if meta_obj.requires
-                 [(h3 "Requires")
+                 [(h4 "Requires")
                   (div {  } 
                        (for_each (`sym (sort meta_obj.requires))
                           (span { `tabindex: 0 `class: (+ "juno-type-" (lowercase (or (prop (describe sym) `type) "")) " juno-requires") `style: "display: inline-block;" } sym )))]
+                 [])
+              (if meta_obj.externals
+                 [(br)
+                  (hr)
+                  (h4 "External References")
+                  (div {  } 
+                       (for_each (`sym (sort meta_obj.externals))
+                          (span { `tabindex: 0 `class: "juno-requires" `style: "display: inline-block;" } sym )))]
                  [])
               ))
       (cond
@@ -1468,13 +1520,77 @@
 
 (defun holding_tank_controls ()
   (aif (get_control_by_name "Holding Tank")
-       (-> it `controls)
+       (reduce (ctl (-> it `controls))
+          (unless ctl.options.bundled
+             ctl))
        [])
   {
       usage: []
       description: "Returns an array of all controls currently stored in the control holding tank."
       tags: ["ui" "controls" "holding" "tank"]
   })
+
+(defun get_current_layout_control ()
+   (let
+      ((root_ctl nil))
+      (for_each (ctl $root_controls)
+         (when (and ctl.options.root_frame
+                  (not (== ctl.type "app_header"))
+                  (not (== ctl.type "holding_tank")))
+             (= root_ctl ctl)
+             (break)))
+      root_ctl)
+   {
+     description: (+ "Returns the current root frame for the layout. ")
+     usage: []
+     tags: ["DOM" "controls" "ui" "root" "layout" "control"]
+   })
+
+(defun get_layout_for_control (control)
+   (let
+      ((ctls_by_parent (controls_by_parent))
+       (roots (prop controls_by_parent `root))
+       (next_up (fn (ctl_name)
+                   (for_each (pset (pairs ctls_by_parent))
+                      (destructuring_bind (parent_name controls)
+                         pset
+                         (cond 
+                            (and (== parent_name "root")
+                                 (contains? ctl_name (each controls `name)))
+                            (progn
+                               (= layout ctl_name)
+                               (break))
+                            (contains? ctl_name (each controls `name))
+                            (next_up parent_name))))))
+       (layout nil))
+      (declare (function controls_by_parent)
+               (global controls_by_parent))
+      (cond 
+         (is_string? control)
+         (next_up control)
+         (is_control? control)
+         (next_up control.name)
+         else
+         (throw TypeError "get_layout_for_control: invalid argument provided: must be control or string"))
+      (get_control_by_name layout))
+   {
+     description: (+ "Given either a control or name of a control, returns the layout control "
+                     "or root container control (such as the holding tank) for the provided control.  "
+                     "If it cannot be found, nil will be returned.<br> ")
+     usage: ["control:object|string"]
+     tags: ["DOM" "controls" "ui" "root" "layout" "control"]
+   })
+
+(defun current_layout_locked? ()
+   (aif (get_current_layout_control)
+        (prop it.options `is_locked?))
+   {
+     `description: (+ "If the currently displayed named layout is locked, the function will "
+                      "return `true` otherwise it will return `false`.  The return value is sourced "
+                      "from the current root control options `is_locked?` property. ")
+     usage: []
+     tags: ["DOM" "controls" "ui" "root" "layout" "control"]
+   })
 
 (defun replace_control (target_control new_control)
   (let
@@ -1592,18 +1708,7 @@
        
       existing_container))
 
-(defun_sync is_control? (val)
-  (and (is_object? val) val.type val.view val.toJSON true)
-  {
-    usage: "val:object"
-    description: "Predicate function which returns true if the provided object tests to be a control."
-    tags: ["controls" "ui" "control"]
-  })
 
-(defun_sync is_top_control? (control)
-  (if (is_control? control)
-    (contains? control $root_controls)
-    false))
 
 (defun top_frame (control)
   (let
@@ -1629,6 +1734,25 @@
    `description: "Given a control, returns an array containing the parent chain, with the last being the top control."
    `usage: ["control:object"]
    `tags: [ `control `controls `position `heirarchy `path]
+   })
+
+(defun_sync frame_0 ()
+   (let
+      ((f0 nil))
+      (for_each (ctl $root_controls)
+         (when (and (== ctl.type "control_container")
+                    (not ctl.options.root_bundle))
+            (= f0 ctl)))
+      f0)
+   {
+     description: (+ "Frame 0 is defined as the first `control_container` type that is non "
+                     "bundled in the $root_controls.  It is the default where to place things.  Non "
+                     "bundled means that it doesn\'t have a `root_bundle` key and is therefore "
+                     "considered an open place to put new controls.  Because layouts can come and go, "
+                     "this function is a utility to help easily find the first container meeting this "
+                     "criteria. This function returns the container control representing frame 0. ")
+     usage: []
+     tags: ["layouts" "frame" "default" "ui" "controls" "control" ]
    })
 
 (defparameter *focus_suppress_timer* nil)
@@ -1702,7 +1826,7 @@
 (defun default_focus ()
   (let
       ((found_control nil))
-    (control_tree $root_controls
+    (control_tree [(get_current_layout_control)]
                   (fn (control)
                       (when (and (not found_control)
                                  (is_function? control.on_focus))
@@ -1711,7 +1835,297 @@
       (progn
         (set_focus_to found_control)
         found_control)
-      nil)))
+      nil)))        
+
+(defun switch_to_new_layout (layout_name)
+   (let
+      ((current_layout (get_current_layout_control))
+       (current_focus_for_layout (or *last_focus* (default_focus)))
+       (control_to_focus_to nil)
+       (found false))
+      (if current_layout
+         (for_each (ctl $root_controls)
+            (if (== ctl.options.name layout_name)
+                (progn
+                   (control_tree current_layout
+                                 (fn (control)
+                                    (when (is_function? control.lock_ratio)
+                                       (-> control `lock_ratio true))))
+                   (set_prop current_layout.options
+                      `root_frame
+                      false
+                      `last_focus_id
+                      (if current_focus_for_layout
+                         current_focus_for_layout.options.id
+                         nil))
+                   (-> current_layout.view `replaceWith ctl.view)
+                   (set_prop ctl.options
+                      `root_frame
+                      true)
+                   (control_tree ctl
+                                 (fn (control)
+                                    (when (is_function? control.lock_ratio)
+                                       (-> control `lock_ratio false))))
+                   (-> ctl `initialize)  ;; if we need to initialize, do it
+                   (= found true)
+                   (sleep 0.01) 
+                   
+                   
+                   (= control_to_focus_to (or (get_control_by_id ctl.options.last_focus_id)
+                                              (default_focus)))
+                   (set_focus_to control_to_focus_to)
+                   (= *last_focus* control_to_focus_to)
+                   (break))))
+         (progn
+            (notify "Unable to find the currently active layout: check $root_controls")))
+      found)
+   {
+     description: (+ "Given a new layout name, replaces the current layout with the provided "
+                     "named layout, if it exists.  If the operation is successful, the function will "
+                     "return true, otherwise it will return false. ")
+     usage:["layout_name:string"]
+     tags: ["layout" "DOM" "controls" "ui" "root" "layout" "control"]
+     }) 
+
+(defun is_sub_control? (control)
+   (let
+      ((pos (control_position control)))
+      (if (== pos.child.options.id 
+              pos.parent.options.id)
+          true
+          false))
+   {
+       description: (+ "Given a control, returns true if the control is part of another control, " 
+                       "otherwise it will return false.  This is determined by the control " 
+                       "having the same ID as the parent.")
+       usage: ["control:object"]
+       tags: ["control" "controls" "sub" "child" "bundle" "ui" "contains"]
+   })
+
+
+
+(defun set_bundle_state (control bundle_name )
+   (when (is_control? control)
+      (set_prop control.options
+         `bundled
+         bundle_name)
+      (when (is_function? control.controls)
+         (for_each (`c (or (-> control `controls) []))
+            (unless (is_sub_control? c)
+               (set_bundle_state c bundle_name))))
+      bundle_name)
+   {
+     `description: (+ "A control bundle is a set of controls that share a common bundle "
+                      "identifier in their `options` object.  A named layout will contain controls all "
+                      "having the same `bundled` value, which is the name of the layout.  The "
+                      "`set_bundle_state` sets the value of the `bundled` options to the name provided "
+                      "in the `bundle_name` argument for all the controls managed by the provided root "
+                      "control.  <br>This function is a lower level function used to control the "
+                      "current state of the displayed layout and non-displayed layouts. ")
+     
+     `usage: ["control:object" "bundle_name:string"]
+     `tags: ["control" "layout" "root" "DOM" "ui" "layouts"]
+     })
+
+
+(defun unlock_layout_positions (layout_name)
+   (let
+      ((ctl (get_control_by_name layout_name)))
+      (if ctl.options.root_bundle
+         (set_prop ctl.options
+            `is_locked?
+            false)
+         nil))
+   {
+     description: (+ "Given a layout name, sets the `is_locked?` property of the root "
+                     "container control to false.  If the named layout is found, returns the updated "
+                     "options of the root container.  Otherwise nil is returned. ")
+     usage: ["layout_name:string"]
+     tags: ["control" "layout" "root" "DOM" "ui" "layouts"]
+     })
+      
+(defun lock_layout_positions (layout_name)
+   (let
+      ((ctl (get_control_by_name layout_name)))
+      (if ctl.options.root_bundle
+         (set_prop ctl.options
+            `is_locked?
+            true)
+         nil))
+   {
+     description: (+ "Given a layout name, sets the `is_locked?` property of the root "
+                     "container control to true.  If the named layout is found, returns the updated "
+                     "options of the root container.  Otherwise nil is returned. ")
+     usage: ["layout_name:string"]
+     tags: ["control" "layout" "root" "DOM" "ui" "layouts"]
+     })
+
+(defun named_layouts ()
+   (reduce (ctl $root_controls)
+      (if ctl.options.root_bundle
+         ctl.name))
+   {
+       description: "Returns an array containing the names of the current named layouts"
+       usage:[]
+       tags: ["DOM" "controls" "ui" "root" "layout" "control" "names"]
+   })
+
+
+(defun make_named_layout (name root_control options)
+   (let
+      ((target_control (cond
+                          (and (is_control? root_control)
+                               (is_top_control? root_control))
+                          (first (-> root_control `controls))
+                          else
+                          (throw TypeError "make_named_layout must be passed a control_container type")))
+       (layout_name (if (and (is_string? name)
+                             (not (blank? name)))
+                        name
+                        (throw TypeError "make_named_layout must be a non blank name")))
+       (layout_control nil)
+       (parents (parents_for_control target_control))
+       (id (or options.id (gen_id "container")))
+       (can_hide? (fn ()   ;; link to the children to prevent them going to the holding tank individually
+                     false))
+       (replacement_control nil)
+       (already_mounted true)
+       (num_named_layouts (length (named_layouts)))
+       (idx 0))
+      (declare (function alert_on_error control_holding_tank empty_selection_control holding_tank_controls set_key_binding)
+               (global alert_on_error control_holding_tank empty_selection_control holding_tank_controls set_key_binding))
+      (alert_on_error "Error when naming the layout"    ;;setup a user alert on error
+          (if (is_function? target_control.controls)
+              (for_each (`c (or target_control.controls []))
+                 (set_bundle_state c layout_name)))
+          ;; add target_control to the new layout and remove from the old one
+          (= layout_control (control_container target_control
+                                               {
+                                                 name: name
+                                                 id: id
+                                                 root_bundle: name
+                                                 last_focus_id: (resolve_path [ `options `id ]
+                                                                              (or *last_focus*
+                                                                                 (default_focus)
+                                                                                 {}))
+                                                 }))
+          (assert (is_element? layout_control.view) "Unable to create the new layout control")
+          ;; if we have something in the control holding tank use it
+          ;; otherwise, make a new empty temp control
+          ;; give the replacement control to the current root_frame
+          ;; ..before switching
+          (cond
+             (> (length (holding_tank_controls)) 0)
+             (progn
+                (= replacement_control (first (holding_tank_controls)))
+                (-> (control_holding_tank) `remove_control replacement_control))
+             else
+             (= replacement_control (empty_selection_control)))
+          
+          
+          (set_key_binding `global (+ "layout_" (+ 1 num_named_layouts))
+                           {
+                             description: (+ "Jump to layout at index " (+ 1 num_named_layouts))
+                             exec: (eval `(fn ()
+                                             (switch_to_new_layout ,#name)))
+                             mac: (+ "Command-" (+ 1 num_named_layouts))
+                             win: (+ "Alt-" (+ 1 num_named_layouts))
+                             })
+          
+          (push $root_controls
+             layout_control)
+          
+          (-> root_control `set_content 0 replacement_control)
+          (set_focus_to replacement_control)
+          
+          (set_path [ `options `last_focus_id ] (get_current_layout_control)  replacement_control.options.id)
+                    
+          ;; find the displayed
+          
+          (aif (switch_to_new_layout layout_control.name)
+               (progn
+                  (notify (+ "Layout switched to " layout_control.name))
+                  it)
+               (progn
+                  (notify "Unable to switch to the new layout")
+                  it))))
+   {
+     `description: (+ "Given a name for the layout, and the root control to be used as the "
+                      "basis for the layout, the function will name the layout and associate the "
+                      "currently displayed controls in the root_control to be part of the layout.  The "
+                      "user can then switch to and from the layout allowing for multiple different "
+                      "composite views to be available of the available controls.  <br>Layouts can be "
+                      "switched via the `Layout` menu or key commands tied to the path `[ \"global\" "
+                      "\"layout_n\" ]` where n is a numeric value starting from 0. <br>Named layouts are "
+                      "preserved across serializations.")
+     `usage: ["name:string" "root_control:object" ]
+     `tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
+     })
+
+
+
+
+(defun remove_named_layout (layout_name _ctl)
+   (let
+      ((control (if (eq nil _ctl)
+                    (get_control_by_name layout_name)
+                    _ctl))
+       (holding_tank (control_holding_tank))
+       (control_idx -1))
+      (declare (function  control_holding_tank)
+               (global  control_holding_tank))
+      ;; we have to ensure we aren't in the active layout 
+      (when (eq nil _ctl)
+         (if (== control (get_current_layout_control))
+             (throw EvalError "cannot remove a layout when it is active")))
+      (when (is_control? control)
+         (cond
+            control.options.can_hide_orig?
+            (progn
+               (set_prop control
+                  `can_hide?
+                  control.options.can_hide_orig?)
+               (delete_prop control.options
+                  `can_hide_orig?))
+            else
+            (delete_prop control
+               `can_hide?))
+         (remove_prop control.options
+            `bundled))
+      
+      (log "remove_named_layout: " layout_name control.options.name)
+      (when (is_function? control.controls)
+         (for_each (`c (or (-> control `controls) []))
+            (unless (is_sub_control? c)
+               (remove_named_layout layout_name c))))
+      
+      ;; send the control to the holding tank unless it is the 
+      ;; root container, in which we remove it from the root controls
+      ;; array
+      
+      (if (eq nil _ctl)
+          (progn  ;; remove the root layout container...
+             (= control_idx
+                (index_of control $root_controls))
+             (log "remove_named_layout: root_control index: " control_idx)
+             (if (> control_idx -1)
+                 (-> $root_controls `splice control_idx 1)))
+          (unless (or (-> holding_tank `has_control? control) ;; add any subcontrols to the holding tank if allowed.
+                      (== control.type "split_view_vertical")
+                      (== control.type "split_view_horizontal"))
+             (-> holding_tank `add_control control)))
+      true)
+   {
+     description: (+ "Given a name of an existing named layout,  unbundles the controls "
+                     "associated with the layout and places them in the holding tank.  The named "
+                     "layout container is removed.  The function by default will return true.  The "
+                     "bundle to be removed must not be displayed at the time of the call to this "
+                     "function.  If the named layout to be deleted is currently the displayed layout, "
+                     "an Error will be thrown. ")
+     usage: ["layout_name:string"]
+     tags: ["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
+   })
+
 
 (defun commands_button (id)
   (button { `control_id: id
@@ -2069,7 +2483,8 @@
               
 (defun show_control (control_to_show)
   (let
-      ((control_to_show (cond 
+      ((current_layout (get_current_layout_control))
+       (control_to_show (cond 
                           (and (is_string? control_to_show)
                                (get_control_by_name control_to_show))
                           (get_control_by_name control_to_show)
@@ -2078,10 +2493,23 @@
                           (get_control_by_id control_to_show)
                           (is_control? control_to_show)
                           control_to_show))
+       (target_layout (if control_to_show
+                          (get_layout_for_control control_to_show)))
        (target_control (if *last_focus*
                          *last_focus*
                            nil)))
+      ;; cannot switch to the holding tank.
+    (if (== target_layout (control_holding_tank))
+        (= target_layout nil))
     (cond 
+       (and target_layout
+          (not (== target_layout current_layout)))
+       (progn
+          (switch_to_new_layout target_layout.options.name)
+          (sleep 0.01)
+          (set_focus_to control_to_show)
+          true)
+         
        (and target_control control_to_show)
        (progn
           (swap_control target_control control_to_show)
@@ -2827,6 +3255,27 @@
                         "to be applied to the select element.<br>"
                         "no_cancel_button:boolean - If true the cancel button will not be displayed.<br>")
        `tags: ["request" "user" "choice" "collect" "wait" "ui" "DOM"]
+   })
+
+
+(defun make_named_layout_interactive (root_control)
+   (let
+      ((current_names (named_layouts))
+       (name (request_user_input "Please enter a name for this layout."
+                           {
+                             validator:(fn (v)
+                                          (not (contains? v current_names)))
+                             })))
+      (if (not (blank? name))
+          (make_named_layout name (get_current_layout_control))))
+   {
+     description: (+ "<br><br>Given a root control which has a layout that should be \'frozen\', "
+                      "provides a pop up dialog to request a name for the new layout.  Once the user "
+                      "has entered a name that is unique and not presently used by another named "
+                      "layout, the presently displayed layout will be named and the controls bundled "
+                      "together. ")
+     usage: ["root_control:obj"]
+     tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
    })
 
 (defun select_control_by_name (prompt options)
@@ -6025,6 +6474,7 @@
                                         
                                         ;; ensure that the Ace language tools extension is loaded
                                         
+                                        
                                         (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                         
                                         ;; if we are not explicitly told to link to another editor...
@@ -6322,7 +6772,10 @@
                 `can_hide?: (fn ()
                                (progn
                                   ;(log "editor: can_hide? " (get_editors_for_path options.path) "<= 1 can hide" options.path)
-                                  (< (length (get_editors_for_path options.path)) 2)))
+                                  (if (or (is_array? options.path)
+                                          (is_string? options.path))
+                                      (< (length (get_editors_for_path options.path)) 2)
+                                      true)))
                 
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
@@ -9097,7 +9550,10 @@
                 last
                 first))
        (new_ctl nil))
-   (if (> candidates.length 0)
+   (cond
+      (current_layout_locked?)
+      (notify (+ (dtext "This layout is locked.") " " (dtext "Please Switch to another layout to change controls.")))
+      (> candidates.length 0)
       (progn 
          (= new_ctl (cmd candidates))
          (swap_control *last_focus* new_ctl)
@@ -9105,6 +9561,7 @@
          ;; focus into the editor for this operation
          (when new_ctl.editor
             (focus_to new_ctl.editor)))
+      else
       (notify (dtext "No controls are in the holding tank."))))
    {
      `usage: ["backward?:boolean"]
@@ -12551,7 +13008,7 @@
 (defun serialize_controls (controls)
   [(quote quote) (JSON.parse (JSON.stringify controls))]
   {
-    `description: (+ "<br><br>Given an array of controls, serializes their state to JSON form such "
+    `description: (+ "Given an array of controls, serializes their state to JSON form such "
                      "that their state can be stored.<br>As an example, given the current "
                      "`$root_controls` array, will produce a JSON form:```(serialize_controls "
                      "$root_controls)```<br><br>The returned structure can then be rehydrated using "
@@ -12567,6 +13024,7 @@
      ((root (if (is_array? options.root_controls)
                 options.root_controls
                 $root_controls))
+      (current_control $current_control)
       (save_as_name *env_config*.export.save_prefix)
       (options (if (is_object? options)
                    options
@@ -12596,6 +13054,8 @@
            (console.log "*serialized_controls*: " *serialized_controls*)
            (= results (save_image (+ { `save_as: save_as_name } options)))
            (= *system_repl* system_repl)
+           (defglobal core/$root_controls root)
+           (defglobal core/$current_theme current_control)
            (log (dtext "Save Application State Results: ") results)
            (log (dtext "Complete"))
            (when (and is_served? validate_name?)
@@ -12617,8 +13077,10 @@
        (= control (eval serialized_control))
        (when (and control.view
                   (not control.view.parentElement))
-         (-> container
-             `append control.view))
+          (if (or (== control.type "app_header")
+                  (== control.options.root_frame true))
+              (-> container
+                 `append control.view)))
        (push $root_controls
              control)
        (when control.initialize
@@ -12644,8 +13106,16 @@
 
 
 
+
+
+(defun jump_to_frame_0 ()
+   (aif (frame_0)
+        (switch_to_new_layout it.name)
+        (alert_box (dtext "Layout Error")
+                   (dtext "Frame 0 cannot be found, check to make sure it exists"))))
+
 (defun new_buffer (options)
-  (let
+   (let
       ((options (cond
                    (is_array? options)
                    { `path: options `mode: "juno"}
@@ -12658,12 +13128,12 @@
                    { `path: [ options ] `mode: "juno" }
                    else
                    { `mode: "juno" }))
-       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (target_container nil)
        (new_control nil)
        (symbol_data (if options.path
                         { `path: options.path `namespace: (or options.namespace (current_namespace)) }
                         (symbol_chooser "Select a symbol to edit" options.mode)))
-       (extension (cond 
+       (extension (cond
                      options.filename
                      (last (split_by "." options.filename))
                      (== options.mode "dom")
@@ -12671,53 +13141,67 @@
                      else
                      "juno"))
        (target_ns symbol_data.namespace)
+       (current_layout (get_current_layout_control))
        (target_env nil))
       (log "new_buffer: for: " options target_ns extension symbol_data)
       
-    (when target_ns
-      (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
-    (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
-       (make_path symbol_data.path target_env.global_ctx.scope ""))
-    
-    (when symbol_data.path
-       (= new_control
-          (if (== extension `dom)
-              (DOM_editor (+ { rules: [ `*markdown_rules* ]
-                               hide_control_bar: false 
-                               debug: false } 
-                             options))
-              (text_editor (+ { name: (last symbol_data.path) 
-                                path_namespace: target_ns 
-                                namespace: target_ns 
-                                path: symbol_data.path 
-                                mode: options.mode } 
-                              options ))))
-      (cond
-         (is_top_control? target_container)
-         (container_view_operation "split_right" 
-                                   (first (-> target_container `controls))
-                                   new_control)
-         else
-         (swap_control target_container 
-                       new_control))
-      (sleep 0.1)
-      (set_focus_to new_control)))
-  {
-      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
-                       "split the view to the right for the new editor.  If no options are provided, the user "
-                       "will be prompted for a symbol to edit.  Options can be: <br>"
-                       "string: is considered a symbol name and the function will open or create the " 
-                       "specified symbol in the current namespace global context.<br>"
-                       "array: is considered a path to access, and if the path is present will open the path.  If not, "
-                       "will attempt to create the final value in the path as a string for editing.<br>"
-                       "object: if an object, the object can contain:<br>"
-                       "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
-                       "it will create it.<br>"
-                       "  namespace: string: the namespace to use for accessing the provided path.<br>"
-                       "  mode: the mode to open the editor in. The default mode is Juno.<br>")
-      `tags: ["editor" "edit" "buffer" "control"]
-      `usage: ["options:object?"]
-  })
+      (when (resolve_path [ `options `is_locked? ] current_layout)
+         (jump_to_frame_0)
+         (sleep 0.1))
+      
+      (= target_container (or (and options.control_to_replace  ;; first check easy thing
+                                   (== current_layout (get_current_layout_control)) ;; then the hard thing
+                                   options.control_to_replace) ;; then return the control to replace 
+                              *last_focus* 
+                              (default_focus)))
+                 
+                 
+         
+      
+      (when target_ns
+         (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+      (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
+         (make_path symbol_data.path target_env.global_ctx.scope ""))
+      
+      (when symbol_data.path
+         (= new_control
+            (if (== extension `dom)
+                (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                                       hide_control_bar: false
+                                       debug: false }
+                               options))
+                (text_editor (+ { name: (last symbol_data.path)
+                                       path_namespace: target_ns
+                                       namespace: target_ns
+                                       path: symbol_data.path
+                                       mode: options.mode }
+                                options ))))
+         (cond
+            (is_top_control? target_container)
+            (container_view_operation "split_right"
+                                      (first (-> target_container `controls))
+                                      new_control)
+            else
+            (swap_control target_container
+                          new_control))
+         (sleep 0.1)
+         (set_focus_to new_control)))
+   {
+     `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
+                      "split the view to the right for the new editor.  If no options are provided, the user "
+                      "will be prompted for a symbol to edit.  Options can be: <br>"
+                      "string: is considered a symbol name and the function will open or create the "
+                      "specified symbol in the current namespace global context.<br>"
+                      "array: is considered a path to access, and if the path is present will open the path.  If not, "
+                      "will attempt to create the final value in the path as a string for editing.<br>"
+                      "object: if an object, the object can contain:<br>"
+                      "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
+                      "it will create it.<br>"
+                      "  namespace: string: the namespace to use for accessing the provided path.<br>"
+                      "  mode: the mode to open the editor in. The default mode is Juno.<br>")
+     `tags: ["editor" "edit" "buffer" "control"]
+     `usage: ["options:object?"]
+     })
 
 (defun new_top_level_frame ()
    (let
@@ -13148,68 +13632,72 @@
 
 (defun gen_layout_menu ()
    (let
-      ((menu_acc [])
-       (idx 0)
-       (holding_tank (get_control_by_name "Holding Tank"))
-       (control_to_place (fn ()
-                            (if (and (prop *last_focus* `editor) ;; if we are in an editor, (but not repl) split it
-                                     (not (== (prop *last_focus* `type) "visual_repl")))
-                                (clone_text_editor_control *last_focus*) 
-                                (empty_selection_control)))) ;; otherwise pull the last control out of storage
-                             
-       (root_ctls (new Set)))
-      (conj
-         ;[["New Frame" (fn ()
-                          ;(new_top_level_frame))]]
-         (reduce (pset (pairs (controls_by_parent)))
-            (destructuring_bind (key controls)
-               pset
-               (console.log "key: " key "is the holding tank?" (== (get_control_by_name key) holding_tank) controls  )
-               (cond
-                  (== key "root")
+      ((current_layout (get_current_layout_control))
+       (idx -1)
+       (roots (reduce (ctl $root_controls)
+                 (when (and (not (== ctl.type "app_header"))
+                            (not (== ctl.type "holding_tank")))
+                    ctl)))
+       (layout_locked? (prop current_layout.options `is_locked?)))
+      (conj 
+         (for_each (ctl roots)
+            (progn
+               (inc idx)
+               (if (== ctl.options.root_frame true)
+                   [{
+                      path: [ `global (+ "layout_" idx) ]
+                      text: (span { class: "juno-selected-menu-item" } ctl.options.name)
+                      exec:(fn ()
+                              true)
+                      }]
+                   [{
+                      path: [ `global (+ "layout_" idx) ]
+                      text: ctl.options.name
+                      exec:(fn ()
+                              (switch_to_new_layout ctl.options.name))
+                      }])))
+         [["--" nil]]
+         [(if current_layout.options.root_bundle
+                []
+                [{
+                    text: (dtext "New named layout")
+                    path: [ `global `name_current_layout ]
+                    exec: (fn ()
+                             (make_named_layout_interactive current_layout))
+                }])]
+         [(if (and current_layout.options.root_bundle
+                   layout_locked?)
+                [{
+                    text: (dtext "Unlock Layout Positions")
+                    path: [ `global `unlock_current_layout_positions ]
+                    exec: (fn ()
+                             (unlock_layout_positions current_layout.options.name))
+                }]
+                [{
+                    text: (dtext "Lock Layout Positions")
+                    path: [ `global `lock_current_layout_positions ]
+                    exec: (fn ()
+                             (lock_layout_positions current_layout.options.name))
+                }])]
+         [[(dtext "Remove Named Layout..")
+           (on_empty [["No Named Layouts" 
+                      (fn ()
+                         false)]]
+              (reduce (ctl roots)
                   (progn
-                     (for_each (control controls)
-                        (-> root_ctls `add control.name))
-                     nil)
-                  
-                  (and (-> root_ctls `has key)
-                       (not (== key "Holding Tank")))
-                  [key (for_each (operation ["Split Right" "Split Bottom" "Show" "Hide"])
-                          (progn
-                             (defvar control (get_control_by_name key))
-                             [(dtext operation)
-                              (cond
-                                 (and (> idx 1)
-                                      (== operation "--"))
-                                 nil
-                                 (== operation "Split Right")
-                                 (fn ()
-                                    (place_control "right" (control_to_place)))
-                                 (== operation "Split Bottom")
-                                 (fn ()
-                                    (place_control "below" (control_to_place)))
-                                 (or (and (== operation "Show")
-                                          (-> holding_tank `has_control? control))
-                                     (and (== operation "Hide")
-                                          (not (-> holding_tank `has_control? control)))
-                                     (and (== operation "Close Control")
-                                          (-> holding_tank `has_control? control)))
-                                 (progn
-                                    (when (-> holding_tank `has_control? control)
-                                       (inc idx))
-                                    (fn ()
-                                       (container_view_operation (to_key operation)
-                                                                 (get_control_by_name key)
-                                                                 nil))))]))]
-                  
-                  (not (== key "Holding Tank"))
-                  [key (for_each (operation ["Split Above" "Split Below" "Split Left" "Split Right"])
-                          [(dtext operation) (fn ()
-                                  (progn
-                                     (console.log key "operation: " operation controls)
-                                     (container_view_operation (to_key operation)
-                                                               (get_control_by_name key)
-                                                               (control_to_place))))])]))))))
+                     (when (not (blank? ctl.options.root_bundle))
+                        [{
+                           text: ctl.options.name
+                           path: [ `global `remove_named_layout ]
+                           exec: (fn ()
+                                    (alert_on_error "Error removing layout"
+                                                    (eval `(progn
+                                                              (when (== (resolve_path [ `options `id ] (get_current_layout_control)) 
+                                                                      ,#ctl.options.id)
+                                                                  (switch_to_new_layout "Frame 0"))
+                                                              (remove_named_layout ,#ctl.options.name)))))
+                           }]))))]]
+          )))
 
 (defun gen_controls_menu ()
   (progn
@@ -13217,11 +13705,14 @@
    (defvar holding_tank_visible? (if (prop (control_position holding_tank) `parent)
                                      true
                                      false))
+   (defvar current_layout (get_current_layout_control))
+   
    (conj 
         (reduce (control (current_controls))
             (when (and control.on_focus
                        control.options.id)
-              (defvar is_displayed? (and (not (== holding_tank control))
+              (defvar is_displayed? (and (== (get_layout_for_control control) current_layout)
+                                         (not (== holding_tank control))
                                          (not (-> holding_tank `has_control? control))))
               [(if (== *system_repl* control)
                    (+" ⮕ " control.name)
@@ -13304,7 +13795,7 @@
     
     ;; the root container which controls are added to..
     (defglobal juno_container
-      (div { `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
+      (div { `id: "juno_container" `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
 
     
     (set_prop *env_config*.editor
@@ -13560,7 +14051,13 @@
                             mac: "Command-V"
                             description: "Copy the current selection and remove from document"
                             exec: (fn (e) (handle_clipboard_event `paste e))
-                            })
+                            }
+                  "frame_0" {
+                              win: "Alt-Shift-0"
+                              mac: "Command-0"
+                              description: "Jump to frame 0"
+                              exec: (fn (e) (jump_to_frame_0))
+                              })
        ;; the execs are nil because the editor will use the key of the object to assign the correct
        ;; internal function
        

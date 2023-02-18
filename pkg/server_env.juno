@@ -29,6 +29,10 @@
 (defglobal $response nil)
 
 
+(defun_sync vlog ( `& args)
+   (when (> __VERBOSITY__ 0)
+      (apply console.log args)))
+
 ;; various accessors to the reques_eventt object
 
 (defun get_content_type (request)
@@ -728,6 +732,7 @@
 
 
 
+
 (defun websocket_handler (options)
    (let
       ((options options))
@@ -746,11 +751,11 @@
                      (object socket response))
             (try
                (progn
-                 ;
+                  (vlog "websocket_handler: initializing websocket")
                   ;; embed js since the compiler doesn't have a construct for multiple return values.
                   (javascript | let { socket, response } = Deno.upgradeWebSocket(request_event.request) | )
-                 
                   (= returned_response response)
+                  (vlog "websocket_handler: upgraded to websocket: " returned_response)
                   (set_prop socket
                      `onopen
                      (fn (event)
@@ -890,7 +895,6 @@
                            `on_open: (fn (ws event parameters)
                                         (try
                                            (progn
-                                              
                                               (set_prop ws
                                                  `ws_id (inc *ws_counter*)
                                                  `namespace (or options.namespace "user")
@@ -908,102 +912,104 @@
                                               (set_prop *active_websockets*
                                                  ws.ws_id
                                                  ws)
-                                              (when (> __VERBOSITY__ 0)
-                                                 (console.log "ws_repl_handler: new open request: default namespace: " (or options.namespace "user")))
+                                              (vlog "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
                                               ;(= evaluator (get_evaluator_for_ns ws.namespace))
-                                              
                                               (send_to_ws ws
                                                        { ws_id: ws.ws_id
                                                          namespace: ws.namespace
                                                          }))
                                            (catch Error (e)
-                                              (console.log "ws_repl_handler: cannot send to client: " e.message))))
+                                              (progn
+                                                 (console.error "ws_repl_handler: cannot open: " e.message)))))
                            `on_message: (fn (ws event)
-                                           (let
-                                              ((data (JSON.parse event.data))
-                                               (command (prop data `command))
-                                               (args (prop data `args))
-                                               (cmd_opts (or args.1 {}))
-                                               (request_id (prop data `req_id))
-                                               (compiled_metadata nil)
-                                               (compiled_source nil)
-                                               (compl_complete (fn (compilation_results)
-                                                                  (progn
-                                                                     (= compiled_metadata compilation_results.0)
-                                                                     (= compiled_source compilation_results.1))))
-                                                                 
-                                               (result_type nil)
-                                               (evaluator (get_evaluator_for_ns ws.namespace))
-                                               (result nil))
-                                              (= compiled_source nil)
-                                              (= compiled_metadata nil)
-                                              (when (> __VERBOSITY__ 0)
-                                                 (console.log "ws_repl_handler: -> " data cmd_opts))
-                                              (cond
-                                                 (and (== command "eval")
-                                                      (is_array? args)
-                                                      (starts_with? "(use_ns " (trim args.0)))
-                                                 (try
-                                                    (let
-                                                       ((cmd (read_lisp args.0))
-                                                        (new_ns nil)
-                                                        (is_reference? cmd.1))
-                                                       (if (is_reference? cmd.1)
-                                                           (progn
-                                                              (= evaluator (get_evaluator_for_ns (desym_ref cmd.1)))
-                                                              (when evaluator
-                                                                 (set_prop ws
-                                                                    `namespace
-                                                                    (desym_ref cmd.1)))
-                                                              (send_to_ws ws
-                                                                 (encode_remote_result request_id ws.namespace evaluator.namespace { ws_id: ws.ws_id } )))
-                                                           (send_to_ws ws 
-                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace { ws_id: ws.ws_id }))))
-                                                    (catch Error (e)
-                                                       (send_to_ws ws
-                                                          (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id }))))
-                                                                  
-                                                       
-                                                 (and (== command "eval")
-                                                      (is_array? args))
-                                                 (try
-                                                    (progn
-                                                       (= result (-> evaluator `evaluate_local args.0 { scope: { ws_id: ws.ws_id}}  (+ {} cmd_opts { on_compilation_complete: compl_complete })))
-                                                       (when (> __VERBOSITY__ 0)
-                                                          (console.log "ws_repl_handler: " namespace " <- " result))
-                                                       (send_to_ws ws
-                                                                   (encode_remote_result request_id result evaluator.namespace { ws_id: ws.ws_id })))
-                                                    (catch Error (e)
-                                                       (progn
-                                                          
-                                                          (console.log "ws_repl_handler: compilation details: " compiled_metadata)
-                                                          (if (eq nil e.details)
-                                                              (set_prop e
-                                                                 `details {
-                                                                     `compiled: compiled_source
-                                                                     `compiled_metadata: compiled_metadata
-                                                                 })
-                                                              (set_prop e.details
-                                                                 `compiled compiled_source
-                                                                 `compiled_metadata compiled_metadata))
-                                                          (console.error "ws_repl_handler: error on eval: " e.message e.details)
-                                                          (send_to_ws ws
-                                                                      (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id })))))
-                                                 (== command "close")
-                                                 (progn
-                                                    (when (> __VERBOSITY__ 0)
-                                                       (console.log "ws_repl_handler: received close request: closing repl connection"))
+                                           (progc
+                                              (let
+                                                 ((data (JSON.parse event.data))
+                                                  (command (prop data `command))
+                                                  (args (prop data `args))
+                                                  (cmd_opts (or args.1 {}))
+                                                  (request_id (prop data `req_id))
+                                                  (compiled_metadata nil)
+                                                  (compiled_source nil)
+                                                  (compl_complete (fn (compilation_results)
+                                                                     (progn
+                                                                        (= compiled_metadata compilation_results.0)
+                                                                        (= compiled_source compilation_results.1))))
+                                                  
+                                                  (result_type nil)
+                                                  (evaluator (get_evaluator_for_ns ws.namespace))
+                                                  (result nil))
+                                                 (= compiled_source nil)
+                                                 (= compiled_metadata nil)
+                                                 (vlog "ws_repl_handler: -> " data cmd_opts)
+                                                 (cond
+                                                    (and (== command "eval")
+                                                         (is_array? args)
+                                                         (starts_with? "(use_ns " (trim args.0)))
                                                     (try
-                                                       (http/close_ws ws)
+                                                       (let
+                                                          ((cmd (read_lisp args.0))
+                                                           (new_ns nil)
+                                                           (is_reference? cmd.1))
+                                                          (if (is_reference? cmd.1)
+                                                              (progn
+                                                                 (= evaluator (get_evaluator_for_ns (desym_ref cmd.1)))
+                                                                 (when evaluator
+                                                                    (set_prop ws
+                                                                       `namespace
+                                                                       (desym_ref cmd.1)))
+                                                                 (send_to_ws ws
+                                                                    (encode_remote_result request_id ws.namespace evaluator.namespace { ws_id: ws.ws_id } )))
+                                                              (send_to_ws ws
+                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace { ws_id: ws.ws_id }))))
+                                                       (catch Error (e)
+                                                          (send_to_ws ws
+                                                             (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id }))))
+                                                    
+                                                    
+                                                    (and (== command "eval")
+                                                         (is_array? args))
+                                                    (try
+                                                       (progn
+                                                          (= result (-> evaluator `evaluate_local args.0 { scope: { ws_id: ws.ws_id}}  (+ {} cmd_opts { on_compilation_complete: compl_complete })))
+                                                          (vlog "ws_repl_handler: " namespace " <- " result)
+                                                          (send_to_ws ws
+                                                             (encode_remote_result request_id result evaluator.namespace { ws_id: ws.ws_id })))
                                                        (catch Error (e)
                                                           (progn
-                                                             (log "Error on closing: " e.message))))))))
+                                                             
+                                                             (console.log "ws_repl_handler: compilation details: " compiled_metadata)
+                                                             (if (eq nil e.details)
+                                                                 (set_prop e
+                                                                    `details {
+                                                                               `compiled: compiled_source
+                                                                               `compiled_metadata: compiled_metadata
+                                                                               })
+                                                                 (set_prop e.details
+                                                                    `compiled compiled_source
+                                                                    `compiled_metadata compiled_metadata))
+                                                             (try
+                                                                (progn
+                                                                   (console.error "ws_repl_handler: error on eval: " e.message e.details)
+                                                                   (send_to_ws ws
+                                                                      (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id })))
+                                                                (catch Error (send_error)
+                                                                   (console.error "Unable to send to web socket: " send_error))))))
+                                                    (== command "close")
+                                                    (progn
+                                                       (vlog "ws_repl_handler: received close request: closing repl connection")
+                                                       (try
+                                                          (http/close_ws ws)
+                                                          (catch Error (e)
+                                                             (progn
+                                                                (log "Error on closing: " e.message)))))))))
                            `on_error: (fn (ws error)
-                                         (log "error on websocket: " error))
+                                         (progn
+                                            (console.error "ws_repl_handler: on_error: " error ws)
+                                            (log "error on websocket: " error)))
                            `on_close: (fn (ws event)
                                          (progn
-                                            (when (> __VERBOSITY__ 0)
-                                               (console.log "ws_repl_handler: close event: closing repl connection"))
+                                            (vlog "ws_repl_handler: close event: closing remote connection")
                                             (when ws.ws_id
                                                (remove_prop *active_websockets*
                                                   ws.ws_id))))

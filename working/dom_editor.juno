@@ -389,11 +389,16 @@
 
 (defparameter *markdown_rules*
    {
+     meta: {
+         name: "markdown"
+         description: "Simple implementation of a subset of markdown for documentation. To be used with the DOM Editor"
+     }
      reload_rules:{
          on_event: `keydown
          key_sequence: "Alt-L"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: "Reloads the markdown rule set.  This can be used after any changes have been made to the rule set."
          qualifier: (fn (point ctl)
                        true)
          exec: (fn (point ctl event)
@@ -406,7 +411,10 @@
          on_event: `keydown
          key_sequence: "Alt-X"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: (+ "Used with the text editor, will collect the DOM buffer contents and "
+                         "place the contents in the description text of the edited function. "
+                         "NOTE: this will close the DOM editor. ")
          qualifier: (fn (point ctl)
                        (progn
                           true))
@@ -432,7 +440,8 @@
          on_event: `keydown
          key_sequence: "Alt-R"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: "Copies the DOM buffer contents to the clipboard as markdown text."
          qualifier: (fn (point ctl)
                        true)
          exec: (fn (point ctl event)
@@ -450,18 +459,21 @@
          on_event: `keydown
          key_sequence: "Alt-Shift-Q"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: "Copies the contents of the DOM buffer or selection as a quoted lisp structure"
          qualifier: (fn (point ctl)
-                       true)
+                       (not (blank? (-> (get_selection) `toString))))
          exec: (fn (point ctl event)
                   (progn
-                     (copy_text_to_clipboard (pretty_print (-> ctl `get)))
+                     (if (not (blank? (-> (get_selection) `toString)))
+                         (copy_text_to_clipboard (pretty_print (-> (get_selection) `toString)))
+                         (copy_text_to_clipboard (pretty_print (-> ctl `get))))
                      (notify "Copied as quoted DOM to clipboard")))
      }
      on_blank:{
          on_event: `keyup
          key_sequence: "Backspace"
-         menu: false
+         control_menu: false
          handle_event: false
          qualifier: (fn (point ctl)
                        (progn
@@ -477,7 +489,9 @@
      insert_pre:{   
          ;; on_event specifies what events cause this rule to be checked
          on_event: `keyup
-         menu: true
+         control_menu: true
+         context_menu: true
+         description: "Inserts a <pre> element into the DOM buffer at the location of the cursor (point)."
          ;; prior_text_sequences are the buffer contents prior to point that 
          ;; initiate the firing of the rule..
          prior_text_sequence: "```"    ;; when three backticks 
@@ -505,7 +519,7 @@
      insert_return_in_pre_down:{
          on_event: `keydown   ;; intercept the enter key in PRE tags to ignore any action on Enter
          key_sequence: "Enter"
-         menu: false
+         control_menu: false
          qualifier: (fn (point ctl)   ;; we must be in a PRE tag
                         (progn
                            (point_under_element_tag? "PRE" point)))
@@ -530,7 +544,7 @@
                        (progn
                           false))
          handle_event: true
-         menu: false
+         control_menu: false
          exec: (fn (point ctl event)
                   (progc
                      (defvar at_end ;; if we are at the end of the node, insert two newlines, otherwise just a single node
@@ -551,7 +565,7 @@
                        (not (point_under_element_tag? "PRE" point)))
          handle_event: true
          remove_if_prior: true
-         menu: true
+         control_menu: true
          exec: (fn (point ctl event)
                   (progc
                      (let 
@@ -564,7 +578,7 @@
                                          0))
                          ;; add one because our rule triggered so it deleted one and the space
                          (tag_name (+ "H" (clamp (+ num_hashes 1) 1 5)))
-                         (point nil))   
+                         (point nil))
                         
                         ;; since we have asked the editor to remove the matching text we are going to 
                         ;; remove the remaining and use that as a way to compute the Heading element we
@@ -590,17 +604,18 @@
          key_sequence: "Ctrl-Alt-S"     ;; or when they control-option-p or control-alt-p
          remove_if_prior: true     ;; remove sequence from buffer if prior to point if true
          handle_event: true       ;; we don't care about handling the event
-         menu: true
+         control_menu: true
+         context_menu: true
          ;; qualifiers specify if the rule can be executed by returning true or false.  
          ;; True to execute, false to ignore in current position or context
          qualifier: (fn (point ctl)
                        (not (point_under_element_tag? "PRE" point))) ;; don't fire if we are in a pre tag
-         
+         description: "Inserts a details section into the DOM buffer at the cursor (point)"
          ;; exec is the function that is evaluated when the rule is qualified to be fired
          exec: (fn (point ctl event) 
                   (progc
                      (defvar insert_point point)
-                     (doc_exec `insertHTML "<br><details tabindex=0 open><summary>Summary Text</summary>Detail Text</details>" true)
+                     (doc_exec `insertHTML "<br><details tabindex=0 open><summary>Summary Text</summary><div>Detail Text</div></details>" true)
                      (move_to_point insert_point)
                      (move_point `forward `character)
                      (move_point `forward `character)
@@ -611,7 +626,8 @@
       insert_horizontal_rule:{
           on_event: `keyup
           handle_event: true
-          menu: true
+          control_menu: true
+          context_menu: true
           remove_if_prior: true
           prior_text_sequence: "---"    ;; when three dashes 
           qualifier: (fn (point ctl)
@@ -631,7 +647,7 @@
       insert_tab:{
           on_event: `keydown
           handle_event: true
-          menu: false
+          control_menu: false
           remove_if_prior: false
           key_sequence: "Tab"
           ;prior_text_sequence: ""    ;; when three dashes 
@@ -653,14 +669,16 @@
        wrap_text_in_code_tag:{
           on_event: `keydown
           handle_event: true
-          menu: true
+          control_menu: true
+          context_menu: true
           key_sequence: "Ctrl-Alt-C"
           remove_if_prior: true
+          description: "Wraps the selected text in a code tag."
           qualifier: (fn (point ctl)
                         (progn
+                           (sleep 0.001)
                            (and (not (point_under_element_tag? "PRE" point))
-                                
-                                )))
+                                (not (blank? (-> (get_selection) `toString))))))
           exec: (fn (point ctl event)
                    (progc
                       (sleep 0.001)
@@ -692,6 +710,7 @@
 
 (defcontrol DOM_editor ()
    ((starter  (div { } "Enter text"))
+    
     (root_elem (div { `contenteditable: true `tabindex: 0 }
                     starter))
     (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 0px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
@@ -734,7 +753,9 @@
                      )))
                      
     (rules nil) 
+    (rule_set_name nil)
     (rules_menu [])
+    (rules_context_menu [])
     (collection_timer nil)
     (key_sequence_rules { keyup: {} keydown: {} })
     (prior_text_rules { keyup: {} keydown: {} })
@@ -752,53 +773,92 @@
                                                              (notify (+ "Rule " ,#name " has no exec rule")))) })
                                       (if rule.handle_event
                                          { `handle_event: true }
-                                         {}))))
+                                         {})))
+                      (rule_desc nil))
                      (when rule.prior_text_sequence
                         (make_path [ rule.on_event rule.prior_text_sequence ] prior_text_rules lookup_rule))
                      (when rule.key_sequence
                         (make_path [ rule.on_event rule.key_sequence ] key_sequence_rules lookup_rule))
-                     (when rule.menu
-                        (push rules_menu
-                           [(from_key name)
-                            (eval `(fn (e)
-                                      (try
-                                         (progn
-                                            (defvar rule ,#rule)
-                                            (defvar ctl_id ,#id)
-                                            (defvar ctl (get_control_by_id ctl_id))
-                                            (console.log "DOM_editor: load_rule: " ctl.options (get_by_id "body"))
-                                            (when (and ctl
-                                                       (prop  ctl `root_elem))
-                                               (focus_to (-> ctl `root_elem))
-                                               (defvar current_point (-> ctl `current_point))
-                                               (when current_point
-                                                  (move_to_point current_point))
-                                               (if (is_function? rule.qualifier)
-                                                   (if (rule.qualifier current_point ctl)
-                                                       (progn
-                                                           (rule.exec current_point ctl nil)))
-                                                   (rule.exec current_point ctl nil))))
-                                         (catch Error (e)
-                                            (progn
-                                               (log "dom_editor: load_rule: error on eval: " e.message)
-                                               (console.error "dom_editor: load_rule: error on eval: " e))))))])))))
-                                   
+                     
+                     ;; if the rules are in a menu, see if they have a key sequence
+                     (when (and (or rule.control_menu rule.context_menu)
+                                rule.key_sequence)
+                        (set_path [ rule_set_name name ] *key_bindings*
+                                  {
+                                    `description: (or rule.description "No Description")
+                                    `exec: nil
+                                    `mac: (or rule.key_sequence_mac rule.key_sequence)
+                                    `win: (or rule.key_sequence_win rule.key_sequence)
+                                  }))
+                     (when (or rule.control_menu rule.context_menu)
+                        (= rule_desc
+                           [{ `text: (from_key name)
+                                    `path: [ rule_set_name name ]
+                                    `exec: (eval `(fn (e)
+                                                     (try
+                                                        (progn
+                                                           (defvar rule ,#rule)
+                                                           (defvar ctl_id ,#id)
+                                                           (defvar ctl (get_control_by_id ctl_id))
+                                                           (console.log "DOM_editor: load_rule: " ctl.options (get_by_id "body"))
+                                                           (when (and ctl
+                                                                      (prop  ctl `root_elem))
+                                                              (focus_to (-> ctl `root_elem))
+                                                              (defvar current_point (-> ctl `current_point))
+                                                              (when current_point
+                                                                 (move_to_point current_point))
+                                                              (if (is_function? rule.qualifier)
+                                                                  (if (rule.qualifier current_point ctl)
+                                                                      (progn
+                                                                         (rule.exec current_point ctl nil)))
+                                                                  (rule.exec current_point ctl nil))))
+                                                        (catch Error (e)
+                                                           (progn
+                                                              (log "dom_editor: load_rule: error on eval: " e.message)
+                                                              (console.error "dom_editor: load_rule: error on eval: " e))))))
+                                    } ])
+                        (when rule.control_menu
+                           (push rules_menu
+                              rule_desc))
+                        (when rule.context_menu
+                           (push rules_context_menu
+                              rule_desc))))))
+    
     (load_rules (fn ()
                    (progn
-                      (cond 
+                      (cond
                          (is_array? options.rules)
                          (= rules (resolve_path options.rules Environment.context.scope))
                          (is_function? options.rules)
                          (= rules (-> options `rules self)))
-                      (= rules_menu [])
-                      (= key_sequence_rules { keyup: {} keydown: {} })
-                      (= prior_text_rules { keyup: {} keydown: {} })
-                      (= post_text_rules { keyup: {} keydown: {} })
-                      (when rules
-                         (for_each (pset (pairs rules))
-                            (destructuring_bind (name rule)
-                               pset
-                               (load_rule name rule)))))))
+                      
+                       (= rule_set_name (or rules.meta.name))
+                       
+                       (if (or (not (is_string? rule_set_name))
+                               (blank? rule_set_name))
+                           (notify "dom_editor: rules must have a meta object and name key to activate key shortcuts"))
+                       
+                       ;; make sure we have an entry in key bindings
+                       ;; reset the path since the rules are sourced from the 
+                       ;; provided object.  We will load keybindings with 
+                       ;; the kes 
+                       (set_path [ rule_set_name ] *key_bindings* {})
+                       
+                       ;; clear out our registries..
+                       
+                       (= rules_menu [])
+                       (= rules_context_menu [])
+                       (= key_sequence_rules { keyup: {} keydown: {} })
+                       (= prior_text_rules { keyup: {} keydown: {} })
+                       (= post_text_rules { keyup: {} keydown: {} })
+                       
+                       ;; and build up the rules...
+                       (when rules
+                          (for_each (pset (pairs rules))
+                             (destructuring_bind (name rule)
+                                pset
+                                (unless (== name "meta")   ;; the meta rule is the description for the rule bundle and is not evaluated
+                                   (load_rule name rule))))))))
     (active_rules (fn ()
                      prior_text_rules))
     (current_point nil)
@@ -1130,27 +1190,31 @@
                              (fn (event)
                                 (let
                                    ()
-                                   [
-                                    (if (is_clipboard_allowed?)
-                                        [{
-                                           text: "Cut"
-                                           path: [`global `cut ]
-                                           exec: cut_selection }]
-                                        [])
-                                    (if (is_clipboard_allowed?)
-                                        [{
-                                           text: "Copy"
-                                           path: [`global `copy ]
-                                           exec: copy_selection
-                                           }]
-                                        [])
-                                    (if (is_clipboard_allowed?)
-                                        [ {
-                                            text: "Paste"
-                                            path: [`global `paste ]
-                                            exec: paste_selection }]
-                                        [])
-                                    ])))))
+                                   (conj rules_context_menu
+                                      (if (> rules_context_menu.length 0)
+                                          [["--" nil]]
+                                          [])
+                                      [
+                                       (if (is_clipboard_allowed?)
+                                           [{
+                                              text: "Cut"
+                                              path: [`global `cut ]
+                                              exec: cut_selection }]
+                                           [])
+                                       (if (is_clipboard_allowed?)
+                                           [{
+                                              text: "Copy"
+                                              path: [`global `copy ]
+                                              exec: copy_selection
+                                              }]
+                                           [])
+                                       (if (is_clipboard_allowed?)
+                                           [ {
+                                               text: "Paste"
+                                               path: [`global `paste ]
+                                               exec: paste_selection }]
+                                           [])
+                                       ]))))))
     (on_initialize (fn ()
                       (progc
                          (let
@@ -1246,6 +1310,10 @@
                                          (last options.path)
                                          else
                                          "Untitled"))
+                            
+                            ;; load_rules will setup the mapping between 
+                            ;; the provided rule set for the editor and 
+                            ;; the key bindings and menus
                                           
                             (try
                                (load_rules)

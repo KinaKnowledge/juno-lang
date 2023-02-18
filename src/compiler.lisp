@@ -217,14 +217,19 @@
              ;; the types of statements that return completion types
              (`completion_types [ `return `throw `yield ])
              
-             ;; For optimizations, keep track of referenced global
-             ;; symbols.  If defined with the constant attribute,
+             ;; For optimizations, and dependency tracking, keep track 
+             ;; of referenced global symbols.  If defined with the constant attribute,
              ;; they can be declared in an outer closure for speed of
              ;; reference, or if building an environment, the code
              ;; inlined to the declaring symbol (since one cannot
              ;; assume that there is a defined environment yet).
              
              (`referenced_global_symbols (new Set))
+             
+             ;; external accessible JS references 
+             ;; will be returned for dependency tracking
+             
+             (`referenced_externals (new Set))
              
              ;; A compilation lexical context is established where we
              ;; can store state about declared varables, compilation states,
@@ -280,7 +285,6 @@
              (`set_ctx_log (if opts.quiet_mode
                                log
                                (defclog { `prefix: "set_ctx" `background: `darkgreen `color: `white } )))
-             
              
              ;; given a ctype value, returns a type value
              ;; for the ctype.
@@ -418,7 +422,6 @@
                                                 (prop ctx.scope ref_name)
                                                 ctx.parent
                                                 (get_ctx ctx.parent ref_name)))))))))
-             
              
              ;; Symbols at the current scope can be declared to be a certain type, which assists
              ;; with compilation optimization, especially with regard to whether something is
@@ -751,15 +754,23 @@
                                                              (-> Environment `get_global ref_name NOT_FOUND_THING cannot_be_js_global)
                                                              global_ref)))))
                                       
-                                      (when (and (not (== NOT_FOUND_THING ref_type))
-                                                 (not (contains? ref_name standard_types)))
-                                         (-> referenced_global_symbols
-                                            `add ref_name)
-                                         (aif (get_ctx ctx `__GLOBALS__)
-                                              (-> it `add ref_name))
-                                         ;(-> (get_ctx ctx `__GLOBALS__)
-                                         ;   `add ref_name)
-                                         )
+                                      
+                                      (cond 
+                                         (and (not (== NOT_FOUND_THING ref_type))
+                                              (not (contains? ref_name standard_types)))
+                                         (progn
+                                            (-> referenced_global_symbols
+                                               `add ref_name)
+                                            (aif (get_ctx ctx `__GLOBALS__)
+                                                 (-> it `add ref_name)))
+                                         (and (not (== NOT_FOUND_THING ref_type))
+                                              (-> externals `has ref_name))
+                                         (progn
+                                            (-> referenced_externals `add ref_name)
+                                            (aif (get_ctx ctx `__EXTERNALS__)
+                                                 (progn
+                                                    (-> it `add ref_name)))))
+                                      
                                       (when (verbosity root_ctx)
                                          (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
                                       (cond
@@ -804,9 +815,6 @@
                                          
                                          (== ref_type "objliteral")
                                          ref_type
-                                         
-                                         
-                                         
                                          else
                                          (do
                                             (debug)
@@ -3348,6 +3356,7 @@
                        (`wrap_as_function? nil)
                        (`ctx (new_ctx ctx))
                        (`global_dependencies nil)
+                       (`external_dependencies nil)
                        (`preamble (calling_preamble ctx))
                        (`source_meta nil)
                        (`acc nil)
@@ -3367,6 +3376,7 @@
                       (= has_lisp_globals true) ; ensure that we are passed the environment for this assembly
                       
                       (set_ctx ctx `__GLOBALS__ (new Set))  ;; reset our globals scope so we capture any dependencies for this global
+                      ;(set_ctx ctx `__EXTERNALS__ (new Set)) ;; and externals
                       
                       ;; setup the reference in the globals as an assumed function type
                       (set_prop root_ctx.defined_lisp_globals
@@ -3378,16 +3388,20 @@
                             (compile_wrapper_fn tokens.2 ctx)))
                       
                       (= global_dependencies (to_array (get_ctx ctx `__GLOBALS__)))
+                      (= external_dependencies (to_array (get_ctx ctx `__EXTERNALS__)))
                       
                       (when true; 
                          (cond
                             (eq nil tokens.3)
-                            (push tokens (tokenize { `requires: global_dependencies `source_name: source_name } ctx))
+                            (push tokens (tokenize { `requires: global_dependencies `externals: external_dependencies `source_name: source_name } ctx))
                             (is_object? tokens.3.val.val.1) ; (resolve_path [ `val `val 1 ] tokens.3))
                             (progn
                                (set_prop tokens.3.val.val.1
                                   `requires
                                   global_dependencies)
+                               (set_prop tokens.3.val.val.1
+                                  `externals
+                                  external_dependencies)
                                (set_prop tokens.3.val.val.1
                                   `source_name
                                   source_name))
@@ -3399,6 +3413,10 @@
                                   (= global_dependencies (tokenize { `requires: global_dependencies  } ctx))
                                   (push tokens.3.val
                                      global_dependencies.val.0))
+                               (when (> external_dependencies.length 0)
+                                  (= external_dependencies (tokenize { `requires: external_dependencies  } ctx))
+                                  (push tokens.3.val
+                                     external_dependencies.val.0))
                                (= source_meta (tokenize { `source_name: source_name } ctx))
                                (push tokens.3.val
                                   source_meta.val.0)
@@ -4254,7 +4272,6 @@
                                acc)
                             
                             
-                            
                             (and (== ref_type ArgumentType)
                                  (is_array? tokens))
                             (do
@@ -4364,6 +4381,7 @@
                                                                   (object_methods globalThis))))))
                                  (-> all_vals `delete "length") ;; length sometimes seems to be a globalThis value, so we need to remove it, otherwise it will screw us up..
                                  all_vals))
+             (`externals (make_set (object_methods globalThis)))
              
              (`is_error nil)
              
@@ -5123,7 +5141,9 @@
             (set_ctx root_ctx
                      `__GLOBALS__
                      (new Set))
-            
+            (set_ctx root_ctx
+                     `__EXTERNALS__
+                     (new Set))
             (set_ctx root_ctx
                      `__SOURCE_NAME__
                      source_name)
@@ -5225,7 +5245,6 @@
                                     (and (not (== val "assignment"))
                                          (not (contains? "block" val))
                                          (not (contains? "unction" val))))))
-                        
                         (progn
                            (set_prop assembly.0
                            `ctype
@@ -5249,15 +5268,15 @@
                         (eq nil assembly)
                         (= assembly []))
                      
-                     
                      (if is_error
                         (do
                            [ { `ctype: "FAIL" }  errors])
                         (if (is_object? (first assembly))
-                            [(+ { `has_lisp_globals: has_lisp_globals `requires: (to_array referenced_global_symbols) }
+                            [(+ { `has_lisp_globals: has_lisp_globals `requires: (to_array referenced_global_symbols) `externals: (to_array referenced_externals) }
                                 (take assembly))
                              (assemble_output assembly)]
-                            [{`has_lisp_globals: has_lisp_globals `requires: (to_array referenced_global_symbols) } (assemble_output assembly)])))))
+                            [{`has_lisp_globals: has_lisp_globals `requires: (to_array referenced_global_symbols) `externals: (to_array referenced_externals)} 
+                                                 (assemble_output assembly)])))))
             
             (when (and (is_object? (first output))
                        target_namespace)
@@ -5267,5 +5286,4 @@
             
             (when opts.error_report
                (opts.error_report { `errors: errors `warnings: warnings}))
-            
             output))))

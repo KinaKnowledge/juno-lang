@@ -406,19 +406,19 @@
         }
     )
 
-   (defun from_key (value sep? ignore?)
+   (defun_sync from_key (value sep? ignore?)
         (if (is_string? value)
               (do 
                 (if ignore?
                     (return value))
                 (= sep? (or sep? "_"))
                 (dtext (join " "
-                   (map (fn (v)
+                   (for_each (v (split_by sep? value))
                         (+ ""
                            (-> (-> v `charAt 0)
                                `toUpperCase)
                            (-> v `slice 1)))
-                       (split_by sep? value)))))
+                       )))
             value)
         {   
          `usage: ["value:string" "separator?:string"]
@@ -428,7 +428,7 @@
          `tags: ["string" "split" "key" "hash" "record" "form" "ui"]
         })
                        
-    (defun from_key1 (v)
+    (defun_sync from_key1 (v)
         (from_key v)
         {
          `description: "Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function."
@@ -438,16 +438,15 @@
 
    
         
-   (defun to_key (value sep? ignore?)
+   (defun_sync to_key (value sep? ignore?)
       (if (is_string? value)
          (do    
             (if ignore?
                 (return value))
             (= sep? "_")
             
-            (defvar `tokens (map (fn (v)
-                                    (+ "" (lowercase v)))
-                                 (split_by " " value)))
+            (defvar `tokens (for_each (v (split_by " " value))
+                                    (+ "" (lowercase v))))
             (defvar `rv (join sep?
                             tokens))
             rv)
@@ -460,7 +459,7 @@
                            "by the default separator, '_'.  Each word is converted to lowercase characters as well." 
                            "An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\".")
          `tags: ["string" "split" "key" "hash" "record" "form" "ui"]
-        }) 
+        })  
     
      (defun is_date? (x)
        (== (sub_type x) "Date")

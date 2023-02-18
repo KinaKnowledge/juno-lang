@@ -2191,6 +2191,7 @@ span.juno-editable:focus {
   margin-left: 2px;  
 }
 
+
 span.juno-tag {
     cursor: pointer; 
     margin-right: 5px; 
@@ -2216,6 +2217,16 @@ span.juno-requires:hover {
 
 .opacity-0 {
   opacity: 0;
+}
+
+.juno-selected-menu-item {
+    margin-left: -5px; 
+    padding-left: 5px; 
+    padding-right: 5px; 
+    border-radius: 3px; 
+    font-weight: bold; 
+    background: var(--selected-bg-color); 
+    color: var(--selected-color);
 }
 
 input.juno-input-error {
@@ -2255,6 +2266,28 @@ span.juno-hint {
     opacity: 60%;
 }
 
+.juno-source-location {
+    padding: 5px;
+    background: var(--main-accent-line);
+    cursor: pointer;
+}
+
+.juno-bottom-bar {
+    padding: 5px;
+    margin-top: 5px;
+}
+
+.juno-form {
+    padding: 10px;
+}
+
+.juno-form h4 {
+    margin-top: 0px;
+}
+
+.juno-form-data {
+    line-height: 1.5em;
+}
 
 /* Overrides - may be dealt with in a better way but for now
  * placing in the same as the main style set for easier

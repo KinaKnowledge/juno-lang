@@ -4471,7 +4471,7 @@ such as things that connect or use environmental resources.
      })
 
 
-(defun get_dependencies (global_symbol _deps _req_ns)
+(defun get_dependencies (global_symbol _deps _req_ns _externs)
    (let
       ((comps (split_by "/" global_symbol))
        (target_symbol (if (> comps.length 1)
@@ -4481,6 +4481,7 @@ such as things that connect or use environmental resources.
                       (first comps)
                       nil))
        (added false)
+       (externals (or _externs (new Set)))
        (required_namespaces (or _req_ns (new Set)))
        (dependencies (or _deps (new Set)))
        (ns_env (-> Environment `get_namespace_handle (current_namespace)))  ;; make sure to operate in the current evaluation context
@@ -4501,6 +4502,10 @@ such as things that connect or use environmental resources.
                (not (-> required_namespaces `has namespace)))
           (-> required_namespaces `add namespace))
       
+      (when sym_meta.externals
+         (for_each (external_ref sym_meta.externals)
+            (-> externals `add external_ref)))
+      
       (when (and sym_meta namespace)
          (for_each (required_symbol sym_meta.requires)
             (when (not (-> dependencies `has required_symbol))
@@ -4508,20 +4513,24 @@ such as things that connect or use environmental resources.
                (-> dependencies `add required_symbol)))
          (if added
             (for_each (required_symbol sym_meta.requires)
-               (get_dependencies required_symbol dependencies required_namespaces))))
+               (get_dependencies required_symbol dependencies required_namespaces externals))))
       (when (eq nil _deps)
          {
            dependencies: (to_array dependencies)
            namespaces: (to_array required_namespaces)
+           externals: (to_array externals)
            }))
    {
      `description: (+ "<br><br>Given a symbol in string form, returns the global dependencies that the "
                       "symbol is dependent on in the runtime environment.  The return structure is in "
-                      "the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return "
-                      "structure will contain all the qualified and non-qualified symbols referenced "
-                      "by the provided target symbol, plus the dependencies of the required "
-                      "symbols.  <br>The needed namespace environments are also returned in the "
-                      "namespaces value.<br> ")
+                      "the form:```{\n  dependencies: []\n  namespaces: []   \n  externals: "
+                      "[]\n}```<br><br>The return structure will contain all the qualified and "
+                      "non-qualified symbols referenced by the provided target symbol, plus the "
+                      "dependencies of the required symbols.  <br>The needed namespace environments "
+                      "are also returned in the `namespaces` value.\n<br>References to external global "
+                      "Javascript values are listed in the `externals` result.  These values are "
+                      "defined as dependencies for the provided symbol, but are not defined in a Juno "
+                      "Environment.<br> ")
      `usage: ["quoted_symbol:string"]
      `tags: ["dependencies" "tree" "required" "dependency"]
    })
@@ -4543,13 +4552,15 @@ such as things that connect or use environmental resources.
       (let
          ((dependencies (new Set))
           (ns_deps (new Set))
+          (externals (new Set))
           (deps nil))
       (for_each (sym symbol_array)
          (progn
-            (get_dependencies sym dependencies ns_deps)))
+            (get_dependencies sym dependencies ns_deps externals)))
       {
         `dependencies: (to_array dependencies)
         `namespaces: (to_array ns_deps)
+        `externals: (to_array externals)
         }))
    {
        `description: (+ "Given an array of symbols in string form, returns the global dependencies that the "

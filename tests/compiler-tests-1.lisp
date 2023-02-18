@@ -284,8 +284,8 @@
      ]
  ["(defconst my_constant 123) (describe `my_constant)"
   []
-  `{"namespace":"tests" "name":"my_constant" "type":"Number" requires:[] source_name:"anonymous" "constant":true}
-  "global constant definition is mark as a constant" ]
+  `{"namespace":"tests" "name":"my_constant" "type":"Number" requires:[] externals: [] source_name:"anonymous" "constant":true}
+  "global constant definition is marked as a constant" ]
  ["(undefine `my_constant) (defconst my_constant 123) (undefine `my_constant) (describe `my_constant)"
   []
   nil
@@ -2259,7 +2259,7 @@
   "defconst in local scope creates a const allocation."]
  [ "(compile `(progn (defconst my_new_constant 123)))"
   []
-  "{return await Environment.set_global(\"my_new_constant\",123,{requires:[],source_name:\"anonymous\"},true)}"
+  "{return await Environment.set_global(\"my_new_constant\",123,{requires:[],externals:[],source_name:\"anonymous\"},true)}"
   "defconst in top-level progn compiles to set global scope"]
   [ "(contains? \"defun\" (progn (declare (namespace core)) (keys Environment.context.scope)))"
   []

@@ -2052,7 +2052,7 @@
                                        {}
                                        "identifier")))))
             (cached_symbols nil)
-            (sorted_symbols nil)
+            (sorted_symbols [])
             (get_current_symbols (fn ()
                                     (let
                                        ((symbol_set (if evaluator_control
@@ -2283,6 +2283,7 @@
                                         ;(log "initialize_editor: " options.mode " options: " (clone options))
                                         
                                         ;; ensure that the Ace language tools extension is loaded
+                                        
                                         
                                         (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                         
@@ -2581,7 +2582,10 @@
                 `can_hide?: (fn ()
                                (progn
                                   ;(log "editor: can_hide? " (get_editors_for_path options.path) "<= 1 can hide" options.path)
-                                  (< (length (get_editors_for_path options.path)) 2)))
+                                  (if (or (is_array? options.path)
+                                          (is_string? options.path))
+                                      (< (length (get_editors_for_path options.path)) 2)
+                                      true)))
                 
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
