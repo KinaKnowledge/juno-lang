@@ -1939,6 +1939,8 @@
        (let
           ((current_layout (get_current_layout_control))
            (current_focus_for_layout (or *last_focus* (default_focus)))
+           ;; get handle to the documentation and layout - if it is in the layout being moved away from,
+           ;; put the documentation control in the holding tank
            (control_to_focus_to nil)
            (page_container (get_by_id `juno_container))
            (layout_holding_cell nil)
@@ -1946,9 +1948,8 @@
           (console.log "switch_to_new_layout: layout_name: " layout_name)
           (if (eq nil (get_by_id "layout_holding_cell"))
               (-> (first (get_by_tag "body"))
-                  `append (div { `id: "layout_holding_cell" } )))
+                  `append (div { `id: "layout_holding_cell" `style: "position: absolute; top: 3000; left: -4000; z-index: -10;"} )))
           (= layout_holding_cell (get_by_id "layout_holding_cell"))
-          
           (cond 
              (and current_layout
                   (== current_layout.name layout_name))
@@ -1974,7 +1975,8 @@
                            (progn
                               (-> page_container `remove current_layout.view)
                               (-> page_container `append ctl.view)))
-                       
+                       ;(remove_class "juno-display-none" ctl.view)
+                       ;(add_class "juno-display-none" current_layout.view)
                        (-> layout_holding_cell `append current_layout.view) ;; and store the old one until needed
                        (set_prop ctl.options
                           `root_frame
@@ -1986,11 +1988,16 @@
                        (-> ctl `initialize)  ;; if we need to initialize, do it
                        (= found true)
                        (sleep 0.01)
+                       (cascade_resize)
+                       (when ctl.options.last_focus_id 
+                          (= control_to_focus_to (get_control_by_id ctl.options.last_focus_id)))
+                       (if control_to_focus_to
+                           (if (not (== current_layout (get_layout_for_control control_to_focus_to)))
+                               (= control_to_focus_to (default_focus)))
+                           (= control_to_focus_to (default_focus)))
+                              
+                       ;(log "control_to_focus_to: " control_to_focus_to)
                        
-                       
-                       (= control_to_focus_to (or (get_control_by_id ctl.options.last_focus_id)
-                                                  (default_focus)))
-                       (set_focus_to control_to_focus_to)
                        (= *last_focus* control_to_focus_to)
                        (break))))
              else
@@ -2046,14 +2053,15 @@
      `tags: ["control" "layout" "root" "DOM" "ui" "layouts"]
      })
 
-
 (defun unlock_layout_positions (layout_name)
    (let
       ((ctl (get_control_by_name layout_name)))
       (if ctl.options.root_bundle
-         (set_prop ctl.options
-            `is_locked?
-            false)
+         (progn
+            (notify (+ (dtext "Unlocked Layout") ": " layout_name))
+            (set_prop ctl.options
+               `is_locked?
+               false))
          nil))
    {
      description: (+ "Given a layout name, sets the `is_locked?` property of the root "
@@ -2067,10 +2075,14 @@
    (let
       ((ctl (get_control_by_name layout_name)))
       (if ctl.options.root_bundle
-         (set_prop ctl.options
-            `is_locked?
-            true)
-         nil))
+         (progn
+            (notify (+ (dtext "Locked Layout") ": " layout_name))
+            (set_prop ctl.options
+               `is_locked?
+               true))
+         (if (is_control? ctl)
+             (progn
+                (notify (dtext "Unnamed frames and standard controls cannot be locked."))))))
    {
      description: (+ "Given a layout name, sets the `is_locked?` property of the root "
                      "container control to true.  If the named layout is found, returns the updated "
@@ -2287,6 +2299,14 @@
     (= current_control_layout (get_layout_for_control target_control))
     (= new_control_layout (get_layout_for_control new_control))
     
+    
+    (if (and new_control_layout
+             new_control.options.only_for
+             (not (== new_control.options.only_for (control_name new_control_layout))))
+        (progn
+           (notify (+ (dtext "Cannot swap out the target control - control is only for: ") new_control.options.only_for))
+           (= noop true)))
+    
     (if (== current_control_layout holding_tank)
         (= current_control_layout nil))
     (if (== new_control_layout holding_tank)
@@ -2302,6 +2322,8 @@
         (progn
            (notify (dtext "Cannot swap out the target control - layout is locked"))
            (= noop true)))
+    
+    
     
     (if (== target_control new_control)
         (progn
@@ -2321,6 +2343,7 @@
         (progn
            (= noop true)
            (notify (dtext "Cannot swap controls between different layouts"))))
+    (log "swap_control: from: " (control_name current_control_layout) (control_name target_control) "->" (control_name new_control_layout) (control_name new_control))
     
     (cond
         (or (== target_control new_control)
@@ -2438,6 +2461,10 @@
        (position_details nil) ;; the structure that holds the position details of the operation
        (holding_tank (get_control_by_name "Holding Tank"))
        (tmpview nil)
+       (target_layout (get_layout_for_control target_control))
+       (target_layout_locked? (layout_locked? target_layout))
+       (new_control_layout (if (is_control? new_control)
+                               (get_layout_for_control new_control)))
        (confirmed true)
        (new_container nil)
        (split_view_parent nil))
@@ -2445,6 +2472,13 @@
       (assert target_control "Unable to find the target control")
       (assert holding_tank "Unable to find the holding tank")
       (= position_details (control_position target_control))
+      (when (> __VERBOSITY__ 0)
+         (log (+ "container_view_operation: do: " command ": target:") target_layout.name target_control.name " new:" 
+              (if new_control_layout
+                 new_control_layout.name)
+              (if new_control
+                 new_control.name)))
+      
       (console.log "container_view_operation: original_target: " orig_target)
       (console.log "container_view_operation: computed_target: " target_control)
       (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
@@ -2454,11 +2488,26 @@
          (= target_control (first (-> position_details.child `controls)))
          (= position_details (control_position target_control))
          (console.log "container_view_operation: shifted down: target_control was a top control: " position_details))
-      ;(log "container_view_operation: options.suppress_destroy_confirm: " options.suppress_destroy_confirm  (and *last_focus* (prop *last_focus* `options)))
+      
       (unless options.suppress_destroy_confirm
          (if (and (== command "destroy")
                   (is_function? target_control.on_destroy))
              (= confirmed (-> target_control `on_destroy))))
+      
+      (when (and target_layout_locked?
+                 (not (== target_control.type "juno_documentation_control"))
+                 (not (== new_control.type "juno_documentation_control")))
+         (= confirmed false)
+         ;(log "container_view_operation: target layout is locked")
+         (notify (dtext "Target layout is locked")))
+      
+      (when (and target_control.options.only_for
+                 new_control_layout
+                 (not (== target_control holding_tank))
+                 (not (== target_control.options.only_for (control_name new_control_layout))))
+         (= confirmed false)
+         (notify (dtext "The requested control cannot be used with this layout.")))
+         
       (console.log "container_view_operation: confirmed: " confirmed)
       (if confirmed
           ;; if the parent structure is nil in position_details, then we are at the root
@@ -3763,7 +3812,7 @@
                                    (or (prop *event_routes* (compute_handler_key event_obj.source nil)) [])
                                    (or (prop *event_routes* (compute_handler_key nil event_obj.command)) []))))))
                     
-      (when (> __VERBOSITY__ 0)
+      (when (> __VERBOSITY__ 1)
          (log "dispatch_event: " event_obj handler_key handlers))
       (if (> handlers.length 0)
            (for_each (handler handlers)
@@ -4990,30 +5039,32 @@
           
            
 (defun show_editor_keybindings (editor_control)
-   (let
-      ((binding_row (fn (keysequence binding)
-                       (tr
-                          (td keysequence)
-                          (td (or binding.description
-                                  (from_key binding.name)))))))
-      (table { `style: "width: 100%" }
-             (thead
-                (tr
-                   (th "Key Sequence")
-                   (th "Description")))
-             (tbody
-                (for_each (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
-                                          { `key: [`0] }))
-                   (destructuring_bind (keysequence binding)
-                      bindpair
-                      (cond
-                         (is_array? binding)
-                         (for_each (bindval binding)
-                            (binding_row keysequence bindval))
-                         (is_object? binding)
-                         (binding_row keysequence binding)
-                         else
-                         [])))))))
+   (if (is_control? editor_control)
+       (let
+          ((binding_row (fn (keysequence binding)
+                           (tr
+                              (td keysequence)
+                              (td (or binding.description
+                                      (from_key binding.name)))))))
+          (table { `style: "width: 100%" }
+                 (thead
+                    (tr
+                       (th "Key Sequence")
+                       (th "Description")))
+                 (tbody
+                    (for_each (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
+                                              { `key: [`0] }))
+                       (destructuring_bind (keysequence binding)
+                          bindpair
+                          (cond
+                             (is_array? binding)
+                             (for_each (bindval binding)
+                                (binding_row keysequence bindval))
+                             (is_object? binding)
+                             (binding_row keysequence binding)
+                             else
+                             []))))))
+       (throw EvalError "show_editor_keybindings: requirs a text_editor control as an argument")))
 
 (defun show_key_bindings ()
    (let
@@ -5562,7 +5613,157 @@
 
 
 
-
+(defun find_symbol_definition (symbol symbol_map current_pos root_form)
+   (if (and symbol symbol_map)
+       (let
+          ((locations (resolve_path [`symbols symbol ] symbol_map))
+           (def_locs [])
+           (prior_sym nil)
+           (last_chain nil)
+           (in_form? false)
+           (tmp [])
+           (closest nil)
+           (closest_symbol_to_pos nil)
+           (calc_dist (fn (pos1 pos2)
+                         (let
+                            ((total_idx (Math.min pos1.length pos2.length))
+                             (deltas 
+                                (for_each (idx (range total_idx))
+                                   (- (prop pos1 idx)
+                                      (prop pos2 idx)))))
+                            deltas)))
+           (cpos (or current_pos nil))
+           (root_form (or root_form nil))
+           (prior_loc nil)
+           (score 0)
+           (top_score 0)
+           (last_pos_chain_str nil)
+           (last_pos_chain nil))
+          
+          (when (> __VERBOSITY__ 0)
+             (log "find_symbol_definition: " locations cpos root_form))
+          (if locations
+             (progn
+                (for_each (locdata locations)
+                   (destructuring_bind (row column op_chain pos_chain)
+                      locdata
+                      (= prior_sym nil)
+                      (= last_chain nil)
+                      (= last_pos_chain nil)
+                      (= in_form? (and root_form 
+                                       (>= row root_form.start_row)
+                                       (<= row root_form.end_row)))
+                      
+                      (when (== row cpos.row)
+                         (= closest_symbol_to_pos locdata)
+                         (set_prop closest_symbol_to_pos
+                            3
+                            closest_symbol_to_pos.3))
+                       
+                             
+                      (if (> op_chain.length 1)
+                          (= prior_sym (last (but_last op_chain))))
+                      
+                      (= last_chain (last_n 2 op_chain))
+                      (= last_pos_chain (last_n 2 pos_chain))
+                      (= last_pos_chain_str (join "." last_pos_chain))
+                      (= prior_loc (last def_locs))
+                     
+                      (when (> __VERBOSITY__ 0) 
+                         (log "local_defs: " symbol [row column] prior_sym last_chain last_pos_chain locdata in_form?))
+                      (cond
+                         (contains? (last op_chain) [list "defun" "defglobal" "defun_sync" "defmacro" "defcontrol" "defparameter" "defvalue"])
+                         (push def_locs { row: row col: column `type: "global" `chain: pos_chain } )
+                         
+                         (and in_form?
+                            (contains? (first last_chain) [list `defun `defun_sync `defmacro `defcontrol])
+                            (== (last op_chain) symbol)
+                            (== (last pos_chain) 2))
+                         (push def_locs { row: row col: column `type: "named_function_argument" `chain: pos_chain } )
+                         
+                         (and in_form?
+                            (== (first last_chain) `defcontrol)
+                            (== (last last_chain) symbol))
+                         (push def_locs { row: row col: column `type: "local_let" `chain: pos_chain } )
+                         
+                         (and in_form?
+                            (== (first last_chain) "let")
+                            (== (last last_chain) symbol)
+                            (== (first last_pos_chain) 1) ;; in allocation form
+                            (not (== prior_loc.row row))  ;; get rid of duplicates that can occur with patterns like (let ((options options))) where options is also an argument
+                            (not (== prior_loc.pchain last_pos_chain_str)))
+                         (push def_locs { row: row col: column `type: "local_let" `pchain: last_pos_chain_str `chain: pos_chain } )
+                         
+                         (and in_form?
+                            (contains? (first last_chain) (list `fn `function `function* `destructuring_bind))
+                            (== (last pos_chain) 1))
+                         (push def_locs { row: row col: column `type: "anonymous_function_argument" `chain: pos_chain } )
+                         
+                         (and in_form?
+                            (contains? (last last_chain) [ "defvar" "defconst" ])
+                            (== (last pos_chain) 1))
+                         (push def_locs { row: row col: column `type: "local_def" `chain: pos_chain } )
+                         
+                         (and in_form?
+                            (== (last last_chain) "catch")
+                            (== 2 (last pos_chain)))
+                         (push def_locs { row: row col: column `type: "catch_alloc" `chain: pos_chain}))))))
+          
+          (when (> __VERBOSITY__ 0)
+             (log "find_symbol_definition: def_locs: " def_locs)
+             (log "find_symbol_definition: current_pos: " closest_symbol_to_pos))
+          (if (> def_locs.length 1)
+             (for_each (loc def_locs)
+                (progn
+                   (= score 0)
+                   (set_prop loc
+                      `tree_dist
+                      (if closest_symbol_to_pos
+                         (but_last (calc_dist loc.chain closest_symbol_to_pos.3))  ;; remove the last 
+                         nil))
+                   ;; how long do the paths match up until they don't match?
+                   ;; once they don't match, then we deduct the remaining from the score 
+                   (for_each (tpos loc.tree_dist)
+                      (progn
+                         (if (== tpos 0)
+                             (inc score)
+                             (break))))
+                   (if (< score (length loc.tree_dist))
+                       (= score (- score (- (length loc.tree_dist) score))))
+                   (when (> score top_score)
+                      (= top_score score)
+                      (= closest loc))))
+                   ;(log "top score: " top_score " score: " score loc)))
+             (= closest (first def_locs)))
+                      
+          (when (> __VERBOSITY__ 0)
+             (log "closest is: " closest) )
+          [closest]))
+   {
+     description: (+ "<br><br>Given a symbol name (no binding prefix), a `symbol_map` as produced by "
+                     "the function `symbol_map_for_buffer`,  an optional current_pos and an optional "
+                     "root_form, if the symbol is present in the provided symbol map object, this "
+                     "function will return the location of the symbol definition and type of "
+                     "allocation, which could be of the following: <br>global:global scope - The "
+                     "symbol\'s definition was found as a global type definition in the file as "
+                     "defined via `defun`, `defun_sync`, `defglobal`, `defmacro`, `defcontrol`, "
+                     "`defparameter` and `defvalue`.  <br>named_function_argument:local scope - The "
+                     "symbol definition was determined to be provided as an argument to a named "
+                     "function that the current position is within.  Named functions are defined by "
+                     "`defun`, `defun_sync`, `defmacro` and "
+                     "`defcontrol`.  <br>anonymous_function_argument:local scope - The symbol\'s "
+                     "definition was determined to be provided as an argument to an anonymous "
+                     "function.  The operation would be `fn`, `function`, `function*` or "
+                     "`destructuring_bind`.<br>local_let:local scope - The symbol was defined as part "
+                     "of the let allocation block.<br>local_def:local scope - The symbol was defined "
+                     "as using the `defvar`, or `defconst` operators.<br>catch_alloc:local scope - "
+                     "The symbol was defined in a catch form.<br>If no root_form or current_pos "
+                     "objects are provided to the function, then only global symbols will be "
+                     "identified as the function will have no way to determine the local position, "
+                     "and hence what is lexically available in scope. ")
+     usage: ["symbol:string" "symbol_map:object" "current_pos:object" "root_form:object"]
+     tags: ["symbol" "scope" "define" "allocation" "symbols" "buffer"]
+     })
 
 
 (defun recalc_names_for_path (path_to_value)
@@ -5693,7 +5894,33 @@
     (when selected_idx
         (prop (prop available selected_idx) 2))))
 
-           
+(defun symbol_map_for_buffer (source_name source)
+   (let
+      ((symbol_locations {}))
+      (reader source
+         { source_name: source_name
+           suppress_throw_on_error: true 
+           symbol_receiver: (fn (syms)
+                               (= symbol_locations syms)) })
+      symbol_locations)
+      {
+        description: (+ "Given a source file name and a source text, returns an object "
+                        "containing the symbols defined and used by the source text and their locations "
+                        "in the source text.  <br>The output format is an object:<br>source_name:string "
+                        "- The name of the provided source file<br>symbols:object - An object with keys "
+                        "corresponding to the discovered symbols, each with an array with 4 components: "
+                        "`[ row column operator_chain position_chain ]`.  Row and column are the "
+                        "location of the symbol instance in the file.  The operator chain is the chain "
+                        "of operators (or keys) leading up to the root of the form the symbol appears "
+                        "in.  The position chain is the offsets within the forms, with each period `.` "
+                        "referring to another depth level as constructed via `(`, `[` or `{`.  These "
+                        "latter two elements are used by the principal consumer of this functions "
+                        "output, `find_symbol_definition` to help determine the source of a particular "
+                        "symbol in the editor.<br>")
+        usage: ["source_name:string" "source:string"]
+        tags: ["symbol" "scope" "define" "allocation" "symbols" "buffer"]
+        })
+
 (defun_sync select_css_rule (editor pos)
    (let
       ((cpos (or pos
@@ -5990,6 +6217,7 @@
                                options.name)
                             options.name)))
             (refresh_symbol_timer nil)
+            (symbol_positions_timer nil)
             (evaluate_selection (function (editor)
                                    (let
                                       ((rval nil)
@@ -6218,7 +6446,13 @@
                                        (-> editor `navigateTo pos.row pos.column)
                                        (-> editor `scrollToLine pos.row true nil)
                                        (focus_to_editor intf))))
-            (update_position (function ()
+            (get_current_token (fn ()
+                                  (let
+                                     ((pos (or pos (-> editor `getCursorPosition)))
+                                      (stream (indirect_new TokenIterator editor.session pos.row pos.column)))
+                                     (-> stream `getCurrentToken))))
+                                     
+            (update_position (function (force?)
                                 (when editor
                                    (defvar current_pos (-> editor `getCursorPosition))
                                    
@@ -6243,12 +6477,14 @@
                                          (defvar last_pos (prop position_history position_history_idx))
                                          (when (eq nil last_pos)
                                             (log "last_pos is nil! and it shouldn't be: " position_history_idx))
-                                         (if (> (Math.abs (- current_pos.row (prop last_pos `row)))
-                                                8)
+                                         (if (or force?
+                                                 (> (Math.abs (- current_pos.row (prop last_pos `row)))
+                                                    8))
                                              (progn
                                                 (inc position_history_idx)
                                                 (-> position_history `splice position_history_idx 0 current_pos)
-                                                ;(log "update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row))))
+                                                (when (> __VERBOSITY__ 0)
+                                                   (log "text_editor: update_position: recorded position" position_history_idx (prop last_pos `row) (Math.abs (- current_pos.row (prop last_pos `row)))))
                                                 (when (> position_history.length max_history_length)
                                                    (take position_history)
                                                    (= position_history_idx (clamp position_history_idx 0 (- position_history.length 1)))))
@@ -6297,6 +6533,7 @@
                                       (bind_key "indent_current_row" indent_current_row)
                                       (bind_key "evaluate_selection" evaluate_selection)
                                       (bind_key "evaluate_root_form" evaluate_root_form)
+                                      (bind_key "jump_to_local_definition" jump_to_local_definition_command)
                                       (bind_key "evaluate_selected_in_place" (fn (editor)
                                                                                 (progn
                                                                                    (setTimeout (fn ()
@@ -6490,8 +6727,54 @@
                                     (if want_metadata
                                        {}
                                        "identifier")))))
+            (jump_to_local_definition (fn (symbol)
+                                         (progn
+                                            (when (or symbol_map_dirty?
+                                                    (eq nil symbol_map))
+                                               (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
+                                               (= symbol_map_dirty? false))
+                                            (if symbol_map
+                                               (let
+                                                  ((locations (resolve_path [`symbols symbol ] symbol_map))
+                                                   (def_locs [])
+                                                   (cpos (current_position))
+                                                   (root_form (select_root_form editor cpos)))
+                                                  (if locations
+                                                     (progn
+                                                        (= def_locs (find_symbol_definition symbol symbol_map cpos root_form)))
+                                                     (progn
+                                                        (notify (dtext "No symbol map is available"))))
+                                                  (when (> __VERBOSITY__ 0)
+                                                     (log "text_editor: jump_to_local_definition: def_locs: " def_locs))
+                                                  (cond
+                                                     (and (== def_locs.length 1)
+                                                          (not (eq nil def_locs.0.row)))
+                                                     (progn 
+                                                        (set_cursor_position { `row: def_locs.0.row `column: def_locs.0.col })
+                                                        (update_position true))
+                                                     (== def_locs.length 1)
+                                                     (progn
+                                                        (notify "Cannot find the definition in the file")
+                                                        (log "text_editor: define locations: " def_locs))
+                                                     (> def_locs.length 1)
+                                                     (progn
+                                                        (notify "Ambiguous: multiple positions found"))
+                                                     (== def_locs.length 0)
+                                                     (progn
+                                                        (dispatch_event { command: "open_definition"
+                                                                          source: options.id
+                                                                          args: [ symbol ] })
+                                                        (notify (dtext "No local definition found")))))))))
+            (jump_to_local_definition_command (fn (editor)
+                                                 (let
+                                                    ((token (get_current_token)))
+                                                    (if token
+                                                       (jump_to_local_definition token.value)))))
+                                                    
+            (symbol_map_dirty? true)                                                 
             (cached_symbols nil)
-            (sorted_symbols nil)
+            (symbol_map nil)
+            (sorted_symbols [])
             (get_current_symbols (fn ()
                                     (let
                                        ((symbol_set (if evaluator_control
@@ -6523,7 +6806,12 @@
                                                          (if in_path
                                                              sym
                                                              (+ ns "/" sym))))))))
-                                       
+                                       (try 
+                                          (progn
+                                             (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
+                                             (= symbol_map_dirty? false))
+                                          (catch Error (e)
+                                             (log "editor: symbol_map threw: " e.message)))
                                        (when evaluator_control
                                           (set_prop ns_span
                                              `innerText
@@ -6579,39 +6867,43 @@
                                   (-> editor.session `replace rng text))))
             
             (menu_items (fn ()
-                           [(if options.path
-                                [(+ (dtext "Save to") " " (last options.path))
-                                 (fn (e) (request_save))]
-                                [])
-                            [(dtext "Split Vertically")
-                             (fn (e)
-                                (split_editor `vertical)) ]
-                            [(dtext "Split Horizontally")
-                             (fn (e)
-                                (split_editor `horizontal))]
-                            [(dtext "Select Evaluator")
-                             user_select_evaluator]
-                            
-                            [(dtext "Increase Font Size") increase_font_size]
-                            [(dtext "Decrease Font Size") decrease_font_size]
-                            [(dtext "Go")
-                             [[(dtext "Step Backward In Position History")
-                               go_backward_in_position]
-                              [(dtext "Step Forward In Position History")
-                               go_forward_in_position]]]
-                            (if (-> editor `getReadOnly)
-                                [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
-                                [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
-                            [(dtext "Set Edit Mode")
-                             [["Juno" (fn () (-> intf `set_mode "juno"))]
-                              ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
-                              ["Text" (fn () (-> intf `set_mode "text"))]
-                              ["CSS" (fn () (-> intf `set_mode "css"))]
-                              ["JSON" (fn () (-> intf `set_mode "json"))]
-                              ["Shell" (fn () (-> intf `set_mode "sh"))]]]
-                            [(dtext "Set Editor Theme")
-                             (for_each (theme *editor_themes*)
-                                [theme  (fn () (-> intf `set_theme theme))])]]))
+                           (if (is_object? editor)
+                              [(if options.path
+                                   [(+ (dtext "Save to") " " (last options.path))
+                                    (fn (e) (request_save))]
+                                   [])
+                               [(dtext "Split Vertically")
+                                (fn (e)
+                                   (split_editor `vertical)) ]
+                               [(dtext "Split Horizontally")
+                                (fn (e)
+                                   (split_editor `horizontal))]
+                               [(dtext "Select Evaluator")
+                                user_select_evaluator]
+                               
+                               [(dtext "Increase Font Size") increase_font_size]
+                               [(dtext "Decrease Font Size") decrease_font_size]
+                               [(dtext "Go")
+                                [[(dtext "Step Backward In Position History")
+                                  go_backward_in_position]
+                                 [(dtext "Step Forward In Position History")
+                                  go_forward_in_position]]]
+                               (if (-> editor `getReadOnly)
+                                   [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
+                                   [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
+                               [(dtext "Set Edit Mode")
+                                [["Juno" (fn () (-> intf `set_mode "juno"))]
+                                 ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
+                                 ["Text" (fn () (-> intf `set_mode "text"))]
+                                 ["CSS" (fn () (-> intf `set_mode "css"))]
+                                 ["JSON" (fn () (-> intf `set_mode "json"))]
+                                 ["Shell" (fn () (-> intf `set_mode "sh"))]]]
+                               [(dtext "Set Editor Theme")
+                                (for_each (theme *editor_themes*)
+                                   [theme  (fn () (-> intf `set_theme theme))])]]
+                              (progn
+                                 (notify (+ "" options.name ": BUG: no editor anymore"))
+                                 []))))
             
             (init_context_menu (fn ()
                                   (let
@@ -6620,11 +6912,23 @@
                                         view
                                         (fn (event)
                                            (let
-                                              ()
+                                              ((ctoken (get_current_token)))
+                                              ;(log "current token: " ctoken)
                                               (conj
                                                  (cond
                                                     (== options.mode "juno")
-                                                    [[{
+                                                    [(if (and ctoken
+                                                               (or (== ctoken.type "identifier")
+                                                                   (== ctoken.type "asyncfunction")
+                                                                   (== ctoken.type "function")))
+                                                         [ {
+                                                              text: (dtext "Go to symbol definition")
+                                                              path: [`editor `jump_to_local_definition ]
+                                                              exec: (fn ()
+                                                                       (jump_to_local_definition ctoken.value))
+                                                          } ]
+                                                          [])
+                                                     [{
                                                         text: (dtext "Select to root form")
                                                         path: [`editor `select_form_root ]
                                                         exec: (fn ()
@@ -6871,6 +7175,7 @@
                                                                   (progn
                                                                      (add_class "juno-needs-save" title_span)
                                                                      (= is_dirty? true)
+                                                                     (= symbol_map_dirty? true)
                                                                      (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
                                                                         (when (not linked_editor)
                                                                            (handle_lisp_format_event val editor)))
@@ -6880,6 +7185,8 @@
                                                                                           source: options.id
                                                                                           args: [ val ] }))
                                                                      ;(update_position)
+                                                                     
+                                                                     
                                                                      (when options.on_change
                                                                         (options.on_change editor val)))))
                                         ;; resize
@@ -6958,8 +7265,6 @@
                                                  (handle_event e)
                                                  (go_backward_in_position))))
                                         
-                                        
-                                        
                                         (attach_event_listener evaluator_span
                                            `click
                                            user_select_evaluator)
@@ -7025,7 +7330,8 @@
                                           (is_string? options.path))
                                       (< (length (get_editors_for_path options.path)) 2)
                                       true)))
-                
+                `on_hide: (fn ()
+                             (log "text_editor: " options.name ": on_hide is called."))
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
                                 (progn
@@ -7124,6 +7430,11 @@
                 `on_focus: (if options.disallow_control_focus
                               nil
                               on_focus)
+                `move_to_position: (fn (row column)
+                                      (set_cursor_position { row: row column: column }))
+                `jump_to_local_definition: (fn (symbol)
+                                              (if (is_string? symbol)
+                                                 (jump_to_local_definition symbol)))
                 `name: options.name
                 `set_name: set_name
                 `get_linked: (fn ()
@@ -7781,9 +8092,11 @@
                         (-> output_container `replaceChildren))]
                     [(dtext "Set Max Log Lines")
                      (fn ()
-                        (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
-                                                           *env_config*.application.max_log_lines) })
-                             (set_max_log_lines it)))]
+                        (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") 
+                                                 `number 
+                                                 { `default_value: (or options.max_log_lines
+                                                                       *env_config*.application.max_log_lines) })
+                             (set_max_log_lines (int it))))]
                     [(+ (dtext "Display Mode") "...")
                      [[(dtext "Tree")
                        (fn ()
@@ -7874,6 +8187,11 @@
                                  (notify "Cannot paste directly to the log viewer"))]
               [`output_container output_container]
               [`control_bar control_status]
+              [`set_max_log_lines set_max_log_lines]
+              [`max_log_lines (fn ()
+                                 (or options.max_log_lines
+                                    *env_config*.application.max_log_lines
+                                    10))]
               [`append add_result]
               [`log_message log_standard ]
               [`log_error log_problem ]]
@@ -9066,9 +9384,11 @@
                                               output_control.options.display_options.show_timestamps)))]
                       [(dtext "Set Max Log Lines")
                        (fn ()
-                         (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") `number { `default_value: (or options.max_log_lines
-                                                                                                                                        *env_config*.application.max_log_lines) })
-                              (-> output_control `set_max_log_lines it)))]
+                         (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") 
+                                                  `number 
+                                                  { `default_value: (-> output_control `max_log_lines) })
+                              (progn
+                                 (-> output_control `set_max_log_lines (int it)))))]
                       [(+ (dtext "Set Display Mode") "...")
                        [[(dtext "Tree")
                          (fn ()
@@ -9794,27 +10114,31 @@
 
 (defun next_hidden_control (backward?)
    (let
-      ((candidates (holding_tank_controls))
-       (cmd (if backward? 
+      ((layout_name (control_name (get_current_layout_control)))
+       (candidates (reduce (ctl (holding_tank_controls))
+                      (if (or (eq nil ctl.options.only_for)
+                              (== ctl.options.only_for layout_name))
+                          ctl)))
+       (cmd (if backward?
                 last
                 first))
        (new_ctl nil))
-   (cond
-      (current_layout_locked?)
-      (notify (+ (dtext "This layout is locked.") " " (dtext "Please Switch to another layout to change controls.")))
-      (> candidates.length 0)
-      (progn 
-         (= new_ctl (cmd candidates))
-         (swap_control *last_focus* new_ctl)
-         ;; control will get the on_focus event, but we want to default
-         ;; focus into the editor for this operation
-         (when new_ctl.editor
-            (focus_to new_ctl.editor)))
-      else
-      (notify (dtext "No controls are in the holding tank."))))
+      (cond
+         (current_layout_locked?)
+         (notify (+ (dtext "This layout is locked.") " " (dtext "Please Switch to another layout to change controls.")))
+         (> candidates.length 0)
+         (progn
+            (= new_ctl (cmd candidates))
+            (swap_control *last_focus* new_ctl)
+            ;; control will get the on_focus event, but we want to default
+            ;; focus into the editor for this operation
+            (when new_ctl.editor
+               (focus_to new_ctl.editor)))
+         else
+         (notify (dtext "No controls are in the holding tank."))))
    {
      `usage: ["backward?:boolean"]
-     `description: (+ "If backward? is false (default) swap the current control " 
+     `description: (+ "If backward? is false (default) swap the current control "
                       "with the last control in the holding tank. Otherwise "
                       "swap with the first control in the holding tank. "
                       "If there are no controls, notifies the user that there are "
@@ -10814,7 +11138,7 @@
     (on_resize (fn (self)
                   (progn
                      (set_style [["height" (+ "calc(100% - " search_bar_elem.offsetHeight "px") ]] content_view))))
-    (name "Juno Documentation")
+    (name (or options.name "Juno Documentation"))
     (title_span (span { `style: "font-weight: bold; margin-right: 15px;" } (dtext "Documentation")))
     (back_button (button { `disabled: true } (+ "<" " " (dtext "Go Back"))))
     (pin_button (button { } (dtext "Pin")))
@@ -11086,31 +11410,39 @@
 ;; hide the documentation control behind a singleton function
 
 (defun juno_documentation (options)
-   (aif (get_control_by_name "Juno Documentation")
-        it
-        (juno_documentation_control options))
+   (let
+      ((doc_control_name (+ "Juno Documentation - " (control_name (get_current_layout_control)))))
+      (aif (or (get_control_by_name doc_control_name)
+               (get_control_by_name "Juno Documentation"))
+           it
+           (if options.no_create
+              nil
+              (juno_documentation_control (+ { name: doc_control_name }
+                                             options)))))
    {
-       `tags: ["help" "control" "show" "search" "tags" "documentation" ]
-       `usage: ["options:object"]
-       `description: "Creates a new documentation control if none exists and return it, otherwise returns the existing documentation control."
-   })
+     `tags: ["help" "control" "show" "search" "tags" "documentation" ]
+     `usage: ["options:object"]
+     `description: "Creates a new documentation control if none exists and return it, otherwise returns the existing documentation control."
+     })
 
 
 (defun toggle_help_panel (focus_to_help?)
-   (progn
-      (defvar ctl_holding (control_holding_tank))
-      (defvar focused *last_focus*)
+   (let
+      ((ctl_holding (control_holding_tank))
+       (focused *last_focus*))
+      
       (try
          (cond
             (-> ctl_holding `has_control? (juno_documentation))
             (progn
-               ((fn () (place_control `right (juno_documentation))))
+               
+               (place_control `right (juno_documentation))
                (cascade_resize)
                (when (not focus_to_help?)
                   (setTimeout (fn ()
                                  (progn
                                     (focus_to_editor focused))) 5)))
-            (get_control_by_name "Juno Documentation")
+            (juno_documentation { no_create: true } )
             (hide_control (juno_documentation))
             else
             (progn
@@ -11132,7 +11464,7 @@
 
 (defun show_help_panel (focus_to_search)
    (let
-      ((ctl (get_control_by_name "Juno Documentation")))
+      ((ctl (juno_documentation { `no_create: true })))
       (cond
          (and ctl (-> ctl `is_displayed?))
          true
@@ -11142,7 +11474,7 @@
       (if focus_to_search
          (setTimeout (fn () 
                         (progn
-                           (= ctl (get_control_by_name "Juno Documentation"))
+                           (= ctl (juno_documentation))
                            (-> ctl `take_focus)) 20))))
    {
      `description: "Shows the documentation panel if it is not displayed."
@@ -13511,6 +13843,8 @@
                    (let
                        ((selection nil)
                         (target_control (or *last_focus* (default_focus)))
+                        (target_layout (get_current_layout_control))
+                        (locked_state (layout_locked? target_layout))
                         (control (file_tree_browser { 
                                                       create_mode: create_mode                          
                                                       on_select: (fn (stack)
@@ -13518,18 +13852,24 @@
                                                                      (= selection (join "/" stack))
                                                                      (if (> stack.length 0)
                                                                        (progn
-                                                                        (destroy_control control)))))
+                                                                          (destroy_control control)))))
                                                                         
                                                      on_destroy: (fn (self)
                                                                     (progn
-                                                                     (setTimeout (fn ()
-                                                                                    (progn
-                                                                                       (set_focus_to target_control)
-                                                                                       (resolve selection))
-                                                                                    20))
-                                                                     true)) })))
-
+                                                                       (if (blank? selection)
+                                                                           (switch_to_new_layout (resolve_path [ `options `name ] target_layout)))
+                                                                       (setTimeout (fn ()
+                                                                                      (progn
+                                                                                         (set_focus_to target_control)
+                                                                                         (resolve selection))
+                                                                                      20))
+                                                                       true)) })))
+                       ;; if the layout is locked, remove the lock temporarily so we can pop open a selector
+                     (if locked_state
+                         (switch_to_new_layout (resolve_path [ `options `name ] (frame_0))))
                      (place_control `below control)
+                     ;(if locked_state
+                      ;  (lock_layout_positions target_layout.options.name))
                      (set_focus_to control))))
    {
        `description: (+ "Opens a file tree browser for selection of a file.  Once the a " 
@@ -14312,7 +14652,7 @@
                               }
                   "make_named_layout" {
                               win: "Alt-Shift-L"
-                              mac: "Command-L"
+                              mac: "Command-Shift-L"
                               description: "Make a new named layout from the current frame"
                               exec: (fn ()
                                        (progn
@@ -14368,7 +14708,13 @@
                                        win: "tab"
                                        mac: "tab"
                                        exec: nil
-                                       })
+                                       }
+                 "jump_to_local_definition" {
+                                              description: "Jump to the local definition"
+                                              win: "Alt-Shift-J"
+                                              mac: "Alt-Shift-J"
+                                              exec: nil
+                                              })
        
        
                  

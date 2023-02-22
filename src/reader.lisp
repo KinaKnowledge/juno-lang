@@ -29,6 +29,10 @@
 ;; symbol_receiver - function that if present will be called prior to returning
 ;;               the processed structure which will contain an object with 
 ;;               symbol information within it.
+;; suppress_throw_on_error - by default the behaviour is to throw an exception 
+;;                           when an error is encountered.  This suppresses it 
+;;                           and if the on_error function is present, it will be
+;;                           called..otherwise error is ignored
 
 
 (defglobal `reader
@@ -40,19 +44,19 @@
          (throw EvalError (+ "reader: received " (sub_type text) ": text must be a string."))
          else
          (let
-            ((`output_structure [])
-             (`idx -1)
-             (`error_collector [])
-             (`symbol_collector {})
-             (`throw_on_error (not opts.suppress_throw_on_error))
-             (`line_number 0)
-             (`column_number 0)
-             (`source_name (if opts.source_name
+            ((output_structure [])
+             (idx -1)
+             (error_collector [])
+             (symbol_collector {})
+             (throw_on_error (not opts.suppress_throw_on_error))
+             (line_number 0)
+             (column_number 0)
+             (source_name (if opts.source_name
                                opts.source_name
                                "anonymous"))
-             (`opts (or opts {}))
-             (`len (- (length text) 1))
-             (`debugmode (cond
+             (opts (or opts {}))
+             (len (- (length text) 1))
+             (debugmode (cond
                             opts.verbose
                             true
                             (== opts.verbose false)
@@ -61,19 +65,25 @@
                             true
                             else
                             false))
-             (`in_buffer (split_by "" text))
-             (`in_code 0)
-             (`in_quotes 1)
-             (`in_long_text 2)
-             (`in_comment 3)
-             (`in_single_quote 4)
-             (`reading_object false)
-             (`mode in_code)  ;; start out in code
-             (`symbol_start nil)
-             (`last_final_column_num 0)
-             (`symbol_receiver (if (is_function? opts.symbol_receiver)
+             (in_buffer (split_by "" text))
+             (in_code 0)
+             (in_quotes 1)
+             (in_long_text 2)
+             (in_comment 3)
+             (in_single_quote 4)
+             (reading_object false)
+             (mode in_code)  ;; start out in code
+             (symbol_start nil)
+             (cpath [])
+             (ctx {
+                     scope:{ op_chain:[] 
+                     }
+                     parent: nil
+                     })
+             (last_final_column_num 0)
+             (symbol_receiver (if (is_function? opts.symbol_receiver)
                                    opts.symbol_receiver))
-             (`add_symbol (fn (symbol)
+             (add_symbol (fn (symbol _ctx)
                              ;; since called when a symbol is already read, we have... 
                              ;; to subtract the length of the symbol to get the start col
                              (when (not (ends_with? ":" symbol))
@@ -87,43 +97,43 @@
                                     (real_sym (first (split_by "." symbol))))
                                    (if (eq nil (prop symbol_collector real_sym))
                                        (set_prop symbol_collector
-                                          real_sym [[cline ccol]])
+                                          real_sym [[cline ccol (if _ctx (getf_ctx _ctx `op_chain) nil) (but_last cpath)]])
                                        (push (prop symbol_collector real_sym)
-                                             [cline ccol]))))))
-             (`local_text (fn ()
+                                             [cline ccol (if _ctx (getf_ctx _ctx `op_chain) nil) (but_last cpath)]))))))
+             (local_text (fn ()
                              (let
-                                ((`start (Math.max 0 (- idx 10)))
-                                 (`end   (Math.min (length in_buffer) (+ idx 10))))
+                                ((start (Math.max 0 (- idx 10)))
+                                 (end   (Math.min (length in_buffer) (+ idx 10))))
                                 (join "" (slice in_buffer start end)))))
-             (`position (fn (offset)
+             (position (fn (offset)
                            (+ "line: " line_number
                               " column: " (if offset
                                              (+ column_number offset)
                                              column_number))))
-             (`read_table
+             (read_table
                 (+ {}
                    (if opts.read_table_entries
                       opts.read_table_entries
                       {})
                    {
-                     "(":[")" (fn (block)
+                     "(":[")" (fn (block _ctx)
                                  (do
                                     block))]
-                     "[":["]" (fn (block)
+                     "[":["]" (fn (block _ctx)
                                  (do
                                     block))]
-                     "{":["}" (fn (block)
+                     "{":["}" (fn (block _ctx)
                                  (let
-                                    ((`obj (new Object))
-                                     (`idx -1)
-                                     (`key_mode 0)
-                                     (`need_colon 1)
-                                     (`value_mode 2)
-                                     (`key nil)
-                                     (`value nil)
-                                     (`cpos nil)
-                                     (`state key_mode)
-                                     (`block_length (- (length block) 1)))
+                                    ((obj (new Object))
+                                     (idx -1)
+                                     (key_mode 0)
+                                     (need_colon 1)
+                                     (value_mode 2)
+                                     (key nil)
+                                     (value nil)
+                                     (cpos nil)
+                                     (state key_mode)
+                                     (block_length (- (length block) 1)))
                                     (= reading_object false)
                                     ;(log "obj block: " block)
                                     (while (< idx block_length)
@@ -158,7 +168,7 @@
                                                 (= cpos (-> key `indexOf ":"))
                                                 (= value (-> key `substr (+ cpos 1)))
                                                 (= key (-> key `substr 0 cpos))
-                                                (= value (process_word (split_by "" value) 0))
+                                                (= value (process_word (split_by "" value) 0 _ctx ))
                                                 (set_prop obj
                                                    key
                                                    value))
@@ -188,9 +198,9 @@
                                       ["quotes" block]))]
                      
                      }))
-             (`get_char (fn (pos)
+             (get_char (fn (pos)
                            (prop in_buffer pos)))
-             (`error (fn (type message offset)
+             (error (fn (type message offset)
                         (progn
                            ;(log "reader: throw_on_error: " throw_on_error message)
                            (if throw_on_error
@@ -214,9 +224,9 @@
                                       `source_name: source_name
                                       `type: type
                                       }))))))
-             (`handle_escape_char (fn (c)
+             (handle_escape_char (fn (c)
                                      (let
-                                        ((`ccode (-> c `charCodeAt 0)))
+                                        ((ccode (-> c `charCodeAt 0)))
                                         (cond
                                            (== ccode 34)   ;; backslash
                                            c
@@ -235,10 +245,10 @@
                                            else  ;; just return the character
                                            c))))
              
-             (`process_word (fn (word_acc backtick_mode)
+             (process_word (fn (word_acc backtick_mode _ctx)
                                (let
-                                  ((`word (join "" word_acc))
-                                   (`word_as_number (Number word))) ;(parseFloat word)))
+                                  ((word (join "" word_acc))
+                                   (word_as_number (Number word))) ;(parseFloat word)))
                                   (when debugmode
                                      (console.log "process_word: " word word_as_number backtick_mode))
                                   (cond
@@ -286,7 +296,7 @@
                                            word
                                            else
                                            (progn
-                                              (when symbol_receiver (add_symbol word))
+                                              (when symbol_receiver (add_symbol word _ctx))
                                               (+ (quotel "=:") word)))) ;; since not in quotes, return a symbol
                                      (is_number? word_as_number)
                                      word_as_number
@@ -295,25 +305,24 @@
                                         (log "reader: " (position) " what is this?" word word_acc (local_text))
                                         word)))))
              
-             (`registered_stop_char nil)
-             (`handler_stack [])
-             (`handler nil)
-             (`c nil)
-             (`next_c nil)
-             (`depth 0)
-             (`stop false)
-             
-             (`read_block (fn (_depth _prefix_op)
+             (registered_stop_char nil)
+             (handler_stack [])
+             (handler nil)
+             (c nil)
+             (next_c nil)
+             (depth 0)
+             (stop false)
+             (read_block (fn (_depth _ctx)
                              (let
-                                ((`acc [])
-                                 (`word_acc [])
-                                 (`backtick_mode 0)
-                                 (`escape_mode 0)
-                                 (`last_c nil)
-                                 (`block_return nil))
-                                (when _prefix_op
-                                   (push acc
-                                      _prefix_op))
+                                ((acc [])
+                                 (word_acc [])
+                                 (operator nil)
+                                 (old_ctx nil)
+                                 (backtick_mode 0)
+                                 (escape_mode 0)
+                                 (last_c nil)
+                                 (_ctx _ctx)
+                                 (block_return nil))
                                 (= depth _depth)
                                 
                                 (while (and (not stop)
@@ -330,7 +339,7 @@
                                          (= column_number 0))
                                       
                                       (when debugmode
-                                         (console.log _depth "  " c " " next_c " " mode "" escape_mode " " (as_lisp acc) (as_lisp word_acc) handler_stack.length))
+                                         (console.log _depth "  " c " " next_c " " mode "" escape_mode " " (as_lisp acc) (as_lisp word_acc) acc.length (join "." cpath)))
                                       
                                       ;; read until the end or are stopped via debugger
                                       ;; we have a few special cases that facilitate the transformation
@@ -433,10 +442,10 @@
                                          (do
                                             (if (> word_acc.length 0)
                                                 (do
-                                                   (push acc (process_word word_acc))
+                                                   (push acc (process_word word_acc nil _ctx))
                                                    (= word_acc [  ])))
                                             (= mode in_long_text)
-                                            (= block_return (read_block (+ _depth 1)))
+                                            (= block_return (read_block (+ _depth 1) _ctx))
                                             (when (== backtick_mode 1)
                                                (= block_return [(quotel "=:quotem") block_return])
                                                (= backtick_mode 0))
@@ -448,10 +457,10 @@
                                          (do
                                             (if (> word_acc.length 0)
                                                 (do
-                                                   (push acc (process_word word_acc))
+                                                   (push acc (process_word word_acc nil _ctx))
                                                    (= word_acc [  ])))
                                             (= mode in_quotes)
-                                            (= block_return (read_block (+ _depth 1)))
+                                            (= block_return (read_block (+ _depth 1) _ctx))
                                             (when (== backtick_mode 1)
                                                (= backtick_mode 0))
                                             (push acc block_return))
@@ -462,10 +471,10 @@
                                          (do
                                             (if (> word_acc.length 0)
                                                 (do
-                                                   (push acc (process_word word_acc))
+                                                   (push acc (process_word word_acc nil _ctx))
                                                    (= word_acc [  ])))
                                             (= mode in_single_quote)
-                                            (= block_return (read_block (+ _depth 1)))
+                                            (= block_return (read_block (+ _depth 1) _ctx))
                                             (when (== backtick_mode 1)
                                                (= backtick_mode 0))
                                             (push acc block_return))
@@ -480,10 +489,10 @@
                                          (do
                                             (if (> word_acc.length 0)
                                                 (do
-                                                   (push acc (process_word word_acc))
+                                                   (push acc (process_word word_acc nil _ctx))
                                                    (= word_acc [  ])))
                                             (= mode in_comment)
-                                            (read_block (+ _depth 1))) ;; read the block but just discard the contents since it is a comment.
+                                            (read_block (+ _depth 1) _ctx)) ;; read the block but just discard the contents since it is a comment.
                                          
                                          ;; at depth+1, we read until we encounter a block end character
                                          ;; which terminates the present block, or if we encounter another
@@ -510,24 +519,28 @@
                                                (handler)
                                                (= handler nil))
                                             
+                                                                   
                                             (push handler_stack
                                                (prop read_table c))
                                             
                                             (if (> word_acc.length 0)
                                                 (do
-                                                   (push acc (process_word word_acc backtick_mode))
+                                                   (push acc (process_word word_acc backtick_mode _ctx))
                                                    (= backtick_mode 0)
                                                    (= word_acc [])))
-                                            
+                                            (= old_ctx _ctx)
+                                            (= _ctx (new_ctx _ctx))
+                                            (push cpath 0)
                                             ;; now read the block until the block complete character is encountered...
-                                            (= block_return (read_block (+ _depth 1)))
+                                            (= block_return (read_block (+ _depth 1) _ctx))
                                             
                                             ;; handle the returned block that was read with the handler
                                             (= handler (prop (pop handler_stack) 1))
                                             
                                             (= block_return
-                                               (handler block_return))
-                                            
+                                               (handler block_return _ctx))
+                                            (pop cpath)
+                                            (= _ctx old_ctx)
                                             ;; if the block is undefined, do not add it to the accumulator, otherwise add the block structure
                                             ;; to the accumulator and discard the block complete character
                                             
@@ -542,7 +555,7 @@
                                          (do
                                             (if (> word_acc.length 0)
                                                 (do
-                                                   (push acc (process_word word_acc))
+                                                   (push acc (process_word word_acc nil _ctx))
                                                    (= word_acc [])))
                                             (= backtick_mode 1))
                                          
@@ -562,7 +575,7 @@
                                          (do
                                             ;(log "special operator: " (+ last_c c))
                                             (push word_acc c)
-                                            (push acc (process_word word_acc))
+                                            (push acc (process_word word_acc nil _ctx))
                                             (= word_acc []))
                                          
                                          (and (== mode in_code)
@@ -574,15 +587,23 @@
                                                        (not (== next_c "#")))))
                                          
                                          (do
-                                            ;(when opts.debug (log "whitespace:" c))
+                                            (if (and (== acc.length 0)
+                                                       (> word_acc.length 0))
+                                                (progn
+                                                   (set_prop _ctx.scope 
+                                                      `op_chain
+                                                      (conj (getf_ctx _ctx `op_chain) (join "" word_acc)))))
                                             (if (> word_acc.length 0)
                                                 (do
                                                    (if (== backtick_mode 1)
                                                        (do
-                                                          (push acc (process_word word_acc backtick_mode))
+                                                          (push acc (process_word word_acc backtick_mode _ctx))
                                                           (= backtick_mode 0))
-                                                       (push acc (process_word word_acc)))
-                                                   (= word_acc []))))
+                                                       (push acc (process_word word_acc nil _ctx)))
+                                                   (= word_acc [])))
+                                            (pop cpath)  ;; update our path
+                                            (push cpath (length acc))
+                                            )
                                          
                                          (and (== mode in_code)
                                               (== (-> c `charCodeAt 0) 13))
@@ -596,7 +617,7 @@
                                 (if (> word_acc.length 0)
                                     (do
                                        ;(log "outside of loop: pushing into acc, backtick_mode:",backtick_mode, word_acc)
-                                       (push acc (process_word word_acc backtick_mode))
+                                       (push acc (process_word word_acc backtick_mode _ctx))
                                        
                                        ;(push acc (join "" word_acc))
                                        (= word_acc [])))
@@ -606,9 +627,9 @@
             
             (when debugmode
                (console.log "read->" in_buffer )
-               (console.log "D  CHAR NC " " M" "ESC" "ACC" "WORDACC" "HS"))
+               (console.log "D  CHAR NC " " M" "ESC" "ACC" "WORDACC" "ACCL"))
             
-            (= output_structure (read_block 0))
+            (= output_structure (read_block 0 ctx))
             ;(log output_structure)
             (when debugmode
                (console.log "read<-" (clone output_structure)))
