@@ -2750,13 +2750,15 @@ such as things that connect or use environmental resources.
 
 
 (defmacro defvalue (sym value meta)
-  `(let
-      ((unquoted_sym (desym ,#sym))
-       (details (describe unquoted_sym)))
-     (if details
-       (-> Environment `get_global (+ details.namespace "/" unquoted_sym))
-       (defglobal ,#sym ,#value ,#meta)))
-   {
+   (let
+      ((meta_data (if (is_object? meta) meta {})))
+      `(let
+          ((unquoted_sym (desym ,#sym))
+           (details (describe unquoted_sym)))
+          (if details
+             (-> Environment `get_global (+ details.namespace "/" unquoted_sym))
+             (defglobal ,#sym ,#value ,#meta_data))))
+      {
       `description: (+ "If the provided symbol is already defined as an accessible "
                        "global value from the current namespace it will return the "
                        "defined value, otherwise it will define the global in the "
@@ -2768,20 +2770,22 @@ such as things that connect or use environmental resources.
     })
    
 (defmacro defparameter (sym value meta)
-  `(first
-    (use_quoted_initializer 
-         (defglobal ,#sym ,#value ,#meta))
-    {
-        `description: (+ "Defines a global that is always reset to the provided value, "
-                         "when called or when the image is reloaded, ensuring that the "
-                         "initial value is always set to a specific value.  If the value "
-                         "is already defined, it will be overwritten.  To set a symbol in "
-                         "an explicit namespace, provide a fully qualified symbol name "
-                         "in the form of namspace/symname as the symbol to be defined. "
-                         "Returns the defined value.")
-        `usage: ["sym:symbol|string" "value:*" "meta:?object"]
-        `tags: ["allocation" "reference" "symbol" "value" "set" "reference" "global"]
-        }))
+   (let
+      ((meta_data (if (is_object? meta) meta {})))
+      `(first
+          (use_quoted_initializer
+             (defglobal ,#sym ,#value ,#meta_data))))
+          {
+            `description: (+ "Defines a global that is always reset to the provided value, "
+                             "when called or when the image is reloaded, ensuring that the "
+                             "initial value is always set to a specific value.  If the value "
+                             "is already defined, it will be overwritten.  To set a symbol in "
+                             "an explicit namespace, provide a fully qualified symbol name "
+                             "in the form of namspace/symname as the symbol to be defined. "
+                             "Returns the defined value.")
+            `usage: ["sym:symbol|string" "value:*" "meta:?object"]
+            `tags: ["allocation" "reference" "symbol" "value" "set" "reference" "global"]
+            })
 
 (defun get_function_args (f)
     (let
@@ -4099,6 +4103,41 @@ such as things that connect or use environmental resources.
                      "provided path isn\'t found. ")
      usage:["key:array" "alt_val:*"]
      tags: ["settings" "config" "defaults" "default" "environment" "env" "application"]
+   })
+
+(defun traverse (structure operator_function _path)
+   (let
+      ((path (or _path [])))
+      (if (eq nil operator_function)
+          (throw Error "traverse: requires a function as a second argument"))
+      (cond
+         (is_array? structure)
+         (progn
+            (operator_function structure path)
+            (map (fn (elem idx)
+                    (progn
+                       (traverse elem operator_function (conj path idx))))
+                 structure))
+         (is_object? structure)
+         (progn
+            (operator_function structure path)
+            (for_each (pset (pairs structure))
+               (destructuring_bind (key value)
+                  pset
+                  (traverse value operator_function (conj path key)))))
+         else
+         (operator_function structure path))
+      structure)
+   {
+     description: (+ "Given a structure such as an object or an array, and an operator "
+                     "function argument, the function will recursively call the operator function "
+                     "with the value and the path to each value in the structure.   The operator "
+                     "function can choose to operate on the value at the path by calling `set_path` "
+                     "for the root object, or otherwise examine the value and the path.  The return "
+                     "value of the operator function is ignored.  The operator function signature is "
+                     "called with `(value path_to_value)` as a signature.<br><br> ")
+     usage: ["structure:object" "operator_function:function"]
+     tags: ["recursion" "recurse" "structure" "object" "array" "search" "find"]
    })
 
 (defun_sync all_global_functions ()

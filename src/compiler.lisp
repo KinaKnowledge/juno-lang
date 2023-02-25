@@ -4480,6 +4480,20 @@
                             (defclog { `background: "LightSkyblue" `color: "#000000" } )))
              
              (`last_source nil)
+             ;; checks the assembled text for certain grammatical/syntax errors
+             (`output_validation (fn (output_str)
+                                    (let
+                                       ((rgx1 (new RegExp ",,|,\\\\)|:,"))  ;; the bane of this compiler! :(
+                                        (rval (scan_str rgx1 output_str))
+                                        (lines nil))
+                                       (if (== rval.length 0)
+                                           output_str ;; just return it - no problems found
+                                           (progn
+                                              (for_each (issue rval)
+                                                 (when (not (contains? "RegExp" (-> output_str `substr (- issue.index 10) 20)))
+                                                     (log "compiler: bad character: " (-> output_str `substr (- issue.index 10) 20))))
+                                              output_str)))))
+                                        
              (`compile_obj_literal
                 (fn (tokens ctx)
                    (let
@@ -4532,6 +4546,7 @@
                                                `__LAMBDA_STEP__
                                                -1)
                                       (= stmt (compile_wrapper_fn kvpair.val.1 ctx))
+                                     
                                       (assert stmt "compile: obj literal value returned invalid/undefined value.")
                                       (push acc stmt)
                                       (when (< idx total_length)
@@ -5050,10 +5065,15 @@
                                                              (assemble t))
                                                           (== "object" (typeof t))
                                                           (do
-                                                             (when (and t.comment
+                                                             (if (and t.comment
                                                                         opts.include_source)
-                                                                (push text (+ "/* " t.comment " */"))
-                                                                (insert_indent)))
+                                                                (progn 
+                                                                   (push text (+ "/* " t.comment " */"))
+                                                                   (insert_indent))
+                                                                (when false
+                                                                   (console.log "assemble: discarding: " t "->" (last_n 5 text)))))
+                                                                   
+                                                                   
                                                           (is_function? t)
                                                           (do
                                                              (cond
@@ -5075,7 +5095,7 @@
                                            text
                                            (do
                                               ;(console.log (join "" text))
-                                              (join "" text))))))))
+                                              (output_validation (join "" text)))))))))
             
             (declare (optimize (safety 2))
                      (include length first second map do_deferred_splice

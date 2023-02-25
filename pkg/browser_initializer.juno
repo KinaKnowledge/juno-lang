@@ -1883,6 +1883,7 @@
                (-> control `on_blur)))
          (when (not (== *last_focus* target_control))
             (when (and *last_focus*
+                       *app_menu_control*
                        (prop *last_focus* `menu_items))
                (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
                                                        "Control"))))
@@ -1895,7 +1896,8 @@
                (setq *last_focus* target_control)
                (setq core/$current_control *last_focus*)
                (setq *last_top_frame* (top_frame target_control))
-               (when target_control.menu_items
+               (when (and target_control.menu_items
+                          *app_menu_control*)
                   (-> *app_menu_control* `add_menu [ (or target_control.name
                                                          "Control")
                                                     target_control.menu_items
@@ -1948,7 +1950,7 @@
           (console.log "switch_to_new_layout: layout_name: " layout_name)
           (if (eq nil (get_by_id "layout_holding_cell"))
               (-> (first (get_by_tag "body"))
-                  `append (div { `id: "layout_holding_cell" `style: "position: absolute; top: 3000; left: -4000; z-index: -10;"} )))
+                  `append (div { `id: "layout_holding_cell" `style: "position: absolute; top: 3000px; left: -4000px; z-index: -10;"} )))
           (= layout_holding_cell (get_by_id "layout_holding_cell"))
           (cond 
              (and current_layout
@@ -4852,6 +4854,11 @@
                (block_on e))))
       
       
+      (attach_event_listener frame 
+         `focusin
+         (progn
+            (add_class "juno-focused" control_bar)))
+      
       (attach_event_listener full_block
                              `mouseup
                              end_drag)
@@ -4869,8 +4876,38 @@
       ;; now mounted on the DOM
       (when contents.initialize
          (-> contents `initialize))
-      
-      true))
+      (if options.controls
+         {
+           `close: (fn ()
+                      (progn
+                         (when options.on_close
+                            (options.on_close))
+                         (-> frame `remove)))
+           `view: frame
+           }
+         true))
+   {
+     description: (+ "Given content in the form of a DOM structure, creates a draggable frame "
+                     "that presents like a dialog box, and which does not affect the underlying "
+                     "layout structure.  The presented frame can be modified with options.  The popup "
+                     "frame includes a title bar with a close button by default.   This is a "
+                     "non-modal structure, howerver by using the controls option in conjunction with "
+                     "a `Promise`, evaluation of subsequent code can be prevented until the dialog is "
+                     "closed.<br><br>#### Options <br><br>position:object - An object with two keys, "
+                     "`left` and `top`, which values control the position of the box.  If a value is "
+                     "a string, then the value is treated directly as a CSS directive, such as "
+                     "`45%`.  If the value is a number, it is considered to be a pixel offset for "
+                     "that value.  <br>title:string - If provided, this value will be used as the "
+                     "title bar.<br>style:string - Any CSS styling directives to be passed to the "
+                     "outer frame `div` that functions as the container for the "
+                     "content.<br>on_close:function - When present, this function is called when the "
+                     "user has initiated a close operation with the close button.  The return value "
+                     "of this function is ignored and so this function is purely "
+                     "advisory.<br>controls:boolean - If true, provides an interface object to manage "
+                     "the floating div externally.  This provides a means to close the floating div "
+                     "element and retrieve the view.  By default this option is false. <br> ")
+
+     })
 
 (defun monitor_control_tree ()
    (let
@@ -6336,7 +6373,8 @@
                                              ((new_op nil)
                                               (rnge (or (-> editor.session `getBracketRange (-> editor `getCursorPosition))
                                                         (find_last_paren editor)))
-                                              (usage nil))
+                                              (usage nil)
+                                              (stime (time_in_millis)))
                                              (if rnge
                                                 (progn
                                                    (= last_bracket_match rnge)
@@ -6345,9 +6383,9 @@
                                                    (when (not (== new_op active_lisp_operator))
                                                       (= active_lisp_operator new_op)
                                                       (= usage (decorative_usage active_lisp_operator nil nil (function (val)
-                                                                                                                               (progn 
-                                                                                                                                  (symbol_finder val true)
-                                                                                                                                     ))))
+                                                                                                                 (progn
+                                                                                                                    (symbol_finder val true)
+                                                                                                                    ))))
                                                       (when (> __VERBOSITY__ 0)
                                                          (log "find_active_lisp_operator: " active_lisp_operator " usage is: " usage))
                                                       (if usage
@@ -6357,7 +6395,8 @@
                                                       (when usage
                                                          (dispatch_event { `command: "display_usage" `source: options.id `args: [active_lisp_operator] }))
                                                       (when options.on_new_lisp_operator
-                                                         (options.on_new_lisp_operator active_lisp_operator))))
+                                                         (options.on_new_lisp_operator active_lisp_operator))
+                                                      (console.log "find_active_lisp_operator: eval time: " (- (time_in_millis) stime) "ms")))
                                                 (progn
                                                    (= active_lisp_operator nil)
                                                    (-> help_context_elem
@@ -6711,7 +6750,7 @@
                                                    (set_prop rval
                                                       `namespace ns)
                                                    (break))))
-                                          (console.log "symbol_finder: search_order:" search_order " rval from level 2: " token "->" rval)
+                                          ;(console.log "symbol_finder: search_order:" search_order " rval from level 2: " token "->" rval)
                                           (if rval
                                              (if want_metadata
                                                 rval
@@ -6806,12 +6845,7 @@
                                                          (if in_path
                                                              sym
                                                              (+ ns "/" sym))))))))
-                                       (try 
-                                          (progn
-                                             (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
-                                             (= symbol_map_dirty? false))
-                                          (catch Error (e)
-                                             (log "editor: symbol_map threw: " e.message)))
+                                       
                                        (when evaluator_control
                                           (set_prop ns_span
                                              `innerText
@@ -7023,11 +7057,12 @@
                                         (setq editor
                                            (ace.edit editor_div))
                                         
+                                        
                                         ;(log "initialize_editor: " options.mode " options: " (clone options))
                                         
                                         ;; ensure that the Ace language tools extension is loaded
-                                        
-                                        
+                                        (display_context_message "Initializing....")
+                                        (sleep 0.01)  ;; update display
                                         (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                         
                                         ;; if we are not explicitly told to link to another editor...
@@ -13588,9 +13623,114 @@
      })
 
 
+(defun symbols_for_controls (target_controls options)
+   (let
+      ((target_controls (if (is_array? target_controls)
+                            target_controls
+                            [ target_controls ]))
+       (namespace (or options.namespace (current_namespace)))
+       (ctl_symbol_data [])
+       (sub_ctls nil)
+       (results nil)
+       (initializer_symbol (cond 
+                              (and (is_string? options.initializer_symbol)
+                                   (is_function? (get_global options.initializer_symbol)))
+                              options.initializer_symbol
+                              options.initializer_symbol
+                              (throw TypeError "symbols_for_controls: option initializer_symbol must be a string"))))
+      
+      (for_each (ctl target_controls)
+         (progn
+            (= sub_ctls (current_controls false target_controls))
+            (for_each (sctl (or sub_ctls []))
+               (unless (contains? sctl target_controls)
+                  (push target_controls sctl)))))
+      
+      (log "symbols_for_controls: target_controls: " target_controls)
+      (log "symbols_for_controls: initializer_symbol: " initializer_symbol options)
+      (for_each (`ctl target_controls)
+         (assert (is_control? ctl`) "symbols_for_control: non control provided in target_controls argument"))
+      ;; make a temp symbol that will represent the root
+      ;; find the control definition
+      (for_each (`ctl target_controls)
+         (for_each (desc (describe ctl.type true))
+            (when (== desc.namespace namespace)
+               (push ctl_symbol_data desc)
+               (break))))
+      (= results
+         (symbol_dependencies (conj (each ctl_symbol_data `name)
+                                    (if initializer_symbol
+                                       [ initializer_symbol ]
+                                       [] ))))
+      (when results
+         (for_each (t target_controls)
+            (push results.dependencies
+               t.type)))
+      (when (and results
+                 initializer_symbol)
+         (push results.dependencies
+            initializer_symbol))
+      results))
 
-(defun serialize_controls (controls)
-  [(quote quote) (JSON.parse (JSON.stringify controls))]
+(defun shake_tree (root_control options)
+   (let
+      ((root_control root_control)
+       (root_and_children (if (is_control? root_control)
+                              (current_controls false root_control)
+                              (throw EvalError "shake_tree: invalid root_control")))
+       
+       (symbol_data (and (is_control? root_control)
+                         (symbols_for_controls root_control options)))
+       (export_order {
+                       `symbols: []
+                       `namespaces: []
+                       `do_not_include: []
+                       })
+       (req_namespaces (new Set))
+       (env nil)
+       (sdata nil)
+       (dependency_data (sort_dependencies)))
+      (assert (is_object? symbol_data) "shake_tree: first argument must be a control object")
+      (for_each (qualified_symbol dependency_data.symbols)
+         (destructuring_bind (ns symbol)
+            (split_by "/" qualified_symbol)
+            (= env (-> Environment `get_namespace_handle ns))
+            (= sdata nil)
+            (when (and ns (not (== ns "EXTERNAL")))
+               (try
+                  (= sdata (-> env `eval `(describe ,#symbol)))
+                  (catch Error (e)
+                     (log "shake_tree: " ns " cannot describe symbol:" symbol e))))
+            (when sdata
+               (if (or (== ns "html")
+                       (== "Special" sdata.type)
+                       (contains? symbol symbol_data.dependencies))
+                   (progn
+                      (push export_order.symbols
+                         qualified_symbol)
+                      (when (not (-> req_namespaces `has ns))
+                         (-> req_namespaces `add ns)
+                         (push export_order.namespaces
+                            ns)))
+                   (progn
+                      (push export_order.do_not_include
+                         qualified_symbol))))))
+      
+      export_order))
+
+(defun serialize_controls (controls options)
+  (let
+     ((serialized_layout [(quote quote) (JSON.parse (JSON.stringify controls))]))
+     (log "serialize_controls: options: " options)
+     (unless options.keep_text_editor_content
+        (traverse serialized_layout
+                   (fn (val path)
+                      (progn
+                         (when (and (is_object? val)
+                                    (prop val "content_compressed"))
+                            (log "serialize_controls: removing content_compressed: " path)
+                            (delete_prop val "content_compressed"))))))
+     serialized_layout)
   {
     `description: (+ "Given an array of controls, serializes their state to JSON form such "
                      "that their state can be stored.<br>As an example, given the current "
@@ -13605,14 +13745,32 @@
 
 (defun save_control_image (validate_name? options)
   (let
-     ((root (if (is_array? options.root_controls)
+     ((options (if (is_object? options)
+                   options
+                   {}))
+      (root (if (is_array? options.root_controls)
                 options.root_controls
                 $root_controls))
+      (root_controls $root_controls) ;; capture the root controls 
       (current_control $current_control)
-      (save_as_name *env_config*.export.save_prefix)
-      (options (if (is_object? options)
-                   options
-                   {})))
+      (save_as_name (or options.save_prefix
+                        *env_config*.export.save_prefix))
+      (system_repl *system_repl*)
+      (orig_initializer *initializer*)
+      (initializer (cond 
+                      (and (is_string? options.initializer_symbol)
+                           (is_function? (get_global options.initializer_symbol nil)))
+                      (get_global options.initializer_symbol)
+                      (is_string? options.initializer_symbol)
+                      (throw TypeError "save_control_image: initializer_symbol option must be a symbol to a global function")
+                      else
+                      nil))
+      (export_details {
+                        do_not_include: (new Set)
+                        namespaces: (new Set)
+                        symbols: (new Set)
+                        })
+      (exp nil))
      (when validate_name?
         (aif (request_user_input (+ (dtext "Enter a name for the saved image.")
                                     " "
@@ -13624,34 +13782,75 @@
      (when (blank? save_as_name)
         (notify (dtext "Cancelled Save Operation"))
         (return 0))
+     (= save_as_name (to_key save_as_name))
      
-     (log (dtext "Saving Application State to: ") save_as_name)
+     
+        
+     (for_each (ctl root)
+        (progn
+           (log "save_control_image: evaluating control dependencies for: " ctl.type)
+           (= exp (shake_tree ctl options))
+           (for_each (sym exp.symbols)
+              (-> export_details.symbols `add sym))
+           (for_each (ns exp.namespaces)
+              (-> export_details.namespaces `add ns))))
+     ;; now add the do not includes - but only if there is no symbol dependencies do not contain it
+     (for_each (ctl root)
+        (progn
+           (for_each (dni exp.do_not_include)
+              (unless (-> export_details.symbols `has dni)
+                 (-> export_details.do_not_include `add dni)))))
+     (-> export_details.do_not_include `delete "user/*initializer*")
+     (set_prop export_details
+        `do_not_include (to_array export_details.do_not_include)
+        `namespaces (to_array export_details.namespaces)
+        `symbols (to_array export_details.symbols))
+     
+     (set_prop options
+        `do_not_include export_details.do_not_include)
+     ;; do we have an initializer to use?
+     (when initializer
+        (log "save_control_image: using initializer: " options.initializer_symbol initializer)
+        (= *initializer* initializer))
+     
+     (log (+ "save_control_image: saving application state to: " save_as_name))
+     (log "save_control_image: export_details: " export_details)
      (try
         (progn
            (set_focus_to nil)
-           (defvar system_repl *system_repl*)
-           (defvar results nil)
-           (= *system_repl* nil)
            
-           (= *serialized_controls* (serialize_controls root))
+           (defvar results nil)
+           (= *serialized_controls* (serialize_controls root options))
+           (log "save_control_image: " *serialized_controls*)
+           
+           (for_each (ctl root)
+              (log "save_control_image: serializing: " (or (control_name ctl) ctl.type)))
+           (= *system_repl* nil)
            ;[(quote quote) [(quote quote) (JSON.parse (JSON.stringify $root_controls))]])
            (console.log "*serialized_controls*: " *serialized_controls*)
            (= results (save_image (+ { `save_as: save_as_name } options)))
            (= *system_repl* system_repl)
-           (defglobal core/$root_controls root)
-           (defglobal core/$current_theme current_control)
-           (log (dtext "Save Application State Results: ") results)
-           (log (dtext "Complete"))
-           (when (and is_served? validate_name?)
+           (when (is_function? initializer)
+              (= *initializer* orig_initializer))
+           ;(defglobal core/$root_controls root_controls)
+           ;(defglobal core/$current_control current_control)
+           (log (+ "save_control_image: result: ") results)
+           (log (+ "save_control_image: " (dtext "Complete")))
+           (when (and is_served? options.open_new_image)
               (-> window `open (+ "/env/" save_as_name ".html") save_as_name))
            results)
         (catch Error (e)
            (progn
+              (= *system_repl* system_repl)
+               (when (is_function? initializer)
+                  (= *initializer* orig_initializer))
+              (log "Error during save: " e.message)
               (if validate_name?
                  (alert_box "Save Image Problem" e.message))
               (console.error "Cannot save image: " e)
               (log_error "ERROR on save: " e.message))))))
-                 
+             
+    
 
 (defun rehydrate_controls (container serialized_controls)
   (let
@@ -13677,7 +13876,79 @@
     tags:  ["controls" "storage" "serialize" "serialization" "rehydration" "restore" "state" "application"]
   })
 
+(defun layout_initializer ()
+   (let
+      ((key_mode (get_operating_platform)))
+    (defvalue $root_controls [])
+    ;; the root container which controls are added to..
+    (defglobal juno_container
+      (div { `id: "juno_container" `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
+   (attach_event_listener juno_container `click
+                           (fn (e)
+                             (progn
+                              (defvar menu (get_by_id `cmenu))
+                              (when menu (-> menu `remove)))))
+    (set_prop *env_config*.export
+	      `save_path
+	      nil)
+    (attach_event_listener juno_container
+                           `focusin
+                           (fn (e)
+                             (process_focus_chain e)))
+    (-> (get_by_id "body") `appendChild juno_container)
+    (rehydrate_controls juno_container *serialized_controls*)
+    (sleep 0.1)
+    (default_focus)
+    ;; setup key bindings
+    (set_prop *key_bindings*
+              `active
+              {})  ;; reset out and copy
+    (for_each (desc (values (prop *key_bindings* `global)))
+       (progn
+          (for_each (key_combo (split_by "|" (prop desc key_mode)))
+             (set_prop *key_bindings*.active
+                key_combo
+                (prop desc `exec)))))
 
+     (attach_event_listener juno_container
+                           `click
+                           (fn (e)
+                             (handle_app_click_event e)))
+    
+    (attach_event_listener (first (get_by_tag `body))
+                           `keydown
+                           (function (e)
+                             (progn                              
+                              (defvar kcode (get_key_code e))
+                              (when *log_key_events* (log "key_code:" kcode "->" (prop *key_bindings*.active kcode)))
+                              ;(console.log "kcode is: " kcode)
+                              (aif (prop *key_bindings*.active kcode)
+                                   (progn
+                                    (handle_event e)
+                                    (try 
+                                       (it)
+                                       (catch Error (e)
+                                          (progn
+                                             (log_error (+ "Base Catch: " e.message))
+                                             (log_error e))))))
+                              )))
+    
+    (attach_event_listener document
+       `blur
+       (fn (event)
+          (progn
+             (setq *document_focused* false)
+             (dispatch_event { command: "blur"
+                               source: "document"
+                               args: [ ] }))))
+    (attach_event_listener document
+       `focus
+       (fn (event)
+          (progn
+             (setq *document_focused* true)
+             (dispatch_event { command: "focus"
+                               source: "document"
+                               args: [ ] }))))))
 
 (defun_sync to_indent (str)
     (join "" (for_each (c (range str.length))
@@ -14084,7 +14355,225 @@
    `tags: ["save" "file" "control"]
    })    
 
+(defun serialize_layout (layout_name options)
+   (let
+      ((layout (cond 
+                  (is_string? layout_name)
+                  (get_control_by_name layout_name)
+                  (is_control? layout_name)
+                  layout_name
+                  else
+                  (throw TypeError "invalid layout value provided to serialize_layout: must be string or control")))
+       (serialized_layout nil))
+      (assert (is_control? layout) "layout isn't a control: check provided name or value to serialize_layout")
+      (cond
+         options.include_container
+         (= serialized_layout (JSON.parse (JSON.stringify layout)))
+         else
+         (= serialized_layout (JSON.parse (JSON.stringify (first (-> layout `controls))))))
+      (unless options.keep_text_editor_content
+         (log "serialize_layout: removing compressed text editor content")
+         (traverse serialized_layout
+                   (fn (val path)
+                      (progn
+                         (when (and (is_object? val)
+                                    (prop val "content_compressed"))
+                            (log "removing content_compressed: " path)
+                            (delete_prop val "content_compress`ed"))))))
+                            
+      serialized_layout))
 
+
+(defun copy_layout_to_buffer (layout options)
+   (let
+      ((layout (cond 
+                  (is_string? layout)
+                  (get_control_by_name layout)
+                  (is_control? layout)
+                  layout
+                  else
+                  (throw TypeError "copy_layout_to_buffer: layout must either be a string or a control")))
+       (idx 0)
+       (base_name (to_key (control_name layout)))
+       (symbol_name (if options.symbol_name
+                        options.symbol_name
+                        (progn
+                           (= symbol_name base_name)
+                           (while (is_symbol? symbol_name)
+                              (progn
+                                 (inc idx)
+                                 (= symbol_name (+ "" base_name "_" idx))))
+                           symbol_name))))
+      (log "Symbol name: " symbol_name)
+      (-> Environment `set_global symbol_name (pretty_print (serialize_layout layout options)))
+      (new_buffer {
+                    path: [ symbol_name ]
+                    }))
+   {
+     description: (+ "Given a layout name, serializes the layout, places it in a global "
+                     "variable and opens up a buffer with the value.  The name of the global variable "
+                     "can be specified with options, or, by default, the name will be generated from "
+                     "the layout name.  If a symbol already exists by that name, a numeric suffix "
+                     "will be appended to the name to ensure it is unique.<br><br>#### Options "
+                     "<br><br>symbol_name:string - The name of the symbol to create.  NOTE: when "
+                     "using this option and provided with an existing symbol, that symbol will be "
+                     "overwritten with the contents of the layout "
+                     "code.  <br>include_container:boolean - If true, the root container of the "
+                     "layout is included, otherwise only the contents are included.<br> ")
+
+   })
+
+(defun export_layout (layout_name options)
+   (let
+      ((cancel_button (button { `style: "float: right" }  (dtext "Close")))
+       (orig_options options)
+       (export_button (button (dtext "Export")))
+       (export_options nil)
+       (copy_button (button { `title: "Copy as a quoted form that can be reused in other code" } (dtext "Copy Code")))
+       (status_elem (div { `style: "border: 2px inset #FFFFFF; padding: 8px; background: #FFFFFF20; font-weight: bold; margin-bottom: 20px;margin-top: 10px;" } (dtext "Ready")))
+       (options (+ { include_container: true
+                     keep_text_editor_content: (if is_served?
+                                                  false
+                                                  true)
+                     application_name: (or layout_name "")
+                     save_location: (if is_served?
+                                      "Server"
+                                      "Local To This Computer")
+                     output_as: "Multi-line Lisp"
+                     } options))  ;; if supplied options, use them as defaults                          nil))))
+       (set_busy (fn (message)
+                    (if (is_string? message)
+                        (progn
+                           (set_prop status_elem
+                              `innerHTML
+                              message)
+                           (set_disabled cancel_button export_button copy_button))
+                        (progn
+                           (set_prop status_elem
+                              `innerHTML
+                              (dtext "Ready"))
+                           (set_enabled cancel_button export_button copy_button)))))
+       (set_message (fn (message)
+                       (if (is_string? message)
+                        (progn
+                           (log "export_layout: " message)
+                           (set_prop status_elem
+                              `innerHTML
+                              message)))))
+       
+       (layout (get_control_by_name layout_name))
+       (save_as_app (fn ()
+                       (when (not (blank? options.application_name))
+                          (let
+                             ((rval nil)
+                              (app_name nil))
+                             (set_busy (+ (dtext "Saving") "..."))
+                             (sleep 0.1)
+                             (= export_options
+                                {
+                                  `no_header: true
+                                  `initializer_symbol: `layout_initializer
+                                  `save_prefix: options.application_name
+                                  `keep_text_editor_content: options.keep_text_editor_content
+                                  `root_controls: [ layout ]
+                                  `save_locally: (if (== "Local To This Computer" options.save_location)
+                                                     true
+                                                     false)
+                                  })
+                             (log (pre (pretty_print `(save_control_image false ,#(+ {} export_options { `root_controls: [ `(get_control_by_name ,#layout_name) ] } )))))
+                             (= rval (save_control_image false
+                                                         export_options))
+                             ;(-> window `open (+ "/env/" save_as_name ".html") save_as_name)
+                             (set_busy nil)
+                             (cond
+                                (and export_options.save_locally
+                                   (== rval true))
+                                (progn
+                                   (set_message "Saved Locally - check your Downloads Folder"))
+                                (and (not export_options.save_locally)
+                                     (== rval.rval "OK"))
+                                (progn
+                                   (= app_name (last (split_by "/" rval.results.0.filename)))
+                                   (set_message (+ "Saved To Host - opening in browser: " (+ "/env/" app_name)))
+                                   (-> window `open (+ "/env/" app_name) options.application_name))
+                                else
+                                 (progn
+                                    (set_prop status_elem
+                                       `innerHTML
+                                       (+ "ERROR: " (or rval.message "Check system repl for return value")))))
+                             (log "export_layout: result: " rval)))))
+       (resolver nil)
+       (handle_event (fn (e)
+                        (let
+                           ((src e.srcElement))
+                           (declare (function resolver))
+                           (cond
+                              (== src cancel_button)
+                              (progn
+                                 (-> frame `close)
+                                 (resolver nil))
+                              (== src export_button)
+                              (progn
+                                 (save_as_app))
+                              (== src copy_button)
+                              (progn
+                                 (copy_layout_to_buffer layout options))))))
+       (view nil)
+       (frame nil)
+       (result nil))
+      (assert (is_control? layout) "export_layout: invalid layout or control name provided")
+      (= view
+         
+                (div { `class: "juno-form" }
+                     (h4 (+ "Layout: " layout_name))
+                     (dtext "You can export the layout as usable code, or save the layout as an application.")
+                     (br)
+                     (br)
+                     (div { `class: "juno-form-data" }
+                          (value_to_dom options
+                                        { editable: true
+                                          disable_object_toggle: true
+                                          pretty_keys: true
+                                          expand_all: true
+                                          paths: {
+                                                   output_as: {
+                                                                values: ["Formatted Lisp"
+                                                                         "Single-line Lisp"
+                                                                         "Formatted JSON"
+                                                                         "Single-line JSON"]
+                                                                }
+                                                   save_location: {
+                                                       values: (if is_served?
+                                                                  [ "Server" "Local To This Computer"]
+                                                                  ["Local to This Computer"])
+                                                   }
+                                                 }
+                                          }))
+                     status_elem
+                     (div { `class: "juno-bottom-bar" }
+                          export_button
+                          copy_button
+                          cancel_button)))
+      (attach_event_listener view
+         `click
+         handle_event)
+      
+      ;; now wait for the user to confirm/select choices
+      (= result
+         (new Promise
+            (fn (resolve reject)
+               (progn
+                  (declare (function resolve reject))
+                  (= resolver resolve)
+                  (= frame
+                     (floating_div view {
+                                          title: (+ (dtext "Export/Copy") ": " layout_name)
+                                          on_close: (fn ()
+                                                       (resolver nil))
+                                          controls: true
+                                          }))))))
+     
+      result)) 
   
 ;; the global keyword_mapper routes to the currently focused
 ;; editor for the local keyword_mapper to that editor and the
@@ -14255,8 +14744,16 @@
                          (lock_layout_positions current_layout.options.name))
                 }])]
              
-         [[(dtext "Copy as Quoted View")
-           ]]
+         [(if current_layout.options.root_bundle
+              [(dtext "Open This Layout Code in New Buffer")
+               (fn ()
+                  (copy_layout_to_buffer current_layout))]
+              [])]
+          [(if current_layout.options.root_bundle
+              [(+ (dtext "Export Layout") " " (control_name current_layout) "...")
+               (fn ()
+                  (export_layout (control_name current_layout)))]
+              [])]
          [["--" nil]]
          [[(dtext "Remove Named Layout..")
            (on_empty [["No Named Layouts" 

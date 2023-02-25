@@ -157,6 +157,9 @@
                                 `do_not_include: (conj  [ `browser_repl `line_reader  ] (if (is_array? options.do_not_include) options.do_not_include []) )}))
         (scripts (-> (page_header) `querySelectorAll "script[id]"))
         (styles (-> (page_header) `querySelectorAll "style[id]"))
+        (do_not_include_scripts (if (is_array? options.do_not_include_scripts)
+                                    options.do_not_include_scripts
+                                    []))
         (log (if (is_function? options.log)
                options.log
                console.log))
@@ -165,10 +168,13 @@
                                ((acc [])
                                 (deduper (new Set)))
                              (map (fn (idx)
-                                    (when (and (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
-                                               (not (-> deduper `has (-> (prop scripts idx) `getAttribute `id))))
-                                      (-> deduper `add (-> (prop scripts idx) `getAttribute `id))
-                                      (push acc (prop scripts idx))))
+                                     (let
+                                        ((script_id (-> (prop scripts idx) `getAttribute `id)))
+                                        (when (and (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
+                                                   (not (-> deduper `has (-> (prop scripts idx) `getAttribute `id)))
+                                                   (not (contains? script_id do_not_include_scripts)))
+                                           (-> deduper `add (-> (prop scripts idx) `getAttribute `id))
+                                           (push acc (prop scripts idx)))))
                                   (range scripts.length))
                              acc))
         (additional_styles (let
@@ -209,8 +215,14 @@
                           `outerHTML))
         (scaffold_2 (prop
                           
-                          (html/body { style: "height: 98vh; overflow: hidden;" `id: "body" }
-                                     (html/header {  `id: "page-header" class: "juno-page-header" } )
+                          (html/body { style: (+ "" (if options.no_header 
+                                                        "height: 100vh; "
+                                                        "height: 98vh; ")
+                                                 " overflow: hidden;")
+                                             `id: "body" }
+                                     (if options.no_header
+                                        (html/header {  `id: "page-header" })
+                                        (html/header {  `id: "page-header" class: "juno-page-header" } ))
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))

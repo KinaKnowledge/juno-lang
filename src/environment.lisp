@@ -2147,7 +2147,22 @@
                                      (-> child.1 `evaluate (+ "(" child.0 "/*on_serialization*)")))
                                   (= child_env (-> child.1
                                                    `compile
-                                                   (-> child.1 `export_symbol_set (+ {} ;(if options.do_not_include { do_not_include: options.do_not_include } {})
+                                                   (-> child.1 `export_symbol_set (+ {} 
+                                                                                     (if options.do_not_include 
+                                                                                        { do_not_include: (let
+                                                                                                             ((comps nil))
+                                                                                                             (reduce (symbol options.do_not_include)
+                                                                                                                (progn
+                                                                                                                   (cond
+                                                                                                                      (contains? "/" symbol)
+                                                                                                                      (progn
+                                                                                                                         (= comps (split_by "/" symbol))
+                                                                                                                         (if (== comps.0 child.0)
+                                                                                                                             comps.1))
+                                                                                                                      else
+                                                                                                                      symbol))))
+                                                                                                             
+                                                                                     } {})
                                                                                      { `no_compiler: true }))
                                                    { `throw_on_error: true  }))
                                   ;(= child_env (-> child.1

@@ -1278,6 +1278,7 @@
 (defun symbol_map_for_buffer (source_name source debug?)
    (let
       ((symbol_locations {}))
+      (log (+ "symbol_map_for_buffer: running: " source_name))
       (reader source
          { source_name: source_name
            suppress_throw_on_error: true 
@@ -1854,7 +1855,8 @@
                                              ((new_op nil)
                                               (rnge (or (-> editor.session `getBracketRange (-> editor `getCursorPosition))
                                                         (find_last_paren editor)))
-                                              (usage nil))
+                                              (usage nil)
+                                              (stime (time_in_millis)))
                                              (if rnge
                                                 (progn
                                                    (= last_bracket_match rnge)
@@ -1863,9 +1865,9 @@
                                                    (when (not (== new_op active_lisp_operator))
                                                       (= active_lisp_operator new_op)
                                                       (= usage (decorative_usage active_lisp_operator nil nil (function (val)
-                                                                                                                               (progn 
-                                                                                                                                  (symbol_finder val true)
-                                                                                                                                     ))))
+                                                                                                                 (progn
+                                                                                                                    (symbol_finder val true)
+                                                                                                                    ))))
                                                       (when (> __VERBOSITY__ 0)
                                                          (log "find_active_lisp_operator: " active_lisp_operator " usage is: " usage))
                                                       (if usage
@@ -1875,7 +1877,8 @@
                                                       (when usage
                                                          (dispatch_event { `command: "display_usage" `source: options.id `args: [active_lisp_operator] }))
                                                       (when options.on_new_lisp_operator
-                                                         (options.on_new_lisp_operator active_lisp_operator))))
+                                                         (options.on_new_lisp_operator active_lisp_operator))
+                                                      (console.log "find_active_lisp_operator: eval time: " (- (time_in_millis) stime) "ms")))
                                                 (progn
                                                    (= active_lisp_operator nil)
                                                    (-> help_context_elem
@@ -2229,7 +2232,7 @@
                                                    (set_prop rval
                                                       `namespace ns)
                                                    (break))))
-                                          (console.log "symbol_finder: search_order:" search_order " rval from level 2: " token "->" rval)
+                                          ;(console.log "symbol_finder: search_order:" search_order " rval from level 2: " token "->" rval)
                                           (if rval
                                              (if want_metadata
                                                 rval
@@ -2301,7 +2304,8 @@
                                                  (-> evaluator_control `current_namespace)))
                                         (in_path nil)
                                         (search_order nil))
-                                       
+                                       (when (== intf nil)
+                                          (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
                                        (when (is_object? symbol_set)
                                           (= cached_symbols symbol_set)
                                           (= search_order
@@ -2324,12 +2328,7 @@
                                                          (if in_path
                                                              sym
                                                              (+ ns "/" sym))))))))
-                                       (try 
-                                          (progn
-                                             (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
-                                             (= symbol_map_dirty? false))
-                                          (catch Error (e)
-                                             (log "editor: symbol_map threw: " e.message)))
+                                       
                                        (when evaluator_control
                                           (set_prop ns_span
                                              `innerText
@@ -2541,11 +2540,12 @@
                                         (setq editor
                                            (ace.edit editor_div))
                                         
+                                        
                                         ;(log "initialize_editor: " options.mode " options: " (clone options))
                                         
                                         ;; ensure that the Ace language tools extension is loaded
-                                        
-                                        
+                                        (display_context_message "Initializing....")
+                                        (sleep 0.01)  ;; update display
                                         (defglobal LangTools (-> ace `require "ace/ext/language_tools"))
                                         
                                         ;; if we are not explicitly told to link to another editor...
@@ -2691,6 +2691,8 @@
                                         
                                         (-> editor `on `change (function (val)
                                                                   (progn
+                                                                     (when (== intf nil) ;; we've been destroyed so shouldn't be here
+                                                                        (log_error "text_editor: " name ": in on change for the editor and we are destroyed!"))
                                                                      (add_class "juno-needs-save" title_span)
                                                                      (= is_dirty? true)
                                                                      (= symbol_map_dirty? true)
