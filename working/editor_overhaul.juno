@@ -1229,6 +1229,7 @@
             control))))
    
 
+
 (defun rename_editor_group (path)
    (try 
       (let
@@ -1907,7 +1908,7 @@
                                  (-> editor.commands `addCommand
                                     (to_ace_keybinding key_command it func))))))
             ;; keyword mapper support
-            (keyword_mapper (function (token)
+            (internal_keyword_mapper (function (token)
                                (progn
                                   ;(console.log "editor keyword mapper: " options.name token)
                                   (defvar rval
@@ -2375,13 +2376,33 @@
                                     (-> navigator.clipboard `writeText text)
                                     (-> editor.session `replace rng "")))))
             (copy_selection (fn ()
-                               (when (not (blank? (-> editor `getCopyText)))
-                                  (-> navigator.clipboard `writeText (-> editor `getCopyText)))))
-            (paste_selection (fn ()
                                (let
-                                  ((text (-> navigator.clipboard `readText))
-                                   (rng (get_selection_object)))
-                                  (-> editor.session `replace rng text))))
+                                  ((text (if (search_focused?)
+                                             (= text (prop (search_box_handle) `value))
+                                             (= text (-> editor `getCopyText)))))
+                                  (log "copy: "(search_focused?) (prop (search_box_handle) `value))
+                                  (when (not (blank? text))
+                                     (-> navigator.clipboard `writeText text)))))
+                              
+            (paste_selection (fn ()
+                                (cond 
+                                   (search_focused?)
+                                   (progn
+                                      (log "search_focused: " (-> navigator.clipboard `readText))
+                                      (set_prop (search_box_handle)
+                                                `value
+                                                (-> navigator.clipboard `readText)))
+                                   else
+                                   (let
+                                      ((text (-> navigator.clipboard `readText))
+                                       (rng (get_selection_object)))
+                                      (-> editor.session `replace rng text)))))
+            (search_box_handle (function ()
+                                  (-> view `querySelector "input.ace_search_field")))
+            (search_focused? (function ()
+                                (== document.activeElement 
+                                   (-> view
+                                       `querySelector "input.ace_search_field"))))
             
             (menu_items (fn ()
                            (if (is_object? editor)
@@ -2704,8 +2725,6 @@
                                                                         (dispatch_event { command: "editor_change"
                                                                                           source: options.id
                                                                                           args: [ val ] }))
-                                                                     ;(update_position)
-                                                                     
                                                                      
                                                                      (when options.on_change
                                                                         (options.on_change editor val)))))
@@ -2793,6 +2812,7 @@
                                                        (let
                                                           ((count 10)
                                                            (evaluator_control nil))
+                                                          (when (== options.mode "juno")
                                                           ;; unless we have been explicitly given an evaluator, use the system repl
                                                           (if options.evaluator_id
                                                              (progn
@@ -2808,8 +2828,9 @@
                                                                    (notify "Unable to set evalator control for the buffer - id not found")))
                                                              (when *system_repl*
                                                                 (display_context_message (+ "Evaluator for this buffer is " (prop *system_repl* `name)))
-                                                                (set_evaluator_control *system_repl*)))))
+                                                                (set_evaluator_control *system_repl*))))))
                                                     100)
+                                        (display_context_message "Ready")
                                         ;(log "initialize_editor: " (clone options.name) (+ ": (" (last_n_chars 5 options.id) "): initialization complete:") (clone options))
                                         intf)))))
            
@@ -2971,7 +2992,7 @@
                                      options))
                 `cached_symbols: (function ()
                                     cached_symbols)
-                `keyword_mapper: keyword_mapper
+                `keyword_mapper: internal_keyword_mapper
                 `toJSON: (function ()
                             (progn
                                (if (is_symbol? `LZString)
@@ -3180,3 +3201,18 @@
                              else
                              []))))))
        (throw EvalError "show_editor_keybindings: requirs a text_editor control as an argument")))
+
+
+(defun color_popup (rgb_text position)
+   (let
+      ((div { `style: (+ "position: absolute; left:" 
+                         position.x 
+                         "px; top: " 
+                         position.y "px; width: 10px; height: 10px;"
+                         "background: " rgb_text "; ") }))))
+
+
+(let
+   ((widgets (new ace.LineWidgets))
+      
+            

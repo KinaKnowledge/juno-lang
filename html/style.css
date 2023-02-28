@@ -2279,14 +2279,22 @@ span.juno-hint {
 
 .juno-form {
     padding: 10px;
+    flex-direction: column;
+    display: flex;
+    height: calc(100% - 50px);
+    justify-content: stretch;
 }
 
 .juno-form h4 {
     margin-top: 0px;
+    margin-bottom: 5px;
 }
 
 .juno-form-data {
     line-height: 1.5em;
+    display: flex;
+    justify-content: stretch;
+    flex-direction: column;
 }
 
 /* Overrides - may be dealt with in a better way but for now

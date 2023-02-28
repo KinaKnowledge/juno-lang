@@ -56,22 +56,7 @@
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
 
 
-;; 
 
-(create_css_entry "td.juno-obj-to-dom-key"
-                  [["vertical-align" "top"]
-                   ["color" "#881280"]
-                   ["text-align" "right"]
-                   ["font-weight" "bold"]
-                   ["padding-right" "5px"]])
-
-
-;;(create_css_entry "span.juno-value"
- ;;                 [["display" "inline-block"]])
-   
-;;(create_css_entry "li.juno-array-item"
-;;                  [["list-style" "decimal"]])   
- 
 ;; for determining keycodes
 (defun get_operating_platform ()
     (if (contains? "Macintosh" navigator.userAgent)
@@ -125,6 +110,13 @@
             else
             (log "Handle Clipboard Event" command (prop *last_focus* `type))))))
 
+(defun_sync active_element ()
+   document.activeElement
+   {
+       description: "Returns the element with active focus in the document."
+       tags: [ `focus `document `ui `active `element ]
+       usage: []
+   })
 
 (defun_sync value_to_dom (val options _path)
   (let 
@@ -2107,6 +2099,8 @@
 (defun make_named_layout (name root_control options)
    (let
       ((target_control (cond
+                          options.unmounted_source
+                          root_control
                           (and (is_control? root_control)
                                (is_top_control? root_control))
                           (first (-> root_control `controls))
@@ -2117,7 +2111,6 @@
                         (trim name)
                         (throw TypeError "make_named_layout must be a non blank name")))
        (layout_control nil)
-       (parents (parents_for_control target_control))
        (id (or options.id (gen_id "container")))
        (can_hide? (fn ()   ;; link to the children to prevent them going to the holding tank individually
                      false))
@@ -2138,6 +2131,7 @@
                                                {
                                                  name: layout_name
                                                  id: id
+                                                 is_locked?: true
                                                  root_bundle: layout_name
                                                  last_focus_id: (resolve_path [ `options `id ]
                                                                               (or *last_focus*
@@ -2150,6 +2144,8 @@
           ;; give the replacement control to the current root_frame
           ;; ..before switching
           (cond
+             options.unmounted_source
+             nil
              (> (length (holding_tank_controls)) 0)
              (progn
                 (= replacement_control (first (holding_tank_controls)))
@@ -2170,10 +2166,10 @@
           (push $root_controls
              layout_control)
           
-          (-> root_control `set_content 0 replacement_control)
-          (set_focus_to replacement_control)
-          
-          (set_path [ `options `last_focus_id ] (get_current_layout_control)  replacement_control.options.id)
+          (unless options.unmounted_source
+             (-> root_control `set_content 0 replacement_control)
+             (set_focus_to replacement_control)
+             (set_path [ `options `last_focus_id ] (get_current_layout_control)  replacement_control.options.id))
                     
           ;; find the displayed
           
@@ -2185,14 +2181,20 @@
                   (notify "Unable to switch to the new layout")
                   it))))
    {
-     `description: (+ "Given a name for the layout, and the root control to be used as the "
+     `description: (+ "<br><br>Given a name for the layout, and the root control to be used as the "
                       "basis for the layout, the function will name the layout and associate the "
                       "currently displayed controls in the root_control to be part of the layout.  The "
                       "user can then switch to and from the layout allowing for multiple different "
                       "composite views to be available of the available controls.  <br>Layouts can be "
                       "switched via the `Layout` menu or key commands tied to the path `[ \"global\" "
                       "\"layout_n\" ]` where n is a numeric value starting from 0. <br>Named layouts are "
-                      "preserved across serializations.")
+                      "preserved across serializations.<br><br>#### Options "
+                      "<br><br>unmounted_source:boolean - If provided as an option and set to true, "
+                      "the provided root_control is assumed to be an unmounted control, which means "
+                      "that it is not currently attached to the DOM or in the holding tank.  This "
+                      "option is useful for quickly creating a new named layout with a single control "
+                      "as opposed to a previously mounted control.  <br> ")
+
      `usage: ["name:string" "root_control:object" ]
      `tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
      })
@@ -4043,6 +4045,7 @@
    (eval `(defglobal ,#name (html/get_by_id ,#name)
             {
              `embedded_script: true
+             `external_header_ids: [ ,#name ]
              }))))
 
 (defun embed_js (name js_text) 
@@ -4079,12 +4082,34 @@
                     (log (error_message (+ "Unable to create " assignment_to ": " e.message)))
                     (console.error "ERROR: " e))))                                                    
               (when (not error)
+                (set_path [ `definitions assignment_to `source_name ] Environment file.name)
                 (log (message (+ "Loaded JS to " assignment_to )))))
             (notify "Entry Cancelled")))
       else
       (progn
        (log "Unable to read the file")
        (console.error fdata)))))
+
+;; get all the header scripts - we need to choose to eliminate some if we want to
+(defun embedded_script_ids ()
+   (map (fn (v)
+           (get_attribute v `id)) (-> (page_header) `querySelectorAll "script[id]"))
+   {
+       `description: "Returns a list of script elements in the page header"
+       `usage: []
+       `tags: ["scripts" "ids" "assets" "DOM" ]
+   })
+
+(defun embedded_style_ids ()
+   (map (fn (v)
+           (get_attribute v `id)) (-> (page_header) `querySelectorAll "style[id]"))
+   {
+       `description: "Returns a list of script elements in the page header"
+       `usage: []
+       `tags: ["styles" "style" "ids" "assets" "DOM" ]
+   })
+
+
 
 (defun load_files (files)
   (when (> files.length 0)
@@ -6425,7 +6450,7 @@
                                  (-> editor.commands `addCommand
                                     (to_ace_keybinding key_command it func))))))
             ;; keyword mapper support
-            (keyword_mapper (function (token)
+            (internal_keyword_mapper (function (token)
                                (progn
                                   ;(console.log "editor keyword mapper: " options.name token)
                                   (defvar rval
@@ -6822,7 +6847,8 @@
                                                  (-> evaluator_control `current_namespace)))
                                         (in_path nil)
                                         (search_order nil))
-                                       
+                                       (when (== intf nil)
+                                          (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
                                        (when (is_object? symbol_set)
                                           (= cached_symbols symbol_set)
                                           (= search_order
@@ -6892,13 +6918,33 @@
                                     (-> navigator.clipboard `writeText text)
                                     (-> editor.session `replace rng "")))))
             (copy_selection (fn ()
-                               (when (not (blank? (-> editor `getCopyText)))
-                                  (-> navigator.clipboard `writeText (-> editor `getCopyText)))))
-            (paste_selection (fn ()
                                (let
-                                  ((text (-> navigator.clipboard `readText))
-                                   (rng (get_selection_object)))
-                                  (-> editor.session `replace rng text))))
+                                  ((text (if (search_focused?)
+                                             (= text (prop (search_box_handle) `value))
+                                             (= text (-> editor `getCopyText)))))
+                                  (log "copy: "(search_focused?) (prop (search_box_handle) `value))
+                                  (when (not (blank? text))
+                                     (-> navigator.clipboard `writeText text)))))
+                              
+            (paste_selection (fn ()
+                                (cond 
+                                   (search_focused?)
+                                   (progn
+                                      (log "search_focused: " (-> navigator.clipboard `readText))
+                                      (set_prop (search_box_handle)
+                                                `value
+                                                (-> navigator.clipboard `readText)))
+                                   else
+                                   (let
+                                      ((text (-> navigator.clipboard `readText))
+                                       (rng (get_selection_object)))
+                                      (-> editor.session `replace rng text)))))
+            (search_box_handle (function ()
+                                  (-> view `querySelector "input.ace_search_field")))
+            (search_focused? (function ()
+                                (== document.activeElement 
+                                   (-> view
+                                       `querySelector "input.ace_search_field"))))
             
             (menu_items (fn ()
                            (if (is_object? editor)
@@ -7208,6 +7254,8 @@
                                         
                                         (-> editor `on `change (function (val)
                                                                   (progn
+                                                                     (when (== intf nil) ;; we've been destroyed so shouldn't be here
+                                                                        (log_error "text_editor: " name ": in on change for the editor and we are destroyed!"))
                                                                      (add_class "juno-needs-save" title_span)
                                                                      (= is_dirty? true)
                                                                      (= symbol_map_dirty? true)
@@ -7219,8 +7267,6 @@
                                                                         (dispatch_event { command: "editor_change"
                                                                                           source: options.id
                                                                                           args: [ val ] }))
-                                                                     ;(update_position)
-                                                                     
                                                                      
                                                                      (when options.on_change
                                                                         (options.on_change editor val)))))
@@ -7308,6 +7354,7 @@
                                                        (let
                                                           ((count 10)
                                                            (evaluator_control nil))
+                                                          (when (== options.mode "juno")
                                                           ;; unless we have been explicitly given an evaluator, use the system repl
                                                           (if options.evaluator_id
                                                              (progn
@@ -7323,8 +7370,9 @@
                                                                    (notify "Unable to set evalator control for the buffer - id not found")))
                                                              (when *system_repl*
                                                                 (display_context_message (+ "Evaluator for this buffer is " (prop *system_repl* `name)))
-                                                                (set_evaluator_control *system_repl*)))))
+                                                                (set_evaluator_control *system_repl*))))))
                                                     100)
+                                        (display_context_message "Ready")
                                         ;(log "initialize_editor: " (clone options.name) (+ ": (" (last_n_chars 5 options.id) "): initialization complete:") (clone options))
                                         intf)))))
            
@@ -7486,7 +7534,7 @@
                                      options))
                 `cached_symbols: (function ()
                                     cached_symbols)
-                `keyword_mapper: keyword_mapper
+                `keyword_mapper: internal_keyword_mapper
                 `toJSON: (function ()
                             (progn
                                (if (is_symbol? `LZString)
@@ -7633,9 +7681,6 @@
                       "that can contain up to `max_cursor_positions`.  The `go_backward_in_position` "
                       "and `go_forward_in_position` functions in the text_editor closure move an index "
                       "back and forth between the stored positions.   ")
-
-
-
 
      })
 
@@ -13785,29 +13830,35 @@
      (= save_as_name (to_key save_as_name))
      
      
+     (when options.shake_tree
+        (for_each (ctl root)
+           (progn
+              (log "save_control_image: evaluating control dependencies for: " ctl.type)
+              (= exp (shake_tree ctl options))
+              (for_each (sym exp.symbols)
+                 (-> export_details.symbols `add sym))
+              (for_each (ns exp.namespaces)
+                 (-> export_details.namespaces `add ns))))
+        ;; now add the do not includes - but only if there is no symbol dependencies do not contain it
+        (for_each (ctl root)
+           (progn
+              (for_each (dni exp.do_not_include)
+                 (unless (-> export_details.symbols `has dni)
+                    (-> export_details.do_not_include `add dni)))))
+        ;; there are some special functions that we need to include
+        ;; *initializer* is the initialization routine that isn't a dependency for the control since it calls the control
+        ;; user/keyword_mapper - this is a special 'hoisted' function that get moved up to core and exposed for the 
+        ;; Ace editor modes that are calling into the environment
         
-     (for_each (ctl root)
-        (progn
-           (log "save_control_image: evaluating control dependencies for: " ctl.type)
-           (= exp (shake_tree ctl options))
-           (for_each (sym exp.symbols)
-              (-> export_details.symbols `add sym))
-           (for_each (ns exp.namespaces)
-              (-> export_details.namespaces `add ns))))
-     ;; now add the do not includes - but only if there is no symbol dependencies do not contain it
-     (for_each (ctl root)
-        (progn
-           (for_each (dni exp.do_not_include)
-              (unless (-> export_details.symbols `has dni)
-                 (-> export_details.do_not_include `add dni)))))
-     (-> export_details.do_not_include `delete "user/*initializer*")
-     (set_prop export_details
-        `do_not_include (to_array export_details.do_not_include)
-        `namespaces (to_array export_details.namespaces)
-        `symbols (to_array export_details.symbols))
-     
-     (set_prop options
-        `do_not_include export_details.do_not_include)
+        (for_each (`entries [ "user/*initializer*" "user/keyword_mapper" ] )
+           (-> export_details.do_not_include `delete entries))
+        (set_prop export_details
+           `do_not_include (to_array export_details.do_not_include)
+           `namespaces (to_array export_details.namespaces)
+           `symbols (to_array export_details.symbols))
+        
+        (set_prop options
+           `do_not_include export_details.do_not_include))
      ;; do we have an initializer to use?
      (when initializer
         (log "save_control_image: using initializer: " options.initializer_symbol initializer)
@@ -14428,6 +14479,22 @@
       ((cancel_button (button { `style: "float: right" }  (dtext "Close")))
        (orig_options options)
        (export_button (button (dtext "Export")))
+       (array_to_keyed_booleans (fn (items init_state)
+                                  (if (is_array? items)
+                                      (to_object
+                                         (for_each (item items)
+                                            [item (or init_state false)])))))
+       (embedded_scripts (array_to_keyed_booleans (reduce (embeded_id (embedded_script_ids))
+                                           (unless (or (== embeded_id "juno-core")
+                                                       (== embeded_id "lz_string"))
+                                              embeded_id))
+                                        true))
+       (embedded_styles (array_to_keyed_booleans (reduce (embeded_id (embedded_style_ids))
+                                           (unless (or (== embeded_id "juno-css")
+                                                       (== embeded_id "juno-css-theme"))
+                                              embeded_id))
+                                        true))
+       (assets_elem nil)
        (export_options nil)
        (copy_button (button { `title: "Copy as a quoted form that can be reused in other code" } (dtext "Copy Code")))
        (status_elem (div { `style: "border: 2px inset #FFFFFF; padding: 8px; background: #FFFFFF20; font-weight: bold; margin-bottom: 20px;margin-top: 10px;" } (dtext "Ready")))
@@ -14439,8 +14506,10 @@
                      save_location: (if is_served?
                                       "Server"
                                       "Local To This Computer")
-                     output_as: "Multi-line Lisp"
-                     } options))  ;; if supplied options, use them as defaults                          nil))))
+                     output_as: "Multi-line Lisp" }
+                     options))  ;; if supplied options, use them as defaults                          
+       (check_all_assets_button (button { } "Check All"))
+       (uncheck_all_assets_button (button { } "Uncheck All"))
        (set_busy (fn (message)
                     (if (is_string? message)
                         (progn
@@ -14460,7 +14529,18 @@
                            (set_prop status_elem
                               `innerHTML
                               message)))))
-       
+       (check_all_assets (fn (state)
+                            (progn
+                               (try
+                                  (for_each (elem (-> assets_elem `querySelectorAll "input"))
+                                     (when (is_element? elem)
+                                        (if (or (and (== state false`)
+                                                       elem.checked)
+                                                  (and (== state true)
+                                                       (not elem.checked)))
+                                            (-> elem `click))))
+                                  (catch Error (e)
+                                     (log "Error: " e))))))
        (layout (get_control_by_name layout_name))
        (save_as_app (fn ()
                        (when (not (blank? options.application_name))
@@ -14472,10 +14552,18 @@
                              (= export_options
                                 {
                                   `no_header: true
+                                  `do_not_include_scripts: (reduce (emset (pairs embedded_scripts))
+                                                                (destructuring_bind (script_name is_wanted)
+                                                                   emset
+                                                                   (unless (or is_wanted
+                                                                               (== script_name "juno-core")
+                                                                               (== script_name "lz_string"))
+                                                                      script_name)))
                                   `initializer_symbol: `layout_initializer
                                   `save_prefix: options.application_name
                                   `keep_text_editor_content: options.keep_text_editor_content
                                   `root_controls: [ layout ]
+                                  `shake_tree: true
                                   `save_locally: (if (== "Local To This Computer" options.save_location)
                                                      true
                                                      false)
@@ -14517,20 +14605,27 @@
                                  (save_as_app))
                               (== src copy_button)
                               (progn
-                                 (copy_layout_to_buffer layout options))))))
+                                 (copy_layout_to_buffer layout options))
+                              (== src check_all_assets_button)
+                              (progn
+                                 (check_all_assets true))
+                              (== src uncheck_all_assets_button)
+                              (progn
+                                 (check_all_assets false))
+                              ))))
        (view nil)
        (frame nil)
        (result nil))
       (assert (is_control? layout) "export_layout: invalid layout or control name provided")
       (= view
-         
-                (div { `class: "juno-form" }
+                (div { `class: "juno-form" `style: "flex-grow: 1; "}
                      (h4 (+ "Layout: " layout_name))
                      (dtext "You can export the layout as usable code, or save the layout as an application.")
                      (br)
                      (br)
-                     (div { `class: "juno-form-data" }
-                          (value_to_dom options
+                     (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
+                          (div { `style: "flex-grow: 0;"  }
+                               (value_to_dom options
                                         { editable: true
                                           disable_object_toggle: true
                                           pretty_keys: true
@@ -14549,14 +14644,38 @@
                                                    }
                                                  }
                                           }))
-                     status_elem
-                     (div { `class: "juno-bottom-bar" }
-                          export_button
-                          copy_button
-                          cancel_button)))
+                          (hr { `style: "width: 100%" } )
+                          (h4 { `style: "flex-grow: 0;" } "DOM Resident Assets")
+                          (div { `style: "flex-grow: 0;" } "Checked items will be included in the emitted page."
+                               (div { `style: "display: inline-block;"} check_all_assets_button uncheck_all_assets_button))
+                          (= assets_elem
+                             (div { `style: "margin-top: 3px; justify-content: stretch; flex-grow: 2; flex-shrink: 2; flex-basis: 150px; overflow: scroll;" }
+                               (div { `style: "display: flex; align-items: stretch; justify-content: stretch; flex-direction: row;" }
+                                    (div { `style: "flex-grow: 1;margin-top: 3px; background: #FFFFFF10; ; padding: 5px; " }
+                                         (div { `style: "font-weight: bold;" } "Scripts")
+                                            (value_to_dom embedded_scripts
+                                                       { editable: true
+                                                         disable_object_toggle: true
+                                                         pretty_keys: true
+                                                         expand_all: true
+                                                         }))
+                                    (div { `style: "flex-grow: 1;  margin-top: 3px; background: #FFFFFF10;; padding: 5px; " }
+                                         (div { `style: "font-weight: bold;"} "Styles")
+                                         (value_to_dom embedded_styles
+                                                       { editable: true
+                                                         disable_object_toggle: true
+                                                         pretty_keys: true
+                                                         expand_all: true
+                                                         })))))
+                          status_elem
+                          (div
+                             export_button
+                             copy_button
+                             cancel_button))))
       (attach_event_listener view
          `click
          handle_event)
+      
       
       ;; now wait for the user to confirm/select choices
       (= result
@@ -14565,13 +14684,31 @@
                (progn
                   (declare (function resolve reject))
                   (= resolver resolve)
+                  
                   (= frame
                      (floating_div view {
                                           title: (+ (dtext "Export/Copy") ": " layout_name)
                                           on_close: (fn ()
                                                        (resolver nil))
                                           controls: true
-                                          }))))))
+                                          position: {
+                                              left: 10
+                                              top: 10
+                                          }
+                                          }))
+                  (attach_event_listener frame.view
+                     `keydown
+                     (fn (e)
+                        (progn
+                           (log "Key: " e.key)
+                           (if (== e.key "Escape")
+                               (progn
+                                  (-> frame `close)
+                                  (resolver nil)))
+                           )))
+                  (focus_to (first (-> view `querySelectorAll "input")))
+                  ))))
+      
      
       result)) 
   

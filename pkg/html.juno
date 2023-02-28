@@ -1401,69 +1401,7 @@
 
 
 
-(defun tabs (tab_list)
-  (let
-      ((view nil)       
-       (add_tab (fn (name content closable)
-                  true))
-       (header nil)
-       (head_tabs [])
-       (body_tabs [])       
-       (remove_tab (fn (name)
-                     true)))
-       
-    ;; setup the initial view
-    (setq view
-          (div { `class: "tabWrap" }
-               ;; tab headers
-               (setq header
-                     (ul { `class: "tabHead" }
-                         (map (fn (entry idx)                      
-                                (progn
-                                 (push head_tabs
-                                       (li { `idx: idx }
-                                           entry.0
-                                           (if entry.2
-                                             (span { `style: "float: right" } "x")
-                                             [])))
-                                 (last head_tabs)))
-                              tab_list)))
-               (map (fn (entry idx)                      
-                      (progn
-                       (-> entry.1.classList `add "tabBody")
-                       (-> entry.1 `setAttribute "idx" idx)
-                       (push body_tabs entry.1)
-                       (last body_tabs)))
-                    tab_list)))
-    (attach_event_listener header
-                           `click
-                           (fn (e)
-                             (let
-                                 ((src e.srcElement)
-                                  (btab nil)
-                                  (idx (-> src `getAttribute "idx")))
-                               (for_each (elem header.children)
-                                         (cond
-                                           (and (== e.srcElement.tagName "LI")
-                                                (== elem e.srcElement))
-                                           (progn
-                                            (-> elem.classList `add "open")
-                                            (= btab (prop body_tabs (parseInt (-> src `getAttribute `idx))))
-                                            (when btab
-                                              (-> btab.classList `add "open")))
-                                           (and (== e.srcElement.tagName "LI")
-                                                (is_element? elem))
-                                           (progn
-                                            (-> elem.classList `remove "open")
-                                            (= btab (prop body_tabs (parseInt (-> elem `getAttribute `idx))))
-                                            (when btab
-                                              (-> btab.classList `remove "open"))))))))
-                                  
-    {
-     `view: view
-     `add_tab: add_tab
-     `remove_tab: remove_tab
-     }))
+
           
  ;; (defglobal tabview (tabs [["Tab 1" (div "Hi this is tab 1") true ] ["Tab 2" (div "This is tab 2") ]]))                
 

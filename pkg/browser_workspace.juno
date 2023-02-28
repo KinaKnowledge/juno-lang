@@ -160,6 +160,9 @@
         (do_not_include_scripts (if (is_array? options.do_not_include_scripts)
                                     options.do_not_include_scripts
                                     []))
+        (do_not_include_styles (if (is_array? options.do_not_include_styles)
+                                    options.do_not_include_styles
+                                    []))
         (log (if (is_function? options.log)
                options.log
                console.log))
@@ -181,11 +184,14 @@
                                ((acc [])
                                 (deduper (new Set)))
                              (map (fn (idx)
-                                    (when (and (not (== (-> (prop styles idx) `getAttribute `id) "juno-css"))
-                                               (not (-> deduper `has (-> (prop styles idx) `getAttribute `id))))                                      
-                                      (-> deduper `add (-> (prop styles idx) `getAttribute `id))
-                                      (push acc (prop styles idx))))
-                                  (range styles.length))
+                                     (let
+                                        ((style_id (-> (prop styles idx) `getAttribute `id)))
+                                        (when (and (not (== style_id "juno-css"))
+                                                   (not (-> deduper `has style_id))
+                                                   (not (contains? style_id do_not_include_styles)))
+                                           (-> deduper `add style_id)
+                                           (push acc (prop styles idx)))))
+                                     (range styles.length))
                              acc))
         (total_export_script_count (+ (length additional_embeds) 1)) ;; add one for juno-core
         (script_ids (for_each (embedded additional_embeds)
