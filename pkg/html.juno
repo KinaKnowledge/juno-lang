@@ -625,8 +625,7 @@
 
 (defun control_container (content options)
   (let
-      ((contained_content nil)
-       
+      ((contained_content content)
        (resize_observer nil)
        (options (or options {}))
        (name (or options.name
@@ -680,7 +679,7 @@
                           (-> new_content `initialize))  ;; initialize if not already
                         view)))
        (initialize (fn ()
-                     (progn
+                     (when (not initialized)
                       (when init_timer
                         (clearInterval init_timer)
                         (= init_timer nil))
@@ -690,9 +689,9 @@
                         (= parent_view view.parentElement)
                         (-> resize_observer `observe view.parentElement)
                         (perform_resize)
-                        (console.log "control_container: initializing with: " content)
-                        (when content
-                          (set_content 0 content))
+                        (console.log "control_container: initializing with: " contained_content)
+                        (when contained_content
+                          (set_content 0 contained_content))
                         (when (is_function? contained_content.initialize)
                           (-> contained_content `initialize))))))
        (destroy (fn ()
