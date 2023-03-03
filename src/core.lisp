@@ -547,7 +547,7 @@
                       ,@macro_body)
                   (quote ,#source_details)))))
          {
-          `eval_when: { `compile_time: true }
+                     `eval_when: { `compile_time: true }
           `description: "simple defmacro for bootstrapping and is replaced by the more sophisticated form."
          })
      
@@ -987,7 +987,7 @@
                                 ;; the rest go into the same path value
                                 (progn
                                    (inc passed_rest)
-                                   (push acc `*))
+                                   (push acc  [ `*  _path_prefix ]))
                                 else ;; not container, simple values record the final path in our acculumlator
                                 (push acc _path_prefix)))))
         (follow_tree structure [])
@@ -1020,9 +1020,11 @@
                        (is_value? expression)
                        (is_value? forms))
                   "destructuring_bind: requires 3 arguments")
+          ;(log "destructuring_bind: " "bind_vars: " bind_vars "paths: " paths "bound_expression: " bound_expression 
+           ;    "forms: " forms)
           (for_each (`idx (range (length paths)))
              (do
-                (if (== "*" (prop paths idx))
+                (if (== "*" (first (prop paths idx)))
                     (progn
                        (push allocations
                           [(resolve_path (prop paths (+ idx 1)) binding_vars)
@@ -1030,15 +1032,17 @@
                               (is_object? bound_expression)
                               (slice bound_expression idx)
                               else
-                              `(slice ,#expression ,#(+ idx 0)))])
+                              `(slice ,#expression ,#(first (second (prop paths idx)))))])
                        (break))
-                    (push allocations
-                       [ (resolve_path (prop paths idx) binding_vars)
-                        (cond
-                           (is_object? bound_expression)
-                           (resolve_path (prop paths idx) bound_expression)
-                           else
-                           (join "." (conj [ bound_expression ] (prop paths idx)))) ]))))
+                    (progn
+                       (push allocations
+                          [ (resolve_path (prop paths idx) binding_vars)
+                           (cond
+                              (is_object? bound_expression)
+                              (resolve_path (prop paths idx) bound_expression)
+                              else
+                              (join "." (conj [ bound_expression ] (prop paths idx)))) ])))))
+          
           (push acc
                 allocations)
           (= acc (conj acc
@@ -1447,6 +1451,60 @@
    `tags: [`compiler `system ]
    })
  
+(defun_sync from_mixed_case (mixed_case_key)
+   (let
+      ((tokens (if (is_string? mixed_case_key)
+                   (split_by "" mixed_case_key)
+                   (throw TypeError "from_mixed_case: key argument must be a string")))
+       (acc [])
+       (ccode nil))
+      (for_each (t tokens)
+         (progn
+            (= ccode (-> t `charCodeAt 0))
+            (if (and (>= ccode 65)
+                     (<= ccode 90))
+                (progn
+                   (push acc "_")
+                   (push acc (lowercase t)))
+                (push acc t))))
+      (join "" acc))
+   {
+     description: (+ "<br><br>Given a mixed case string, will return the standardized key format "
+                     "representation of the string.  For example,  the string `myVariable` will be "
+                     "returned as `my_variable` with this function.  A TypeError will be thrown if a "
+                     "non-string argument is provided. ")
+     usage: ["mixed_case_key:string"]
+     tags: [`key `convert `snake `mixed `case `format ]
+   })
+
+(defun_sync to_mixed_case (snake_case_key)
+   (let
+      ((tokens (if (is_string? snake_case_key)
+                   (split_by "" snake_case_key)
+                   (throw TypeError "to_mixed_case: key argument must be a string")))
+       (acc [])
+       (upmode false))
+      (for_each (t tokens)
+         (progn
+            (cond 
+               (== t "_")
+               (= upmode true)
+               upmode
+               (progn
+                  (push acc (uppercase t))
+                  (= upmode false))
+               else
+               (push acc t))))
+      (join "" acc))
+   {
+     description: (+ "<br><br>Given a snake case string, will return a mixed case key format "
+                     "representation of the string.  For example,  the string `my_variable` will be "
+                     "returned as `myVariable` with this function.  A TypeError will be thrown if a "
+                     "non-string argument is provided. ")
+     usage: ["snake_case_key:string"]
+     tags: [`key `convert `snake `mixed `case `format ]
+   })
+
 (defun new_ctx (ctx)
    (let
       ((new_ctx { scope: {}
@@ -3717,6 +3775,48 @@ such as things that connect or use environmental resources.
       `description: "Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well."
       `usage: ["obj:Object"]
       `tags: ["object" "array" "keys" "property" "properties" "introspection" "values"]
+   })
+
+(defmacro for ((symbol_list array_ref) `& body_forms)
+   (let
+      ((sym_list symbol_list))
+      (if (is_array? sym_list)
+          `(for_each (_pset ,#array_ref)
+              (destructuring_bind ,#sym_list
+                 _pset
+                 ,@body_forms))
+          `(for_each (,#sym_list ,#array_ref)
+              (progn
+                 ,@body_forms))))
+   {
+     description: (+ "The for macro provides a facility for looping through arrays, "
+                      "destructuring their contents into local symbols that can be used in a block.  "
+                      "The `for` macro is a higher level construct than the `for_each` operator, as it "
+                      "allows for multiple symbols to be mapped into the contents iteratively, vs. "
+                      "for_each allowing only a single symbol to be bound to each top level element in "
+                      "the provided array.<br>The symbol_list is provided as the lambda list to a "
+                      "`destructuring_bind` if multiple symbols are provided, otherwise, if only a "
+                      "single variable is provided, the `for` macro will convert to  a for_each call, "
+                      "with the `body_forms` enclosed in a `progn` block.  <br><br>#### Examples "
+                      "<br><br>An example of a multiple bindings is below.  The values of `positions` "
+                      "are mapped (destructured) into x, y, w and h, respectively, each iteration "
+                      "through the loop mapping to the next structured element of the array:```(let\n "
+                      "((positions\n      [[[1 2] [5 3]]\n       [[6 3] [10 2]]]))\n  (for ([[x y] [w h]] "
+                      "positions)\n       (log \"x,y,w,h=\" x y w h)\n       (+ \"\" x \",\" y \"+\"  w \",\" h "
+                      ")))```<br><br>Upon evaluation the log output is as follows:```\"x,y,w,h=\" 1 2 5 "
+                      "3```<br>```\"x,y,w,h=\" 6 3 10 2```<br><br>The results returned from the "
+                      "call:```[\"1,2+5,3\"\n \"6,3+10,2\"]```<br><br>Notice that the `for` body is wrapped "
+                      "in an explicit `progn` such that the last value is accumulated and returned "
+                      "from the `for` operation.<br>An example of single bindings, which essentially "
+                      "transforms into a `for_each` call with an implicit `progn` around the body "
+                      "forms.  This form is essentially a convenience call around `for_each`.  ```(for "
+                      "(x [1 2 3])\n     (log \"x is: \" x) \n     (+ x 2))```<br><br>Both the log form "
+                      "and the final body form `(+ x 2)` are the body forms and will be evaluated in "
+                      "sequence, the final form results accumulating to be returned to the "
+                      "caller.<br>Log output from the above:```\"x is: \" 1\n\"x is: \" 2\n\"x is: \" "
+                      "3```<br><br>Return value:```[3 4 5]```<br>")
+     usage: ["allocations_and_values:array" "body_forms:*"]
+     tags: [`iteration `loop `for `array `destructuring ]
    })
 
 (defun_sync word_wrap (text ncols)

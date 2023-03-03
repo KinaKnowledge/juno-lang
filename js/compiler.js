@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-02-24 13:17:31
-// Version: 2023.02.24.13.17
-export const DLISP_ENV_VERSION='2023.02.24.13.17';
+// Build Time: 2023-03-03 06:25:22
+// Version: 2023.03.03.06.25
+export const DLISP_ENV_VERSION='2023.03.03.06.25';
 
 
 
@@ -206,14 +206,14 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __body_ref__255=async function() {
+         let __body_ref__263=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(current_obj) { await __body_ref__255();
+        while(current_obj) { await __body_ref__263();
          if(__BREAK__FLAG__) {
              break;
             

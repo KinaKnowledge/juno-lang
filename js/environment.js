@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-02-24 13:17:31
-// Version: 2023.02.24.13.17
-export const DLISP_ENV_VERSION='2023.02.24.13.17';
+// Build Time: 2023-03-03 06:25:22
+// Version: 2023.03.03.06.25
+export const DLISP_ENV_VERSION='2023.03.03.06.25';
 
 
 
@@ -4878,29 +4878,29 @@ export async function init_dlisp(Environment)  {
         {
             await async function(){
                 comps[0]=await (async function(){
-                    let __array_op_rval__196=sanitizer_fn;
-                     if (__array_op_rval__196 instanceof Function){
-                        return await __array_op_rval__196((comps && comps["0"])) 
+                    let __array_op_rval__204=sanitizer_fn;
+                     if (__array_op_rval__204 instanceof Function){
+                        return await __array_op_rval__204((comps && comps["0"])) 
                     } else {
-                        return [__array_op_rval__196,(comps && comps["0"])]
+                        return [__array_op_rval__204,(comps && comps["0"])]
                     }
                 })();
                 return comps;
                 
             }();
             await (async function(){
-                 let __test_condition__197=async function() {
+                 let __test_condition__205=async function() {
                     return ((comps && comps.length)>0)
                 };
-                let __body_ref__198=async function() {
+                let __body_ref__206=async function() {
                     (acc).push((comps).shift());
                     return (acc_full).push(await (async function(){
                          return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
                     })())
                 };
                 let __BREAK__FLAG__=false;
-                while(await __test_condition__197()) {
-                     await __body_ref__198();
+                while(await __test_condition__205()) {
+                     await __body_ref__206();
                      if(__BREAK__FLAG__) {
                          break;
                         

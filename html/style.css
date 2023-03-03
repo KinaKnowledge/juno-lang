@@ -62,9 +62,8 @@
   --success-color: #19A019;
   --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
   --main-app-font-size: 14px;
-  --main-mono-space: ui-monospace,		     
+  --main-mono-space: "Roboto Mono", ui-monospace,		     
     "Cascadia Mono", "Segoe UI Mono",    
-    "Roboto Mono",
     "Ubuntu Mono",
     Menlo, Monaco, Consolas,
     monospace;

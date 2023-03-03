@@ -1309,6 +1309,186 @@
 
 
 
+(defvalue *ace_option_description*
+   { editor: {
+        hScrollBarAlwaysVisible: `boolean
+        vScrollBarAlwaysVisible: `boolean
+        highlightGutterLine: `boolean
+        animatedScroll: `boolean
+        showInvisibles: `boolean
+        showPrintMargin: `boolean
+        printMarginColumn: `number ; (defaults to 80)
+        fadeFoldWidgets: `boolean
+        showFoldWidgets: `boolean ; (defaults to true)
+        showLineNumbers: `boolean ; (defaults to true)
+        showGutter: `boolean ;(defaults to true)
+        displayIndentGuides: `boolean ; (defaults to true)
+        }
+      session: {
+         firstLineNumber: `number
+         overwrite: `boolean
+         newLineMode: [ "auto" "unix" "windows" ]
+         useSoftTabs: `boolean
+         tabSize: `number
+         foldStyle: [ "markbegin" "markbeginend" "manual"]
+         }
+      }
+     {
+         description: (+ "Object whose keys are the options and the values " 
+                         "describe the data type of the option for the text_editor "
+                         "control, which uses the Ace editor.")
+         tags: ["editor" "options" ]
+     })
+
+
+(function (ctl)
+   (try
+      (-> (getComputedStyle (-> ctl.view
+                                `querySelector ".ace_content"))
+          `getPropertyValue "font-family")
+      (catch Error (e)
+         "")))
+
+(defun editor_options (ctl)
+   (let
+      ((editor (if (and (is_control? ctl)
+                        ctl.editor)
+                   ctl.editor
+                   (throw TypeError "editor_options: requires a control with an editor as an argument")))
+       (to_opts (fn (path)
+                   (to_object
+                      (for ((opt_name data_type) (pairs (resolve_path path *ace_option_description*)))
+                           [(from_mixed_case opt_name)
+                                      (or (-> editor `getOption opt_name)
+                                          (cond
+                                             (is_function? data_type)
+                                             (data_type ctl)
+                                             (== data_type `boolean)
+                                             false
+                                             (== data_type `string)
+                                             ""
+                                             (== data_type `number)
+                                             0
+                                             else
+                                             nil))
+                                          ]))))
+       (current_value nil))
+      
+      { editor: (to_opts [ `editor ])
+        session: (to_opts [ `session ]) }
+         )
+   {
+     description: (+ "The function `editor_options` processes option keys in `*ace_editor_options*` and "
+                     "retrieves the present value, or, if the value is undefined, returns a default "
+                     "based on the type value in `*ace_editor_options*.  It handles the conversion of "
+                     "mixed case format to snake-case and returns an object that represents the "
+                     "current state of editor options listed in the `*ace_editor_options*` "
+                     "variable.<br>")
+     tags: ["editor" "options"]
+   })
+
+(defun show_editor_options (ctl)
+   (let
+      ((opts (editor_options ctl))
+       (dwin nil)
+       (set_as_defaults_button (button { } (dtext "Save as Defaults")))
+       (close_button (button { `style: "float: right" }  (dtext "Close")))
+       (special_paths {})
+       (editor ctl.editor)
+       (on_change (function (category path val)
+                     (try
+                        (progn 
+                           (cond
+                              (== category "editor")
+                              (progn 
+                                 (-> editor `setOption (to_mixed_case (last path)) val))
+                              (== category "session")
+                              (-> editor.session `setOption (to_mixed_case (last path)) val))
+                           val)
+                           (catch Error (e)
+                              (progn
+                                 (notify (+ "Unable to set option: " (last path) ": " e.message))
+                                 nil)))))
+       (set_as_defaults (fn ()
+                           (try
+                              (progn
+                                 (unless (resolve_path [ `editor `editor_defaults ] *env_config*)
+                                    (make_path [ `editor `editor_defaults ] *env_config* {}))
+                                 (unless (resolve_path [ `editor `session_defaults ] *env_config*)
+                                    (make_path [ `editor `session_defaults ] *env_config* {}))
+                                 (for ((key val) (pairs opts.editor))
+                                      (set_path [ `editor `editor_defaults key ] *env_config* val))
+                                 (for ((key val) (pairs opts.session))
+                                      (set_path [ `editor `session_defaults key ] *env_config* val))
+                                 (log *env_config*)
+                                 (notify "Set As Editor Defaults"))
+                              (catch Error (e)
+                                 (notify (+ "Cannot set defaults: " e.message)))))))
+                              
+      (traverse *ace_option_description*
+         (function (val path)
+            (if (is_array? val)
+                (make_path (conj 
+                                 (for_each (pseg path)
+                                    (from_mixed_case pseg))
+                                 `values)
+                           special_paths
+                           val))))
+      (= dwin (floating_div 
+                 (div { `class: "juno-form" } 
+                      (h4 (dtext "Options"))
+                      (br)
+                      
+                      (div { `class: "juno-form-data" `style: "flex-grow: 1; overflow-y: auto; overflow-x: auto; "}
+                           (h4 (dtext "Editor"))
+                           (value_to_dom opts.editor
+                                         {
+                                           `editable: true
+                                           `expand_all: true
+                                           `disable_object_toggle: true
+                                           `pretty_keys: true
+                                           `on_change: (function (path val)
+                                                          (on_change `editor path val))
+                                           
+                                            paths: special_paths.editor
+                                         })
+                           (hr { `style: "width: 100%;" })
+                           (h4 (dtext "Session"))
+                           (value_to_dom opts.session
+                                         {
+                                           `editable: true
+                                           `expand_all: true
+                                           `disable_object_toggle: true
+                                           `pretty_keys: true
+                                           `on_change: (function (path val)
+                                                          (on_change `session path val))
+                                             paths: special_paths.session
+                                         }))
+                      (div { `style: "margin-top: 10px" }
+                           set_as_defaults_button close_button))
+                 {
+                   `title: "Editor Options"
+                   `controls: true
+                   }))
+      (attach_event_listener set_as_defaults_button
+         `click
+         (fn ()
+            (set_as_defaults)))
+      
+      (attach_event_listener close_button
+         `click
+         (fn ()
+            (-> dwin `close))))
+      {
+        `description: (+ "Given an editor control, presents a floating window that allows the "
+                         "options listed in `*ace_editor_options*` to be modified for the given editor.  "
+                         "This utility also allows the settings to be set as defaults, by setting the "
+                         "appropriate path in `*env_config*`.<br> ")
+         tags: ["editor" "options" "DOM"]
+         usage: ["control:object"]
+      })
+
+
 (defun display_pos_details (control)
    (when control.get_position_detail
       (let
@@ -2421,6 +2601,9 @@
                                
                                [(dtext "Increase Font Size") increase_font_size]
                                [(dtext "Decrease Font Size") decrease_font_size]
+                               [(dtext "Options and Preferences")
+                                (fn (e)
+                                   (show_editor_options intf))]
                                [(dtext "Go")
                                 [[(dtext "Step Backward In Position History")
                                   go_backward_in_position]
@@ -2656,6 +2839,7 @@
                                         ;; build the key bindings
                                         (build_key_bindings editor)
                                         
+                                       
                                         (-> editor `setOptions {
                                                                  `showFoldWidgets: true
                                                                  `cursorStyle: "wide"
@@ -2663,6 +2847,23 @@
                                                                  `useSoftTabs: true
                                                                  `highlightActiveWord: true
                                                                  })
+                                        
+                                        (when (resolve_path [ `editor `editor_defaults ] *env_config*)
+                                              (for ((key val) (pairs (resolve_path [ `editor `editor_defaults ] *env_config*)))
+                                                   (try 
+                                                      (-> editor `setOption (to_mixed_case key) val)
+                                                      (catch Error (e)
+                                                         (log (+ "Error: " name ": bad initialization default value for editor in *env_config*:" key ": ") val)))))
+                                        
+                                       
+                                        (when (resolve_path [ `editor `session_defaults ] *env_config*)
+                                           
+                                           (for ((key val) (pairs (resolve_path [ `editor `session_defaults ] *env_config*)))
+                                                (try
+                                                   (-> editor.session `setOption (to_mixed_case key) val)
+                                                   (catch Error (e)
+                                                      (log (+ "Error: " name ": bad initialization default value for editor session in *env_config*:" key ": ") val)))))
+                                            
                                         
                                         ;; if this editor is primary, and not linked to another editor,
                                         ;; get the content from the specified source or path
