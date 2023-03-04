@@ -55,6 +55,7 @@
             (second (split_by "-" (first (split_by "." included_lib)))))))
 
 
+
 (defvalue *ace_option_description*
    { editor: {
         hScrollBarAlwaysVisible: `boolean
@@ -4822,18 +4823,28 @@
        (dims nil)
        (top (cond
                (is_string? options.position.top)
-               options.position.top
+               (+ options.position.top ";")
                (is_number? options.position.top)
-               (+ "" options.position.top "px")
+               (+ "" options.position.top "px;")
                else
                (+ "" (+ 5 (random_int 10)) "px; ")))
        (left (cond
                (is_string? options.position.left)
-               options.position.left
+               (+ options.position.left ";")
                (is_number? options.position.left)
                (+ "" options.position.left "px;")
                else
                (+ "" (+ 45 (random_int 10)) "%; ")))
+       (initial_width (cond 
+                         (is_string? options.position.width)
+                         (+ options.position.width ";")
+                         (is_number? options.position.width)
+                         (+ "" options.position.width "px;")))
+       (initial_height (cond
+                          (is_string? options.position.height)
+                          (+ options.position.height ";")
+                          (is_number? options.position.height)
+                          (+ "" options.position.height "px;")))
        (resize_mode false)
        (max_dims {
                   `width: 0
@@ -4880,6 +4891,12 @@
        (frame (div { class: "juno-floating-container" 
                      style: (+ "left: " left
                                "top: " top
+                               (if (is_string? initial_width)
+                                   (+ "width: " initial_width " ")
+                                   "")
+                               (if (is_string? initial_height)
+                                   (+ "height: " initial_height " ")
+                                   "")
                                 (if (is_string? options.style)
                                     (+ "" options.style ";")
                                     ""))
@@ -4949,26 +4966,30 @@
            }
          true))
    {
-     description: (+ "Given content in the form of a DOM structure, creates a draggable frame "
+     description: (+ "<br><br>Given content in the form of a DOM structure, creates a draggable frame "
                      "that presents like a dialog box, and which does not affect the underlying "
                      "layout structure.  The presented frame can be modified with options.  The popup "
                      "frame includes a title bar with a close button by default.   This is a "
                      "non-modal structure, howerver by using the controls option in conjunction with "
                      "a `Promise`, evaluation of subsequent code can be prevented until the dialog is "
-                     "closed.<br><br>#### Options <br><br>position:object - An object with two keys, "
-                     "`left` and `top`, which values control the position of the box.  If a value is "
-                     "a string, then the value is treated directly as a CSS directive, such as "
-                     "`45%`.  If the value is a number, it is considered to be a pixel offset for "
-                     "that value.  <br>title:string - If provided, this value will be used as the "
-                     "title bar.<br>style:string - Any CSS styling directives to be passed to the "
-                     "outer frame `div` that functions as the container for the "
-                     "content.<br>on_close:function - When present, this function is called when the "
-                     "user has initiated a close operation with the close button.  The return value "
-                     "of this function is ignored and so this function is purely "
-                     "advisory.<br>controls:boolean - If true, provides an interface object to manage "
+                     "closed.<br><br>#### Options  <br><br>position:object -An object with up to four "
+                     "optional keys: `undefined``top`, `width`, and `height`, which values control "
+                     "the position of the box.  If a value is a string, then the value is treated "
+                     "directly as a CSS directive, such as `45%`.  If the value is a number, it is "
+                     "considered to be a pixel offset for that value.  <br>title:string -If provided, "
+                     "this value will be used as the title bar.<br>style:string -Any CSS styling "
+                     "directives to be passed to the outer frame `div` that functions as the "
+                     "container for the content.<br>on_close:function -When present, this function is "
+                     "called when the user has initiated a close operation with the close button.  "
+                     "The return value of this function is ignored and so this function is purely "
+                     "advisory.<br>controls:boolean -If true, provides an interface object to manage "
                      "the floating div externally.  This provides a means to close the floating div "
-                     "element and retrieve the view.  By default this option is false. <br> ")
-
+                     "element and retrieve the view.  By default this option is false. <br>If the "
+                     "controls option is true, then the interface object returned will have a `view` "
+                     "element value, and a `close` function which will close the window and should be "
+                     "called with no arguments.<br> ")
+     usage: ["contents:Element" "options:object"]
+     tags: ["DOM" "ui" "html" "view" "floating" "dialog" ]
      })
 
 (defun monitor_control_tree ()
@@ -5136,7 +5157,40 @@
    tags: ["editor" "selection" "form" "lisp" "editing" ]
    })
           
-           
+    
+(defun set_word_wrap (control state wrap_at_column)
+   (let
+      ((target_editor 
+          (cond 
+             (and (is_control? control)
+                  control.editor)
+             control.editor
+             (and control.renderer 
+                control.session
+                control.textInput)
+             control
+             else
+             (throw TypeError "set_word_wrap: invalid control or editor provided"))))
+      (cond
+         (and (== state true)
+              (is_number? wrap_at_column))
+         (-> target_editor.session  `setOption `wrap wrap_at_column)
+         (== state true)
+         (-> target_editor.session `setOption `wrap true)
+         else
+         (-> target_editor.session `setOption `wrap false))
+      (if state
+         true
+         false))
+   {
+     description: (+ "Given a control with an editor property, or an Ace editor object "
+                     "directly, a state and an optional column number, will enable or disable word "
+                     "wrap for the provided object.  If word wrap is turned on, `true` will be "
+                     "returned, otherwise `false`. ")
+     usage: ["control:object" "state:boolean" "wrap_at_column:number" ]
+   })
+
+       
 (defun show_editor_keybindings (editor_control)
    (if (is_control? editor_control)
        (let
@@ -5711,6 +5765,20 @@
    })
 
 
+(defun go_to_line_number (control)
+   (when (and (is_control? control)
+              control.editor)
+      (aif (request_user_input (dtext "Enter line number") `number)
+           (-> control `move_to_position (int it) 0)))
+   {
+     description: (+ "Given an editor type control such as `text_editor`, presents a dialog "
+                     "box asking for a line number to go to and then, once a line number has been "
+                     "entered, moves the cursor and editor view to that line.  The position history "
+                     "is updated as this function calls the `move_to_position` method if the editor "
+                     "interface. ")
+     usage: ["control:object"]
+     tags: [`editor `line `row `jump `go `position `ui]
+   })
 
 (defun find_symbol_definition (symbol symbol_map current_pos root_form)
    (if (and symbol symbol_map)
@@ -6161,6 +6229,28 @@
       })
 
 
+(defun set_edit_mode (control mode_name)
+   (let
+      ((target_mode (if (is_string? mode_name)
+                        (last (split_by "/" mode_name))
+                        nil))
+       (control (if (and (is_control? control)
+                         control.editor
+                         (is_function? control.set_mode))
+                    control
+                    (throw TypeError "set_edit_mode: invalid control provided"))))
+      (unless target_mode
+         (throw TypeError "set_edit_mode: invalid mode - must be a string"))
+      
+      (-> control `set_mode mode_name))
+   {
+     description: (+ "If the provided control is a editor control and given a mode name such "
+                     "as `juno` or `markdown`,  will set that control\'s editor to the given editor "
+                     "mode if possible. ")
+     tags: [`control `editor `mode `ui `modes]
+     usage: ["control:object" "mode_name:string"]
+   })
+
 (defun_sync select_css_rule (editor pos)
    (let
       ((cpos (or pos
@@ -6253,6 +6343,7 @@
                                (if options.read_only
                                   "RO"
                                   "")))
+            (wrap_span (span { `style: "width: 25px; min-width: 25px; display: inline-block;float: right; margin-right: 15px;margin-left: 15px;" `title: "Word Wrap" } ""))
             (mode "-")
             (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
             (title_span (span { `class: "juno-title" } options.name))
@@ -6267,7 +6358,8 @@
                                   nav_forward_button
                                   nav_back_button
                                   mode_span
-                                  col_pos_span)))
+                                  col_pos_span
+                                  wrap_span)))
             (parent_view nil)
             (context_clear_timer nil)
             (display_context_message (function (value)
@@ -6386,10 +6478,13 @@
                                                            `enableBasicAutocompletion: true }))
                                options.mode
                                (progn
-                                  (-> editor.session `setMode options.mode)
+                                  (-> editor.session `setMode (+ "ace/mode/" options.mode))
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true }))
+                                                           `enableBasicAutocompletion: true })
+                                  (log "set_mode: looking for: " (+ "init_mode_" options.mode))
+                                  (aif (resolve_path [ `context `scope (+ "init_mode_" options.mode) ] Environment ) 
+                                       (it intf)))
                                else
                                (progn
                                   (set_prop options
@@ -6627,6 +6722,23 @@
                               (progn
                                  (-> editor.commands `addCommand
                                     (to_ace_keybinding key_command it func))))))
+            (get_current_token (fn ()
+                                  (let
+                                     ((pos (or pos (-> editor `getCursorPosition)))
+                                      (stream (indirect_new TokenIterator editor.session pos.row pos.column)))
+                                     (-> stream `getCurrentToken))))
+            
+            (set_wrap_mode (fn (state)
+                              (progn 
+                                 (set_word_wrap editor state)
+                                 (set_prop options
+                                    `word_wrap
+                                    state)
+                                 (if (== (-> editor `getOption `wrap) "off")
+                                     (set_prop wrap_span
+                                        `innerText "")
+                                     (set_prop wrap_span
+                                        `innerText (dtext "Wrap"))))))
             ;; keyword mapper support
             (internal_keyword_mapper (function (token)
                                (progn
@@ -6683,17 +6795,12 @@
             (position_history_idx 0)
             (current_position (fn ()
                                  (-> editor `getCursorPosition)))
+            
             (set_cursor_position (fn (pos)
                                     (progn
                                        (-> editor `navigateTo pos.row pos.column)
                                        (-> editor `scrollToLine pos.row true nil)
                                        (focus_to_editor intf))))
-            (get_current_token (fn ()
-                                  (let
-                                     ((pos (or pos (-> editor `getCursorPosition)))
-                                      (stream (indirect_new TokenIterator editor.session pos.row pos.column)))
-                                     (-> stream `getCurrentToken))))
-                                     
             (update_position (function (force?)
                                 (when editor
                                    (defvar current_pos (-> editor `getCursorPosition))
@@ -7141,15 +7248,26 @@
                                
                                [(dtext "Increase Font Size") increase_font_size]
                                [(dtext "Decrease Font Size") decrease_font_size]
+                               (if (== (-> editor `getOption `wrap) "off")
+                                   [(dtext "Enable Word Wrap") (fn (e) (set_wrap_mode true))]
+                                   [(dtext "Disable Word Wrap") (fn (e) (set_wrap_mode false)) ])
                                [(dtext "Options and Preferences")
                                 (fn (e)
                                    (show_editor_options intf))]
                                [(dtext "Go")
-                                [[(dtext "Step Backward In Position History")
-                                  go_backward_in_position]
-                                 [(dtext "Step Forward In Position History")
-                                  go_forward_in_position]]]
-                               (if (-> editor `getReadOnly)
+                                [[{
+                                   text: (dtext "Go to line number")
+                                   path: [ `global `go_to_line_number ]
+                                   }]
+                                [{
+                                   text: (dtext "Step Backward In Position History")
+                                   path: [ `global `go_backward_in_position ]
+                                   }]
+                                [{
+                                   text: (dtext "Step Forward In Position History")
+                                   path: [ `global `go_forward_in_position]
+                                   }]]]
+                                (if (-> editor `getReadOnly)
                                    [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
                                    [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
                                [(dtext "Set Edit Mode")
@@ -7347,7 +7465,13 @@
                                            (-> editor.session `setUseWorker true)
                                            (-> editor.session `setUseSoftTabs true))
                                         
+                                        (-> editor.session `setOption `indentedSoftWrap false)
+                                        
+                                        
                                         (-> editor `setShowFoldWidgets true)
+                                         
+                                        ;; expose the editor in our interface
+                                        (set_prop intf `editor editor)
                                         
                                         ;; set the extension if we haven't been given a specific option mode
                                         ;; if we have filename use that to determine what the mode is
@@ -7379,7 +7503,6 @@
                                         ;; build the key bindings
                                         (build_key_bindings editor)
                                         
-                                       
                                         (-> editor `setOptions {
                                                                  `showFoldWidgets: true
                                                                  `cursorStyle: "wide"
@@ -7403,7 +7526,9 @@
                                                    (-> editor.session `setOption (to_mixed_case key) val)
                                                    (catch Error (e)
                                                       (log (+ "Error: " name ": bad initialization default value for editor session in *env_config*:" key ": ") val)))))
-                                            
+                                        
+                                        (if options.word_wrap
+                                           (set_word_wrap editor options.word_wrap))
                                         
                                         ;; if this editor is primary, and not linked to another editor,
                                         ;; get the content from the specified source or path
@@ -7480,11 +7605,9 @@
                                               (catch Error (e)
                                                  (log "ERROR on undo manager:" e message))))
                                         
-                                        ;; expose the editor in our interface
-                                        (set_prop intf `editor editor)
+                                      
                                         
-                                        (when (is_object? options.on_mode_set)
-                                           (options.on_mode_set options.mode))
+                                       
                                         
                                         ;; signal our mode change
                                         
@@ -7544,7 +7667,10 @@
                                               (progn
                                                  (handle_event e)
                                                  (go_backward_in_position))))
-                                        
+                                        (attach_event_listener col_pos_span
+                                           `click
+                                           (fn (e)
+                                              (go_to_line_number intf)))
                                         (attach_event_listener evaluator_span
                                            `click
                                            user_select_evaluator)
@@ -7713,7 +7839,9 @@
                               nil
                               on_focus)
                 `move_to_position: (fn (row column)
-                                      (set_cursor_position { row: row column: column }))
+                                      (progn
+                                         (set_cursor_position { row: row column: column })
+                                         (update_position true)))
                 `jump_to_local_definition: (fn (symbol)
                                               (if (is_string? symbol)
                                                  (jump_to_local_definition symbol)))
@@ -14608,6 +14736,9 @@
    `tags: ["save" "file" "control"]
    })    
 
+(defun init_mode_markdown (control)
+      (set_word_wrap control true))
+
 (defun serialize_layout (layout_name options)
    (let
       ((layout (cond 
@@ -15213,6 +15344,8 @@
        
     (defvalue $root_controls [])
     
+    (when (resolve_path [ `ace `config] globalThis)
+       (-> ace.config `set `basePath "/files/js_lib"))
     
     
     ;; the root container which controls are added to..
@@ -15225,6 +15358,8 @@
        {
          `js: `javascript
          `lisp: `juno
+         `md: `markdown
+         `txt: `text
          })
     
     (attach_event_listener juno_container `click
@@ -15380,6 +15515,15 @@
                                          description: "Next Hidden Control"
                                          exec: (fn () (next_hidden_control))
                                          }
+                 "go_to_line_number" {
+                                       description: "Go to specicic line number in a text editor"
+                                       win: "Alt-Shift-G"
+                                       mac: "Alt-Shift-G"
+                                       exec: (fn ()
+                                                (if (prop *last_focus* `editor)
+                                                   (go_to_line_number *last_focus*)
+                                                   (notify "Cannot go to a line number")))
+                                       }
                  "go_backward_in_position" {
                                        description: "Go backward in the current editor position history"
                                        win: "Alt-BracketLeft"
