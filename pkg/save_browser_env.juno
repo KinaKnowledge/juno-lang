@@ -35,6 +35,7 @@
 
 (import "src/build-tools.lisp")
 
+(import "pkg/sys.juno")
 ;(defglobal core/browser_boot_code
  ; (read_text_file "js/browser_boot.js"))
 
@@ -76,17 +77,25 @@
 				  sym
 				  nil)))
   
-  ;; add in external libraries for modes and themes..
-  (defglobal included_libs ["ext-searchbox.js" "ext-split.js" "ext-language_tools.js" 
-                            "mode-juno.js" "mode-json.js" "mode-javascript.js" "mode-css.js" 
+  ;; base line included libraries
+  (defglobal included_libs ["lz-string.js"])
+  
+  ;; add in external modules for modes and themes.
+  ;; the list below establishes the baseline features, modes, and themes
+  ;; included with the editor 
+  
+  (defglobal included_editor_assets_old ["ext-searchbox.js" "ext-split.js" "ext-language_tools.js" 
+                            "mode-juno.js" "mode-json.js" "mode-javascript.js" 
                             "mode-css.js" "mode-sh.js" "mode-plain_text.js"
                             "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js"
                             "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
                             "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js" 
-                            "theme-solarized_dark.js" "theme-solarized_light.js"
-                            "lz-string.js"])
-
-  (set_path [ `included_libraries ] *env_config* included_libs)
+                            "theme-solarized_dark.js" "theme-solarized_light.js"])
+  
+  (defglobal included_editor_assets (sort (each (sys/list_files "./js_lib/editor-assets") `name)))
+  
+  
+  ;(set_path [ `included_libraries ] *env_config* included_libs)
   
   ;; setup the theme defaults if not previously set..
   (when (eq nil (prop *env_config* `editor))
@@ -95,6 +104,9 @@
               {
                 default_theme: "cobalt"
                 font_size: 14
+                themes: (reduce (theme included_editor_assets)
+                           (aif (starts_with? "theme" theme)
+                                (second (split_by "-" (first (split_by "." theme))))))
                }))
   
   (when (eq nil (prop *env_config* `application))
@@ -103,6 +115,7 @@
               { menu_timeout: 2500
                 global_theme: "idle_fingers"
                 max_log_lines: 100
+                name: "Seedling"
                }))
   
   ;; make sure not to add references that will not be available in the browser environment
@@ -140,6 +153,11 @@
                          [(to_key (replace (new RegExp "-" `g) "_" (first (split_by "." embeded_lib))))
                           (compile `(javascript ,#(read_text_file (+ "js_lib/" embeded_lib )))
                                    { `formatted_output: true }) ]))
+       (embeded_editor_assets 
+          (for_each (embeded_lib included_editor_assets)
+             [(to_key (replace (new RegExp "-" `g) "_" (first (split_by "." embeded_lib))))
+              (compile `(javascript ,#(read_text_file (+ "js_lib/editor-assets/" embeded_lib )))
+                 { `formatted_output: true }) ]))
        (embedded_editor (compile
                          `(javascript ,#(read_text_file "js_lib/ace.js"))
                          { `formatted_output: true })))
@@ -147,7 +165,7 @@
     (= doctext
        (html/serialize_document
          (html/html 
-          (html/head { `title: "Juno Browser" }
+          (html/head { `title: (get_default [ `application `name ]) }
                    (html/style { `id: "juno-css" } "body { `font-family: \"-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;\" }")
                    (html/script { `id: "juno-core" `type: "module" }
                                 js_resource
@@ -157,7 +175,7 @@
                                 )
                    (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
                                 embedded_editor)
-                   (for_each (embed_set embeds)
+                   (for_each (embed_set (conj embeds embeded_editor_assets))
                              (destructuring_bind (id lib)
                                  embed_set
                                  (html/script { `id: id `type: "text/javascript" `charset: "utf-8" }

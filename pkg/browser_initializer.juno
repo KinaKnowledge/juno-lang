@@ -48,11 +48,6 @@
 (defparameter TokenIterator (function () true)) ;; filled in by the first editor
 (defparameter core/*evaluators* {})  ;; remote evaluators
 
-(defparameter
-    *editor_themes*
-    (reduce (included_lib (or *env_config*.included_libraries []))
-        (aif (starts_with? "theme" included_lib)
-            (second (split_by "-" (first (split_by "." included_lib)))))))
 
 
 
@@ -419,7 +414,7 @@
                     "                   }\n                    `editor:{\n                      "
                     "`extensions_to_mode: {\n                            `read_only: true\n           "
                     "               }\n                        `default_theme: {\n                    "
-                    "                    values: *editor_themes*\n                                   "
+                    "                    values: (get_default [ `editor `themes ])\n                                   "
                     "     }\n                    }\n                    `application: {\n              "
                     "        `global_theme: {\n                            values: (keys "
                     "*global_themes*)\n                        }\n                    }\n              "
@@ -1488,7 +1483,7 @@
                (prop *global_themes* theme_name)) )
           (set_path [ `application `global_theme ] *env_config* theme_name)
           (when (and (not options.suppress_set_sub_theme)
-                     (contains? theme_name *editor_themes*))
+                     (contains? theme_name (get_default [ `editor `themes ])))
              (set_path [ `editor `default_theme ] *env_config* theme_name))
           ;; unless we are told not to, set any controls to the theme
           (unless options.suppress_cascade
@@ -1502,8 +1497,8 @@
                       "in that object, the theme is installed, and the *env_config* "
                       "value is updated to reflect this choice.  Additionally, if an "
                       "editor theme is found with the same name, the default editor "
-                      "theme is set as well.  Editor themes are found in the global "
-                      "*editor_themes*. <br><br>"
+                      "theme is set as well.  Editor themes are found in `*env_config*` "
+                      "under `[ \"editor\" \"themes\" ]`. <br><br>"
                       "Options are as follows:<br>"
                       "suppress_set_sub_theme:boolean:false:If true, individual control "
                       "themes such as the editor theme setting will not be set as part "
@@ -7278,7 +7273,7 @@
                                  ["JSON" (fn () (-> intf `set_mode "json"))]
                                  ["Shell" (fn () (-> intf `set_mode "sh"))]]]
                                [(dtext "Set Editor Theme")
-                                (for_each (theme *editor_themes*)
+                                (for_each (theme (get_default [ `editor `themes ]))
                                    [theme  (fn () (-> intf `set_theme theme))])]]
                               (progn
                                  (notify (+ "" options.name ": BUG: no editor anymore"))
@@ -9821,7 +9816,7 @@
                           (if (set_system_repl intf)
                               (-> input_container `display_context_message (+ "*system_repl* / REPL Mode: Press Shift-Enter to evaluate editor contents"))
                               (-> input_container `display_context_message "Unable to set this repl as the *system_repl*")))]
-                      [(dtext "Set Editor Theme") (for_each (theme *editor_themes*)
+                      [(dtext "Set Editor Theme") (for_each (theme (get_default [ `editor `themes ]))
                                                             [theme  (fn ()
                                                                       (progn
                                                                        (set_prop options `theme theme)
@@ -9991,7 +9986,7 @@
              `on_focus: on_focus
              `on_blur: on_blur           
              `set_theme: (fn (theme_name)
-                           (when (contains? theme_name *editor_themes*)
+                           (when (contains? theme_name (get_default [ `editor `themes ]))
                              (set_prop options `theme theme_name)
                              (-> input_container `set_theme theme_name)))
              `cut_selection: cut_selection
@@ -15345,7 +15340,7 @@
     (defvalue $root_controls [])
     
     (when (resolve_path [ `ace `config] globalThis)
-       (-> ace.config `set `basePath "/files/js_lib"))
+       (-> ace.config `set `basePath "/files/js_lib/editor-assets"))
     
     
     ;; the root container which controls are added to..
