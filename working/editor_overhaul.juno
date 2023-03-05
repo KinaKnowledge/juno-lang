@@ -406,7 +406,7 @@
        (target_ns symbol_data.namespace)
        (target_env nil))
       (log "new_buffer: for: " options target_ns extension symbol_data)
-      
+      (console.log "new_buffer: target_container: " target_container.name (is_top_control? target_container))
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
     (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
@@ -2730,7 +2730,7 @@
                                  ["JSON" (fn () (-> intf `set_mode "json"))]
                                  ["Shell" (fn () (-> intf `set_mode "sh"))]]]
                                [(dtext "Set Editor Theme")
-                                (for_each (theme *editor_themes*)
+                                (for_each (theme (get_default [ `editor `themes ]))
                                    [theme  (fn () (-> intf `set_theme theme))])]]
                               (progn
                                  (notify (+ "" options.name ": BUG: no editor anymore"))

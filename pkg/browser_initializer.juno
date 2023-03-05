@@ -1883,6 +1883,7 @@
       (= *focus_suppress_timer* (setTimeout (fn ()
                                                (= *focus_suppress_timer* nil))
                                             50))
+      (console.log "set_focus_to: " target_control.name target_control)
       (let
          ((focused_list (query_all ".juno-focused"))
           (controls (or _controls
@@ -1896,7 +1897,7 @@
                        (is_function? control.on_blur))
                (-> control `on_blur)))
          
-         (console.log "set_focus_to: called with: " target_control.options.name)
+         (console.log "set_focus_to: called with: " target_control.options.name )
          ;; remove any focus class markers
          (when (> focused_list.length 0)
             (= focused_list (map (fn (v) v) focused_list))
@@ -2425,7 +2426,8 @@
         (and (== position_details_new.child holding_tank)
              (is_function? position_details_target.parent.set_content))
         (progn
-         (-> holding_tank `add_control position_details_target.child)
+           (console.log "swap_control C: new is in from holding tank")
+           (-> holding_tank `add_control position_details_target.child)
          (set_prop holding_tank.options
                    `in_tree
                    true) ;; otherwise the holding tank, if not initialized, will not mount correctly and place itself somewhere in the dom after initialization
@@ -2440,14 +2442,16 @@
         (and (== position_details_new.parent holding_tank)   ;; new control is in the holding tank 
              (is_function? position_details_target.parent.set_content))
         (progn
+           (console.log "swap_control D: new control is in the holding tank")
             (-> holding_tank `remove_control position_details_new.child.options.id)
-            (-> holding_tank `add_control position_details_target.child)
+            (-> holding_tank `add_control position_details_target.child true)
             (-> position_details_target.parent `set_content 
                                                 position_details_target.child_position 
                                                 position_details_new.child)
+            (console.log "swap_control D: setting focus to: " position_details_new.child)
             (set_focus_to position_details_new.child)
             (cascade_resize)
-            (focus_to_editor)
+            
             position_details_new.child)
         
         (and (eq nil position_details_new.parent)  ;; this is a new control without a parent
@@ -2463,6 +2467,7 @@
         (and (-> holding_tank `has_control? position_details_new.child)
              position_details_target.parent.set_content)
         (progn
+           (console.log "swap_control F: new control is in the holding tank")
            (-> position_details_target.parent `set_content
               position_details_target.child_position
               position_details_new.child)
@@ -2477,6 +2482,9 @@
         (progn
             (notify "Unhandled swap condition - see console")
             (log "unhandled swap position: target: " position_details_target "new: " position_details_new)
+            (console.log "unhandled swap condition: environment: *last_focus*: " *last_focus*)
+            (console.log "unhandled swap condition: environment: (default_focus): " (default_focus))
+            (console.log "unhandled swap condition: environment: current_layout: " (get_current_layout_control))
             nil))))                               
 
 
@@ -2940,6 +2948,7 @@
 
 (defun process_focus_chain (e originator_container)
    (progn
+      (console.log "process_focus_chain: called: " e originator_container)
       (handle_event e)
       (when e.srcElement
          (let
@@ -10146,7 +10155,7 @@
                                      (initialize))
                                   (render_view))))
             (resize_observer nil)
-            (add_control (fn (control)
+            (add_control (fn (control suppress_focus)
                             (when (not (== control intf))
                                (assert (and control.type control.options.id) "Invalid control provided")
                                (set_prop my_controls
@@ -10166,7 +10175,8 @@
                                          (-> control `destroy))
                                       (when (== *last_focus* control)
                                          (== *last_focus* nil))
-                                      (default_focus))
+                                      (unless suppress_focus
+                                         (default_focus)))
                                    (progn  ;; control is going to storage - call on_hide if it has i
                                       (when (is_function? control.on_hide)
                                          (-> control `on_hide))
@@ -11835,12 +11845,10 @@
    (let
       ((ctl_holding (control_holding_tank))
        (focused *last_focus*))
-      
       (try
          (cond
             (-> ctl_holding `has_control? (juno_documentation))
             (progn
-               
                (place_control `right (juno_documentation))
                (cascade_resize)
                (when (not focus_to_help?)
@@ -11848,15 +11856,16 @@
                                  (progn
                                     (focus_to_editor focused))) 5)))
             (juno_documentation { no_create: true } )
-            (hide_control (juno_documentation))
+            (progn
+               (hide_control (juno_documentation)))
             else
             (progn
                (defvar ctl (juno_documentation))
-               (log "initialized new juno_documentation")
                ((fn () (place_control `right ctl)))
                (when (not focus_to_help?)
                   (setTimeout (fn ()
                                  (progn
+                                    (sleep 0.05)
                                     (focus_to_editor focused))) 5))))
                
          (catch Error (e)
@@ -14489,8 +14498,9 @@
    (new Promise (fn (resolve reject)
                    (let
                        ((selection nil)
-                        (target_control (or *last_focus* (default_focus)))
                         (target_layout (get_current_layout_control))
+                        (f0 (frame_0))
+                        (target_control (or *last_focus* (default_focus)))
                         (locked_state (layout_locked? target_layout))
                         (control (file_tree_browser { 
                                                       create_mode: create_mode                          
@@ -14503,10 +14513,12 @@
                                                                         
                                                      on_destroy: (fn (self)
                                                                     (progn
-                                                                       (if (blank? selection)
-                                                                           (switch_to_new_layout (resolve_path [ `options `name ] target_layout)))
+                                                                       (when (and (not (== target_layout f0))
+                                                                                (blank? selection))
+                                                                          (switch_to_new_layout (resolve_path [ `options `name ] target_layout)))
                                                                        (setTimeout (fn ()
                                                                                       (progn
+                                                                                         (sleep 0.05)
                                                                                          (set_focus_to target_control)
                                                                                          (resolve selection))
                                                                                       20))
