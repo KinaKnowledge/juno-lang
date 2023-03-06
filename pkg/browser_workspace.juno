@@ -312,7 +312,7 @@
                  (rlog (html/div "Bootstrapping new image.."))                 
                  (-> repl `evaluate |
                      (use_unique_symbols "html")
-                     (evaluate (LZString.decompressFromBase64 browser_initializer) { `source_name: "pkg/browser_initializer.juno" })
+                     (evaluate (LZString.decompressFromBase64 browser_initializer) nil { `source_name: "pkg/browser_initializer.juno" })
                      | { `source_name: "pkg/browser_initializer.juno" })
                  (undefine `browser_initializer) ;; no longer needed in text form, remove to save space
                  (-> repl `evaluate | (save_image) | )
