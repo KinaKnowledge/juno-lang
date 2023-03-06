@@ -2891,23 +2891,55 @@
       ((dlist nil)
        (dlist_id "control_names")
        (names (each (current_controls) `name))
-       (check_selection (fn ()
+       (collect_matches (fn (new_value)
                            (let
-                              ((count 0)
+                              ((candidates []))
+                            (for_each (name names)
+                               (if (contains? new_value (lowercase name))
+                                   (push candidates name)))
+                            candidates)))
+       (prune_selection (fn (e)
+                          (let
+                              ((prefix nil)
+                               (new_value (lowercase search_input.value))
                                (candidates []))
-                              (for_each (name names)
-                                 (if (contains? (lowercase search_input.value) (lowercase name))
-                                     (push candidates name)))
-                              (if (== candidates.length 1)
-                                  (set_prop search_input
-                                     `value
-                                     (first candidates))))))
+                              (cond 
+                                 (== e.key "Backspace")
+                                 (progn
+                                    (= prefix (chop new_value))
+                                    (= candidates (collect_matches prefix))
+                                    (while (and (> prefix.length 0)
+                                                (== (length (collect_matches prefix))
+                                                    candidates.length))
+                                       (progn
+                                          (= prefix (chop prefix))))
+                                    (set_prop search_input
+                                       `value
+                                       prefix))))))
+                           
+       (check_selection (fn (e)
+                           (let
+                              ((new_value (lowercase search_input.value))
+                               (candidates []))
+                              (unless (== e.key `Backspace)
+                                 (progn
+                                    (= candidates (collect_matches new_value))
+                                    (cond 
+                                       (== candidates.length 1)
+                                       (set_prop search_input
+                                          `value
+                                          (first candidates))
+                                       (and (> new_value.length 0)
+                                            (== candidates.length 0))
+                                       (set_prop search_input
+                                          `value
+                                          (chop search_input.value))))))))
        (search_input nil)
        (target nil))
       
       (declare (function request_user_input current_controls show_control)
                (global request_user_input current_controls show_control))
-      
+     
       (aif (get_by_id dlist_id)
            (-> it `remove))
       (= dlist (datalist { `id: dlist_id }
@@ -2918,6 +2950,9 @@
                                list: "control_names" 
                                placeholder: (dtext "Type Control Name") 
                                style: "font-weight: bold; display: inline-block; padding: 10px; width: calc(100% - 10px); border: 0px; background: var(--editor-bg-color); color: var(--main-color);" } ))
+      (attach_event_listener search_input
+         `keydown
+         prune_selection)
       (attach_event_listener search_input
          `keyup
          check_selection)
