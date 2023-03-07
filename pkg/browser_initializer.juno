@@ -1282,7 +1282,7 @@
               (if meta_obj.source_name
                  [(br)
                   (h4 "Defined In")
-                  (span { class: "juno-source-location juno-shadow-on-hover" } meta_obj.source_name) ]
+                  (span { `tabindex: 0 class: "juno-source-location juno-shadow-on-hover" } meta_obj.source_name) ]
                  [])
               
               (if meta_obj.requires
@@ -1712,35 +1712,7 @@
      tags: ["DOM" "controls" "ui" "root" "layout" "control"]
    })
 
-(defun replace_control (target_control new_control)
-  (let
-      ((tmp (new Object))
-       (replaced_keys (new Set)))
-    (assert (is_object? target_control) "Invalid object provided for old_control")
-    (assert (is_object? new_control) "Invalid object provided for new_control")
-    ;; first transfer the old object contents to the new location
-    (for_each (k (keys target_control))
-              (set_prop tmp
-                        k
-                        (prop target_control k)))
-    
-    ;; now tmp has the target_control scope references
-    ;; replace the target_control with new values
-    (for_each (k (keys new_control))
-              (progn
-               (-> replaced_keys `add k)
-               (set_prop target_control
-                         k
-                         (prop new_control k))))
-    
-    ;; now remove any keys that are not in the set from the target_control
-    (for_each (k (keys target_control))
-              (if (not (-> replaced_keys `has k))
-                (remove_prop target_control k)))
-    
-    ;; the objects should be swapped at this point
-    ;; return tmp as the old control
-    tmp))
+
 
 
 
@@ -3755,7 +3727,7 @@
 ;; if an array is found at the value, it will call each function in the array in sequence
 ;; as each function in the array is an event handler
 
-(defparameter *event_routes* 
+(defvalue *event_routes* 
    { }
    {
      `description: (+ "The event routing object which contains routes used by dispatch_event. "
@@ -4070,10 +4042,6 @@
                 (do_path_save))))))
              
              
-
-    
-                     
-
 
 (defun load_js_file (file)
   (let
@@ -5843,10 +5811,12 @@
            (prior_loc nil)
            (score 0)
            (top_score 0)
+           (global_definers [list "defun" "defglobal" "defun_sync" "defmacro" "defcontrol" "defparameter" "defvalue"])
            (last_pos_chain_str nil)
            (last_pos_chain nil))
           
           (when (> __VERBOSITY__ 0)
+             (log "find_symbol_definition: symbol: " symbol "symbol_map:" symbol_map)
              (log "find_symbol_definition: " locations cpos root_form))
           (if locations
              (progn
@@ -5878,7 +5848,14 @@
                       (when (> __VERBOSITY__ 0) 
                          (log "local_defs: " symbol [row column] prior_sym last_chain last_pos_chain locdata in_form?))
                       (cond
-                         (contains? (last op_chain) [list "defun" "defglobal" "defun_sync" "defmacro" "defcontrol" "defparameter" "defvalue"])
+                         (and (is_nil? prior_sym)
+                              (== last_chain.length 1)
+                              (== "defglobal" (first last_chain)))
+                         (push def_locs { row: row col: column `type: "defglobal" `chain: pos_chain } )
+                         
+                         
+                         (and (not (contains? symbol global_definers)) 
+                              (contains? (last op_chain) global_definers))
                          (push def_locs { row: row col: column `type: "global" `chain: pos_chain } )
                          
                          (and in_form?
@@ -5938,15 +5915,17 @@
                        (= score (- score (- (length loc.tree_dist) score))))
                    (when (> score top_score)
                       (= top_score score)
-                      (= closest loc))))
-                   ;(log "top score: " top_score " score: " score loc)))
+                      (= closest loc))
+                   (log "top score: " top_score " score: " score loc)))
              (= closest (first def_locs)))
-                      
+          (when (and (is_nil? closest)
+                     (> def_locs.length 0))
+             (= closest (last def_locs)))  ;; for globals take the last definition in the buffer assuming it was compiled last
           (when (> __VERBOSITY__ 0)
              (log "closest is: " closest) )
           [closest]))
    {
-     description: (+ "<br><br>Given a symbol name (no binding prefix), a `symbol_map` as produced by "
+     description: (+ "Given a symbol name (no binding prefix), a `symbol_map` as produced by "
                      "the function `symbol_map_for_buffer`,  an optional current_pos and an optional "
                      "root_form, if the symbol is present in the provided symbol map object, this "
                      "function will return the location of the symbol definition and type of "
@@ -6346,6 +6325,73 @@
             (= text (-> editor `getCopyText))
             (evaluate_css_rule_text text)))))
 
+(defun open_symbol_definition (symbol namespace)
+   (let 
+      ((env (if (is_string? namespace)  ;; if given a namespace, get the symbol from the perspective of the namespace, otherwise just use the current
+                (-> Environment `get_namespace_handle namespace)
+                Environment))
+       (symbol_defs (describe symbol true))
+       (symbol_def (first (reduce (def (or symbol_defs []))
+                             (when (and (not def.require_ns)  ;; pointer to original
+                                        def.source_name)
+                                def))))
+       (comps (cond 
+                 (is_string? symbol_def.source_name)
+                 (split_by "/" symbol_def.source_name)
+                 (is_array? symbol_def.source_name)
+                 symbol_def.source_name
+                 else
+                 nil))
+       (source_file nil)
+       (is_buffer? false)
+       (src_files [ "base-io.lisp" "repl.lisp" "io.lisp" "core.lisp" "compiler.lisp" "reader.lisp" "environment.lisp" "build-tools.lisp" "core-ext.lisp" ])
+       (ctl nil))
+      (declare (function edit_file new_buffer get_control_by_name)
+               (global edit_file new_buffer get_control_by_name))
+      (log "open_symbol_definition: symbol: " symbol namespace)
+      (cond 
+         (eq nil symbol_def)
+         (notify (+ "Unable to find the definition information for " symbol_def))
+         (eq nil symbol_def.source_name)
+         (notify (+ "No source file listed for " symbol_def))
+         (and (== (length comps) 1)
+              (contains? symbol_def.source_name src_files))
+          (= source_file (+ "src/" symbol_def.source_name))
+          (and (== (length comps) 1)
+               (is_array? symbol_def.source_name)
+               (is_symbol? (first symbol_def.source_name)))
+          (progn 
+             (= is_buffer? true)
+             (= source_file symbol_def.source_name))
+          (> comps.length 1)
+          (= source_file symbol_def.source_name))
+      
+      (log "open_symbol_definition: def: " source_file is_buffer?)
+      (cond
+         (and is_buffer?
+            source_file)
+         (progn
+            (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
+            (aif (get_control_by_name (last (split_by "/" source_file)))
+                                  (-> it `jump_to_local_definition symbol)))
+         source_file
+         (progn
+            (edit_file { `filename: source_file })
+            (aif (get_control_by_name (last (split_by "/" source_file)))
+                 (-> it `jump_to_local_definition symbol)))
+         else
+         (notify (+ (dtext "Cannot find source for symbol") ": " symbol))))
+   {
+     description: (+ "Given a symbol and an optional namespace, displays an editor containing "
+                      "the definition of the symbol.  If the editor is already opened, the editor will "
+                      "be switched to and the position moved to the location, otherwise, a new editor "
+                      "will be opened with the source.  The source information is taken from the "
+                      "Environment definition object containing the metadata for the symbol.<br>The "
+                      "local namespace (or provided namespace) is searched first, and then core (if "
+                      "not already in core).   ")
+     tags: [ `source `editor `open `symbol `definition ]
+     usage: ["symbol:string" "namespace:?string"]
+     })
 
 (defun text_editor (options)
    (aif (and (not options.clone_with_editor_id)
@@ -7115,13 +7161,18 @@
                                     (if want_metadata
                                        {}
                                        "identifier")))))
+            ;; the special operators used by the compiler
+            (comp_special_ops (compiler nil { `special_operators: true `env: Environment }))
             (jump_to_local_definition (fn (symbol)
-                                         (progn
+                                         (when (is_string? symbol)
                                             (when (or symbol_map_dirty?
                                                     (eq nil symbol_map))
                                                (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
                                                (= symbol_map_dirty? false))
-                                            (if symbol_map
+                                            (cond 
+                                               (-> comp_special_ops `has symbol)
+                                               (notify (+ symbol " " (dtext "is a compiler operator")))
+                                               symbol_map
                                                (let
                                                   ((locations (resolve_path [`symbols symbol ] symbol_map))
                                                    (def_locs [])
@@ -7132,7 +7183,7 @@
                                                         (= def_locs (find_symbol_definition symbol symbol_map cpos root_form)))
                                                      (progn
                                                         (notify (dtext "No symbol map is available"))))
-                                                  (when (> __VERBOSITY__ 0)
+                                                  (when (> def_locs.length 1)
                                                      (log "text_editor: jump_to_local_definition: def_locs: " def_locs))
                                                   (cond
                                                      (and (== def_locs.length 1)
@@ -7142,8 +7193,9 @@
                                                         (update_position true))
                                                      (== def_locs.length 1)
                                                      (progn
-                                                        (notify "Cannot find the definition in the file")
-                                                        (log "text_editor: define locations: " def_locs))
+                                                        (dispatch_event { command: "open_definition"
+                                                                          source: options.id
+                                                                          args: [ symbol (-> evaluator_control `current_namespace) ] }))
                                                      (> def_locs.length 1)
                                                      (progn
                                                         (notify "Ambiguous: multiple positions found"))
@@ -11605,8 +11657,9 @@
                         (cond
                            (has_class? "juno-requires"  e.srcElement)
                            (progn
-                              
                               (show_documentation e.srcElement.innerText))
+                           (has_class? "juno-source-location" e.srcElement)
+                           (open_symbol_definition current_symbol)
                            (has_class? "juno-tag" e.srcElement)
                            (progn
                               (-> self `search_by_tag e.srcElement.innerText))))))
@@ -11931,9 +11984,6 @@
      `usage: []
      })
         
-             
-     
-  
 
 (defun *help_menu_function* ()
   [["Toggle Documentation" (fn () 
@@ -15763,7 +15813,8 @@
          (set_prop *env_config*.export
                    `save_prefix
                    "seedling"))
-       
+       (register_event_handler nil "open_definition" "open_symbol_definition" (fn (event)
+                                                                                    (apply open_symbol_definition event.args)))
        (-> juno_container
            `append page_frame.view)
        (-> (control_holding_tank) `add_control (juno_documentation))

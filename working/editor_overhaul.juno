@@ -1519,6 +1519,81 @@
       })
 
 
+
+(defun open_symbol_definition (symbol namespace)
+   (let 
+      ((env (if (is_string? namespace)  ;; if given a namespace, get the symbol from the perspective of the namespace, otherwise just use the current
+                (-> Environment `get_namespace_handle namespace)
+                Environment))
+       (symbol_defs (describe symbol true))
+       (symbol_def (first (reduce (def (or symbol_defs []))
+                             (when (and (not def.require_ns)  ;; pointer to original
+                                        def.source_name)
+                                def))))
+       (comps (cond 
+                 (is_string? symbol_def.source_name)
+                 (split_by "/" symbol_def.source_name)
+                 (is_array? symbol_def.source_name)
+                 symbol_def.source_name
+                 else
+                 nil))
+       (source_file nil)
+       (is_buffer? false)
+       (src_files [ "base-io.lisp" "repl.lisp" "io.lisp" "core.lisp" "compiler.lisp" "reader.lisp" "environment.lisp" "build-tools.lisp" "core-ext.lisp" ])
+       (ctl nil))
+      (declare (function edit_file new_buffer get_control_by_name)
+               (global edit_file new_buffer get_control_by_name))
+      (log "open_symbol_definition: symbol: " symbol namespace)
+      (cond 
+         (eq nil symbol_def)
+         (notify (+ "Unable to find the definition information for " symbol_def))
+         (eq nil symbol_def.source_name)
+         (notify (+ "No source file listed for " symbol_def))
+         (and (== (length comps) 1)
+              (contains? symbol_def.source_name src_files))
+          (= source_file (+ "src/" symbol_def.source_name))
+          (and (== (length comps) 1)
+               (is_array? symbol_def.source_name)
+               (is_symbol? (first symbol_def.source_name)))
+          (progn 
+             (= is_buffer? true)
+             (= source_file symbol_def.source_name))
+          (> comps.length 1)
+          (= source_file symbol_def.source_name))
+      
+      (log "open_symbol_definition: def: " source_file is_buffer?)
+      (cond
+         (and is_buffer?
+            source_file)
+         (progn
+            (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
+            (aif (get_control_by_name (last (split_by "/" source_file)))
+                                  (-> it `jump_to_local_definition symbol)))
+         source_file
+         (progn
+            (edit_file { `filename: source_file })
+            (aif (get_control_by_name (last (split_by "/" source_file)))
+                 (-> it `jump_to_local_definition symbol)))
+         else
+         (notify (+ (dtext "Cannot find source for symbol") ": " symbol))))
+   {
+     description: (+ "Given a symbol and an optional namespace, displays an editor containing "
+                      "the definition of the symbol.  If the editor is already opened, the editor will "
+                      "be switched to and the position moved to the location, otherwise, a new editor "
+                      "will be opened with the source.  The source information is taken from the "
+                      "Environment definition object containing the metadata for the symbol.<br>The "
+                      "local namespace (or provided namespace) is searched first, and then core (if "
+                      "not already in core).   ")
+     tags: [ `source `editor `open `symbol `definition ]
+     usage: ["symbol:string" "namespace:?string"]
+     })
+
+(remove_event_handler nil "open_definition" "open_symbol_definition")
+(register_event_handler nil "open_definition" "open_symbol_definition" (fn (event)
+                                                                          (progn
+                                                                             (log "event_handler: " event)
+                                                                             (apply open_symbol_definition event.args))))
+
 (defun display_pos_details (control)
    (when control.get_position_detail
       (let
@@ -1579,10 +1654,12 @@
            (prior_loc nil)
            (score 0)
            (top_score 0)
+           (global_definers [list "defun" "defglobal" "defun_sync" "defmacro" "defcontrol" "defparameter" "defvalue"])
            (last_pos_chain_str nil)
            (last_pos_chain nil))
           
           (when (> __VERBOSITY__ 0)
+             (log "find_symbol_definition: symbol: " symbol "symbol_map:" symbol_map)
              (log "find_symbol_definition: " locations cpos root_form))
           (if locations
              (progn
@@ -1614,7 +1691,14 @@
                       (when (> __VERBOSITY__ 0) 
                          (log "local_defs: " symbol [row column] prior_sym last_chain last_pos_chain locdata in_form?))
                       (cond
-                         (contains? (last op_chain) [list "defun" "defglobal" "defun_sync" "defmacro" "defcontrol" "defparameter" "defvalue"])
+                         (and (is_nil? prior_sym)
+                              (== last_chain.length 1)
+                              (== "defglobal" (first last_chain)))
+                         (push def_locs { row: row col: column `type: "defglobal" `chain: pos_chain } )
+                         
+                         
+                         (and (not (contains? symbol global_definers)) 
+                              (contains? (last op_chain) global_definers))
                          (push def_locs { row: row col: column `type: "global" `chain: pos_chain } )
                          
                          (and in_form?
@@ -1674,10 +1758,12 @@
                        (= score (- score (- (length loc.tree_dist) score))))
                    (when (> score top_score)
                       (= top_score score)
-                      (= closest loc))))
-                   ;(log "top score: " top_score " score: " score loc)))
+                      (= closest loc))
+                   (log "top score: " top_score " score: " score loc)))
              (= closest (first def_locs)))
-                      
+          (when (and (is_nil? closest)
+                     (> def_locs.length 0))
+             (= closest (last def_locs)))  ;; for globals take the last definition in the buffer assuming it was compiled last
           (when (> __VERBOSITY__ 0)
              (log "closest is: " closest) )
           [closest]))
@@ -2528,13 +2614,18 @@
                                     (if want_metadata
                                        {}
                                        "identifier")))))
+            ;; the special operators used by the compiler
+            (comp_special_ops (compiler nil { `special_operators: true `env: Environment }))
             (jump_to_local_definition (fn (symbol)
-                                         (progn
+                                         (when (is_string? symbol)
                                             (when (or symbol_map_dirty?
                                                     (eq nil symbol_map))
                                                (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
                                                (= symbol_map_dirty? false))
-                                            (if symbol_map
+                                            (cond 
+                                               (-> comp_special_ops `has symbol)
+                                               (notify (+ symbol " " (dtext "is a compiler operator")))
+                                               symbol_map
                                                (let
                                                   ((locations (resolve_path [`symbols symbol ] symbol_map))
                                                    (def_locs [])
@@ -2545,7 +2636,7 @@
                                                         (= def_locs (find_symbol_definition symbol symbol_map cpos root_form)))
                                                      (progn
                                                         (notify (dtext "No symbol map is available"))))
-                                                  (when (> __VERBOSITY__ 0)
+                                                  (when (> def_locs.length 1)
                                                      (log "text_editor: jump_to_local_definition: def_locs: " def_locs))
                                                   (cond
                                                      (and (== def_locs.length 1)
@@ -2555,8 +2646,9 @@
                                                         (update_position true))
                                                      (== def_locs.length 1)
                                                      (progn
-                                                        (notify "Cannot find the definition in the file")
-                                                        (log "text_editor: define locations: " def_locs))
+                                                        (dispatch_event { command: "open_definition"
+                                                                          source: options.id
+                                                                          args: [ symbol (-> evaluator_control `current_namespace) ] }))
                                                      (> def_locs.length 1)
                                                      (progn
                                                         (notify "Ambiguous: multiple positions found"))
