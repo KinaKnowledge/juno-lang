@@ -1711,6 +1711,40 @@
       (log (+ "removed " count " definitions."))
       count))
  
+ (defun documentation_coverage (ns)
+   (let
+      ((env (if ns
+                (-> Environment `get_namespace_handle ns)
+                Environment))
+       (good [])
+       (missing [])
+       (total 0))
+      (for ((sym meta) (pairs env.definitions))
+           (if meta.description
+              (push good sym)
+              (push missing sym)))
+      (= total (+ good.length missing.length))
+      {
+          `total: total
+          `ratio: (/ good.length total)
+          `num_good: good.length
+          `num_missing: missing.length
+          `good: good
+          `missing: missing
+      })
+   {
+     description: (+ "This function returns the coverage details for the documentation of "
+                     "global symbols by assessing how many descriptions are registered as part of a "
+                     "namespace\'s symbol meta data.  The lower the coverage score the less documented "
+                     "a namespace is.  The returned data is contained in an object with the total "
+                     "symbol count, the coverage ratio (number-of-documented-symbols / "
+                     "total-symbols), the amounts of good and missing documentation and the symbols "
+                     "grouped as arrays that represent completed and missing documentation "
+                     "respectively. ")
+     usage: ["namespace:?string"]
+     tags: ["documentation" "coverage" "help" "namespace" ]
+   })
+ 
  (register_feature "core-ext")
   
  true
