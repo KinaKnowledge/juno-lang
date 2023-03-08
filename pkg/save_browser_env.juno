@@ -102,7 +102,7 @@
     (set_prop *env_config*
               `editor
               {
-                default_theme: "cobalt"
+                default_theme: "juno_light"  ; "cobalt"
                 font_size: 14
                 themes: (reduce (theme included_editor_assets)
                            (aif (starts_with? "theme" theme)
@@ -113,7 +113,7 @@
     (set_prop *env_config*
               `application
               { menu_timeout: 2500
-                global_theme: "idle_fingers"
+                global_theme: "juno_light"; "idle_fingers"
                 max_log_lines: 100
                 name: "Seedling"
                }))

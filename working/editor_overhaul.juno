@@ -1950,6 +1950,8 @@
             (set_read_only (fn (read_only?)
                               (progn
                                  (-> editor `setReadOnly read_only?)
+                                 (set_prop options
+                                    `read_only read_only?)
                                  (if read_only?
                                     (set_prop locked_span
                                        `innerText
@@ -3149,6 +3151,8 @@
                                               (catch Error (e)
                                                  (log "ERROR on undo manager:" e message))))
                                         
+                                        (if options.read_only
+                                           (set_read_only options.read_only))
                                       
                                         
                                        

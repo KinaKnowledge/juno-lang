@@ -635,22 +635,26 @@
        (init_timer nil)
        (view (div { `control_id: id `class: "juno-view-container" } ))
        (initialized false)
+       (init_count 0)
        (parent_view nil)
        (check_observer (fn ()
                          (when (not (== view.parentElement parent_view))
-                           (-> resize_observer `disconnect)
-                           (-> resize_observer `observe view.parentElement)
-                           (= parent_view view.parentElement))))
+                            (log "control_container: changing observation: parent view changed: parent now: " (get_attribute view.parentElement `id))
+                            
+                            (-> resize_observer `disconnect)
+                            (-> resize_observer `observe view.parentElement)
+                            (= parent_view view.parentElement))))
        (perform_resize (fn ()
                          (when view.parentElement
-                           (check_observer)
-                           (let
+                            (log "control_container: performing resize: parent view is: "  (get_attribute view.parentElement `id))
+                            (check_observer)
+                            (let
                                ((new_height (- (prop view.parentElement `offsetHeight) 0))
                                 (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                             
-                             (set_style [[ "width" (+ "" new_width "px") ]
-                                         [ "height" (+ "" new_height "px") ]]
-                                        view)))))
+                               
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)))))
        (set_content (fn (position new_content) ;; position is discarded but it is essentially 0 since this is a single unit container
                       (let
                           ((new_view nil))
@@ -689,7 +693,7 @@
                         (= parent_view view.parentElement)
                         (-> resize_observer `observe view.parentElement)
                         (perform_resize)
-                        (console.log "control_container: initializing with: " contained_content)
+                        (console.log "control_container: " name ": initializing with: " contained_content)
                         (when contained_content
                           (set_content 0 contained_content))
                         (when (is_function? contained_content.initialize)
@@ -707,13 +711,16 @@
               `id
               id)
     
-    (= resize_observer (new ResizeObserver perform_resize))
+    (= resize_observer (new ResizeObserver (fn ()
+                                              (progn
+                                                 (console.log "control_container: " name ": resize observer fired")
+                                                 (perform_resize)))))
     
     (= init_timer (setInterval (fn (e)
                                    (progn
+                                      (console.log "control_container: resize interval running: timer handle:" init_timer ": count: " init_count)
                                     (when view.parentElement
                                       (clearInterval init_timer)
-                                      (= init_timer nil)
                                       (initialize))))
                                250))
     
@@ -723,8 +730,10 @@
               `initialize initialize              
               `set_content set_content
               `name options.name
-              `resize: perform_resize
-              `menu_items options.menu_items
+              `resize_observer resize_observer
+              `resize perform_resize
+              `menu_items options.menu_item
+              `initialized? (fn () initialized)
               `controls (fn () [contained_content])
               `toJSON (function ()
                                  `(control_container ,#contained_content ,#options))

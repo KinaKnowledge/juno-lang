@@ -1933,6 +1933,22 @@
         found_control)
       nil)))        
 
+(defun get_layout_holding_cell ()
+   (aif (get_by_id "layout_holding_cell")
+        it
+        (progn
+           (-> (first (get_by_tag "body"))
+               `append (div { `id: "layout_holding_cell" `style: "position: absolute; top: 3000px; left: -4000px; z-index: -10; height: 600px; width: 800px; max-width: 800px; max-height: 600px;"} ))
+           (get_by_id `layout_holding_cell)))
+   {
+     description: (+ "Returns the layout holding cell element.  If it doesn\'t yet exist in "
+                     "the DOM it will create it under the body tag and then return the newly created "
+                     "layout holding cell element. ")
+     usage:[]
+     tags: ["DOM" "layout" "controls" "root" "ui"]
+     })
+
+
 (defun switch_to_new_layout (layout_name)
    (if (and (not (blank? layout_name))
             (is_string? layout_name))
@@ -1946,10 +1962,7 @@
            (layout_holding_cell nil)
            (found false))
           (console.log "switch_to_new_layout: layout_name: " layout_name)
-          (if (eq nil (get_by_id "layout_holding_cell"))
-              (-> (first (get_by_tag "body"))
-                  `append (div { `id: "layout_holding_cell" `style: "position: absolute; top: 3000px; left: -4000px; z-index: -10;"} )))
-          (= layout_holding_cell (get_by_id "layout_holding_cell"))
+          (= layout_holding_cell (get_layout_holding_cell))
           (cond 
              (and current_layout
                   (== current_layout.name layout_name))
@@ -2004,7 +2017,7 @@
              (progn
                 (notify "Unable to find the currently active layout: check $root_controls")))
           found)
-       (throw TypeError "switch_to_new_layout: invalid layout__name provided"))
+       (throw TypeError "switch_to_new_layout: invalid layout_name provided"))
    {
      description: (+ "Given a new layout name, replaces the current layout with the provided "
                      "named layout, if it exists.  If the operation is successful, the function will "
@@ -2325,12 +2338,16 @@
     (if (and current_control_layout
              (layout_locked? current_control_layout))
         (progn
-           (notify (dtext "Cannot swap out the current control - layout is locked"))
+           (console.log "swap_control: current layout is locked: " current_control_layout)
+           (console.log "swap_control: target_control: " target_control "new_control: " new_control)
+           (notify (dtext "Cannot swap out the current control - current layout is locked"))
            (= noop true)))
     (if (and new_control_layout
              (layout_locked? new_control_layout))
         (progn
-           (notify (dtext "Cannot swap out the target control - layout is locked"))
+           (console.log "swap_control: new layout is locked: "new_control_layout)
+           (console.log "swap_control: target_control: " target_control "new_control: " new_control)
+           (notify (dtext "Cannot swap out the target control - new control layout is locked"))
            (= noop true)))
     
     
@@ -2498,6 +2515,7 @@
       
       (console.log "container_view_operation: original_target: " orig_target)
       (console.log "container_view_operation: computed_target: " target_control)
+      (console.log "container_view_operation: target_layout_locked? " target_layout_locked? "target_layout: " (clone target_layout))
       (console.log "container_view_operation: command: " command "position_details: " position_details "new_control: " new_control)
       (when (and (== position_details.parent nil) ;; top level control
                  (not (== position_details.child holding_tank))
@@ -2515,7 +2533,7 @@
                  (not (== target_control.type "juno_documentation_control"))
                  (not (== new_control.type "juno_documentation_control")))
          (= confirmed false)
-         ;(log "container_view_operation: target layout is locked")
+         (console.log "container_view_operation: target layout is locked")
          (notify (dtext "Target layout is locked")))
       
       (when (and target_control.options.only_for
@@ -2551,6 +2569,12 @@
                       
                       (= split_view_parent (control_position position_details.parent))
                       (assert split_view_parent.parent.set_content "Unable to set the content of the split view parent")
+                      (console.log "container_view_operation: split_view_parent: " split_view_parent)
+                      (when (not (blank? split_view_parent.parent.options.root_bundle))
+                         (assert (== split_view_parent.parent.type "control_container") "The split_view parent is a root_bundle but is not a control_container.  Bug!")
+                         (console.log "container_view_operation: hide operation: parent of split view is a named layout: " split_view_parent.parent)
+                         (console.log "container_view_operation: hide operation: content of : " split_view_parent.parent.name " will be set to " position_details.child_to_display))
+                      
                       (console.log "container_view_operation: split_view_parent: " split_view_parent)
                       (console.log "container_view_operation: position_details: " position_details)
                       (when (not options.dry_run)
@@ -3873,7 +3897,11 @@
                  (progn 
                     (-> handler `f event_obj))
                  (catch Error (e)
-                    (log (+ "Error on event handler for route: " handler_key ": " e.message))))))
+                    (progn
+                       (log (+ "Error on event handler for route: " handler_key ": removing: " e.message))
+                       (try (remove_event_handler event_obj.source event_obj.command handler.fid)
+                          (catch Error (e)
+                             (log (+ "Error Cannot remove problematic event_handler: " handler_key ": " handler.fid ": " e.message)))))))))
       (when event_obj.error
          (progn
             (log "dispatch_event: error: " event_obj)
@@ -6497,6 +6525,8 @@
             (set_read_only (fn (read_only?)
                               (progn
                                  (-> editor `setReadOnly read_only?)
+                                 (set_prop options
+                                    `read_only read_only?)
                                  (if read_only?
                                     (set_prop locked_span
                                        `innerText
@@ -7696,6 +7726,8 @@
                                               (catch Error (e)
                                                  (log "ERROR on undo manager:" e message))))
                                         
+                                        (if options.read_only
+                                           (set_read_only options.read_only))
                                       
                                         
                                        
@@ -14323,28 +14355,40 @@
     
 
 (defun rehydrate_controls (container serialized_controls)
-  (let
-      ((control nil))
-    (for_each (`serialized_control serialized_controls)
-      (progn
-       (= control (eval serialized_control))
-       (when (and control.view
-                  (not control.view.parentElement))
-          (if (or (== control.type "app_header")
-                  (== control.options.root_frame true))
-              (-> container
-                 `append control.view)))
-       (push $root_controls
-             control)
-       (when control.initialize
-         (-> control `initialize)))))
-  {
-    description: (+ "<br>Given a DOM element and a JSON structure of serialized controls as produced "
-                    "through the `serialize_controls` function, this function will instantiate them "
-                    "from their saved state into the DOM structure. ")
-    usage: ["conainer:Element" "serialize_controls:array"]
-    tags:  ["controls" "storage" "serialize" "serialization" "rehydration" "restore" "state" "application"]
-  })
+   (let
+      ((control nil)
+       (lhc (get_layout_holding_cell)))
+      (assert lhc "cannot find the layout holding cell: this is an error/bug")
+      (console.log "rehydrate_controls: serialized_controls: " serialized_controls)
+      (for_each (`serialized_control serialized_controls)
+         (progn
+            (= control (eval serialized_control))
+            (console.log "rehydrate_controls: rehydrating: " control.options "control has parent: " control.view.parentElement)
+            (cond
+               (and control.view
+                  (not control.view.parentElement)
+                  (or (== control.type "app_header")
+                      (== control.options.root_frame true)))
+               (progn
+                  (-> container
+                     `append control.view)
+                  (console.log "rehydrate_controls: appended control " control.options.name " to displayed container"))
+               (and control.view
+                  (not (blank? control.options.last_focus_id)))
+               (progn
+                  (-> lhc `append control.view)
+                  (console.log "rehydrate_controls: appended control " control.options.name " to layout holding cell")))
+            (push $root_controls
+               control)
+            (when control.initialize
+               (-> control `initialize)))))
+   {
+     description: (+ "<br>Given a DOM element and a JSON structure of serialized controls as produced "
+                     "through the `serialize_controls` function, this function will instantiate them "
+                     "from their saved state into the DOM structure. ")
+     usage: ["conainer:Element" "serialize_controls:array"]
+     tags:  ["controls" "storage" "serialize" "serialization" "rehydration" "restore" "state" "application"]
+     })
 
 (defun layout_initializer ()
    (let
@@ -14583,10 +14627,16 @@
    (new Promise (fn (resolve reject)
                    (let
                        ((selection nil)
-                        (target_layout (get_current_layout_control))
+                        ;; get the current layout...
+                        (current_layout (get_current_layout_control))
+                        ;; are we locked?  
+                        (locked_state (layout_locked? current_layout))
+                        ;; if so, target layout must be frame 0 which cannot be locked
+                        (target_layout (if locked_state
+                                           (frame_0)
+                                           current_layout))
                         (f0 (frame_0))
-                        (target_control (or *last_focus* (default_focus)))
-                        (locked_state (layout_locked? target_layout))
+                        (target_control (get_control_by_id target_layout.options.last_focus_id))
                         (control (file_tree_browser { 
                                                       create_mode: create_mode                          
                                                       on_select: (fn (stack)
@@ -14604,12 +14654,14 @@
                                                                        (setTimeout (fn ()
                                                                                       (progn
                                                                                          (sleep 0.05)
+                                                                                         (console.log "wait_for_file_selection: " target_layout.name ": target_control:" target_control)
                                                                                          (set_focus_to target_control)
                                                                                          (resolve selection))
                                                                                       20))
                                                                        true)) })))
                        ;; if the layout is locked, remove the lock temporarily so we can pop open a selector
-                     (if locked_state
+                     (console.log "wait_for_file_selection: locked_state: " locked_state "target_layout: " target_layout target_control)  
+                     (when locked_state
                          (switch_to_new_layout (resolve_path [ `options `name ] (frame_0))))
                      (place_control `below control)
                      ;(if locked_state
