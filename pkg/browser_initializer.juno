@@ -14627,15 +14627,12 @@
    (new Promise (fn (resolve reject)
                    (let
                        ((selection nil)
-                        ;; get the current layout...
+                        ;; get the current layout if the user cancels the open
+                        ;; then we can switch back to where they were..
                         (current_layout (get_current_layout_control))
-                        ;; are we locked?  
                         (locked_state (layout_locked? current_layout))
-                        ;; if so, target layout must be frame 0 which cannot be locked
-                        (target_layout (if locked_state
-                                           (frame_0)
-                                           current_layout))
                         (f0 (frame_0))
+                        (target_layout  f0)
                         (target_control (get_control_by_id target_layout.options.last_focus_id))
                         (control (file_tree_browser { 
                                                       create_mode: create_mode                          
@@ -14648,24 +14645,24 @@
                                                                         
                                                      on_destroy: (fn (self)
                                                                     (progn
-                                                                       (when (and (not (== target_layout f0))
+                                                                       (console.log "wait_for_file_selection: selection is: " selection)
+                                                                       (when (and (not (== current_layout f0))
                                                                                 (blank? selection))
-                                                                          (switch_to_new_layout (resolve_path [ `options `name ] target_layout)))
-                                                                       (setTimeout (fn ()
-                                                                                      (progn
-                                                                                         (sleep 0.05)
-                                                                                         (console.log "wait_for_file_selection: " target_layout.name ": target_control:" target_control)
-                                                                                         (set_focus_to target_control)
-                                                                                         (resolve selection))
-                                                                                      20))
+                                                                          (switch_to_new_layout (resolve_path [ `options `name ] current_layout)))
+                                                                       (if (not (blank? selection))
+                                                                           (setTimeout (fn ()
+                                                                                          (progn
+                                                                                             (sleep 0.05)
+                                                                                             (console.log "wait_for_file_selection: " target_layout.name ": target_control:" target_control)
+                                                                                             (set_focus_to target_control)
+                                                                                             (resolve selection))
+                                                                                          20)))
                                                                        true)) })))
                        ;; if the layout is locked, remove the lock temporarily so we can pop open a selector
                      (console.log "wait_for_file_selection: locked_state: " locked_state "target_layout: " target_layout target_control)  
-                     (when locked_state
-                         (switch_to_new_layout (resolve_path [ `options `name ] (frame_0))))
+                     
+                     (switch_to_new_layout (resolve_path [ `options `name ] (frame_0)))
                      (place_control `below control)
-                     ;(if locked_state
-                      ;  (lock_layout_positions target_layout.options.name))
                      (set_focus_to control))))
    {
        `description: (+ "Opens a file tree browser for selection of a file.  Once the a " 
