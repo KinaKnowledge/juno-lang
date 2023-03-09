@@ -1,0 +1,109 @@
+;; functions to generate static documentation for an environment
+
+(declare (namespace `user))
+
+(defun export_documentation_to_html (ns options)
+   (let
+      ((env (if ns
+                (-> Environment `get_namespace_handle ns)
+                Environment))
+       (header [
+                (h2 "Symbol Index for " ns)
+                (span { } "Build: " *env_config*.build)
+                (if options.user_headers
+                   (div { `style: "display: inline-block; float: right;" } 
+                        options.user_headers)
+                   [])
+                (hr { `class: "LightHR" } )
+                ])
+       (left_panel nil)
+       (right_panel [])
+       (meta nil)
+       (save_method nil)
+       (content nil)
+       (fname (or options.save_as (+ "symbols_" ns ".html")))
+       (sym_data (sort (keys env.definitions))))
+      
+      (= left_panel
+         (div { `style: "overflow: scroll; flex-grow: 0; flex-shrink: 0; flex-basis: 250px;margin-top: 3px; background: #FFFFFF10; ; padding: 5px; " }
+              (for_each (symbol sym_data)
+                 (a { href: (+ "#index-" symbol) style: "display: block; padding: 5px;" } symbol))))
+      
+      (= right_panel
+         (div { `style: "overflow: scroll; flex-grow: 2; overflow: scroll; margin-top: 3px; background: #FFFFFF10; ; padding: 5px; " }
+              (for_each (symbol sym_data)
+                 (progn
+                    (= meta (describe symbol))
+                    (div { `id: (+ "index-" symbol) `style: "margin-bottom: 100px; margin-left: 50px; " }
+                         (format_help (describe symbol)))))))
+      (= content
+         (html/html
+            (head
+               (title (+ "Symbol Index for " ns))
+               (style { } (prop (get_by_id "juno-css") `innerHTML))
+               (style { } ":root { --scrollbar-thumb-color: #808080; --scrollbar-track-color: #00000005; } a { `color: `darkblue }"))
+            (body { `style: "height: 100vh; overflow: hidden; " }
+               (div { style: "font-family: var(--main-app-font); overflow: hidden; margin-left: 10px; margin-right: 10px; margin-bottom: 10px; margin-top: 0px; height: inherit; width: calc(100% - 10px); height: calc(100% - 0px);" }
+                    header
+                    (div { `style: "display: flex; align-items: stretch; justify-content: stretch; flex-direction: row;  height: calc(100% - 80px);;" }
+                         left_panel
+                         right_panel)))))
+      (if (and is_served? 
+              (not options.save_locally)
+              (contains? "http_client" *env_config*.features))
+       (progn
+        (= save_method (fn (fname content content_type)
+                             (http/send_files "/save_file" (http/data_to_file (+ (or options.base_dir "doc/") fname) content content_type)))))
+       (= save_method save_locally))
+      (save_method fname
+         (+ "<!DOCTYPE html>\n"
+            content.outerHTML)
+         `text/html))
+   {
+     description: (+ "Given a namespace generates a symbol index as a static html "
+                     "documentation page and saves it either locally or on the host.  If the browser "
+                     "environment is connected to a remote host, then the default is to save the "
+                     "documentation remotely.  <br><br>#### Options  <br><br>save_as:string -The "
+                     "filename to save the generated HTML page as.   This shouldn\'t contain any path "
+                     "information.  The default save name is in the format of "
+                     "`symbols_<namespace>.html`.  <br>base_dir:string -When saving to a server, the "
+                     "relative path to save the generated page to.  The default value is `doc/` which "
+                     "will place the generated HTML files in the `doc/` directory of the hosting Juno "
+                     "environment.<br>user_headers:array -An array of elements to place in the right "
+                     "side of the header.  This can be used to place additional information, links or "
+                     "other items in the generated page.  For example, the `generate_docs` function "
+                     "uses it to place links to other namespace documentation. "
+                     "<br>save_locally:boolean - When set to `true`, the generated documentation "
+                     "files are downloaded, vs. saved on the remote host.  The default is false when "
+                     "the browser environment is hosted.  If the environment is not connected to a "
+                     "host, then saving locally is the default. ")
+
+     usage: ["namespace:string" "options:object"]
+     tags: ["documentation" "help" "about" "index" "symbols" ]
+   })
+
+(defun generate_docs (options)
+   (progn
+      (for_each (ns (sort (namespaces)))
+         (export_documentation_to_html ns
+                                       (+ {
+                                            `user_headers: (for_each (ns (sort (namespaces)))
+                                                              (a {
+                                                                   `href: (+ "symbols_" ns ".html")
+                                                                   `style: "margin-right: 20px; padding: 5px; font-weight: bold; color: darkblue; text-decoration: none;;"  } ns))
+                                            }
+                                         (if options
+                                            options
+                                            {})))))
+   {
+     description: (+ "For each namespace, generates symbol indexes with links between them.  "
+                     "The documentation will either be saved remotely if the browser environment is "
+                     "hosted, otherwise it will be downloaded locally.<br>Options are passed to the "
+                     "function `export_documentation_to_html`.  For more information on options, see "
+                     "the documentation for that function. ")
+     usage: ["namespace:string" "options:object"]
+     tags: ["documentation" "help" "about" "index" "symbols" ]
+     })
+   
+   
+   
